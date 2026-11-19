@@ -1,0 +1,94 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    A documentation search: a BxCommandPalette in a BxModal over a list of pages and their headings, opened by a
+    keyboard shortcut or by a BxContentSearchButton. Filtering, highlighting, activation and the shortcut run in the
+    browser (js/content.js and the command palette), so it works in static rendering. The shortcut is a fallback: a
+    page that registers the same combination with data-bx-hotkey (a dashboard search) takes it first.
+*@
+<BxModal Open="Open" OpenChanged="OpenChanged" AriaLabel="@(Label ?? Options.Strings.ContentSearch)" Close="false" Ui="_modalUi"
+         data-bx-content-search="@Name">
+    <ChildContent>
+        <button type="button" hidden tabindex="-1" data-bx-content-hotkey="@Shortcut"></button>
+    </ChildContent>
+    <Body>
+        <BxCommandPalette Groups="_groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Options.Strings.ContentSearch)"
+                          Placeholder="@(Placeholder ?? Options.Strings.ContentSearchPlaceholder)" Ui="Ui" />
+    </Body>
+</BxModal>
+
+@code {
+    private ModalUi _modalUi = new() { Body = "p-0 sm:p-0" };
+    private IReadOnlyList<BxCommandGroup> _groups = [];
+
+    /// <summary>The pages to search. A page is listed with its headings, under the heading of its <c>Group</c>.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxContentSearchPage> Pages { get; set; } = [];
+
+    /// <summary>Called with the activated command. Pages and headings navigate as well. The search closes in either case.</summary>
+    [Parameter] public EventCallback<BxCommandItem> OnSelect { get; set; }
+
+    /// <summary>
+    /// The keyboard shortcut that opens the search: "mod+k" by default, where mod is Cmd on Apple platforms and Ctrl
+    /// elsewhere. Ctrl, meta, alt and shift are accepted too.
+    /// </summary>
+    [Parameter] public string Shortcut { get; set; } = "mod+k";
+
+    /// <summary>
+    /// Names this search so that a <see cref="BxContentSearchButton"/> with the same <c>For</c> opens it. Needed only
+    /// when a page has more than one search; the unnamed one is the default.
+    /// </summary>
+    [Parameter] public string Name { get; set; } = "";
+
+    /// <summary>Open state. Use <c>@bind-Open</c>; the browser opens and closes the search on its own.</summary>
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible name of the dialog and the search field. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Slot overrides of the command palette.</summary>
+    [Parameter] public CommandPaletteUi? Ui { get; set; }
+
+    protected override void OnParametersSet() => _groups = ToGroups(Pages);
+
+    // Groups keep the order of their first page; inside a group, a page comes right before its headings.
+    private static IReadOnlyList<BxCommandGroup> ToGroups(IReadOnlyList<BxContentSearchPage> pages)
+    {
+        var order = new List<string?>();
+        var items = new Dictionary<string, List<BxCommandItem>>(StringComparer.Ordinal);
+        var ungrouped = new List<BxCommandItem>();
+        foreach (var page in pages)
+        {
+            var list = page.Group is null ? ungrouped : items.TryGetValue(page.Group, out var existing) ? existing : items[page.Group] = [];
+            if (page.Group is not null && !order.Contains(page.Group)) order.Add(page.Group);
+            list.Add(new BxCommandItem
+            {
+                Label = page.Title,
+                Value = page.Href,
+                Description = page.Description,
+                Keywords = page.Keywords,
+                Href = page.Href,
+                Icon = page.Icon == "" ? null : BxIcons.Named(page.Icon ?? "file", "size-5"),
+            });
+            foreach (var heading in page.Headings ?? [])
+            {
+                var href = $"{page.Href}#{heading.Id}";
+                list.Add(new BxCommandItem
+                {
+                    Label = heading.Text,
+                    Value = href,
+                    Description = page.Title,
+                    Keywords = page.Keywords,
+                    Href = href,
+                    Icon = b => b.AddContent(0, "#"),
+                });
+            }
+        }
+        var groups = new List<BxCommandGroup>();
+        if (ungrouped.Count > 0) groups.Add(new BxCommandGroup(null, ungrouped));
+        groups.AddRange(order.Select(group => new BxCommandGroup(group, items[group!])));
+        return groups;
+    }
+}
