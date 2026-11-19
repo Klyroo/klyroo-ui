@@ -1,0 +1,16 @@
+@* Rendering markdown is up to the app: render the text with Markdig (Markdown.ToHtml) and give the result as ChildContent
+   with a MarkupString. Here the content is plain markup. *@
+<div class="flex w-full max-w-xl flex-col gap-4" data-testid="chat-message-example">
+    <BxChatMessage Role="ChatRole.System" Text="Today, 9:41" />
+    <BxChatMessage Role="ChatRole.User" Text="How do I stream a reply in Blazor?" data-testid="chat-message-user" />
+    <BxChatMessage Role="ChatRole.Assistant" AvatarText="B" AvatarAlt="Blux assistant" data-testid="chat-message-assistant">
+        <p>Await an <code>IAsyncEnumerable&lt;string&gt;</code> and append each token to the message.</p>
+    </BxChatMessage>
+    <div class="flex flex-col gap-2">
+        @foreach (var variant in Enum.GetValues<ChatMessageVariant>())
+        {
+            <BxChatMessage Role="ChatRole.Assistant" Variant="variant" Text="@($"Variant {variant}")" />
+        }
+    </div>
+    <BxChatMessage Role="ChatRole.User" Side="ChatSide.Left" Variant="ChatMessageVariant.Solid" Color="BxColor.Primary" Compact Text="A compact, solid message on the left." />
+</div>
