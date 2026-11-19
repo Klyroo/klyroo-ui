@@ -1,0 +1,42 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    The root wrapper of an app, placed once in the layout around @Body. It renders the toaster (so IToastService
+    works), sets the language and text direction of the tree, and cascades global class overrides to every component
+    through a BxTheme. Replace a hand-placed <BxToaster /> with it, never keep both.
+*@
+<BxTheme Overrides="Overrides">
+    <div class="@_slots["root"]" lang="@Lang" dir="@Dir" @attributes="AdditionalAttributes">
+        @ChildContent
+        @if (Toaster)
+        {
+            <BxToaster Duration="ToastDuration" />
+        }
+    </div>
+</BxTheme>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Renders the <see cref="BxToaster"/> after the content. Turn it off when the app places its own.</summary>
+    [Parameter] public bool Toaster { get; set; } = true;
+
+    /// <summary>How long a toast stays on screen.</summary>
+    [Parameter] public TimeSpan ToastDuration { get; set; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Language of the content (the <c>lang</c> attribute), for example "fr". Leave it unset when the page sets it.</summary>
+    [Parameter] public string? Lang { get; set; }
+
+    /// <summary>Text direction (the <c>dir</c> attribute): "ltr", "rtl" or "auto".</summary>
+    [Parameter] public string? Dir { get; set; }
+
+    /// <summary>Class overrides for every component below, by component type. See <see cref="BxTheme"/>.</summary>
+    [Parameter] public IReadOnlyDictionary<Type, Blux.UI.Theming.ISlotOverrides>? Overrides { get; set; }
+    [Parameter] public AppUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.App, new Dictionary<string, string?>(), Ui, "root");
+}

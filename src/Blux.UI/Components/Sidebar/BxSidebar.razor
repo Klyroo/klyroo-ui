@@ -1,0 +1,162 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    An app sidebar. From the lg breakpoint up it is a column that can collapse to icons and, if asked, be resized; the
+    browser owns both states (the <bx-sidebar> element in js/layout.js), keeps them in localStorage under Id, and tells
+    .NET about the collapsed state only when CollapsedChanged is bound. Below lg the column is replaced by a button that
+    opens the same content in a BxSlideover, so it works in static rendering too.
+    The aside carries data-state="expanded|collapsed" and is a Tailwind group named "sidebar".
+*@
+<bx-sidebar data-bx-seq="@(CollapsedChanged.HasDelegate ? _sequence : null)"
+            class="@_slots["host"]"
+            style="--bx-sidebar-width:@(Width)px"
+            collapsed="@Collapsed"
+            resizable="@Resizable"
+            data-bx-sidebar-id="@Id"
+            data-bx-min-width="@MinWidth"
+            data-bx-max-width="@MaxWidth"
+            data-bx-width="@Width"
+            @onbxtoggle="ToggleHandler"
+            @onbxtoggle:stopPropagation="true">
+    @Root
+    <div class="@_slots["mobile"]">
+        <BxSlideover Side="SlideoverSide.Left" Title="@(MobileTitle ?? Options.Strings.SidebarLabel)" Ui="_slideoverUi" data-bx-layout-menu>
+            <ChildContent>
+                <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" LeadingIcon="@(BxIcons.Named("menu", "size-5"))"
+                          aria-label="@Options.Strings.OpenSidebar" />
+            </ChildContent>
+            <Body>
+                <div class="@_slots["mobileBody"]">
+                    @if (Header is not null)
+                    {
+                        <div class="@_slots["header"]"><div class="@_slots["headerContent"]">@Header</div></div>
+                    }
+                    <div class="@_slots["content"]">@ChildContent</div>
+                    @if (Footer is not null)
+                    {
+                        <div class="@_slots["footer"]">@Footer</div>
+                    }
+                </div>
+            </Body>
+        </BxSlideover>
+    </div>
+</bx-sidebar>
+
+@code {
+    private SlotSet _slots = default!;
+    private SlideoverUi _slideoverUi = new() { Body = "p-0 sm:p-0" };
+    private int _sequence;
+
+    /// <summary>The scrollable middle: navigation, search.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Top of the sidebar: a logo and a title. Hidden while the sidebar is collapsed, next to the collapse button.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>Bottom of the sidebar: the signed-in user, settings.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>
+    /// Key under which the collapsed state and the width are remembered in localStorage ("blux:sidebar:" followed by
+    /// the id). Without an id nothing is remembered. With a bound <see cref="Collapsed"/> the collapsed state is not
+    /// restored: your state wins.
+    /// </summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Shows the button that collapses the sidebar to icons.</summary>
+    [Parameter] public bool Collapsible { get; set; } = true;
+
+    /// <summary>
+    /// The collapsed state when nothing is remembered. Use <c>@bind-Collapsed</c> to follow and set it from .NET;
+    /// the browser still toggles it without a round trip, and in static rendering a bound state is not reported.
+    /// </summary>
+    [Parameter] public bool Collapsed { get; set; }
+    [Parameter] public EventCallback<bool> CollapsedChanged { get; set; }
+
+    /// <summary>Adds a handle on the edge to resize the sidebar with the mouse or the arrow keys, Home and End.</summary>
+    [Parameter] public bool Resizable { get; set; }
+
+    /// <summary>Width in pixels when expanded and not resized yet.</summary>
+    [Parameter] public int Width { get; set; } = 256;
+    [Parameter] public int MinWidth { get; set; } = 192;
+    [Parameter] public int MaxWidth { get; set; } = 448;
+
+    /// <summary>
+    /// The element to render, "aside" by default. A complementary landmark must not sit inside another landmark:
+    /// use "div" when the sidebar is placed inside a main element.
+    /// </summary>
+    [Parameter] public string As { get; set; } = "aside";
+
+    /// <summary>Accessible name of the sidebar landmark. Defaults to the built-in text.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Title of the mobile panel. Defaults to the built-in text.</summary>
+    [Parameter] public string? MobileTitle { get; set; }
+    [Parameter] public SidebarUi? Ui { get; set; }
+
+    private EventCallback<BxToggleEventArgs> ToggleHandler =>
+        CollapsedChanged.HasDelegate ? EventCallback.Factory.Create<BxToggleEventArgs>(this, OnToggle) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Sidebar, new Dictionary<string, string?>(), Ui, "root");
+
+    // The event reports whether the sidebar is expanded ("open"), like every other toggle.
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxToggleEventArgs))]
+    private async Task OnToggle(BxToggleEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var collapsed = !e.Open;
+        if (collapsed == Collapsed) return;
+        Collapsed = collapsed;
+        await CollapsedChanged.InvokeAsync(collapsed);
+    }
+
+    private RenderFragment Root => builder =>
+    {
+        builder.OpenElement(0, As);
+        builder.AddAttribute(1, "class", _slots["root"]);
+        builder.AddAttribute(2, "data-slot", "root");
+        builder.AddAttribute(3, "data-state", Collapsed ? "collapsed" : "expanded");
+        if (As is "aside" or "nav")
+        {
+            builder.AddAttribute(4, "aria-label", AriaLabel ?? Options.Strings.SidebarLabel);
+        }
+        builder.AddMultipleAttributes(5, AdditionalAttributes);
+        builder.AddContent(6, Panel);
+        builder.CloseElement();
+    };
+
+    private RenderFragment Panel =>
+        @<text>
+            @if (Header is not null || Collapsible)
+            {
+                <div class="@_slots["header"]" data-slot="header">
+                    @if (Header is not null)
+                    {
+                        <div class="@_slots["headerContent"]">@Header</div>
+                    }
+                    @if (Collapsible)
+                    {
+                        <button type="button" class="@_slots["toggle"]" aria-label="@Options.Strings.CollapseSidebar"
+                                aria-pressed="@(Collapsed ? "true" : "false")" data-bx-sidebar-toggle>
+                            @BxIcons.Named("chevron-left", _slots["toggleIcon"])
+                        </button>
+                    }
+                </div>
+            }
+            <div class="@_slots["content"]" data-slot="content">@ChildContent</div>
+            @if (Footer is not null)
+            {
+                <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+            }
+            @if (Resizable)
+            {
+                <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@Options.Strings.ResizeSidebar"
+                     aria-valuemin="@MinWidth" aria-valuemax="@MaxWidth" aria-valuenow="@Width"
+                     class="@_slots["handle"]" data-slot="handle"></div>
+            }
+        </text>;
+}

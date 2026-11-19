@@ -1,0 +1,64 @@
+@namespace Blux.UI
+@using System.Globalization
+@inherits BxComponentBase
+
+@*
+    A select of cultures, built on BxSelect. Choosing one writes the ASP.NET Core culture cookie in the browser and
+    reloads the page, so it works in static rendering and without a .NET runtime in the page. The server must run
+    UseRequestLocalization with the same cultures: the cookie is only read there. Nothing is posted by the select itself.
+*@
+<div class="@_slots["root"]"
+     data-bx-locale-select
+     data-bx-cookie="@CookieName"
+     data-bx-cookie-path="@CookiePath"
+     data-bx-reload="@(Reload ? "" : null)"
+     @attributes="AdditionalAttributes">
+    <BxSelect Items="_items" Value="@_value" Size="Size" Variant="Variant" Color="Color"
+              aria-label="@(AriaLabel ?? Options.Strings.LocaleSelectLabel)" />
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private IReadOnlyList<BxSelectItem> _items = [];
+    private string? _value;
+
+    /// <summary>The cultures to offer.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxLocale> Locales { get; set; } = [];
+
+    /// <summary>
+    /// The selected culture code. Defaults to the current UI culture, matched by exact name and then by language
+    /// ("fr-FR" selects "fr"). In WebAssembly the client has its own culture: pass the value when it can differ from the server's.
+    /// </summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>The cookie to write. The default is the one the ASP.NET Core request localization middleware reads.</summary>
+    [Parameter] public string CookieName { get; set; } = ".AspNetCore.Culture";
+
+    /// <summary>The path of the cookie. It must cover every page that is localized.</summary>
+    [Parameter] public string CookiePath { get; set; } = "/";
+
+    /// <summary>Reloads the page after the cookie is written, so the server renders it in the new culture.</summary>
+    [Parameter] public bool Reload { get; set; } = true;
+
+    /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public LocaleSelectUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(Options.LocaleSelect, new Dictionary<string, string?>(), Ui, "root");
+        _items = Locales.Select(l => new BxSelectItem(l.Code, l.Flag is null ? l.Label : l.Flag + " " + l.Label)).ToList();
+        _value = Resolve(Value ?? CultureInfo.CurrentUICulture.Name);
+    }
+
+    private string? Resolve(string culture)
+    {
+        var exact = Locales.FirstOrDefault(l => string.Equals(l.Code, culture, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null) return exact.Code;
+        var language = culture.Split('-')[0];
+        return Locales.FirstOrDefault(l => string.Equals(l.Code.Split('-')[0], language, StringComparison.OrdinalIgnoreCase))?.Code;
+    }
+}

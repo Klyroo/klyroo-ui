@@ -10,7 +10,7 @@ public interface ISlotOverrides
 
 /// <summary>
 /// Base of styled components: injects the theme services and resolves slot classes in the documented order
-/// (theme defaults, <c>AddBluxUi</c> overrides, <c>Ui</c>, then <c>Class</c> on the root slot).
+/// (theme defaults, <c>AddBluxUi</c> overrides, enclosing <see cref="BxTheme"/> scopes, <c>Ui</c>, then <c>Class</c> on the root slot).
 /// </summary>
 public abstract class BxComponentBase : ComponentBase
 {
@@ -19,6 +19,9 @@ public abstract class BxComponentBase : ComponentBase
 
     /// <summary>Classes added to the root element, merged last so they win over the theme.</summary>
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>The scope of the closest enclosing <see cref="BxTheme"/>, if any.</summary>
+    [CascadingParameter] private protected BxThemeScope? ThemeScope { get; set; }
 
     /// <summary>Unmatched attributes, forwarded to the main element of the component.</summary>
     [Parameter(CaptureUnmatchedValues = true)]
@@ -34,11 +37,12 @@ public abstract class BxComponentBase : ComponentBase
         var result = new Dictionary<string, string>(resolved.Count, StringComparer.Ordinal);
         foreach (var (slot, classes) in resolved)
         {
+            var scopeClasses = ThemeScope?.ClassesFor(GetType(), slot);
             var overrideClasses = ui?.For(slot);
             var instanceClasses = slot == rootSlot ? Class : null;
-            result[slot] = overrideClasses is null && instanceClasses is null
+            result[slot] = scopeClasses is null && overrideClasses is null && instanceClasses is null
                 ? classes
-                : Resolver.Merge(classes, overrideClasses, instanceClasses);
+                : Resolver.Merge(classes, scopeClasses, overrideClasses, instanceClasses);
         }
         return new SlotSet(result);
     }
