@@ -1,0 +1,126 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    APG carousel: a region with aria-roledescription="carousel", slides that are groups with aria-roledescription="slide", and
+    buttons for previous, next, a slide picker and, with autoplay, rotation. The slides sit in a scroll-snap viewport, so
+    swiping works natively; <bx-carousel> adds the buttons, the keyboard, autoplay and the current slide in the browser.
+    The controls come first in the DOM (rotation control first, as APG asks) and are shown below the slides.
+*@
+<bx-carousel data-bx-seq="@(IndexChanged.HasDelegate ? _sequence : null)"
+             index="@Index"
+             loop="@(Loop ? "" : null)"
+             autoplay="@(AutoPlay > 0 ? AutoPlay.ToString() : null)"
+             data-label-pause="@Options.Strings.PauseSlides"
+             data-label-play="@Options.Strings.PlaySlides"
+             role="region"
+             aria-roledescription="carousel"
+             aria-label="@AriaLabel"
+             class="@_slots["root"]"
+             data-color="@Color.Value"
+             @onbxchange="ChangeHandler"
+             @onbxchange:stopPropagation="true"
+             @attributes="AdditionalAttributes">
+    <div data-slot="controls" class="@_slots["controls"]">
+        @if (AutoPlay > 0)
+        {
+            <button type="button" data-slot="toggle" class="@_slots["control"]" aria-label="@Options.Strings.PauseSlides">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["pauseIcon"]">
+                    <path d="M8 5v14m8-14v14" />
+                </svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["playIcon"]">
+                    <path d="m6 4 14 8-14 8Z" />
+                </svg>
+            </button>
+        }
+        @if (Arrows)
+        {
+            <button type="button" data-slot="prev" class="@_slots["control"]" aria-label="@Options.Strings.PreviousSlide" aria-controls="@ViewportId">
+                @BxIcons.ChevronDown(_slots["prevIcon"])
+            </button>
+        }
+        @if (Dots)
+        {
+            <div role="group" aria-label="@Options.Strings.SlideControls" class="@_slots["dots"]">
+                @for (var i = 0; i < Items.Count; i++)
+                {
+                    var number = i + 1;
+                    <button type="button" data-slot="dot" data-index="@i" class="@_slots["dot"]" aria-controls="@ViewportId"
+                            aria-label="@string.Format(Options.Strings.GoToSlide, number)" aria-current="@(i == Current ? "true" : null)"></button>
+                }
+            </div>
+        }
+        @if (Arrows)
+        {
+            <button type="button" data-slot="next" class="@_slots["control"]" aria-label="@Options.Strings.NextSlide" aria-controls="@ViewportId">
+                @BxIcons.ChevronDown(_slots["nextIcon"])
+            </button>
+        }
+    </div>
+    <div id="@ViewportId" data-slot="viewport" tabindex="0" class="@_slots["viewport"]">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            var number = i + 1;
+            <div role="group" aria-roledescription="slide" data-index="@i" class="@_slots["slide"]"
+                 aria-label="@(item.Label ?? string.Format(Options.Strings.SlideOf, number, Items.Count))">
+                @item.Content
+            </div>
+        }
+    </div>
+</bx-carousel>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private int _sequence;
+
+    [Parameter, EditorRequired] public IReadOnlyList<BxCarouselItem> Items { get; set; } = [];
+
+    /// <summary>Zero-based index of the current slide. Use <c>@bind-Index</c> to follow swipes and button presses.</summary>
+    [Parameter] public int Index { get; set; }
+    [Parameter] public EventCallback<int> IndexChanged { get; set; }
+
+    /// <summary>Wrap from the last slide to the first and back with the buttons and autoplay.</summary>
+    [Parameter] public bool Loop { get; set; }
+
+    /// <summary>Milliseconds between automatic slide changes. Zero (the default) turns autoplay off. Autoplay stops while the pointer or focus is inside and has a pause button; it does not start for visitors who prefer reduced motion.</summary>
+    [Parameter] public int AutoPlay { get; set; }
+
+    /// <summary>Show a button for each slide.</summary>
+    [Parameter] public bool Dots { get; set; } = true;
+
+    /// <summary>Show the previous and next buttons.</summary>
+    [Parameter] public bool Arrows { get; set; } = true;
+
+    /// <summary>Accessible name of the carousel.</summary>
+    [Parameter, EditorRequired] public string? AriaLabel { get; set; }
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public CarouselUi? Ui { get; set; }
+
+    private string ViewportId => _id + "-viewport";
+    private int Current => Math.Clamp(Index, 0, Math.Max(Items.Count - 1, 0));
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        IndexChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("carousel");
+        _slots = ResolveSlots(Options.Carousel, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (!int.TryParse(e.Value, out var index) || index == Index)
+        {
+            return;
+        }
+        Index = index;
+        await IndexChanged.InvokeAsync(index);
+    }
+}

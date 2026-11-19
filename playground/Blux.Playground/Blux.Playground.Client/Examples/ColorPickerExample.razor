@@ -1,0 +1,10 @@
+<div class="flex flex-col items-center gap-3">
+    <BxFormField Label="Brand color">
+        <BxColorPicker @bind-Value="_color" data-testid="brand" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="brand-state">Color: @(_color ?? "none")</p>
+</div>
+
+@code {
+    private string? _color = "#ffd23f";
+}
