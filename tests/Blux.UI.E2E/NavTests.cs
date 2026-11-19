@@ -290,7 +290,8 @@ public class NavTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(guide).ToHaveAttributeAsync("aria-expanded", "false");
 
         // Following the link would leave the page; the click still bubbles through the tree first.
-        await Page.EvaluateAsync("() => document.addEventListener('click', (e) => e.preventDefault())");
+        // Capturing on window runs before Blazor's own document listener, whenever that one was registered.
+        await Page.EvaluateAsync("() => window.addEventListener('click', (e) => e.preventDefault(), true)");
         await guide.FocusAsync();
         await Page.Keyboard.PressAsync("Enter");
 
