@@ -1,0 +1,11 @@
+<div class="h-64 w-full max-w-md rounded-lg border border-(--blux-border)">
+    <BxSplitter Panels="Panels" Orientation="BxOrientation.Vertical" Color="BxColor.Secondary" />
+</div>
+
+@code {
+    private static readonly BxSplitterPanel[] Panels =
+    [
+        new() { Content = @<p class="p-3 text-sm">Editor</p> },
+        new() { Size = 30, MinSize = 10, Content = @<p class="p-3 text-sm">Console</p> },
+    ];
+}

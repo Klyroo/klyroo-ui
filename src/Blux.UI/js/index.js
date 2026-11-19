@@ -6,6 +6,10 @@ import './tooltip.js';
 import './tabs.js';
 import './accordion.js';
 import './select.js';
+import './collapsible.js';
+import './tree.js';
+import './splitter.js';
+import './scroll-area.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
