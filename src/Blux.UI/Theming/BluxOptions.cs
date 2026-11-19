@@ -8,7 +8,8 @@ namespace Blux.UI;
 /// Global configuration of Blux UI. Register it from code shared by the server and the WebAssembly client,
 /// otherwise components change appearance when an Auto render mode switches runtime.
 /// </summary>
-public sealed class BluxOptions
+/// <remarks>Partial: each family of components declares its themes in its own file.</remarks>
+public sealed partial class BluxOptions
 {
     public ComponentTheme Button { get; } = Themes.Button();
     public ComponentTheme Badge { get; } = Themes.Badge();
@@ -34,14 +35,15 @@ public sealed class BluxOptions
     /// <summary>Built-in texts rendered by components, for localization.</summary>
     public BluxStrings Strings { get; } = new();
 
+    /// <summary>Every theme, whichever file declares it. Feeds the Tailwind build and the generated-assets tests.</summary>
     internal IEnumerable<ComponentTheme> AllThemes =>
-    [
-        Button, Badge, Avatar, Card, Alert, Input, Textarea, Checkbox, Switch, RadioGroup, Select, FormField,
-        Popover, Modal, Tooltip, DropdownMenu, Toast, Tabs, Accordion, Table,
-    ];
+        typeof(BluxOptions).GetProperties()
+            .Where(p => p.PropertyType == typeof(ComponentTheme))
+            .Select(p => (ComponentTheme)p.GetValue(this)!);
 }
 
-public sealed class BluxStrings
+/// <remarks>Partial: each family of components declares its texts in its own file.</remarks>
+public sealed partial class BluxStrings
 {
     public string Loading { get; set; } = "Loading";
     public string Close { get; set; } = "Close";
