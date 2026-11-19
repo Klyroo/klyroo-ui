@@ -1,0 +1,34 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    A native select of System, Light and Dark. The browser script sets its value from the stored mode and writes the
+    choice, so it works on static pages and stays in sync with every other color mode control.
+*@
+<div class="@_slots["root"]" data-color="@Color.Value" @attributes="AdditionalAttributes">
+    <select class="@_slots["base"]" aria-label="@(AriaLabel ?? Options.Strings.ColorMode)" data-bx-color-mode="select">
+        <option value="system">@Options.Strings.ColorModeSystem</option>
+        <option value="light">@Options.Strings.ColorModeLight</option>
+        <option value="dark">@Options.Strings.ColorModeDark</option>
+    </select>
+    @BxIcons.ChevronUpDown(_slots["trailingIcon"])
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+
+    /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public ColorModeSelectUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ColorModeSelect, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "root");
+}

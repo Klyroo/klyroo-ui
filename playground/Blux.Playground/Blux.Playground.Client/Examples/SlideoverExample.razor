@@ -1,0 +1,20 @@
+<div class="flex flex-col items-center gap-3">
+    <BxSlideover @bind-Open="_open" Title="Edit profile" Description="Changes are saved when you press Save.">
+        <ChildContent><BxButton Label="Open slideover" Variant="ButtonVariant.Outline" data-testid="slideover-trigger" /></ChildContent>
+        <Body>
+            <div class="flex flex-col gap-4">
+                <BxFormField Label="Name"><BxInput Value="Ada Lovelace" /></BxFormField>
+                <BxFormField Label="Bio"><BxTextarea Rows="3" /></BxFormField>
+            </div>
+        </Body>
+        <Footer>
+            <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close />
+            <BxButton Label="Save" data-bx-close data-testid="slideover-save" />
+        </Footer>
+    </BxSlideover>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="slideover-state">Slideover: @(_open ? "open" : "closed")</p>
+</div>
+
+@code {
+    private bool _open;
+}
