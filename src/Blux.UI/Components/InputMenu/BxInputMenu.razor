@@ -1,0 +1,99 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxFieldBase<string>
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>The suggestions, filtered by what is typed.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+
+    /// <summary>
+    /// Only a suggestion is a valid value: <c>Value</c> is the chosen item's value and the field shows its label.
+    /// Otherwise (the default) the typed text is the value and suggestions only complete it.
+    /// </summary>
+    [Parameter] public bool Strict { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputMenuUi? Ui { get; set; }
+
+    private string Text => Strict ? Items.FirstOrDefault(i => i.Value == Value)?.Label ?? "" : Value ?? "";
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputMenu, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = string.IsNullOrEmpty(e.Value) ? null : e.Value;
+        if (value == Value)
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> InputAttributes(EditBinding binding)
+    {
+        var attributes = ControlAttributes(_slots["base"]);
+        attributes.Remove("required");
+        if (Required || Field?.Required == true) attributes["aria-required"] = "true";
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes["data-slot"] = "input";
+        attributes["type"] = "text";
+        attributes["role"] = "combobox";
+        attributes["autocomplete"] = "off";
+        attributes["aria-autocomplete"] = "list";
+        attributes["aria-expanded"] = "false";
+        if (Placeholder is not null) attributes["placeholder"] = Placeholder;
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-input-menu data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                        value="@(Value ?? "")"
+                        data-strict="@(Strict ? "" : null)"
+                        class="@_slots["root"]"
+                        data-color="@Color.Value"
+                        @onbxchange="ChangeHandler"
+                        @onbxchange:stopPropagation="true">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            <input value="@Text" @attributes="InputAttributes(binding)" />
+            <span class="@_slots["trailing"]" aria-hidden="true">@BxIcons.ChevronDown(_slots["trailingIcon"])</span>
+            <div popover="manual" class="@_slots["content"]" data-slot="content">
+                <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-label="@Options.Strings.InputMenuSuggestions">
+                    @foreach (var item in Items)
+                    {
+                        <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+                             aria-selected="@(Strict && item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
+                            <span class="@_slots["itemLabel"]">@item.Label</span>
+                            @BxIcons.Check(_slots["itemIcon"])
+                        </div>
+                    }
+                </div>
+                <p class="@_slots["empty"]" data-slot="empty" hidden>@Options.Strings.InputMenuNoResults</p>
+            </div>
+        </bx-input-menu>;
+}

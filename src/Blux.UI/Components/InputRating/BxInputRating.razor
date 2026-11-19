@@ -1,0 +1,109 @@
+@namespace Blux.UI
+@using System.Globalization
+@using Blux.UI.Internal
+@inherits BxFieldBase<double>
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="double" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private const string StarPath = "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z";
+
+    private SlotSet _slots = default!;
+
+    /// <summary>Number of stars. The value goes from 0 (nothing chosen) to this.</summary>
+    [Parameter] public int Max { get; set; } = 5;
+
+    /// <summary>Lets a star be chosen by halves (0.5, 1, 1.5…).</summary>
+    [Parameter] public bool AllowHalf { get; set; }
+
+    /// <summary>Shows the value without letting it change. Rendered as an image with a text alternative, still posting the value.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Accessible name of the group when no <see cref="BxFormField"/> label is around.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public InputRatingUi? Ui { get; set; }
+
+    private double StepSize => AllowHalf ? 0.5 : 1;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputRating, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["half"] = VariantValue.Of(AllowHalf && !ReadOnly),
+            ["readonly"] = VariantValue.Of(ReadOnly),
+        }, Ui, "root");
+
+    private static string Invariant(double value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private string Describe(double value) => string.Format(CultureInfo.CurrentCulture, Options.Strings.InputRatingValue, Invariant(value), Max);
+
+    // Highest value first: a checked radio then fills the stars that follow it in the DOM, which show before it.
+    private IEnumerable<double> Choices()
+    {
+        for (double v = Max; v >= StepSize; v -= StepSize) yield return v;
+    }
+
+    private RenderFragment Star(double value, EditBinding binding)
+    {
+        var id = $"{ControlId}-{Invariant(value).Replace('.', '-')}";
+        var half = AllowHalf ? (value % 1 == 0 ? "right" : "left") : null;
+        var chosen = value;
+        var onChange = ValueChanged.HasDelegate
+            ? EventCallback.Factory.Create<ChangeEventArgs>(this, async () =>
+            {
+                Value = chosen;
+                await ValueChanged.InvokeAsync(chosen);
+                NotifyFieldChanged();
+            })
+            : default;
+        return @<text>
+            <input type="radio" id="@id" name="@(binding.Name ?? ControlId)" value="@Invariant(value)" checked="@(Value == value)" disabled="@Disabled"
+                   class="@_slots["input"]" aria-label="@Describe(value)" @onchange="onChange" />
+            <label for="@id" class="@_slots["star"]" data-half="@half" data-slot="star" aria-hidden="true">
+                <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linejoin="round" class="@_slots["icon"]"><path d="@StarPath" /></svg>
+            </label>
+        </text>;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        ReadOnly ? ReadOnlyMarkup(binding) :
+        @<div id="@ControlId" role="radiogroup" class="@_slots["root"]" data-color="@Color.Value"
+              aria-label="@AriaLabel" aria-labelledby="@(AriaLabel is null ? Field?.LabelId : null)" aria-describedby="@Field?.DescribedBy"
+              aria-invalid="@(binding.Invalid ? "true" : null)" aria-required="@(Required || Field?.Required == true ? "true" : null)"
+              @attributes="AdditionalAttributes">
+            @foreach (var value in Choices())
+            {
+                @Star(value, binding)
+            }
+        </div>;
+
+    private RenderFragment ReadOnlyMarkup(EditBinding binding) =>
+        @<div id="@ControlId" role="img" class="@_slots["root"]" data-color="@Color.Value" aria-label="@Describe(Value)" aria-describedby="@Field?.DescribedBy"
+              @attributes="AdditionalAttributes">
+            @if (binding.Name is not null)
+            {
+                <input type="hidden" name="@binding.Name" value="@Invariant(Value)" />
+            }
+            @for (var i = 1; i <= Max; i++)
+            {
+                var index = i;
+                var fill = Value >= index ? "full" : (Value >= index - 0.5 ? "half" : null);
+                <span class="@_slots["star"]" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linejoin="round" class="@_slots["icon"]"><path d="@StarPath" /></svg>
+                    @if (fill is not null)
+                    {
+                        <span class="@_slots["fill"]" data-fill="@fill">
+                            <svg viewBox="0 0 24 24" stroke-width="1.5" stroke-linejoin="round" class="@_slots["filledIcon"]"><path d="@StarPath" /></svg>
+                        </span>
+                    }
+                </span>
+            }
+        </div>;
+}
