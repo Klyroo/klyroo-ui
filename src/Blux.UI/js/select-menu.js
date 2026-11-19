@@ -40,12 +40,11 @@ export class BxSelectMenuElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#model.load());
-    else this.#model.load();
+    this.#model.attributeChanged(name);
   }
 
   refresh() {
-    this.#model.load();
+    this.#model.refresh();
   }
 
   get #multiple() {
@@ -88,7 +87,7 @@ export class BxSelectMenuElement extends HTMLElement {
     trigger.setAttribute('aria-expanded', String(this.#isOpen()));
     this.#search?.setAttribute('aria-controls', listboxId);
     for (const option of this.querySelectorAll('[role="option"]')) ensureId(option, 'option');
-    this.#model.load();
+    this.#model.ensure();
   }
 
   #isOpen() {

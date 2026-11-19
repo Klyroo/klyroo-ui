@@ -23,7 +23,7 @@ export class BxInputTagsElement extends HTMLElement {
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('click', this.#onClick);
     this.addEventListener('paste', this.#onPaste);
-    this.#observer = observeChildren(this, () => this.#model.load());
+    this.#observer = observeChildren(this, () => this.#model.ensure());
   }
 
   disconnectedCallback() {
@@ -32,12 +32,11 @@ export class BxInputTagsElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#model.load());
-    else this.#model.load();
+    this.#model.attributeChanged(name);
   }
 
   refresh() {
-    this.#model.load();
+    this.#model.refresh();
   }
 
   get #input() {

@@ -66,6 +66,8 @@ export class BxColorPickerElement extends HTMLElement {
   #committed = '';
   #observer = null;
   #scheduled = false;
+  #forced = false;
+  #pending = false;
   #reporter = new Reporter(this);
 
   connectedCallback() {
@@ -73,6 +75,8 @@ export class BxColorPickerElement extends HTMLElement {
     this.addEventListener('change', this.#onChange);
     this.addEventListener('pointerdown', this.#onPointerDown);
     this.addEventListener('pointermove', this.#onPointerMove);
+    this.addEventListener('pointerup', this.#onPointerEnd);
+    this.addEventListener('pointercancel', this.#onPointerEnd);
     this.#observer = observeChildren(this, () => this.#sync());
   }
 
@@ -81,21 +85,28 @@ export class BxColorPickerElement extends HTMLElement {
     this.removeEventListener('change', this.#onChange);
     this.removeEventListener('pointerdown', this.#onPointerDown);
     this.removeEventListener('pointermove', this.#onPointerMove);
+    this.removeEventListener('pointerup', this.#onPointerEnd);
+    this.removeEventListener('pointercancel', this.#onPointerEnd);
     this.#observer?.disconnect();
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-bx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
       this.#scheduled = false;
-      this.#sync();
+      const forced = this.#forced;
+      this.#forced = false;
+      this.#sync(forced);
     });
   }
 
   refresh() {
-    this.#sync();
+    this.#reporter.adopt();
+    this.#sync(this.#reporter.bound);
+    this.#writeValue(this.#has ? this.#hex() : '');
   }
 
   #slot(name) {
@@ -110,10 +121,12 @@ export class BxColorPickerElement extends HTMLElement {
     return this.#hexValue;
   }
 
-  #sync() {
+  /** Takes the rendered value when a render changed it (force: a bound render arrived), then paints. */
+  #sync(force = false) {
     if (!this.#slot('hue')) return;
-    if (!this.#reporter.isStale()) {
-      const hex = normalize(this.getAttribute('value'));
+    const text = this.#reporter.take('value', force);
+    if (text !== undefined) {
+      const hex = normalize(text);
       if (hex === null) {
         if (this.#has) {
           this.#has = false;
@@ -169,17 +182,28 @@ export class BxColorPickerElement extends HTMLElement {
     }
   }
 
-  #commit(source) {
+  /** Paints, writes the hidden input and reports, unless defer: a drag reports once, when the pointer is released. */
+  #commit(source, defer = false) {
     this.#paint(source);
     const value = this.#has ? this.#hex() : '';
-    if (value === this.#committed) return;
-    this.#committed = value;
+    this.#writeValue(value);
+    if (defer) this.#pending = true;
+    else this.#report(value);
+  }
+
+  #writeValue(value) {
     const input = this.querySelector(':scope > input[data-slot="value"]');
-    if (input) {
+    if (input && input.value !== value) {
       input.value = value;
       input.setAttribute('value', value);
-      input.dispatchEvent(new Event('change', { bubbles: true }));
     }
+  }
+
+  #report(value) {
+    this.#pending = false;
+    if (value === this.#committed) return;
+    this.#committed = value;
+    this.querySelector(':scope > input[data-slot="value"]')?.dispatchEvent(new Event('change', { bubbles: true }));
     this.#reporter.report('bx-change', { value });
   }
 
@@ -198,13 +222,16 @@ export class BxColorPickerElement extends HTMLElement {
       this.#commit('hex');
       return;
     } else return;
-    this.#commit(slot);
+    // A slider reports on its change event (key press or release), not at every step of a drag.
+    this.#commit(slot, true);
   };
 
   // Leaving the hex field with text that is not a color puts the current color back.
   #onChange = (event) => {
     const target = event.target;
-    if (target instanceof HTMLInputElement && target.dataset.slot === 'hex') this.#paint(null);
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.dataset.slot === 'hex') this.#paint(null);
+    else if (this.#pending) this.#report(this.#has ? this.#hex() : '');
   };
 
   #fromPointer(event) {
@@ -213,7 +240,7 @@ export class BxColorPickerElement extends HTMLElement {
     const s = clamp(((event.clientX - rect.left) / rect.width) * 100, 0, 100);
     const v = clamp(100 - ((event.clientY - rect.top) / rect.height) * 100, 0, 100);
     this.#set({ h: this.#h, s: Math.round(s), v: Math.round(v) });
-    this.#commit(null);
+    this.#commit(null, true);
   }
 
   #onPointerDown = (event) => {
@@ -228,6 +255,11 @@ export class BxColorPickerElement extends HTMLElement {
   #onPointerMove = (event) => {
     const area = this.#slot('area');
     if (area?.hasPointerCapture(event.pointerId)) this.#fromPointer(event);
+  };
+
+  // A drag is one change: .NET hears about it when the pointer is released, not at every step.
+  #onPointerEnd = () => {
+    if (this.#pending) this.#report(this.#has ? this.#hex() : '');
   };
 }
 

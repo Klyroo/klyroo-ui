@@ -35,6 +35,15 @@ export class BxSliderElement extends HTMLElement {
   }
 
   refresh() {
+    this.#reporter.adopt();
+    // A bound slider takes what the server rendered back; a native range keeps its own value otherwise.
+    if (this.#reporter.bound) {
+      const rendered = (this.getAttribute('data-values') ?? '').split(SEP);
+      this.#inputs().forEach((input, i) => {
+        if (rendered[i]) input.value = rendered[i];
+      });
+    }
+    this.#last = this.#read();
     this.#update();
   }
 

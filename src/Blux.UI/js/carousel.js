@@ -28,6 +28,7 @@ export class BxCarouselElement extends HTMLElement {
   #resize = null;
   #wired = false;
   #scheduled = false;
+  #forced = false;
   #reporter = new Reporter(this);
   #reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 
@@ -58,21 +59,29 @@ export class BxCarouselElement extends HTMLElement {
     this.#wired = false;
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-bx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
       this.#scheduled = false;
+      const forced = this.#forced;
+      this.#forced = false;
       if (!this.#wired) return;
-      if (!this.#reporter.isStale()) this.#goTo(Number(this.getAttribute('index')) || 0, { report: false, smooth: true });
+      // Only a render that changed the index (or a bound render) moves the slide: loop or autoplay changes do not.
+      const index = this.#reporter.take('index', forced);
+      if (index !== undefined) this.#goTo(Number(index) || 0, { report: false, smooth: true });
       this.#restartTimer();
     });
   }
 
   refresh() {
+    this.#reporter.adopt();
+    // Unbound, the browser owns the slide and the rotation control; a bound render brings the server's index.
+    const keep = this.#reporter.bound ? null : this.#index;
     this.#wired = false;
-    this.#wire();
+    this.#wire(keep);
   }
 
   get #viewport() {
@@ -95,15 +104,18 @@ export class BxCarouselElement extends HTMLElement {
     return Number(this.getAttribute('autoplay')) || 0;
   }
 
-  #wire() {
+  #wire(keep = null) {
     const viewport = this.#viewport;
     if (!viewport || this.#wired || this.#slides().length === 0) return;
     this.#wired = true;
     viewport.addEventListener('scroll', this.#onScroll, { passive: true });
+    // A refresh wires again: the old observer must not stay behind.
+    this.#resize?.disconnect();
     this.#resize = new ResizeObserver(() => this.#align());
     this.#resize.observe(viewport);
-    this.#userPaused = this.#interval > 0 && this.#reducedMotion.matches;
-    this.#index = this.#clamp(Number(this.getAttribute('index')) || 0);
+    if (keep === null) this.#userPaused = this.#interval > 0 && this.#reducedMotion.matches;
+    this.#reporter.take('index', true);
+    this.#index = this.#clamp(keep ?? (Number(this.getAttribute('index')) || 0));
     this.#align();
     this.#update();
     this.#restartTimer();
@@ -248,8 +260,14 @@ export class BxCarouselElement extends HTMLElement {
     this.#restartTimer();
   };
 
-  #onFocusIn = () => {
+  #onFocusIn = (event) => {
     this.#focused = true;
+    // APG: keyboard focus stops the rotation until the user restarts it with the rotation control, so leaving does not
+    // start it again behind them. Pointer focus only pauses while the pointer or focus is inside.
+    if (this.#interval > 0 && !this.#userPaused && event.target.matches?.(':focus-visible')) {
+      this.#userPaused = true;
+      this.#paintRotation();
+    }
     this.#restartTimer();
   };
 
