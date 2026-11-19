@@ -173,3 +173,9 @@
   0%, 100% { transform: translateX(0); }
   50% { transform: translateX(150%); }
 }
+
+/* Shimmering text (BxChatShimmer): the highlight of a wide gradient travels across the text. */
+@keyframes bx-chat-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}

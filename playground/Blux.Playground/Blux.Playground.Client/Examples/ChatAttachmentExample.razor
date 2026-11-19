@@ -1,0 +1,23 @@
+@* A data URI stands in for an uploaded picture. *@
+<div class="flex w-full max-w-xl flex-col gap-4" data-testid="chat-attachment-example">
+    <div class="flex flex-wrap items-center gap-2">
+        <BxChatAttachment Name="report.pdf" Type="application/pdf" FileSize="248000" />
+        <BxChatAttachment Name="notes.txt" Type="text/plain" FileSize="1200" Removable OnRemove="RemoveNotes" data-testid="chat-attachment-removable" />
+        <BxChatAttachment Name="upload.zip" Type="application/zip" FileSize="5400000" Status="ChatAttachmentStatus.Uploading" />
+        <BxChatAttachment Name="broken.csv" Type="text/csv" Description="Upload failed: the file is too large." Status="ChatAttachmentStatus.Error" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)" role="status" data-testid="chat-attachment-removed">@(_removed is null ? "Nothing removed" : $"Removed {_removed}")</p>
+    <div class="flex flex-wrap items-center gap-2">
+        <BxChatAttachment Name="sunset.svg" Type="image/svg+xml" Url="@Picture" Variant="ChatAttachmentVariant.Thumbnail" Removable />
+        <BxChatAttachment Name="sunset.svg" Type="image/svg+xml" Url="@Picture" FileSize="900" Orientation="BxOrientation.Vertical" Class="w-48" />
+    </div>
+</div>
+
+@code {
+    private string? _removed;
+
+    private void RemoveNotes() => _removed = "notes.txt";
+
+    private const string Picture =
+        "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 48'%3E%3Crect width='64' height='48' fill='%23ffb347'/%3E%3Ccircle cx='32' cy='36' r='14' fill='%23ff6b4a'/%3E%3C/svg%3E";
+}

@@ -1,0 +1,17 @@
+@* Enter sends, Shift+Enter adds a line, and an IME composition never sends. The same code works in every render mode:
+   interactive, the text reaches OnSubmit through the browser; in static rendering the form posts under FormName and the page
+   renders the reply (the list then holds only that exchange, since nothing remembers the earlier ones). *@
+<div class="flex w-full max-w-xl flex-col gap-3" data-testid="chat-prompt-example">
+    @foreach (var (text, reply) in _exchanges)
+    {
+        <BxChatMessage Role="ChatRole.User" Text="@text" data-testid="chat-prompt-sent" />
+        <BxChatMessage Role="ChatRole.Assistant" Text="@reply" data-testid="chat-prompt-reply" />
+    }
+    <BxChatPrompt FormName="chat-prompt-ssr" OnSubmit="Send" Placeholder="Write a message..." data-testid="chat-prompt" />
+</div>
+
+@code {
+    private readonly List<(string Text, string Reply)> _exchanges = [];
+
+    private void Send(string text) => _exchanges.Add((text, ChatDemo.Reply(text)));
+}
