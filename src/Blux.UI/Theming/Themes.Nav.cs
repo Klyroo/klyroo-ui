@@ -140,8 +140,8 @@ internal static partial class Themes
         new ComponentTheme("tree", "root", "list", "item", "row", "chevron", "spacer", "icon", "label", "group")
             .Slot("root", "w-full")
             .Slot("list", "flex flex-col gap-0.5")
-            .Slot("item", "focus:outline-none focus-visible:[&>div]:outline-2 focus-visible:[&>div]:outline-(--bx-color-text)")
-            .Slot("row", "group/row flex cursor-pointer items-center gap-1.5 rounded-(--blux-radius) px-2 py-1 text-sm text-(--blux-text) " +
+            .Slot("item", "")
+            .Slot("row", "group/row flex cursor-pointer focus:outline-none focus-visible:outline-2 focus-visible:outline-(--bx-color-text) items-center gap-1.5 rounded-(--blux-radius) px-2 py-1 text-sm text-(--blux-text) " +
                          "hover:bg-(--blux-bg-elevated) data-[selected=true]:bg-(--bx-color)/10 data-[selected=true]:text-(--bx-color-text) " +
                          "data-[disabled=true]:cursor-not-allowed data-[disabled=true]:opacity-60")
             .Slot("chevron", "size-4 shrink-0 text-(--blux-text-muted) transition-transform duration-150 group-data-[expanded=true]/row:rotate-90 rtl:group-data-[expanded=true]/row:-rotate-90")
