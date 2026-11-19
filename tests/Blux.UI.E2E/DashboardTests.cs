@@ -50,6 +50,10 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
 
     private Task<string?> Stored(string key) => Page.EvaluateAsync<string?>("k => localStorage.getItem(k)", key);
 
+    // The sidebar remembers its state in cookies (blux-sidebar-{id}, so the server could render it too).
+    private async Task<string?> SidebarCookie(string name) =>
+        (await Page.Context.CookiesAsync()).FirstOrDefault(c => c.Name == name)?.Value;
+
     // ---- Sidebar collapse
 
     [Theory]
@@ -69,7 +73,7 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
         await Assertions.Expect(collapse).ToHaveAttributeAsync("aria-expanded", "false");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "64px");
-        Assert.Equal("1", await Stored("blux:sidebar:playground-dashboard"));
+        Assert.Equal("1", await SidebarCookie("blux-sidebar-playground-dashboard"));
         // Collapsed to icons, the links and the search button keep their names.
         await Assertions.Expect(sidebar.GetByRole(AriaRole.Link, new() { Name = "Inbox" })).ToBeVisibleAsync();
         await Assertions.Expect(sidebar.GetByRole(AriaRole.Button, new() { Name = "Search" })).ToBeVisibleAsync();
@@ -83,7 +87,7 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         await collapse.ClickAsync();
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "expanded");
         await Assertions.Expect(collapse).ToHaveAttributeAsync("aria-expanded", "true");
-        Assert.Equal("0", await Stored("blux:sidebar:playground-dashboard"));
+        Assert.Equal("0", await SidebarCookie("blux-sidebar-playground-dashboard"));
     }
 
     [Fact]
@@ -123,7 +127,7 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.Keyboard.PressAsync("ArrowRight");
 
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "240px");
-        Assert.Equal("240", await Stored("blux:sidebar:playground-dashboard-sidebar:width"));
+        Assert.Equal("240", await SidebarCookie("blux-sidebar-playground-dashboard-sidebar-width"));
 
         await Reload(mode);
 
