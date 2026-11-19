@@ -173,6 +173,20 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
+    public async Task Sidebar_remembered_state_is_painted_before_any_script_module_runs()
+    {
+        // Without blazor.web.js nothing but the inline first-paint script can apply the cookie.
+        await Page.Context.AddCookiesAsync([new Cookie { Name = "blux-sidebar-playground-sidebar", Value = "1", Url = BaseUrl }]);
+        await Page.RouteAsync("**/_framework/blazor.web*.js", route => route.AbortAsync());
+
+        await Page.GotoAsync("/ssr/components/sidebar");
+
+        var sidebar = Page.GetByTestId("sidebar");
+        await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
+        await Assertions.Expect(sidebar.GetByRole(AriaRole.Button, new() { Name = "Collapse sidebar" })).ToHaveAttributeAsync("aria-pressed", "true");
+    }
+
+    [Fact]
     public async Task Sidebar_keeps_its_collapsed_state_after_an_enhanced_navigation()
     {
         await Open("ssr", "sidebar");
