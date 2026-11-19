@@ -16,7 +16,7 @@
                 <div class="@_slots["track"]">
                     @if (Interactive && !item.Disabled)
                     {
-                        <button type="button" disabled="@(!RendererInfo.IsInteractive)" aria-label="@item.Title" data-state="@state" class="@_slots["indicator"]"
+                        <button type="button" disabled="@(!RendererInfo.IsInteractive)" aria-label="@($"{index + 1}. {item.Title}")" data-state="@state" class="@_slots["indicator"]"
                                 @onclick="@(() => Select(index))">@Indicator(item, index, state)</button>
                     }
                     else
