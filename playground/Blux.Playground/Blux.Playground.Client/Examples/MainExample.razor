@@ -1,0 +1,13 @@
+@* The site's own layout already has a main element, and a page has only one: As="div" here.
+   Class="min-h-48" replaces the viewport-high minimum so the frame stays small. *@
+<div class="w-full overflow-hidden rounded-xl border border-(--blux-border)">
+    <BxHeader Title="Acme" Sticky="false" />
+    <BxMain As="div" Class="min-h-48 p-6" data-testid="main">
+        <p class="text-sm text-(--blux-text-muted)">
+            In a layout, BxMain grows to fill the screen below the header, so the footer never floats up on a short page.
+        </p>
+    </BxMain>
+    <BxFooter>
+        <Left><p>Copyright 2026 Acme Inc.</p></Left>
+    </BxFooter>
+</div>

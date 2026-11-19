@@ -1,0 +1,16 @@
+@using Blux.UI.Theming
+@* In a real app this wraps @Body in MainLayout.razor and replaces <BxToaster />:
+   <BxApp Lang="en" Overrides="_overrides">@Body</BxApp>
+   The site's layout already has a toaster, so this one turns it off. *@
+<BxApp Toaster="false" Lang="en" Dir="ltr" Overrides="_overrides" Class="flex flex-wrap items-center gap-3" data-testid="app">
+    <BxButton Label="Save" />
+    <BxButton Label="Cancel" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+    <BxBadge Label="Every button is rounded" Variant="BxVariant.Subtle" />
+</BxApp>
+
+@code {
+    private readonly Dictionary<Type, ISlotOverrides> _overrides = new()
+    {
+        [typeof(BxButton)] = new ButtonUi { Base = "rounded-full" },
+    };
+}

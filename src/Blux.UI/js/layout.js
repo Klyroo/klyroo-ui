@@ -1,0 +1,249 @@
+import { Reporter } from './shared.js';
+
+const SIDEBAR_PREFIX = 'blux:sidebar:';
+
+function read(key) {
+  if (!key) return null;
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function write(key, value) {
+  if (!key) return;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage unavailable (private window): the state lasts until the page is reloaded.
+  }
+}
+
+/**
+ * <bx-sidebar data-bx-sidebar-id="app" collapsed resizable data-bx-width="256" data-bx-min-width="192" data-bx-max-width="448" style="--bx-sidebar-width:256px">
+ *   <aside data-slot="root" data-state="expanded">
+ *     <button data-bx-sidebar-toggle aria-pressed="false">…</button> … <div role="separator" data-slot="handle"></div>
+ *   </aside>
+ *   <div>…the mobile panel…</div>
+ * </bx-sidebar>
+ *
+ * Owns the collapsed state (data-state on the aside, aria-pressed on the toggles) and the width (the --bx-sidebar-width
+ * variable on this element). Both are remembered in localStorage under the id, except that a bound collapsed state
+ * (data-bx-seq) is never read from storage: .NET owns it. A change of the collapsed state is reported with "bx-toggle",
+ * where open means expanded.
+ */
+export class BxSidebarElement extends HTMLElement {
+  static observedAttributes = ['data-bx-seq', 'collapsed'];
+
+  #reporter = new Reporter(this);
+  #collapsed = false;
+  #width = null;
+  #ready = false;
+  #drag = null;
+
+  connectedCallback() {
+    this.addEventListener('click', this.#onClick);
+    this.addEventListener('pointerdown', this.#onPointerDown);
+    this.addEventListener('keydown', this.#onKeyDown);
+    // Blazor inserts the element before its attributes and children: read them once the whole batch is applied.
+    queueMicrotask(() => this.#init());
+  }
+
+  disconnectedCallback() {
+    this.removeEventListener('click', this.#onClick);
+    this.removeEventListener('pointerdown', this.#onPointerDown);
+    this.removeEventListener('keydown', this.#onKeyDown);
+    this.#ready = false;
+  }
+
+  attributeChangedCallback(name) {
+    if (!this.#ready) return;
+    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
+    else this.#applyRendered(false);
+  }
+
+  /** Re-applies the state an enhanced navigation merge reset to what the server rendered. */
+  refresh() {
+    if (!this.#ready) return;
+    this.#reporter.adopt();
+    this.#reporter.take('collapsed', true);
+    this.#render();
+  }
+
+  get #key() {
+    const id = this.getAttribute('data-bx-sidebar-id');
+    return id ? SIDEBAR_PREFIX + id : null;
+  }
+
+  get #aside() {
+    return this.querySelector(':scope > [data-slot="root"]');
+  }
+
+  get #handle() {
+    return this.#aside?.querySelector(':scope > [data-slot="handle"]') ?? null;
+  }
+
+  #number(name, fallback) {
+    const value = Number(this.getAttribute(name));
+    return Number.isFinite(value) && value > 0 ? value : fallback;
+  }
+
+  get #min() {
+    return this.#number('data-bx-min-width', 192);
+  }
+
+  get #max() {
+    return this.#number('data-bx-max-width', 448);
+  }
+
+  get #default() {
+    return this.#number('data-bx-width', 256);
+  }
+
+  #clamp(width) {
+    return Math.min(this.#max, Math.max(this.#min, Math.round(width)));
+  }
+
+  #init() {
+    if (!this.isConnected || this.#ready) return;
+    this.#reporter.take('collapsed', true);
+    const stored = this.#reporter.bound ? null : read(this.#key);
+    this.#collapsed = stored === null ? this.hasAttribute('collapsed') : stored === '1';
+    const width = this.hasAttribute('resizable') ? Number(read(this.#key && this.#key + ':width')) : 0;
+    this.#width = width > 0 ? this.#clamp(width) : null;
+    this.#ready = true;
+    this.#render();
+  }
+
+  #applyRendered(force) {
+    const value = this.#reporter.take('collapsed', force);
+    if (value === undefined) return;
+    this.#collapsed = value !== null;
+    this.#render();
+  }
+
+  #render() {
+    const state = this.#collapsed ? 'collapsed' : 'expanded';
+    const aside = this.#aside;
+    if (aside && aside.dataset.state !== state) aside.dataset.state = state;
+    for (const toggle of this.querySelectorAll('[data-bx-sidebar-toggle]')) {
+      if (toggle.closest('bx-sidebar') === this) toggle.setAttribute('aria-pressed', String(this.#collapsed));
+    }
+    this.#renderWidth();
+  }
+
+  #renderWidth() {
+    const width = this.#width ?? this.#default;
+    this.style.setProperty('--bx-sidebar-width', `${width}px`);
+    const handle = this.#handle;
+    if (handle) {
+      handle.setAttribute('aria-valuemin', String(this.#min));
+      handle.setAttribute('aria-valuemax', String(this.#max));
+      handle.setAttribute('aria-valuenow', String(width));
+    }
+  }
+
+  #setCollapsed(collapsed) {
+    this.#collapsed = collapsed;
+    this.#render();
+    if (!this.#reporter.bound) write(this.#key, collapsed ? '1' : '0');
+    this.#reporter.report('bx-toggle', { open: !collapsed });
+  }
+
+  #setWidth(width, persist) {
+    this.#width = this.#clamp(width);
+    this.#renderWidth();
+    if (persist) write(this.#key && this.#key + ':width', String(this.#width));
+  }
+
+  #onClick = (event) => {
+    const toggle = event.target instanceof Element ? event.target.closest('[data-bx-sidebar-toggle]') : null;
+    if (!toggle || toggle.closest('bx-sidebar') !== this) return;
+    this.#setCollapsed(!this.#collapsed);
+  };
+
+  get #direction() {
+    return getComputedStyle(this).direction === 'rtl' ? -1 : 1;
+  }
+
+  #onPointerDown = (event) => {
+    const handle = event.target instanceof Element ? event.target.closest('[data-slot="handle"]') : null;
+    if (!handle || handle !== this.#handle || event.button !== 0) return;
+    const aside = this.#aside;
+    event.preventDefault();
+    handle.setPointerCapture(event.pointerId);
+    this.#drag = { startX: event.clientX, startWidth: aside.getBoundingClientRect().width, direction: this.#direction };
+    aside.dataset.dragging = '';
+    handle.dataset.dragging = '';
+    handle.addEventListener('pointermove', this.#onPointerMove);
+    handle.addEventListener('pointerup', this.#onPointerEnd);
+    handle.addEventListener('pointercancel', this.#onPointerEnd);
+  };
+
+  #onPointerMove = (event) => {
+    const drag = this.#drag;
+    if (!drag) return;
+    this.#setWidth(drag.startWidth + drag.direction * (event.clientX - drag.startX), false);
+  };
+
+  #onPointerEnd = (event) => {
+    const handle = event.currentTarget;
+    handle.removeEventListener('pointermove', this.#onPointerMove);
+    handle.removeEventListener('pointerup', this.#onPointerEnd);
+    handle.removeEventListener('pointercancel', this.#onPointerEnd);
+    this.#drag = null;
+    delete this.#aside?.dataset.dragging;
+    delete handle.dataset.dragging;
+    if (this.#width !== null) write(this.#key && this.#key + ':width', String(this.#width));
+  };
+
+  #onKeyDown = (event) => {
+    const handle = event.target instanceof Element ? event.target.closest('[data-slot="handle"]') : null;
+    if (!handle || handle !== this.#handle) return;
+    const current = this.#width ?? this.#default;
+    let next = null;
+    if (event.key === 'ArrowRight') next = current + 16 * this.#direction;
+    else if (event.key === 'ArrowLeft') next = current - 16 * this.#direction;
+    else if (event.key === 'Home') next = this.#min;
+    else if (event.key === 'End') next = this.#max;
+    if (next === null) return;
+    event.preventDefault();
+    this.#setWidth(next, true);
+  };
+}
+
+if (!customElements.get('bx-sidebar')) customElements.define('bx-sidebar', BxSidebarElement);
+
+// ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-bx-layout-menu.
+const MENU = 'dialog[data-bx-layout-menu]';
+
+// Following a link closes the panel: the page may stay (enhanced navigation) and a modal dialog would keep it inert.
+document.addEventListener('click', (event) => {
+  const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+  const dialog = link?.closest(MENU);
+  if (dialog?.open) dialog.close();
+});
+
+// The panels belong to small screens: close them when the screen grows past the lg breakpoint, where their trigger is hidden.
+matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
+  if (!event.matches) return;
+  for (const dialog of document.querySelectorAll(`${MENU}[open]`)) dialog.close();
+});
+
+// ---- BxLocaleSelect: writes the ASP.NET Core culture cookie, then reloads so the server renders the new culture.
+document.addEventListener('bx-change', (event) => {
+  const host = event.target instanceof Element ? event.target.closest('[data-bx-locale-select]') : null;
+  const culture = event.detail?.value;
+  if (!host || !culture) return;
+  const name = host.getAttribute('data-bx-cookie') || '.AspNetCore.Culture';
+  const path = host.getAttribute('data-bx-cookie-path') || '/';
+  const secure = location.protocol === 'https:' ? '; secure' : '';
+  try {
+    document.cookie = `${name}=${encodeURIComponent(`c=${culture}|uic=${culture}`)}; path=${path}; max-age=31536000; samesite=lax${secure}`;
+  } catch {
+    // Cookies blocked: nothing to remember.
+  }
+  if (host.hasAttribute('data-bx-reload')) location.reload();
+});
