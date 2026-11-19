@@ -7,11 +7,18 @@ public sealed record ExampleEntry(string Title, Type Type, string? Description =
 public sealed record ComponentDoc(string Slug, string Name, string Group, string Description, ExampleEntry[] Examples, Type[] Api);
 
 /// <summary>Every documented component, in sidebar order.</summary>
-public static class Catalog
+public static partial class Catalog
 {
-    public static readonly string[] Groups = ["Elements", "Form", "Overlay", "Navigation & data"];
+    public static readonly string[] Groups =
+        ["Elements", "Form", "Overlay", "Navigation", "Data", "Layout", "Page", "Dashboard", "Chat", "Editor"];
 
-    public static readonly ComponentDoc[] Components =
+    /// <summary>Every documented component. Each family declares its entries in its own Catalog.*.cs file.</summary>
+    // Built on first use: static fields of the other partial files may not be initialized yet at type load.
+    public static ComponentDoc[] Components => _components ??= [.. Core];
+
+    private static ComponentDoc[]? _components;
+
+    private static readonly ComponentDoc[] Core =
     [
         new("button", "Button", "Elements", "A button, or a link styled as one, in every color and variant.",
             [new("Variants", typeof(Examples.ButtonVariantsExample)), new("Sizes and icons", typeof(Examples.ButtonSizesExample)),
@@ -56,11 +63,11 @@ public static class Catalog
         new("toast", "Toast", "Overlay", "Brief notifications, raised from .NET through IToastService.",
             [new("Toasts", typeof(Examples.ToastExample))], [typeof(BxToaster)]),
 
-        new("tabs", "Tabs", "Navigation & data", "WAI-ARIA tabs with automatic activation.",
+        new("tabs", "Tabs", "Navigation", "WAI-ARIA tabs with automatic activation.",
             [new("Pill", typeof(Examples.TabsExample)), new("Link", typeof(Examples.TabsLinkExample))], [typeof(BxTabs)]),
-        new("accordion", "Accordion", "Navigation & data", "Stacked headings that reveal their section.",
+        new("accordion", "Accordion", "Navigation", "Stacked headings that reveal their section.",
             [new("Accordion", typeof(Examples.AccordionExample)), new("With controls inside", typeof(Examples.AccordionNestedExample))], [typeof(BxAccordion)]),
-        new("table", "Table", "Navigation & data", "A data table with sortable columns.",
+        new("table", "Table", "Data", "A data table with sortable columns.",
             [new("Sortable table", typeof(Examples.TableExample))], [typeof(BxTable<object>), typeof(BxColumn<object>)]),
     ];
 
