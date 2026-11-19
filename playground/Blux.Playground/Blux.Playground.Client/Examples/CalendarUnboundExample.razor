@@ -1,0 +1,10 @@
+<div class="flex flex-col items-center gap-3">
+    <BxCalendar Value="@(new DateOnly(2026, 11, 10))" Min="_min" Name="visit" AriaLabel="Visit date" data-testid="unbound-calendar" />
+    <BxButton Variant="ButtonVariant.Outline" Label="Move the minimum" OnClick="Move" />
+</div>
+
+@code {
+    private DateOnly _min = new(2026, 11, 1);
+
+    private void Move() => _min = _min.AddDays(1);
+}

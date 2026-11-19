@@ -37,7 +37,7 @@ export class BxInputNumberElement extends HTMLElement {
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
     if (name === 'data-bx-seq') {
-      queueMicrotask(() => this.#applyRendered());
+      queueMicrotask(() => this.#applyRendered(true));
     } else {
       if (name === 'locale') this.#format = null;
       this.#applyRendered();
@@ -45,7 +45,8 @@ export class BxInputNumberElement extends HTMLElement {
   }
 
   refresh() {
-    this.#applyRendered();
+    this.#reporter.adopt();
+    this.#applyRendered(this.#reporter.bound);
   }
 
   get #input() {
@@ -66,9 +67,9 @@ export class BxInputNumberElement extends HTMLElement {
     return this.#num('value');
   }
 
-  #applyRendered() {
-    if (this.#reporter.isStale()) return;
-    this.#value = this.#rendered();
+  /** Takes the rendered value when a render changed it (force: a bound render arrived), then paints. */
+  #applyRendered(force = false) {
+    if (this.#reporter.take('value', force) !== undefined) this.#value = this.#rendered();
     this.#show();
   }
 

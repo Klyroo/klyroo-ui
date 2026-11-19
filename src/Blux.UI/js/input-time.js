@@ -24,6 +24,7 @@ export class BxInputTimeElement extends HTMLElement {
   #committed = '';
   #observer = null;
   #scheduled = false;
+  #forced = false;
   #reporter = new Reporter(this);
 
   connectedCallback() {
@@ -40,18 +41,25 @@ export class BxInputTimeElement extends HTMLElement {
     this.#observer?.disconnect();
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-bx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
       this.#scheduled = false;
-      this.#sync();
+      const forced = this.#forced;
+      this.#forced = false;
+      this.#sync(forced);
     });
   }
 
   refresh() {
-    this.#sync();
+    this.#reporter.adopt();
+    this.#sync(this.#reporter.bound);
+    // The merge put the server's value back into the hidden input.
+    const input = this.querySelector(':scope > input[data-slot="value"]');
+    if (input) input.value = this.#current();
   }
 
   get #hour12() {
@@ -74,9 +82,11 @@ export class BxInputTimeElement extends HTMLElement {
     return [...this.querySelectorAll(':scope > [data-segment]')];
   }
 
-  #sync() {
-    if (!this.#reporter.isStale()) {
-      const value = this.getAttribute('value') ?? '';
+  /** Takes the rendered value when a render changed it (force: a bound render arrived), then paints. */
+  #sync(force = false) {
+    const text = this.#reporter.take('value', force);
+    if (text !== undefined) {
+      const value = text ?? '';
       if (value !== this.#current()) this.#parse(value);
       this.#committed = this.#current();
     }

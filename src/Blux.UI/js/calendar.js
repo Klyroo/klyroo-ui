@@ -55,7 +55,7 @@ function icon(path, className) {
  * Keys on a day: arrows move by day or week, Home/End to the week's edges, PageUp/PageDown by month (Shift: year).
  */
 export class BxCalendarElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value', 'mode', 'min', 'max', 'disabled-dates', 'disabled', 'week-start', 'data-locale'];
+  static observedAttributes = ['data-bx-seq', 'value', 'mode', 'min', 'max', 'disabled-dates', 'disabled', 'week-start', 'data-locale', 'name'];
 
   #observer = null;
   #reporter = new Reporter(this);
@@ -64,6 +64,7 @@ export class BxCalendarElement extends HTMLElement {
   #focus = null;
   #body = null;
   #scheduled = false;
+  #forced = false;
   #headingId = `bx-calendar-${++counter}`;
 
   connectedCallback() {
@@ -79,19 +80,24 @@ export class BxCalendarElement extends HTMLElement {
     this.#body = null;
   }
 
-  attributeChangedCallback() {
+  attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-bx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
       this.#scheduled = false;
-      if (this.#body) this.#sync();
+      const forced = this.#forced;
+      this.#forced = false;
+      if (this.#body) this.#sync(forced);
     });
   }
 
   /** Re-applies the wiring, e.g. after enhanced navigation merged server HTML over attributes set here. */
   refresh() {
+    this.#reporter.adopt();
     this.#init();
+    if (this.#body) this.#sync(this.#reporter.bound);
   }
 
   /** Selects a value without reporting it, for a host that keeps the value elsewhere (the date field). */
@@ -128,14 +134,22 @@ export class BxCalendarElement extends HTMLElement {
 
   #init() {
     const body = this.querySelector(':scope > [data-slot="body"]');
-    if (!body || body === this.#body) return;
-    this.#body = body;
-    this.#sync();
+    if (!body) return;
+    if (body !== this.#body) {
+      this.#body = body;
+      this.#sync(true);
+    } else if (body.childElementCount === 0) {
+      // An enhanced navigation or form post merged the server's empty body over the grid: draw it again.
+      this.#render(null);
+    }
   }
 
-  #sync() {
-    if (!this.#reporter.isStale()) this.#applyValue(this.getAttribute('value') ?? '');
+  /** Takes the rendered value when a render changed it (or force: a bound render arrived), then draws. */
+  #sync(force) {
+    const text = this.#reporter.take('value', force || !this.#view);
+    if (text !== undefined) this.#applyValue(text ?? '');
     else if (!this.#view) this.#applyValue('');
+    else this.#writeInput(this.#serialize());
     this.#render(null);
   }
 
@@ -192,6 +206,34 @@ export class BxCalendarElement extends HTMLElement {
       input.value = value;
       input.setAttribute('value', value);
     }
+    this.#writeEntries();
+  }
+
+  /**
+   * Multiple and range post one entry per date, so a form binds them to a list or a range: the dates under "name",
+   * or "name.Start" and "name.End". The inputs live in the empty <span data-slot="values">, which Blazor renders empty.
+   */
+  #writeEntries() {
+    const box = this.querySelector(':scope > [data-slot="values"]');
+    if (!box) return;
+    const name = this.getAttribute('name');
+    const sel = this.#selection;
+    let wanted = [];
+    if (name && !this.hasAttribute('disabled')) {
+      if (this.#mode === 'multiple') wanted = sel.map((date) => [name, date]);
+      else if (this.#mode === 'range' && sel[0]) wanted = [[`${name}.Start`, sel[0]], ...(sel[1] ? [[`${name}.End`, sel[1]]] : [])];
+    }
+    const current = [...box.children];
+    if (current.length === wanted.length && current.every((input, i) => input.name === wanted[i][0] && input.value === wanted[i][1])) return;
+    box.replaceChildren(
+      ...wanted.map(([entry, date]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = entry;
+        input.value = date;
+        return input;
+      }),
+    );
   }
 
   #isDisabled(iso) {
@@ -339,7 +381,7 @@ export class BxCalendarElement extends HTMLElement {
   }
 
   #report(value) {
-    this.querySelector(':scope > input[data-slot="value"]')?.dispatchEvent(new Event('change', { bubbles: true }));
+    (this.querySelector(':scope > input[data-slot="value"]') ?? this).dispatchEvent(new Event('change', { bubbles: true }));
     this.#reporter.report('bx-change', { value });
   }
 

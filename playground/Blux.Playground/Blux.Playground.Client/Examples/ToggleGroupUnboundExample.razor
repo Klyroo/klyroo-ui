@@ -1,0 +1,5 @@
+<BxToggleGroup Items="Marks" AriaLabel="Text marks" Name="marks" Multiple Value="@(["bold"])" />
+
+@code {
+    private static readonly BxToggleItem[] Marks = [new("bold", "Bold"), new("italic", "Italic"), new("underline", "Underline")];
+}

@@ -83,7 +83,7 @@ export function afterWebStarted(blazor) {
     applyColorMode();
     hideBrokenAvatars();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
-    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner, bx-calendar, bx-input-time, bx-color-picker, bx-file-upload, bx-carousel').forEach((el) => el.refresh?.());
+    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner, bx-calendar, bx-input-time, bx-color-picker, bx-file-upload, bx-carousel, bx-select-menu, bx-listbox, bx-toggle-group, bx-input-tags, bx-input-menu, bx-input-number, bx-pin-input, bx-slider, bx-toggle').forEach((el) => el.refresh?.());
   });
 }
 
