@@ -14,7 +14,7 @@
 <bx-chart class="@_slots["root"]" data-type="@_kind" @attributes="AdditionalAttributes">
     <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
          role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
-         aria-label="@(_interactive ? Options.Strings.ChartHint : null)">
+         aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? _id + "-hint" : null)">
         <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="img" aria-label="@_label"
              aria-describedby="@(AriaDescription is null ? null : _id + "-description")" class="@_slots["svg"]">
             @if (Type != BxChartType.Line && _series.Count > 0)
@@ -152,6 +152,10 @@
                 }
             }
         </svg>
+        @if (_interactive)
+        {
+            <span id="@(_id + "-hint")" class="sr-only">@Options.Strings.ChartHint</span>
+        }
         @if (AriaDescription is not null)
         {
             <span id="@(_id + "-description")" class="sr-only">@AriaDescription</span>
@@ -175,7 +179,7 @@
                             <p class="@_slots["tooltipRow"]" data-color="@_series[row].Color.Value">
                                 <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
                                 <span class="@_slots["tooltipLabel"]">@Categories[0].Name</span>
-                                <span class="@_slots["tooltipValue"]">@FormatValue(slice.Value) (@slice.Fraction.ToString("P0", CultureInfo.CurrentCulture))</span>
+                                <span class="@_slots["tooltipValue"]">@FormatValue(slice.Value) (@slice.Fraction.ToString("P0", Cult))</span>
                             </p>
                         }
                         else
@@ -339,6 +343,16 @@
     [Parameter] public RenderFragment? Center { get; set; }
     [Parameter] public ChartUi? Ui { get; set; }
 
+    /// <summary>
+    /// The culture of every number, date and percentage the chart writes (axis ticks, tooltip, table, summary). Defaults to the
+    /// current culture, which can differ between prerendering on the server and WebAssembly: set it when the markup must not change
+    /// at the switch, and the width the axis labels take is then the same too.
+    /// </summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    private CultureInfo Cult => Culture ?? CultureInfo.CurrentCulture;
+    private object?[]? _key;
+
     private int PatternCount => _series.Count;
 
     private int LegendCount => _series.Count;
@@ -346,15 +360,15 @@
     private static string Num(double value) => ChartLayout.N(value);
 
     private string FormatValue(double value) =>
-        Format is not null ? Format(value) : (value == 0 ? 0 : value).ToString("#,0.##", CultureInfo.CurrentCulture);
+        Format is not null ? Format(value) : (value == 0 ? 0 : value).ToString("#,0.##", Cult);
 
     private string IndexText(object? value) => value switch
     {
         null => "",
-        DateTime date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
-        DateTimeOffset date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
-        DateOnly date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
-        IFormattable formattable => formattable.ToString(IndexFormat, CultureInfo.CurrentCulture),
+        DateTime date => date.ToString(IndexFormat ?? "d", Cult),
+        DateTimeOffset date => date.ToString(IndexFormat ?? "d", Cult),
+        DateOnly date => date.ToString(IndexFormat ?? "d", Cult),
+        IFormattable formattable => formattable.ToString(IndexFormat, Cult),
         _ => value.ToString() ?? "",
     };
 
@@ -377,6 +391,20 @@
     protected override void OnParametersSet()
     {
         _id ??= NewId("chart");
+
+        // Everything below depends only on these: a parent that renders again with the same values (same Data list,
+        // same delegates) keeps the layout it already built. A list changed in place is only noticed when its length changes.
+        object?[] key =
+        [
+            Data, Data.Count, Index, Categories, Categories.Count, Type, Horizontal, Stacked, Curve, Points, Grid, XAxis, YAxis,
+            XLabel, YLabel, Legend, Format, IndexFormat, Tooltip, Thickness, Height, Width, Colors, AriaLabel, Table, Ui, Class,
+            Cult, ThemeScope, Options,
+        ];
+        if (_key is not null && _key.AsSpan().SequenceEqual(key))
+        {
+            return;
+        }
+        _key = key;
         var strings = Options.Strings;
         var donut = Type == BxChartType.Donut;
 
@@ -443,17 +471,17 @@
         if (Type == BxChartType.Donut)
         {
             var total = _layout.Slices.Sum(s => s.Value);
-            var slices = _layout.Slices.Select(s => string.Format(CultureInfo.CurrentCulture, strings.ChartSlice, _index[s.Row], FormatValue(s.Value), s.Fraction.ToString("P0", CultureInfo.CurrentCulture)));
-            return string.Format(CultureInfo.CurrentCulture, strings.ChartSummaryDonut, _kind, string.Join(", ", slices));
+            var slices = _layout.Slices.Select(s => string.Format(Cult, strings.ChartSlice, _index[s.Row], FormatValue(s.Value), s.Fraction.ToString("P0", Cult)));
+            return string.Format(Cult, strings.ChartSummaryDonut, _kind, string.Join(", ", slices));
         }
         var ranges = _values.Select((v, s) =>
         {
             var present = v.Where(x => x is not null).Select(x => x!.Value).ToList();
             return present.Count == 0
                 ? _series[s].Name
-                : string.Format(CultureInfo.CurrentCulture, strings.ChartRange, _series[s].Name, FormatValue(present.Min()), FormatValue(present.Max()));
+                : string.Format(Cult, strings.ChartRange, _series[s].Name, FormatValue(present.Min()), FormatValue(present.Max()));
         });
-        return string.Format(CultureInfo.CurrentCulture, strings.ChartSummary, _kind, _index.Count, _index[0], _index[^1], string.Join(", ", ranges));
+        return string.Format(Cult, strings.ChartSummary, _kind, _index.Count, _index[0], _index[^1], string.Join(", ", ranges));
     }
 
     /// <summary>What a screen reader hears when the keyboard reaches a row: the same text as the tooltip.</summary>
@@ -462,7 +490,7 @@
         if (Type == BxChartType.Donut)
         {
             var slice = _layout.Slices.First(s => s.Row == row);
-            return $"{_index[row]}: {FormatValue(slice.Value)} ({slice.Fraction.ToString("P0", CultureInfo.CurrentCulture)})";
+            return $"{_index[row]}: {FormatValue(slice.Value)} ({slice.Fraction.ToString("P0", Cult)})";
         }
         var parts = _series.Select((s, i) => (s.Name, Value: _values[i][row])).Where(p => p.Value is not null).Select(p => $"{p.Name} {FormatValue(p.Value!.Value)}");
         return $"{_index[row]}: {string.Join(", ", parts)}";

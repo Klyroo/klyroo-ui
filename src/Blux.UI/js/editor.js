@@ -37,7 +37,7 @@ export class BxEditorElement extends HTMLElement {
     this.#lastReported = this.getAttribute('data-value') ?? '';
     this.addEventListener('focusout', this.#onFocusOut);
     this.addEventListener('keydown', this.#onKeyDown);
-    this.#observer = observeChildren(this, () => this.#wire());
+    this.#observer = observeChildren(this, () => this.#wire(), { ignore: '[data-slot="editor"]' });
   }
 
   disconnectedCallback() {

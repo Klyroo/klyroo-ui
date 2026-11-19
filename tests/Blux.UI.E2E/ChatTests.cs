@@ -219,7 +219,7 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(log).ToHaveAttributeAsync("aria-live", "off");
         await Page.GetByTestId("chat-messages-status-streaming").ClickAsync();
         await Assertions.Expect(root.Locator("[data-slot=indicator]")).ToBeVisibleAsync();
-        await Assertions.Expect(root.Locator("[data-slot=indicator]")).ToContainTextAsync("Assistant is responding");
+        await Assertions.Expect(root.Locator("[data-slot=typing-status]")).ToContainTextAsync("Assistant is responding");
         await Page.GetByTestId("chat-messages-status-error").ClickAsync();
         await Assertions.Expect(root.GetByRole(AriaRole.Alert)).ToContainTextAsync("Something went wrong");
         await Assertions.Expect(root.Locator("[data-slot=indicator]")).ToHaveCountAsync(0);
@@ -480,5 +480,40 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(shimmer).ToHaveCSSAsync("animation-name", "none");
         await Assertions.Expect(shimmer).Not.ToHaveCSSAsync("color", "rgba(0, 0, 0, 0)");
+    }
+
+
+    // ---- Review findings (waves C and D)
+
+    [Fact]
+    public async Task Streamed_text_does_not_rescan_every_message_for_each_token()
+    {
+        await Open("ssr", "chat-messages");
+        var root = Page.GetByTestId("chat-messages-demo");
+        await Page.EvaluateAsync("""
+            () => {
+                const host = document.querySelector('[data-testid=chat-messages-demo]').closest('bx-chat-messages') ?? document.querySelector('bx-chat-messages');
+                window.__scans = 0;
+                const original = host.querySelectorAll.bind(host);
+                host.querySelectorAll = (selector) => {
+                    if (selector.includes('data-role="assistant"')) window.__scans++;
+                    return original(selector);
+                };
+            }
+            """);
+
+        // Twenty tokens arrive, one per task, in the text of the message being streamed.
+        await root.Locator("[data-bx-chat-message][data-role=assistant] [data-bx-chat-content]").Last.EvaluateAsync("""
+            async (content) => {
+                const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+                const text = walker.nextNode();
+                for (let i = 0; i < 20; i++) {
+                    text.data += ' token';
+                    await new Promise((resolve) => setTimeout(resolve, 0));
+                }
+            }
+            """);
+
+        Assert.True(await Page.EvaluateAsync<int>("() => window.__scans") <= 1, "every token rescanned all the assistant messages");
     }
 }

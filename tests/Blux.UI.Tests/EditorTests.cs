@@ -373,5 +373,17 @@ public class EditorSanitizedTests() : BluxTestContext(o => o.SanitizeEditorHtml 
 
         Assert.Equal("you", cut.Find("[data-slot=fallback] strong").TextContent);
     }
-}
 
+
+    [Fact]
+    public void SuggestionMenu_listbox_id_stays_the_same_across_renders()
+    {
+        var cut = Render<BxEditorSuggestionMenu>();
+        var id = cut.Find("[role=listbox]").Id;
+
+        cut.Render();
+        cut.Render(p => p.Add(m => m.Limit, 10));
+
+        Assert.Equal(id, cut.Find("[role=listbox]").Id);
+    }
+}

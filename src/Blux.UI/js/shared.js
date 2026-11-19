@@ -81,12 +81,31 @@ export class Reporter {
   }
 }
 
-/** Calls callback now and whenever the element's children change (Blazor inserts children after the element). */
-export function observeChildren(host, callback) {
-  const observer = new MutationObserver(callback);
+/**
+ * Calls callback now and whenever the element's children change (Blazor inserts children after the element).
+ * Changes inside an element matching `ignore` do not count: it is DOM another library owns (the editor surface), which
+ * changes on every keystroke and holds nothing for the element to wire.
+ */
+export function observeChildren(host, callback, { ignore = null } = {}) {
+  const inside = (node) => (node instanceof Element ? node : node.parentElement)?.closest(ignore) != null;
+  const observer = new MutationObserver((records, self) => {
+    if (ignore && records.every((record) => inside(record.target))) return;
+    callback(records, self);
+  });
   observer.observe(host, { childList: true, subtree: true });
   callback();
   return observer;
+}
+
+/**
+ * True when a modal dialog is open and does not contain the element: the page behind it is not available, though it
+ * is not marked inert (a modal dialog blocks it without the attribute).
+ */
+export function behindModal(element) {
+  for (const dialog of document.querySelectorAll('dialog:modal')) {
+    if (!dialog.contains(element)) return true;
+  }
+  return false;
 }
 
 /** Moves focus within items with arrow keys, Home, End and first-letter typeahead. Returns true when handled. */

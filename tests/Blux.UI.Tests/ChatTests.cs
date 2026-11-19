@@ -227,8 +227,8 @@ public class ChatTests : BluxTestContext
         Assert.Equal(indicator ? "true" : null, cut.Find("[role=log]").GetAttribute("aria-busy"));
         if (indicator)
         {
-            Assert.Equal("status", cut.Find("[data-slot=indicator]").GetAttribute("role"));
-            Assert.Contains("Assistant is responding", cut.Find("[data-slot=indicator]").TextContent);
+            Assert.Equal("status", cut.Find("[data-slot=typing-status]").GetAttribute("role"));
+            Assert.Contains("Assistant is responding", cut.Find("[data-slot=typing-status]").TextContent);
         }
     }
 
@@ -249,7 +249,7 @@ public class ChatTests : BluxTestContext
         var cut = localized.Render<BxChatMessages>(p => p.Add(m => m.Status, ChatStatus.Submitted));
 
         Assert.Equal("Conversation FR", cut.Find("[role=log]").GetAttribute("aria-label"));
-        Assert.Contains("Reponse en cours", cut.Find("[data-slot=indicator]").TextContent);
+        Assert.Contains("Reponse en cours", cut.Find("[data-slot=typing-status]").TextContent);
     }
 
     // ---- ChatPrompt
@@ -683,5 +683,22 @@ public class ChatTests : BluxTestContext
         public StaticContext() : base(interactive: false)
         {
         }
+    }
+
+
+    [Theory]
+    [InlineData(ChatStatus.Idle)]
+    [InlineData(ChatStatus.Submitted)]
+    public void Messages_typing_status_region_is_always_rendered_and_filled_when_busy(ChatStatus status)
+    {
+        var cut = Render<BxChatMessages>(p => p.Add(m => m.Status, ChatStatus.Idle));
+        var region = cut.Find("[data-slot=typing-status]");
+        Assert.Equal("status", region.GetAttribute("role"));
+        Assert.Equal("", region.TextContent.Trim());
+
+        cut.Render(p => p.Add(m => m.Status, status));
+
+        var expected = status == ChatStatus.Idle ? "" : "Assistant is responding";
+        Assert.Equal(expected, cut.Find("[data-slot=typing-status]").TextContent.Trim());
     }
 }

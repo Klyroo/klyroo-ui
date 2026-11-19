@@ -17,6 +17,7 @@
  */
 export class BxChartElement extends HTMLElement {
   #active = null;
+  #shown = null;
 
   connectedCallback() {
     this.addEventListener('pointermove', this.#onPointerMove);
@@ -57,6 +58,12 @@ export class BxChartElement extends HTMLElement {
       this.#active?.removeAttribute('data-active');
       hit.setAttribute('data-active', '');
       this.#active = hit;
+      this.#shown = null;
+    }
+    // A render can change the values of the row under the pointer: the tooltip follows the tip, not the row.
+    const html = tip.innerHTML;
+    if (this.#shown !== html) {
+      this.#shown = html;
       tooltip.replaceChildren(...[...tip.children].map((child) => child.cloneNode(true)));
     }
     tooltip.dataset.state = 'open';
@@ -78,6 +85,7 @@ export class BxChartElement extends HTMLElement {
   #hide() {
     this.#active?.removeAttribute('data-active');
     this.#active = null;
+    this.#shown = null;
     const tooltip = this.#plot?.querySelector(':scope > [data-slot="tooltip"]');
     if (tooltip) tooltip.dataset.state = 'closed';
   }
@@ -128,7 +136,12 @@ export class BxChartElement extends HTMLElement {
         next = hits[hits.length - 1];
         break;
       case 'Escape':
-        this.#hide();
+        // The first Escape dismisses the tooltip; with none open it belongs to whatever surrounds the chart (a modal).
+        if (this.#plot?.querySelector(':scope > [data-slot="tooltip"]')?.dataset.state === 'open') {
+          event.preventDefault();
+          event.stopPropagation();
+          this.#hide();
+        }
         return;
       default:
         return;

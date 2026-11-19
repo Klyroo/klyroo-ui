@@ -187,7 +187,9 @@ public class ChartTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(plot).ToBeFocusedAsync();
         // Focusing alone shows nothing: the chart is named and waits for a key.
         await Assertions.Expect(tooltip).Not.ToBeVisibleAsync();
-        Assert.Equal("Chart values. Use the arrow keys to move between points.", await plot.GetAttributeAsync("aria-label"));
+        // Named by the chart, described by the hint on how to explore it.
+        Assert.Equal(await chart.GetByRole(AriaRole.Img).GetAttributeAsync("aria-label"), await plot.GetAttributeAsync("aria-label"));
+        await Assertions.Expect(chart.Locator("#" + await plot.GetAttributeAsync("aria-describedby"))).ToHaveTextAsync("Chart values. Use the arrow keys to move between points.");
 
         await Page.Keyboard.PressAsync("ArrowRight");
         await Assertions.Expect(tooltip).ToBeVisibleAsync();
@@ -264,5 +266,56 @@ public class ChartTests(PlaygroundServer server) : PlaygroundTest(server)
 
         Assert.Equal("0s", await tooltip.EvaluateAsync<string>("e => getComputedStyle(e).transitionDuration"));
         Assert.Equal("0s", await Chart("chart-line").Locator("g[data-hit] path").First.EvaluateAsync<string>("e => getComputedStyle(e).transitionDuration"));
+    }
+
+
+    // ---- Review findings (waves C and D)
+
+    [Fact]
+    public async Task Tooltip_shows_the_new_values_when_the_tip_of_the_active_row_changes()
+    {
+        await Open("ssr", "chart");
+        var chart = Chart("chart-line");
+        var tooltip = chart.Locator("[data-slot=tooltip]");
+        var hit = chart.Locator("g[data-hit][data-index='1'] rect");
+        await hit.HoverAsync();
+        await Assertions.Expect(tooltip).ToHaveAttributeAsync("data-state", "open");
+
+        // What a Blazor render does to the hidden tips while the pointer stays on the row.
+        await chart.Locator("[data-slot=tips] [data-tip='1'] p:last-child span:last-child").EvaluateAsync("e => { e.textContent = 'NEW-999'; }");
+        var box = (await hit.BoundingBoxAsync())!;
+        await Page.Mouse.MoveAsync(box.X + box.Width / 2 + 2, box.Y + box.Height / 2 + 2);
+
+        await Assertions.Expect(tooltip).ToContainTextAsync("NEW-999");
+    }
+
+    [Fact]
+    public async Task Escape_closes_the_tooltip_first_and_the_modal_around_the_chart_on_the_next_press()
+    {
+        await Open("ssr", "chart");
+        await Page.EvaluateAsync("""
+            () => {
+                const dialog = document.createElement('dialog');
+                dialog.id = 'around-chart';
+                dialog.append(document.querySelector('[data-testid=chart-line]'));
+                document.body.append(dialog);
+                dialog.showModal();
+            }
+            """);
+        var chart = Chart("chart-line");
+        var plot = chart.Locator("[data-slot=plot]");
+        var tooltip = chart.Locator("[data-slot=tooltip]");
+        await plot.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(tooltip).ToHaveAttributeAsync("data-state", "open");
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(tooltip).ToHaveAttributeAsync("data-state", "closed");
+        Assert.True(await Page.EvaluateAsync<bool>("() => document.getElementById('around-chart').open"), "the first Escape only dismisses the tooltip");
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Page.WaitForFunctionAsync("() => !document.getElementById('around-chart').open");
     }
 }
