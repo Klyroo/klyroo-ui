@@ -1,0 +1,235 @@
+- generic [ref=f3e1]:
+  - link "Skip to content" [ref=f3e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f3e3]:
+    - generic [ref=f3e4]:
+      - link "blux/ui" [ref=f3e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f3e13]:
+        - button "Search" [ref=f3e14]:
+          - generic [ref=f3e18]:
+            - generic [ref=f3e19]: Search
+            - generic [aria-hidden] [ref=f3e20]:
+              - generic [ref=f3e21]: Ctrl
+              - generic [ref=f3e22]: K
+        - button "Toggle dark mode" [ref=f3e23]
+  - main [ref=f3e27]:
+    - generic [ref=f3e29]:
+      - group [ref=f3e30]:
+        - generic "Menu" [ref=f3e31] [cursor=pointer]
+      - article [ref=f3e32]:
+        - generic [ref=f3e33]:
+          - generic [ref=f3e34]:
+            - paragraph [ref=f3e35]: Layout
+            - complementary [ref=f3e36]:
+              - navigation "On this page" [ref=f3e39]:
+                - button "On this page" [ref=f3e40]
+          - heading "Header" [level=1] [ref=f3e44]
+          - paragraph [ref=f3e45]: A site header with a title, links, actions and a mobile menu that opens in a slideover.
+          - generic [ref=f3e46]:
+            - paragraph [ref=f3e47]:
+              - generic [ref=f3e49]:
+                - text: Rendered by
+                - strong [ref=f3e50]: Static
+                - text: ", static"
+            - navigation "Render mode" [ref=f3e51]:
+              - link "ssr" [ref=f3e52] [cursor=pointer]:
+                - /url: /ssr/components/header
+              - link "server" [ref=f3e53] [cursor=pointer]:
+                - /url: /server/components/header
+              - link "wasm" [ref=f3e54] [cursor=pointer]:
+                - /url: /wasm/components/header
+              - link "auto" [ref=f3e55] [cursor=pointer]:
+                - /url: /auto/components/header
+          - generic [ref=f3e56]:
+            - generic [ref=f3e57]:
+              - region "Header" [ref=f3e58]:
+                - heading [level=2] [ref=f3e59]:
+                  - link "Header" [ref=f3e60] [cursor=pointer]:
+                    - /url: "#header"
+                - paragraph [ref=f3e61]: "The mobile menu is a native dialog handled in the browser: it works in static rendering and closes when a link is followed."
+                - generic [ref=f3e62]:
+                  - generic [ref=f3e63]: Preview
+                  - generic [ref=f3e67]:
+                    - generic [ref=f3e69]:
+                      - link "Acme" [ref=f3e71] [cursor=pointer]:
+                        - /url: /
+                      - button "Sign in" [ref=f3e73]
+                      - generic [ref=f3e76]:
+                        - button "Open menu" [expanded] [ref=f3e78]
+                        - dialog "Site menu" [ref=f3e266]:
+                          - generic [ref=f3e267]:
+                            - heading "Site menu" [level=2] [ref=f3e269]
+                            - button "Close" [active] [ref=f3e270]
+                          - navigation "Menu" [ref=f3e274]:
+                            - list [ref=f3e275]:
+                              - listitem [ref=f3e276]:
+                                - link "Home" [ref=f3e277] [cursor=pointer]:
+                                  - /url: /
+                              - listitem [ref=f3e279]:
+                                - button "Components" [ref=f3e281]
+                              - listitem [ref=f3e285]:
+                                - link "Docs" [ref=f3e286] [cursor=pointer]:
+                                  - /url: /docs
+                    - paragraph [ref=f3e82]: Page content. Narrow the window below the lg breakpoint to get the menu button.
+                  - generic [ref=f3e83]:
+                    - generic "Code" [ref=f3e84]:
+                      - code [ref=f3e85]: "<div class=\"w-full overflow-hidden rounded-xl border border-(--blux-border)\"> <BxHeader Title=\"Acme\" Items=\"_items\" Sticky=\"false\" AriaLabel=\"Site\" MenuTitle=\"Site menu\" data-testid=\"header\"> <Right> <BxButton Label=\"Sign in\" Size=\"BxSize.Sm\" Variant=\"ButtonVariant.Outline\" Color=\"BxColor.Neutral\" /> </Right> </BxHeader> <p class=\"p-6 text-sm text-(--blux-text-muted)\">Page content. Narrow the window below the lg breakpoint to get the menu button.</p> </div> @code { private static readonly BxNavigationItem[] _items = [ new(\"Home\") { Href = \"/\", Exact = true }, new(\"Components\") { Children = [ new(\"Button\") { Href = \"/components/button\" }, new(\"Header\") { Href = \"/components/header\" }, new(\"Sidebar\") { Href = \"/components/sidebar\" }, ], }, new(\"Docs\") { Href = \"/docs\" }, ]; }"
+                    - button "Copy" [ref=f3e86]
+              - region "Custom slots" [ref=f3e87]:
+                - heading [level=2] [ref=f3e88]:
+                  - link "Custom slots" [ref=f3e89] [cursor=pointer]:
+                    - /url: "#custom-slots"
+                - paragraph [ref=f3e90]: Left, center, right and the mobile body are all replaceable.
+                - generic [ref=f3e91]:
+                  - generic [ref=f3e92]: Preview
+                  - generic [ref=f3e98]:
+                    - link "acme/app" [ref=f3e100] [cursor=pointer]:
+                      - /url: /
+                    - generic [ref=f3e108]:
+                      - button "Toggle dark mode" [ref=f3e109]
+                      - button "Get started" [ref=f3e113]
+                    - button "Open menu" [ref=f3e118]
+                  - generic [ref=f3e122]:
+                    - generic "Code" [ref=f3e123]:
+                      - code [ref=f3e124]: <div class="w-full overflow-hidden rounded-xl border border-(--blux-border)"> <BxHeader Sticky="false" MenuTitle="Product menu" MenuSide="SlideoverSide.Left" data-testid="header-custom"> <Left> <a href="/" class="inline-flex items-center gap-2 font-mono text-sm font-semibold text-(--blux-text-highlighted)"> <Logo Class="size-6" /> <span>acme/app</span> </a> </Left> <ChildContent> <nav aria-label="Product" class="flex items-center gap-5 text-sm text-(--blux-text-muted)"> <a href="/components/header" class="hover:text-(--blux-text-highlighted)">Features</a> <a href="/components/footer" class="hover:text-(--blux-text-highlighted)">Pricing</a> <a href="/docs" class="hover:text-(--blux-text-highlighted)">Changelog</a> </nav> </ChildContent> <Right> <BxColorModeButton /> <BxButton Label="Get started" Size="BxSize.Sm" /> </Right> <Body> <nav aria-label="Product menu" class="flex flex-col gap-3 text-sm"> <a href="/components/header" class="text-(--blux-text)">Features</a> <a href="/components/footer" class="text-(--blux-text)">Pricing</a> <a href="/docs" class="text-(--blux-text)">Changelog</a> </nav> </Body> </BxHeader> </div>
+                    - button "Copy" [ref=f3e125]
+            - heading "API" [level=2] [ref=f3e126]
+            - heading "BxHeader" [level=3] [ref=f3e127]
+            - table "Parameters of BxHeader" [ref=f3e129]:
+              - caption [ref=f3e130]: Parameters of BxHeader
+              - rowgroup [ref=f3e131]:
+                - row [ref=f3e132]:
+                  - columnheader "Parameter" [ref=f3e133]
+                  - columnheader "Type" [ref=f3e134]
+                  - columnheader "Default" [ref=f3e135]
+              - rowgroup [ref=f3e136]:
+                - row [ref=f3e137]:
+                  - cell [ref=f3e138]:
+                    - code [ref=f3e139]: AriaLabel
+                    - paragraph [ref=f3e140]: Accessible name of the Items navigation. Needed when the page has several.
+                  - cell [ref=f3e141]:
+                    - code [ref=f3e142]: string
+                  - cell [ref=f3e143]:
+                    - code [ref=f3e144]: —
+                - row [ref=f3e145]:
+                  - cell [ref=f3e146]:
+                    - code [ref=f3e147]: Body
+                    - paragraph [ref=f3e148]: Content of the mobile menu. Replaces the vertical Items navigation.
+                  - cell [ref=f3e149]:
+                    - code [ref=f3e150]: RenderFragment
+                  - cell [ref=f3e151]:
+                    - code [ref=f3e152]: —
+                - row [ref=f3e153]:
+                  - cell [ref=f3e154]:
+                    - code [ref=f3e155]: Class
+                    - paragraph [ref=f3e156]: Classes added to the root element, merged last so they win over the theme.
+                  - cell [ref=f3e157]:
+                    - code [ref=f3e158]: string
+                  - cell [ref=f3e159]:
+                    - code [ref=f3e160]: —
+                - row [ref=f3e161]:
+                  - cell [ref=f3e162]:
+                    - code [ref=f3e163]: Href
+                    - paragraph [ref=f3e164]: Where the title link goes.
+                  - cell [ref=f3e165]:
+                    - code [ref=f3e166]: string
+                  - cell [ref=f3e167]:
+                    - code [ref=f3e168]: "\"/\""
+                - row [ref=f3e169]:
+                  - cell [ref=f3e170]:
+                    - code [ref=f3e171]: Items
+                    - paragraph [ref=f3e172]: "Site links: a horizontal navigation in the middle, and a vertical one in the mobile menu. Set ChildContent or Body to replace either."
+                  - cell [ref=f3e173]:
+                    - code [ref=f3e174]: IReadOnlyList<BxNavigationItem>
+                  - cell [ref=f3e175]:
+                    - code [ref=f3e176]: —
+                - row [ref=f3e177]:
+                  - cell [ref=f3e178]:
+                    - code [ref=f3e179]: Left
+                    - paragraph [ref=f3e180]: "Replaces the title link: a logo, or a logo with the title."
+                  - cell [ref=f3e181]:
+                    - code [ref=f3e182]: RenderFragment
+                  - cell [ref=f3e183]:
+                    - code [ref=f3e184]: —
+                - row [ref=f3e185]:
+                  - cell [ref=f3e186]:
+                    - code [ref=f3e187]: Menu
+                    - paragraph [ref=f3e188]: Shows the mobile menu button below the lg breakpoint, when there is something to put in the menu.
+                  - cell [ref=f3e189]:
+                    - code [ref=f3e190]: bool
+                  - cell [ref=f3e191]:
+                    - code [ref=f3e192]: "true"
+                - row [ref=f3e193]:
+                  - cell [ref=f3e194]:
+                    - code [ref=f3e195]: MenuSide
+                    - paragraph [ref=f3e196]: The edge the mobile menu slides in from.
+                  - cell [ref=f3e197]:
+                    - code [ref=f3e198]: SlideoverSide
+                  - cell [ref=f3e199]:
+                    - code [ref=f3e200]: SlideoverSide.Right
+                - row [ref=f3e201]:
+                  - cell [ref=f3e202]:
+                    - code [ref=f3e203]: MenuTitle
+                    - paragraph [ref=f3e204]: Title of the mobile menu panel. Defaults to the built-in text.
+                  - cell [ref=f3e205]:
+                    - code [ref=f3e206]: string
+                  - cell [ref=f3e207]:
+                    - code [ref=f3e208]: —
+                - row [ref=f3e209]:
+                  - cell [ref=f3e210]:
+                    - code [ref=f3e211]: Right
+                    - paragraph [ref=f3e212]: "The right side: actions, color mode button, language select. Always visible."
+                  - cell [ref=f3e213]:
+                    - code [ref=f3e214]: RenderFragment
+                  - cell [ref=f3e215]:
+                    - code [ref=f3e216]: —
+                - row [ref=f3e217]:
+                  - cell [ref=f3e218]:
+                    - code [ref=f3e219]: Sticky
+                    - paragraph [ref=f3e220]: Keeps the header at the top of the screen while the page scrolls.
+                  - cell [ref=f3e221]:
+                    - code [ref=f3e222]: bool
+                  - cell [ref=f3e223]:
+                    - code [ref=f3e224]: "true"
+                - row [ref=f3e225]:
+                  - cell [ref=f3e226]:
+                    - code [ref=f3e227]: Title
+                    - paragraph [ref=f3e228]: The title link on the left, used when Left is not set.
+                  - cell [ref=f3e229]:
+                    - code [ref=f3e230]: string
+                  - cell [ref=f3e231]:
+                    - code [ref=f3e232]: —
+                - row [ref=f3e233]:
+                  - cell [ref=f3e234]:
+                    - code [ref=f3e235]: Ui
+                  - cell [ref=f3e236]:
+                    - code [ref=f3e237]: HeaderUi
+                  - cell [ref=f3e238]:
+                    - code [ref=f3e239]: —
+                - row [ref=f3e240]:
+                  - cell [ref=f3e241]:
+                    - code [ref=f3e242]: ChildContent
+                    - paragraph [ref=f3e243]: The middle of the header, shown from the lg breakpoint up. Replaces the Items navigation.
+                  - cell [ref=f3e244]:
+                    - code [ref=f3e245]: RenderFragment
+                  - cell [ref=f3e246]:
+                    - code [ref=f3e247]: —
+            - navigation "Previous and next pages" [ref=f3e249]:
+              - 'link "Previous App The root wrapper of an app: renders the toaster, sets language and direction, and cascades global class overrides." [ref=f3e250] [cursor=pointer]':
+                - /url: /ssr/components/app
+                - generic [ref=f3e251]: Previous
+                - generic [ref=f3e254]: App
+                - generic [ref=f3e255]: "The root wrapper of an app: renders the toaster, sets language and direction, and cascades global class overrides."
+              - link "Next Footer A site footer with top and bottom areas and left, center and right slots." [ref=f3e256] [cursor=pointer]:
+                - /url: /ssr/components/footer
+                - generic [ref=f3e257]: Next
+                - generic [ref=f3e260]: Footer
+                - generic [ref=f3e261]: A site footer with top and bottom areas and left, center and right slots.
+  - contentinfo [ref=f3e262]:
+    - generic [ref=f3e263]:
+      - paragraph [ref=f3e264]: blux/ui · MIT
+      - paragraph [ref=f3e265]: Built with Blazor and Tailwind CSS.
+  - generic:
+    - region "Notifications":
+      - list

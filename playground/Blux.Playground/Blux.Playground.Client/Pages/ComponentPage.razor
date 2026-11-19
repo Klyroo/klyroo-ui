@@ -11,6 +11,13 @@
 else
 {
     <PageTitle>@_doc.Name · blux-ui</PageTitle>
+    @* The table of contents floats at the top right, collapsed behind its title (so it takes no room of its own), and,
+       from the 2xl breakpoint up, in the margin next to the article, where there is room for it and it stays in view.
+       No positioned wrapper: the stretched links of some examples cover their nearest positioned ancestor. *@
+    <div>
+    <aside class="float-end w-44 min-[96rem]:-me-[13.5rem] min-[96rem]:sticky min-[96rem]:top-24">
+        <BxContentToc Links="DocsNavigation.Toc(_doc)" Breakpoint="BxContentTocBreakpoint.Xxl" Title="Contents" Ui="_tocUi" data-testid="page-toc" />
+    </aside>
     <p class="pg-eyebrow">@_doc.Group</p>
     <h1 class="mt-2 text-4xl font-semibold tracking-[-0.04em] text-(--blux-text-highlighted)">@_doc.Name</h1>
     <p class="mt-3 text-lg text-(--blux-text-muted)">@_doc.Description</p>
@@ -28,30 +35,47 @@ else
         </nav>
     </div>
 
-    <div class="mt-10 flex flex-col gap-12">
-        @foreach (var example in _doc.Examples)
-        {
-            <Example Of="example.Type" Title="@example.Title" Description="@example.Description" />
-        }
-    </div>
+    <div class="mt-10">
+        <div class="flex flex-col gap-12">
+            @foreach (var example in _doc.Examples)
+            {
+                <Example Of="example.Type" Title="@example.Title" Description="@example.Description" />
+            }
+        </div>
 
-    <h2 id="api" class="mt-16 scroll-mt-24 text-xl font-semibold tracking-tight text-(--blux-text-highlighted)">API</h2>
-    @foreach (var type in _doc.Api)
-    {
-        <h3 class="mt-6 mb-3 font-mono text-sm font-semibold">@ApiName(type)</h3>
-        <ApiTable Of="type" />
-    }
+        <h2 id="api" class="mt-16 scroll-mt-24 text-xl font-semibold tracking-tight text-(--blux-text-highlighted)">API</h2>
+        @foreach (var type in _doc.Api)
+        {
+            <h3 class="mt-6 mb-3 font-mono text-sm font-semibold">@ApiName(type)</h3>
+            <ApiTable Of="type" />
+        }
+
+        <div class="mt-16">
+            <BxContentSurround Previous="_previous" Next="_next" data-testid="page-surround" />
+        </div>
+    </div>
+    </div>
 }
 
 @code {
     [Parameter] public string Slug { get; set; } = "";
     [Parameter] public string? Mode { get; set; }
 
+    private static readonly ContentTocUi _tocUi = new() { Trigger = "py-0 text-xs" };
+
     private ComponentDoc? _doc;
 
     private string? CurrentMode => Mode is null ? null : PlaygroundServices.ModeFromPath("/" + Mode);
 
-    protected override void OnParametersSet() => _doc = Catalog.Find(Slug);
+    private BxContentSurroundLink? _previous;
+    private BxContentSurroundLink? _next;
+
+    protected override void OnParametersSet()
+    {
+        _doc = Catalog.Find(Slug);
+        // The links keep the render mode of the page.
+        (_previous, _next) = DocsNavigation.Surround(Slug, CurrentMode is null ? "" : "/" + CurrentMode);
+    }
 
     private static string ApiName(Type type) => ApiReader.TypeName(type).Replace("<object>", "<TItem>").Replace("<string>", "<TValue>");
 }

@@ -27,6 +27,8 @@ import './dashboard.js';
 import './marketing.js';
 import './chat.js';
 import './editor.js';
+import './chart.js';
+import './content.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
