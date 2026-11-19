@@ -1,0 +1,125 @@
+@namespace Blux.UI
+@using System.Globalization
+@inherits BxComponentBase
+
+@*
+    The file input is native: in a static form it posts the files (multipart) under Name, and <bx-file-upload> adds the drop zone,
+    the file list with remove buttons and the size, count and type limits in the browser. With OnChange bound, the input is
+    Blazor's InputFile, which hands the chosen files to .NET over the render mode's connection.
+*@
+<bx-file-upload data-color="@Color.Value"
+                multiple="@(Multiple ? "" : null)"
+                accept="@Accept"
+                max-size="@(MaxSize?.ToString(CultureInfo.InvariantCulture))"
+                max-files="@(MaxFiles?.ToString(CultureInfo.InvariantCulture))"
+                data-text-too-large="@Options.Strings.FileTooLarge"
+                data-text-too-many="@Options.Strings.TooManyFiles"
+                data-text-not-accepted="@Options.Strings.FileNotAccepted"
+                data-text-remove="@Options.Strings.RemoveFile"
+                data-cls-file="@_slots["file"]"
+                data-cls-file-name="@_slots["fileName"]"
+                data-cls-file-size="@_slots["fileSize"]"
+                data-cls-remove="@_slots["remove"]"
+                data-cls-icon="@_slots["icon"]"
+                class="@_slots["root"]"
+                @attributes="AdditionalAttributes">
+    <label data-slot="dropzone" for="@ControlId" class="@_slots["dropzone"]">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["icon"]">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12" />
+        </svg>
+        <span class="@_slots["label"]">@(Label ?? Options.Strings.DropFiles)</span>
+        @if (Hint is not null)
+        {
+            <span class="@_slots["description"]">@Hint</span>
+        }
+        @if (MaxSize is not null)
+        {
+            <span class="@_slots["description"]">@string.Format(Options.Strings.MaximumSize, FormatSize(MaxSize.Value))</span>
+        }
+        @if (OnChange.HasDelegate)
+        {
+            <InputFile OnChange="OnChange" @attributes="InputAttributes()" />
+        }
+        else
+        {
+            <input type="file" @attributes="InputAttributes()" />
+        }
+    </label>
+    <ul data-slot="files" class="@_slots["files"]"></ul>
+    <p data-slot="error" class="@_slots["error"]" aria-live="polite"></p>
+</bx-file-upload>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [CascadingParameter] private FormFieldContext? Field { get; set; }
+
+    /// <summary>Form field name. A static form posts the chosen files under it.</summary>
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public bool Multiple { get; set; }
+
+    /// <summary>The native <c>accept</c> attribute: comma separated extensions (<c>.png</c>) and MIME types (<c>image/*</c>). Also enforced on dropped files.</summary>
+    [Parameter] public string? Accept { get; set; }
+
+    /// <summary>Largest file, in bytes. Larger files are refused in the browser with a message, before anything is sent.</summary>
+    [Parameter] public long? MaxSize { get; set; }
+
+    /// <summary>Most files kept at once. Defaults to 1 unless <see cref="Multiple"/>.</summary>
+    [Parameter] public int? MaxFiles { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+
+    /// <summary>Defaults to the size of the enclosing <see cref="BxFormField"/>, or medium.</summary>
+    [Parameter] public BxSize? Size { get; set; }
+
+    /// <summary>Main text of the drop zone. Defaults to <see cref="BluxStrings.DropFiles"/>.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Secondary text of the drop zone, such as the accepted formats.</summary>
+    [Parameter] public string? Hint { get; set; }
+
+    /// <summary>
+    /// Raised with the chosen files when the page is interactive. Setting it renders Blazor's <c>InputFile</c>; read the files
+    /// with <c>e.GetMultipleFiles()</c> or <c>e.File</c>. Without it, the input is a plain one, which is what static forms need.
+    /// </summary>
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    [Parameter] public FileUploadUi? Ui { get; set; }
+
+    private string? _generatedId;
+
+    private string ControlId => Id ?? Field?.InputId ?? (_generatedId ??= NewId("fileupload"));
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.FileUpload, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(Size ?? Field?.Size ?? BxSize.Md),
+        }, Ui, "root");
+
+    internal static string FormatSize(long bytes)
+    {
+        string[] units = ["B", "KB", "MB", "GB"];
+        double size = bytes;
+        var unit = 0;
+        while (size >= 1024 && unit < units.Length - 1)
+        {
+            size /= 1024;
+            unit++;
+        }
+        return $"{Math.Round(size, 1).ToString(CultureInfo.CurrentCulture)} {units[unit]}";
+    }
+
+    private Dictionary<string, object> InputAttributes()
+    {
+        var attributes = new Dictionary<string, object> { ["id"] = ControlId, ["class"] = _slots["input"], ["data-slot"] = "control" };
+        if (Name is not null) attributes["name"] = Name;
+        if (Accept is not null) attributes["accept"] = Accept;
+        if (Multiple) attributes["multiple"] = true;
+        if (Disabled) attributes["disabled"] = true;
+        if (Required || Field?.Required == true) attributes["required"] = true;
+        if (Field?.DescribedBy is not null) attributes["aria-describedby"] = Field.DescribedBy;
+        if (Field?.Invalid == true) attributes["aria-invalid"] = "true";
+        return attributes;
+    }
+}

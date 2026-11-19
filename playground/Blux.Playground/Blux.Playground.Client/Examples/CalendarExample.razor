@@ -1,0 +1,11 @@
+<div class="flex flex-col items-center gap-3">
+    <BxCalendar @bind-Value="_date" Min="_min" Max="_max" DisabledDates="_disabled" AriaLabel="Appointment date" data-testid="calendar" />
+    <p class="text-sm text-(--blux-text-muted)" data-testid="calendar-state">Selected: @(_date?.ToString("yyyy-MM-dd") ?? "none")</p>
+</div>
+
+@code {
+    private DateOnly? _date = new(2026, 11, 19);
+    private readonly DateOnly _min = new(2026, 11, 3);
+    private readonly DateOnly _max = new(2026, 12, 20);
+    private readonly DateOnly[] _disabled = [new(2026, 11, 25)];
+}

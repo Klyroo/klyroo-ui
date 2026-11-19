@@ -29,6 +29,22 @@ public sealed class EditBridge : InputBase<string?>
     }
 }
 
+/// <summary>
+/// Infrastructure of Blux form controls; not meant to be used directly. Same as <see cref="EditBridge"/> for controls
+/// whose bound value is not a string (dates, times).
+/// </summary>
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+public sealed class FieldBridge<TValue> : InputBase<TValue>
+{
+    [Parameter, EditorRequired] public RenderFragment<EditBinding> ChildContent { get; set; } = default!;
+
+    protected override void BuildRenderTree(RenderTreeBuilder builder) =>
+        builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any())));
+
+    protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out TValue result, [NotNullWhen(false)] out string? validationErrorMessage) =>
+        throw new NotSupportedException();
+}
+
 /// <summary>Renders its content after its earlier siblings, so child components can register first (table columns).</summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class Defer : ComponentBase
