@@ -1,0 +1,19 @@
+<div class="flex w-full max-w-md flex-col items-center gap-3">
+    <BxContextMenu Items="Items" @bind-Open="_open" Label="Document actions" aria-label="Document, press Shift+F10 for actions" Class="w-full">
+        <div class="flex h-36 w-full items-center justify-center rounded-(--blux-radius) border border-dashed border-(--blux-border-accented) px-4 text-center text-sm text-(--blux-text-muted)" data-testid="bound-context-area">
+            Right click here: the open state is bound
+        </div>
+    </BxContextMenu>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="bound-context-state">Open: @(_open ? "yes" : "no")</p>
+</div>
+
+@code {
+    private bool _open;
+
+    private static readonly BxMenuItem[] Items =
+    [
+        new() { Label = "Open" },
+        new() { Label = "Rename" },
+        new() { Label = "Delete", Color = BxColor.Error },
+    ];
+}

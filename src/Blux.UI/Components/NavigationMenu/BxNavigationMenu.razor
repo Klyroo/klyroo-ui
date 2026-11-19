@@ -54,20 +54,12 @@
         if (_subscribed) Navigation.LocationChanged -= OnLocationChanged;
     }
 
-    private static string TrimPath(string path) => path.Length > 1 ? path.TrimEnd('/') : path;
-
     private bool IsActive(BxNavigationItem item)
     {
         if (item.Active is { } forced) return forced;
         if (item.Children is { Count: > 0 }) return item.Children.Any(IsActive);
         if (string.IsNullOrEmpty(item.Href)) return false;
-        var target = Navigation.ToAbsoluteUri(item.Href);
-        var current = new Uri(Navigation.Uri);
-        if (!string.Equals(target.Authority, current.Authority, StringComparison.OrdinalIgnoreCase)) return false;
-        var path = TrimPath(Uri.UnescapeDataString(target.AbsolutePath));
-        var here = TrimPath(Uri.UnescapeDataString(current.AbsolutePath));
-        if (path == here) return true;
-        return !item.Exact && path != "/" && here.StartsWith(path + "/", StringComparison.Ordinal);
+        return LinkMatcher.Matches(Navigation, item.Href, item.Exact);
     }
 
     private RenderFragment Entry(BxNavigationItem item) =>
@@ -76,7 +68,7 @@
             {
                 if (_horizontal)
                 {
-                    <BxPopover Placement="bottom-start" AriaLabel="@item.Label" Ui="_panelUi">
+                    <BxPopover Placement="bottom-start" Role="@((string?)null)" Ui="_panelUi">
                         <ChildContent>
                             <button type="button" disabled="@item.Disabled" data-state="@(IsActive(item) ? "active" : null)" class="@_slots["trigger"]">
                                 @Inner(item)

@@ -93,8 +93,9 @@ export class BxContextMenuElement extends HTMLElement {
 
   #apply() {
     if (!this.#menu || this.#reporter.isStale()) return;
-    if (this.hasAttribute('open')) this.#openAtCenter();
-    else this.#hide();
+    // The render answering an open at the pointer must not move the menu to the centre.
+    if (!this.hasAttribute('open')) this.#hide();
+    else if (!this.#isOpen) this.#openAtCenter();
   }
 
   #openAtCenter() {
