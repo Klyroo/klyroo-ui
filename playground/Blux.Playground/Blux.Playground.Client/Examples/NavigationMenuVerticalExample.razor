@@ -1,0 +1,19 @@
+<div class="w-64">
+    <BxNavigationMenu Items="Items" Orientation="BxOrientation.Vertical" AriaLabel="Sidebar" />
+</div>
+
+@code {
+    private static readonly BxNavigationItem[] Items =
+    [
+        new("Home") { Href = "/", Exact = true },
+        new("Guides")
+        {
+            Children =
+            [
+                new("Installation") { Href = "/docs/installation" },
+                new("Theming") { Href = "/docs/theming" },
+            ],
+        },
+        new("Render modes") { Href = "/docs/render-modes" },
+    ];
+}
