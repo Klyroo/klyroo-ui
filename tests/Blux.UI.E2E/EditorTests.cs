@@ -83,14 +83,16 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
-    public async Task Static_page_shows_the_server_rendered_html_read_only_until_the_editor_is_ready_and_when_it_cannot_load()
+    public async Task Static_page_shows_the_value_read_only_until_the_editor_is_ready_and_when_it_cannot_load()
     {
         await Page.RouteAsync("**/blux-editor*.js", route => route.AbortAsync());
         await Open("ssr", "editor");
 
         var editor = Page.GetByTestId("editor");
         await Assertions.Expect(editor.Locator("[data-slot=fallback]")).ToBeVisibleAsync();
-        await Assertions.Expect(editor.Locator("[data-slot=fallback] strong")).ToHaveTextAsync("Blux");
+        // Without a configured sanitizer the read-only view shows the text, never the posted markup.
+        await Assertions.Expect(editor.Locator("[data-slot=fallback]")).ToContainTextAsync("Hello Blux.");
+        await Assertions.Expect(editor.Locator("[data-slot=fallback] strong")).ToHaveCountAsync(0);
         await Assertions.Expect(editor.Locator(".ProseMirror")).ToHaveCountAsync(0);
         await Assertions.Expect(editor).ToHaveAttributeAsync("data-error", "");
         // The value still posts without the engine.

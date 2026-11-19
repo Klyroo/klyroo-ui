@@ -23,7 +23,9 @@ public class EditorTests : BluxTestContext
         var input = cut.Find("input[type=hidden]");
         Assert.Equal("body", input.GetAttribute("name"));
         Assert.Equal("<p>Hello <strong>you</strong></p>", input.GetAttribute("value"));
-        Assert.Equal("you", cut.Find("[data-slot=fallback] strong").TextContent);
+        // No sanitizer configured: the read-only view shows the text, not the markup.
+        Assert.Equal("Hello you", cut.Find("[data-slot=fallback]").TextContent.Trim());
+        Assert.Empty(cut.FindAll("[data-slot=fallback] strong"));
         var surface = cut.Find("[data-slot=editor]");
         Assert.True(surface.HasAttribute("data-permanent"));
         Assert.Empty(surface.Children);
@@ -347,4 +349,29 @@ public class EditorLocalizedTests : BluxTestContext
         Assert.Equal("Aucun resultat", Render<BxEditorEmojiMenu>().Find("[data-slot=empty]").TextContent);
         Assert.Equal("Deplacer", Render<BxEditorDragHandle>().Find("button").GetAttribute("aria-label"));
     }
+
+    [Fact]
+    public void Read_only_view_never_renders_posted_markup_without_a_sanitizer()
+    {
+        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>Hello <img src=x onerror=alert(1)></p><script>alert(2)</script><p>World</p>"));
+
+        var fallback = cut.Find("[data-slot=fallback]");
+        Assert.Empty(fallback.QuerySelectorAll("img, script"));
+        Assert.Contains("Hello", fallback.TextContent);
+        Assert.Contains("World", fallback.TextContent);
+        Assert.DoesNotContain("alert(2)", fallback.TextContent);
+    }
+
 }
+
+public class EditorSanitizedTests() : BluxTestContext(o => o.SanitizeEditorHtml = html => html.Replace("<script>", "").Replace("</script>", ""))
+{
+    [Fact]
+    public void Read_only_view_renders_markup_through_the_configured_sanitizer()
+    {
+        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>Hello <strong>you</strong></p>"));
+
+        Assert.Equal("you", cut.Find("[data-slot=fallback] strong").TextContent);
+    }
+}
+
