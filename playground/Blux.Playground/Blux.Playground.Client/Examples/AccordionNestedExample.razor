@@ -1,0 +1,14 @@
+@* Components inside a panel keep their own behavior: opening the menu does not collapse the item. *@
+<div class="w-full max-w-lg">
+    <BxAccordion Items="Items" Value="@(["settings"])" />
+</div>
+
+@code {
+    private static readonly BxSelectItem[] Themes = [new("light", "Light"), new("dark", "Dark"), new("system", "System")];
+
+    private static readonly BxAccordionItem[] Items =
+    [
+        new("Settings") { Value = "settings", Content = @<BxFormField Label="Theme"><BxSelect Items="Themes" Placeholder="Pick a theme" /></BxFormField> },
+        new("Danger zone") { Value = "danger", Content = @<p>Delete your account.</p> },
+    ];
+}

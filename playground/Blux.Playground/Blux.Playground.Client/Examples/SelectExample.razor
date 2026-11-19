@@ -1,0 +1,20 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Country">
+        <BxSelect @bind-Value="_country" Items="Countries" Placeholder="Choose a country" data-testid="country" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="country-state">Selected: @(_country ?? "none")</p>
+</div>
+
+@code {
+    private string? _country;
+
+    private static readonly BxSelectItem[] Countries =
+    [
+        new("fr", "France"),
+        new("de", "Germany"),
+        new("it", "Italy"),
+        new("es", "Spain"),
+        new("ch", "Switzerland") { Disabled = true },
+        new("uk", "United Kingdom"),
+    ];
+}

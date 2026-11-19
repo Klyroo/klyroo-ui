@@ -1,0 +1,61 @@
+@namespace Blux.UI
+@inherits BxFieldBase<string>
+
+<div class="@_slots["root"]" data-color="@Color.Value">
+    @if (LeadingIcon is not null)
+    {
+        <span class="@_slots["leading"]"><span class="@_slots["leadingIcon"]" aria-hidden="true">@LeadingIcon</span></span>
+    }
+    @if (UseEditContext)
+    {
+        <InputText Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+    }
+    else if (!ValueChanged.HasDelegate)
+    {
+        <input name="@Name" value="@Value" @attributes="Attributes()" />
+    }
+    else if (Immediate)
+    {
+        <input name="@Name" @bind:get="Value" @bind:set="SetValue" @bind:event="oninput" @attributes="Attributes()" />
+    }
+    else
+    {
+        <input name="@Name" @bind:get="Value" @bind:set="SetValue" @attributes="Attributes()" />
+    }
+    @if (TrailingIcon is not null)
+    {
+        <span class="@_slots["trailing"]"><span class="@_slots["trailingIcon"]" aria-hidden="true">@TrailingIcon</span></span>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The <c>type</c> attribute: text, email, password, search, tel, url, number…</summary>
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Update the bound value on every keystroke instead of on change. Costs a round trip per key in Server mode.</summary>
+    [Parameter] public bool Immediate { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public RenderFragment? LeadingIcon { get; set; }
+    [Parameter] public RenderFragment? TrailingIcon { get; set; }
+    [Parameter] public InputUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Input, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["leading"] = VariantValue.Of(LeadingIcon is not null),
+            ["trailing"] = VariantValue.Of(TrailingIcon is not null),
+        }, Ui, "root");
+
+    private Dictionary<string, object> Attributes()
+    {
+        var attributes = ControlAttributes(_slots["base"]);
+        attributes["type"] = Type;
+        if (Placeholder is not null) attributes["placeholder"] = Placeholder;
+        return attributes;
+    }
+}

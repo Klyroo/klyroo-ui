@@ -1,0 +1,12 @@
+<div class="flex items-center justify-between border-b border-(--blux-border) px-3 py-2">
+    <span class="pg-eyebrow-mono flex items-center gap-2 text-[11px]!"><span class="size-1.5 bg-(--blux-primary)" aria-hidden="true"></span>@Title</span>
+    @if (Note is not null)
+    {
+        <span class="font-mono text-[11px] text-(--blux-text-muted)">@Note</span>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Note { get; set; }
+}

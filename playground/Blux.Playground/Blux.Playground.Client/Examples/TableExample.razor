@@ -1,0 +1,27 @@
+<div class="w-full">
+    <BxTable Items="People" Caption="Team members" Class="rounded-xl border border-(--blux-border)">
+        <BxColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable Class="font-medium text-(--blux-text)" />
+        <BxColumn TItem="Person" Title="Role" Field="p => p.Role" Sortable />
+        <BxColumn TItem="Person" Title="Joined" Field="p => p.Joined" Sortable>
+            <Template>@context.Joined.ToString("MMM yyyy")</Template>
+        </BxColumn>
+        <BxColumn TItem="Person" Title="Status">
+            <Template>
+                <BxBadge Label="@context.Status" Variant="BxVariant.Subtle" Size="BxSize.Sm"
+                         Color="@(context.Status == "Active" ? BxColor.Success : BxColor.Neutral)" />
+            </Template>
+        </BxColumn>
+    </BxTable>
+</div>
+
+@code {
+    private sealed record Person(string Name, string Role, DateOnly Joined, string Status);
+
+    private static readonly Person[] People =
+    [
+        new("Lindsay Walton", "Front-end developer", new(2024, 3, 1), "Active"),
+        new("Courtney Henry", "Designer", new(2023, 11, 15), "Active"),
+        new("Tom Cook", "Director of product", new(2022, 6, 1), "Away"),
+        new("Whitney Francis", "Copywriter", new(2025, 1, 20), "Active"),
+    ];
+}

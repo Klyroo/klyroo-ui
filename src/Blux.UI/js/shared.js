@@ -1,0 +1,83 @@
+import { autoUpdate, computePosition, flip, offset, shift, size } from '@floating-ui/dom';
+
+export const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+let counter = 0;
+
+/** Gives an element an id if it has none, and returns it. */
+export function ensureId(element, prefix) {
+  if (!element.id) element.id = `bx-${prefix}-${++counter}`;
+  return element.id;
+}
+
+/**
+ * Keeps a floating element next to its anchor while it is shown. Returns the cleanup function.
+ * matchWidth makes the floating element at least as wide as the anchor (select lists).
+ */
+export function float(anchor, floating, { placement = 'bottom', distance = 8, matchWidth = false } = {}) {
+  const middleware = [offset(distance), flip({ padding: 8 }), shift({ padding: 8 })];
+  if (matchWidth) {
+    middleware.push(size({ apply: ({ rects }) => { floating.style.minWidth = `${rects.reference.width}px`; } }));
+  }
+  return autoUpdate(anchor, floating, async () => {
+    const result = await computePosition(anchor, floating, { strategy: 'fixed', placement, middleware });
+    floating.style.left = `${result.x}px`;
+    floating.style.top = `${result.y}px`;
+    floating.dataset.side = result.placement.split('-')[0];
+  });
+}
+
+/**
+ * Change reporting shared by every element bound from .NET. Each report carries an increasing sequence; a bound
+ * component renders back the last one it has seen in data-bx-seq, so a render computed before .NET received the
+ * latest report can be recognized and ignored instead of undoing what the user just did.
+ */
+export class Reporter {
+  #host;
+  #sequence = 0;
+
+  constructor(host) {
+    this.#host = host;
+  }
+
+  report(type, detail) {
+    this.#host.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { ...detail, sequence: ++this.#sequence } }));
+  }
+
+  /** True when the attribute change being processed comes from a render older than the last report. */
+  isStale() {
+    const seen = this.#host.getAttribute('data-bx-seq');
+    return seen !== null && Number(seen) < this.#sequence;
+  }
+}
+
+/** Calls callback now and whenever the element's children change (Blazor inserts children after the element). */
+export function observeChildren(host, callback) {
+  const observer = new MutationObserver(callback);
+  observer.observe(host, { childList: true, subtree: true });
+  callback();
+  return observer;
+}
+
+/** Moves focus within items with arrow keys, Home, End and first-letter typeahead. Returns true when handled. */
+export function rovingKey(event, items, current, { vertical = true } = {}) {
+  if (items.length === 0) return false;
+  const index = items.indexOf(current);
+  const next = vertical ? 'ArrowDown' : 'ArrowRight';
+  const previous = vertical ? 'ArrowUp' : 'ArrowLeft';
+  let target = null;
+  if (event.key === next) target = items[(index + 1) % items.length];
+  else if (event.key === previous) target = items[(index - 1 + items.length) % items.length];
+  else if (event.key === 'Home') target = items[0];
+  else if (event.key === 'End') target = items[items.length - 1];
+  else if (event.key.length === 1 && /\S/.test(event.key)) {
+    const letter = event.key.toLowerCase();
+    const ordered = [...items.slice(index + 1), ...items.slice(0, index + 1)];
+    target = ordered.find((item) => item.textContent.trim().toLowerCase().startsWith(letter)) ?? null;
+  }
+  if (!target) return false;
+  event.preventDefault();
+  target.focus();
+  return true;
+}

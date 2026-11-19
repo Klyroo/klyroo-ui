@@ -1,0 +1,6 @@
+/* Entry of wwwroot/blux.css: the stylesheet for apps without Tailwind. Generated, do not edit the output. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@import './blux.base.css';
+@source './generated/classes.txt';

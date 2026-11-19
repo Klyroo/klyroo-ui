@@ -1,0 +1,16 @@
+<div class="flex flex-col gap-3">
+    @foreach (var color in Colors)
+    {
+        <div class="flex flex-wrap gap-2">
+            @foreach (var variant in Enum.GetValues<ButtonVariant>())
+            {
+                <BxButton Color="color" Variant="variant" Label="@($"{color} {variant}")" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly BxColor[] Colors =
+        [BxColor.Primary, BxColor.Secondary, BxColor.Success, BxColor.Info, BxColor.Warning, BxColor.Error, BxColor.Neutral];
+}

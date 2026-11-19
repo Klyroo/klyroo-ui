@@ -1,0 +1,58 @@
+@page "/docs/theming"
+@layout Layout.DocsLayout
+
+<PageTitle>Theming · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Theming</h1>
+    <p class="pg-lead">Three levels, from the broadest to the most local: design tokens, the global theme, and per-instance overrides.</p>
+
+    <h2>Design tokens</h2>
+    <p>Colors, radius and surfaces are CSS variables. Override them in both <code>:root</code> and <code>.dark</code>, with or without Tailwind.</p>
+    <CodeBlock Title="app.css" Code="@Tokens" />
+
+    <h2>Custom colors</h2>
+    <p>Components take a <code>Color</code>. Any name works: define its three variables and pass it.</p>
+    <CodeBlock Code="@CustomColor" />
+    <div class="not-prose my-4 flex gap-2"><BxButton Label="Brand button" Color="@("brand")" /><BxBadge Label="Brand badge" Color="@("brand")" Variant="BxVariant.Subtle" /></div>
+
+    <h2>Global theme</h2>
+    <p>Every component has slots, variants and defaults declared in C#. Classes you add win over the defaults.</p>
+    <CodeBlock Title="Program.cs" Code="@Global" />
+
+    <h2>Per instance</h2>
+    <p><code>Class</code> styles the root element; <code>Ui</code> targets any slot. Both take Tailwind utilities, so they need Tailwind compiled by your app.</p>
+    <CodeBlock Code="@Instance" />
+</div>
+
+@code {
+    private const string Tokens = """
+        :root {
+          --blux-radius: 0.5rem;
+          --blux-primary: var(--color-teal-700);
+          --blux-primary-text: var(--color-teal-800);
+        }
+        .dark {
+          --blux-primary: var(--color-teal-400);
+          --blux-primary-text: var(--color-teal-300);
+        }
+        """;
+
+    private const string CustomColor = """
+        [data-color='brand'] { --bx-color: #0f766e; --bx-color-text: #115e59; --bx-color-contrast: #fff; }
+
+        <BxButton Label="Brand button" Color="@("brand")" />
+        """;
+
+    private const string Global = """
+        builder.Services.AddBluxUi(o =>
+        {
+            o.Button.Slot("base", "rounded-full");
+            o.Card.Slot("root", "shadow-sm");
+        });
+        """;
+
+    private const string Instance = """
+        <BxButton Label="Save" Class="px-6" Ui="@(new ButtonUi { Label = "uppercase tracking-wide" })" />
+        """;
+}

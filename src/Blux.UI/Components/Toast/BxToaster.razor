@@ -1,0 +1,30 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    Place once in the layout. Toasts are added by the browser into the empty list below (Blazor never renders its
+    children), so one toaster serves .NET code running on the server and in WebAssembly alike.
+*@
+@* data-permanent: enhanced navigation keeps the element, so a toast shown before a redirect stays visible. *@
+<bx-toaster data-permanent
+            data-close-label="@Options.Strings.Close"
+            data-duration="@((int)Duration.TotalMilliseconds)"
+            data-ui-root="@_slots["root"]"
+            data-ui-wrapper="@_slots["wrapper"]"
+            data-ui-title="@_slots["title"]"
+            data-ui-description="@_slots["description"]"
+            data-ui-close="@_slots["close"]">
+    <section aria-label="@Options.Strings.Notifications">
+        <ol class="@_slots["viewport"]" data-slot="viewport" aria-live="polite"></ol>
+    </section>
+</bx-toaster>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public TimeSpan Duration { get; set; } = TimeSpan.FromSeconds(5);
+    [Parameter] public ToastUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Toast, new Dictionary<string, string?>(), Ui, "viewport");
+}

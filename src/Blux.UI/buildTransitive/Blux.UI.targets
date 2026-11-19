@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    Mode with Tailwind compiled by the app: copies the Blux theme (tokens, dark variant, and the list of classes the
+    components use) to a stable path, obj/blux/blux.theme.css, because the NuGet cache path changes with every version.
+    The app's stylesheet imports it after Tailwind:  @import "tailwindcss";  @import "../obj/blux/blux.theme.css";
+  -->
+  <Target Name="BluxCopyTailwindTheme" BeforeTargets="BeforeBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../staticwebassets/blux.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

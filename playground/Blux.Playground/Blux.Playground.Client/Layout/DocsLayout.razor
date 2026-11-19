@@ -1,0 +1,17 @@
+@inherits LayoutComponentBase
+@layout MainLayout
+
+<div class="mx-auto flex max-w-(--breakpoint-2xl) gap-10 px-4 sm:px-6 lg:px-8">
+    <aside class="sticky top-16 hidden h-[calc(100dvh_-_4rem)] w-56 shrink-0 overflow-y-auto py-8 lg:block">
+        <Sidebar />
+    </aside>
+    <div class="min-w-0 flex-1 py-8 lg:py-10">
+        <details class="mb-6 rounded-lg border border-(--blux-border) lg:hidden">
+            <summary class="cursor-pointer px-4 py-2.5 text-sm font-medium">Menu</summary>
+            <div class="border-t border-(--blux-border) p-4"><Sidebar /></div>
+        </details>
+        <article class="max-w-4xl">
+            @Body
+        </article>
+    </div>
+</div>

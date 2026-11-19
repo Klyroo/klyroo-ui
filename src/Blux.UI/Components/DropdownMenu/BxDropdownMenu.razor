@@ -1,0 +1,87 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@* A menu button on <bx-popover>: arrow keys, Home, End and typeahead move between items; Escape and Tab close it. *@
+<bx-popover data-bx-seq="@(OpenChanged.HasDelegate ? _sequence : null)"
+            open="@Open"
+            placement="@Placement"
+            offset="4"
+            @onbxtoggle="ToggleHandler"
+            @onbxtoggle:stopPropagation="true">
+    <span data-slot="trigger">@ChildContent</span>
+    <div popover="auto" role="menu" class="@_slots["content"]" data-slot="content" @attributes="AdditionalAttributes">
+        @foreach (var item in Items)
+        {
+            switch (item.Kind)
+            {
+                case BxMenuItemKind.Separator:
+                    <div role="separator" class="@_slots["separator"]"></div>
+                    break;
+                case BxMenuItemKind.Heading:
+                    <div role="presentation" class="@_slots["label"]">@item.Label</div>
+                    break;
+                default:
+                    var color = item.Color?.Value;
+                    if (item.Href is not null && !item.Disabled)
+                    {
+                        <a role="menuitem" tabindex="-1" href="@item.Href" class="@_slots["item"]" data-color="@color">@ItemContent(item)</a>
+                    }
+                    else
+                    {
+                        <button type="button" role="menuitem" tabindex="-1" class="@_slots["item"]" data-color="@color"
+                                aria-disabled="@(item.Disabled ? "true" : null)"
+                                @onclick="(item.Disabled || !OnSelect.HasDelegate ? default : EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item)))">
+                            @ItemContent(item)
+                        </button>
+                    }
+                    break;
+            }
+        }
+    </div>
+</bx-popover>
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>The trigger; it must contain a button.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter, EditorRequired] public IReadOnlyList<BxMenuItem> Items { get; set; } = [];
+
+    /// <summary>Called with the activated item. Link items navigate instead.</summary>
+    [Parameter] public EventCallback<BxMenuItem> OnSelect { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string Placement { get; set; } = "bottom-start";
+    [Parameter] public DropdownMenuUi? Ui { get; set; }
+
+    private EventCallback<BxToggleEventArgs> ToggleHandler =>
+        OpenChanged.HasDelegate ? EventCallback.Factory.Create<BxToggleEventArgs>(this, OnToggle) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DropdownMenu, new Dictionary<string, string?>(), Ui, "content");
+
+    private RenderFragment ItemContent(BxMenuItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                <span class="@_slots["itemIcon"]" aria-hidden="true">@item.Icon</span>
+            }
+            <span class="@_slots["itemLabel"]">@item.Label</span>
+            @if (item.Shortcut is not null)
+            {
+                <kbd class="@_slots["itemShortcut"]">@item.Shortcut</kbd>
+            }
+        </text>;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxToggleEventArgs))]
+    private async Task OnToggle(BxToggleEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (e.Open == Open) return;
+        Open = e.Open;
+        await OpenChanged.InvokeAsync(e.Open);
+    }
+}

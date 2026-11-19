@@ -1,0 +1,26 @@
+@page "/docs/render-modes"
+@layout Layout.DocsLayout
+
+<PageTitle>Render modes · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Render modes</h1>
+    <p class="pg-lead">Every component is tested in Interactive Server, WebAssembly, Auto and static server rendering. Each component page lets you switch mode.</p>
+
+    <h2>What runs where</h2>
+    <ul>
+        <li><strong>In the browser</strong>: opening and closing overlays, focus, keyboard navigation, positioning, tab and accordion selection, select options, toasts.</li>
+        <li><strong>In .NET</strong>: the values you bind (<code>@@bind-Value</code>, <code>@@bind-Open</code>), click handlers, validation.</li>
+    </ul>
+    <p>An overlay without <code>@@bind-Open</code> never calls .NET. Bind it only when your code needs the state.</p>
+
+    <h2>Static rendering</h2>
+    <p>
+        Without interactivity, forms still post: Switch, Checkbox, RadioGroup, Input and Select render real form fields.
+        Overlays, tabs and the accordion keep working because their behavior lives in the browser. A button with
+        <code>OnClick</code> renders disabled, since its handler cannot run.
+    </p>
+
+    <h2>Auto mode</h2>
+    <p>Register <code>AddBluxUi</code> with the same options on the server and in the client, or components change appearance when WebAssembly takes over.</p>
+</div>

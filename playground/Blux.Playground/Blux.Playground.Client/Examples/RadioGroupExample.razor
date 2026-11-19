@@ -1,0 +1,17 @@
+<div class="flex flex-col gap-6 sm:flex-row sm:gap-12">
+    <BxRadioGroup TValue="string" @bind-Value="_plan" Legend="Plan" Items="Plans" />
+    <BxRadioGroup TValue="string" Legend="Billing" Orientation="BxOrientation.Horizontal" Color="BxColor.Neutral"
+                  Items="@([new("month", "Monthly"), new("year", "Yearly")])" Value="@("month")" />
+</div>
+<p class="w-full text-center text-sm text-(--blux-text-muted)">Selected plan: @_plan</p>
+
+@code {
+    private string? _plan = "pro";
+
+    private static readonly BxRadioItem<string>[] Plans =
+    [
+        new("free", "Free") { Description = "For side projects." },
+        new("pro", "Pro") { Description = "For teams shipping every week." },
+        new("enterprise", "Enterprise") { Description = "Contact sales.", Disabled = true },
+    ];
+}

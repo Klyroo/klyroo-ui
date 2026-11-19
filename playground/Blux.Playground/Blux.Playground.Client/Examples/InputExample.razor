@@ -1,0 +1,14 @@
+<div class="flex w-full max-w-sm flex-col gap-3">
+    @foreach (var variant in Enum.GetValues<FieldVariant>())
+    {
+        <BxInput Variant="variant" Placeholder="@($"{variant} input")" aria-label="@($"{variant} input")" />
+    }
+    <BxInput @bind-Value="_search" Immediate Type="search" Placeholder="Search…" aria-label="Search">
+        <LeadingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg></LeadingIcon>
+    </BxInput>
+    <p class="text-sm text-(--blux-text-muted)">Searching for: @_search</p>
+</div>
+
+@code {
+    private string? _search;
+}

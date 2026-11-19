@@ -1,0 +1,11 @@
+<BxModal Title="Edit invoice" data-testid="outer-modal">
+    <ChildContent><BxButton Label="Edit invoice" Variant="ButtonVariant.Outline" /></ChildContent>
+    <Body>
+        <BxModal Title="Discard changes?" Size="BxSize.Sm" Close="false">
+            <ChildContent><BxButton Label="Discard" Color="BxColor.Error" Variant="ButtonVariant.Soft" /></ChildContent>
+            <Footer>
+                <BxButton Label="Keep editing" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-bx-close />
+            </Footer>
+        </BxModal>
+    </Body>
+</BxModal>

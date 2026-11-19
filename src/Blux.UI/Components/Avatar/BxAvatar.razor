@@ -1,0 +1,47 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@* The root is the image and carries the name, so it stays named when the picture fails and the fallback shows. *@
+<span class="@_slots["root"]"
+      role="img"
+      aria-label="@(Alt ?? Text)"
+      @attributes="AdditionalAttributes">
+    <span class="@_slots["fallback"]" aria-hidden="true">
+        @if (Icon is not null)
+        {
+            @Icon
+        }
+        else
+        {
+            @Initials
+        }
+    </span>
+    @if (Src is not null)
+    {
+        @* Hidden by Blux.UI.lib.module.js when it fails to load, uncovering the fallback. *@
+        <img src="@Src" alt="" class="@_slots["image"]" loading="lazy" data-bx-avatar-image />
+    }
+</span>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Src { get; set; }
+
+    /// <summary>Text alternative; its initials are shown when there is no image or it fails to load.</summary>
+    [Parameter] public string? Alt { get; set; }
+
+    /// <summary>Fallback text instead of the initials of <see cref="Alt"/>.</summary>
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public RenderFragment? Icon { get; set; }
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public AvatarUi? Ui { get; set; }
+
+    private string Initials => Text ?? string.Concat((Alt ?? "")
+        .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Take(2)
+        .Select(word => char.ToUpperInvariant(word[0])));
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Avatar, new Dictionary<string, string?> { ["size"] = VariantValue.Of(Size) }, Ui, "root");
+}

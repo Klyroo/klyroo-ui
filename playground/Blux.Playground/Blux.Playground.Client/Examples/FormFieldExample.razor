@@ -1,0 +1,46 @@
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="Model" FormName="signup" OnValidSubmit="Submit" class="flex w-full max-w-sm flex-col gap-4" novalidate>
+    <DataAnnotationsValidator />
+    <BxFormField Label="Email" Required For="() => Model!.Email" Description="We never share it.">
+        <BxInput Type="email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
+    </BxFormField>
+    <BxFormField Label="Role" Hint="Optional">
+        <BxSelect @bind-Value="Model!.Role" Items="Roles" Placeholder="Pick one" />
+    </BxFormField>
+    <BxFormField Label="About you" Help="Markdown is supported." For="() => Model!.Bio">
+        <BxTextarea @bind-Value="Model!.Bio" Rows="3" />
+    </BxFormField>
+    <BxCheckbox @bind-Value="Model!.Newsletter" Label="Send me the newsletter" />
+    <BxButton Type="submit" Label="Create account" Block />
+    @if (_done)
+    {
+        <BxAlert Title="Account created" Color="BxColor.Success" Variant="BxVariant.Soft" Icon="BxIcons.CircleCheck()" />
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "signup")]
+    private SignUp? Model { get; set; }
+
+    private bool _done;
+
+    private static readonly BxSelectItem[] Roles = [new("dev", "Developer"), new("design", "Designer"), new("pm", "Product manager")];
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private void Submit() => _done = true;
+
+    private sealed class SignUp
+    {
+        [Required, EmailAddress]
+        public string? Email { get; set; }
+
+        public string? Role { get; set; }
+
+        [MaxLength(200)]
+        public string? Bio { get; set; }
+
+        public bool Newsletter { get; set; }
+    }
+}

@@ -1,0 +1,15 @@
+<div class="w-full max-w-md">
+    <BxTabs Items="Items" @bind-Value="_tab" AriaLabel="Account settings" />
+    <p class="mt-2 text-sm text-(--blux-text-muted)" data-testid="tab-state">Selected: @(_tab ?? "account")</p>
+</div>
+
+@code {
+    private string? _tab;
+
+    private static readonly BxTabItem[] Items =
+    [
+        new("Account") { Value = "account", Content = @<p class="p-4 text-sm">Make changes to your account.</p> },
+        new("Password") { Value = "password", Content = @<p class="p-4 text-sm">Change your password.</p> },
+        new("Danger zone") { Value = "danger", Disabled = true },
+    ];
+}
