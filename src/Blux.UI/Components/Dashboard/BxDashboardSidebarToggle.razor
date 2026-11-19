@@ -1,0 +1,31 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    Opens the off-canvas sidebar panel; visible below the lg breakpoint, where the sidebar is not a column. The panel
+    is a native modal dialog handled in the browser (js/layout.js), which keeps aria-expanded and aria-controls up to
+    date, so it works in static rendering.
+*@
+<BxButton Square Variant="Variant" Color="Color" Size="Size" Class="@_slots["root"]"
+          LeadingIcon="@(BxIcons.Named("menu", "size-5"))"
+          aria-label="@(Label ?? Options.Strings.OpenSidebar)" aria-haspopup="dialog"
+          data-bx-sidebar-open="" data-bx-sidebar-for="@(For ?? Context?.Key)"
+          @attributes="AdditionalAttributes" />
+
+@code {
+    private SlotSet _slots = default!;
+
+    [CascadingParameter] private DashboardContext? Context { get; set; }
+
+    /// <summary>The storage id of the sidebar to open. Defaults to the one of the enclosing group, or the sidebar of the same dashboard.</summary>
+    [Parameter] public string? For { get; set; }
+
+    /// <summary>Accessible name. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DashboardSidebarToggle, new Dictionary<string, string?>(), null, "root");
+}

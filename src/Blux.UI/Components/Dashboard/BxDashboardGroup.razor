@@ -1,0 +1,71 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    The root of a dashboard: a row of a BxDashboardSidebar and BxDashboardPanels. <bx-dashboard-group> (js/dashboard.js)
+    owns the panel sizes in the browser and remembers them under StorageKey; the sidebar keeps its collapsed state and
+    width in localStorage under the same key (js/layout.js). .NET hears about sizes only when Sizes is bound.
+    It fills its parent, so the parent needs a height: a frame with a fixed height, or the page itself.
+*@
+<CascadingValue Value="_context" IsFixed="true">
+    <bx-dashboard-group data-bx-seq="@(SizesChanged.HasDelegate ? _sequence : null)"
+                        class="@_slots["root"]"
+                        data-bx-dashboard-id="@StorageKey"
+                        sizes="@(Sizes is null ? null : string.Join(',', Sizes.Select(s => s.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))))"
+                        @onbxchange="ChangeHandler"
+                        @onbxchange:stopPropagation="true"
+                        @attributes="AdditionalAttributes">
+        @ChildContent
+    </bx-dashboard-group>
+</CascadingValue>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly DashboardContext _context = new();
+    private int _sequence;
+
+    /// <summary>The sidebar, the panels and anything else of the dashboard, laid out in a row.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Key under which the dashboard remembers its state in localStorage: the collapsed state and the width of its
+    /// sidebar ("blux:sidebar:" followed by the key) and the sizes of its panels ("blux:dashboard:" key ":panels").
+    /// Without a key nothing is remembered. Use a different key for each dashboard of the app.
+    /// </summary>
+    [Parameter] public string? StorageKey { get; set; }
+
+    /// <summary>
+    /// Sizes of the panels in percent, one per panel in document order. Bind it to follow resizing from .NET; unbound,
+    /// resizing stays in the browser. Bound sizes are not restored from storage: your state wins.
+    /// </summary>
+    [Parameter] public IReadOnlyList<double>? Sizes { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<double>> SizesChanged { get; set; }
+    [Parameter] public DashboardGroupUi? Ui { get; set; }
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        SizesChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet()
+    {
+        _context.Key = StorageKey;
+        _slots = ResolveSlots(Options.DashboardGroup, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        // Other components inside the group report with the same event: only a list of numbers is ours.
+        var parts = (e.Value ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var sizes = new double[parts.Length];
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (!double.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizes[i])) return;
+        }
+        if (sizes.Length == 0) return;
+        _sequence = e.Sequence;
+        Sizes = sizes;
+        await SizesChanged.InvokeAsync(sizes);
+    }
+}

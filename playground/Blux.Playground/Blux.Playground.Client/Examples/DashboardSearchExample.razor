@@ -1,0 +1,27 @@
+@* Press Ctrl+K (Cmd+K on a Mac), or use the button. The shortcut and the button are handled in the browser, so they work
+   in static rendering too. *@
+<div class="flex flex-col items-start gap-3" data-testid="dashboard-search-example">
+    <div class="w-64">
+        <BxDashboardSearchButton data-testid="dashboard-search-example-button" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="dashboard-search-example-last">Last command: @(_last ?? "none")</p>
+    <BxDashboardSearch Groups="_groups" OnSelect="item => _last = item.Label" />
+</div>
+
+@code {
+    private string? _last;
+
+    private static readonly BxCommandGroup[] _groups =
+    [
+        new("Go to",
+        [
+            new() { Label = "Inbox", Href = "?view=inbox", Keywords = "mail messages" },
+            new() { Label = "Settings", Href = "?view=settings", Keywords = "preferences account" },
+        ]),
+        new("Actions",
+        [
+            new() { Label = "Compose message", Keywords = "new write" },
+            new() { Label = "Sign out", Keywords = "logout" },
+        ]),
+    ];
+}
