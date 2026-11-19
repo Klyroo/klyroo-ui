@@ -307,8 +307,8 @@ public class PickersTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Page.GetByTestId("documents").Locator("input[type=file]").SetInputFilesAsync(
             new FilePayload { Name = "report.pdf", MimeType = "application/pdf", Buffer = Encoding.UTF8.GetBytes("%PDF") });
-        // Interactive modes hand the file to .NET through InputFile once it has been read in.
-        await Page.WaitForTimeoutAsync(mode == "ssr" ? 0 : 500);
+        // Interactive modes hand the file to .NET through InputFile: wait until .NET shows it has it.
+        if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("documents-chosen")).ToContainTextAsync("1 file", new() { Timeout = 15_000 });
         await Page.GetByRole(AriaRole.Button, new() { Name = "Upload" }).ClickAsync();
 
         await Assertions.Expect(Page.GetByTestId("documents-saved")).ToHaveTextAsync("Received: report.pdf");
