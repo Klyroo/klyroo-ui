@@ -21,6 +21,11 @@ else
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// Reads the culture cookie that BxLocaleSelect writes (the default provider list includes it).
+app.UseRequestLocalization(new RequestLocalizationOptions()
+    .SetDefaultCulture("en")
+    .AddSupportedCultures("en", "fr", "es")
+    .AddSupportedUICultures("en", "fr", "es"));
 app.UseAntiforgery();
 
 app.MapStaticAssets();

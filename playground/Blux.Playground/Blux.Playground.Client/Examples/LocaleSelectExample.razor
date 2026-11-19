@@ -1,0 +1,16 @@
+@using System.Globalization
+@* Needs app.UseRequestLocalization with the same cultures on the server: the select only writes the culture cookie.
+   The flags are regional indicator pairs; Windows draws them as letters. *@
+<div class="flex flex-col items-center gap-3">
+    <BxLocaleSelect Locales="_locales" data-testid="locale-select" />
+    <p class="text-sm text-(--blux-text-muted)">Current UI culture: <code data-testid="locale-current">@CultureInfo.CurrentUICulture.Name</code></p>
+</div>
+
+@code {
+    private static readonly BxLocale[] _locales =
+    [
+        new("en", "English") { Flag = "\U0001F1EC\U0001F1E7" },
+        new("fr", "Français") { Flag = "\U0001F1EB\U0001F1F7" },
+        new("es", "Español") { Flag = "\U0001F1EA\U0001F1F8" },
+    ];
+}

@@ -1,0 +1,31 @@
+@* As="div": the docs page already sits inside a main landmark, and an aside must not. In a layout, keep the default.
+   The group-data-[state=collapsed]/sidebar variant hides a label visually while it stays available to screen readers. *@
+<div class="flex h-96 w-full flex-col overflow-hidden rounded-xl border border-(--blux-border) lg:flex-row">
+    <BxSidebar Id="playground-sidebar" As="div" data-testid="sidebar">
+        <Header>
+            <span class="font-semibold text-(--blux-text-highlighted)">Acme</span>
+        </Header>
+        <ChildContent>
+            <BxNavigationMenu Items="_items" Orientation="BxOrientation.Vertical" AriaLabel="Workspace" Ui="_navUi" />
+        </ChildContent>
+        <Footer>
+            <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-elevated) text-xs font-medium" aria-hidden="true">AL</span>
+            <span class="min-w-0 truncate text-sm group-data-[state=collapsed]/sidebar:sr-only">Ada Lovelace</span>
+        </Footer>
+    </BxSidebar>
+    <div class="min-w-0 flex-1 p-6 text-sm text-(--blux-text-muted)">
+        Collapse the sidebar with its button: the state is remembered in the browser, and survives a reload.
+    </div>
+</div>
+
+@code {
+    private static readonly NavigationMenuUi _navUi = new() { Label = "group-data-[state=collapsed]/sidebar:sr-only" };
+
+    private static readonly BxNavigationItem[] _items =
+    [
+        new("Home") { Href = "/", Exact = true, Icon = BxIcons.Named("home", "size-5") },
+        new("Inbox") { Href = "/components/sidebar", Icon = BxIcons.Named("inbox", "size-5") },
+        new("Calendar") { Href = "/components/header", Icon = BxIcons.Named("calendar", "size-5") },
+        new("Settings") { Href = "/docs/theming", Icon = BxIcons.Named("user", "size-5") },
+    ];
+}

@@ -1,0 +1,26 @@
+<div class="flex h-72 w-full flex-col overflow-hidden rounded-xl border border-(--blux-border) lg:flex-row">
+    <BxSidebar @bind-Collapsed="_collapsed" As="div" data-testid="sidebar-bound">
+        <Header>
+            <span class="font-semibold text-(--blux-text-highlighted)">Acme</span>
+        </Header>
+        <ChildContent>
+            <BxNavigationMenu Items="_items" Orientation="BxOrientation.Vertical" AriaLabel="Workspace, bound" Ui="_navUi" />
+        </ChildContent>
+    </BxSidebar>
+    <div class="flex min-w-0 flex-1 flex-col items-start gap-3 p-6 text-sm text-(--blux-text-muted)">
+        <p data-testid="sidebar-state">Collapsed: @(_collapsed ? "true" : "false")</p>
+        <BxButton Label="Toggle from .NET" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="() => _collapsed = !_collapsed" data-testid="sidebar-bound-toggle" />
+    </div>
+</div>
+
+@code {
+    private bool _collapsed;
+
+    private static readonly NavigationMenuUi _navUi = new() { Label = "group-data-[state=collapsed]/sidebar:sr-only" };
+
+    private static readonly BxNavigationItem[] _items =
+    [
+        new("Home") { Href = "/", Exact = true, Icon = BxIcons.Named("home", "size-5") },
+        new("Inbox") { Href = "/components/sidebar", Icon = BxIcons.Named("inbox", "size-5") },
+    ];
+}
