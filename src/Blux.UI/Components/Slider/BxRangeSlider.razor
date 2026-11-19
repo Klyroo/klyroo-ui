@@ -1,0 +1,105 @@
+@namespace Blux.UI
+@using System.Globalization
+@using Blux.UI.Internal
+@inherits BxFieldBase<IReadOnlyList<double>>
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="IReadOnlyList<double>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    [Parameter] public double Min { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+    [Parameter] public double Step { get; set; } = 1;
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
+
+    /// <summary>Report every move to .NET instead of the final values. Costs a round trip per step in Server mode.</summary>
+    [Parameter] public bool Immediate { get; set; }
+
+    /// <summary>Accessible name of the group when no <see cref="BxFormField"/> label is around.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public SliderUi? Ui { get; set; }
+
+    private double Low => Value is { Count: > 0 } ? Value[0] : Min;
+    private double High => Value is { Count: > 1 } ? Value[1] : Max;
+
+    private static string Invariant(double value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Slider, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["orientation"] = Orientation == BxOrientation.Vertical ? "vertical" : "horizontal",
+            ["range"] = "true",
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var parts = (e.Value ?? "").Split(ListValue.Separator);
+        if (parts.Length != 2
+            || !double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var low)
+            || !double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var high)
+            || (low == Low && high == High))
+        {
+            return;
+        }
+        IReadOnlyList<double> values = [low, high];
+        Value = values;
+        await ValueChanged.InvokeAsync(values);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> ThumbAttributes(EditBinding binding, bool isHigh)
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            ["type"] = "range",
+            ["min"] = Invariant(Min),
+            ["max"] = Invariant(Max),
+            ["step"] = Invariant(Step),
+            ["value"] = Invariant(isHigh ? High : Low),
+            ["class"] = _slots["thumb"],
+            ["data-slot"] = "thumb",
+            ["aria-label"] = isHigh ? Options.Strings.SliderMaximum : Options.Strings.SliderMinimum,
+        };
+        if (!isHigh) attributes["id"] = ControlId;
+        if (binding.Name is not null) attributes["name"] = binding.Name;
+        if (Disabled) attributes["disabled"] = true;
+        if (Orientation == BxOrientation.Vertical) attributes["aria-orientation"] = "vertical";
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-slider data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                    data-values="@(Invariant(Low) + ListValue.Separator + Invariant(High))"
+                    data-immediate="@(Immediate ? "" : null)"
+                    role="group"
+                    aria-label="@AriaLabel"
+                    aria-labelledby="@(AriaLabel is null ? Field?.LabelId : null)"
+                    aria-describedby="@Field?.DescribedBy"
+                    class="@_slots["root"]"
+                    data-color="@Color.Value"
+                    @onbxchange="ChangeHandler"
+                    @onbxchange:stopPropagation="true"
+                    @attributes="AdditionalAttributes">
+            <div class="@_slots["track"]" data-slot="track" aria-hidden="true"><div class="@_slots["range"]" data-slot="range"></div></div>
+            <input @attributes="ThumbAttributes(binding, false)" />
+            <input @attributes="ThumbAttributes(binding, true)" />
+        </bx-slider>;
+}

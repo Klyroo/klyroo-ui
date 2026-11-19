@@ -1,0 +1,90 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxFieldBase<bool>
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="bool" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>Text of the button. <see cref="ChildContent"/> wins when both are given.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Icon { get; set; }
+    [Parameter] public ToggleVariant Variant { get; set; } = ToggleVariant.Outline;
+    [Parameter] public ToggleUi? Ui { get; set; }
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Toggle, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "base");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = e.Value == "true";
+        if (value == Value)
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> ButtonAttributes()
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            ["id"] = ControlId,
+            ["class"] = _slots["base"],
+            ["data-slot"] = "control",
+        };
+        if (Disabled) attributes["disabled"] = true;
+        if (Field?.DescribedBy is { } describedBy) attributes["aria-describedby"] = describedBy;
+        if (AdditionalAttributes is not null)
+        {
+            foreach (var (key, value) in AdditionalAttributes) attributes[key] = value;
+        }
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-toggle data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                    pressed="@(Value ? "" : null)"
+                    disabled="@Disabled"
+                    data-color="@Color.Value"
+                    @onbxchange="ChangeHandler"
+                    @onbxchange:stopPropagation="true">
+            @if (binding.Name is not null)
+            {
+                <input type="hidden" data-slot="value" name="@binding.Name" value="true" disabled="@(!Value || Disabled)" />
+            }
+            <button type="button" aria-pressed="@(Value ? "true" : "false")" data-state="@(Value ? "on" : "off")" @attributes="ButtonAttributes()">
+                @if (Icon is not null)
+                {
+                    <span class="@_slots["icon"]" aria-hidden="true" data-slot="icon">@Icon</span>
+                }
+                @if (ChildContent is not null || Label is not null)
+                {
+                    <span class="@_slots["label"]" data-slot="label">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label)))</span>
+                }
+            </button>
+        </bx-toggle>;
+}
