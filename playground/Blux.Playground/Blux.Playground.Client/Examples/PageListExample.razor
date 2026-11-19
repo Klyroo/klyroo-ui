@@ -1,0 +1,17 @@
+<div class="w-full max-w-xl">
+    <BxPageList>
+        @foreach (var (name, role) in _people)
+        {
+            <li><BxUser Name="@name" Description="@role" /></li>
+        }
+    </BxPageList>
+</div>
+
+@code {
+    private readonly (string Name, string Role)[] _people =
+    [
+        ("Ada Lovelace", "Analyst"),
+        ("Grace Hopper", "Compiler pioneer"),
+        ("Margaret Hamilton", "Flight software"),
+    ];
+}
