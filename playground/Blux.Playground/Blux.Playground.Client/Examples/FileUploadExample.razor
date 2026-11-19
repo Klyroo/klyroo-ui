@@ -3,6 +3,11 @@
     <BxFormField Label="Documents" class="w-full">
         <BxFileUpload Name="Files" Multiple Accept=".txt,.pdf,image/*" MaxSize="1048576" MaxFiles="3" Hint="Text, PDF or images" OnChange="OnChange" data-testid="documents" />
     </BxFormField>
+    @if (_chosen.Count > 0)
+    {
+        @* Interactive rendering: shows that .NET has the files, so Upload sends them. *@
+        <p class="text-sm text-(--blux-text-muted)" data-testid="documents-chosen">Ready to send: @_chosen.Count file(s)</p>
+    }
     <BxButton Type="submit" Label="Upload" />
     @if (_saved)
     {
