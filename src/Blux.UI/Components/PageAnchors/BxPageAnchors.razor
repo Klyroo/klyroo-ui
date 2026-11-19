@@ -1,0 +1,49 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    Plain anchors, not BxLink: a link to "#section" always points at the current page, so an address-based active state
+    would mark every anchor as current. Which anchor is in view is up to the page.
+*@
+<nav aria-label="@Options.Strings.PageAnchors" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Links is { Count: > 0 })
+    {
+        <ul class="@_slots["list"]" data-slot="list">
+            @foreach (var link in Links)
+            {
+                <li class="@_slots["item"]">
+                    <a href="@(link.Disabled ? null : link.Href)"
+                       target="@link.Target"
+                       rel="@(link.Target == "_blank" ? "noopener noreferrer" : null)"
+                       role="@(link.Disabled ? "link" : null)"
+                       aria-disabled="@(link.Disabled ? "true" : null)"
+                       class="@_slots["link"]">
+                        @if (link.Icon is not null)
+                        {
+                            <span class="@_slots["leading"]" aria-hidden="true">
+                                <BxIcon Name="@link.Icon" Class="@_slots["leadingIcon"]" />
+                            </span>
+                        }
+                        <span class="@_slots["label"]">@link.Label</span>
+                        @if (link.Target == "_blank")
+                        {
+                            <BxIcon Name="arrow-up-right" Class="@_slots["externalIcon"]" />
+                            <span class="sr-only"> @Options.Strings.OpensInNewTab</span>
+                        }
+                    </a>
+                </li>
+            }
+        </ul>
+    }
+</nav>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The anchors: <c>Href</c> is typically a fragment such as <c>#installation</c>. Pass <c>aria-label</c> to rename the navigation.</summary>
+    [Parameter] public IReadOnlyList<PageLinkItem>? Links { get; set; }
+    [Parameter] public PageAnchorsUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageAnchors, new Dictionary<string, string?>(), Ui, "root");
+}
