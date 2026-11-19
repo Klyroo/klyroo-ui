@@ -1,0 +1,32 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    A styled scroll container. <bx-scroll-area> makes the viewport focusable (tabindex 0) while its content overflows,
+    so keyboard users can scroll it; without scripts it still scrolls with the mouse and touch.
+    Give it an AriaLabel: a focusable scroll container is announced as a region with that name.
+*@
+<bx-scroll-area class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div data-bx-scroll-viewport role="@(AriaLabel is null ? null : "region")" aria-label="@AriaLabel" class="@_slots["viewport"]">
+        @ChildContent
+    </div>
+</bx-scroll-area>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Scrolling direction. Null scrolls both ways.</summary>
+    [Parameter] public BxOrientation? Orientation { get; set; } = BxOrientation.Vertical;
+
+    /// <summary>Accessible name of the scrollable region.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public ScrollAreaUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ScrollArea, new Dictionary<string, string?>
+        {
+            ["orientation"] = Orientation switch { BxOrientation.Vertical => "vertical", BxOrientation.Horizontal => "horizontal", _ => "both" },
+        }, Ui, "root");
+}

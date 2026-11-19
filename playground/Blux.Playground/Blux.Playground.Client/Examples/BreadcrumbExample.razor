@@ -1,0 +1,10 @@
+<BxBreadcrumb Items="Items" AriaLabel="You are here" />
+
+@code {
+    private static readonly BxBreadcrumbItem[] Items =
+    [
+        new("Home") { Href = "/", Icon = BxIcons.Info("size-4") },
+        new("Components") { Href = "/components/button" },
+        new("Breadcrumb"),
+    ];
+}

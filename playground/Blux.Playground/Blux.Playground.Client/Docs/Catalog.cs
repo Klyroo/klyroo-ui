@@ -14,7 +14,7 @@ public static partial class Catalog
 
     /// <summary>Every documented component. Each family declares its entries in its own Catalog.*.cs file.</summary>
     // Built on first use: static fields of the other partial files may not be initialized yet at type load.
-    public static ComponentDoc[] Components => _components ??= [.. Core];
+    public static ComponentDoc[] Components => _components ??= [.. Core, .. Nav];
 
     private static ComponentDoc[]? _components;
 
