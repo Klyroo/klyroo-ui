@@ -255,7 +255,7 @@ internal static partial class Themes
         new ComponentTheme("form", "root", "fieldset", "summary", "summaryTitle", "summaryList")
             .Slot("root", "w-full")
             .Slot("fieldset", "m-0 flex min-w-0 flex-col gap-4 border-0 p-0 disabled:opacity-60")
-            .Slot("summary", "rounded-(--blux-radius) border border-(--blux-error) bg-(--blux-error)/10 p-3 text-sm text-(--blux-error-text)")
+            .Slot("summary", "text-sm text-(--blux-error-text)")
             .Slot("summaryTitle", "font-medium")
-            .Slot("summaryList", "mt-1 list-disc ps-5");
+            .Slot("summaryList", "list-disc rounded-(--blux-radius) border border-(--blux-error) bg-(--blux-error)/10 py-3 pe-3 ps-8");
 }
