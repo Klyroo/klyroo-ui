@@ -1,0 +1,25 @@
+<div class="flex w-full max-w-2xl flex-col gap-3">
+    <div class="ms-8">
+        <BxFormField Label="Release notes" Help="Type / for blocks, @@ to mention someone and : followed by a word for an emoji.">
+            <BxEditor @bind-Value="_html" Placeholder="Write something..." data-testid="editor">
+                <BxEditorToolbar />
+                <BxEditorDragHandle />
+                <BxEditorSuggestionMenu />
+                <BxEditorMentionMenu Items="People" />
+                <BxEditorEmojiMenu />
+            </BxEditor>
+        </BxFormField>
+    </div>
+    <p class="break-all font-mono text-xs text-(--blux-text-muted)" data-testid="editor-html">@(string.IsNullOrEmpty(_html) ? "(empty)" : _html)</p>
+</div>
+
+@code {
+    private string? _html = "<p>Hello <strong>Blux</strong>.</p><p>Second paragraph.</p>";
+
+    private static readonly EditorMentionItem[] People =
+    [
+        new("ada", "Ada Lovelace") { Description = "Mathematician" },
+        new("alan", "Alan Turing") { Description = "Computer scientist" },
+        new("grace", "Grace Hopper") { Description = "Rear admiral" },
+    ];
+}

@@ -1,0 +1,33 @@
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="Model" FormName="editor-notes" OnValidSubmit="Save" class="flex w-full max-w-2xl flex-col items-start gap-3">
+    <DataAnnotationsValidator />
+    <BxFormField Label="Notes" Description="Posted as HTML, also without interactivity." For="() => Model!.Notes" class="w-full">
+        <BxEditor @bind-Value="Model!.Notes" Placeholder="Write a note..." data-testid="editor-form">
+            <BxEditorToolbar />
+        </BxEditor>
+    </BxFormField>
+    <BxButton Type="submit" Label="Save" />
+    @if (_saved is not null)
+    {
+        <p role="status" class="break-all font-mono text-xs text-(--blux-text-muted)" data-testid="saved">Saved: @_saved</p>
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "editor-notes")]
+    private Note? Model { get; set; }
+
+    private string? _saved;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    // The posted HTML is user input: sanitize it on the server before you store or show it anywhere else.
+    private void Save() => _saved = Model!.Notes;
+
+    private sealed class Note
+    {
+        [Required(ErrorMessage = "Write something first.")]
+        public string? Notes { get; set; } = "<p>Draft</p>";
+    }
+}
