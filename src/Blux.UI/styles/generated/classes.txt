@@ -285,8 +285,6 @@ focus-visible:[&::-moz-range-thumb]:outline-offset-2
 focus-visible:[&::-webkit-slider-thumb]:outline-(--bx-color-text)
 focus-visible:[&::-webkit-slider-thumb]:outline-2
 focus-visible:[&::-webkit-slider-thumb]:outline-offset-2
-focus-visible:[&>div]:outline-(--bx-color-text)
-focus-visible:[&>div]:outline-2
 focus-visible:bg-(--bx-color)
 focus-visible:outline-(--blux-primary-text)
 focus-visible:outline-(--bx-color-text)

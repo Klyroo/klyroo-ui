@@ -1,0 +1,468 @@
+- generic [active] [ref=e1]:
+  - link "Skip to content" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - link "blux/ui" [ref=e5] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e13]: v0.1-alpha
+      - navigation "Main" [ref=e14]:
+        - link "Docs" [ref=e15] [cursor=pointer]:
+          - /url: /docs
+        - link "Components" [ref=e16] [cursor=pointer]:
+          - /url: /components/button
+        - link "Theming" [ref=e17] [cursor=pointer]:
+          - /url: /docs/theming
+      - button "Toggle dark mode" [ref=e19]
+  - main [ref=e23]:
+    - generic [ref=e24]:
+      - complementary [ref=e25]:
+        - navigation "Documentation" [ref=e26]:
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: Getting started
+            - list [ref=e29]:
+              - listitem [ref=e30]:
+                - link "Introduction" [ref=e31] [cursor=pointer]:
+                  - /url: /docs
+              - listitem [ref=e32]:
+                - link "Installation" [ref=e33] [cursor=pointer]:
+                  - /url: /docs/installation
+              - listitem [ref=e34]:
+                - link "Theming" [ref=e35] [cursor=pointer]:
+                  - /url: /docs/theming
+              - listitem [ref=e36]:
+                - link "Render modes" [ref=e37] [cursor=pointer]:
+                  - /url: /docs/render-modes
+          - generic [ref=e38]:
+            - paragraph [ref=e39]: Elements
+            - list [ref=e40]:
+              - listitem [ref=e41]:
+                - link "Button" [ref=e42] [cursor=pointer]:
+                  - /url: /components/button
+              - listitem [ref=e43]:
+                - link "Badge" [ref=e44] [cursor=pointer]:
+                  - /url: /components/badge
+              - listitem [ref=e45]:
+                - link "Avatar" [ref=e46] [cursor=pointer]:
+                  - /url: /components/avatar
+              - listitem [ref=e47]:
+                - link "Card" [ref=e48] [cursor=pointer]:
+                  - /url: /components/card
+              - listitem [ref=e49]:
+                - link "Alert" [ref=e50] [cursor=pointer]:
+                  - /url: /components/alert
+              - listitem [ref=e51]:
+                - link "Kbd" [ref=e52] [cursor=pointer]:
+                  - /url: /components/kbd
+              - listitem [ref=e53]:
+                - link "Separator" [ref=e54] [cursor=pointer]:
+                  - /url: /components/separator
+              - listitem [ref=e55]:
+                - link "Skeleton" [ref=e56] [cursor=pointer]:
+                  - /url: /components/skeleton
+              - listitem [ref=e57]:
+                - link "Chip" [ref=e58] [cursor=pointer]:
+                  - /url: /components/chip
+              - listitem [ref=e59]:
+                - link "Link" [ref=e60] [cursor=pointer]:
+                  - /url: /components/link
+              - listitem [ref=e61]:
+                - link "Icon" [ref=e62] [cursor=pointer]:
+                  - /url: /components/icon
+              - listitem [ref=e63]:
+                - link "Container" [ref=e64] [cursor=pointer]:
+                  - /url: /components/container
+              - listitem [ref=e65]:
+                - link "Progress" [ref=e66] [cursor=pointer]:
+                  - /url: /components/progress
+              - listitem [ref=e67]:
+                - link "Banner" [ref=e68] [cursor=pointer]:
+                  - /url: /components/banner
+              - listitem [ref=e69]:
+                - link "Empty" [ref=e70] [cursor=pointer]:
+                  - /url: /components/empty
+              - listitem [ref=e71]:
+                - link "User" [ref=e72] [cursor=pointer]:
+                  - /url: /components/user
+              - listitem [ref=e73]:
+                - link "AvatarGroup" [ref=e74] [cursor=pointer]:
+                  - /url: /components/avatar-group
+              - listitem [ref=e75]:
+                - link "FieldGroup" [ref=e76] [cursor=pointer]:
+                  - /url: /components/field-group
+          - generic [ref=e77]:
+            - paragraph [ref=e78]: Form
+            - list [ref=e79]:
+              - listitem [ref=e80]:
+                - link "Input" [ref=e81] [cursor=pointer]:
+                  - /url: /components/input
+              - listitem [ref=e82]:
+                - link "Textarea" [ref=e83] [cursor=pointer]:
+                  - /url: /components/textarea
+              - listitem [ref=e84]:
+                - link "Checkbox" [ref=e85] [cursor=pointer]:
+                  - /url: /components/checkbox
+              - listitem [ref=e86]:
+                - link "Switch" [ref=e87] [cursor=pointer]:
+                  - /url: /components/switch
+              - listitem [ref=e88]:
+                - link "RadioGroup" [ref=e89] [cursor=pointer]:
+                  - /url: /components/radio-group
+              - listitem [ref=e90]:
+                - link "Select" [ref=e91] [cursor=pointer]:
+                  - /url: /components/select
+              - listitem [ref=e92]:
+                - link "FormField" [ref=e93] [cursor=pointer]:
+                  - /url: /components/form-field
+              - listitem [ref=e94]:
+                - link "Calendar" [ref=e95] [cursor=pointer]:
+                  - /url: /components/calendar
+              - listitem [ref=e96]:
+                - link "InputDate" [ref=e97] [cursor=pointer]:
+                  - /url: /components/input-date
+              - listitem [ref=e98]:
+                - link "InputTime" [ref=e99] [cursor=pointer]:
+                  - /url: /components/input-time
+              - listitem [ref=e100]:
+                - link "ColorPicker" [ref=e101] [cursor=pointer]:
+                  - /url: /components/color-picker
+              - listitem [ref=e102]:
+                - link "FileUpload" [ref=e103] [cursor=pointer]:
+                  - /url: /components/file-upload
+              - listitem [ref=e104]:
+                - link "SelectMenu" [ref=e105] [cursor=pointer]:
+                  - /url: /components/select-menu
+              - listitem [ref=e106]:
+                - link "InputMenu" [ref=e107] [cursor=pointer]:
+                  - /url: /components/input-menu
+              - listitem [ref=e108]:
+                - link "InputNumber" [ref=e109] [cursor=pointer]:
+                  - /url: /components/input-number
+              - listitem [ref=e110]:
+                - link "InputTags" [ref=e111] [cursor=pointer]:
+                  - /url: /components/input-tags
+              - listitem [ref=e112]:
+                - link "PinInput" [ref=e113] [cursor=pointer]:
+                  - /url: /components/pin-input
+              - listitem [ref=e114]:
+                - link "Slider" [ref=e115] [cursor=pointer]:
+                  - /url: /components/slider
+              - listitem [ref=e116]:
+                - link "CheckboxGroup" [ref=e117] [cursor=pointer]:
+                  - /url: /components/checkbox-group
+              - listitem [ref=e118]:
+                - link "Toggle" [ref=e119] [cursor=pointer]:
+                  - /url: /components/toggle
+              - listitem [ref=e120]:
+                - link "ToggleGroup" [ref=e121] [cursor=pointer]:
+                  - /url: /components/toggle-group
+              - listitem [ref=e122]:
+                - link "Listbox" [ref=e123] [cursor=pointer]:
+                  - /url: /components/listbox
+              - listitem [ref=e124]:
+                - link "InputRating" [ref=e125] [cursor=pointer]:
+                  - /url: /components/input-rating
+              - listitem [ref=e126]:
+                - link "Form" [ref=e127] [cursor=pointer]:
+                  - /url: /components/form
+          - generic [ref=e128]:
+            - paragraph [ref=e129]: Overlay
+            - list [ref=e130]:
+              - listitem [ref=e131]:
+                - link "Modal" [ref=e132] [cursor=pointer]:
+                  - /url: /components/modal
+              - listitem [ref=e133]:
+                - link "Popover" [ref=e134] [cursor=pointer]:
+                  - /url: /components/popover
+              - listitem [ref=e135]:
+                - link "Tooltip" [ref=e136] [cursor=pointer]:
+                  - /url: /components/tooltip
+              - listitem [ref=e137]:
+                - link "DropdownMenu" [ref=e138] [cursor=pointer]:
+                  - /url: /components/dropdown-menu
+              - listitem [ref=e139]:
+                - link "Toast" [ref=e140] [cursor=pointer]:
+                  - /url: /components/toast
+              - listitem [ref=e141]:
+                - link "Drawer" [ref=e142] [cursor=pointer]:
+                  - /url: /components/drawer
+              - listitem [ref=e143]:
+                - link "Slideover" [ref=e144] [cursor=pointer]:
+                  - /url: /components/slideover
+              - listitem [ref=e145]:
+                - link "ContextMenu" [ref=e146] [cursor=pointer]:
+                  - /url: /components/context-menu
+              - listitem [ref=e147]:
+                - link "CommandPalette" [ref=e148] [cursor=pointer]:
+                  - /url: /components/command-palette
+              - listitem [ref=e149]:
+                - link "ColorModeButton" [ref=e150] [cursor=pointer]:
+                  - /url: /components/color-mode-button
+              - listitem [ref=e151]:
+                - link "ColorModeSwitch" [ref=e152] [cursor=pointer]:
+                  - /url: /components/color-mode-switch
+              - listitem [ref=e153]:
+                - link "ColorModeSelect" [ref=e154] [cursor=pointer]:
+                  - /url: /components/color-mode-select
+              - listitem [ref=e155]:
+                - link "ColorModeAvatar" [ref=e156] [cursor=pointer]:
+                  - /url: /components/color-mode-avatar
+              - listitem [ref=e157]:
+                - link "ColorModeImage" [ref=e158] [cursor=pointer]:
+                  - /url: /components/color-mode-image
+          - generic [ref=e159]:
+            - paragraph [ref=e160]: Navigation
+            - list [ref=e161]:
+              - listitem [ref=e162]:
+                - link "Tabs" [ref=e163] [cursor=pointer]:
+                  - /url: /components/tabs
+              - listitem [ref=e164]:
+                - link "Accordion" [ref=e165] [cursor=pointer]:
+                  - /url: /components/accordion
+              - listitem [ref=e166]:
+                - link "Breadcrumb" [ref=e167] [cursor=pointer]:
+                  - /url: /components/breadcrumb
+              - listitem [ref=e168]:
+                - link "Pagination" [ref=e169] [cursor=pointer]:
+                  - /url: /components/pagination
+              - listitem [ref=e170]:
+                - link "Stepper" [ref=e171] [cursor=pointer]:
+                  - /url: /components/stepper
+              - listitem [ref=e172]:
+                - link "Timeline" [ref=e173] [cursor=pointer]:
+                  - /url: /components/timeline
+              - listitem [ref=e174]:
+                - link "NavigationMenu" [ref=e175] [cursor=pointer]:
+                  - /url: /components/navigation-menu
+              - listitem [ref=e176]:
+                - link "Collapsible" [ref=e177] [cursor=pointer]:
+                  - /url: /components/collapsible
+              - listitem [ref=e178]:
+                - link "Tree" [ref=e179] [cursor=pointer]:
+                  - /url: /components/tree
+              - listitem [ref=e180]:
+                - link "Marquee" [ref=e181] [cursor=pointer]:
+                  - /url: /components/marquee
+              - listitem [ref=e182]:
+                - link "ScrollArea" [ref=e183] [cursor=pointer]:
+                  - /url: /components/scroll-area
+              - listitem [ref=e184]:
+                - link "Splitter" [ref=e185] [cursor=pointer]:
+                  - /url: /components/splitter
+          - generic [ref=e186]:
+            - paragraph [ref=e187]: Data
+            - list [ref=e188]:
+              - listitem [ref=e189]:
+                - link "Table" [ref=e190] [cursor=pointer]:
+                  - /url: /components/table
+              - listitem [ref=e191]:
+                - link "Carousel" [ref=e192] [cursor=pointer]:
+                  - /url: /components/carousel
+          - generic [ref=e193]:
+            - paragraph [ref=e194]: Layout
+            - list
+          - generic [ref=e195]:
+            - paragraph [ref=e196]: Page
+            - list
+          - generic [ref=e197]:
+            - paragraph [ref=e198]: Dashboard
+            - list
+          - generic [ref=e199]:
+            - paragraph [ref=e200]: Chat
+            - list
+          - generic [ref=e201]:
+            - paragraph [ref=e202]: Editor
+            - list
+      - article [ref=e204]:
+        - paragraph [ref=e205]: Form
+        - heading "InputNumber" [level=1] [ref=e206]
+        - paragraph [ref=e207]: A numeric field with increment and decrement buttons, formatted for a culture.
+        - generic [ref=e208]:
+          - paragraph [ref=e209]:
+            - generic [ref=e211]:
+              - text: Rendered by
+              - strong [ref=e212]: Static
+              - text: ", static"
+          - navigation "Render mode" [ref=e213]:
+            - link "ssr" [ref=e214] [cursor=pointer]:
+              - /url: /ssr/components/input-number
+            - link "server" [ref=e215] [cursor=pointer]:
+              - /url: /server/components/input-number
+            - link "wasm" [ref=e216] [cursor=pointer]:
+              - /url: /wasm/components/input-number
+            - link "auto" [ref=e217] [cursor=pointer]:
+              - /url: /auto/components/input-number
+        - region "Quantity and price" [ref=e219]:
+          - heading [level=2] [ref=e220]:
+            - link "Quantity and price" [ref=e221] [cursor=pointer]:
+              - /url: "#quantity-and-price"
+          - paragraph [ref=e222]: The posted value is always invariant, whatever the culture shown.
+          - generic [ref=e223]:
+            - generic [ref=e224]: Preview
+            - generic [ref=e228]:
+              - generic [ref=e229]:
+                - generic [ref=e230]: Quantity
+                - generic [ref=e233]:
+                  - spinbutton "Quantity" [ref=e234]: "2"
+                  - button "Decrease" [ref=e235] [cursor=pointer]
+                  - button "Increase" [ref=e236] [cursor=pointer]
+              - generic [ref=e237]:
+                - generic [ref=e238]: Price (French format)
+                - generic [ref=e241]:
+                  - spinbutton "Price (French format)" [ref=e242]: 1 234,5
+                  - button "Decrease" [ref=e243] [cursor=pointer]
+                  - button "Increase" [ref=e244] [cursor=pointer]
+              - paragraph [ref=e245]: "Quantity: 2, price: 1234.5"
+            - generic [ref=e246]:
+              - generic "Code" [ref=e247]:
+                - code [ref=e248]: "<div class=\"flex w-full max-w-xs flex-col gap-4\"> <BxFormField Label=\"Quantity\"> <BxInputNumber @bind-Value=\"_quantity\" Min=\"0\" Max=\"20\" /> </BxFormField> <BxFormField Label=\"Price (French format)\"> <BxInputNumber @bind-Value=\"_price\" Min=\"0\" Step=\"0.5m\" Locale=\"fr-FR\" Orientation=\"BxOrientation.Vertical\" /> </BxFormField> <p class=\"text-sm text-(--blux-text-muted)\" data-testid=\"number-state\">Quantity: @(_quantity?.ToString() ?? \"none\"), price: @(_price?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? \"none\")</p> </div> @code { private decimal? _quantity = 2; private decimal? _price = 1234.5m; }"
+              - button "Copy" [ref=e249]
+        - heading "API" [level=2] [ref=e250]
+        - heading "BxInputNumber" [level=3] [ref=e251]
+        - table "Parameters of BxInputNumber" [ref=e253]:
+          - caption [ref=e254]: Parameters of BxInputNumber
+          - rowgroup [ref=e255]:
+            - row [ref=e256]:
+              - columnheader "Parameter" [ref=e257]
+              - columnheader "Type" [ref=e258]
+              - columnheader "Default" [ref=e259]
+          - rowgroup [ref=e260]:
+            - row [ref=e261]:
+              - cell [ref=e262]:
+                - code [ref=e263]: Class
+                - paragraph [ref=e264]: Classes added to the root element, merged last so they win over the theme.
+              - cell [ref=e265]:
+                - code [ref=e266]: string
+              - cell [ref=e267]:
+                - code [ref=e268]: —
+            - row [ref=e269]:
+              - cell [ref=e270]:
+                - code [ref=e271]: Color
+              - cell [ref=e272]:
+                - code [ref=e273]: BxColor
+              - cell [ref=e274]:
+                - code [ref=e275]: "\"primary\""
+            - row [ref=e276]:
+              - cell [ref=e277]:
+                - code [ref=e278]: Disabled
+              - cell [ref=e279]:
+                - code [ref=e280]: bool
+              - cell [ref=e281]:
+                - code [ref=e282]: "false"
+            - row [ref=e283]:
+              - cell [ref=e284]:
+                - code [ref=e285]: Id
+              - cell [ref=e286]:
+                - code [ref=e287]: string
+              - cell [ref=e288]:
+                - code [ref=e289]: —
+            - row [ref=e290]:
+              - cell [ref=e291]:
+                - code [ref=e292]: Locale
+                - paragraph [ref=e293]: Culture used to show and read the number, such as fr-FR . Defaults to the current culture. The posted value is always invariant.
+              - cell [ref=e294]:
+                - code [ref=e295]: string
+              - cell [ref=e296]:
+                - code [ref=e297]: —
+            - row [ref=e298]:
+              - cell [ref=e299]:
+                - code [ref=e300]: Max
+              - cell [ref=e301]:
+                - code [ref=e302]: Decimal?
+              - cell [ref=e303]:
+                - code [ref=e304]: —
+            - row [ref=e305]:
+              - cell [ref=e306]:
+                - code [ref=e307]: Min
+              - cell [ref=e308]:
+                - code [ref=e309]: Decimal?
+              - cell [ref=e310]:
+                - code [ref=e311]: —
+            - row [ref=e312]:
+              - cell [ref=e313]:
+                - code [ref=e314]: Name
+                - paragraph [ref=e315]: Form field name outside an EditForm . Inside one, the name comes from the bound expression.
+              - cell [ref=e316]:
+                - code [ref=e317]: string
+              - cell [ref=e318]:
+                - code [ref=e319]: —
+            - row [ref=e320]:
+              - cell [ref=e321]:
+                - code [ref=e322]: Orientation
+                - paragraph [ref=e323]: Horizontal puts the buttons on both sides of the field, vertical stacks them at its end.
+              - cell [ref=e324]:
+                - code [ref=e325]: BxOrientation
+              - cell [ref=e326]:
+                - code [ref=e327]: BxOrientation.Horizontal
+            - row [ref=e328]:
+              - cell [ref=e329]:
+                - code [ref=e330]: Placeholder
+              - cell [ref=e331]:
+                - code [ref=e332]: string
+              - cell [ref=e333]:
+                - code [ref=e334]: —
+            - row [ref=e335]:
+              - cell [ref=e336]:
+                - code [ref=e337]: Required
+              - cell [ref=e338]:
+                - code [ref=e339]: bool
+              - cell [ref=e340]:
+                - code [ref=e341]: "false"
+            - row [ref=e342]:
+              - cell [ref=e343]:
+                - code [ref=e344]: Size
+                - paragraph [ref=e345]: Defaults to the size of the enclosing BxFormField , or medium.
+              - cell [ref=e346]:
+                - code [ref=e347]: BxSize?
+              - cell [ref=e348]:
+                - code [ref=e349]: —
+            - row [ref=e350]:
+              - cell [ref=e351]:
+                - code [ref=e352]: Step
+                - paragraph [ref=e353]: Amount added or removed by the buttons and the arrow keys; Page Up and Page Down use ten steps.
+              - cell [ref=e354]:
+                - code [ref=e355]: Decimal
+              - cell [ref=e356]:
+                - code [ref=e357]: —
+            - row [ref=e358]:
+              - cell [ref=e359]:
+                - code [ref=e360]: Ui
+              - cell [ref=e361]:
+                - code [ref=e362]: InputNumberUi
+              - cell [ref=e363]:
+                - code [ref=e364]: —
+            - row [ref=e365]:
+              - cell [ref=e366]:
+                - code [ref=e367]: Value
+              - cell [ref=e368]:
+                - code [ref=e369]: Decimal?
+              - cell [ref=e370]:
+                - code [ref=e371]: —
+            - row [ref=e372]:
+              - cell [ref=e373]:
+                - code [ref=e374]: ValueChanged
+              - cell [ref=e375]:
+                - code [ref=e376]: EventCallback<Decimal?>
+              - cell [ref=e377]:
+                - code [ref=e378]: —
+            - row [ref=e379]:
+              - cell [ref=e380]:
+                - code [ref=e381]: ValueExpression
+              - cell [ref=e382]:
+                - code [ref=e383]: Expression<Func<Decimal?>>
+              - cell [ref=e384]:
+                - code [ref=e385]: —
+            - row [ref=e386]:
+              - cell [ref=e387]:
+                - code [ref=e388]: Variant
+              - cell [ref=e389]:
+                - code [ref=e390]: FieldVariant
+              - cell [ref=e391]:
+                - code [ref=e392]: FieldVariant.Outline
+  - contentinfo [ref=e393]:
+    - generic [ref=e394]:
+      - paragraph [ref=e395]: blux/ui · MIT
+      - paragraph [ref=e396]: Built with Blazor and Tailwind CSS.
+  - generic:
+    - region "Notifications":
+      - list

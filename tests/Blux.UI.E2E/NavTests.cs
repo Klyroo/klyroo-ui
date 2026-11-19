@@ -204,12 +204,12 @@ public class NavTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task Navigation_menu_opens_a_panel_with_links(string mode)
     {
         await Open(mode, "navigation-menu");
-        var trigger = Page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Button, new() { Name = "Components" });
+        var trigger = Page.GetByRole(AriaRole.Navigation, new() { Name = "Primary" }).GetByRole(AriaRole.Button, new() { Name = "Components" });
 
         await trigger.ClickAsync();
 
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
-        await Assertions.Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Tabs", Exact = true })).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog, new() { Name = "Components" }).GetByRole(AriaRole.Link, new() { Name = "Tabs", Exact = true })).ToBeVisibleAsync();
         await Page.Keyboard.PressAsync("Escape");
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "false");
     }
