@@ -519,4 +519,69 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(toolbar.GetByRole(AriaRole.Button, new() { Name = "Move block down" })).ToBeDisabledAsync();
         await Assertions.Expect(toolbar.GetByRole(AriaRole.Button, new() { Name = "Move block up" })).ToBeEnabledAsync();
     }
+
+
+    // ---- Review findings (waves C and D)
+
+    [Fact]
+    public async Task Drag_handle_that_is_removed_and_added_again_does_not_stack_listeners_on_its_button()
+    {
+        await OpenEditor("ssr", "editor-drag-handle");
+        // Blazor removes and adds elements while the page lives: the handle is wired again each time it comes back, on the
+        // same button. The listeners of the first wiring must be gone by then: net additions (added minus removed) are zero.
+        var net = await Page.EvaluateAsync<int>("""
+            async () => {
+                const handle = document.querySelector('[data-testid=editor-drag] bx-editor-drag-handle');
+                const button = handle.querySelector('button');
+                const parent = handle.parentElement;
+                const next = handle.nextSibling;
+                let net = 0;
+                const add = EventTarget.prototype.addEventListener;
+                const remove = EventTarget.prototype.removeEventListener;
+                EventTarget.prototype.addEventListener = function (type, ...rest) { if (this === button) net++; return add.call(this, type, ...rest); };
+                EventTarget.prototype.removeEventListener = function (type, ...rest) { if (this === button) net--; return remove.call(this, type, ...rest); };
+                handle.remove();
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                parent.insertBefore(handle, next);
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                EventTarget.prototype.addEventListener = add;
+                EventTarget.prototype.removeEventListener = remove;
+                return net;
+            }
+            """);
+
+        Assert.Equal(0, net);
+        // And the handle still works once.
+        var handle = Page.GetByTestId("editor-drag").GetByRole(AriaRole.Button, new() { Name = "Drag to move block" });
+        await Surface("editor-drag").Locator("p", new() { HasText = "Two" }).HoverAsync();
+        await handle.ClickAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        Assert.Equal("<p>One</p><p>Three</p><p>Two</p>", await Posted("blocks"));
+    }
+
+    [Fact]
+    public async Task Adding_paragraphs_does_not_wire_the_editor_parts_again()
+    {
+        await OpenEditor("ssr", "editor-toolbar");
+        await Page.EvaluateAsync("""
+            () => {
+                const host = document.querySelector('[data-testid=editor-toolbar]').closest('bx-editor') ?? document.querySelector('bx-editor');
+                window.__wires = 0;
+                const original = host.querySelectorAll.bind(host);
+                host.querySelectorAll = (selector) => { window.__wires++; return original(selector); };
+            }
+            """);
+
+        await Surface("editor-toolbar").ClickAsync();
+        await Page.Keyboard.PressAsync("Control+End");
+        for (var i = 0; i < 10; i++)
+        {
+            await Page.Keyboard.TypeAsync("line");
+            await Page.Keyboard.PressAsync("Enter");
+        }
+        await Assertions.Expect(Surface("editor-toolbar").Locator("p")).ToHaveCountAsync(12);
+
+        // New paragraphs are added inside what ProseMirror renders: the host has nothing to wire.
+        Assert.True(await Page.EvaluateAsync<int>("() => window.__wires") <= 1, "the editor host looked for its parts while the user typed");
+    }
 }

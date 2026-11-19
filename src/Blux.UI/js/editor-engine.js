@@ -305,10 +305,13 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       restore();
     };
 
+    const stopMove = (event) => event.stopPropagation();
+    const onBlur = () => setTimeout(restore, 0);
+
     const editorDom = view().dom;
     editorDom.addEventListener('mousemove', onMove);
     host.addEventListener('mouseleave', restore);
-    container.addEventListener('mousemove', (event) => event.stopPropagation());
+    container.addEventListener('mousemove', stopMove);
     button.addEventListener('click', selectBlock);
     button.addEventListener('keydown', onKeyDown);
     button.addEventListener('dragstart', onDragStart);
@@ -316,13 +319,20 @@ export function createEngine({ element, html, editable, placeholder, attributes,
     button.draggable = true;
     editor.on('selectionUpdate', restore);
     editor.on('focus', restore);
-    editor.on('blur', () => setTimeout(restore, 0));
+    editor.on('blur', onBlur);
 
+    // The handle can be removed and added again (Blazor moves and replaces elements): every listener goes, or they stack.
     return () => {
       editorDom.removeEventListener('mousemove', onMove);
       host.removeEventListener('mouseleave', restore);
+      container.removeEventListener('mousemove', stopMove);
+      button.removeEventListener('click', selectBlock);
+      button.removeEventListener('keydown', onKeyDown);
+      button.removeEventListener('dragstart', onDragStart);
+      button.removeEventListener('dragend', onDragEnd);
       editor.off('selectionUpdate', restore);
       editor.off('focus', restore);
+      editor.off('blur', onBlur);
       container.hidden = true;
     };
   }

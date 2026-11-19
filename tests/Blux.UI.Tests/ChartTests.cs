@@ -490,7 +490,7 @@ public class ChartTests : BluxTestContext
         var plot = cut.Find("[data-slot=plot]");
         Assert.Equal("0", plot.GetAttribute("tabindex"));
         Assert.Equal("group", plot.GetAttribute("role"));
-        Assert.Equal("Chart values. Use the arrow keys to move between points.", plot.GetAttribute("aria-label"));
+        Assert.Equal(cut.Find("svg").GetAttribute("aria-label"), plot.GetAttribute("aria-label"));
         var tips = cut.FindAll("[data-slot=tips] > [data-tip]");
         Assert.Equal(6, tips.Count);
         Assert.NotNull(cut.Find("[data-slot=tips]").GetAttribute("hidden"));
@@ -567,5 +567,92 @@ public class ChartTests : BluxTestContext
 
         Assert.Equal("0 0 500 200", cut.Find("svg").GetAttribute("viewBox"));
         Assert.Contains("max-width:500px", cut.Find("[data-slot=plot]").GetAttribute("style"));
+    }
+
+
+    // ---- Review findings (waves C and D)
+
+    [Theory]
+    [InlineData(1e16, 1e16 + 2)]
+    [InlineData(-1e300, 1e300)]
+    [InlineData(-double.MaxValue, double.MaxValue)]
+    [InlineData(0, 1e-300)]
+    public async Task Nice_scale_of_extreme_values_finishes_with_a_bounded_number_of_ticks(double min, double max)
+    {
+        var task = Task.Run(() => ChartLayout.NiceScale(min, max), Xunit.TestContext.Current.CancellationToken);
+
+        var finished = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(3), Xunit.TestContext.Current.CancellationToken));
+        Assert.Same(task, finished);
+        var (lo, hi, _, ticks) = await task;
+        Assert.InRange(ticks.Count, 1, 1000);
+        Assert.All(ticks, t => Assert.True(double.IsFinite(t)));
+        Assert.True(double.IsFinite(lo) && double.IsFinite(hi));
+    }
+
+    [Fact]
+    public void Chart_formats_values_and_index_with_the_Culture_parameter()
+    {
+        var before = CultureInfo.CurrentCulture;
+        CultureInfo.CurrentCulture = new CultureInfo("en-US");
+        try
+        {
+            var cut = Chart(
+                p => p.Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Table, BxChartTable.Visible),
+                data: [new("a", 1234.5, 0.5)]);
+
+            Assert.Contains("1.234,5", cut.Find("tbody td").TextContent);
+            Assert.Contains("0,5", cut.FindAll("tbody td")[1].TextContent);
+            Assert.Contains("1.234,5", cut.Find("[data-tip]").GetAttribute("data-text"));
+            Assert.DoesNotContain("1,234.5", cut.Markup);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = before;
+        }
+    }
+
+    [Fact]
+    public void Chart_does_not_rebuild_its_layout_when_the_parameters_have_not_changed()
+    {
+        var calls = 0;
+        Func<Sale, object?> index = s => { calls++; return s.Month; };
+        Action<ComponentParameterCollectionBuilder<BxChart<Sale>>> parameters = p =>
+            p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both);
+        var cut = Render(parameters);
+        var first = calls;
+        Assert.True(first > 0);
+
+        cut.Render(parameters);
+        cut.Render(parameters);
+
+        Assert.Equal(first, calls);
+
+        cut.Render(p => parameters(p.Add(c => c.Stacked, true)));
+        Assert.True(calls > first);
+    }
+
+    [Fact]
+    public void Chart_rebuilds_when_the_data_changes()
+    {
+        var calls = 0;
+        Func<Sale, object?> index = s => { calls++; return s.Month; };
+        var cut = Render<BxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both));
+        var first = calls;
+
+        cut.Render(p => p.Add(c => c.Data, Sales.Take(3).ToArray()).Add(c => c.Index, index).Add(c => c.Categories, Both));
+
+        Assert.True(calls > first);
+        Assert.Equal(3, cut.FindAll("[data-slot=tips] > [data-tip]").Count);
+    }
+
+    [Fact]
+    public void Chart_focus_target_is_named_by_the_chart_and_the_hint_is_its_description()
+    {
+        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month"));
+
+        var plot = cut.Find("[data-slot=plot]");
+        Assert.Equal("Sales by month", plot.GetAttribute("aria-label"));
+        var hint = cut.Find("#" + plot.GetAttribute("aria-describedby"));
+        Assert.Equal("Chart values. Use the arrow keys to move between points.", hint.TextContent.Trim());
     }
 }

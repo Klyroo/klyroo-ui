@@ -15,6 +15,7 @@ internal sealed record EditorMenuOption(string Value, string Label, string? Desc
 public abstract class BxEditorMenuBase : BxComponentBase
 {
     private SlotSet _slots = default!;
+    private string _listId = default!;
 
     /// <summary>Character that opens the menu.</summary>
     [Parameter] public string? Char { get; set; }
@@ -35,12 +36,14 @@ public abstract class BxEditorMenuBase : BxComponentBase
     /// <summary>Characters typed after the trigger before the menu opens.</summary>
     private protected virtual int MinQuery => 0;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _listId ??= NewId("editor-list");
         _slots = ResolveSlots(Options.EditorMenu, new Dictionary<string, string?> { ["size"] = VariantValue.Of(Size) }, Ui, "root");
+    }
 
     protected override void BuildRenderTree(RenderTreeBuilder b)
     {
-        var listId = NewId("editor-list");
         b.OpenElement(0, "bx-editor-menu");
         b.AddAttribute(1, "class", _slots["root"]);
         b.AddAttribute(2, "data-char", Char ?? DefaultChar);
@@ -56,7 +59,7 @@ public abstract class BxEditorMenuBase : BxComponentBase
 
         b.OpenElement(11, "div");
         b.AddAttribute(12, "role", "listbox");
-        b.AddAttribute(13, "id", listId);
+        b.AddAttribute(13, "id", _listId);
         b.AddAttribute(14, "aria-label", Label ?? DefaultLabel(Options.Strings));
         b.AddAttribute(15, "class", _slots["listbox"]);
         foreach (var option in BuildOptions())

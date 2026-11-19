@@ -437,4 +437,69 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(SiteSearch).ToBeVisibleAsync();
     }
+
+
+    // ---- Review findings (waves C and D)
+
+    [Fact]
+    public async Task Toc_keeps_following_when_the_headings_are_replaced_by_elements_with_the_same_ids()
+    {
+        await Open("ssr", "content-toc");
+        var toc = Page.GetByTestId("content-toc-example-toc");
+        await ScrollHeadingToTop("toc-usage");
+        await Assertions.Expect(toc.Locator("a[aria-current=location]")).ToHaveTextAsync("Usage");
+
+        // A render that replaces the headings (a key change, a conditional) and touches the table of contents.
+        await Page.EvaluateAsync("""
+            () => {
+                for (const heading of document.querySelectorAll('[data-testid^=toc-heading-]')) heading.replaceWith(heading.cloneNode(true));
+                document.querySelector('[data-testid=content-toc-example-toc] ul').append(document.createComment('rendered'));
+            }
+            """);
+        await ScrollHeadingToTop("toc-intro");
+        await Assertions.Expect(toc.Locator("a[aria-current=location]")).ToHaveTextAsync("Introduction");
+        await ScrollHeadingToTop("toc-props");
+
+        await Assertions.Expect(toc.Locator("a[aria-current=location]")).ToHaveTextAsync("Props");
+    }
+
+    [Fact]
+    public async Task Shortcuts_do_not_fire_behind_a_modal_dialog_that_does_not_contain_their_element()
+    {
+        await Open("ssr", "content-toc");
+        await Page.EvaluateAsync("""
+            () => {
+                window.__hits = [];
+                const add = (name, attributes) => {
+                    const button = document.createElement('button');
+                    button.textContent = name;
+                    for (const [key, value] of Object.entries(attributes)) button.setAttribute(key, value);
+                    button.addEventListener('click', () => window.__hits.push(name));
+                    document.body.append(button);
+                };
+                add('plain', { 'data-bx-hotkey': 'ctrl+1' });
+                add('always', { 'data-bx-hotkey': 'ctrl+2', 'data-bx-hotkey-always': '' });
+                add('content', { 'data-bx-content-hotkey': 'ctrl+3' });
+            }
+            """);
+        await Page.Keyboard.PressAsync("Control+1");
+        await Page.Keyboard.PressAsync("Control+2");
+        await Page.Keyboard.PressAsync("Control+3");
+        Assert.Equal(["plain", "always", "content"], await Page.EvaluateAsync<string[]>("() => window.__hits"));
+
+        await Page.EvaluateAsync("""
+            () => {
+                window.__hits.length = 0;
+                const dialog = document.createElement('dialog');
+                dialog.innerHTML = '<input aria-label="Name" />';
+                document.body.append(dialog);
+                dialog.showModal();
+            }
+            """);
+        await Page.Keyboard.PressAsync("Control+1");
+        await Page.Keyboard.PressAsync("Control+2");
+        await Page.Keyboard.PressAsync("Control+3");
+
+        Assert.Empty(await Page.EvaluateAsync<string[]>("() => window.__hits"));
+    }
 }

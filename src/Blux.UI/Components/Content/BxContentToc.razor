@@ -1,5 +1,7 @@
 @namespace Blux.UI
+@implements IDisposable
 @inherits BxComponentBase
+@using Microsoft.AspNetCore.Components.Routing
 @inject NavigationManager Navigation
 
 @*
@@ -55,12 +57,31 @@
     [Parameter] public BxContentTocBreakpoint Breakpoint { get; set; } = BxContentTocBreakpoint.Lg;
     [Parameter] public ContentTocUi? Ui { get; set; }
 
+    protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+
+    // Enhanced navigation to the same page with another query string: the links keep pointing at the page being read.
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var page = PageOf(e.Location);
+        if (page != _page)
+        {
+            _page = page;
+            _ = InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private static string PageOf(string uri)
+    {
+        var hash = uri.IndexOf('#');
+        return hash < 0 ? uri : uri[..hash];
+    }
+
     protected override void OnParametersSet()
     {
         _id ??= NewId("toc");
-        var uri = Navigation.Uri;
-        var hash = uri.IndexOf('#');
-        _page = hash < 0 ? uri : uri[..hash];
+        _page = PageOf(Navigation.Uri);
         _slots = ResolveSlots(Options.ContentToc, new Dictionary<string, string?>
         {
             ["breakpoint"] = Breakpoint switch { BxContentTocBreakpoint.Xl => "xl", BxContentTocBreakpoint.Xxl => "2xl", _ => "lg" },

@@ -61,7 +61,8 @@ internal sealed class ChartLayout
     /// <summary>Position along the value axis (y for vertical charts, x for horizontal bars).</summary>
     public double ValuePosition(double value)
     {
-        var t = (value - DomainMin) / (DomainMax - DomainMin);
+        // Halves: exact, and the span of two finite values may not be finite.
+        var t = (value / 2 - DomainMin / 2) / (DomainMax / 2 - DomainMin / 2);
         return Horizontal ? Left + t * (Right - Left) : Bottom - t * (Bottom - Top);
     }
 
@@ -100,9 +101,17 @@ internal sealed class ChartLayout
 
     // ---- Scale
 
+    /// <summary>The most ticks an axis gets; a range that would need more, or whose ticks double precision cannot tell apart, gets its two ends.</summary>
+    private const int MaxTicks = 1000;
+
     /// <summary>Rounds a range out to ticks on 1, 2 or 5 times a power of ten.</summary>
     public static (double Min, double Max, double Step, List<double> Ticks) NiceScale(double min, double max, int target = 5)
     {
+        if (!double.IsFinite(min) || !double.IsFinite(max))
+        {
+            min = 0;
+            max = 1;
+        }
         if (!(max > min))
         {
             if (min == 0)
@@ -112,22 +121,41 @@ internal sealed class ChartLayout
             else
             {
                 var pad = Math.Abs(min) * 0.1;
-                min -= pad;
-                max += pad;
+                min = Math.Max(min - pad, -double.MaxValue);
+                max = Math.Min(max + pad, double.MaxValue);
             }
         }
+        // The difference of two finite doubles can overflow: divide first then.
         var raw = (max - min) / target;
-        var magnitude = Math.Pow(10, Math.Floor(Math.Log10(raw)));
-        var normal = raw / magnitude;
-        var step = (normal <= 1.5 ? 1 : normal <= 3 ? 2 : normal <= 7 ? 5 : 10) * magnitude;
-        var first = Math.Floor(min / step + 1e-9);
-        var last = Math.Ceiling(max / step - 1e-9);
-        var ticks = new List<double>();
-        for (var i = first; i <= last; i++)
+        if (!double.IsFinite(raw))
         {
-            ticks.Add(Math.Round(i * step, 10));
+            raw = max / target - min / target;
         }
-        return (ticks[0], ticks[^1], step, ticks);
+        if (raw > 0 && double.IsFinite(raw))
+        {
+            var magnitude = Math.Pow(10, Math.Floor(Math.Log10(raw)));
+            var normal = raw / magnitude;
+            var step = (normal <= 1.5 ? 1 : normal <= 3 ? 2 : normal <= 7 ? 5 : 10) * magnitude;
+            var first = Math.Floor(min / step + 1e-9);
+            var last = Math.Ceiling(max / step - 1e-9);
+            var count = last - first;
+            if (step > 0 && double.IsFinite(step) && double.IsFinite(count) && count < MaxTicks)
+            {
+                // An integer counter: a double one stops moving once it passes 2^53.
+                var ticks = new List<double>((int)count + 1);
+                for (var k = 0; k <= (int)count; k++)
+                {
+                    ticks.Add(Math.Round((first + k) * step, 10));
+                }
+                if (ticks.All(double.IsFinite) && ticks.Zip(ticks.Skip(1), (x, y) => y > x).All(ok => ok))
+                {
+                    return (ticks[0], ticks[^1], step, ticks);
+                }
+            }
+        }
+        // Too many ticks, or ticks that cannot be told apart or represented: the two ends of the range.
+        var span = max - min;
+        return (min, max, double.IsFinite(span) ? span : double.MaxValue, [min, max]);
     }
 
     // ---- Cartesian charts (line, area, bar)

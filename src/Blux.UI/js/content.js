@@ -1,4 +1,4 @@
-import { observeChildren } from './shared.js';
+import { behindModal, observeChildren } from './shared.js';
 
 /**
  * The "Content" family: documentation components.
@@ -20,7 +20,7 @@ export class BxContentTocElement extends HTMLElement {
   #observer = null;
   #children = null;
   #targets = [];
-  #key = '';
+  #wiredCount = -1;
   #activeId = null;
 
   connectedCallback() {
@@ -36,12 +36,13 @@ export class BxContentTocElement extends HTMLElement {
     this.#children?.disconnect();
     this.#observer?.disconnect();
     this.#observer = null;
-    this.#key = '';
+    this.#targets = [];
+    this.#wiredCount = -1;
   }
 
   /** After an enhanced navigation merged server HTML over the links: marks and the open state are gone. */
   refresh() {
-    this.#key = '';
+    this.#wiredCount = -1;
     this.#activeId = null;
     this.#wire();
   }
@@ -69,9 +70,9 @@ export class BxContentTocElement extends HTMLElement {
   #wire = () => {
     const ids = this.#links.map((link) => this.#idOf(link));
     const targets = ids.map((id) => document.getElementById(id)).filter((el) => el !== null);
-    const key = targets.map((el) => el.id).join('\n') + '|' + ids.length;
-    if (key === this.#key) return;
-    this.#key = key;
+    // The elements themselves, not their ids: a render can replace a heading by another element with the same id.
+    if (ids.length === this.#wiredCount && targets.length === this.#targets.length && targets.every((el) => this.#targets.includes(el))) return;
+    this.#wiredCount = ids.length;
     this.#observer?.disconnect();
     // Document order, whatever the order of the links.
     this.#targets = targets.sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
@@ -181,7 +182,7 @@ document.addEventListener('keydown', (event) => {
     }
     // A shortcut without ctrl or meta types a character: leave it to the text field.
     if (isTyping && !combo.ctrl && !combo.meta) continue;
-    if (element.matches(':disabled') || element.closest('[inert]')) continue;
+    if (element.matches(':disabled') || element.closest('[inert]') || behindModal(element)) continue;
     event.preventDefault();
     element.click();
     return;

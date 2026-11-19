@@ -480,4 +480,17 @@ public class ContentTests : BluxTestContext
         o.Strings.ContentToc = "Sur cette page";
         o.Strings.ContentNext = "Suivant";
     });
+
+
+    [Fact]
+    public void Toc_links_follow_the_page_url_when_the_query_changes()
+    {
+        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
+        Assert.DoesNotContain("tab=2", cut.Find("a").GetAttribute("href"));
+
+        // Only the location changes: the parent does not render, so no parameter is set again.
+        cut.InvokeAsync(() => Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("tab", 2)));
+
+        cut.WaitForAssertion(() => Assert.Contains("tab=2", cut.Find("a").GetAttribute("href")));
+    }
 }

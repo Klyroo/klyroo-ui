@@ -30,6 +30,7 @@ export class BxChatMessagesElement extends HTMLElement {
   #announceTimer = 0;
   #initTimer = 0;
   #baselined = false;
+  #frame = 0;
 
   connectedCallback() {
     this.addEventListener('scroll', this.#onScroll, true);
@@ -49,6 +50,8 @@ export class BxChatMessagesElement extends HTMLElement {
     clearTimeout(this.#initTimer);
     clearTimeout(this.#announceTimer);
     clearTimeout(this.#smoothing);
+    cancelAnimationFrame(this.#frame);
+    this.#frame = 0;
     this.#ready = false;
     this.#baselined = false;
   }
@@ -138,15 +141,32 @@ export class BxChatMessagesElement extends HTMLElement {
 
   #onMutation = (records) => {
     if (!this.#ready) return;
+    let messages = false;
     for (const record of records) {
+      if (record.type === 'attributes') {
+        // data-streaming changed: a message may be complete.
+        messages = true;
+        continue;
+      }
+      // Text and nodes inside a message are the answer being streamed: nothing to scan, the list only has to follow.
+      if (record.type !== 'childList' || record.target.closest?.('[data-bx-chat-message]')) continue;
       for (const node of record.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
         // The user sent something: show it, and the answer that follows.
-        if (node.nodeType === Node.ELEMENT_NODE && this.#isMessage(node, 'user')) this.#stick = true;
+        if (this.#isMessage(node, 'user')) this.#stick = true;
+        if (node.matches('[data-bx-chat-message]') || node.querySelector('[data-bx-chat-message]')) messages = true;
       }
     }
-    this.#follow();
-    this.#scan();
-    this.#updateButton();
+    if (messages) this.#scan();
+    // One scroll and one button update per frame, however many tokens arrived.
+    if (!this.#frame) {
+      this.#frame = requestAnimationFrame(() => {
+        this.#frame = 0;
+        if (!this.#ready) return;
+        this.#follow();
+        this.#updateButton();
+      });
+    }
   };
 
   #isMessage(node, role) {

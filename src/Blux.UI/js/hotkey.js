@@ -5,8 +5,11 @@
  *
  * A shortcut without ctrl, meta or mod ("/", "g", "shift+?") types a character, so it never fires while the focus is in
  * a text field, a select or a contenteditable element. Elements that are disabled, inert or not rendered are skipped,
- * and the key is only consumed when an element was actually clicked.
+ * and the key is only consumed when an element was actually clicked. While a modal dialog is open, only the elements inside
+ * it are available.
  */
+import { behindModal } from './shared.js';
+
 const APPLE = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
 function parse(combo) {
@@ -39,7 +42,7 @@ function isTyping(target) {
 }
 
 function isAvailable(element) {
-  if (element.matches(':disabled') || element.closest('[inert]')) return false;
+  if (element.matches(':disabled') || element.closest('[inert]') || behindModal(element)) return false;
   // data-bx-hotkey-always: the element is a hidden trigger that only exists to be clicked (BxDashboardSearch).
   if (element.hasAttribute('data-bx-hotkey-always')) return true;
   return element.checkVisibility ? element.checkVisibility() : element.getClientRects().length > 0;
