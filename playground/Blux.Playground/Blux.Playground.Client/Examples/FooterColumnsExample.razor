@@ -1,0 +1,43 @@
+<div class="w-full overflow-hidden rounded-xl border border-(--blux-border)">
+    <BxFooter>
+        <Top>
+            <BxFooterColumns Columns="_columns" AriaLabel="Sitemap" data-testid="footer-columns">
+                <Left>
+                    <p class="font-mono text-sm font-semibold text-(--blux-text-highlighted)">acme/app</p>
+                    <p class="mt-2 max-w-xs text-sm text-(--blux-text-muted)">Tools for teams that ship.</p>
+                </Left>
+            </BxFooterColumns>
+        </Top>
+        <Left>
+            <p>Copyright 2026 Acme Inc.</p>
+        </Left>
+    </BxFooter>
+</div>
+
+@code {
+    private static readonly BxFooterColumn[] _columns =
+    [
+        new("Product")
+        {
+            Links =
+            [
+                new("Features") { Href = "/components/header" },
+                new("Pricing") { Href = "/components/footer" },
+                new("Changelog") { Href = "/docs" },
+            ],
+        },
+        new("Company")
+        {
+            Links =
+            [
+                new("About") { Href = "/docs" },
+                new("Careers") { Href = "/docs", Disabled = true },
+                new("Blog") { Href = "https://example.com", Target = "_blank" },
+            ],
+        },
+        new("Legal")
+        {
+            Links = [new("Privacy") { Href = "/docs" }, new("Terms") { Href = "/docs" }],
+        },
+    ];
+}
