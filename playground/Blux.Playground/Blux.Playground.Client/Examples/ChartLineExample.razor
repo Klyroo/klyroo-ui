@@ -1,0 +1,29 @@
+@* The chart is drawn by the server as SVG. Hover a column, or focus a chart and use the arrow keys, to see the values. *@
+<div class="grid w-full gap-8 md:grid-cols-2">
+    <div>
+        <p class="mb-2 text-sm font-medium text-(--blux-text-highlighted)">Line, with points and a smooth curve</p>
+        <BxChart TItem="Visit" Data="_data" Index="@(v => v.Month)" Categories="_categories" Points Curve="BxChartCurve.Monotone"
+                 XLabel="Month" YLabel="Visitors" Width="420" Height="260" data-testid="chart-line" />
+    </div>
+    <div>
+        <p class="mb-2 text-sm font-medium text-(--blux-text-highlighted)">Stacked area</p>
+        <BxChart TItem="Visit" Data="_data" Index="@(v => v.Month)" Categories="_categories" Type="BxChartType.Area" Stacked
+                 Width="420" Height="260" AriaLabel="Visitors by month, desktop and mobile stacked" data-testid="chart-area" />
+    </div>
+</div>
+
+@code {
+    private sealed record Visit(string Month, double Desktop, double Mobile);
+
+    private static readonly Visit[] _data =
+    [
+        new("Jan", 186, 80), new("Feb", 305, 200), new("Mar", 237, 120),
+        new("Apr", 73, 190), new("May", 209, 130), new("Jun", 214, 140),
+    ];
+
+    private static readonly BxChartCategory<Visit>[] _categories =
+    [
+        new("desktop", v => v.Desktop) { Label = "Desktop" },
+        new("mobile", v => v.Mobile) { Label = "Mobile" },
+    ];
+}

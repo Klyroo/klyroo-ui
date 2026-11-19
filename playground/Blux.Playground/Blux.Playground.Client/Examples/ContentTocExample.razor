@@ -1,0 +1,26 @@
+@* Scroll this article: the link of the heading being read is marked (aria-current="location"). The scroll-spy runs in
+   the browser with an IntersectionObserver, and the list collapses behind its title below the lg breakpoint. *@
+<div class="grid w-full gap-8 lg:grid-cols-[minmax(0,1fr)_14rem]" data-testid="content-toc-example">
+    <article class="min-w-0 text-sm text-(--blux-text-muted)">
+        @foreach (var link in _links)
+        {
+            <section class="min-h-[45vh]">
+                <h3 id="@link.Id" class="scroll-mt-24 text-base font-semibold text-(--blux-text-highlighted)" data-testid="@("toc-heading-" + link.Id)">@link.Text</h3>
+                <p class="mt-2 max-w-prose">A section with enough height for the next heading to be out of sight, so the table of contents has something to follow while you scroll.</p>
+            </section>
+        }
+    </article>
+    <aside class="lg:sticky lg:top-24 lg:self-start">
+        <BxContentToc Links="_links" Title="In this article" data-testid="content-toc-example-toc" />
+    </aside>
+</div>
+
+@code {
+    private static readonly BxContentTocLink[] _links =
+    [
+        new("toc-intro", "Introduction"),
+        new("toc-usage", "Usage"),
+        new("toc-props", "Props") { Level = 3 },
+        new("toc-theme", "Theming"),
+    ];
+}

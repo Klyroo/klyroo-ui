@@ -1,0 +1,70 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+@inject NavigationManager Navigation
+
+@*
+    A table of contents. <bx-content-toc> (js/content.js) marks the link of the heading being read with
+    data-active and aria-current="location", using an IntersectionObserver, and opens and closes the collapsible block
+    below the breakpoint. Both happen in the browser; without it the links still jump to their headings.
+    The state attributes are not rendered here, so a render never fights the browser over them.
+*@
+<bx-content-toc data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <nav aria-label="@(Title ?? Options.Strings.ContentToc)">
+        @if (Collapsible)
+        {
+            <button type="button" data-slot="trigger" class="@_slots["trigger"]" aria-expanded="false" aria-controls="@(_id + "-content")">
+                <span>@(Title ?? Options.Strings.ContentToc)</span>
+                @BxIcons.ChevronDown(_slots["chevron"])
+            </button>
+        }
+        <p class="@_slots["title"]" data-slot="title">@(Title ?? Options.Strings.ContentToc)</p>
+        <div id="@(_id + "-content")" data-slot="content" class="@_slots["content"]">
+            <ul class="@_slots["list"]">
+                @foreach (var link in Links)
+                {
+                    <li class="@_slots["item"]">
+                        <a href="@(_page + "#" + link.Id)" data-level="@Math.Clamp(link.Level, 2, 5)" class="@_slots["link"]">@link.Text</a>
+                    </li>
+                }
+            </ul>
+        </div>
+    </nav>
+</bx-content-toc>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+
+    // A bare "#id" resolves against the <base href> of a Blazor app, which is the root: the link would leave the page.
+    private string _page = "";
+
+    /// <summary>The headings of the page, in document order. Each <c>Id</c> must be the id of an element on the page.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxContentTocLink> Links { get; set; } = [];
+
+    /// <summary>The title, and the accessible name of the navigation. Defaults to the built-in text.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>The color of the link of the heading being read.</summary>
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+
+    /// <summary>
+    /// Collapses the list behind its title below <see cref="Breakpoint"/>, as a disclosure button. Above it, and without
+    /// this, the list is always shown.
+    /// </summary>
+    [Parameter] public bool Collapsible { get; set; } = true;
+    [Parameter] public BxContentTocBreakpoint Breakpoint { get; set; } = BxContentTocBreakpoint.Lg;
+    [Parameter] public ContentTocUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("toc");
+        var uri = Navigation.Uri;
+        var hash = uri.IndexOf('#');
+        _page = hash < 0 ? uri : uri[..hash];
+        _slots = ResolveSlots(Options.ContentToc, new Dictionary<string, string?>
+        {
+            ["breakpoint"] = Breakpoint switch { BxContentTocBreakpoint.Xl => "xl", BxContentTocBreakpoint.Xxl => "2xl", _ => "lg" },
+            ["collapsible"] = VariantValue.Of(Collapsible),
+        }, Ui, "root");
+    }
+}

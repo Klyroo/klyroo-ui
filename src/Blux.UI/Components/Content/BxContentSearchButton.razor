@@ -1,0 +1,62 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    The button that opens a BxContentSearch, showing its shortcut with BxKbd. It is a BxButton, so it takes its color,
+    variant and size. A click is handled in the browser (js/content.js), which opens the search by clicking the hidden
+    trigger of its modal, so it works in static rendering and focus returns to the button when the search closes.
+*@
+<BxButton Color="Color" Variant="Variant" Size="Size" Square="Collapsed" Class="@_slots["root"]" Ui="_buttonUi"
+          aria-haspopup="dialog" aria-label="@(Collapsed ? ButtonLabel : null)" data-bx-content-search-open="@For"
+          @attributes="AdditionalAttributes">
+    <LeadingIcon>@BxIcons.Named("search", "size-5")</LeadingIcon>
+    <ChildContent>
+        @if (!Collapsed)
+        {
+            <span class="@_slots["label"]">@ButtonLabel</span>
+            @if (Keys.Count > 0)
+            {
+                <span class="@_slots["kbds"]" aria-hidden="true">
+                    @foreach (var key in Keys)
+                    {
+                        <BxKbd Value="@key" Size="BxSize.Sm" />
+                    }
+                </span>
+            }
+        }
+    </ChildContent>
+</BxButton>
+
+@code {
+    private SlotSet _slots = default!;
+
+    private ButtonUi _buttonUi = new();
+
+    private string ButtonLabel => Label ?? Options.Strings.ContentSearchButton;
+
+    /// <summary>The text of the button. Defaults to the built-in text; with <see cref="Collapsed"/> it is the accessible name.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Shows only the icon, as a square button. Without it the button shows its label and its shortcut.</summary>
+    [Parameter] public bool Collapsed { get; set; } = true;
+
+    /// <summary>The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search.</summary>
+    [Parameter] public IReadOnlyList<string> Keys { get; set; } = ["Ctrl", "K"];
+
+    /// <summary>The <c>Name</c> of the search to open. Without it the button opens the unnamed one.</summary>
+    [Parameter] public string For { get; set; } = "";
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Outline;
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public ContentSearchButtonUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(Options.ContentSearchButton, new Dictionary<string, string?>
+        {
+            ["collapsed"] = VariantValue.Of(Collapsed),
+        }, Ui, "root");
+        // The label of the button holds the text and the keys side by side.
+        _buttonUi = new ButtonUi { Label = _slots["buttonLabel"] };
+    }
+}

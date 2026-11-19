@@ -1,0 +1,248 @@
+- generic [ref=f45e624]:
+  - link "Skip to content" [ref=f45e625] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=f45e626]:
+    - generic [ref=f45e627]:
+      - link "blux/ui" [ref=f45e628] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f45e636]: v0.1-alpha
+      - navigation "Main" [ref=f45e637]:
+        - link "Docs" [ref=f45e638] [cursor=pointer]:
+          - /url: /docs
+        - link "Components" [ref=f45e639] [cursor=pointer]:
+          - /url: /components/button
+        - link "Theming" [ref=f45e640] [cursor=pointer]:
+          - /url: /docs/theming
+      - generic [ref=f45e641]:
+        - button "Search" [ref=f45e642]:
+          - generic [ref=f45e646]:
+            - generic [ref=f45e647]: Search
+            - generic [aria-hidden] [ref=f45e648]:
+              - generic [ref=f45e649]: Ctrl
+              - generic [ref=f45e650]: K
+        - button "Toggle dark mode" [ref=f45e651]
+  - main [ref=f45e655]:
+    - generic [ref=f45e656]:
+      - generic [ref=f45e659]:
+        - generic [ref=f45e660]:
+          - paragraph [ref=f45e661]: blux/ui · open source · MIT
+          - heading "Blazor components for every render mode." [active] [level=1] [ref=f45e662]
+        - generic [ref=f45e663]:
+          - paragraph [ref=f45e664]: Twenty accessible components for Server, WebAssembly, Auto and static pages. Menus, dialogs and tabs answer in the browser; .NET only hears what you bind.
+          - generic [ref=f45e665]:
+            - link "Get started" [ref=f45e666] [cursor=pointer]:
+              - /url: /docs/installation
+            - button "$ dotnet add package Blux.UI Copy" [ref=f45e671]:
+              - generic [ref=f45e672]: $ dotnet add package Blux.UI
+              - generic [ref=f45e673]: Copy
+      - generic [ref=f45e674]:
+        - generic [ref=f45e675]:
+          - paragraph [ref=f45e676]: Live · pick a component, then use it
+          - paragraph [ref=f45e678]:
+            - generic [ref=f45e680]:
+              - text: Rendered by
+              - strong [ref=f45e681]: Server
+              - text: ", interactive"
+        - generic [ref=f45e683]:
+          - tablist "Pick a component" [ref=f45e684]:
+            - tab "Modal" [selected] [ref=f45e685]
+            - tab "Select" [ref=f45e687]
+            - tab "Tabs" [ref=f45e689]
+            - tab "DropdownMenu" [ref=f45e691]
+            - tab "Switch" [ref=f45e693]
+          - tabpanel "Modal" [ref=f45e695]:
+            - generic [ref=f45e696]:
+              - generic [ref=f45e697]:
+                - generic [ref=f45e698]:
+                  - generic [ref=f45e699]: RenameDialog.razor
+                  - generic [ref=f45e700]: 7 lines
+                - generic [ref=f45e701]:
+                  - generic [ref=f45e702]:
+                    - generic [aria-hidden] [ref=f45e703]: "1"
+                    - code [ref=f45e704]: <BxModal @bind-Open="open" Title="Rename project">
+                  - generic [ref=f45e705]:
+                    - generic [aria-hidden] [ref=f45e706]: "2"
+                    - code [ref=f45e707]: <ChildContent><BxButton Label="Rename" /></ChildContent>
+                  - generic [ref=f45e708]:
+                    - generic [aria-hidden] [ref=f45e709]: "3"
+                    - code [ref=f45e710]: <Body><BxInput @bind-Value="name" /></Body>
+                  - generic [ref=f45e711]:
+                    - generic [aria-hidden] [ref=f45e712]: "4"
+                    - code [ref=f45e713]: <Footer>
+                  - generic [ref=f45e714]:
+                    - generic [aria-hidden] [ref=f45e715]: "5"
+                    - code [ref=f45e716]: <BxButton Label="Save" data-bx-close />
+                  - generic [ref=f45e717]:
+                    - generic [aria-hidden] [ref=f45e718]: "6"
+                    - code [ref=f45e719]: </Footer>
+                  - generic [ref=f45e720]:
+                    - generic [aria-hidden] [ref=f45e721]: "7"
+                    - code [ref=f45e722]: </BxModal>
+                - paragraph [ref=f45e723]: "// highlighted: the only line that talks to .NET"
+              - generic [ref=f45e724]:
+                - generic [ref=f45e725]:
+                  - generic [ref=f45e726]:
+                    - generic [ref=f45e727]: Live component
+                    - generic [ref=f45e729]: try it
+                  - button "Rename" [ref=f45e733]
+                - generic [ref=f45e735]:
+                  - generic [ref=f45e736]:
+                    - generic [ref=f45e737]:
+                      - generic [ref=f45e738]: In the browser
+                      - generic [ref=f45e740]: no .NET
+                    - list "Events handled in the browser" [ref=f45e741]
+                  - generic [ref=f45e742]:
+                    - generic [ref=f45e743]:
+                      - generic [ref=f45e744]: Sent to .NET
+                      - generic [ref=f45e746]: Server
+                    - list "Events received by .NET" [ref=f45e747]:
+                      - listitem [ref=f45e748]: Waiting for a bound change…
+          - text: Choose…
+    - region "Twenty components, one stylesheet." [ref=f45e749]:
+      - generic [ref=f45e750]:
+        - generic [ref=f45e751]:
+          - heading "Twenty components, one stylesheet." [level=2] [ref=f45e752]: Twenty components,one stylesheet.
+          - paragraph [ref=f45e753]: Every card below is the real component, running in this page. Same markup on the server and in the browser, themed with a handful of CSS variables.
+        - generic [ref=f45e754]:
+          - article [ref=f45e755]:
+            - generic [ref=f45e757]:
+              - button "Deploy" [ref=f45e758]
+              - button "Cancel" [ref=f45e760]
+              - button "Saving" [disabled] [ref=f45e762]
+            - generic [ref=f45e767]:
+              - heading [level=3] [ref=f45e768]:
+                - link "Button" [ref=f45e769] [cursor=pointer]:
+                  - /url: /components/button
+                - generic [aria-hidden] [ref=f45e770]: →
+              - paragraph [ref=f45e771]: Seven colors, six variants, loading and link states.
+          - article [ref=f45e772]:
+            - combobox "Region" [ref=f45e776] [cursor=pointer]:
+              - generic [ref=f45e777]: Europe (Paris)
+            - generic [ref=f45e780]:
+              - heading [level=3] [ref=f45e781]:
+                - link "Select" [ref=f45e782] [cursor=pointer]:
+                  - /url: /components/select
+                - generic [aria-hidden] [ref=f45e783]: →
+              - paragraph [ref=f45e784]: Keyboard, typeahead, and a hidden input that posts in plain forms.
+          - article [ref=f45e785]:
+            - button "Open dialog" [ref=f45e789]
+            - generic [ref=f45e791]:
+              - heading [level=3] [ref=f45e792]:
+                - link "Modal" [ref=f45e793] [cursor=pointer]:
+                  - /url: /components/modal
+                - generic [aria-hidden] [ref=f45e794]: →
+              - paragraph [ref=f45e795]: "The native dialog: inert page, focus kept inside, Escape."
+          - article [ref=f45e796]:
+            - button "Deploy to production" [ref=f45e798]
+            - generic [ref=f45e800]:
+              - heading [level=3] [ref=f45e801]:
+                - link "Toast" [ref=f45e802] [cursor=pointer]:
+                  - /url: /components/toast
+                - generic [aria-hidden] [ref=f45e803]: →
+              - paragraph [ref=f45e804]: Raised from .NET, shown and timed by the browser.
+          - article [ref=f45e805]:
+            - generic [ref=f45e807]:
+              - generic [ref=f45e808]:
+                - switch "Auto deploy" [checked] [ref=f45e810] [cursor=pointer]
+                - generic [ref=f45e811]: Auto deploy
+              - generic [ref=f45e813]:
+                - checkbox "Run tests" [checked] [ref=f45e815] [cursor=pointer]
+                - generic [ref=f45e816]: Run tests
+            - generic [ref=f45e818]:
+              - heading [level=3] [ref=f45e819]:
+                - link "Form controls" [ref=f45e820] [cursor=pointer]:
+                  - /url: /components/form-field
+                - generic [aria-hidden] [ref=f45e821]: →
+              - paragraph [ref=f45e822]: Switch, checkbox and radio on native inputs, right even without scripts.
+          - article [ref=f45e823]:
+            - generic [ref=f45e826]:
+              - tablist "Environment" [ref=f45e827]:
+                - tab "Preview" [selected] [ref=f45e828]
+                - tab "Production" [ref=f45e830]
+              - tabpanel "Preview" [ref=f45e832]:
+                - paragraph [ref=f45e833]: 3 deployments today
+            - generic [ref=f45e834]:
+              - heading [level=3] [ref=f45e835]:
+                - link "Tabs" [ref=f45e836] [cursor=pointer]:
+                  - /url: /components/tabs
+                - generic [aria-hidden] [ref=f45e837]: →
+              - paragraph [ref=f45e838]: Arrow keys and automatic activation, no round trip.
+          - article [ref=f45e839]:
+            - generic [ref=f45e841]:
+              - generic [ref=f45e842]:
+                - img "Ada Lovelace" [ref=f45e843]:
+                  - generic [aria-hidden] [ref=f45e844]: AL
+                - img "Grace Hopper" [ref=f45e845]:
+                  - generic [aria-hidden] [ref=f45e846]: GH
+                - img "Alan Turing" [ref=f45e847]:
+                  - generic [aria-hidden] [ref=f45e848]: AT
+              - generic [ref=f45e849]: online
+            - generic [ref=f45e851]:
+              - heading [level=3] [ref=f45e852]:
+                - link "Avatar & Badge" [ref=f45e853] [cursor=pointer]:
+                  - /url: /components/avatar
+                - generic [aria-hidden] [ref=f45e854]: →
+              - paragraph [ref=f45e855]: Initials when the picture is missing, status at a glance.
+          - article [ref=f45e856]:
+            - button "Hover or focus me" [ref=f45e860]
+            - generic [ref=f45e862]:
+              - heading [level=3] [ref=f45e863]:
+                - link "Tooltip" [ref=f45e864] [cursor=pointer]:
+                  - /url: /components/tooltip
+                - generic [aria-hidden] [ref=f45e865]: →
+              - paragraph [ref=f45e866]: Hover after a delay, focus at once, Escape to dismiss.
+    - region "What happens on a click" [ref=f45e867]:
+      - generic [ref=f45e869]:
+        - generic [ref=f45e870]:
+          - heading "What happens on a click" [level=2] [ref=f45e871]: What happenson a click
+          - paragraph [ref=f45e872]: Opening a popover in Server mode usually means a SignalR round trip. Here it is five steps, and four of them never leave the browser.
+        - generic [ref=f45e873]:
+          - generic [ref=f45e874]:
+            - generic [ref=f45e875]: click
+            - generic [ref=f45e876]: .NET, if bound
+          - list [ref=f45e880]:
+            - listitem [ref=f45e881]:
+              - paragraph [ref=f45e882]: "01"
+              - paragraph [ref=f45e883]: Click
+              - paragraph [ref=f45e884]: The trigger is a native popover invoker. No .NET handler is attached.
+              - code [ref=f45e885]: popoverTargetElement
+            - listitem [ref=f45e886]:
+              - paragraph [ref=f45e887]: "02"
+              - paragraph [ref=f45e888]: Custom element
+              - paragraph [ref=f45e889]: <bx-popover> positions the panel and moves focus inside.
+              - code [ref=f45e890]: float(trigger, panel)
+            - listitem [ref=f45e891]:
+              - paragraph [ref=f45e892]: "03"
+              - paragraph [ref=f45e893]: Top layer
+              - paragraph [ref=f45e894]: The browser handles Escape, light dismiss and stacking.
+              - code [ref=f45e895]: showPopover()
+            - listitem [ref=f45e896]:
+              - paragraph [ref=f45e897]: "04"
+              - paragraph [ref=f45e898]: One event
+              - paragraph [ref=f45e899]: The new state goes out once, with a sequence number.
+              - code [ref=f45e900]: "bx-toggle {open, seq}"
+            - listitem [ref=f45e901]:
+              - paragraph [ref=f45e902]: "05"
+              - paragraph [ref=f45e903]: .NET
+              - paragraph [ref=f45e904]: Only if you bound it. Late renders are recognised and ignored.
+              - code [ref=f45e905]: "@bind-Open"
+    - region "Start with one package." [ref=f45e906]:
+      - generic [ref=f45e908]:
+        - paragraph [ref=f45e909]: 20 components · 4 render modes
+        - heading "Start with one package." [level=2] [ref=f45e910]
+        - generic [ref=f45e912]:
+          - generic "Code" [ref=f45e913]:
+            - code [ref=f45e914]: dotnet add package Blux.UI --prerelease
+          - button "Copy" [ref=f45e915]
+        - generic [ref=f45e916]:
+          - link "Read the docs" [ref=f45e917] [cursor=pointer]:
+            - /url: /docs
+          - link "Browse components" [ref=f45e919] [cursor=pointer]:
+            - /url: /components/button
+  - contentinfo [ref=f45e921]:
+    - generic [ref=f45e922]:
+      - paragraph [ref=f45e923]: blux/ui · MIT
+      - paragraph [ref=f45e924]: Built with Blazor and Tailwind CSS.
+  - generic:
+    - region "Notifications":
+      - list

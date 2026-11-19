@@ -15,10 +15,14 @@
             <a href="/docs/theming" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Theming</a>
         </nav>
         <div class="ms-auto flex items-center gap-1">
+            <BxContentSearchButton Collapsed="false" Class="me-1 min-w-0 sm:w-56" />
             <ColorModeButton />
         </div>
     </div>
 </header>
+
+@* The search of the whole site, over the catalog: Ctrl+K (Cmd+K on a Mac) or the button in the header. *@
+<BxContentSearch Pages="Blux.Playground.Client.Docs.DocsNavigation.SearchPages" />
 
 <main id="main" tabindex="-1" class="focus:outline-none">
     @Body
