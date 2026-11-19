@@ -133,9 +133,13 @@ public class Form2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "pin-input");
         var cells = Page.GetByRole(AriaRole.Group, new() { Name = "Verification code" }).Locator("[data-slot=cell]");
 
+        // A real copy and paste: Firefox hides the data of a scripted ClipboardEvent from handlers.
+        await Page.EvaluateAsync(
+            "() => { const t = document.createElement('textarea'); t.id = 'bx-test-clip'; t.value = '12-34 56'; document.body.append(t); t.select(); }");
+        await Page.Keyboard.PressAsync("ControlOrMeta+C");
+        await Page.EvaluateAsync("() => document.getElementById('bx-test-clip').remove()");
         await cells.First.FocusAsync();
-        await cells.First.EvaluateAsync(
-            "el => { const data = new DataTransfer(); data.setData('text', '12-34 56'); el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true })); }");
+        await Page.Keyboard.PressAsync("ControlOrMeta+V");
 
         for (var i = 0; i < 6; i++) await Assertions.Expect(cells.Nth(i)).ToHaveValueAsync("123456"[i].ToString());
         await Assertions.Expect(cells.Nth(5)).ToBeFocusedAsync();
