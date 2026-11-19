@@ -42,8 +42,9 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
         var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Quick actions" });
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         Assert.True(await dialog.EvaluateAsync<bool>("d => d.matches(':modal') && d.contains(document.activeElement)"));
-        // Docked to the bottom edge once the slide has finished.
-        await Assertions.Expect(dialog).ToHaveCSSAsync("transform", "matrix(1, 0, 0, 1, 0, 0)");
+        // The slide runs by default (Tailwind animates the individual translate property) and ends docked to the bottom edge.
+        Assert.Contains("translate", await dialog.EvaluateAsync<string>("d => getComputedStyle(d).transitionProperty"));
+        await Assertions.Expect(dialog).ToHaveCSSAsync("translate", "0px");
         Assert.True(await dialog.EvaluateAsync<bool>("d => Math.abs(d.getBoundingClientRect().bottom - innerHeight) < 1"));
 
         await Page.Keyboard.PressAsync("Escape");
@@ -75,7 +76,7 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await trigger.ClickAsync();
         var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Edit profile" });
         await Assertions.Expect(dialog).ToBeVisibleAsync();
-        await Assertions.Expect(dialog).ToHaveCSSAsync("transform", "matrix(1, 0, 0, 1, 0, 0)");
+        await Assertions.Expect(dialog).ToHaveCSSAsync("translate", "0px");
         Assert.True(await dialog.EvaluateAsync<bool>("d => Math.abs(d.getBoundingClientRect().right - innerWidth) < 1 && d.getBoundingClientRect().height >= innerHeight - 1"));
 
         await dialog.GetByRole(AriaRole.Button, new() { Name = "Close" }).ClickAsync();
@@ -94,7 +95,7 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.GetByTestId("drawer-trigger").ClickAsync();
 
         var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Quick actions" });
-        Assert.Equal("0s", await dialog.EvaluateAsync<string>("d => getComputedStyle(d).transitionDuration"));
+        Assert.Equal("none", await dialog.EvaluateAsync<string>("d => getComputedStyle(d).transitionProperty"));
     }
 
     [Theory]
@@ -177,12 +178,12 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
 
         await input.FillAsync("zzz");
         await Assertions.Expect(options).ToHaveCountAsync(0);
-        await Assertions.Expect(palette.GetByText("No results found")).ToBeVisibleAsync();
+        await Assertions.Expect(palette.Locator("[data-slot=empty]")).ToBeVisibleAsync();
         await Assertions.Expect(palette.GetByRole(AriaRole.Status)).ToHaveTextAsync("No results found");
 
         await input.FillAsync("");
         await Assertions.Expect(options).ToHaveCountAsync(7);
-        await Assertions.Expect(palette.GetByText("No results found")).ToBeHiddenAsync();
+        await Assertions.Expect(palette.Locator("[data-slot=empty]")).ToBeHiddenAsync();
     }
 
     [Theory]
@@ -263,7 +264,7 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open(mode, "color-mode-switch");
         var first = Page.GetByRole(AriaRole.Switch).First;
-        var second = Page.GetByRole(AriaRole.Switch, new() { Name = "Dark mode" });
+        var second = Page.GetByRole(AriaRole.Switch, new() { Name = "Dark mode", Exact = true });
         await Assertions.Expect(first).Not.ToBeCheckedAsync();
 
         await first.ClickAsync();
