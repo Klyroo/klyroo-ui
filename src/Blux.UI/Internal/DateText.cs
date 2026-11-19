@@ -8,11 +8,11 @@ internal static partial class DateText
 {
     /// <summary>
     /// Formats with <paramref name="format"/>, or, without one, with the long date pattern of the current culture
-    /// minus the day name ("March 3, 2026" in en-US, "3 mars 2026" in fr-FR).
+    /// minus the day name ("March 3, 2026" in en-US, "3 mars 2026" in fr-FR). <paramref name="culture"/> defaults to the current culture.
     /// </summary>
-    public static string Format(DateTimeOffset date, string? format)
+    public static string Format(DateTimeOffset date, string? format, CultureInfo? culture = null)
     {
-        var culture = CultureInfo.CurrentCulture;
+        culture ??= CultureInfo.CurrentCulture;
         if (format is not null)
         {
             return date.ToString(format, culture);

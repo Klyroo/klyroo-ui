@@ -87,6 +87,59 @@ public class MarketingTests : BluxTestContext
     }
 
     [Fact]
+    public void AuthForm_rejects_a_pathological_email_quickly_instead_of_timing_out()
+    {
+        var cut = RenderAuth();
+        cut.Find("input[type=email]").Change("a@" + new string('.', 50_000) + "@");
+        cut.Find("bx-password input").Change("longenough1");
+
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        cut.Find("form").Submit();
+        watch.Stop();
+
+        Assert.Equal("Enter a valid email address.", cut.Find("p[data-slot=error]").TextContent.Trim());
+        Assert.True(watch.ElapsedMilliseconds < 100, $"validation took {watch.ElapsedMilliseconds} ms");
+    }
+
+    [Fact]
+    public async Task AuthForm_only_keeps_posted_values_of_declared_fields()
+    {
+        IReadOnlyDictionary<string, string?>? submitted = null;
+        var form = new BxAuthForm();
+        typeof(BxAuthForm).GetProperty("Posted", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .SetValue(form, new Dictionary<string, string?>
+            {
+                ["__form"] = "sign-in",
+                ["email"] = "ada@example.com",
+                ["password"] = "longenough1",
+                ["isAdmin"] = "true",
+            });
+        ComponentFactories.Add(t => t == typeof(BxAuthForm), _ => form);
+
+        var cut = Render<BxAuthForm>(p => p.Add(f => f.Fields, SignInFields).Add(f => f.FormName, "sign-in")
+            .Add(f => f.OnValidSubmit, (IReadOnlyDictionary<string, string?> values) => submitted = values));
+        await cut.InvokeAsync(() => (Task)form.GetType().GetMethod("HandleSubmit", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .Invoke(form, [null])!);
+
+        Assert.Equal("ada@example.com", cut.Find("input[type=email]").GetAttribute("value"));
+        Assert.NotNull(submitted);
+        Assert.Equal("ada@example.com", submitted!["email"]);
+        Assert.DoesNotContain("isAdmin", submitted.Keys);
+    }
+
+    [Fact]
+    public void AuthForm_separator_comes_from_the_strings()
+    {
+        using var localized = new LocalizedContext();
+        var cut = localized.Render<BxAuthForm>(p => p.Add(f => f.Fields, SignInFields)
+            .Add(f => f.Providers, [new BxAuthProvider("GitHub", "https://example.com/o")]));
+
+        var markup = cut.Markup.Replace(" ", "").Replace("\n", "");
+        Assert.Contains(">ou</span>", markup);
+        Assert.DoesNotContain(">or</span>", markup);
+    }
+
+    [Fact]
     public void AuthForm_valid_submit_hands_over_the_values_and_clears_the_errors()
     {
         IReadOnlyDictionary<string, string?>? submitted = null;
@@ -446,6 +499,36 @@ public class MarketingTests : BluxTestContext
     }
 
     [Fact]
+    public void BlogPost_and_ChangelogVersion_format_the_date_in_the_given_culture_whatever_the_current_one_is()
+    {
+        var date = new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero);
+        var previous = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            var post = Render<BxBlogPost>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
+            var version = Render<BxChangelogVersion>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
+
+            Assert.Equal("12 novembre 2026", post.Find("time").TextContent);
+            Assert.Equal("12 novembre 2026", version.Find("time").TextContent);
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+        }
+    }
+
+    [Fact]
+    public void BlogPost_and_ChangelogVersion_links_that_open_a_new_tab_say_so_to_screen_readers()
+    {
+        var post = Render<BxBlogPost>(p => p.Add(c => c.Title, "Post").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
+        var version = Render<BxChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
+
+        Assert.Equal("(opens in a new tab)", post.Find("h3 a span.sr-only").TextContent.Trim());
+        Assert.Equal("(opens in a new tab)", version.Find("h3 a span.sr-only").TextContent.Trim());
+    }
+
+    [Fact]
     public void ChangelogVersions_wraps_the_versions()
     {
         var cut = Render<BxChangelogVersions>(p => p.AddChildContent("<article>one</article>"));
@@ -482,6 +565,7 @@ public class MarketingTests : BluxTestContext
             {
                 o.Strings.AuthFormShowPassword = "Afficher le mot de passe";
                 o.Strings.AuthFormSubmit = "Continuer";
+                o.Strings.AuthFormSeparator = "ou";
             });
             SetRendererInfo(new RendererInfo("Server", true));
         }

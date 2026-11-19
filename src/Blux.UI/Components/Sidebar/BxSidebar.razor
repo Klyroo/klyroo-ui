@@ -3,10 +3,15 @@
 
 @*
     An app sidebar. From the lg breakpoint up it is a column that can collapse to icons and, if asked, be resized; the
-    browser owns both states (the <bx-sidebar> element in js/layout.js), keeps them in localStorage under Id, and tells
+    browser owns both states (the <bx-sidebar> element in js/layout.js), keeps them in cookies named after Id, and tells
     .NET about the collapsed state only when CollapsedChanged is bound. Below lg the column is replaced by a button that
     opens the same content in a BxSlideover, so it works in static rendering too.
     The aside carries data-state="expanded|collapsed" and is a Tailwind group named "sidebar".
+    Header, ChildContent and Footer are rendered twice: in the column and in the mobile panel. Only one is on screen
+    (the other is display:none or a closed dialog, so assistive technology does not see it twice), but both exist in the
+    DOM and in the component tree, so an id, a form field or a stateful component inside them is duplicated. Prefer
+    classes to ids there, and keep state outside. The copy cannot be rendered on demand: the panel opens in the browser,
+    and a copy that appears after a round trip to .NET would open empty (Server) or not at all (static rendering).
 *@
 <bx-sidebar data-bx-seq="@(CollapsedChanged.HasDelegate ? _sequence : null)"
             class="@_slots["host"]"
@@ -48,7 +53,7 @@
     private SlideoverUi _slideoverUi = new() { Body = "p-0 sm:p-0" };
     private int _sequence;
 
-    /// <summary>The scrollable middle: navigation, search.</summary>
+    /// <summary>The scrollable middle: navigation, search. Rendered twice (column and mobile panel): avoid ids and local state in it.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Top of the sidebar: a logo and a title. Hidden while the sidebar is collapsed, next to the collapse button.</summary>
@@ -58,9 +63,12 @@
     [Parameter] public RenderFragment? Footer { get; set; }
 
     /// <summary>
-    /// Key under which the collapsed state and the width are remembered in localStorage ("blux:sidebar:" followed by
-    /// the id). Without an id nothing is remembered. With a bound <see cref="Collapsed"/> the collapsed state is not
-    /// restored: your state wins.
+    /// Name under which the collapsed state and the width are remembered, in the cookies <c>blux-sidebar-{id}</c>
+    /// ("1" when collapsed) and <c>blux-sidebar-{id}-width</c>, written by the browser. Without an id nothing is
+    /// remembered. With a bound <see cref="Collapsed"/> the collapsed state is not restored: your state wins.
+    /// The browser applies the remembered state once its script runs, without animating it. The server renders
+    /// <see cref="Collapsed"/> and <see cref="Width"/> until then: to avoid the page shifting on load, read the cookies
+    /// from the request in your layout (the component cannot, it also runs in WebAssembly) and pass them.
     /// </summary>
     [Parameter] public string? Id { get; set; }
 
