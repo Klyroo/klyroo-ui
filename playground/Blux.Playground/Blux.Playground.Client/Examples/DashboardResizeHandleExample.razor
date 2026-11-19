@@ -1,0 +1,12 @@
+@* A handle placed between two panels, instead of Resizable on the first. It resizes the panel before it. *@
+<div class="h-56 w-full overflow-hidden rounded-xl border border-(--blux-border)" data-testid="dashboard-handle-frame">
+    <BxDashboardGroup>
+        <BxDashboardPanel Size="50" data-testid="dashboard-handle-left">
+            <Body><p class="text-sm text-(--blux-text-muted)">Editor</p></Body>
+        </BxDashboardPanel>
+        <BxDashboardResizeHandle Label="Resize editor" Value="50" data-testid="dashboard-handle" />
+        <BxDashboardPanel Size="50" data-testid="dashboard-handle-right">
+            <Body><p class="text-sm text-(--blux-text-muted)">Preview</p></Body>
+        </BxDashboardPanel>
+    </BxDashboardGroup>
+</div>

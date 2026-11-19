@@ -1,0 +1,303 @@
+namespace Blux.UI.Tests;
+
+public class DashboardTests : BluxTestContext
+{
+    // ---- DashboardGroup
+
+    [Fact]
+    public void Group_unbound_renders_no_sequence_and_a_storage_id_only_with_a_key()
+    {
+        var plain = Render<BxDashboardGroup>();
+        var remembered = Render<BxDashboardGroup>(p => p.Add(g => g.StorageKey, "app"));
+
+        var element = plain.Find("bx-dashboard-group");
+        Assert.False(element.HasAttribute("data-bx-seq"));
+        Assert.False(element.HasAttribute("data-bx-dashboard-id"));
+        Assert.False(element.HasAttribute("sizes"));
+        Assert.Equal("app", remembered.Find("bx-dashboard-group").GetAttribute("data-bx-dashboard-id"));
+        Assert.Contains("overflow-hidden", element.ClassList);
+    }
+
+    [Fact]
+    public void Group_bound_renders_the_sequence_first_and_the_sizes()
+    {
+        var cut = Render<BxDashboardGroup>(p => p
+            .Add(g => g.Sizes, [30.0, 70.0])
+            .Add(g => g.SizesChanged, (IReadOnlyList<double> _) => { }));
+
+        var element = cut.Find("bx-dashboard-group");
+        Assert.Equal("data-bx-seq", element.Attributes.First().Name);
+        Assert.Equal("30,70", element.GetAttribute("sizes"));
+    }
+
+    [Fact]
+    public void Group_gives_its_key_to_the_sidebar_and_to_the_controls()
+    {
+        var cut = Render<BxDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent<BxDashboardSidebar>(s => s
+            .Add(x => x.As, "div")
+            .Add(x => x.Header, b => b.AddContent(0, (Microsoft.AspNetCore.Components.RenderFragment)(inner =>
+            {
+                inner.OpenComponent<BxDashboardSidebarCollapse>(0);
+                inner.CloseComponent();
+            })))));
+
+        Assert.Equal("app", cut.Find("bx-sidebar").GetAttribute("data-bx-sidebar-id"));
+        Assert.All(cut.FindAll("[data-bx-sidebar-collapse]"), c => Assert.Equal("app", c.GetAttribute("data-bx-sidebar-for")));
+    }
+
+    // ---- DashboardSidebar
+
+    [Fact]
+    public void Sidebar_has_no_buttons_of_its_own_and_keeps_its_panel_trigger_out_of_the_row()
+    {
+        var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.ChildContent, "<p class=\"nav\">Nav</p>"));
+
+        var aside = cut.Find("aside");
+        Assert.Equal("Sidebar", aside.GetAttribute("aria-label"));
+        Assert.Empty(aside.QuerySelectorAll("button"));
+        // The panel still has its trigger, hidden: the dashboard's toggle clicks it.
+        var trigger = cut.Find("bx-modal [data-slot=trigger] button");
+        Assert.True(trigger.HasAttribute("hidden"));
+        Assert.Contains("contents", cut.Find("bx-sidebar > div").ClassList);
+        Assert.Equal(2, cut.FindAll("p.nav").Count);
+    }
+
+    [Fact]
+    public void Sidebar_collapsible_adds_its_own_toggle_and_resizable_a_separator()
+    {
+        var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.Collapsible, true).Add(s => s.Resizable, true));
+
+        Assert.NotNull(cut.Find("aside button[data-bx-sidebar-toggle]"));
+        Assert.Equal("Resize sidebar", cut.Find("aside [role=separator]").GetAttribute("aria-label"));
+    }
+
+    [Fact]
+    public void Sidebar_bound_state_is_reported_and_rendered()
+    {
+        var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.Collapsed, true).Add(s => s.CollapsedChanged, (bool _) => { }));
+
+        Assert.Equal("data-bx-seq", cut.Find("bx-sidebar").Attributes.First().Name);
+        Assert.Equal("collapsed", cut.Find("aside").GetAttribute("data-state"));
+    }
+
+    [Fact]
+    public void Sidebar_passes_attributes_and_class_to_the_landmark()
+    {
+        var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.As, "div").Add(s => s.Class, "bg-red-500")
+            .AddUnmatched("data-testid", "side"));
+
+        var root = cut.Find("[data-testid=side]");
+        Assert.Equal("div", root.LocalName);
+        Assert.False(root.HasAttribute("aria-label"));
+        Assert.Contains("bg-red-500", root.ClassList);
+    }
+
+    // ---- DashboardSidebarCollapse and DashboardSidebarToggle
+
+    [Fact]
+    public void Collapse_is_a_named_button_for_the_sidebar_shown_from_lg_up_and_leaves_its_state_to_the_browser()
+    {
+        var cut = Render<BxDashboardSidebarCollapse>(p => p.Add(c => c.For, "nav"));
+
+        var button = cut.Find("button");
+        Assert.Equal("Collapse sidebar", button.GetAttribute("aria-label"));
+        Assert.Equal("button", button.GetAttribute("type"));
+        Assert.True(button.HasAttribute("data-bx-sidebar-collapse"));
+        Assert.Equal("nav", button.GetAttribute("data-bx-sidebar-for"));
+        Assert.Contains("hidden", button.ClassList);
+        Assert.Contains("lg:inline-flex", button.ClassList);
+        // aria-expanded and aria-controls depend on the stored state: the browser writes them.
+        Assert.False(button.HasAttribute("aria-expanded"));
+        Assert.False(button.HasAttribute("aria-controls"));
+    }
+
+    [Fact]
+    public void Toggle_opens_the_panel_below_lg_and_announces_a_dialog()
+    {
+        var cut = Render<BxDashboardSidebarToggle>(p => p.Add(c => c.Label, "Menu"));
+
+        var button = cut.Find("button");
+        Assert.Equal("Menu", button.GetAttribute("aria-label"));
+        Assert.Equal("dialog", button.GetAttribute("aria-haspopup"));
+        Assert.True(button.HasAttribute("data-bx-sidebar-open"));
+        Assert.Contains("lg:hidden", button.ClassList);
+        Assert.False(button.HasAttribute("data-bx-sidebar-for"));
+    }
+
+    // ---- DashboardPanel and DashboardResizeHandle
+
+    [Fact]
+    public void Panel_describes_its_limits_and_a_starting_flex_weight()
+    {
+        var cut = Render<BxDashboardPanel>(p => p.Add(x => x.Size, 30.5).Add(x => x.MinSize, 10).Add(x => x.MaxSize, 60)
+            .Add(x => x.Header, "<h2>Head</h2>").Add(x => x.Body, "<p>Body</p>").Add(x => x.Footer, "<p>Foot</p>"));
+
+        var panel = cut.Find("[data-bx-dash-panel]");
+        Assert.Equal("30.5", panel.GetAttribute("data-size"));
+        Assert.Equal("10", panel.GetAttribute("data-min"));
+        Assert.Equal("60", panel.GetAttribute("data-max"));
+        Assert.Equal("flex: 30.5 1 0%", panel.GetAttribute("style"));
+        Assert.Equal(["header", "body", "footer"], panel.Children.Select(c => c.GetAttribute("data-slot")));
+        Assert.Empty(cut.FindAll("[role=separator]"));
+    }
+
+    [Fact]
+    public void Panel_without_a_size_takes_an_equal_share_and_child_content_replaces_the_slots()
+    {
+        var cut = Render<BxDashboardPanel>(p => p.Add(x => x.ChildContent, "<p class=\"all\">All</p>").Add(x => x.Body, "<p>Ignored</p>"));
+
+        var panel = cut.Find("[data-bx-dash-panel]");
+        Assert.False(panel.HasAttribute("data-size"));
+        Assert.Equal("flex: 1 1 0%", panel.GetAttribute("style"));
+        Assert.Single(cut.FindAll("p.all"));
+        Assert.Empty(cut.FindAll("[data-slot=body]"));
+    }
+
+    [Fact]
+    public void Resizable_panel_has_a_separator_that_controls_it()
+    {
+        var cut = Render<BxDashboardPanel>(p => p.Add(x => x.Resizable, true).Add(x => x.Size, 40).Add(x => x.ResizeLabel, "Resize list"));
+
+        var panel = cut.Find("[data-bx-dash-panel]");
+        var handle = cut.Find("[role=separator]");
+        Assert.Equal(panel.Id, handle.GetAttribute("aria-controls"));
+        Assert.Equal("Resize list", handle.GetAttribute("aria-label"));
+        Assert.Equal("40", handle.GetAttribute("aria-valuenow"));
+        Assert.Equal("vertical", handle.GetAttribute("aria-orientation"));
+        Assert.Equal("0", handle.GetAttribute("tabindex"));
+        Assert.Contains("absolute", handle.ClassList);
+        Assert.DoesNotContain("relative", handle.ClassList);
+    }
+
+    [Fact]
+    public void Resize_handle_is_a_focusable_separator_with_the_values_a_static_page_needs()
+    {
+        var cut = Render<BxDashboardResizeHandle>(p => p.Add(h => h.Value, 33.4));
+
+        var handle = cut.Find("[data-bx-dash-handle]");
+        Assert.Equal("separator", handle.GetAttribute("role"));
+        Assert.Equal("0", handle.GetAttribute("tabindex"));
+        Assert.Equal("33", handle.GetAttribute("aria-valuenow"));
+        Assert.Equal("0", handle.GetAttribute("aria-valuemin"));
+        Assert.Equal("100", handle.GetAttribute("aria-valuemax"));
+        Assert.Equal("Resize panels", handle.GetAttribute("aria-label"));
+        Assert.Equal("5", handle.GetAttribute("data-step"));
+    }
+
+    // ---- DashboardNavbar and DashboardToolbar
+
+    [Fact]
+    public void Navbar_has_a_title_heading_and_the_sidebar_toggle_first()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Title, "Inbox").Add(n => n.Right, "<button>Act</button>"));
+
+        Assert.Equal("Inbox", cut.Find("header h1").TextContent);
+        var left = cut.Find("[data-slot=left]");
+        Assert.True(left.Children[0].HasAttribute("data-bx-sidebar-open"));
+        Assert.Equal("h1", left.Children[1].LocalName);
+        Assert.Single(cut.FindAll("[data-slot=right] button"));
+        Assert.Empty(cut.FindAll("[data-slot=center]"));
+    }
+
+    [Fact]
+    public void Navbar_can_leave_the_toggle_out_and_places_its_areas()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Toggle, false)
+            .Add(n => n.Leading, "<i class=\"lead\"></i>").Add(n => n.Trailing, "<i class=\"trail\"></i>")
+            .Add(n => n.ChildContent, "<i class=\"mid\"></i>"));
+
+        Assert.Empty(cut.FindAll("[data-bx-sidebar-open]"));
+        Assert.Empty(cut.FindAll("h1"));
+        Assert.Equal(["lead", "trail"], cut.Find("[data-slot=left]").Children.Select(c => c.ClassName));
+        Assert.Single(cut.FindAll("[data-slot=center] .mid"));
+    }
+
+    [Fact]
+    public void Toolbar_renders_only_the_areas_it_was_given()
+    {
+        var cut = Render<BxDashboardToolbar>(p => p.Add(t => t.Left, "<b>L</b>").Add(t => t.Right, "<b>R</b>"));
+
+        Assert.Equal(["left", "right"], cut.Find("div").Children.Select(c => c.GetAttribute("data-slot")));
+    }
+
+    // ---- DashboardSearch and DashboardSearchButton
+
+    private static readonly BxCommandGroup[] Groups =
+    [
+        new("Go to", [new() { Label = "Inbox", Href = "/inbox" }, new() { Label = "Settings", Href = "/settings" }]),
+        new("Actions", [new() { Label = "Sign out" }]),
+    ];
+
+    [Fact]
+    public void Search_is_a_modal_with_a_command_palette_and_a_hidden_hotkey_trigger()
+    {
+        var cut = Render<BxDashboardSearch>(p => p.Add(s => s.Groups, Groups));
+
+        var dialog = cut.Find("dialog");
+        Assert.True(dialog.HasAttribute("data-bx-dashboard-search"));
+        Assert.Equal("Search", dialog.GetAttribute("aria-label"));
+        // A palette is not given a close button: Escape and a selection close it.
+        Assert.Empty(dialog.QuerySelectorAll("button[aria-label='Close']"));
+        var trigger = cut.Find("bx-modal [data-slot=trigger] button");
+        Assert.Equal("mod+k", trigger.GetAttribute("data-bx-hotkey"));
+        Assert.True(trigger.HasAttribute("data-bx-hotkey-always"));
+        Assert.True(trigger.HasAttribute("hidden"));
+        Assert.Equal("Type a command or search...", cut.Find("input[role=combobox]").GetAttribute("placeholder"));
+        Assert.Equal(3, cut.FindAll("[role=option]").Count);
+        Assert.Equal("/inbox", cut.FindAll("a[role=option]")[0].GetAttribute("href"));
+        // Selecting a command closes the modal without a round trip.
+        Assert.All(cut.FindAll("[role=option]"), o => Assert.True(o.HasAttribute("data-bx-close")));
+        Assert.False(cut.Find("bx-modal").HasAttribute("data-bx-seq"));
+    }
+
+    [Fact]
+    public void Search_takes_a_custom_shortcut_and_bound_open_state()
+    {
+        var cut = Render<BxDashboardSearch>(p => p.Add(s => s.Groups, Groups).Add(s => s.Shortcut, "ctrl+/")
+            .Add(s => s.Open, true).Add(s => s.OpenChanged, (bool _) => { }));
+
+        Assert.Equal("ctrl+/", cut.Find("[data-bx-hotkey]").GetAttribute("data-bx-hotkey"));
+        Assert.Equal("data-bx-seq", cut.Find("bx-modal").Attributes.First().Name);
+        Assert.True(cut.Find("bx-modal").HasAttribute("open"));
+    }
+
+    [Fact]
+    public void Search_button_opens_the_search_and_shows_the_shortcut_with_kbd()
+    {
+        var cut = Render<BxDashboardSearchButton>();
+
+        var button = cut.Find("button");
+        Assert.Equal("button", button.GetAttribute("type"));
+        Assert.Equal("dialog", button.GetAttribute("aria-haspopup"));
+        Assert.True(button.HasAttribute("data-bx-search-open"));
+        Assert.Equal("Search", button.QuerySelector("span")!.TextContent);
+        Assert.Equal(["Ctrl", "K"], cut.FindAll("kbd").Select(k => k.TextContent));
+        Assert.Contains("group-data-[state=collapsed]/sidebar:sr-only", button.QuerySelector("span")!.ClassList);
+    }
+
+    [Fact]
+    public void Search_button_texts_and_keys_can_be_changed()
+    {
+        var cut = Render<BxDashboardSearchButton>(p => p.Add(b => b.Label, "Find").Add(b => b.Keys, ["/"]));
+
+        Assert.Equal("Find", cut.Find("button span").TextContent);
+        Assert.Equal(["/"], cut.FindAll("kbd").Select(k => k.TextContent));
+        Assert.Empty(Render<BxDashboardSearchButton>(p => p.Add(b => b.Keys, [])).FindAll("kbd"));
+    }
+}
+
+public class DashboardTextsTests() : BluxTestContext(o =>
+{
+    o.Strings.DashboardSearch = "Rechercher";
+    o.Strings.DashboardSearchButton = "Chercher";
+    o.Strings.CollapseSidebar = "Replier";
+})
+{
+    [Fact]
+    public void Dashboard_texts_come_from_the_options()
+    {
+        Assert.Equal("Rechercher", Render<BxDashboardSearch>().Find("dialog").GetAttribute("aria-label"));
+        Assert.Equal("Chercher", Render<BxDashboardSearchButton>().Find("button span").TextContent);
+        Assert.Equal("Replier", Render<BxDashboardSidebarCollapse>().Find("button").GetAttribute("aria-label"));
+    }
+}

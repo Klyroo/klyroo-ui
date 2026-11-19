@@ -8,6 +8,7 @@
 -me-1
 -mt-0.5
 -mx-1
+-mx-[3px]
 -rotate-90
 -space-x-2
 -translate-x-1/2
@@ -426,8 +427,10 @@ group-data-[half=left]:start-0
 group-data-[half=right]:end-0
 group-data-[state=collapsed]/sidebar:hidden
 group-data-[state=collapsed]/sidebar:justify-center
+group-data-[state=collapsed]/sidebar:px-0
 group-data-[state=collapsed]/sidebar:px-2
 group-data-[state=collapsed]/sidebar:rotate-180
+group-data-[state=collapsed]/sidebar:sr-only
 group-data-[state=open]/item:rotate-180
 group-data-disabled:cursor-not-allowed
 group-data-disabled:opacity-60
@@ -450,6 +453,7 @@ h-1
 h-1.5
 h-1/2
 h-10
+h-12
 h-16
 h-2
 h-3
@@ -559,6 +563,7 @@ lg:grid-cols-2
 lg:grid-cols-3
 lg:grid-cols-4
 lg:hidden
+lg:inline-flex
 lg:items-center
 lg:justify-between
 lg:justify-end
@@ -685,6 +690,8 @@ mx-auto
 my-1
 my-3
 my-auto
+not-last:border-(--blux-border)
+not-last:border-e
 object-contain
 object-cover
 opacity-0

@@ -1,0 +1,34 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    The button that opens the BxDashboardSearch of its dashboard, showing the shortcut with BxKbd. A click is handled in
+    the browser (js/dashboard.js). In a collapsed sidebar only the icon is left; the label stays for screen readers.
+*@
+<button type="button" class="@_slots["root"]" aria-haspopup="dialog" data-bx-search-open @attributes="AdditionalAttributes">
+    @BxIcons.Named("search", _slots["icon"])
+    <span class="@_slots["label"]">@(Label ?? Options.Strings.DashboardSearchButton)</span>
+    @if (Keys.Count > 0)
+    {
+        <span class="@_slots["kbds"]" aria-hidden="true">
+            @foreach (var key in Keys)
+            {
+                <BxKbd Value="@key" Size="BxSize.Sm" />
+            }
+        </span>
+    }
+</button>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The text of the button. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search.</summary>
+    [Parameter] public IReadOnlyList<string> Keys { get; set; } = ["Ctrl", "K"];
+    [Parameter] public DashboardSearchButtonUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DashboardSearchButton, new Dictionary<string, string?>(), Ui, "root");
+}
