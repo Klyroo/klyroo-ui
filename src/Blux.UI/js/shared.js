@@ -36,6 +36,7 @@ export function float(anchor, floating, { placement = 'bottom', distance = 8, ma
 export class Reporter {
   #host;
   #sequence = 0;
+  #taken = new Map();
 
   constructor(host) {
     this.#host = host;
@@ -49,6 +50,34 @@ export class Reporter {
   isStale() {
     const seen = this.#host.getAttribute('data-bx-seq');
     return seen !== null && Number(seen) < this.#sequence;
+  }
+
+  /** True when a .NET component renders this element and listens to it (it renders data-bx-seq). */
+  get bound() {
+    return this.#host.hasAttribute('data-bx-seq');
+  }
+
+  /**
+   * The rendered value of an attribute, when the element should show it: it differs from the one taken last time (or
+   * the caller forces it, because a bound render arrived) and the render is not older than the last report.
+   * Otherwise undefined. An element that owns its state reads the rendered value this way, never because some other
+   * attribute or a child changed: a value the user chose would be undone by a render that did not touch it.
+   */
+  take(name, force = false) {
+    if (this.isStale()) return undefined;
+    const value = this.#host.getAttribute(name);
+    if (!force && this.#taken.has(name) && this.#taken.get(name) === value) return undefined;
+    this.#taken.set(name, value);
+    return value;
+  }
+
+  /**
+   * After an enhanced navigation or form post the server has rendered the page again. A static page has no .NET
+   * runtime to receive reports, so the sequence the server rendered (always the initial one) becomes the baseline:
+   * without this, every later server render would look older than the element's own reports and be ignored.
+   */
+  adopt() {
+    this.#sequence = Number(this.#host.getAttribute('data-bx-seq') ?? 0);
   }
 }
 

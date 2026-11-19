@@ -40,12 +40,15 @@ export class BxInputMenuElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered());
+    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered();
   }
 
   refresh() {
-    this.#applyRendered();
+    this.#reporter.adopt();
+    this.#applyRendered(this.#reporter.bound);
+    this.#writeHidden();
+    this.#paintSelected();
   }
 
   get #strict() {
@@ -79,14 +82,21 @@ export class BxInputMenuElement extends HTMLElement {
     }
   }
 
+  /** Shows the rendered value when a render changed it (force: a bound render arrived, or the first one). */
   #applyRendered(force = false) {
-    if (!force && this.#reporter.isStale()) return;
-    const value = this.getAttribute('value') ?? '';
-    if (!force && value === this.#value) return;
+    const text = this.#reporter.take('value', force);
+    if (text === undefined) return;
+    const value = text ?? '';
     this.#value = value;
     this.#writeHidden();
+    this.#paintSelected();
     const input = this.#input;
     if (input && document.activeElement !== input) input.value = this.#strict ? (this.#labelOf(value) ?? '') : value;
+  }
+
+  /** Strict: the option that is the value is selected. Blazor renders it once; after that it is the script's to keep. */
+  #paintSelected() {
+    for (const option of this.#options()) option.setAttribute('aria-selected', String(this.#strict && option.dataset.value === this.#value));
   }
 
   #writeHidden() {
@@ -150,6 +160,7 @@ export class BxInputMenuElement extends HTMLElement {
     if (value === this.#value) return;
     this.#value = value;
     this.#writeHidden();
+    this.#paintSelected();
     if (report) {
       this.dispatchEvent(new Event('change', { bubbles: true }));
       this.#reporter.report('bx-change', { value });
@@ -170,11 +181,14 @@ export class BxInputMenuElement extends HTMLElement {
     this.#filter(input.value);
     this.#open();
     this.#highlight(this.#strict ? (navigable(this.#options())[0] ?? null) : null);
-    // Free text is the value as it is typed (the hidden field posts it); .NET hears about it on change.
-    if (!this.#strict) {
-      this.#value = input.value;
-      this.#writeHidden();
+    // Emptying a strict field clears the value: no suggestion is left to be it.
+    if (this.#strict) {
+      if (input.value === '') this.#commit('', true);
+      return;
     }
+    // Free text is the value as it is typed (the hidden field posts it); .NET hears about it on change.
+    this.#value = input.value;
+    this.#writeHidden();
   };
 
   // The native change event of the field: free text commits when the field loses focus or Enter is pressed.

@@ -1,0 +1,33 @@
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="Model" FormName="select-menu-clear" OnValidSubmit="Save" class="flex w-full max-w-sm flex-col items-start gap-4" novalidate>
+    <BxFormField Label="Toolset" For="() => Model!.Stack" class="w-full">
+        <BxSelectMenu Items="Stack" Multiple @bind-Value="Model!.Stack" Placeholder="Pick technologies" />
+    </BxFormField>
+    <BxButton Type="submit" Label="Save selection" />
+    @if (_saved)
+    {
+        <p role="status" class="text-sm text-(--blux-success-text)" data-testid="clear-saved">Saved: @(Picked.Count == 0 ? "none" : string.Join(", ", Picked))</p>
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "select-menu-clear")]
+    private Profile? Model { get; set; }
+
+    private bool _saved;
+
+    // Emptying the selection posts one empty value (a form cannot post an empty list): ignore it.
+    private List<string> Picked => Model!.Stack.Where(value => value.Length > 0).ToList();
+
+    private static readonly BxSelectItem[] Stack = [new("dotnet", ".NET"), new("node", "Node.js"), new("go", "Go")];
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private void Save() => _saved = true;
+
+    private sealed class Profile
+    {
+        public IReadOnlyList<string> Stack { get; set; } = ["dotnet", "go"];
+    }
+}

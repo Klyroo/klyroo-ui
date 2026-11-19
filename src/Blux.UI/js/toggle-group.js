@@ -14,13 +14,14 @@ export class BxToggleGroupElement extends HTMLElement {
   static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
 
   #observer = null;
+  #stop = null;
   #model = new ValueModel(this, (values) => this.#paint(values));
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('focusin', this.#onFocusIn);
-    this.#observer = observeChildren(this, () => this.#model.load());
+    this.#observer = observeChildren(this, () => this.#model.ensure());
   }
 
   disconnectedCallback() {
@@ -29,12 +30,11 @@ export class BxToggleGroupElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#model.load());
-    else this.#model.load();
+    this.#model.attributeChanged(name);
   }
 
   refresh() {
-    this.#model.load();
+    this.#model.refresh();
   }
 
   #items() {
@@ -52,10 +52,13 @@ export class BxToggleGroupElement extends HTMLElement {
       item.setAttribute('aria-pressed', String(pressed));
       item.dataset.state = pressed ? 'on' : 'off';
     }
-    this.#roving(items.find((b) => !b.disabled && b.getAttribute('aria-pressed') === 'true') ?? this.#enabled()[0]);
+    // The item that is the tab stop stays it when a press changes what is pressed; only a first paint picks one.
+    const stop = items.includes(this.#stop) && !this.#stop.disabled ? this.#stop : null;
+    this.#roving(stop ?? items.find((b) => !b.disabled && b.getAttribute('aria-pressed') === 'true') ?? this.#enabled()[0]);
   }
 
   #roving(current) {
+    this.#stop = current;
     for (const item of this.#items()) item.tabIndex = item === current ? 0 : -1;
   }
 

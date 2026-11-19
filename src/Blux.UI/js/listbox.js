@@ -32,12 +32,11 @@ export class BxListboxElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#model.load());
-    else this.#model.load();
+    this.#model.attributeChanged(name);
   }
 
   refresh() {
-    this.#model.load();
+    this.#model.refresh();
   }
 
   get #listbox() {
@@ -54,7 +53,7 @@ export class BxListboxElement extends HTMLElement {
 
   #wire() {
     for (const option of this.#options()) ensureId(option, 'option');
-    this.#model.load();
+    this.#model.ensure();
   }
 
   #paint(values) {

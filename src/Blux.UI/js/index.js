@@ -83,7 +83,10 @@ export function afterWebStarted(blazor) {
     applyColorMode();
     hideBrokenAvatars();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
-    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner, bx-calendar, bx-input-time, bx-color-picker, bx-file-upload, bx-carousel, bx-tree, bx-command-palette, bx-splitter, bx-scroll-area').forEach((el) => el.refresh?.());
+    // Every Blux element re-applies what the merge reset; no list to keep in sync with the components.
+    for (const el of document.querySelectorAll('*')) {
+      if (el.localName.startsWith('bx-') && typeof el.refresh === 'function') el.refresh();
+    }
   });
 }
 

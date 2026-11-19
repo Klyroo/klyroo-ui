@@ -46,11 +46,17 @@ public class PickersTests : BluxTestContext
     public void Calendar_range_and_multiple_values_are_serialized_for_the_form()
     {
         var range = Render<BxCalendar>(p => p.Add(c => c.Mode, BxCalendarMode.Range).Add(c => c.Range, new BxDateRange(new DateOnly(2026, 11, 9), null)).Add(c => c.Name, "stay"));
-        var multiple = Render<BxCalendar>(p => p.Add(c => c.Mode, BxCalendarMode.Multiple).Add(c => c.Values, [new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 20)]));
+        var multiple = Render<BxCalendar>(p => p.Add(c => c.Mode, BxCalendarMode.Multiple).Add(c => c.Values, [new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 20)]).Add(c => c.Name, "days"));
 
+        // The element writes one hidden input per date (multiple) or name.Start and name.End (range) into an empty span.
         Assert.Equal("range", range.Find("bx-calendar").GetAttribute("mode"));
-        Assert.Equal("2026-11-09/", range.Find("input[type=hidden]").GetAttribute("value"));
-        Assert.Equal("2026-11-02,2026-11-20", multiple.Find("input[type=hidden]").GetAttribute("value"));
+        Assert.Equal("2026-11-09/", range.Find("bx-calendar").GetAttribute("value"));
+        Assert.Equal("stay", range.Find("bx-calendar").GetAttribute("name"));
+        Assert.Empty(range.FindAll("input[type=hidden]"));
+        Assert.Empty(range.Find("[data-slot=values]").Children);
+        Assert.Equal("2026-11-02,2026-11-20", multiple.Find("bx-calendar").GetAttribute("value"));
+        Assert.Equal("days", multiple.Find("bx-calendar").GetAttribute("name"));
+        Assert.Empty(multiple.FindAll("input[type=hidden]"));
     }
 
     [Fact]

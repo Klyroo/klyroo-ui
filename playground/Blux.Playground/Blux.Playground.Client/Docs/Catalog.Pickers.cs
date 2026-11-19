@@ -8,6 +8,8 @@ public static partial class Catalog
     [
         new("calendar", "Calendar", "Form", "A month grid following the WAI-ARIA date picker pattern: arrow keys, Page Up/Down, Home and End, in single, multiple or range mode.",
             [new("Single date", typeof(Examples.CalendarExample), "Dates outside the minimum and maximum, and the listed ones, are disabled."),
+             new("In an EditForm", typeof(Examples.CalendarFormExample), "Multiple posts one entry per date; a range posts name.Start and name.End."),
+             new("Not bound", typeof(Examples.CalendarUnboundExample), "Without a binding the browser keeps the selection, even when other parameters change."),
              new("Range and multiple", typeof(Examples.CalendarModesExample), "Month and day names and the first day of the week come from the culture.")],
             [typeof(BxCalendar), typeof(BxDateRange)]),
         new("input-date", "InputDate", "Form", "A date field typed in segments with a calendar popover. The value is always posted as yyyy-MM-dd.",
@@ -16,6 +18,7 @@ public static partial class Catalog
             [typeof(BxInputDate)]),
         new("input-time", "InputTime", "Form", "A time field made of spinbutton segments, with a 12 or 24 hour clock taken from the culture. Posts HH:mm.",
             [new("12 and 24 hours", typeof(Examples.InputTimeExample)),
+             new("Not bound", typeof(Examples.InputTimeUnboundExample), "Without a binding the browser keeps the typed time, even when other parameters change."),
              new("In an EditForm", typeof(Examples.InputTimeFormExample), "Type digits, use the arrow keys, or Backspace to clear a segment.")],
             [typeof(BxInputTime)]),
         new("color-picker", "ColorPicker", "Form", "A saturation and brightness area, a hue slider and a hex field. The value is a #rrggbb string.",
@@ -29,6 +32,7 @@ public static partial class Catalog
             [typeof(BxFileUpload)]),
         new("carousel", "Carousel", "Data", "Slides in a scroll-snap viewport with previous and next buttons, a slide picker and optional autoplay that can be paused.",
             [new("Loop with buttons", typeof(Examples.CarouselExample), "Arrow keys move between slides while the slides have focus."),
+             new("Not bound", typeof(Examples.CarouselUnboundExample), "Without a binding the browser keeps the current slide, even when other parameters change."),
              new("Autoplay", typeof(Examples.CarouselAutoplayExample), "Autoplay pauses on hover and focus and has a pause button; it stays off for visitors who prefer reduced motion.")],
             [typeof(BxCarousel), typeof(BxCarouselItem)]),
     ];

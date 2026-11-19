@@ -1,0 +1,20 @@
+<div class="w-full max-w-md">
+    <BxCarousel Items="Items" Loop="_loop" AriaLabel="Unbound slides" data-testid="unbound-carousel" />
+    <BxButton Variant="ButtonVariant.Outline" Label="Toggle looping" OnClick="Toggle" class="mt-2" />
+</div>
+
+@code {
+    private bool _loop;
+
+    private void Toggle() => _loop = !_loop;
+
+    private static RenderFragment Slide(string text) =>
+        @<div class="flex h-24 items-center justify-center bg-(--blux-bg-muted) p-4 text-center text-sm text-(--blux-text-highlighted)">@text</div>;
+
+    private static readonly BxCarouselItem[] Items =
+    [
+        new(Slide("First")) { Label = "First" },
+        new(Slide("Second")) { Label = "Second" },
+        new(Slide("Third")) { Label = "Third" },
+    ];
+}
