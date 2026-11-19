@@ -40,6 +40,8 @@ function isTyping(target) {
 
 function isAvailable(element) {
   if (element.matches(':disabled') || element.closest('[inert]')) return false;
+  // data-bx-hotkey-always: the element is a hidden trigger that only exists to be clicked (BxDashboardSearch).
+  if (element.hasAttribute('data-bx-hotkey-always')) return true;
   return element.checkVisibility ? element.checkVisibility() : element.getClientRects().length > 0;
 }
 

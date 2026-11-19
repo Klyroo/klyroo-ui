@@ -1,4 +1,4 @@
-import { Reporter } from './shared.js';
+import { Reporter, ensureId } from './shared.js';
 
 const SIDEBAR_PREFIX = 'blux:sidebar:';
 
@@ -46,6 +46,7 @@ export class BxSidebarElement extends HTMLElement {
     this.addEventListener('click', this.#onClick);
     this.addEventListener('pointerdown', this.#onPointerDown);
     this.addEventListener('keydown', this.#onKeyDown);
+    this.addEventListener('bx-toggle', this.#onPanelToggle);
     // Blazor inserts the element before its attributes and children: read them once the whole batch is applied.
     queueMicrotask(() => this.#init());
   }
@@ -54,6 +55,7 @@ export class BxSidebarElement extends HTMLElement {
     this.removeEventListener('click', this.#onClick);
     this.removeEventListener('pointerdown', this.#onPointerDown);
     this.removeEventListener('keydown', this.#onKeyDown);
+    this.removeEventListener('bx-toggle', this.#onPanelToggle);
     this.#ready = false;
   }
 
@@ -132,7 +134,43 @@ export class BxSidebarElement extends HTMLElement {
       if (toggle.closest('bx-sidebar') === this) toggle.setAttribute('aria-pressed', String(this.#collapsed));
     }
     this.#renderWidth();
+    this.syncControls();
   }
+
+  /**
+   * Collapse and open buttons placed outside the sidebar (BxDashboardSidebarCollapse, BxDashboardSidebarToggle) carry
+   * aria-controls and aria-expanded set here, since the state lives in the browser.
+   */
+  syncControls() {
+    if (!this.#ready) return;
+    const aside = this.#aside;
+    const dialog = this.querySelector('dialog');
+    for (const button of document.querySelectorAll('[data-bx-sidebar-collapse]')) {
+      if (sidebarFor(button) !== this || !aside) continue;
+      button.setAttribute('aria-controls', ensureId(aside, 'sidebar'));
+      button.setAttribute('aria-expanded', String(!this.#collapsed));
+    }
+    for (const button of document.querySelectorAll('[data-bx-sidebar-open]')) {
+      if (sidebarFor(button) !== this || !dialog) continue;
+      button.setAttribute('aria-controls', ensureId(dialog, 'sidebar-panel'));
+      button.setAttribute('aria-expanded', String(dialog.open));
+    }
+  }
+
+  toggleCollapsed() {
+    if (this.#ready) this.#setCollapsed(!this.#collapsed);
+  }
+
+  /** Opens the off-canvas panel, as its own button would. */
+  openPanel() {
+    this.querySelector('bx-modal > [data-slot="trigger"] button')?.click();
+  }
+
+  // The panel is a bx-modal inside: its toggles bubble up here; the sidebar's own report has this element as target.
+  #onPanelToggle = (event) => {
+    if (event.target === this) return;
+    queueMicrotask(() => this.syncControls());
+  };
 
   #renderWidth() {
     const width = this.#width ?? this.#default;
@@ -215,6 +253,22 @@ export class BxSidebarElement extends HTMLElement {
 }
 
 if (!customElements.get('bx-sidebar')) customElements.define('bx-sidebar', BxSidebarElement);
+
+/** The sidebar a control outside it belongs to: data-bx-sidebar-for names it, else the one of the same dashboard. */
+function sidebarFor(button) {
+  const id = button.getAttribute('data-bx-sidebar-for');
+  const selector = id ? `bx-sidebar[data-bx-sidebar-id="${CSS.escape(id)}"]` : 'bx-sidebar';
+  return button.closest('bx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
+}
+
+document.addEventListener('click', (event) => {
+  const button = event.target instanceof Element ? event.target.closest('[data-bx-sidebar-collapse], [data-bx-sidebar-open]') : null;
+  if (!button || button.disabled) return;
+  const sidebar = sidebarFor(button);
+  if (!sidebar) return;
+  if (button.hasAttribute('data-bx-sidebar-collapse')) sidebar.toggleCollapsed();
+  else sidebar.openPanel();
+});
 
 // ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-bx-layout-menu.
 const MENU = 'dialog[data-bx-layout-menu]';
