@@ -1,0 +1,118 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    A sheet docked to one edge, on the same <bx-modal> element as BxModal: native modal dialog, inert page, focus kept
+    inside, Escape, focus returned to the trigger. Elements with data-bx-close close it without a round trip.
+*@
+<bx-modal data-bx-seq="@(OpenChanged.HasDelegate ? _sequence : null)"
+          open="@Open"
+          dismissible="@Dismissible"
+          @onbxtoggle="ToggleHandler"
+          @onbxtoggle:stopPropagation="true">
+    @if (ChildContent is not null)
+    {
+        <span data-slot="trigger">@ChildContent</span>
+    }
+    <dialog id="@_id" class="@_slots["content"]" data-slot="content" data-direction="@_direction"
+            aria-labelledby="@(Title is null ? null : _id + "-title")"
+            aria-describedby="@(Description is null ? null : _id + "-description")"
+            aria-label="@(Title is null ? AriaLabel : null)"
+            @attributes="AdditionalAttributes">
+        @if (Handle)
+        {
+            <div class="@_slots["handle"]" data-slot="handle" aria-hidden="true"></div>
+        }
+        @if (Title is not null || Description is not null || Close)
+        {
+            <div class="@_slots["header"]" data-slot="header">
+                <div class="@_slots["wrapper"]">
+                    @if (Title is not null)
+                    {
+                        <h2 id="@(_id + "-title")" class="@_slots["title"]">@Title</h2>
+                    }
+                    @if (Description is not null)
+                    {
+                        <p id="@(_id + "-description")" class="@_slots["description"]">@Description</p>
+                    }
+                </div>
+                @if (Close)
+                {
+                    <button type="button" class="@_slots["close"]" aria-label="@Options.Strings.Close" data-bx-close>@BxIcons.Close("size-5")</button>
+                }
+            </div>
+        }
+        @if (Body is not null)
+        {
+            <div class="@_slots["body"]" data-slot="body">@Body</div>
+        }
+        @if (Footer is not null)
+        {
+            <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+        }
+    </dialog>
+</bx-modal>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private string _direction = "bottom";
+    private int _sequence;
+
+    /// <summary>The trigger: its first button opens the drawer.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Accessible name when there is no <see cref="Title"/>.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public RenderFragment? Body { get; set; }
+
+    /// <summary>Footer actions. Add <c>data-bx-close</c> to a button to make it close the drawer.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Open state. Use <c>@bind-Open</c>: the browser closes the drawer on its own (Escape, backdrop, close button).</summary>
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    /// <summary>The edge the drawer is docked to.</summary>
+    [Parameter] public DrawerDirection Direction { get; set; } = DrawerDirection.Bottom;
+
+    /// <summary>The grab handle shown on top and bottom drawers. It is decorative: the drawer closes with Escape, the backdrop or a close button.</summary>
+    [Parameter] public bool Handle { get; set; } = true;
+
+    /// <summary>Floats the drawer away from the edges of the screen.</summary>
+    [Parameter] public bool Inset { get; set; }
+
+    /// <summary>Escape and a click on the backdrop close the drawer.</summary>
+    [Parameter] public bool Dismissible { get; set; } = true;
+
+    /// <summary>Shows a close button in the header (a title or a description also shows the header).</summary>
+    [Parameter] public bool Close { get; set; }
+    [Parameter] public DrawerUi? Ui { get; set; }
+
+    private EventCallback<BxToggleEventArgs> ToggleHandler =>
+        OpenChanged.HasDelegate ? EventCallback.Factory.Create<BxToggleEventArgs>(this, OnToggle) : default;
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("drawer");
+        _direction = Direction.ToString().ToLowerInvariant();
+        _slots = ResolveSlots(Options.Drawer, new Dictionary<string, string?>
+        {
+            ["direction"] = _direction,
+            ["inset"] = VariantValue.Of(Inset),
+        }, Ui, "content");
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxToggleEventArgs))]
+    private async Task OnToggle(BxToggleEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (e.Open == Open) return;
+        Open = e.Open;
+        await OpenChanged.InvokeAsync(e.Open);
+    }
+}

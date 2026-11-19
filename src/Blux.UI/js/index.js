@@ -10,6 +10,10 @@ import './collapsible.js';
 import './tree.js';
 import './splitter.js';
 import './scroll-area.js';
+import './context-menu.js';
+import './command-palette.js';
+import './color-mode-controls.js';
+import './hotkey.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 

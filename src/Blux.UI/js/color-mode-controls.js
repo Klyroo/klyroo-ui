@@ -1,0 +1,66 @@
+import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
+
+/**
+ * Behavior of the color mode controls, wired by attribute so that it works on static pages, before and without a .NET
+ * runtime, and for any number of instances on a page:
+ *   [data-bx-color-mode="toggle"]  button: switches between light and dark
+ *   [data-bx-color-mode="switch"]  checkbox: checked in dark mode
+ *   [data-bx-color-mode="select"]  select: system, light or dark
+ * The visuals that only depend on light or dark (icons, images, the switch thumb) use the "dark" class in CSS.
+ * What CSS cannot know (the checked state, the select value, aria-pressed) is written here every time the mode
+ * changes, whoever changed it: a control, Blux.setColorMode, the system preference, another tab or enhanced navigation.
+ */
+const SELECTOR = '[data-bx-color-mode]';
+
+const isDark = () => document.documentElement.classList.contains('dark');
+
+function syncControl(control) {
+  switch (control.dataset.bxColorMode) {
+    case 'toggle':
+      control.setAttribute('aria-pressed', String(isDark()));
+      break;
+    case 'switch':
+      if (control.checked !== isDark()) control.checked = isDark();
+      break;
+    case 'select': {
+      const mode = getColorMode();
+      if (control.value !== mode) control.value = mode;
+      break;
+    }
+  }
+}
+
+function syncWithin(root) {
+  if (root.matches?.(SELECTOR)) syncControl(root);
+  for (const control of root.querySelectorAll?.(SELECTOR) ?? []) syncControl(control);
+}
+
+const syncAll = () => syncWithin(document);
+
+document.addEventListener('click', (event) => {
+  if (!event.target.closest?.('[data-bx-color-mode="toggle"]')) return;
+  setColorMode(isDark() ? 'light' : 'dark');
+});
+
+document.addEventListener('change', (event) => {
+  const control = event.target;
+  if (!(control instanceof Element) || !control.matches(SELECTOR)) return;
+  if (control.dataset.bxColorMode === 'switch') setColorMode(control.checked ? 'dark' : 'light');
+  else if (control.dataset.bxColorMode === 'select') setColorMode(control.value);
+});
+
+document.addEventListener('bx-color-mode', syncAll);
+// localStorage changed in another tab: apply the stored mode here too, which then syncs the controls.
+window.addEventListener('storage', (event) => {
+  if (event.key !== 'blux-color-mode') return;
+  applyColorMode();
+});
+
+// Controls rendered later (Blazor inserts them after the script ran).
+new MutationObserver((mutations) => {
+  for (const mutation of mutations) {
+    for (const node of mutation.addedNodes) if (node.nodeType === Node.ELEMENT_NODE) syncWithin(node);
+  }
+}).observe(document.documentElement, { childList: true, subtree: true });
+
+syncAll();
