@@ -44,10 +44,11 @@ else
 
     private string Describe(double value) => string.Format(CultureInfo.CurrentCulture, Options.Strings.InputRatingValue, Invariant(value), Max);
 
-    // Highest value first: a checked radio then fills the stars that follow it in the DOM, which show before it.
+    // Lowest value first, in reading order: the native radio keys then move like the stars look (Right raises the
+    // rating, Left lowers it). A star is filled by CSS when its own radio or any later one is checked.
     private IEnumerable<double> Choices()
     {
-        for (double v = Max; v >= StepSize; v -= StepSize) yield return v;
+        for (var v = StepSize; v <= Max; v += StepSize) yield return v;
     }
 
     private RenderFragment Star(double value, EditBinding binding)

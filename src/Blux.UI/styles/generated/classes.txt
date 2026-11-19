@@ -56,6 +56,8 @@
 [&::-webkit-slider-thumb]:size-4
 [&::-webkit-slider-thumb]:size-5
 [&::-webkit-slider-thumb]:size-6
+[&:has(~input:checked)_svg]:fill-(--bx-color)
+[&:has(~input:checked)_svg]:stroke-(--bx-color-text)
 [&>:not(:first-child)]:-ms-px
 [&>:not(:first-child)]:-mt-px
 [&>:not(:first-child)]:rounded-s-none
@@ -83,6 +85,8 @@
 [background-image:linear-gradient(to_right,red,yellow,lime,cyan,blue,magenta,red)]
 [background-image:linear-gradient(to_top,black,transparent),linear-gradient(to_right,white,transparent)]
 [direction:rtl]
+[input:checked+&_svg]:fill-(--bx-color)
+[input:checked+&_svg]:stroke-(--bx-color-text)
 [scrollbar-color:var(--blux-border-accented)_transparent]
 [scrollbar-width:none]
 [scrollbar-width:thin]
@@ -276,7 +280,6 @@ flex-1
 flex-col
 flex-col-reverse
 flex-row
-flex-row-reverse
 flex-wrap
 focus-visible:-outline-offset-2
 focus-visible:[&::-moz-range-thumb]:outline-(--bx-color-text)
@@ -510,8 +513,6 @@ pe-7
 pe-8
 pe-9
 peer
-peer-checked:[&_svg]:fill-(--bx-color)
-peer-checked:[&_svg]:stroke-(--bx-color-text)
 peer-checked:bg-(--bx-color-contrast)
 peer-checked:opacity-100
 peer-checked:translate-x-3
