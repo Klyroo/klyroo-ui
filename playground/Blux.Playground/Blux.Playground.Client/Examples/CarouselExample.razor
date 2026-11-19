@@ -1,0 +1,22 @@
+<div class="w-full max-w-md">
+    <BxCarousel Items="Items" @bind-Index="_index" Loop AriaLabel="Featured places" data-testid="places" />
+    <p class="mt-2 text-sm text-(--blux-text-muted)" data-testid="places-state">Slide: @(_index + 1)</p>
+</div>
+
+@code {
+    private int _index;
+
+    private static RenderFragment Slide(string title, string text) =>
+        @<div class="flex h-40 flex-col items-center justify-center gap-1 bg-(--blux-bg-muted) p-4 text-center">
+            <p class="font-semibold text-(--blux-text-highlighted)">@title</p>
+            <p class="text-sm text-(--blux-text-muted)">@text</p>
+        </div>;
+
+    private static readonly BxCarouselItem[] Items =
+    [
+        new(Slide("Lisbon", "Hills, trams and tiles.")) { Label = "Lisbon" },
+        new(Slide("Kyoto", "Temples and tea houses.")) { Label = "Kyoto" },
+        new(Slide("Cape Town", "Between the mountain and the sea.")) { Label = "Cape Town" },
+        new(Slide("Montreal", "Murals and bagels.")) { Label = "Montreal" },
+    ];
+}
