@@ -1,0 +1,17 @@
+<div class="flex w-full max-w-xs flex-col gap-4">
+    <BxFormField Label="Search a country (free text)">
+        <BxInputMenu Items="Countries" @bind-Value="_free" Placeholder="Type a country" />
+    </BxFormField>
+    <BxFormField Label="Country (a suggestion is required)">
+        <BxInputMenu Items="Countries" Strict @bind-Value="_strict" Placeholder="Pick a country" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="menu-state">Free: @(_free ?? "none"), strict: @(_strict ?? "none")</p>
+</div>
+
+@code {
+    private string? _free;
+    private string? _strict;
+
+    private static readonly BxSelectItem[] Countries =
+        [new("fr", "France"), new("de", "Germany"), new("it", "Italy"), new("es", "Spain"), new("pt", "Portugal")];
+}

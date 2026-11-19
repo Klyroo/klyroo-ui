@@ -6,6 +6,7 @@ import './tooltip.js';
 import './tabs.js';
 import './accordion.js';
 import './select.js';
+import './form2.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 

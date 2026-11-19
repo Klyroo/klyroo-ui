@@ -1,0 +1,14 @@
+<div class="flex flex-col items-start gap-4">
+    <BxFormField Label="Your rating">
+        <BxInputRating @bind-Value="_rating" />
+    </BxFormField>
+    <BxFormField Label="With halves">
+        <BxInputRating AllowHalf Value="3.5" Color="BxColor.Warning" />
+    </BxFormField>
+    <BxInputRating ReadOnly Value="4" AriaLabel="Average rating" Size="BxSize.Sm" />
+    <p class="text-sm text-(--blux-text-muted)" data-testid="rating-state">Rating: @_rating</p>
+</div>
+
+@code {
+    private double _rating = 2;
+}

@@ -1,0 +1,15 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Framework">
+        <BxSelectMenu Items="Frameworks" Value="@_single" ValueChanged="@(v => _single = v ?? [])" Placeholder="Pick a framework" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="single-state">Selected: @(_single.Count > 0 ? string.Join(", ", _single) : "none")</p>
+</div>
+
+@code {
+    private IReadOnlyList<string> _single = [];
+
+    private static readonly BxSelectItem[] Frameworks =
+    [
+        new("blazor", "Blazor"), new("react", "React"), new("vue", "Vue"), new("svelte", "Svelte"), new("angular", "Angular") { Disabled = true },
+    ];
+}

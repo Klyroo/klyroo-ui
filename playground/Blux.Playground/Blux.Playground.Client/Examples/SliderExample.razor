@@ -1,0 +1,14 @@
+<div class="flex w-full max-w-sm flex-col gap-6">
+    <BxFormField Label="Volume">
+        <BxSlider @bind-Value="_volume" Min="0" Max="100" Step="5" />
+    </BxFormField>
+    <BxFormField Label="Price range">
+        <BxRangeSlider @bind-Value="_range" Min="0" Max="500" Step="10" Color="BxColor.Neutral" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="slider-state">Volume: @_volume, range: @_range[0] to @_range[1]</p>
+</div>
+
+@code {
+    private double _volume = 40;
+    private IReadOnlyList<double> _range = [100, 300];
+}
