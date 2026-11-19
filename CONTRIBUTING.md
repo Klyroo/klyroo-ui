@@ -22,6 +22,10 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
    The element observes `data-bx-seq` and its state attribute, ignores renders older than its last report
    (`reporter.isStale()`), and re-applies the rendered state in a `queueMicrotask` when `data-bx-seq` changes.
    Reuse `bx-change` / `bx-toggle`; a new event type needs registering in `js/index.js` and `EventHandlers.cs`.
+   Read the rendered value with `reporter.take(attr)`: it returns it only when the attribute changed or a bound render
+   arrived, so an **unbound** element never undoes the user when Blazor re-renders or children change.
+   Give the element a `refresh()` that calls `reporter.adopt()` and re-applies what an enhanced-navigation merge resets
+   (attributes it set, tabindex, hidden inputs); every `bx-*` element with `refresh()` is called after `enhancedload`.
 4. **Never fight Blazor over the DOM.** The element may set attributes Blazor does not render, and may change
    attributes Blazor rendered only when Blazor would render the same value afterwards (bound) or never re-render them
    (unbound). It never replaces text nodes or elements Blazor rendered: put a label in an attribute and show it with
@@ -49,7 +53,7 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 | Docs examples | `playground/Blux.Playground/Blux.Playground.Client/Examples/<Name><What>Example.razor` (unique names) |
 | Docs catalog | `Docs/Catalog.<Family>.cs`: `public static partial class Catalog { private static readonly ComponentDoc[] <Family> = [...]; }`, then add `.. <Family>` to `Components` in `Catalog.cs` |
 | Unit tests | `tests/Blux.UI.Tests/<Family>Tests.cs`, deriving from `BluxTestContext` |
-| E2E tests | `tests/Blux.UI.E2E/<Family>Tests.cs`: an axe theory over the family's slugs in all four modes, plus behavior tests |
+| E2E tests | `tests/Blux.UI.E2E/<Family>Tests.cs`: an axe theory over the family's slugs in all four modes, plus behavior tests, **bound and unbound**, and after an enhanced navigation for elements that set attributes |
 
 Form controls derive from `BxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
 uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-popover>` / `<bx-modal>` patterns.
