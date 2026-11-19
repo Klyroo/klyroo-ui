@@ -25,6 +25,7 @@ import './form2.js';
 import './layout.js';
 import './dashboard.js';
 import './marketing.js';
+import './editor.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 

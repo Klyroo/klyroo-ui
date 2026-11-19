@@ -1,0 +1,85 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxFieldBase<string>
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>
+    /// Toolbars, drag handle and suggestion menus: components of the editor family placed inside it. They are wired to
+    /// the editor by the browser.
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Shown while the editor is empty.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The text can be selected and copied but not changed. The value still posts with the form.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Accessible name of the editable area when there is no enclosing <see cref="BxFormField"/> label. Defaults to <see cref="BluxStrings.EditorLabel"/>.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public EditorUi? Ui { get; set; }
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Editor, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = e.Value ?? "";
+        if (value == (Value ?? ""))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-editor data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                    data-value="@(Value ?? "")"
+                    data-placeholder="@Placeholder"
+                    data-readonly="@(ReadOnly ? "" : null)"
+                    data-label="@(Label ?? Options.Strings.EditorLabel)"
+                    data-labelledby="@Field?.LabelId"
+                    data-describedby="@Field?.DescribedBy"
+                    data-invalid="@(binding.Invalid ? "true" : null)"
+                    data-required="@(Required || Field?.Required == true ? "true" : null)"
+                    data-editor-id="@ControlId"
+                    disabled="@Disabled"
+                    class="@_slots["root"]"
+                    data-color="@Color.Value"
+                    @onbxchange="ChangeHandler"
+                    @onbxchange:stopPropagation="true"
+                    @attributes="AdditionalAttributes">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            @ChildContent
+            <div class="@_slots["content"]" data-slot="content">
+                <div class="@_slots["fallback"]" data-slot="fallback">@((MarkupString)(Value ?? ""))</div>
+                <div class="@_slots["base"]" data-slot="editor" data-permanent></div>
+            </div>
+        </bx-editor>;
+}
