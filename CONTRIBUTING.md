@@ -1,0 +1,75 @@
+# Adding components to blux-ui
+
+blux-ui follows Nuxt UI's catalog and API where it makes sense, adapted to Blazor and to its render modes.
+Reference for a component's features: `https://ui.nuxt.com/raw/docs/components/<slug>.md`.
+Read `PLAN.md` for the design decisions; this file is the checklist.
+
+## Rules that are not negotiable
+
+1. **Every render mode.** Each component works in Interactive Server, WebAssembly, Auto and static server rendering.
+   What can only work with interactivity must say so in its XML docs and degrade honestly (a `BxButton` with
+   `OnClick` renders disabled until the page is interactive).
+2. **UI state lives in the browser.** Opening, closing, focus, keyboard navigation, highlighting and selection run in
+   a custom element (`src/Blux.UI/js/<name>.js`). .NET only hears about state that is bound
+   (`ValueChanged.HasDelegate` / `OpenChanged.HasDelegate`); unbound, no handler is attached at all.
+3. **The JS/.NET protocol.** A custom element reports changes with `bx-toggle` (`open`) or `bx-change` (`value`),
+   through `Reporter` from `js/shared.js`, which adds a sequence number. The component:
+   - renders `data-bx-seq="@(Bound ? _sequence : null)"` as the **first** attribute of the custom element;
+   - stores `e.Sequence` in its handler before anything else;
+   - adds `@onbx...:stopPropagation="true"` so nested components don't trigger each other;
+   - puts `[DynamicDependency(PublicConstructors | PublicProperties, typeof(BxChangeEventArgs))]` (or the toggle args)
+     on the handler, or trimming removes the event args.
+   The element observes `data-bx-seq` and its state attribute, ignores renders older than its last report
+   (`reporter.isStale()`), and re-applies the rendered state in a `queueMicrotask` when `data-bx-seq` changes.
+   Reuse `bx-change` / `bx-toggle`; a new event type needs registering in `js/index.js` and `EventHandlers.cs`.
+4. **Never fight Blazor over the DOM.** The element may set attributes Blazor does not render, and may change
+   attributes Blazor rendered only when Blazor would render the same value afterwards (bound) or never re-render them
+   (unbound). It never replaces text nodes or elements Blazor rendered: put a label in an attribute and show it with
+   `before:content-[attr(data-label)]`, or append into an element Blazor renders empty.
+   Custom elements wire themselves with `observeChildren` (Blazor inserts an element before its children).
+5. **Accessibility.** Follow the WAI-ARIA Authoring Practices pattern of the component; native elements first
+   (`<dialog>`, `popover`, `<input>`, `<details>` only for disclosure). Text at least 4.5:1, control boundaries and
+   state indicators at least 3:1, in light and dark. Every page must pass axe.
+6. **Theme through tokens only.** Colors come from `--blux-*` tokens and the `data-color` variables
+   (`--bx-color`, `--bx-color-text`, `--bx-color-contrast`); no Tailwind palette colors in themes. Focus outlines use
+   `outline-(--bx-color-text)` or `outline-(--blux-primary-text)`. Sizes are `BxSize` (xs to xl) where they apply.
+7. **Static ids and loops.** Ids come from `NewId(...)`. In a Razor `for` loop, copy the index into a local before any
+   child component content or lambda uses it.
+8. **Interop is primitive.** Calls into JS pass strings and numbers, never anonymous objects (trimming).
+
+## Where things go (one family = one set of files)
+
+| What | Where |
+|---|---|
+| Component | `src/Blux.UI/Components/<Name>/Bx<Name>.razor` (+ `.razor.cs`), item records next to it |
+| Slot overrides | `<Name>Ui` record implementing `ISlotOverrides`, in the component folder |
+| Theme | `src/Blux.UI/Theming/Themes.<Family>.cs`: `internal static partial class Themes` |
+| Options | `src/Blux.UI/Theming/BluxOptions.<Family>.cs`: `public sealed partial class BluxOptions` (theme properties) and `public sealed partial class BluxStrings` (texts) |
+| Browser behavior | `src/Blux.UI/js/<name>.js`, imported in `js/index.js`; use `js/shared.js` helpers |
+| Docs examples | `playground/Blux.Playground/Blux.Playground.Client/Examples/<Name><What>Example.razor` (unique names) |
+| Docs catalog | `Docs/Catalog.<Family>.cs`: `public static partial class Catalog { private static readonly ComponentDoc[] <Family> = [...]; }`, then add `.. <Family>` to `Components` in `Catalog.cs` |
+| Unit tests | `tests/Blux.UI.Tests/<Family>Tests.cs`, deriving from `BluxTestContext` |
+| E2E tests | `tests/Blux.UI.E2E/<Family>Tests.cs`: an axe theory over the family's slugs in all four modes, plus behavior tests |
+
+Form controls derive from `BxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
+uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-popover>` / `<bx-modal>` patterns.
+
+## Commands
+
+```bash
+export DOTNET_ROOT=$HOME/.dotnet PATH=$HOME/.dotnet:$PATH DOTNET_CLI_TELEMETRY_OPTOUT=1 DOTNET_NOLOGO=1
+npm ci                     # or symlink node_modules from the main checkout
+npm run build              # theme classes, blux.css, JS bundle, site.css: commit the results
+dotnet build Blux.UI.slnx  # warnings are errors
+dotnet test --project tests/Blux.UI.Tests
+dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-build -- --filter-class Blux.UI.E2E.<Family>Tests
+```
+
+`GeneratedAssetsTests` fails when a theme class is missing from `blux.css` (typo, invalid Tailwind syntax) or
+`npm run build` was not run.
+
+## Done means
+
+- The component renders and behaves in all four modes, with a docs entry, live examples and an API table.
+- `dotnet build` has no warnings, all unit tests pass, the family's E2E tests pass (Chromium at least).
+- Generated assets are rebuilt and committed.
