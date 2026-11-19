@@ -68,7 +68,7 @@ else
             ["value"] = Invariant(Value),
             ["id"] = ControlId,
             ["class"] = _slots["thumb"],
-            ["data-slot"] = "control",
+            ["data-slot"] = "thumb",
         };
         if (binding.Name is not null) attributes["name"] = binding.Name;
         if (Disabled) attributes["disabled"] = true;
@@ -92,6 +92,6 @@ else
                     @onbxchange="ChangeHandler"
                     @onbxchange:stopPropagation="true">
             <div class="@_slots["track"]" data-slot="track" aria-hidden="true"><div class="@_slots["range"]" data-slot="range"></div></div>
-            <input data-slot="thumb" @attributes="ThumbAttributes(binding)" />
+            <input @attributes="ThumbAttributes(binding)" />
         </bx-slider>;
 }

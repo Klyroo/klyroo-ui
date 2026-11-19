@@ -3,7 +3,7 @@
 @inherits BxComponentBase
 
 <EditForm EditContext="_context" FormName="@FormName" OnSubmit="HandleSubmit" Enhance="Enhance"
-          class="@_slots["root"]" aria-busy="@(_submitting ? "true" : null)" data-loading="@(_submitting ? "" : null)"
+          novalidate class="@_slots["root"]" aria-busy="@(_submitting ? "true" : null)" data-loading="@(_submitting ? "" : null)"
           @attributes="AdditionalAttributes">
     @if (Validate)
     {

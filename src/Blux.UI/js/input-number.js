@@ -1,4 +1,4 @@
-import { Reporter } from './shared.js';
+import { Reporter, observeChildren } from './shared.js';
 
 /**
  * Numeric field with increment and decrement buttons. The visible field shows the number formatted for the
@@ -18,13 +18,20 @@ export class BxInputNumberElement extends HTMLElement {
   #value = null;
   #format = null;
   #decimal = '.';
+  #observer = null;
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('change', this.#onChange);
-    this.#value = this.#rendered();
-    this.#show();
+    this.#observer?.disconnect();
+    // Blazor inserts the element before its children and attributes: take the rendered state once they are there.
+    this.#observer = observeChildren(this, () => this.#applyRendered());
+  }
+
+  disconnectedCallback() {
+    this.#observer?.disconnect();
+    this.#observer = null;
   }
 
   attributeChangedCallback(name) {
