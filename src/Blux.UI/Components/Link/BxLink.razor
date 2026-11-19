@@ -80,28 +80,5 @@
         return state is null ? themed : Resolver.Merge(themed, state);
     }
 
-    private bool Matches(string href)
-    {
-        var baseUri = new Uri(Navigation.BaseUri);
-        if (!Uri.TryCreate(baseUri, href, out var target) || !Uri.TryCreate(Navigation.Uri, UriKind.Absolute, out var current))
-        {
-            return false;
-        }
-        if (!string.Equals(target.GetLeftPart(UriPartial.Authority), current.GetLeftPart(UriPartial.Authority), StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-        var targetPath = Normalize(target.AbsolutePath);
-        var currentPath = Normalize(current.AbsolutePath);
-        if (string.Equals(targetPath, currentPath, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-        // A link to the root of the app would otherwise be active everywhere.
-        return !Exact
-            && !string.Equals(targetPath, Normalize(baseUri.AbsolutePath), StringComparison.OrdinalIgnoreCase)
-            && currentPath.StartsWith(targetPath + "/", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string Normalize(string path) => Uri.UnescapeDataString(path).TrimEnd('/');
+    private bool Matches(string href) => LinkMatcher.Matches(Navigation, href, Exact);
 }

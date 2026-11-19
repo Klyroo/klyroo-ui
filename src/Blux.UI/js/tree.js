@@ -39,6 +39,11 @@ export class BxTreeElement extends HTMLElement {
     this.#observer?.disconnect();
   }
 
+  /** Re-applies the roving tabindex, e.g. after enhanced navigation merged server HTML over it. */
+  refresh() {
+    this.#syncTabIndex();
+  }
+
   attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
     if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
@@ -161,13 +166,18 @@ export class BxTreeElement extends HTMLElement {
       case 'End':
         this.#focus(visible[visible.length - 1]);
         break;
-      case 'Enter':
+      case 'Enter': {
         if (item.getAttribute('aria-disabled') === 'true') break;
-        this.#select(item);
-        if (hasChildren) this.#setExpanded(item, !expanded);
-        // The link is not focusable (tabindex -1), so the item forwards Enter to it.
-        if (event.target === item) this.#row(item)?.querySelector('a')?.click();
+        // The link is not focusable (tabindex -1), so the item forwards Enter to it; that click selects and toggles.
+        const link = event.target === item ? this.#row(item)?.querySelector('a') : null;
+        if (link) {
+          link.click();
+        } else {
+          this.#select(item);
+          if (hasChildren) this.#setExpanded(item, !expanded);
+        }
         break;
+      }
       case ' ':
         if (item.getAttribute('aria-disabled') !== 'true') this.#select(item);
         break;

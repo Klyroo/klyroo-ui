@@ -175,7 +175,7 @@ internal static partial class Themes
             .Slot("root", "flex size-full min-h-0 min-w-0")
             .Slot("panel", "min-h-0 min-w-0 overflow-auto")
             .Slot("handle", "relative z-10 flex shrink-0 touch-none items-center justify-center bg-(--blux-border-accented) transition-colors " +
-                            "hover:bg-(--bx-color) data-[dragging=true]:bg-(--bx-color) focus-visible:bg-(--bx-color) focus-visible:outline-none " +
+                            "hover:bg-(--bx-color) data-[dragging=true]:bg-(--bx-color) focus-visible:bg-(--bx-color) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " +
                             "after:absolute after:content-['']")
             .Variant("orientation", "horizontal", "root", "flex-row")
             .Variant("orientation", "horizontal", "handle", "w-px cursor-col-resize after:inset-y-0 after:-inset-x-1.5")

@@ -90,11 +90,16 @@ export class BxPopoverElement extends HTMLElement {
       trigger.popoverTargetElement = content;
       trigger.popoverTargetAction = 'toggle';
     }
-    trigger.setAttribute('aria-haspopup', this.#isMenu ? 'menu' : 'dialog');
+    // A panel without a role is a disclosure (navigation menu): expanded and controls say it all.
+    const role = content.getAttribute('role');
+    if (role) trigger.setAttribute('aria-haspopup', role === 'menu' ? 'menu' : 'dialog');
+    else trigger.removeAttribute('aria-haspopup');
     trigger.setAttribute('aria-controls', content.id);
     trigger.setAttribute('aria-expanded', String(content.matches(':popover-open')));
     // Name the panel after its trigger, unless the component was given an explicit label.
-    if (content.hasAttribute('aria-label')) {
+    if (!role) {
+      // A role-less element cannot carry a name.
+    } else if (content.hasAttribute('aria-label')) {
       if (content.hasAttribute('data-bx-labelledby')) {
         content.removeAttribute('aria-labelledby');
         content.removeAttribute('data-bx-labelledby');

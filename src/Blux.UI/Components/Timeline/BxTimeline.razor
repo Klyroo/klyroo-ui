@@ -7,7 +7,7 @@
     {
         var item = Items[i];
         var state = Active is { } active && i <= active ? "active" : "inactive";
-        <li data-state="@state" class="@_slots["item"]">
+        <li data-state="@state" aria-current="@(Active == i ? "step" : null)" class="@_slots["item"]">
             <div class="@_slots["track"]">
                 <span aria-hidden="true" data-state="@state" class="@_slots["indicator"]">
                     @if (item.Icon is not null)
