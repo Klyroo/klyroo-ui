@@ -21,6 +21,7 @@ import './input-time.js';
 import './color-picker.js';
 import './file-upload.js';
 import './carousel.js';
+import './form2.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 

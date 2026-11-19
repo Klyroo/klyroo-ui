@@ -1,0 +1,93 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxListFieldBase
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="IReadOnlyList<string>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+
+    /// <summary>Several values can be selected; each one posts under <c>Name</c>. Otherwise the list holds at most one value.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    /// <summary>Offers the typed text as a new value when no item has that label. A created value is kept in the value list but is not added to <see cref="Items"/>.</summary>
+    [Parameter] public bool Create { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Label of the filter field. Defaults to <see cref="BluxStrings.SelectMenuSearch"/>.</summary>
+    [Parameter] public string? SearchLabel { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public SelectMenuUi? Ui { get; set; }
+
+    private string Label => Value is { Count: > 0 }
+        ? string.Join(", ", Value.Select(v => Items.FirstOrDefault(i => i.Value == v)?.Label ?? v))
+        : Placeholder ?? "";
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.SelectMenu, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    private Dictionary<string, object> TriggerAttributes(EditBinding binding)
+    {
+        var attributes = PartAttributes(_slots["base"], binding, "combobox");
+        attributes["data-slot"] = "trigger";
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-select-menu data-bx-seq="@SequenceAttribute"
+                         name="@binding.Name"
+                         data-values="@DataValues"
+                         data-multiple="@(Multiple ? "" : null)"
+                         data-post-empty="@(Multiple ? null : "")"
+                         data-create="@(Create ? "" : null)"
+                         data-create-label="@(Create ? Options.Strings.SelectMenuCreate : null)"
+                         disabled="@Disabled"
+                         class="@_slots["root"]"
+                         data-color="@Color.Value"
+                         @onbxchange="ChangeHandler"
+                         @onbxchange:stopPropagation="true">
+            <span data-slot="values" hidden></span>
+            <button type="button" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
+                <span class="@_slots["label"]" data-slot="label"
+                      data-label="@Label"
+                      data-placeholder="@(Value is { Count: > 0 } ? null : "")"
+                      data-placeholder-text="@(Placeholder ?? "")"></span>
+                @BxIcons.ChevronUpDown(_slots["trailingIcon"])
+            </button>
+            <div popover="auto" class="@_slots["content"]" data-slot="content">
+                <div class="@_slots["searchWrapper"]">
+                    <input type="text" role="combobox" class="@_slots["search"]" data-slot="search" autocomplete="off" aria-autocomplete="list" aria-expanded="true"
+                           aria-label="@(SearchLabel ?? Options.Strings.SelectMenuSearch)" />
+                </div>
+                <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)"
+                     aria-multiselectable="@(Multiple ? "true" : null)">
+                    @foreach (var item in Items)
+                    {
+                        <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+                             aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
+                            <span class="@_slots["itemLabel"]">@item.Label</span>
+                            @BxIcons.Check(_slots["itemIcon"])
+                        </div>
+                    }
+                    @if (Create)
+                    {
+                        <div role="option" class="@($"{_slots["item"]} {_slots["create"]}")" data-slot="create" data-label="" aria-selected="false" hidden></div>
+                    }
+                </div>
+                <p class="@_slots["empty"]" data-slot="empty" hidden>@Options.Strings.SelectMenuNoResults</p>
+            </div>
+        </bx-select-menu>;
+}

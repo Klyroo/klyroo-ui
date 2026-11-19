@@ -1,0 +1,97 @@
+@namespace Blux.UI
+@using System.Globalization
+@using Blux.UI.Internal
+@inherits BxFieldBase<double>
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="double" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    [Parameter] public double Min { get; set; }
+    [Parameter] public double Max { get; set; } = 100;
+    [Parameter] public double Step { get; set; } = 1;
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
+
+    /// <summary>Report every move to .NET instead of the final value. Costs a round trip per step in Server mode.</summary>
+    [Parameter] public bool Immediate { get; set; }
+
+    /// <summary>Accessible name when no <see cref="BxFormField"/> label is around.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public SliderUi? Ui { get; set; }
+
+    private static string Invariant(double value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Slider, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["orientation"] = Orientation == BxOrientation.Vertical ? "vertical" : "horizontal",
+            ["range"] = "false",
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (!double.TryParse(e.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) || value == Value)
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> ThumbAttributes(EditBinding binding)
+    {
+        // min, max and step come before value: a range input clamps the value it is given.
+        var attributes = new Dictionary<string, object>
+        {
+            ["type"] = "range",
+            ["min"] = Invariant(Min),
+            ["max"] = Invariant(Max),
+            ["step"] = Invariant(Step),
+            ["value"] = Invariant(Value),
+            ["id"] = ControlId,
+            ["class"] = _slots["thumb"],
+            ["data-slot"] = "control",
+        };
+        if (binding.Name is not null) attributes["name"] = binding.Name;
+        if (Disabled) attributes["disabled"] = true;
+        if (Orientation == BxOrientation.Vertical) attributes["aria-orientation"] = "vertical";
+        if (AriaLabel is not null) attributes["aria-label"] = AriaLabel;
+        if (FormFieldContext.Join(Field?.DescribedBy) is { } describedBy) attributes["aria-describedby"] = describedBy;
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        if (AdditionalAttributes is not null)
+        {
+            foreach (var (key, value) in AdditionalAttributes) attributes[key] = value;
+        }
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-slider data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                    data-values="@Invariant(Value)"
+                    data-immediate="@(Immediate ? "" : null)"
+                    class="@_slots["root"]"
+                    data-color="@Color.Value"
+                    @onbxchange="ChangeHandler"
+                    @onbxchange:stopPropagation="true">
+            <div class="@_slots["track"]" data-slot="track" aria-hidden="true"><div class="@_slots["range"]" data-slot="range"></div></div>
+            <input data-slot="thumb" @attributes="ThumbAttributes(binding)" />
+        </bx-slider>;
+}

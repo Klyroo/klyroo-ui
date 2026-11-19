@@ -32,7 +32,7 @@ public abstract class BxFieldBase<TValue> : BxComponentBase
 
     private protected bool UseEditContext => EditContext is not null && ValueExpression is not null;
 
-    private protected string ControlId => Id ?? Field?.InputId ?? (_generatedId ??= NewId(GetType().Name.ToLowerInvariant()));
+    private protected string ControlId => Id ?? Field?.InputId ?? (_generatedId ??= NewId(GetType().Name.Split('`')[0].ToLowerInvariant()));
 
     private protected BxSize EffectiveSize => Size ?? Field?.Size ?? BxSize.Md;
 

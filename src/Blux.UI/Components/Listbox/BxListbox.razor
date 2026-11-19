@@ -1,0 +1,65 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxListFieldBase
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="IReadOnlyList<string>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+
+    /// <summary>Several values can be selected, each posting under <c>Name</c>.</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    /// <summary>Accessible name when no <see cref="BxFormField"/> label is around.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public ListboxUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Listbox, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
+
+    private Dictionary<string, object> ListboxAttributes(EditBinding binding)
+    {
+        var attributes = PartAttributes(_slots["base"], binding, "listbox");
+        attributes.Remove("disabled");
+        attributes["tabindex"] = Disabled ? "-1" : "0";
+        if (Disabled) attributes["aria-disabled"] = "true";
+        if (Multiple) attributes["aria-multiselectable"] = "true";
+        if (AriaLabel is not null) attributes["aria-label"] = AriaLabel;
+        else if (Field?.LabelId is not null) attributes["aria-labelledby"] = Field.LabelId;
+        attributes["data-slot"] = "listbox";
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-listbox data-bx-seq="@SequenceAttribute"
+                     name="@binding.Name"
+                     data-values="@DataValues"
+                     data-multiple="@(Multiple ? "" : null)"
+                     data-post-empty="@(Multiple ? null : "")"
+                     disabled="@Disabled"
+                     class="@_slots["root"]"
+                     data-color="@Color.Value"
+                     @onbxchange="ChangeHandler"
+                     @onbxchange:stopPropagation="true">
+            <span data-slot="values" hidden></span>
+            <div @attributes="ListboxAttributes(binding)">
+                @foreach (var item in Items)
+                {
+                    <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+                         aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
+                        <span class="@_slots["itemLabel"]">@item.Label</span>
+                        @BxIcons.Check(_slots["itemIcon"])
+                    </div>
+                }
+            </div>
+        </bx-listbox>;
+}
