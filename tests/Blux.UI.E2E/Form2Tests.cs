@@ -251,7 +251,8 @@ public class Form2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "input-rating");
         var group = Page.GetByRole(AriaRole.Radiogroup, new() { Name = "Your rating" });
 
-        await group.GetByRole(AriaRole.Radio, new() { Name = "4 out of 5" }).CheckAsync(new() { Force = true });
+        // The radios are visually hidden, so a person picks a star by clicking its drawn label.
+        await group.Locator("label[data-slot=star][for$='-4']").ClickAsync();
         await Assertions.Expect(group.GetByRole(AriaRole.Radio, new() { Name = "4 out of 5" })).ToBeCheckedAsync();
         await group.GetByRole(AriaRole.Radio, new() { Name = "4 out of 5" }).PressAsync("ArrowLeft");
 
@@ -317,6 +318,12 @@ public class Form2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.Locator("[data-slot=summary] li")).ToHaveTextAsync("The name is required.");
 
         await Page.GetByRole(AriaRole.Textbox, new() { Name = "Name" }).FillAsync("Acme");
+        if (mode != "ssr")
+        {
+            // Leaving the field clears its message and the summary shrinks: wait for that so the click lands on the button.
+            await Page.Keyboard.PressAsync("Tab");
+            await Assertions.Expect(Page.Locator("[data-slot=summary] li")).ToHaveCountAsync(0);
+        }
         await submit.ClickAsync();
 
         await Assertions.Expect(Page.GetByTestId("form-saved")).ToHaveTextAsync("Workspace Acme created.");
