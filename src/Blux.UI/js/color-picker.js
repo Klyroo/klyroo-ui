@@ -60,6 +60,9 @@ export class BxColorPickerElement extends HTMLElement {
   #s = 0;
   #v = 0;
   #has = false;
+  // The hex is the source of truth: a typed or bound color comes back unchanged. H, S and V are only derived for
+  // display (and rounded), so they are not converted back to hex unless the user moves a slider.
+  #hexValue = '';
   #committed = '';
   #observer = null;
   #scheduled = false;
@@ -104,7 +107,7 @@ export class BxColorPickerElement extends HTMLElement {
   }
 
   #hex() {
-    return hsvToHex(this.#h, this.#s, this.#v);
+    return this.#hexValue;
   }
 
   #sync() {
@@ -117,7 +120,7 @@ export class BxColorPickerElement extends HTMLElement {
           this.#s = this.#v = 0;
         }
       } else if (!this.#has || hex !== this.#hex()) {
-        this.#set(hexToHsv(hex, this.#h));
+        this.#setHex(hex);
       }
       this.#committed = this.#has ? this.#hex() : '';
     }
@@ -129,6 +132,16 @@ export class BxColorPickerElement extends HTMLElement {
     this.#s = clamp(s, 0, 100);
     this.#v = clamp(v, 0, 100);
     this.#has = true;
+    this.#hexValue = hsvToHex(this.#h, this.#s, this.#v);
+  }
+
+  #setHex(hex) {
+    const { h, s, v } = hexToHsv(hex, this.#h);
+    this.#h = clamp(h, 0, 359);
+    this.#s = clamp(s, 0, 100);
+    this.#v = clamp(v, 0, 100);
+    this.#has = true;
+    this.#hexValue = hex;
   }
 
   /** Writes the state into every part. `source` is the part the user is editing, left alone so typing is not disturbed. */
@@ -181,7 +194,7 @@ export class BxColorPickerElement extends HTMLElement {
       const hex = normalize(target.value);
       target.toggleAttribute('aria-invalid', false);
       if (hex === null) return;
-      this.#set(hexToHsv(hex, this.#h));
+      this.#setHex(hex);
       this.#commit('hex');
       return;
     } else return;
