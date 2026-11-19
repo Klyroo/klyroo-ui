@@ -1,0 +1,63 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    A BxSidebar for a dashboard: the same browser-owned collapsed state and width, the same off-canvas panel below the
+    lg breakpoint. What differs is that the controls live elsewhere: BxDashboardSidebarCollapse collapses it and
+    BxDashboardSidebarToggle opens the panel, both usually in a navbar, so the sidebar renders neither of its own
+    buttons unless Collapsible is set. The key of the enclosing BxDashboardGroup is its storage id.
+*@
+<BxSidebar Id="@(Id ?? Context?.Key)"
+           Header="Header" Footer="Footer"
+           Collapsible="Collapsible"
+           Collapsed="Collapsed" CollapsedChanged="CollapsedChanged"
+           Resizable="Resizable" Width="Width" MinWidth="MinWidth" MaxWidth="MaxWidth"
+           As="@As" AriaLabel="@AriaLabel" MobileTitle="@MobileTitle"
+           MobileTrigger="false"
+           Ui="_ui" Class="@Class"
+           @attributes="AdditionalAttributes">
+    @ChildContent
+</BxSidebar>
+
+@code {
+    private SidebarUi _ui = new();
+
+    [CascadingParameter] private DashboardContext? Context { get; set; }
+
+    /// <summary>The scrollable middle: navigation, search button.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Top of the sidebar: a logo and a title. Hidden while the sidebar is collapsed.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>Bottom of the sidebar: the signed-in user.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Overrides the storage id taken from the group.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    /// <summary>Also shows a collapse button in the header of the sidebar, besides <see cref="BxDashboardSidebarCollapse"/>.</summary>
+    [Parameter] public bool Collapsible { get; set; }
+
+    /// <summary>The collapsed state when nothing is remembered. <c>@bind-Collapsed</c> follows and sets it from .NET.</summary>
+    [Parameter] public bool Collapsed { get; set; }
+    [Parameter] public EventCallback<bool> CollapsedChanged { get; set; }
+
+    /// <summary>Adds a handle on the edge to resize the sidebar with the mouse or the keyboard. Sizes are in pixels, unlike the panels.</summary>
+    [Parameter] public bool Resizable { get; set; }
+    [Parameter] public int Width { get; set; } = 256;
+    [Parameter] public int MinWidth { get; set; } = 192;
+    [Parameter] public int MaxWidth { get; set; } = 448;
+
+    /// <summary>The element to render, "aside" by default; use "div" inside another landmark.</summary>
+    [Parameter] public string As { get; set; } = "aside";
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public string? MobileTitle { get; set; }
+
+    /// <summary>Slot overrides, the same as <see cref="BxSidebar"/>.</summary>
+    [Parameter] public SidebarUi? Ui { get; set; }
+
+    // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
+    protected override void OnParametersSet() =>
+        _ui = (Ui ?? new SidebarUi()) with { Mobile = Ui?.Mobile ?? "contents" };
+}
