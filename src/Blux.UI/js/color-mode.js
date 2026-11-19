@@ -15,6 +15,8 @@ export function applyColorMode() {
   const dark = mode === 'dark' || (mode === 'system' && media.matches);
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  // Controls that show the mode (switch, select) listen to this to stay in sync.
+  document.dispatchEvent(new CustomEvent('bx-color-mode', { detail: { mode, dark } }));
 }
 
 /** @param {'light' | 'dark' | 'system'} mode */

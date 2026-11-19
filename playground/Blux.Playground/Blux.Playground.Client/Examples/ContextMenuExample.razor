@@ -1,0 +1,22 @@
+<div class="flex w-full max-w-md flex-col items-center gap-3">
+    <BxContextMenu Items="Items" OnSelect="item => _last = item.Label" Label="Document actions" aria-label="Document, press Shift+F10 for actions" Class="w-full">
+        <div class="flex h-36 w-full items-center justify-center rounded-(--blux-radius) border border-dashed border-(--blux-border-accented) px-4 text-center text-sm text-(--blux-text-muted)" data-testid="context-area">
+            Right click, long press, or focus here and press Shift+F10
+        </div>
+    </BxContextMenu>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="context-state">Last action: @(_last ?? "none")</p>
+</div>
+
+@code {
+    private string? _last;
+
+    private static readonly BxMenuItem[] Items =
+    [
+        new() { Label = "Open", Shortcut = "Enter" },
+        new() { Label = "Rename", Shortcut = "F2" },
+        new() { Label = "Share", Href = "/docs" },
+        BxMenuItem.Separator(),
+        new() { Label = "Archive", Disabled = true },
+        new() { Label = "Delete", Color = BxColor.Error },
+    ];
+}
