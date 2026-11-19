@@ -42,6 +42,13 @@ public partial class BxPopover
     /// <summary>Accessible name of the panel. Defaults to the trigger's text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
 
+    /// <summary>
+    /// Role of the panel. Defaults to <c>dialog</c>. Null renders a plain panel, a disclosure as in the WAI-ARIA
+    /// navigation pattern: the trigger then only reports <c>aria-expanded</c> and <c>aria-controls</c>, and
+    /// <see cref="AriaLabel"/> is not rendered because a role-less element cannot carry a name.
+    /// </summary>
+    [Parameter] public string? Role { get; set; } = "dialog";
+
     [Parameter] public PopoverUi? Ui { get; set; }
 
     // Only listen when someone is bound: an unbound popover never calls back into .NET.

@@ -228,6 +228,56 @@ public class NavTests : BluxTestContext
         Assert.Equal(["B"], cut.FindAll("[aria-current=page]").Select(a => a.TextContent.Trim()));
     }
 
+    [Fact]
+    public void NavigationMenu_matches_case_insensitively()
+    {
+        Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/Docs/Theming");
+        BxNavigationItem[] items = [new("Docs") { Href = "/docs" }];
+        var cut = Render<BxNavigationMenu>(p => p.Add(m => m.Items, items));
+
+        Assert.Equal(["Docs"], cut.FindAll("a[aria-current=page]").Select(a => a.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void NavigationMenu_horizontal_panel_is_not_announced_as_a_dialog()
+    {
+        BxNavigationItem[] items = [new("Components") { Children = [new("Button") { Href = "/button" }] }];
+        var cut = Render<BxNavigationMenu>(p => p.Add(m => m.Items, items));
+
+        Assert.Empty(cut.FindAll("[role=dialog]"));
+        var panel = cut.Find("[popover]");
+        Assert.False(panel.HasAttribute("role"));
+        Assert.False(panel.HasAttribute("aria-label"));
+    }
+
+    [Fact]
+    public void Timeline_marks_the_current_item_for_assistive_technology()
+    {
+        BxTimelineItem[] items = [new("A"), new("B"), new("C")];
+        var cut = Render<BxTimeline>(p => p.Add(t => t.Items, items).Add(t => t.Active, 1));
+
+        Assert.Equal(["B"], cut.FindAll("ol > li[aria-current=step]").Select(i => i.QuerySelector("span:not([aria-hidden])")!.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Splitter_handle_has_a_visible_focus_outline()
+    {
+        var cut = Render<BxSplitter>(p => p.Add(s => s.Panels, TwoPanels));
+
+        var classes = cut.Find("[role=separator]").GetAttribute("class")!;
+        Assert.DoesNotContain("focus-visible:outline-none", classes);
+        Assert.Contains("focus-visible:outline-2", classes);
+    }
+
+    [Fact]
+    public void CommandPalette_link_options_are_not_tab_stops()
+    {
+        BxCommandGroup[] groups = [new("Go", [new() { Label = "Docs", Href = "/docs" }, new() { Label = "Run" }])];
+        var cut = Render<BxCommandPalette>(p => p.Add(c => c.Groups, groups));
+
+        Assert.Equal("-1", cut.Find("a[role=option]").GetAttribute("tabindex"));
+    }
+
     // ---- Collapsible
 
     [Fact]
@@ -416,5 +466,31 @@ public class NavTests : BluxTestContext
         Assert.Equal("45.5,54.5", cut.Find("bx-splitter").GetAttribute("sizes"));
         Assert.Equal("46", cut.Find("[role=separator]").GetAttribute("aria-valuenow"));
         Assert.Equal("3", cut.Find("bx-splitter").GetAttribute("data-bx-seq"));
+    }
+}
+
+public class NavBasePathTests : BunitContext
+{
+    private sealed class BasePathNavigation : Microsoft.AspNetCore.Components.NavigationManager
+    {
+        public BasePathNavigation() => Initialize("http://localhost/app/", "http://localhost/app/docs/theming");
+        protected override void NavigateToCore(string uri, Microsoft.AspNetCore.Components.NavigationOptions options) { }
+    }
+
+    // The base path has to be in place before the first service is resolved, so this does not derive from BluxTestContext.
+    public NavBasePathTests()
+    {
+        Services.AddSingleton<Microsoft.AspNetCore.Components.NavigationManager>(new BasePathNavigation());
+        Services.AddBluxUi();
+        SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo("Server", true));
+    }
+
+    [Fact]
+    public void NavigationMenu_does_not_mark_the_app_root_as_active_under_a_base_path()
+    {
+        BxNavigationItem[] items = [new("Home") { Href = "/app/" }, new("Docs") { Href = "/app/docs" }];
+        var cut = Render<BxNavigationMenu>(p => p.Add(m => m.Items, items));
+
+        Assert.Equal(["Docs"], cut.FindAll("a[aria-current=page]").Select(a => a.TextContent.Trim()));
     }
 }

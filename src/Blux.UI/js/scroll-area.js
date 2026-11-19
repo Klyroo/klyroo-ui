@@ -20,6 +20,11 @@ export class BxScrollAreaElement extends HTMLElement {
     this.#observer?.disconnect();
   }
 
+  /** Re-applies the tab stop, e.g. after enhanced navigation merged server HTML over it. */
+  refresh() {
+    this.#update();
+  }
+
   get #viewport() {
     return this.querySelector(':scope > [data-bx-scroll-viewport]');
   }

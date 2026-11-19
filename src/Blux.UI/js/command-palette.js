@@ -79,7 +79,7 @@ export class BxCommandPaletteElement extends HTMLElement {
     if (this.hasAttribute('data-empty') !== (visible === 0)) this.toggleAttribute('data-empty', visible === 0);
 
     const keep = !reset && !changed && this.#active && this.#selectable().includes(this.#active);
-    this.#highlight(keep ? this.#active : (this.#selectable()[0] ?? null));
+    this.#highlight(keep ? this.#active : (this.#selectable()[0] ?? null), reset);
     if (reset) this.#announce(visible);
   }
 
@@ -93,7 +93,18 @@ export class BxCommandPaletteElement extends HTMLElement {
     if (status.textContent !== text) status.textContent = text;
   }
 
-  #highlight(option) {
+  // Scrolls the listbox only, never the page: scrollIntoView would also scroll the window when the palette is inline.
+  #reveal(option) {
+    const list = this.#listbox;
+    if (!list) return;
+    const box = option.getBoundingClientRect();
+    const bounds = list.getBoundingClientRect();
+    if (box.top < bounds.top) list.scrollTop -= bounds.top - box.top;
+    else if (box.bottom > bounds.bottom) list.scrollTop += box.bottom - bounds.bottom;
+  }
+
+  /** Highlights an option; only a keyboard move or a new search scrolls it into view. */
+  #highlight(option, reveal = false) {
     if (this.#active && this.#active !== option) {
       this.#active.removeAttribute('data-highlighted');
       this.#active.setAttribute('aria-selected', 'false');
@@ -103,7 +114,7 @@ export class BxCommandPaletteElement extends HTMLElement {
     if (option) {
       option.setAttribute('data-highlighted', '');
       option.setAttribute('aria-selected', 'true');
-      option.scrollIntoView({ block: 'nearest' });
+      if (reveal) this.#reveal(option);
       input?.setAttribute('aria-activedescendant', option.id);
     } else {
       input?.removeAttribute('aria-activedescendant');
@@ -116,17 +127,18 @@ export class BxCommandPaletteElement extends HTMLElement {
 
   #onKeyDown = (event) => {
     const input = this.#input;
-    if (event.target !== input) return;
+    // Enter that confirms an IME composition must not run a command.
+    if (event.target !== input || event.isComposing || event.keyCode === 229) return;
     const options = this.#selectable();
     const index = options.indexOf(this.#active);
     switch (event.key) {
       case 'ArrowDown':
         event.preventDefault();
-        if (options.length) this.#highlight(options[(index + 1) % options.length]);
+        if (options.length) this.#highlight(options[(index + 1) % options.length], true);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        if (options.length) this.#highlight(options[(index - 1 + options.length) % options.length]);
+        if (options.length) this.#highlight(options[(index - 1 + options.length) % options.length], true);
         break;
       case 'Enter':
         if (this.#active) {
