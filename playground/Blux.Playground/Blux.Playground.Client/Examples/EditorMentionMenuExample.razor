@@ -1,0 +1,20 @@
+<div class="flex w-full max-w-2xl flex-col gap-3">
+    <BxFormField Label="Mentions" Help="Type @@ then a name. The mention is stored with its id.">
+        <BxEditor @bind-Value="_html" Placeholder="Mention a teammate with @@" data-testid="editor-mention">
+            <BxEditorMentionMenu Items="People" />
+        </BxEditor>
+    </BxFormField>
+    <p class="break-all font-mono text-xs text-(--blux-text-muted)" data-testid="mention-html">@(string.IsNullOrEmpty(_html) ? "(empty)" : _html)</p>
+</div>
+
+@code {
+    private string? _html = "";
+
+    private static readonly EditorMentionItem[] People =
+    [
+        new("ada", "Ada Lovelace") { Description = "Mathematician" },
+        new("alan", "Alan Turing") { Description = "Computer scientist" },
+        new("grace", "Grace Hopper") { Description = "Rear admiral" },
+        new("linus", "Linus Torvalds") { Description = "Kernel maintainer" },
+    ];
+}
