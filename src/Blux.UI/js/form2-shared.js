@@ -10,13 +10,15 @@ export const parseList = (text) => (text ? text.split(SEP) : []);
  *
  * The rendered state is the host's data-values attribute. The model owns a list of hidden inputs in
  * <span data-slot="values" hidden>, which Blazor renders empty, so the values post in a plain HTML form.
- * Reports changes as bx-change, and ignores renders older than the last report (see Reporter).
+ * Reports changes as bx-change, and ignores renders older than the last report (see Reporter). The rendered values are
+ * taken when data-values or data-bx-seq change, never because children changed.
  */
 export class ValueModel {
   #host;
   #paint;
   #values = [];
   #loaded = false;
+  #cleared = false;
   reporter;
 
   constructor(host, paint) {
@@ -29,11 +31,36 @@ export class ValueModel {
     return this.#values;
   }
 
-  /** Takes the rendered state, unless it comes from a render older than the last report, then paints. */
-  load() {
-    if (!this.#loaded || !this.reporter.isStale()) this.#values = parseList(this.#host.getAttribute('data-values'));
-    this.#loaded = true;
+  /** Paints what is there. The rendered values are only taken the first time: a child change is not a new render. */
+  ensure() {
+    if (!this.#loaded) this.#take(true);
     this.render();
+  }
+
+  /** An observed attribute changed: data-bx-seq and data-values mean a render, anything else only repaints. */
+  attributeChanged(name) {
+    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply(true));
+    else if (name === 'data-values') this.#apply(false);
+    else this.render();
+  }
+
+  /** After an enhanced load merged server HTML over this element. A bound element takes what the server rendered. */
+  refresh() {
+    this.reporter.adopt();
+    this.#apply(this.reporter.bound);
+  }
+
+  #apply(force) {
+    this.#take(force);
+    this.render();
+  }
+
+  #take(force) {
+    const text = this.reporter.take('data-values', force || !this.#loaded);
+    if (text === undefined) return;
+    this.#values = parseList(text);
+    this.#cleared = false;
+    this.#loaded = true;
   }
 
   render() {
@@ -44,6 +71,7 @@ export class ValueModel {
   set(values, report = true) {
     if (values.length === this.#values.length && values.every((v, i) => v === this.#values[i])) return;
     this.#values = values;
+    this.#cleared = values.length === 0;
     this.render();
     if (report) {
       this.#host.dispatchEvent(new Event('change', { bubbles: true }));
@@ -57,7 +85,10 @@ export class ValueModel {
     const name = this.#host.getAttribute('name');
     let wanted = [];
     if (name && !this.#host.hasAttribute('disabled')) {
-      wanted = this.#values.length === 0 && this.#host.hasAttribute('data-post-empty') ? [''] : this.#values;
+      // An empty selection posts nothing, so a form model keeps its default: post one empty value when the user emptied it
+      // (and always for a single value, which has exactly one). The form mapper reads that as one empty entry.
+      const marker = this.#host.hasAttribute('data-post-empty') || this.#cleared;
+      wanted = this.#values.length === 0 && marker ? [''] : this.#values;
     }
     const current = [...box.children];
     if (current.length === wanted.length && current.every((i, k) => i.value === wanted[k] && i.name === name)) return;

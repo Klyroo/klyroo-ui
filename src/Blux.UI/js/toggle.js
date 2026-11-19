@@ -24,6 +24,7 @@ export class BxToggleElement extends HTMLElement {
   }
 
   refresh() {
+    this.#reporter.adopt();
     this.#apply();
   }
 

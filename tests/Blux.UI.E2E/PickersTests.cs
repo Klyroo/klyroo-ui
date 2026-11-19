@@ -260,6 +260,130 @@ public class PickersTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(carousel.Locator($"[data-slot=dot]:not([data-index='{current}'])[aria-current=true]")).ToHaveCountAsync(1, new() { Timeout = 6_000 });
     }
 
+    // Unbound pickers own their value in the browser: a render that only changes another attribute must not reset it.
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Unbound_Calendar_keeps_the_picked_day_when_another_parameter_changes(string mode)
+    {
+        await Open(mode, "calendar");
+
+        await Day("unbound-calendar", "2026-11-18").ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Move the minimum" }).ClickAsync();
+        await Assertions.Expect(Page.Locator("[data-testid=unbound-calendar]")).ToHaveAttributeAsync("min", "2026-11-02");
+
+        await Assertions.Expect(Day("unbound-calendar", "2026-11-18")).ToHaveAttributeAsync("data-selected", "");
+        await Assertions.Expect(Page.Locator("[data-testid=unbound-calendar] input[type=hidden]")).ToHaveValueAsync("2026-11-18");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Unbound_InputTime_keeps_the_typed_time_when_another_parameter_changes(string mode)
+    {
+        await Open(mode, "input-time");
+        var field = Page.GetByTestId("unbound-time");
+
+        await field.GetByRole(AriaRole.Spinbutton, new() { Name = "Hours" }).ClickAsync();
+        await Page.Keyboard.TypeAsync("1030");
+        await Assertions.Expect(field.Locator("input[type=hidden]")).ToHaveValueAsync("10:30");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Switch the clock" }).ClickAsync();
+        await Assertions.Expect(field).ToHaveAttributeAsync("hour12", "");
+
+        await Assertions.Expect(field.Locator("input[type=hidden]")).ToHaveValueAsync("10:30");
+        await Assertions.Expect(field.GetByRole(AriaRole.Spinbutton, new() { Name = "Minutes" })).ToHaveAttributeAsync("aria-valuenow", "30");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Unbound_Carousel_keeps_its_slide_when_another_parameter_changes(string mode)
+    {
+        await Open(mode, "carousel");
+        var carousel = Page.GetByTestId("unbound-carousel");
+        var dots = carousel.Locator("[data-slot=dot]");
+
+        await carousel.GetByRole(AriaRole.Button, new() { Name = "Next slide" }).ClickAsync();
+        await Assertions.Expect(dots.Nth(1)).ToHaveAttributeAsync("aria-current", "true");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Toggle looping" }).ClickAsync();
+        await Assertions.Expect(carousel).ToHaveAttributeAsync("loop", "");
+
+        await Page.WaitForTimeoutAsync(500);
+        await Assertions.Expect(dots.Nth(1)).ToHaveAttributeAsync("aria-current", "true");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Calendar_multiple_and_range_post_one_entry_per_date(string mode)
+    {
+        await Open(mode, "calendar");
+
+        await Day("form-days", "2026-11-05").ClickAsync();
+        await Day("form-stay", "2026-11-16").ClickAsync();
+        await Day("form-stay", "2026-11-18").ClickAsync();
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Book dates" }).ClickAsync();
+
+        await Assertions.Expect(Page.GetByTestId("calendar-saved")).ToHaveTextAsync("Booked: 11-02,11-05 / 2026-11-16 to 2026-11-18");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Carousel_stays_stopped_after_keyboard_focus_until_the_user_restarts_it(string mode)
+    {
+        await Open(mode, "carousel");
+        var carousel = Page.GetByTestId("news");
+
+        // Keyboard focus stops the rotation, and leaving does not start it again (APG).
+        await carousel.Locator("[data-slot=viewport]").FocusAsync();
+        await Page.EvaluateAsync("document.activeElement.blur()");
+        await Page.Mouse.MoveAsync(0, 0);
+        var current = await carousel.Locator("[data-slot=dot][aria-current=true]").GetAttributeAsync("data-index");
+        await Page.WaitForTimeoutAsync(2_600);
+
+        Assert.Equal(current, await carousel.Locator("[data-slot=dot][aria-current=true]").GetAttributeAsync("data-index"));
+        await Assertions.Expect(carousel.GetByRole(AriaRole.Button, new() { Name = "Start automatic slide show" })).ToBeVisibleAsync();
+        await carousel.GetByRole(AriaRole.Button, new() { Name = "Start automatic slide show" }).ClickAsync();
+        await Page.EvaluateAsync("document.activeElement.blur()");
+        await Page.Mouse.MoveAsync(0, 0);
+        await Assertions.Expect(carousel.Locator($"[data-slot=dot]:not([data-index='{current}'])[aria-current=true]")).ToHaveCountAsync(1, new() { Timeout = 6_000 });
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Carousel_refresh_keeps_a_single_resize_observer(string mode)
+    {
+        await Page.AddInitScriptAsync(
+            "(() => { const Native = window.ResizeObserver; window.__observing = new Map();" +
+            "window.ResizeObserver = class extends Native {" +
+            "constructor(cb) { super(cb); window.__observing.set(this, new Set()); }" +
+            "observe(t, o) { window.__observing.get(this).add(t); super.observe(t, o); }" +
+            "disconnect() { window.__observing.get(this).clear(); super.disconnect(); } }; })();");
+        await Open(mode, "carousel");
+
+        await Page.EvaluateAsync("() => { const c = document.querySelector('[data-testid=places]'); c.refresh(); c.refresh(); c.refresh(); }");
+
+        var observers = await Page.EvaluateAsync<int>(
+            "() => { const v = document.querySelector('[data-testid=places] [data-slot=viewport]'); return [...window.__observing.values()].filter((s) => s.has(v)).length; }");
+        Assert.Equal(1, observers);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task ColorPicker_reports_once_when_a_drag_ends(string mode)
+    {
+        await Open(mode, "color-picker");
+        var picker = Page.Locator("bx-color-picker[data-testid=brand]");
+        await picker.EvaluateAsync("el => { window.__reports = 0; el.addEventListener('bx-change', () => window.__reports++); }");
+        var box = (await picker.Locator("[data-slot=area]").BoundingBoxAsync())!;
+
+        await Page.Mouse.MoveAsync(box.X + 10, box.Y + 10);
+        await Page.Mouse.DownAsync();
+        await Page.Mouse.MoveAsync(box.X + 40, box.Y + 30, new() { Steps = 6 });
+        await Page.Mouse.MoveAsync(box.X + 90, box.Y + 50, new() { Steps = 6 });
+
+        Assert.Equal(0, await Page.EvaluateAsync<int>("window.__reports"));
+        await Page.Mouse.UpAsync();
+        Assert.Equal(1, await Page.EvaluateAsync<int>("window.__reports"));
+    }
+
     [Theory]
     [MemberData(nameof(AllModes))]
     public async Task FileUpload_lists_chosen_files_and_removes_them(string mode)

@@ -25,12 +25,14 @@ export class BxPinInputElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered());
+    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered();
   }
 
   refresh() {
-    this.#applyRendered();
+    this.#reporter.adopt();
+    this.#applyRendered(this.#reporter.bound);
+    this.#sync();
   }
 
   #cells() {
@@ -49,9 +51,11 @@ export class BxPinInputElement extends HTMLElement {
     return [...text].filter((c) => this.#accepts(c));
   }
 
-  #applyRendered() {
-    if (this.#reporter.isStale()) return;
-    const value = this.getAttribute('value') ?? '';
+  /** Shows the rendered value when a render changed it (force: a bound render arrived). */
+  #applyRendered(force = false) {
+    const text = this.#reporter.take('value', force);
+    if (text === undefined) return;
+    const value = text ?? '';
     if (value === this.#read()) return;
     this.#fill(this.#clean(value), 0);
     this.#last = this.#read();
@@ -66,7 +70,11 @@ export class BxPinInputElement extends HTMLElement {
   }
 
   #sync() {
+    // The value is the boxes joined, so the boxes show exactly that: no digit sits after an empty box.
     const value = this.#read();
+    this.#cells().forEach((cell, i) => {
+      cell.value = value[i] ?? '';
+    });
     const hidden = this.querySelector('input[data-slot="value"]');
     if (hidden) hidden.value = value;
     return value;
@@ -130,7 +138,15 @@ export class BxPinInputElement extends HTMLElement {
   };
 
   #onFocusIn = (event) => {
-    if (event.target.matches?.('[data-slot="cell"]')) event.target.select();
+    if (!event.target.matches?.('[data-slot="cell"]')) return;
+    // Typing continues after the last digit: a box past the first empty one hands focus to it.
+    const cells = this.#cells();
+    const empty = cells.findIndex((c) => c.value === '');
+    if (empty !== -1 && cells.indexOf(event.target) > empty) {
+      cells[empty].focus();
+      return;
+    }
+    event.target.select();
   };
 }
 

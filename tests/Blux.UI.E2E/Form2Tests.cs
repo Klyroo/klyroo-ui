@@ -314,6 +314,219 @@ public class Form2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.GetByTestId("saved")).ToHaveTextAsync("Saved: dotnet, go / alpha, beta");
     }
 
+    // Unbound list controls own their state in the browser: a child change must not make them re-read the rendered value.
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Unbound_InputTags_keeps_a_tag_the_user_adds(string mode)
+    {
+        await Open(mode, "input-tags");
+        var tags = Page.Locator("bx-input-tags[name=skills]");
+
+        await tags.GetByRole(AriaRole.Textbox).FocusAsync();
+        await Page.Keyboard.TypeAsync("rust");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(tags.Locator("[data-tag=rust]")).ToBeVisibleAsync();
+        await Page.WaitForTimeoutAsync(300);
+        await Assertions.Expect(tags.Locator("[data-tag=rust]")).ToBeVisibleAsync();
+        await Assertions.Expect(tags.Locator("input[type=hidden]")).ToHaveCountAsync(2);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Unbound_Listbox_keeps_the_option_the_user_picks(string mode)
+    {
+        await Open(mode, "listbox");
+        var listbox = Page.GetByRole(AriaRole.Listbox, new() { Name = "Color" });
+
+        await listbox.GetByRole(AriaRole.Option, new() { Name = "Blue" }).ClickAsync();
+
+        await Page.WaitForTimeoutAsync(300);
+        await Assertions.Expect(listbox.GetByRole(AriaRole.Option, new() { Name = "Blue" })).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(listbox.GetByRole(AriaRole.Option, new() { Name = "Green" })).ToHaveAttributeAsync("aria-selected", "false");
+        await Assertions.Expect(Page.Locator("bx-listbox[name=color] input[type=hidden]")).ToHaveValueAsync("blue");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Unbound_ToggleGroup_keeps_what_the_user_presses(string mode)
+    {
+        await Open(mode, "toggle-group");
+        var group = Page.GetByRole(AriaRole.Group, new() { Name = "Text marks" });
+
+        await group.GetByRole(AriaRole.Button, new() { Name = "Italic" }).ClickAsync();
+
+        await Page.WaitForTimeoutAsync(300);
+        await Assertions.Expect(group.GetByRole(AriaRole.Button, new() { Name = "Italic" })).ToHaveAttributeAsync("aria-pressed", "true");
+        await Assertions.Expect(group.GetByRole(AriaRole.Button, new() { Name = "Bold" })).ToHaveAttributeAsync("aria-pressed", "true");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Unbound_SelectMenu_keeps_the_values_the_user_picks(string mode)
+    {
+        await Open(mode, "select-menu");
+        var trigger = Page.GetByRole(AriaRole.Combobox, new() { Name = "Editors" });
+
+        await trigger.ClickAsync();
+        await Page.GetByRole(AriaRole.Option, new() { Name = "Rider" }).ClickAsync();
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Page.WaitForTimeoutAsync(300);
+        await Assertions.Expect(Page.Locator("bx-select-menu[name=editors] input[type=hidden]")).ToHaveCountAsync(2);
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Unbound_InputNumber_keeps_the_number_when_another_parameter_changes(string mode)
+    {
+        await Open(mode, "input-number");
+        var seats = Page.GetByRole(AriaRole.Spinbutton, new() { Name = "Seats" });
+
+        await seats.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowUp");
+        await Assertions.Expect(seats).ToHaveValueAsync("3");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Raise the maximum" }).ClickAsync();
+        await Assertions.Expect(Page.Locator("bx-input-number:has(input[name=seats])")).ToHaveAttributeAsync("max", "25");
+
+        await Assertions.Expect(seats).ToHaveValueAsync("3");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task PinInput_keeps_the_digits_in_order_whatever_box_is_clicked(string mode)
+    {
+        await Open(mode, "pin-input");
+        var group = Page.GetByRole(AriaRole.Group, new() { Name = "Verification code" });
+        var cells = group.Locator("[data-slot=cell]");
+
+        await cells.Nth(3).ClickAsync();
+        await Page.Keyboard.TypeAsync("5");
+
+        // What the boxes show is what posts: no digit sits in a box after an empty one.
+        await Assertions.Expect(cells.Nth(0)).ToHaveValueAsync("5");
+        await Assertions.Expect(cells.Nth(3)).ToHaveValueAsync("");
+        await Assertions.Expect(group.Locator("input[type=hidden]")).ToHaveValueAsync("5");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task InputMenu_strict_is_cleared_by_emptying_the_field(string mode)
+    {
+        await Open(mode, "input-menu");
+        var menu = Page.Locator("bx-input-menu").Nth(1);
+        var field = menu.GetByRole(AriaRole.Combobox);
+
+        await field.FocusAsync();
+        await Page.Keyboard.TypeAsync("ger");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(menu.Locator("input[type=hidden]")).ToHaveValueAsync("de");
+
+        await field.FillAsync("");
+        await Page.Keyboard.PressAsync("Tab");
+
+        await Assertions.Expect(field).ToHaveValueAsync("");
+        await Assertions.Expect(menu.Locator("input[type=hidden]")).ToHaveValueAsync("");
+        if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("menu-state")).ToContainTextAsync("strict: none");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task InputMenu_marks_the_chosen_suggestion_as_selected(string mode)
+    {
+        await Open(mode, "input-menu");
+        var menu = Page.Locator("bx-input-menu").Nth(1);
+
+        await menu.GetByRole(AriaRole.Combobox).FocusAsync();
+        await Page.Keyboard.TypeAsync("ger");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(menu.Locator("[role=option][data-value=de]")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(menu.Locator("[role=option][data-value=fr]")).Not.ToHaveAttributeAsync("aria-selected", "true");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task ToggleGroup_keeps_the_focused_item_as_the_tab_stop_when_pressed(string mode)
+    {
+        await Open(mode, "toggle-group");
+        var group = Page.GetByRole(AriaRole.Group, new() { Name = "Text marks" });
+        var underline = group.GetByRole(AriaRole.Button, new() { Name = "Underline" });
+
+        await underline.ClickAsync();
+
+        await Assertions.Expect(underline).ToHaveAttributeAsync("aria-pressed", "true");
+        await Assertions.Expect(underline).ToHaveAttributeAsync("tabindex", "0");
+        await Assertions.Expect(group.GetByRole(AriaRole.Button, new() { Name = "Bold" })).ToHaveAttributeAsync("tabindex", "-1");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task SelectMenu_multiple_posts_an_empty_marker_when_cleared(string mode)
+    {
+        await Open(mode, "select-menu");
+        var form = Page.Locator("form", new() { Has = Page.GetByRole(AriaRole.Button, new() { Name = "Save selection" }) });
+
+        await form.GetByRole(AriaRole.Combobox, new() { Name = "Toolset" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Option, new() { Name = ".NET" }).Last.ClickAsync();
+        await Page.GetByRole(AriaRole.Option, new() { Name = "Go" }).Last.ClickAsync();
+        await Page.Keyboard.PressAsync("Escape");
+        await form.GetByRole(AriaRole.Button, new() { Name = "Save selection" }).ClickAsync();
+
+        await Assertions.Expect(Page.GetByTestId("clear-saved")).ToHaveTextAsync("Saved: none");
+    }
+
+    [Fact]
+    public async Task Enhanced_post_redraws_the_calendar_grid()
+    {
+        await Open("ssr", "form");
+        var form = Page.Locator("form", new() { Has = Page.GetByRole(AriaRole.Button, new() { Name = "Save enhanced" }) });
+
+        await form.Locator("button[data-date='2026-11-18']").ClickAsync();
+        await form.GetByRole(AriaRole.Button, new() { Name = "Save enhanced" }).ClickAsync();
+        await Assertions.Expect(Page.GetByTestId("enhanced-saved")).ToContainTextAsync("2026-11-18");
+
+        await Assertions.Expect(form.Locator("[role=grid]")).ToBeVisibleAsync();
+        await Assertions.Expect(form.Locator("button[data-date='2026-11-10']")).ToHaveAttributeAsync("data-selected", "");
+    }
+
+    [Fact]
+    public async Task Enhanced_post_shows_what_the_server_rendered_back()
+    {
+        await Open("ssr", "form");
+        var form = Page.Locator("form", new() { Has = Page.GetByRole(AriaRole.Button, new() { Name = "Save enhanced" }) });
+        await Page.EvaluateAsync("window.__notReloaded = true");
+
+        await form.GetByRole(AriaRole.Combobox, new() { Name = "Stack" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Option, new() { Name = "Go" }).Last.ClickAsync();
+        await Page.Keyboard.PressAsync("Escape");
+        await form.GetByRole(AriaRole.Button, new() { Name = "Italic" }).ClickAsync();
+        var seats = form.GetByRole(AriaRole.Spinbutton, new() { Name = "Seats" });
+        await seats.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowUp");
+        await Assertions.Expect(seats).ToHaveValueAsync("3");
+        await form.GetByRole(AriaRole.Group, new() { Name = "Code" }).Locator("[data-slot=cell]").First.ClickAsync();
+        await Page.Keyboard.TypeAsync("1234");
+        await form.Locator("button[data-date='2026-11-18']").ClickAsync();
+        await form.GetByRole(AriaRole.Button, new() { Name = "Save enhanced" }).ClickAsync();
+
+        // The server received what the browser showed...
+        await Assertions.Expect(Page.GetByTestId("enhanced-saved")).ToHaveTextAsync("Posted: dotnet,go / bold,italic / 3 / 1234 / 2026-11-18");
+        Assert.True(await Page.EvaluateAsync<bool>("window.__notReloaded === true"), "The post reloaded the page instead of enhancing it.");
+        // ...then reset the model, and the controls show that.
+        await Assertions.Expect(form.Locator("bx-select-menu input[type=hidden]")).ToHaveCountAsync(1);
+        await Assertions.Expect(form.Locator("bx-select-menu input[type=hidden]")).ToHaveValueAsync("dotnet");
+        await Assertions.Expect(form.GetByRole(AriaRole.Button, new() { Name = "Italic" })).ToHaveAttributeAsync("aria-pressed", "false");
+        await Assertions.Expect(form.GetByRole(AriaRole.Button, new() { Name = "Bold" })).ToHaveAttributeAsync("aria-pressed", "true");
+        await Assertions.Expect(form.GetByRole(AriaRole.Spinbutton, new() { Name = "Seats" })).ToHaveValueAsync("2");
+        await Assertions.Expect(form.GetByRole(AriaRole.Group, new() { Name = "Code" }).Locator("input[type=hidden]")).ToHaveValueAsync("");
+        await Assertions.Expect(form.GetByRole(AriaRole.Group, new() { Name = "Code" }).Locator("[data-slot=cell]").First).ToHaveValueAsync("");
+        await Assertions.Expect(form.Locator("[role=grid]")).ToBeVisibleAsync();
+        await Assertions.Expect(form.Locator("button[data-date='2026-11-10']")).ToHaveAttributeAsync("data-selected", "");
+        await Assertions.Expect(form.Locator("button[data-date='2026-11-18']")).Not.ToHaveAttributeAsync("data-selected", "");
+    }
+
     [Theory]
     [MemberData(nameof(AllModes))]
     public async Task Form_shows_the_summary_then_is_busy_while_submitting(string mode)
