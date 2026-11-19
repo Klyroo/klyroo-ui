@@ -1,0 +1,28 @@
+<div class="flex w-full flex-col items-center gap-8">
+    @* The prices are .NET state, so the switch works once the page is interactive and stays disabled until then. *@
+    <BxToggleGroup Items="Cycles" AriaLabel="Billing cycle" Value="@(_yearly ? YearlyValue : MonthlyValue)" ValueChanged="Pick" Disabled="@(!RendererInfo.IsInteractive)" />
+
+    <BxPricingPlans>
+        <BxPricingPlan Title="Starter" Description="For side projects and small teams." Price="@Price(0, 0)" BillingCycle="@Cycle"
+                       Features="@(["3 projects", "Community support", "1 GB storage"])" ButtonLabel="Start for free" ButtonHref="/docs" />
+        <BxPricingPlan Title="Pro" Badge="Most popular" Description="For growing teams that ship every week." Highlight Scale
+                       Price="@Price(29, 24)" BillingCycle="@Cycle" Terms="@(_yearly ? "Billed yearly, 2 months free." : "Billed monthly, cancel anytime.")"
+                       Features="@(["Unlimited projects", "Priority support", "100 GB storage", "Audit log"])" ButtonLabel="Get Pro" ButtonHref="/docs" />
+        <BxPricingPlan Title="Team" Description="For organizations with compliance needs." Price="@Price(99, 79)" BillingCycle="@Cycle"
+                       Features="@(["Everything in Pro", "Single sign-on", "Dedicated manager", "1 TB storage"])" ButtonLabel="Contact sales" ButtonHref="/docs" />
+    </BxPricingPlans>
+</div>
+
+@code {
+    private bool _yearly;
+
+    private string Cycle => _yearly ? "/month, billed yearly" : "/month";
+
+    private static readonly string[] MonthlyValue = ["monthly"];
+    private static readonly string[] YearlyValue = ["yearly"];
+    private static readonly BxToggleItem[] Cycles = [new("monthly", "Monthly"), new("yearly", "Yearly")];
+
+    private string Price(int monthly, int yearly) => $"${(_yearly ? yearly : monthly)}";
+
+    private void Pick(IReadOnlyList<string>? value) => _yearly = value?.Contains("yearly") == true;
+}

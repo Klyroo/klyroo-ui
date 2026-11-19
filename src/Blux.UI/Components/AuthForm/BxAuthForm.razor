@@ -1,0 +1,293 @@
+@namespace Blux.UI
+@using System.Globalization
+@using System.Text.RegularExpressions
+@using Blux.UI.Internal
+@inherits BxComponentBase
+
+<div data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Header is not null)
+    {
+        @Header
+    }
+    else if (Icon is not null || Title is not null || Description is not null)
+    {
+        <div class="@_slots["header"]" data-slot="header">
+            @if (Icon is not null)
+            {
+                <span class="@_slots["leading"]" aria-hidden="true">@Icon</span>
+            }
+            @if (Title is not null)
+            {
+                <Heading Level="HeadingLevel" Class="@_slots["title"]">@Title</Heading>
+            }
+            @if (Description is not null)
+            {
+                <p class="@_slots["description"]" data-slot="description">@Description</p>
+            }
+        </div>
+    }
+    @if (Providers.Count > 0)
+    {
+        <div class="@_slots["providers"]" data-slot="providers">
+            @foreach (var provider in Providers)
+            {
+                <BxButton Href="@provider.Href" Label="@provider.Label" Block Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Lg"
+                          LeadingIcon="@ProviderIcon(provider)" />
+            }
+        </div>
+        @if (Fields.Count > 0 && !string.IsNullOrEmpty(Separator))
+        {
+            <BxSeparator Label="@Separator" />
+        }
+    }
+    @if (Fields.Count > 0)
+    {
+        <EditForm EditContext="_context" FormName="@FormName" OnSubmit="HandleSubmit" Enhance="Enhance" novalidate
+                  class="@_slots["form"]" aria-label="@Title" aria-busy="@(Busy ? "true" : null)">
+            @* Always rendered, so a screen reader announces the message when it appears. *@
+            <div role="alert" class="@_slots["error"]" data-slot="error">
+                @if (Error is not null)
+                {
+                    <BxAlert Color="BxColor.Error" Variant="BxVariant.Soft" Title="@Error" />
+                }
+            </div>
+            @if (FormName is not null)
+            {
+                @* Tells apart the posted values of several auth forms on one page: they all receive the same dictionary. *@
+                <input type="hidden" name="@NameOf(FormMarker)" value="@FormName" />
+            }
+            <fieldset class="@_slots["fieldset"]" disabled="@(Busy || Disabled)">
+                @foreach (var field in Fields)
+                {
+                    var f = field;
+                    <BxFormField @key="f.Name" Id="@($"{_id}-{f.Name}")" Label="@(f.Type == "checkbox" ? null : f.Label)" Description="@f.Description"
+                                 Help="@f.Help" Required="@(f.Required && f.Type != "checkbox")" Error="@ErrorOf(f)">
+                        @Control(f)
+                    </BxFormField>
+                }
+            </fieldset>
+            @if (Validation is not null)
+            {
+                @Validation
+            }
+            @if (Submit is not null)
+            {
+                @Submit
+            }
+            else
+            {
+                <BxButton Type="submit" Block Size="BxSize.Lg" Loading="Busy" Label="@(SubmitLabel ?? Options.Strings.AuthFormSubmit)" Color="@Color" />
+            }
+        </EditForm>
+    }
+    @if (Footer is not null)
+    {
+        <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+    }
+</div>
+
+@code {
+    private static readonly Regex EmailPattern = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200));
+
+    private SlotSet _slots = default!;
+    private readonly string _id = NewId("auth");
+    private Dictionary<string, string?> _values = new(StringComparer.Ordinal);
+    private IReadOnlyDictionary<string, string> _errors = new Dictionary<string, string>();
+    private EditContext _context = default!;
+    private bool _submitting;
+    private bool _initialized;
+
+    // Filled in static server rendering when the form was posted. Interactive modes keep the values in _values instead.
+    [SupplyParameterFromForm] private Dictionary<string, string?>? Posted { get; set; }
+
+    /// <summary>The fields, in order.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxAuthField> Fields { get; set; } = [];
+
+    /// <summary>Name of the form. Required to post in static server rendering, where it identifies the posted form; one auth form per page.</summary>
+    [Parameter] public string? FormName { get; set; }
+
+    /// <summary>Enhanced form handling in static server rendering: the post updates the page without a reload.</summary>
+    [Parameter] public bool Enhance { get; set; }
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Level of the title heading: 2 by default.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 2;
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Icon above the title.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Buttons that leave for another address (OAuth), above the fields.</summary>
+    [Parameter] public IReadOnlyList<BxAuthProvider> Providers { get; set; } = [];
+
+    /// <summary>Text between the providers and the fields. Empty hides the line.</summary>
+    [Parameter] public string? Separator { get; set; } = "or";
+    [Parameter] public string? SubmitLabel { get; set; }
+
+    /// <summary>Shows the submit button as loading and disables the fields, as it does itself while <see cref="OnValidSubmit"/> runs.</summary>
+    [Parameter] public bool Loading { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>A message about the whole form (wrong password): put it here after <see cref="OnValidSubmit"/> failed.</summary>
+    [Parameter] public string? Error { get; set; }
+
+    /// <summary>Messages by field name, for what only the server can tell (the email is taken). Shown after the built-in ones.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string>? FieldErrors { get; set; }
+
+    /// <summary>Extra validation after the required, email and code checks, with the values by field name. Returns messages by field name.</summary>
+    [Parameter] public Func<IReadOnlyDictionary<string, string?>, IReadOnlyDictionary<string, string>?>? Validate { get; set; }
+
+    /// <summary>Called with the values by field name once they are valid. The form is busy until the task completes.</summary>
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnValidSubmit { get; set; }
+    [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnInvalidSubmit { get; set; }
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+
+    /// <summary>Replaces the title block.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>Content between the fields and the submit button (a "forgot password" link).</summary>
+    [Parameter] public RenderFragment? Validation { get; set; }
+
+    /// <summary>Replaces the submit button.</summary>
+    [Parameter] public RenderFragment? Submit { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public AuthFormUi? Ui { get; set; }
+
+    private bool Busy => Loading || _submitting;
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(Options.AuthForm, new Dictionary<string, string?>(), Ui, "root");
+        if (!_initialized)
+        {
+            _initialized = true;
+            _context = new EditContext(_values);
+            if (Posted is not null && FormName is not null && Posted.GetValueOrDefault(FormMarker) == FormName)
+            {
+                foreach (var (key, value) in Posted.Where(p => p.Key != FormMarker))
+                {
+                    _values[key] = value;
+                }
+                // A checkbox that is not checked is not posted: do not let its default come back.
+                foreach (var field in Fields.Where(f => f.Type == "checkbox" && !Posted.ContainsKey(f.Name)))
+                {
+                    _values[field.Name] = "false";
+                }
+            }
+        }
+        foreach (var field in Fields)
+        {
+            _values.TryAdd(field.Name, field.Value);
+        }
+    }
+
+    private const string FormMarker = "__form";
+
+    private string NameOf(BxAuthField field) => NameOf(field.Name);
+
+    private static string NameOf(string key) => $"{nameof(Posted)}[{key}]";
+
+    private string? ValueOf(BxAuthField field)
+    {
+        // A posted password is never sent back to the browser.
+        if (field.Type == "password" && !RendererInfo.IsInteractive)
+        {
+            return null;
+        }
+        return _values.GetValueOrDefault(field.Name);
+    }
+
+    private string? ErrorOf(BxAuthField field) =>
+        _errors.GetValueOrDefault(field.Name) ?? FieldErrors?.GetValueOrDefault(field.Name);
+
+    private void Set(BxAuthField field, string? value) => _values[field.Name] = value;
+
+    private RenderFragment? ProviderIcon(BxAuthProvider provider) =>
+        provider.IconContent ?? (provider.Icon is null ? null : BxIcons.Named(provider.Icon, "size-5"));
+
+    private RenderFragment Control(BxAuthField f) => f.Type switch
+    {
+        "checkbox" => @<BxCheckbox Name="@NameOf(f)" Label="@f.Label" Required="@f.Required" Value="@(ValueOf(f) == "true")"
+                                   ValueChanged="@((bool v) => Set(f, v ? "true" : "false"))" />,
+        "select" => @<BxSelect Name="@NameOf(f)" Items="f.Items" Placeholder="@f.Placeholder" Value="@ValueOf(f)"
+                               ValueChanged="@((string? v) => Set(f, v))" />,
+        "otp" => @<BxPinInput Name="@NameOf(f)" Length="f.Length" Value="@ValueOf(f)" ValueChanged="@((string? v) => Set(f, v))" />,
+        "password" => @<bx-password class="@_slots["passwordRoot"]">
+                          <BxInput Type="password" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@(f.Autocomplete ?? "current-password")"
+                                   ValueChanged="@((string? v) => Set(f, v))" Ui="@(new InputUi { Base = _slots["passwordInput"] })" />
+                          <button type="button" data-slot="toggle" class="@_slots["passwordButton"]" aria-pressed="false" aria-label="@Options.Strings.AuthFormShowPassword">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["passwordShow"]">
+                                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                                  <circle cx="12" cy="12" r="3" />
+                              </svg>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["passwordHide"]">
+                                  <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" />
+                                  <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" />
+                                  <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" />
+                                  <path d="m2 2 20 20" />
+                              </svg>
+                          </button>
+                      </bx-password>,
+        _ => @<BxInput Type="@f.Type" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@f.Autocomplete"
+                       ValueChanged="@((string? v) => Set(f, v))" />,
+    };
+
+    private Dictionary<string, string> CheckValues()
+    {
+        var errors = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var field in Fields)
+        {
+            var value = _values.GetValueOrDefault(field.Name);
+            var label = field.Label ?? field.Name;
+            var empty = field.Type == "checkbox" ? value != "true" : string.IsNullOrWhiteSpace(value);
+            if (empty)
+            {
+                if (field.Required)
+                {
+                    errors[field.Name] = string.Format(CultureInfo.CurrentCulture, Options.Strings.AuthFormRequired, label);
+                }
+            }
+            else if (field.Type == "email" && !EmailPattern.IsMatch(value!.Trim()))
+            {
+                errors[field.Name] = Options.Strings.AuthFormInvalidEmail;
+            }
+            else if (field.Type == "otp" && value!.Length < field.Length)
+            {
+                errors[field.Name] = string.Format(CultureInfo.CurrentCulture, Options.Strings.AuthFormIncompleteCode, field.Length);
+            }
+        }
+        if (errors.Count == 0 && Validate?.Invoke(_values) is { } custom)
+        {
+            foreach (var (name, message) in custom)
+            {
+                errors[name] = message;
+            }
+        }
+        return errors;
+    }
+
+    private async Task HandleSubmit(EditContext context)
+    {
+        if (_submitting)
+        {
+            return;
+        }
+        _errors = CheckValues();
+        if (_errors.Count > 0)
+        {
+            await OnInvalidSubmit.InvokeAsync(_values);
+            return;
+        }
+        _submitting = true;
+        StateHasChanged();
+        try
+        {
+            await OnValidSubmit.InvokeAsync(_values);
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+}
