@@ -18,6 +18,12 @@
     <ProjectReference Include="..\..\playground\Blux.Playground\Blux.Playground\Blux.Playground.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <!-- One browser page per test class at a time: by default xUnit uses one thread per core, and that many pages
+       booting WebAssembly at once time out (Firefox first). -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <Using Include="Xunit" />
     <Using Include="Microsoft.Playwright" />
