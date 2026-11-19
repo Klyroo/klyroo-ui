@@ -1,0 +1,23 @@
+<div class="flex flex-col items-center gap-3">
+    <BxDropdownMenu Items="Items" OnSelect="item => _last = item.Label">
+        <BxButton Label="Options" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="menu-trigger">
+            <TrailingIcon>@BxIcons.ChevronDown()</TrailingIcon>
+        </BxButton>
+    </BxDropdownMenu>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="menu-state">Last action: @(_last ?? "none")</p>
+</div>
+
+@code {
+    private string? _last;
+
+    private static readonly BxMenuItem[] Items =
+    [
+        BxMenuItem.Heading("My account"),
+        new() { Label = "Profile", Shortcut = "⌘P" },
+        new() { Label = "Billing", Shortcut = "⌘B" },
+        new() { Label = "Documentation", Href = "/docs" },
+        BxMenuItem.Separator(),
+        new() { Label = "Archive", Disabled = true },
+        new() { Label = "Delete account", Color = BxColor.Error },
+    ];
+}

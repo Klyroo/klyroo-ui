@@ -1,0 +1,8 @@
+<div class="flex flex-wrap items-center gap-3">
+    @foreach (var placement in new[] { "top", "right", "bottom", "left" })
+    {
+        <BxTooltip Text="@($"Tooltip on the {placement}")" Placement="@placement">
+            <BxButton Label="@placement" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" />
+        </BxTooltip>
+    }
+</div>

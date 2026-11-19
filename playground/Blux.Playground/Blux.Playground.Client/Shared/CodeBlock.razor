@@ -1,0 +1,21 @@
+@using Blux.Playground.Client.Docs
+
+<div class="group relative overflow-hidden bg-(--pg-code-bg) @Class">
+    @if (Title is not null)
+    {
+        <div class="flex items-center justify-between border-b border-white/10 bg-(--pg-code-head) px-4 py-2 font-mono text-xs text-[#a3a9ac]">
+            <span>@Title</span>
+        </div>
+    }
+    <pre tabindex="0" aria-label="@(Title ?? "Code")" class="overflow-x-auto p-4 font-mono text-[13px]/6 text-[#d7dcde] focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--blux-primary)"><code>@((MarkupString)Highlighter.ToHtml(Code.Trim()))</code></pre>
+    @* Copy is handled by site.js: no round trip, works on static pages. *@
+    <button type="button" data-copy class="absolute end-2 rounded-md border border-white/10 bg-[#131618] px-2 py-1 font-mono text-[11px] uppercase tracking-wider text-[#c9ced1] opacity-0 transition-opacity hover:text-white focus-visible:opacity-100 group-hover:opacity-100 @(Title is null ? "top-2" : "top-11")">
+        Copy
+    </button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Code { get; set; } = "";
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

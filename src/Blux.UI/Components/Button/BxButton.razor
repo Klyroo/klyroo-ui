@@ -1,0 +1,56 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@if (Href is null)
+{
+    <button type="@Type"
+            disabled="@IsDisabled"
+            aria-busy="@(Loading ? "true" : null)"
+            data-color="@Color.Value"
+            class="@_slots["base"]"
+            @onclick="ClickHandler"
+            @attributes="AdditionalAttributes">
+        @Inner
+    </button>
+}
+else
+{
+    @* A disabled link has no href, so it cannot be followed or focused. *@
+    <a href="@(IsDisabled ? null : Href)"
+       target="@Target"
+       role="@(IsDisabled ? "link" : null)"
+       aria-disabled="@(IsDisabled ? "true" : null)"
+       aria-busy="@(Loading ? "true" : null)"
+       data-color="@Color.Value"
+       class="@_slots["base"]"
+       @onclick="ClickHandler"
+       @attributes="AdditionalAttributes">
+        @Inner
+    </a>
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    private RenderFragment Inner => @<text>
+        @if (Loading)
+        {
+            <svg class="@_slots["leadingIcon"]" viewBox="0 0 24 24" fill="none" aria-hidden="true" data-slot="leadingIcon">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-opacity="0.25" stroke-width="3" />
+                <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round" />
+            </svg>
+        }
+        else if (LeadingIcon is not null)
+        {
+            <span class="@_slots["leadingIcon"]" aria-hidden="true" data-slot="leadingIcon">@LeadingIcon</span>
+        }
+        @if (ChildContent is not null || Label is not null)
+        {
+            <span class="@_slots["label"]" data-slot="label">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label)))</span>
+        }
+        @if (TrailingIcon is not null)
+        {
+            <span class="@_slots["trailingIcon"]" aria-hidden="true" data-slot="trailingIcon">@TrailingIcon</span>
+        }
+    </text>;
+}

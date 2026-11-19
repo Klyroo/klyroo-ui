@@ -1,0 +1,12 @@
+@inject IToastService Toasts
+
+<BxButton Label="Deploy to production" Size="BxSize.Sm" OnClick="Deploy" />
+
+@code {
+    private async Task Deploy() => await Toasts.Add(new BxToast
+    {
+        Title = "Deployed",
+        Description = "blux-ui is live on production.",
+        Color = BxColor.Success,
+    });
+}

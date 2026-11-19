@@ -1,0 +1,13 @@
+<Project>
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.15" />
+    <PackageVersion Include="TailwindMerge.NET" Version="1.5.0" />
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="11.0.100" />
+    <PackageVersion Include="xunit.v3" Version="4.0.3" />
+    <PackageVersion Include="bunit" Version="2.15.2" />
+    <PackageVersion Include="Microsoft.Playwright" Version="1.65.1" />
+    <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.14.0" />
+  </ItemGroup>
+</Project>

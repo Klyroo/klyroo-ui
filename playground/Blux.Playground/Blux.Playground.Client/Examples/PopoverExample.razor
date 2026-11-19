@@ -1,0 +1,16 @@
+<div class="flex flex-wrap items-center gap-4">
+    <BxPopover @bind-Open="_open" Placement="bottom-start">
+        <ChildContent><BxButton Label="Open bound" Variant="ButtonVariant.Outline" data-testid="bound-trigger" /></ChildContent>
+        <Content>
+            <div class="flex w-64 flex-col items-start gap-2 p-4" data-testid="bound-panel">
+                <p class="text-sm">Escape or a click outside closes me.</p>
+                <BxButton Label="Close" Size="BxSize.Sm" OnClick="() => _open = false" data-testid="bound-close" />
+            </div>
+        </Content>
+    </BxPopover>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="bound-state">State: @(_open ? "open" : "closed")</p>
+</div>
+
+@code {
+    private bool _open;
+}

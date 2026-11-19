@@ -1,0 +1,16 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Blux.UI/Blux.UI.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Blux.UI.Tests/Blux.UI.Tests.csproj" />
+    <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />
+  </Folder>
+  <Folder Name="/playground/">
+    <Project Path="playground/Blux.Playground/Blux.Playground/Blux.Playground.csproj" />
+    <Project Path="playground/Blux.Playground/Blux.Playground.Client/Blux.Playground.Client.csproj" />
+  </Folder>
+  <Folder Name="/build/">
+    <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />
+  </Folder>
+</Solution>

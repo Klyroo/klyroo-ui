@@ -1,0 +1,39 @@
+@using System.Diagnostics.CodeAnalysis
+@using Blux.Playground.Client.Docs
+
+<div class="overflow-x-auto rounded-xl border border-(--blux-border)">
+    <table class="min-w-full text-sm">
+        <caption class="sr-only">Parameters of @Name</caption>
+        <thead class="bg-(--blux-bg-muted) text-start">
+            <tr>
+                <th scope="col" class="px-4 py-2.5 text-start font-semibold">Parameter</th>
+                <th scope="col" class="px-4 py-2.5 text-start font-semibold">Type</th>
+                <th scope="col" class="px-4 py-2.5 text-start font-semibold">Default</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-(--blux-border)">
+            @foreach (var p in ApiReader.Parameters(Of))
+            {
+                <tr class="align-top">
+                    <td class="px-4 py-3">
+                        <code class="font-mono text-[13px] font-medium text-(--blux-primary-text)">@p.Name</code>
+                        @if (p.Description is not null)
+                        {
+                            <p class="mt-1 max-w-md text-(--blux-text-muted)">@p.Description</p>
+                        }
+                    </td>
+                    <td class="px-4 py-3"><code class="whitespace-nowrap font-mono text-[13px] text-(--blux-text)">@p.Type</code></td>
+                    <td class="px-4 py-3"><code class="whitespace-nowrap font-mono text-[13px] text-(--blux-text-muted)">@(p.Default ?? "—")</code></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties | DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)]
+    public Type Of { get; set; } = default!;
+
+    private string Name => ApiReader.TypeName(Of).Replace("<Object>", "<TItem>").Replace("<object>", "<TItem>").Replace("<string>", "<TValue>");
+}

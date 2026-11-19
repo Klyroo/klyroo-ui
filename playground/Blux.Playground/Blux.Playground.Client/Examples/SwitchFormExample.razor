@@ -1,0 +1,29 @@
+@using System.ComponentModel.DataAnnotations
+
+<EditForm Model="Model" FormName="terms" OnValidSubmit="Save" class="flex flex-col items-start gap-3">
+    <DataAnnotationsValidator />
+    <BxSwitch @bind-Value="Model!.AcceptTerms" Label="I accept the terms" data-testid="terms" />
+    <ValidationMessage For="() => Model!.AcceptTerms" class="text-sm text-(--blux-error-text)" />
+    <BxButton Type="submit" Label="Save" />
+    @if (_saved)
+    {
+        <p role="status" class="text-sm text-(--blux-success-text)" data-testid="saved">Saved, terms accepted.</p>
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "terms")]
+    private Settings? Model { get; set; }
+
+    private bool _saved;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private void Save() => _saved = true;
+
+    private sealed class Settings
+    {
+        [Range(typeof(bool), "true", "true", ErrorMessage = "You must accept the terms.")]
+        public bool AcceptTerms { get; set; }
+    }
+}

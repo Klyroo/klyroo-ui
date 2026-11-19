@@ -1,0 +1,19 @@
+<article class="group relative flex flex-col overflow-hidden rounded-xl border border-(--blux-border) bg-(--blux-bg) transition-colors hover:border-(--blux-border-accented)">
+    <div class="pg-dots m-2 flex h-40 items-center justify-center rounded-lg border border-(--blux-border) bg-(--blux-bg-muted)/50 p-4">
+        @ChildContent
+    </div>
+    <div class="flex flex-1 flex-col px-4 pt-2 pb-4">
+        <h3 class="flex items-center justify-between font-medium text-(--blux-text-highlighted)">
+            <a href="@Href" class="hover:underline hover:decoration-(--blux-primary) hover:decoration-2 hover:underline-offset-4">@Title</a>
+            <span class="font-mono text-xs text-(--blux-text-muted) transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
+        </h3>
+        <p class="mt-1 text-sm text-(--blux-text-muted)">@Text</p>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

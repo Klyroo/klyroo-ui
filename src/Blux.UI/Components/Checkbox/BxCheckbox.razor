@@ -1,0 +1,48 @@
+@namespace Blux.UI
+@inherits BxFieldBase<bool>
+
+<div class="@_slots["root"]" data-color="@Color.Value" data-disabled="@(Disabled ? "" : null)">
+    <div class="@_slots["container"]">
+        @if (UseEditContext)
+        {
+            <InputCheckbox Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+        }
+        else if (ValueChanged.HasDelegate)
+        {
+            <input type="checkbox" name="@Name" value="true" @bind:get="Value" @bind:set="SetValue" @attributes="Attributes()" />
+        }
+        else
+        {
+            <input type="checkbox" name="@Name" value="true" checked="@Value" @attributes="Attributes()" />
+        }
+        @BxIcons.Check(_slots["icon"])
+    </div>
+    @if (Label is not null || Description is not null)
+    {
+        <div class="@_slots["wrapper"]">
+            @if (Label is not null)
+            {
+                <label for="@ControlId" class="@_slots["label"]">@Label</label>
+            }
+            @if (Description is not null)
+            {
+                <p id="@DescriptionId" class="@_slots["description"]">@Description</p>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public CheckboxUi? Ui { get; set; }
+
+    private string? DescriptionId => Description is null ? null : ControlId + "-description";
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Checkbox, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
+
+    private Dictionary<string, object> Attributes() => ControlAttributes(_slots["base"], DescriptionId);
+}

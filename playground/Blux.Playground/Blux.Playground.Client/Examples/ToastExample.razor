@@ -1,0 +1,23 @@
+@inject IToastService Toasts
+
+<div class="flex flex-wrap gap-2">
+    <BxButton Label="Show toast" OnClick="Saved" data-testid="toast-trigger" />
+    <BxButton Label="Show error" Color="BxColor.Error" Variant="ButtonVariant.Soft" OnClick="Failed" />
+</div>
+
+@code {
+    private async Task Saved() => await Toasts.Add(new BxToast
+    {
+        Title = "Changes saved",
+        Description = "Your profile is up to date.",
+        Color = BxColor.Success,
+    });
+
+    private async Task Failed() => await Toasts.Add(new BxToast
+    {
+        Title = "Upload failed",
+        Description = "The file is larger than 10 MB.",
+        Color = BxColor.Error,
+        Duration = TimeSpan.FromSeconds(8),
+    });
+}

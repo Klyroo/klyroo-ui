@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Accessible, themable Blazor components for every render mode." />
+    <base href="/" />
+    <BxColorModeScript />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist+Mono:wght@400..600&family=Geist:wght@400..700&display=swap" />
+    <ResourcePreloader />
+    @* The site compiles Tailwind itself (Blux "Tailwind in the app" mode): one stylesheet, no blux.css. *@
+    <link rel="stylesheet" href="@Assets["site.css"]" />
+    <link rel="stylesheet" href="@Assets["Blux.Playground.styles.css"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="_mode" />
+</head>
+
+<body>
+    <Routes @rendermode="_mode" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["site.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? _mode;
+
+    // /ssr, /server, /wasm and /auto prefixes pick a mode, to test components in each; everything else runs in Auto.
+    protected override void OnParametersSet()
+    {
+        _mode = PlaygroundServices.ModeFromPath(HttpContext.Request.Path) switch
+        {
+            "ssr" => null,
+            "server" => InteractiveServer,
+            "wasm" => InteractiveWebAssembly,
+            _ => InteractiveAuto,
+        };
+    }
+}

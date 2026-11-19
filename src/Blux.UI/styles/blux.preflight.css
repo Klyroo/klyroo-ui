@@ -1,0 +1,3 @@
+/* Entry of wwwroot/blux.preflight.css: Tailwind's reset, only for apps without their own Tailwind. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/preflight.css' layer(base);

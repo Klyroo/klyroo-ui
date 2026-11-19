@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+
+jobs:
+  build:
+    name: Build, generated assets, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      # The CSS and JS in src/Blux.UI/wwwroot are committed: rebuilding them must change nothing.
+      - name: Generated assets are up to date
+        run: |
+          npm run build
+          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
+          if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
+
+      - run: dotnet build Blux.UI.slnx -c Release
+      - name: Unit tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
+      - name: Pack
+        run: dotnet pack src/Blux.UI -c Release --no-build -o artifacts
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nuget
+          path: artifacts/*.nupkg
+
+  e2e:
+    name: E2E (${{ matrix.browser }})
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet build tests/Blux.UI.E2E
+      - name: Install browser
+        run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps ${{ matrix.browser }}
+      # Every test runs in the four render modes of the playground: ssr, server, wasm, auto.
+      - name: E2E tests
+        run: dotnet test --project tests/Blux.UI.E2E --no-build
+        env:
+          BLUX_BROWSER: ${{ matrix.browser }}
+
+  e2e-published:
+    name: E2E on the published, trimmed build (chromium)
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - run: dotnet publish playground/Blux.Playground/Blux.Playground -c Release -o published
+      - run: dotnet build tests/Blux.UI.E2E
+      - name: Install browser
+        run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+      - name: E2E tests
+        run: dotnet test --project tests/Blux.UI.E2E --no-build
+        env:
+          BLUX_PLAYGROUND_PUBLISHED: published

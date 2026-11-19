@@ -1,0 +1,48 @@
+@page "/docs/installation"
+@layout Layout.DocsLayout
+
+<PageTitle>Installation · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Installation</h1>
+    <p class="pg-lead">Add the package, register the services, and load one stylesheet.</p>
+
+    <h2>1. Add the package</h2>
+    <CodeBlock Code="dotnet add package Blux.UI --prerelease" />
+
+    <h2>2. Register the services</h2>
+    <p>Call <code>AddBluxUi</code> in the server <code>Program.cs</code> and in the client one, with the same configuration. A shared method in the client project keeps them in sync.</p>
+    <CodeBlock Title="Program.cs" Code="@ProgramCs" />
+
+    <h2>3. Load the styles</h2>
+    <p>Without Tailwind in your app, load the precompiled stylesheet and its reset:</p>
+    <CodeBlock Title="App.razor" Code="@AppRazor" />
+    <p>With Tailwind v4 in your app, each build copies the Blux theme to <code>obj/blux/blux.theme.css</code>. Import it after Tailwind:</p>
+    <CodeBlock Title="app.css" Code="@AppCss" />
+
+    <h2>4. Use the components</h2>
+    <CodeBlock Title="_Imports.razor" Code="@("@using Blux.UI")" />
+    <p>Remove Bootstrap from the Blazor template, or import it in a cascade layer: CSS outside layers overrides Tailwind's.</p>
+</div>
+
+@code {
+    private const string ProgramCs = """
+        builder.Services.AddBluxUi(options =>
+        {
+            options.Button.Slot("base", "font-semibold");
+        });
+        """;
+
+    private const string AppRazor = """
+        <head>
+            <BxColorModeScript />
+            <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
+            <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
+        </head>
+        """;
+
+    private const string AppCss = """
+        @import "tailwindcss";
+        @import "../obj/blux/blux.theme.css";
+        """;
+}

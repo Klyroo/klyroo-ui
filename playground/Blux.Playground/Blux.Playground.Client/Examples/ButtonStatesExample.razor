@@ -1,0 +1,13 @@
+<div class="flex w-full max-w-md flex-col gap-3">
+    <div class="flex flex-wrap items-center gap-2">
+        <BxButton Label="@($"Clicked {_clicks} times")" OnClick="() => _clicks++" data-testid="counter" />
+        <BxButton Label="Disabled" Disabled />
+        <BxButton Label="Saving" Loading />
+        <BxButton Label="Read the docs" Href="/docs" Variant="ButtonVariant.Link" />
+    </div>
+    <BxButton Label="Full width" Block Variant="ButtonVariant.Soft" />
+</div>
+
+@code {
+    private int _clicks;
+}
