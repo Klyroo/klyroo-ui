@@ -1,7 +1,16 @@
-@* The title is the only link; it stretches over the card, so a click anywhere follows it. *@
+@* The title is the only link; it stretches over the card, so a click anywhere follows it: header and footer included. *@
 <div class="grid w-full gap-4 sm:grid-cols-2">
     <BxPageCard Variant="PageCardVariant.Spotlight" Icon="file" Title="Documentation" Href="/docs/installation"
                 Description="Install the package and render your first component." data-testid="card-link" />
     <BxPageCard Variant="PageCardVariant.Outline" Icon="external-link" Title="Source code" Href="https://github.com/" Target="_blank"
                 Description="Read the code and open an issue." Color="BxColor.Neutral" data-testid="card-external" />
+    <BxPageCard Title="Release notes" Href="/docs/installation" Description="What changed since the last version." data-testid="card-whole">
+        <Header>
+            <div class="h-24 bg-(--blux-bg-elevated)" data-testid="card-header"></div>
+        </Header>
+        <Footer>
+            <div data-testid="card-footer-text" class="text-sm text-(--blux-text-muted)">Updated today</div>
+            <BxButton Label="Share" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+        </Footer>
+    </BxPageCard>
 </div>

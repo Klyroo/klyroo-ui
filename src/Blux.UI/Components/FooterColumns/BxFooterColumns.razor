@@ -1,4 +1,5 @@
 @namespace Blux.UI
+@using Blux.UI.Internal
 @inherits BxComponentBase
 
 @* Groups of links under a heading, as a navigation landmark. Meant for the Top slot of a BxFooter. *@
@@ -11,7 +12,7 @@
         @foreach (var column in Columns)
         {
             <div class="@_slots["column"]">
-                <h3 class="@_slots["label"]">@column.Label</h3>
+                <Heading Level="HeadingLevel" Class="@_slots["label"]">@column.Label</Heading>
                 <ul class="@_slots["list"]">
                     @foreach (var link in column.Links)
                     {
@@ -56,6 +57,8 @@
 
     /// <summary>Accessible name of the links navigation. Needed when the page has several.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Level of the column headings: 3 by default.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
     [Parameter] public FooterColumnsUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

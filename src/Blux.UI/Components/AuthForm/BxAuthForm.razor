@@ -35,9 +35,9 @@
                           LeadingIcon="@ProviderIcon(provider)" />
             }
         </div>
-        @if (Fields.Count > 0 && !string.IsNullOrEmpty(Separator))
+        @if (Fields.Count > 0 && Separator != string.Empty)
         {
-            <BxSeparator Label="@Separator" />
+            <BxSeparator Label="@(Separator ?? Options.Strings.AuthFormSeparator)" />
         }
     }
     @if (Fields.Count > 0)
@@ -87,7 +87,25 @@
 </div>
 
 @code {
-    private static readonly Regex EmailPattern = new(@"^[^@\s]+@[^@\s]+\.[^@\s]+$", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200));
+    private static readonly Regex EmailPattern = new(@"^[^@\s]+@[^@\s.]+(\.[^@\s.]+)+$", RegexOptions.CultureInvariant, TimeSpan.FromMilliseconds(200));
+
+    private const int MaxEmailLength = 254;
+
+    private static bool IsEmail(string value)
+    {
+        if (value.Length > MaxEmailLength)
+        {
+            return false;
+        }
+        try
+        {
+            return EmailPattern.IsMatch(value);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return false;
+        }
+    }
 
     private SlotSet _slots = default!;
     private readonly string _id = NewId("auth");
@@ -103,7 +121,7 @@
     /// <summary>The fields, in order.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<BxAuthField> Fields { get; set; } = [];
 
-    /// <summary>Name of the form. Required to post in static server rendering, where it identifies the posted form; one auth form per page.</summary>
+    /// <summary>Name of the form. Required to post in static server rendering, where it identifies the posted form. Several auth forms can share a page when their names differ.</summary>
     [Parameter] public string? FormName { get; set; }
 
     /// <summary>Enhanced form handling in static server rendering: the post updates the page without a reload.</summary>
@@ -120,8 +138,8 @@
     /// <summary>Buttons that leave for another address (OAuth), above the fields.</summary>
     [Parameter] public IReadOnlyList<BxAuthProvider> Providers { get; set; } = [];
 
-    /// <summary>Text between the providers and the fields. Empty hides the line.</summary>
-    [Parameter] public string? Separator { get; set; } = "or";
+    /// <summary>Text between the providers and the fields: <c>BluxStrings.AuthFormSeparator</c> by default. An empty string hides the line.</summary>
+    [Parameter] public string? Separator { get; set; }
     [Parameter] public string? SubmitLabel { get; set; }
 
     /// <summary>Shows the submit button as loading and disables the fields, as it does itself while <see cref="OnValidSubmit"/> runs.</summary>
@@ -164,9 +182,13 @@
             _context = new EditContext(_values);
             if (Posted is not null && FormName is not null && Posted.GetValueOrDefault(FormMarker) == FormName)
             {
-                foreach (var (key, value) in Posted.Where(p => p.Key != FormMarker))
+                // Only the declared fields: any other posted key would reach Validate and OnValidSubmit.
+                foreach (var field in Fields)
                 {
-                    _values[key] = value;
+                    if (Posted.TryGetValue(field.Name, out var value))
+                    {
+                        _values[field.Name] = value;
+                    }
                 }
                 // A checkbox that is not checked is not posted: do not let its default come back.
                 foreach (var field in Fields.Where(f => f.Type == "checkbox" && !Posted.ContainsKey(f.Name)))
@@ -247,7 +269,7 @@
                     errors[field.Name] = string.Format(CultureInfo.CurrentCulture, Options.Strings.AuthFormRequired, label);
                 }
             }
-            else if (field.Type == "email" && !EmailPattern.IsMatch(value!.Trim()))
+            else if (field.Type == "email" && !IsEmail(value!.Trim()))
             {
                 errors[field.Name] = Options.Strings.AuthFormInvalidEmail;
             }

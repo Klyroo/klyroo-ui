@@ -46,6 +46,8 @@ public sealed partial class BluxStrings
     public string ErrorBackHome { get; set; } = "Back to home";
     public string ErrorNotFound { get; set; } = "Page not found";
     public string ErrorNotFoundMessage { get; set; } = "The page you are looking for does not exist or has moved.";
+    public string ErrorUnauthorized { get; set; } = "Sign in required";
+    public string ErrorUnauthorizedMessage { get; set; } = "You need to sign in to view this page.";
     public string ErrorForbidden { get; set; } = "Access denied";
     public string ErrorForbiddenMessage { get; set; } = "You do not have permission to view this page.";
     public string ErrorServer { get; set; } = "Something went wrong";

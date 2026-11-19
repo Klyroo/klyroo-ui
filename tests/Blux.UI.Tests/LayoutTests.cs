@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components.Rendering;
 using System.Globalization;
 using Blux.UI.Theming;
 using Microsoft.AspNetCore.Components;
@@ -294,6 +295,27 @@ public class LayoutTests : BluxTestContext
     }
 
     [Fact]
+    public void Error_unauthorized_asks_to_sign_in_instead_of_saying_access_is_denied()
+    {
+        var cut = Render<BxError>(p => p.Add(e => e.StatusCode, 401));
+        var forbidden = Render<BxError>(p => p.Add(e => e.StatusCode, 403));
+
+        Assert.Equal("Sign in required", cut.Find("h1").TextContent);
+        Assert.Contains("sign in", cut.Markup);
+        Assert.Equal("Access denied", forbidden.Find("h1").TextContent);
+    }
+
+    [Fact]
+    public void FooterColumns_heading_level_can_be_changed()
+    {
+        BxFooterColumn[] columns = [new("Product") { Links = [new("Features") { Href = "/features" }] }];
+        var cut = Render<BxFooterColumns>(p => p.Add(c => c.Columns, columns).Add(c => c.HeadingLevel, 2));
+
+        Assert.Equal("Product", cut.Find("h2").TextContent);
+        Assert.Empty(cut.FindAll("h3"));
+    }
+
+    [Fact]
     public void Error_takes_explicit_texts_and_a_custom_way_back()
     {
         var cut = Render<BxError>(p => p.Add(e => e.StatusCode, 404).Add(e => e.StatusMessage, "Gone").Add(e => e.Message, "It left.")
@@ -499,5 +521,46 @@ public class LayoutTests : BluxTestContext
         var classes = cut.Find("button").ClassList;
         Assert.Contains("underline", classes);
         Assert.DoesNotContain("italic", classes);
+    }
+
+    // A component below a theme counts how often its parameters are set.
+    public sealed class ParameterCounter : BxComponentBase
+    {
+        public static int Count;
+        protected override void OnParametersSet() => Count++;
+    }
+
+    public sealed class ThemeHost : ComponentBase
+    {
+        [Parameter] public int Tick { get; set; }
+        [Parameter] public bool Inline { get; set; }
+        [Parameter] public IReadOnlyDictionary<Type, ISlotOverrides>? Shared { get; set; }
+
+        protected override void BuildRenderTree(RenderTreeBuilder b)
+        {
+            b.AddContent(0, Tick);
+            b.OpenComponent<BxTheme>(1);
+            b.AddAttribute(2, nameof(BxTheme.Overrides), Inline
+                ? new Dictionary<Type, ISlotOverrides> { [typeof(BxButton)] = new ButtonUi { Base = "font-bold" } }
+                : Shared);
+            b.AddAttribute(3, nameof(BxTheme.ChildContent), (RenderFragment)(c => { c.OpenComponent<ParameterCounter>(0); c.CloseComponent(); }));
+            b.CloseComponent();
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Theme_does_not_render_the_components_below_again_when_nothing_changed(bool inline)
+    {
+        ParameterCounter.Count = 0;
+        var shared = new Dictionary<Type, ISlotOverrides> { [typeof(BxButton)] = new ButtonUi { Base = "font-bold" } };
+        var cut = Render<ThemeHost>(p => p.Add(h => h.Shared, shared).Add(h => h.Inline, inline).Add(h => h.Tick, 0));
+        for (var i = 1; i <= 5; i++)
+        {
+            cut.Render(p => p.Add(h => h.Shared, shared).Add(h => h.Inline, inline).Add(h => h.Tick, i));
+        }
+
+        Assert.Equal(1, ParameterCounter.Count);
     }
 }

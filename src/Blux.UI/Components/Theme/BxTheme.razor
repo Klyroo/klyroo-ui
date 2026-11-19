@@ -5,8 +5,13 @@
     Cascades class overrides to every component of a given type below it, like Nuxt UI's UTheme. The classes are
     merged after the theme and AddBluxUi, and before the component's own Ui and Class, so an instance still wins.
     Without overrides it adds nothing and passes the enclosing scope through.
+    A scope is a cascading value, so it does not cross a render mode boundary (a component with @rendermode, or a page
+    that is interactive on its own): inside it the components see no scope. Put a BxTheme (or BxApp) inside each
+    interactive island, or set app-wide overrides with AddBluxUi, which every render mode shares.
 *@
-<CascadingValue Value="_scope">@ChildContent</CascadingValue>
+@* Fixed: a non-fixed value of a class type notifies (and renders again) every component below on each render of this one.
+   The key rebuilds the subtree when the scope really changed. *@
+<CascadingValue Value="_scope" IsFixed="true" @key="_scope">@ChildContent</CascadingValue>
 
 @code {
     private BxThemeScope? _scope;
@@ -34,12 +39,14 @@
 
     protected override void OnParametersSet()
     {
-        // A fresh scope makes every component below render again: only build one when an input changed.
-        if (_built && ReferenceEquals(_usedParent, Parent) && ReferenceEquals(_usedUi, Ui) && _usedFor == For && ReferenceEquals(_usedOverrides, Overrides))
+        // A fresh scope rebuilds everything below: only build one when an input changed. Overrides are compared by value,
+        // so an inline `new ButtonUi { ... }` on every render of the parent does not count as a change.
+        if (_built && ReferenceEquals(_usedParent, Parent) && Equals(_usedUi, Ui) && _usedFor == For && SameOverrides(_usedOverrides, Overrides))
         {
             return;
         }
-        (_built, _usedParent, _usedUi, _usedFor, _usedOverrides) = (true, Parent, Ui, For, Overrides);
+        (_built, _usedParent, _usedUi, _usedFor) = (true, Parent, Ui, For);
+        _usedOverrides = Overrides is null ? null : new Dictionary<Type, ISlotOverrides>(Overrides);
 
         var map = new Dictionary<Type, ISlotOverrides>();
         if (For is not null && Ui is not null) map[For] = Ui;
@@ -48,5 +55,16 @@
             foreach (var (type, ui) in Overrides) map[type] = ui;
         }
         _scope = map.Count == 0 ? Parent : new BxThemeScope(Parent, map);
+    }
+
+    private static bool SameOverrides(IReadOnlyDictionary<Type, ISlotOverrides>? a, IReadOnlyDictionary<Type, ISlotOverrides>? b)
+    {
+        if (ReferenceEquals(a, b)) return true;
+        if (a is null || b is null || a.Count != b.Count) return false;
+        foreach (var (type, ui) in a)
+        {
+            if (!b.TryGetValue(type, out var other) || !Equals(ui, other)) return false;
+        }
+        return true;
     }
 }
