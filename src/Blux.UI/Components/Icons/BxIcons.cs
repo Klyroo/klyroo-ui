@@ -18,6 +18,10 @@ public static class BxIcons
     public static RenderFragment TriangleAlert(string? @class = null) => Icon(@class, "M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z");
     public static RenderFragment CircleX(string? @class = null) => Icon(@class, "m15 9-6 6m0-6 6 6m7-3a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z");
 
+    /// <summary>A built-in Lucide icon by name (see <see cref="BxIcon"/>); renders nothing for an unknown name.</summary>
+    public static RenderFragment Named(string name, string? @class = null) =>
+        IconRegistry.Builtin.TryGetValue(name, out var path) ? Icon(@class, path) : _ => { };
+
     private static RenderFragment Icon(string? @class, string path) => builder =>
     {
         builder.OpenElement(0, "svg");
