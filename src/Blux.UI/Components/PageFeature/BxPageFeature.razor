@@ -1,0 +1,76 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+@using Blux.UI.Internal
+
+@*
+    With Href the title is the one link of the feature and its box stretches over the whole feature, so there is a
+    single focus stop and no nested interactive element.
+*@
+<div data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Icon is not null)
+    {
+        <span class="@_slots["leading"]" aria-hidden="true" data-slot="leading">
+            <BxIcon Name="@Icon" Class="@_slots["leadingIcon"]" />
+        </span>
+    }
+    <div class="@_slots["wrapper"]">
+        @if (Title is not null)
+        {
+            @if (HeadingLevel is { } level)
+            {
+                <SectionHeading Level="level" Class="@_slots["title"]">@TitleContent</SectionHeading>
+            }
+            else
+            {
+                <p class="@_slots["title"]" data-slot="title">@TitleContent</p>
+            }
+        }
+        @if (Description is not null)
+        {
+            <p class="@_slots["description"]" data-slot="description">@Description</p>
+        }
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    private RenderFragment TitleContent => @<text>
+        @if (Href is null)
+        {
+            @Title
+        }
+        else
+        {
+            <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" class="@_slots["link"]" data-slot="link">@Title@if (Target == "_blank") {<span class="sr-only"> @Options.Strings.OpensInNewTab</span>}</a>
+        }
+    </text>;
+
+    /// <summary>Name of a built-in icon (see <see cref="BxIcon"/>).</summary>
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Makes the whole feature a link, carried by the title.</summary>
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Target { get; set; }
+
+    /// <summary>Extra content under the description. Interactive content would sit under the stretched link: give it <c>relative z-10</c>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+
+    /// <summary>Horizontal puts the icon before the text; vertical puts it above.</summary>
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
+
+    /// <summary>Renders the title as a heading of this level (1 to 6) instead of a paragraph.</summary>
+    [Parameter] public int? HeadingLevel { get; set; }
+    [Parameter] public PageFeatureUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageFeature, new Dictionary<string, string?>
+        {
+            ["orientation"] = Orientation == BxOrientation.Vertical ? "vertical" : "horizontal",
+            ["link"] = VariantValue.Of(Href is not null),
+        }, Ui, "root");
+}

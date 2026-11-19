@@ -1,0 +1,18 @@
+<div class="grid w-full gap-6 sm:grid-cols-[12rem_1fr]">
+    <BxPageAnchors Links="_anchors" data-testid="anchors" />
+    <div class="max-h-48 overflow-y-auto rounded-lg border border-(--blux-border) bg-(--blux-bg) p-4 text-sm text-(--blux-text-muted)">
+        <section id="anchor-install" class="min-h-40"><p class="font-medium text-(--blux-text-highlighted)">Installation</p><p>Add the package to your project.</p></section>
+        <section id="anchor-theming" class="min-h-40"><p class="font-medium text-(--blux-text-highlighted)">Theming</p><p>Override the CSS variables.</p></section>
+        <section id="anchor-release" class="min-h-40"><p class="font-medium text-(--blux-text-highlighted)">Releases</p><p>Follow the changelog.</p></section>
+    </div>
+</div>
+
+@code {
+    private readonly PageLinkItem[] _anchors =
+    [
+        new("Installation", "#anchor-install") { Icon = "download" },
+        new("Theming", "#anchor-theming") { Icon = "pencil" },
+        new("Releases", "#anchor-release") { Icon = "star" },
+        new("GitHub", "https://github.com/") { Icon = "code", Target = "_blank" },
+    ];
+}
