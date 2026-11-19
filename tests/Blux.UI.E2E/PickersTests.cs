@@ -59,7 +59,8 @@ public class PickersTests(PlaygroundServer server) : PlaygroundTest(server)
         var heading = Page.Locator("[data-testid=calendar] [aria-live=polite]");
         await Assertions.Expect(heading).ToHaveTextAsync("November 2026");
 
-        await Day("calendar", "2026-11-25").ClickAsync();
+        // aria-disabled days are not actionable for Playwright, so force the click to prove the component refuses it.
+        await Day("calendar", "2026-11-25").ClickAsync(new() { Force = true });
         await Assertions.Expect(Day("calendar", "2026-11-25")).ToHaveAttributeAsync("aria-disabled", "true");
         await Assertions.Expect(Day("calendar", "2026-11-19")).ToHaveAttributeAsync("data-selected", "");
 
