@@ -106,8 +106,46 @@
 
   bx-tabs,
   bx-accordion,
-  bx-select {
+  bx-select,
+  bx-collapsible,
+  bx-tree,
+  bx-splitter,
+  bx-scroll-area {
     display: block;
+  }
+
+  /* Marquee: two copies of the content slide by their own length, so the loop has no seam. */
+  [data-bx-marquee] {
+    --bx-gap: 1rem;
+  }
+  [data-bx-marquee][data-overlay='true'][data-orientation='horizontal'] {
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-bx-marquee][data-overlay='true'][data-orientation='vertical'] {
+    mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-bx-marquee] > [data-bx-marquee-group] {
+    animation: bx-marquee-x var(--bx-marquee-duration, 30s) linear infinite;
+  }
+  [data-bx-marquee][data-orientation='vertical'] > [data-bx-marquee-group] {
+    animation-name: bx-marquee-y;
+  }
+  [data-bx-marquee][data-reverse='true'] > [data-bx-marquee-group] {
+    animation-direction: reverse;
+  }
+  [data-bx-marquee][data-pause-on-hover='true']:is(:hover, :focus-within) > [data-bx-marquee-group] {
+    animation-play-state: paused;
+  }
+  @keyframes bx-marquee-x {
+    to { transform: translateX(calc(-100% - var(--bx-gap))); }
+  }
+  @keyframes bx-marquee-y {
+    to { transform: translateY(calc(-100% - var(--bx-gap))); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-bx-marquee] { overflow: auto; mask-image: none !important; }
+    [data-bx-marquee] > [data-bx-marquee-group] { animation: none; }
+    [data-bx-marquee] > [data-bx-marquee-group][aria-hidden='true'] { display: none; }
   }
 
   /* A modal dialog makes the page inert; stop it from scrolling behind. */

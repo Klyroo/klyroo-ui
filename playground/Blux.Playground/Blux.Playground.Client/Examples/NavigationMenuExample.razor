@@ -1,0 +1,18 @@
+<BxNavigationMenu Items="Items" AriaLabel="Main" />
+
+@code {
+    private static readonly BxNavigationItem[] Items =
+    [
+        new("Home") { Href = "/", Exact = true },
+        new("Components")
+        {
+            Children =
+            [
+                new("Button") { Href = "/components/button" },
+                new("Tabs") { Href = "/components/tabs" },
+                new("Tree") { Href = "/components/tree" },
+            ],
+        },
+        new("Docs") { Href = "/docs" },
+    ];
+}

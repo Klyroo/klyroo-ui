@@ -1,0 +1,16 @@
+<div class="flex w-full max-w-2xl flex-col gap-3">
+    <div class="h-40 rounded-lg border border-(--blux-border)">
+        <BxSplitter Panels="Panels" @bind-Sizes="_sizes" data-testid="splitter" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="splitter-state">Sizes: @(_sizes is null ? "default" : string.Join(" / ", _sizes.Select(s => Math.Round(s))))</p>
+</div>
+
+@code {
+    private IReadOnlyList<double>? _sizes;
+
+    private static readonly BxSplitterPanel[] Panels =
+    [
+        new() { Size = 40, MinSize = 20, Content = @<p class="p-3 text-sm">Sidebar</p> },
+        new() { Size = 60, MinSize = 20, Content = @<p class="p-3 text-sm">Content</p> },
+    ];
+}
