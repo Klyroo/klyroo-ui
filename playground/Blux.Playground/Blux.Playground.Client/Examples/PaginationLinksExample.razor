@@ -2,15 +2,19 @@
 @inject NavigationManager Navigation
 
 <div class="flex flex-col items-center gap-3">
-    <BxPagination Total="60" PageSize="10" Page="_page" HrefTemplate="?page={page}" AriaLabel="Archive" Color="BxColor.Secondary" />
+    <BxPagination Total="60" PageSize="10" Page="_page" HrefTemplate="@_template" AriaLabel="Archive" Color="BxColor.Secondary" />
     <p class="text-sm text-(--blux-text-muted)" data-testid="link-page-state">Archive page: @_page</p>
 </div>
 
 @code {
     private int _page = 1;
 
+    // The document has a <base href>, so a bare "?page=" would resolve against the site root: keep the current path.
+    private string _template = "?page={page}";
+
     protected override void OnInitialized()
     {
+        _template = new Uri(Navigation.Uri).AbsolutePath + "?page={page}";
         Read();
         Navigation.LocationChanged += OnLocationChanged;
     }

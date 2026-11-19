@@ -60,14 +60,16 @@
                 var hasChildren = item.Children is { Count: > 0 };
                 var selected = Value is not null && Value == ValueOf(item);
                 var labelId = $"{_id}-{node.Path}";
+                var groupId = $"{_id}-{node.Path}-g";
             }
-            <li role="treeitem" data-value="@ValueOf(item)"
-                aria-labelledby="@labelId"
-                aria-expanded="@(hasChildren ? (item.Expanded ? "true" : "false") : null)"
-                aria-selected="@(selected ? "true" : "false")"
-                aria-disabled="@(item.Disabled ? "true" : null)"
-                class="@_slots["item"]">
-                <div data-slot="row" data-selected="@(selected ? "true" : "false")"
+            <li role="none" class="@_slots["item"]">
+                <div role="treeitem" data-value="@ValueOf(item)" data-slot="row"
+                     aria-labelledby="@labelId"
+                     aria-owns="@(hasChildren ? groupId : null)"
+                     aria-expanded="@(hasChildren ? (item.Expanded ? "true" : "false") : null)"
+                     aria-selected="@(selected ? "true" : "false")"
+                     aria-disabled="@(item.Disabled ? "true" : null)"
+                     data-selected="@(selected ? "true" : "false")"
                      data-expanded="@(hasChildren ? (item.Expanded ? "true" : "false") : null)"
                      data-disabled="@(item.Disabled ? "true" : null)" class="@_slots["row"]">
                     @if (hasChildren)
@@ -93,7 +95,7 @@
                 </div>
                 @if (hasChildren)
                 {
-                    <ul role="group" hidden="@(!item.Expanded)" class="@_slots["group"]">
+                    <ul id="@groupId" role="group" hidden="@(!item.Expanded)" class="@_slots["group"]">
                         @foreach (var child in Nodes(item.Children!, node.Path))
                         {
                             @Node(child)

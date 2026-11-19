@@ -5,9 +5,9 @@ const ITEM = '[role="treeitem"]';
 /**
  * <bx-tree value="a">
  *   <ul role="tree">
- *     <li role="treeitem" aria-expanded="true" aria-selected="false" data-value="a">
- *       <div data-slot="row">…</div>
- *       <ul role="group">…<li role="treeitem">…</li></ul>
+ *     <li role="none">
+ *       <div role="treeitem" data-slot="row" aria-expanded="true" aria-owns="g" aria-selected="false" data-value="a">…</div>
+ *       <ul id="g" role="group">…<li role="none">…</li></ul>
  *     </li>
  *   </ul>
  * </bx-tree>
@@ -15,7 +15,8 @@ const ITEM = '[role="treeitem"]';
  * WAI-ARIA tree view with a roving tabindex: Up/Down move through visible items, Right expands or enters a node,
  * Left collapses or goes to the parent, Home/End jump, Enter selects (and follows a link, and toggles a node),
  * Space selects, "*" expands the siblings, letters jump by first letter.
- * The row mirrors the state (data-selected, data-expanded) so styles never depend on nested selectors.
+ * The item is its own row and mirrors the state (data-selected, data-expanded); its group is a sibling inside the
+ * same list item (so the item's name never has to cover its children) and is tied to it with aria-owns.
  * Selection is reported with "bx-change".
  */
 export class BxTreeElement extends HTMLElement {
@@ -60,15 +61,15 @@ export class BxTreeElement extends HTMLElement {
   }
 
   #row(item) {
-    return item.querySelector(':scope > [data-slot="row"]');
+    return item;
   }
 
   #group(item) {
-    return item.querySelector(':scope > [role="group"]');
+    return item.parentElement.querySelector(':scope > [role="group"]');
   }
 
   #parent(item) {
-    const parent = item.parentElement.closest(ITEM);
+    const parent = item.parentElement.parentElement.closest('[role="group"]')?.parentElement.querySelector(':scope > ' + ITEM);
     return parent && parent.closest('bx-tree') === this ? parent : null;
   }
 
@@ -122,9 +123,6 @@ export class BxTreeElement extends HTMLElement {
   #onClick = (event) => {
     const item = event.target.closest?.(ITEM);
     if (!item || item.closest('bx-tree') !== this || item.getAttribute('aria-disabled') === 'true') return;
-    // Only clicks on the item's own row: the padding around nested groups belongs to nobody.
-    const row = event.target.closest('[data-slot="row"]');
-    if (!row || row.parentElement !== item) return;
     this.#select(item);
     if (this.#group(item)) this.#setExpanded(item, item.getAttribute('aria-expanded') !== 'true');
   };
