@@ -331,15 +331,15 @@ public class Form2Tests : BluxTestContext
     }
 
     [Fact]
-    public void InputRating_is_a_radiogroup_of_radios_highest_first()
+    public void InputRating_is_a_radiogroup_of_radios_in_reading_order()
     {
         var cut = Render<BxInputRating>(p => p.Add(r => r.Max, 3).Add(r => r.Value, 2).Add(r => r.Name, "stars").Add(r => r.AriaLabel, "Rating"));
 
         Assert.Equal("radiogroup", cut.Find("[role=radiogroup]").GetAttribute("role"));
         var radios = cut.FindAll("input[type=radio]");
-        Assert.Equal(["3", "2", "1"], radios.Select(r => r.GetAttribute("value")));
+        Assert.Equal(["1", "2", "3"], radios.Select(r => r.GetAttribute("value")));
         Assert.Equal([false, true, false], radios.Select(r => r.HasAttribute("checked")));
-        Assert.Equal("2 out of 3", radios[1].GetAttribute("aria-label"));
+        Assert.Equal("2 out of 3", radios[1].GetAttribute("aria-label")); // the middle one either way
         Assert.All(radios, r => Assert.Equal("stars", r.GetAttribute("name")));
     }
 
@@ -351,9 +351,9 @@ public class Form2Tests : BluxTestContext
             .Add(r => r.Value, value).Add(r => r.ValueChanged, (double v) => value = v));
 
         var radios = cut.FindAll("input[type=radio]");
-        Assert.Equal(["2", "1.5", "1", "0.5"], radios.Select(r => r.GetAttribute("value")));
+        Assert.Equal(["0.5", "1", "1.5", "2"], radios.Select(r => r.GetAttribute("value")));
 
-        radios[1].Change("1.5");
+        radios[2].Change("1.5");
 
         Assert.Equal(1.5, value);
     }
