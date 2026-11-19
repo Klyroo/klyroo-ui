@@ -1,0 +1,571 @@
+using System.Globalization;
+using Blux.UI.Internal;
+
+namespace Blux.UI.Tests;
+
+/// <summary>The "Chart" family: BxChart, drawn as SVG in C#.</summary>
+public class ChartTests : BluxTestContext
+{
+    private sealed record Sale(string Month, double? Desktop, double? Mobile);
+
+    private static readonly Sale[] Sales =
+    [
+        new("January", 186, 80),
+        new("February", 305, 200),
+        new("March", 237, 120),
+        new("April", 73, 190),
+        new("May", 209, 130),
+        new("June", 214, 140),
+    ];
+
+    private static readonly BxChartCategory<Sale>[] Both =
+    [
+        new("desktop", s => s.Desktop) { Label = "Desktop" },
+        new("mobile", s => s.Mobile) { Label = "Mobile" },
+    ];
+
+    private IRenderedComponent<BxChart<Sale>> Chart(Action<ComponentParameterCollectionBuilder<BxChart<Sale>>>? configure = null, IReadOnlyList<Sale>? data = null, IReadOnlyList<BxChartCategory<Sale>>? categories = null) =>
+        Render<BxChart<Sale>>(p =>
+        {
+            p.Add(c => c.Data, data ?? Sales)
+             .Add(c => c.Index, s => s.Month)
+             .Add(c => c.Categories, categories ?? Both);
+            configure?.Invoke(p);
+        });
+
+    private static string[] Texts(IRenderedComponent<BxChart<Sale>> cut, string selector) =>
+        cut.FindAll(selector).Select(e => e.TextContent.Trim()).ToArray();
+
+    // ---- Scale
+
+    [Fact]
+    public void Nice_scale_rounds_a_range_out_to_ticks_on_1_2_5()
+    {
+        var (min, max, step, ticks) = ChartLayout.NiceScale(0, 305);
+        Assert.Equal((0, 350, 50), (min, max, step));
+        Assert.Equal([0, 50, 100, 150, 200, 250, 300, 350], ticks);
+
+        var small = ChartLayout.NiceScale(0, 1);
+        Assert.Equal([0, 0.2, 0.4, 0.6, 0.8, 1], small.Ticks);
+
+        var negative = ChartLayout.NiceScale(-30, 80);
+        Assert.Equal(-40, negative.Min);
+        Assert.Equal(80, negative.Max);
+        Assert.Contains(0, negative.Ticks);
+    }
+
+    [Fact]
+    public void Nice_scale_of_a_flat_range_still_has_ticks()
+    {
+        Assert.Equal([0, 0.2, 0.4, 0.6, 0.8, 1], ChartLayout.NiceScale(0, 0).Ticks);
+        var five = ChartLayout.NiceScale(5, 5);
+        Assert.True(five.Min < 5 && five.Max > 5);
+    }
+
+    // ---- Structure and accessibility
+
+    [Fact]
+    public void Chart_is_an_image_with_a_generated_summary()
+    {
+        var cut = Chart();
+
+        var svg = cut.Find("svg[role=img]");
+        var label = svg.GetAttribute("aria-label")!;
+        Assert.StartsWith("Line chart with 6 data points from January to June.", label);
+        Assert.Contains("Desktop (73 to 305)", label);
+        Assert.Contains("Mobile (80 to 200)", label);
+        Assert.Equal("0 0 640 300", svg.GetAttribute("viewBox"));
+    }
+
+    [Fact]
+    public void An_aria_label_replaces_the_summary_and_a_description_is_linked()
+    {
+        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month").Add(c => c.AriaDescription, "Desktop leads every month but April."));
+
+        var svg = cut.Find("svg[role=img]");
+        Assert.Equal("Sales by month", svg.GetAttribute("aria-label"));
+        var description = cut.Find("#" + svg.GetAttribute("aria-describedby"));
+        Assert.Equal("Desktop leads every month but April.", description.TextContent);
+        Assert.Contains("sr-only", description.ClassList);
+    }
+
+    [Fact]
+    public void Axes_have_nice_ticks_and_labels_and_the_grid_follows_the_ticks()
+    {
+        var cut = Chart();
+
+        // A line chart's axis fits its values (73 to 305); bars and areas always include zero.
+        Assert.Equal(["50", "100", "150", "200", "250", "300", "350"], Texts(cut, "svg > text").Where(t => t.Length <= 3 && char.IsDigit(t[0])).ToArray());
+        Assert.Equal(["January", "February", "March", "April", "May", "June"], Texts(cut, "svg > text").Where(t => char.IsLetter(t[0])).ToArray());
+        // One grid line per tick, and the line of the index axis.
+        Assert.Equal(8, cut.FindAll("svg > line").Count);
+        Assert.Contains("0", Texts(Chart(p => p.Add(c => c.Type, BxChartType.Bar)), "svg > text"));
+    }
+
+    [Fact]
+    public void Grid_and_axes_can_be_turned_off()
+    {
+        var cut = Chart(p => p.Add(c => c.Grid, false).Add(c => c.XAxis, false).Add(c => c.YAxis, false));
+
+        Assert.Empty(cut.FindAll("svg > line"));
+        Assert.Empty(cut.FindAll("svg > text"));
+    }
+
+    [Fact]
+    public void Axis_titles_are_drawn()
+    {
+        var cut = Chart(p => p.Add(c => c.XLabel, "Month").Add(c => c.YLabel, "Visitors"));
+
+        var texts = Texts(cut, "svg > text");
+        Assert.Contains("Month", texts);
+        Assert.Contains("Visitors", texts);
+        Assert.Contains("rotate(-90", cut.FindAll("svg > text").First(t => t.TextContent == "Visitors").GetAttribute("transform"));
+    }
+
+    [Fact]
+    public void Value_labels_use_the_current_culture_and_a_custom_format_wins()
+    {
+        var original = CultureInfo.CurrentCulture;
+        try
+        {
+            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            Sale[] big = [new("a", 1500, null), new("b", 2500, null)];
+            var cut = Chart(null, big, [new("d", s => s.Desktop)]);
+
+            Assert.Contains(2000.0.ToString("#,0.##", CultureInfo.CurrentCulture), Texts(cut, "svg > text"));
+
+            var formatted = Chart(p => p.Add(c => c.Format, v => $"${v}"), Sales);
+            Assert.Contains("$100", Texts(formatted, "svg > text"));
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = original;
+        }
+    }
+
+    [Fact]
+    public void Dates_in_the_index_are_formatted_with_the_current_culture()
+    {
+        var cut = Render<BxChart<DateTime>>(p => p
+            .Add(c => c.Data, [new DateTime(2026, 3, 5), new DateTime(2026, 3, 6)])
+            .Add(c => c.Index, d => d)
+            .Add(c => c.Categories, new BxChartCategory<DateTime>[] { new("v", d => d.Day) })
+            .Add(c => c.IndexFormat, "MMM d"));
+
+        Assert.Equal(["Mar 5", "Mar 6"], cut.FindAll("svg > text").Select(t => t.TextContent).Where(t => t.StartsWith("Mar")).ToArray());
+    }
+
+    // ---- Data table
+
+    [Fact]
+    public void Data_table_holds_the_same_data_and_is_visually_hidden_by_default()
+    {
+        var cut = Chart();
+
+        var table = cut.Find("table");
+        Assert.Equal("Line chart", table.QuerySelector("caption")!.TextContent);
+        Assert.Equal(["Category", "Desktop", "Mobile"], table.QuerySelectorAll("thead th").Select(t => t.TextContent.Trim()));
+        var rows = table.QuerySelectorAll("tbody tr").ToList();
+        Assert.Equal(6, rows.Count);
+        Assert.Equal(["February", "305", "200"], rows[1].Children.Select(c => c.TextContent.Trim()));
+        Assert.Equal("row", rows[0].QuerySelector("th")!.GetAttribute("scope"));
+        Assert.Contains("sr-only", table.ParentElement!.ClassList);
+        Assert.Null(cut.FindAll("details").FirstOrDefault());
+    }
+
+    [Fact]
+    public void Data_table_can_be_shown_or_put_behind_a_disclosure()
+    {
+        var visible = Chart(p => p.Add(c => c.Table, BxChartTable.Visible));
+        Assert.DoesNotContain("sr-only", visible.Find("table").ParentElement!.ClassList);
+
+        var toggle = Chart(p => p.Add(c => c.Table, BxChartTable.Toggle).Add(c => c.XLabel, "Month"));
+        Assert.Equal("Data table", toggle.Find("details > summary").TextContent);
+        Assert.NotNull(toggle.Find("details table"));
+        Assert.Equal("Month", toggle.Find("thead th").TextContent.Trim());
+    }
+
+    [Fact]
+    public void Gaps_are_empty_cells_and_break_the_line()
+    {
+        Sale[] gap = [new("a", 1, 1), new("b", null, 2), new("c", 3, 3), new("d", 4, 4)];
+        var cut = Chart(data: gap);
+
+        Assert.Equal("", cut.FindAll("tbody tr")[1].Children[1].TextContent.Trim());
+        var desktop = cut.Find("g[data-series='0']");
+        // A line before the gap and one after it: the missing value is not drawn as zero.
+        Assert.Equal(2, desktop.QuerySelectorAll("path").Length);
+        var mobile = cut.Find("g[data-series='1']");
+        Assert.Single(mobile.QuerySelectorAll("path"));
+    }
+
+    [Fact]
+    public void Empty_data_renders_a_chart_that_says_so()
+    {
+        var cut = Chart(data: []);
+
+        Assert.Contains("No data", cut.Find("svg").GetAttribute("aria-label"));
+        Assert.Empty(cut.FindAll("[data-hit]"));
+        Assert.Null(cut.Find("[data-slot=plot]").GetAttribute("tabindex"));
+    }
+
+    // ---- Colors and distinguishing without color
+
+    [Fact]
+    public void Series_get_their_color_from_the_tokens_of_data_color_and_never_from_a_palette()
+    {
+        var cut = Chart(null, null, [new("desktop", s => s.Desktop), new("mobile", s => s.Mobile) { Color = BxColor.Success }]);
+
+        Assert.Equal(["primary", "success"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
+        Assert.Equal(["primary", "success"], cut.FindAll("li[data-color]").Select(g => g.GetAttribute("data-color")));
+        var html = cut.Markup;
+        Assert.DoesNotContain("fill=\"#", html);
+        Assert.DoesNotContain("stroke=\"#", html);
+        Assert.DoesNotContain("zinc-", html);
+        Assert.DoesNotContain("rgb(", html);
+        Assert.Contains("stroke-(--bx-color-text)", cut.Find("g[data-series='0'] path").GetAttribute("class"));
+    }
+
+    [Fact]
+    public void Colors_replace_the_palette_in_order()
+    {
+        var cut = Chart(p => p.Add(c => c.Colors, new[] { BxColor.Error, BxColor.Info }));
+
+        Assert.Equal(["error", "info"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
+    }
+
+    [Fact]
+    public void Lines_differ_by_dash_pattern_and_markers_by_shape()
+    {
+        var cut = Chart(p => p.Add(c => c.Points, true));
+
+        var first = cut.Find("g[data-series='0'] path");
+        var second = cut.Find("g[data-series='1'] path");
+        Assert.Null(first.GetAttribute("stroke-dasharray"));
+        Assert.NotNull(second.GetAttribute("stroke-dasharray"));
+        var markers = cut.FindAll("g[data-hit][data-index='0'] path").Select(m => m.GetAttribute("d")!).ToList();
+        Assert.Equal(2, markers.Count);
+        Assert.NotEqual(markers[0], markers[1]);
+        // Points always shown: the marker is opaque instead of waiting for the active row.
+        Assert.Contains("opacity-100", cut.Find("g[data-hit] path").GetAttribute("class"));
+    }
+
+    [Fact]
+    public void Markers_wait_for_the_active_row_unless_points_are_on()
+    {
+        var cut = Chart();
+
+        var marker = cut.Find("g[data-hit] path").GetAttribute("class")!;
+        Assert.Contains("opacity-0", marker);
+        Assert.Contains("group-data-active/col:opacity-100", marker);
+    }
+
+    [Fact]
+    public void Bars_and_areas_differ_by_fill_pattern_and_the_legend_shows_the_same_pattern()
+    {
+        var bars = Chart(p => p.Add(c => c.Type, BxChartType.Bar));
+
+        var patterns = bars.FindAll("defs pattern");
+        Assert.Equal(2, patterns.Count);
+        Assert.Equal(["primary", "secondary"], patterns.Select(x => x.GetAttribute("data-color")));
+        Assert.NotEmpty(patterns[1].QuerySelectorAll("path"));
+        Assert.Empty(patterns[0].QuerySelectorAll("path"));
+        var id = patterns[1].GetAttribute("id");
+        Assert.Contains(bars.FindAll("rect[fill]"), r => r.GetAttribute("fill") == $"url(#{id})");
+        Assert.Equal($"url(#{id})", bars.FindAll("li svg rect")[1].GetAttribute("fill"));
+
+        var area = Chart(p => p.Add(c => c.Type, BxChartType.Area));
+        Assert.Equal(2, area.FindAll("defs pattern").Count);
+        Assert.Equal(2, area.FindAll("g[data-series] > path[fill^='url(#']").Count);
+    }
+
+    [Fact]
+    public void Line_charts_need_no_pattern_definitions()
+    {
+        Assert.Empty(Chart().FindAll("defs"));
+    }
+
+    // ---- Types
+
+    [Fact]
+    public void Line_chart_has_a_path_per_series_and_a_hit_row_per_index()
+    {
+        var cut = Chart();
+
+        Assert.Equal(2, cut.FindAll("g[data-series]").Count);
+        Assert.Equal(6, cut.FindAll("g[data-hit]").Count);
+        Assert.Equal(["0", "1", "2", "3", "4", "5"], cut.FindAll("g[data-hit]").Select(g => g.GetAttribute("data-index")));
+        var d = cut.Find("g[data-series='0'] path").GetAttribute("d")!;
+        Assert.StartsWith("M", d);
+        Assert.Equal(5, d.Count(c => c == 'L'));
+    }
+
+    [Theory]
+    [InlineData(BxChartCurve.Linear, "L", "C")]
+    [InlineData(BxChartCurve.Monotone, "C", "L")]
+    public void Curve_shapes_the_line(BxChartCurve curve, string present, string absent)
+    {
+        var cut = Chart(p => p.Add(c => c.Curve, curve));
+
+        var d = cut.Find("g[data-series='0'] path").GetAttribute("d")!;
+        Assert.Contains(present, d);
+        Assert.DoesNotContain(absent, d);
+    }
+
+    [Fact]
+    public void Step_curve_makes_right_angles()
+    {
+        var path = ChartLayout.CurvePath([(0, 10), (10, 20), (20, 5)], BxChartCurve.Step);
+
+        Assert.Equal("M0 10 L5 10 L5 20 L10 20 L15 20 L15 5 L20 5", path);
+    }
+
+    [Fact]
+    public void Monotone_curve_does_not_overshoot_the_values()
+    {
+        var path = ChartLayout.CurvePath([(0, 0), (10, 0), (20, 10), (30, 10)], BxChartCurve.Monotone);
+
+        // Control points of the flat segments stay on the flat level.
+        var numbers = path.Replace("M", "").Replace("C", "").Split([' '], StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray();
+        Assert.All(Enumerable.Range(0, numbers.Length / 2).Select(i => numbers[i * 2 + 1]), y => Assert.InRange(y, 0, 10));
+    }
+
+    [Fact]
+    public void Area_chart_closes_each_shape_down_to_the_baseline()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Area));
+
+        var areas = cut.FindAll("g[data-series='0'] > path[fill^='url(#']");
+        Assert.Single(areas);
+        Assert.EndsWith("Z", areas[0].GetAttribute("d"));
+        // The outline is a separate path, so it can carry the dash pattern.
+        Assert.Equal(2, cut.Find("g[data-series='0']").QuerySelectorAll("path").Length);
+    }
+
+    [Fact]
+    public void Stacked_areas_sit_on_each_other()
+    {
+        var layout = ChartLayout.Build(BxChartType.Area, false, true, BxChartCurve.Linear, ["a", "b"],
+            [(IReadOnlyList<double?>)new double?[] { 10, 20 }, new double?[] { 5, 5 }], 640, 300, true, true, false, false, 24, v => v.ToString());
+
+        // The second series starts where the first ends: its upper edge is higher than the first's.
+        Assert.True(layout.Series[1].Points[0].Y < layout.Series[0].Points[0].Y);
+        Assert.Equal(25, layout.DomainMax);
+    }
+
+    [Fact]
+    public void Bar_chart_draws_a_bar_per_value_side_by_side()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar));
+
+        var first = cut.FindAll("g[data-series='0'] rect");
+        var second = cut.FindAll("g[data-series='1'] rect");
+        Assert.Equal(6, first.Count);
+        Assert.Equal(6, second.Count);
+        var x0 = double.Parse(first[0].GetAttribute("x")!, CultureInfo.InvariantCulture);
+        var x1 = double.Parse(second[0].GetAttribute("x")!, CultureInfo.InvariantCulture);
+        Assert.True(x1 > x0);
+        // Bars grow with the value.
+        double H(AngleSharp.Dom.IElement r) => double.Parse(r.GetAttribute("height")!, CultureInfo.InvariantCulture);
+        Assert.True(H(first[1]) > H(first[0]));
+        Assert.True(H(first[3]) < H(first[0]));
+    }
+
+    [Fact]
+    public void Stacked_bars_share_a_position_and_reach_the_total()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar).Add(c => c.Stacked, true));
+
+        var a = cut.FindAll("g[data-series='0'] rect")[0];
+        var b = cut.FindAll("g[data-series='1'] rect")[0];
+        Assert.Equal(a.GetAttribute("x"), b.GetAttribute("x"));
+        var top = double.Parse(b.GetAttribute("y")!, CultureInfo.InvariantCulture);
+        var bottom = double.Parse(a.GetAttribute("y")!, CultureInfo.InvariantCulture) + double.Parse(a.GetAttribute("height")!, CultureInfo.InvariantCulture);
+        Assert.True(top < bottom);
+        // 305 + 200 is the tallest stack: the axis reaches 600.
+        Assert.Contains("600", Texts(cut, "svg > text"));
+    }
+
+    [Fact]
+    public void Horizontal_bars_put_the_index_on_the_y_axis_and_grow_to_the_right()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar).Add(c => c.Horizontal, true));
+
+        var bars = cut.FindAll("g[data-series='0'] rect");
+        double W(AngleSharp.Dom.IElement r) => double.Parse(r.GetAttribute("width")!, CultureInfo.InvariantCulture);
+        Assert.True(W(bars[1]) > W(bars[0]));
+        var january = cut.FindAll("svg > text").First(t => t.TextContent == "January");
+        Assert.Equal("end", january.GetAttribute("text-anchor"));
+        Assert.Contains("Horizontal bar chart", cut.Find("svg").GetAttribute("aria-label"));
+        // The grid lines are vertical.
+        var line = cut.FindAll("svg > line")[0];
+        Assert.Equal(line.GetAttribute("x1"), line.GetAttribute("x2"));
+    }
+
+    [Fact]
+    public void Negative_values_reach_below_a_zero_line()
+    {
+        Sale[] swing = [new("a", -20, null), new("b", 40, null)];
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar), swing, [new("d", s => s.Desktop)]);
+
+        Assert.Contains("-20", Texts(cut, "svg > text"));
+        Assert.Contains(cut.FindAll("svg > line"), l => l.GetAttribute("class")!.Contains("border-accented") && l.GetAttribute("y1") == l.GetAttribute("y2"));
+        var bars = cut.FindAll("g[data-series='0'] rect");
+        Assert.True(double.Parse(bars[0].GetAttribute("y")!, CultureInfo.InvariantCulture) > double.Parse(bars[1].GetAttribute("y")!, CultureInfo.InvariantCulture));
+    }
+
+    // ---- Donut
+
+    [Fact]
+    public void Donut_has_a_slice_per_row_sized_by_the_first_category_and_a_legend_with_values()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Donut));
+
+        var slices = cut.FindAll("path[data-hit]");
+        Assert.Equal(6, slices.Count);
+        Assert.Equal(["primary", "secondary", "info", "error", "success", "warning"], slices.Select(s => s.GetAttribute("data-color")));
+        Assert.Equal(6, cut.FindAll("ul li").Count);
+        Assert.Equal("186", cut.FindAll("ul li")[0].QuerySelector("span:last-child")!.TextContent);
+        var label = cut.Find("svg").GetAttribute("aria-label")!;
+        Assert.StartsWith("Donut chart. Slices: January 186 (", label);
+        // The table has one column of values: the first category.
+        Assert.Equal(["Category", "Desktop"], cut.FindAll("thead th").Select(t => t.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void Donut_slices_add_up_to_a_full_turn_and_a_single_slice_is_a_whole_ring()
+    {
+        var layout = ChartLayout.Build(BxChartType.Donut, false, false, BxChartCurve.Linear, ["a", "b"],
+            [(IReadOnlyList<double?>)new double?[] { 1, 3 }], 200, 200, true, true, false, false, 24, v => v.ToString());
+        Assert.Equal([0.25, 0.75], layout.Slices.Select(s => s.Fraction));
+        Assert.Equal(70, layout.InnerRadius);
+
+        var whole = ChartLayout.Build(BxChartType.Donut, false, false, BxChartCurve.Linear, ["a"],
+            [(IReadOnlyList<double?>)new double?[] { 5 }], 200, 200, true, true, false, false, 24, v => v.ToString());
+        Assert.Equal(2, whole.Slices[0].Path.Split('M', StringSplitOptions.RemoveEmptyEntries).Length);
+    }
+
+    [Fact]
+    public void Donut_center_content_is_rendered_over_the_hole()
+    {
+        var cut = Chart(p => p
+            .Add(c => c.Type, BxChartType.Donut)
+            .Add(c => c.Center, b => b.AddMarkupContent(0, "<strong data-testid=total>1,224</strong>")));
+
+        Assert.Equal("1,224", cut.Find("[data-testid=total]").TextContent);
+        Assert.Contains("absolute", cut.Find("[data-testid=total]").ParentElement!.ClassList);
+    }
+
+    // ---- Legend
+
+    [Fact]
+    public void Legend_shows_with_several_series_and_not_with_one_unless_asked()
+    {
+        Assert.NotNull(Chart().Find("ul[aria-label=Legend]"));
+        BxChartCategory<Sale>[] one = [new("d", s => s.Desktop) { Label = "Desktop" }];
+        Assert.Empty(Chart(null, null, one).FindAll("ul"));
+        Assert.Single(Chart(p => p.Add(c => c.Legend, true), null, one).FindAll("ul"));
+        Assert.Empty(Chart(p => p.Add(c => c.Legend, false)).FindAll("ul"));
+    }
+
+    [Fact]
+    public void Legend_swatch_of_a_line_shows_its_dash_and_marker()
+    {
+        var cut = Chart(p => p.Add(c => c.Points, true));
+
+        var swatches = cut.FindAll("li svg");
+        Assert.Null(swatches[0].QuerySelector("path")!.GetAttribute("stroke-dasharray"));
+        Assert.NotNull(swatches[1].QuerySelector("path")!.GetAttribute("stroke-dasharray"));
+        Assert.Equal(2, swatches[0].QuerySelectorAll("path").Length);
+        Assert.All(swatches, s => Assert.Equal("true", s.GetAttribute("aria-hidden")));
+    }
+
+    // ---- Tooltip and keyboard
+
+    [Fact]
+    public void Interactive_chart_can_be_focused_and_has_a_hidden_tip_per_row()
+    {
+        var cut = Chart();
+
+        var plot = cut.Find("[data-slot=plot]");
+        Assert.Equal("0", plot.GetAttribute("tabindex"));
+        Assert.Equal("group", plot.GetAttribute("role"));
+        Assert.Equal("Chart values. Use the arrow keys to move between points.", plot.GetAttribute("aria-label"));
+        var tips = cut.FindAll("[data-slot=tips] > [data-tip]");
+        Assert.Equal(6, tips.Count);
+        Assert.NotNull(cut.Find("[data-slot=tips]").GetAttribute("hidden"));
+        Assert.Equal("February: Desktop 305, Mobile 200", tips[1].GetAttribute("data-text"));
+        Assert.Equal("February", tips[1].QuerySelector("p")!.TextContent);
+        var rows = tips[1].QuerySelectorAll("p").Skip(1).ToList();
+        Assert.Equal(["Desktop", "305"], rows[0].QuerySelectorAll("span").Where(s => s.TextContent.Length > 0).Select(s => s.TextContent));
+        Assert.Equal("primary", rows[0].GetAttribute("data-color"));
+        Assert.Equal("true", cut.Find("[data-slot=tooltip]").GetAttribute("aria-hidden"));
+        Assert.Equal("status", cut.Find("[data-slot=status]").GetAttribute("role"));
+        Assert.Empty(cut.Find("[data-slot=tooltip]").Children);
+    }
+
+    [Fact]
+    public void Tooltip_off_leaves_a_plain_image()
+    {
+        var cut = Chart(p => p.Add(c => c.Tooltip, false));
+
+        Assert.Null(cut.Find("[data-slot=plot]").GetAttribute("tabindex"));
+        Assert.Null(cut.Find("[data-slot=plot]").GetAttribute("role"));
+        Assert.Empty(cut.FindAll("[data-slot=tips]"));
+        Assert.Empty(cut.FindAll("[data-slot=tooltip]"));
+    }
+
+    [Fact]
+    public void Donut_tip_gives_the_value_and_the_share()
+    {
+        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Donut));
+
+        var tip = cut.Find("[data-tip='0']");
+        Assert.StartsWith("January: 186 (", tip.GetAttribute("data-text"));
+        Assert.Contains("Desktop", tip.TextContent);
+        Assert.Contains("%", tip.TextContent);
+    }
+
+    [Fact]
+    public void Animation_respects_reduced_motion()
+    {
+        var themes = new BluxOptions().Chart;
+
+        var animated = themes.AllClassTokens().Where(t => t.Contains("transition")).ToList();
+        Assert.NotEmpty(animated);
+        Assert.All(animated, t => Assert.StartsWith("motion-safe:", t));
+    }
+
+    [Fact]
+    public void Static_rendering_gives_the_same_markup()
+    {
+        using var ctx = new StaticContext();
+        var cut = ctx.Render<BxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, s => s.Month).Add(c => c.Categories, Both));
+
+        Assert.Equal(6, cut.FindAll("g[data-hit]").Count);
+        Assert.NotNull(cut.Find("bx-chart"));
+    }
+
+    private sealed class StaticContext() : BluxTestContext(interactive: false);
+
+    // ---- Theming
+
+    [Fact]
+    public void Ui_and_class_override_slots()
+    {
+        var cut = Chart(p => p.Add(c => c.Class, "my-chart").Add(c => c.Ui, new ChartUi { Legend = "justify-start" }));
+
+        Assert.Contains("my-chart", cut.Find("bx-chart").ClassList);
+        Assert.Contains("justify-start", cut.Find("ul").ClassList);
+        Assert.DoesNotContain("justify-center", cut.Find("ul").ClassList);
+    }
+
+    [Fact]
+    public void Height_and_width_set_the_drawing_and_its_largest_size()
+    {
+        var cut = Chart(p => p.Add(c => c.Height, 200).Add(c => c.Width, 500));
+
+        Assert.Equal("0 0 500 200", cut.Find("svg").GetAttribute("viewBox"));
+        Assert.Contains("max-width:500px", cut.Find("[data-slot=plot]").GetAttribute("style"));
+    }
+}

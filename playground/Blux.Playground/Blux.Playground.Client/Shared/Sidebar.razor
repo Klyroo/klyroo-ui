@@ -1,45 +1,19 @@
 @using Blux.Playground.Client.Docs
 @inject NavigationManager Navigation
 
-<nav aria-label="Documentation" class="flex flex-col gap-6 text-sm">
-    <div>
-        <p class="mb-2 px-2 font-mono text-[11px] uppercase tracking-[0.14em] text-(--blux-text-muted)">Getting started</p>
-        <ul class="flex flex-col gap-0.5">
-            @foreach (var (href, title) in Catalog.Guides)
-            {
-                <li><a href="@href" class="@LinkClass(href)" aria-current="@Current(href)">@title</a></li>
-            }
-        </ul>
-    </div>
-    @foreach (var group in Catalog.Groups)
-    {
-        <div>
-            <p class="mb-2 px-2 font-mono text-[11px] uppercase tracking-[0.14em] text-(--blux-text-muted)">@group</p>
-            <ul class="flex flex-col gap-0.5">
-                @foreach (var doc in Catalog.Components.Where(c => c.Group == group))
-                {
-                    var href = $"/components/{doc.Slug}";
-                    <li><a href="@href" class="@LinkClass(href)" aria-current="@Current(href)">@doc.Name</a></li>
-                }
-            </ul>
-        </div>
-    }
-</nav>
+@* The documentation sidebar is a ContentNavigation: groups collapse in the browser, the current page is marked by address. *@
+<BxContentNavigation Items="_items" AriaLabel="Documentation" Ui="_ui" data-testid="docs-sidebar" />
 
 @code {
-    private string Path
+    private static readonly ContentNavigationUi _ui = new() { List = "gap-6" };
+
+    private IReadOnlyList<BxContentNavigationItem> _items = [];
+
+    protected override void OnInitialized()
     {
-        get
-        {
-            var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
-            var mode = PlaygroundServices.ModeFromPath(path);
-            return mode is null ? path : path[(mode.Length + 1)..];
-        }
+        // /server/components/button and the like: links keep the render mode of the page.
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        var mode = PlaygroundServices.ModeFromPath(path);
+        _items = DocsNavigation.Sidebar(mode is null ? "" : "/" + mode);
     }
-
-    private string? Current(string href) => Path == href ? "page" : null;
-
-    private string LinkClass(string href) => Path == href
-        ? "relative block rounded-md bg-(--blux-bg-muted) px-2 py-1.5 font-medium text-(--blux-text-highlighted) before:absolute before:inset-y-1.5 before:-start-px before:w-0.5 before:bg-(--blux-primary)"
-        : "block rounded-md px-2 py-1.5 text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text-highlighted)";
 }

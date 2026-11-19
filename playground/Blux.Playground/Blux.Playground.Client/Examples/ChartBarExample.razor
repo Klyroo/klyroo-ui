@@ -1,0 +1,30 @@
+@* Series differ by fill pattern as well as by color. The data table of the first chart is shown behind a disclosure. *@
+<div class="grid w-full gap-8 md:grid-cols-2">
+    <div>
+        <p class="mb-2 text-sm font-medium text-(--blux-text-highlighted)">Grouped</p>
+        <BxChart TItem="Sale" Data="_data" Index="@(s => s.Quarter)" Categories="_categories" Type="BxChartType.Bar"
+                 Format="Money" Table="BxChartTable.Toggle" Width="420" Height="260" data-testid="chart-bar" />
+    </div>
+    <div>
+        <p class="mb-2 text-sm font-medium text-(--blux-text-highlighted)">Stacked and horizontal</p>
+        <BxChart TItem="Sale" Data="_data" Index="@(s => s.Quarter)" Categories="_categories" Type="BxChartType.Bar"
+                 Stacked Horizontal Format="Money" Width="420" Height="260" data-testid="chart-bar-horizontal" />
+    </div>
+</div>
+
+@code {
+    private static string Money(double value) => "$" + value.ToString("N0");
+
+    private sealed record Sale(string Quarter, double Online, double Store);
+
+    private static readonly Sale[] _data =
+    [
+        new("Q1", 4200, 3100), new("Q2", 5100, 2800), new("Q3", 4700, 3600), new("Q4", 6900, 4100),
+    ];
+
+    private static readonly BxChartCategory<Sale>[] _categories =
+    [
+        new("online", s => s.Online) { Label = "Online" },
+        new("store", s => s.Store) { Label = "Store", Color = BxColor.Info },
+    ];
+}

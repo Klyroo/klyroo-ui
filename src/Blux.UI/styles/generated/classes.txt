@@ -6,6 +6,7 @@
 -m-1
 -mb-px
 -me-1
+-ms-px
 -mt-0.5
 -mx-1
 -mx-[3px]
@@ -170,12 +171,15 @@ animate-[bx-progress-swing_2s_ease-in-out_infinite]
 animate-pulse
 animate-spin
 appearance-none
+aria-[current=page]:bg-(--blux-bg-muted)
 aria-[current=page]:bg-(--bx-color)
 aria-[current=page]:bg-(--bx-color)/10
 aria-[current=page]:font-medium
 aria-[current=page]:hover:bg-(--bx-color)
+aria-[current=page]:shadow-[inset_2px_0_0_var(--bx-color)]
 aria-[current=page]:text-(--blux-primary-text)
 aria-[current=page]:text-(--blux-text)
+aria-[current=page]:text-(--blux-text-highlighted)
 aria-[current=page]:text-(--bx-color-contrast)
 aria-[current=page]:text-(--bx-color-text)
 aria-current:bg-(--bx-color)
@@ -232,6 +236,7 @@ bg-(--blux-text)
 bg-(--bx-color)
 bg-(--bx-color)/10
 bg-(--bx-color-contrast)
+bg-(--bx-color-text)
 bg-(--bx-swatch,transparent)
 bg-[radial-gradient(40rem_circle_at_50%_0%,color-mix(in_oklab,var(--bx-color)_16%,transparent),transparent_60%)]
 bg-transparent
@@ -252,6 +257,7 @@ border-dotted
 border-e
 border-s
 border-s-(length:--bx-sep)
+border-s-2
 border-separate
 border-solid
 border-spacing-0.5
@@ -292,6 +298,9 @@ data-[disabled=true]:opacity-60
 data-[dragging=true]:bg-(--bx-color)
 data-[fill=full]:w-full
 data-[fill=half]:w-1/2
+data-[level=3]:ps-6
+data-[level=4]:ps-9
+data-[level=5]:ps-12
 data-[selected=true]:bg-(--bx-color)/10
 data-[selected=true]:text-(--bx-color-text)
 data-[state=active]:bg-(--bx-color)
@@ -308,6 +317,13 @@ data-[state=completed]:bg-(--bx-color)
 data-[state=completed]:border-transparent
 data-[state=completed]:text-(--blux-text)
 data-[state=completed]:text-(--bx-color-contrast)
+data-[state=open]:block
+data-[state=open]:opacity-100
+data-[state=open]:visible
+data-active:border-(--bx-color-text)
+data-active:font-medium
+data-active:opacity-70
+data-active:text-(--bx-color-text)
 data-disabled:cursor-not-allowed
 data-disabled:opacity-60
 data-dragging:bg-(--blux-bg-elevated)
@@ -349,7 +365,11 @@ end-4
 end-[calc(100%-var(--bx-hi))]
 end-auto
 field-sizing-content
+fill-(--blux-bg)
+fill-(--blux-text-muted)
 fill-(--bx-color)
+fill-(--bx-color-text)
+fill-none
 fill-transparent
 fixed
 flex
@@ -357,6 +377,7 @@ flex-1
 flex-col
 flex-col-reverse
 flex-row
+flex-row-reverse
 flex-wrap
 focus-visible:-outline-offset-2
 focus-visible:[&::-moz-range-thumb]:outline-(--bx-color-text)
@@ -406,6 +427,7 @@ gap-x-2
 gap-x-3
 gap-x-4
 gap-y-1
+gap-y-1.5
 gap-y-3
 gap-y-6
 grid
@@ -432,6 +454,8 @@ group-data-[state=collapsed]/sidebar:px-2
 group-data-[state=collapsed]/sidebar:rotate-180
 group-data-[state=collapsed]/sidebar:sr-only
 group-data-[state=open]/item:rotate-180
+group-data-active/col:fill-(--blux-text)/5
+group-data-active/col:opacity-100
 group-data-disabled:cursor-not-allowed
 group-data-disabled:opacity-60
 group-data-paused/carousel:block
@@ -439,11 +463,15 @@ group-data-paused/carousel:hidden
 group-has-disabled:cursor-not-allowed
 group-has-disabled:opacity-60
 group-hover/card:opacity-100
+group-hover/link:-translate-x-0.5
+group-hover/link:translate-x-0.5
 group-hover:text-(--blux-primary-text)
 group/card
 group/carousel
 group/cmd
+group/col
 group/item
+group/link
 group/radio
 group/row
 group/sidebar
@@ -470,6 +498,7 @@ h-[18px]
 h-[22px]
 h-[calc(100dvh_-_1rem)]
 h-[var(--bx-header-height,4rem)]
+h-auto
 h-dvh
 h-full
 h-px
@@ -501,6 +530,7 @@ hidden
 hover:bg-(--blux-bg-accented)
 hover:bg-(--blux-bg-elevated)
 hover:bg-(--blux-bg-elevated)/70
+hover:bg-(--blux-bg-muted)
 hover:bg-(--blux-border-accented)
 hover:bg-(--bx-color)
 hover:bg-(--bx-color)/10
@@ -508,6 +538,7 @@ hover:bg-(--bx-color)/15
 hover:bg-(--bx-color)/20
 hover:bg-(--bx-color)/90
 hover:bg-(--bx-color-contrast)/10
+hover:border-(--blux-border-accented)
 hover:opacity-100
 hover:ring-(--bx-color)/50
 hover:text-(--blux-text)
@@ -527,6 +558,7 @@ invisible
 isolate
 items-baseline
 items-center
+items-end
 items-start
 items-stretch
 justify-around
@@ -540,6 +572,7 @@ last:pb-0
 leading-[0.95]
 leading-none
 leading-tight
+left-0
 left-1/2
 lg:block
 lg:col-span-10
@@ -583,6 +616,7 @@ lg:text-7xl
 lg:w-1/3
 lg:w-48
 lg:z-10
+line-clamp-2
 line-through
 list-disc
 list-none
@@ -648,6 +682,8 @@ md:top-[var(--bx-sticky-offset,0px)]
 md:w-1/3
 md:w-2/5
 md:z-10
+min-[96rem]:block
+min-[96rem]:hidden
 min-h-0
 min-h-4
 min-h-6
@@ -673,6 +709,7 @@ motion-reduce:opacity-60
 motion-reduce:scroll-auto
 motion-reduce:transition-none
 motion-reduce:w-full
+motion-safe:transition-opacity
 ms-3
 ms-auto
 mt-0.5
@@ -695,6 +732,7 @@ not-last:border-e
 object-contain
 object-cover
 opacity-0
+opacity-100
 opacity-60
 opacity-80
 open:flex
@@ -727,6 +765,7 @@ pb-3.5
 pb-4
 pb-6
 pe-1
+pe-1.5
 pe-10
 pe-11
 pe-2
@@ -801,6 +840,7 @@ ring-inset
 rotate-90
 rounded
 rounded-(--blux-radius)
+rounded-[2px]
 rounded-[calc(var(--blux-radius)*2)]
 rounded-[calc(var(--blux-radius)*3)]
 rounded-[calc(var(--blux-radius)_+_2px)]
@@ -808,11 +848,14 @@ rounded-[calc(var(--blux-radius)_-_2px)]
 rounded-b-[calc(var(--blux-radius)*2)]
 rounded-e-(--blux-radius)
 rounded-full
+rounded-md
 rounded-sm
 rounded-t-[calc(var(--blux-radius)*2)]
 rtl:-scale-x-100
 rtl:-translate-x-1/2
 rtl:group-data-[expanded=true]/row:-rotate-90
+rtl:group-hover/link:-translate-x-0.5
+rtl:group-hover/link:translate-x-0.5
 rtl:peer-checked:-translate-x-3
 rtl:peer-checked:-translate-x-3.5
 rtl:peer-checked:-translate-x-4
@@ -851,6 +894,7 @@ size-8
 size-9
 size-[18px]
 size-full
+sm:col-start-2
 sm:columns-2
 sm:gap-16
 sm:gap-y-24
@@ -885,8 +929,13 @@ starting:open:translate-x-full
 starting:open:translate-y-full
 starting:translate-y-2
 sticky
+stroke-(--blux-bg)
+stroke-(--blux-border)
+stroke-(--blux-border-accented)
 stroke-(--blux-text-dimmed)
 stroke-(--bx-color-text)
+stroke-1
+stroke-2
 tabular-nums
 text-(--blux-bg)
 text-(--blux-error-text)
@@ -928,6 +977,7 @@ top-[var(--blux-header-height,0px)]
 top-auto
 touch-none
 tracking-[-0.045em]
+tracking-[0.14em]
 tracking-tight
 tracking-wider
 transition
@@ -968,10 +1018,12 @@ w-fit
 w-full
 w-px
 whitespace-nowrap
+xl:block
 xl:col-span-2
 xl:gap-8
 xl:grid
 xl:grid-cols-3
+xl:hidden
 xl:mb-0
 xl:mt-0
 z-10

@@ -1,0 +1,543 @@
+@namespace Blux.UI
+@typeparam TItem
+@using System.Globalization
+@using Blux.UI.Internal
+@using Microsoft.AspNetCore.Components.Rendering
+@inherits BxComponentBase
+
+@*
+    A chart drawn as SVG by the server, in C#: no charting library and no round trip. The plot is an image with a
+    generated description, the same numbers are in a data table, and series differ by dash, marker and fill pattern as
+    well as by color. The tooltip and the arrow-key exploration are a custom element (js/chart.js) that reads the
+    hidden "tips" and highlights the hit area under the pointer: nothing leaves the browser.
+*@
+<bx-chart class="@_slots["root"]" data-type="@_kind" @attributes="AdditionalAttributes">
+    <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
+         role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
+         aria-label="@(_interactive ? Options.Strings.ChartHint : null)">
+        <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="img" aria-label="@_label"
+             aria-describedby="@(AriaDescription is null ? null : _id + "-description")" class="@_slots["svg"]">
+            @if (Type != BxChartType.Line && _series.Count > 0)
+            {
+                <defs>
+                    @for (var k = 0; k < PatternCount; k++)
+                    {
+                        @Pattern(k)
+                    }
+                </defs>
+            }
+            @if (Type != BxChartType.Donut)
+            {
+                @if (Grid)
+                {
+                    @foreach (var line in _layout.GridLines)
+                    {
+                        <line x1="@Num(line.X1)" y1="@Num(line.Y1)" x2="@Num(line.X2)" y2="@Num(line.Y2)" stroke-width="1"
+                              class="@(line.Zero ? _slots["axisLine"] : _slots["grid"])" />
+                    }
+                }
+                @if (XAxis)
+                {
+                    @if (_layout.Horizontal)
+                    {
+                        <line x1="@Num(_layout.Left)" y1="@Num(_layout.Top)" x2="@Num(_layout.Left)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
+                    }
+                    else
+                    {
+                        <line x1="@Num(_layout.Left)" y1="@Num(_layout.Bottom)" x2="@Num(_layout.Right)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
+                    }
+                    @foreach (var label in _layout.IndexLabels)
+                    {
+                        @if (_layout.Horizontal)
+                        {
+                            @SvgText(_slots["tick"], label.Text, _layout.Left - 8, label.Position, "end", "0.32em")
+                        }
+                        else
+                        {
+                            @SvgText(_slots["tick"], label.Text, label.Position, _layout.Bottom + 16, "middle")
+                        }
+                    }
+                }
+                @if (YAxis)
+                {
+                    @foreach (var tick in _layout.ValueTicks)
+                    {
+                        @if (_layout.Horizontal)
+                        {
+                            @SvgText(_slots["tick"], tick.Label, tick.Position, _layout.Bottom + 16, "middle")
+                        }
+                        else
+                        {
+                            @SvgText(_slots["tick"], tick.Label, _layout.Left - 8, tick.Position, "end", "0.32em")
+                        }
+                    }
+                }
+                @if (XLabel is not null)
+                {
+                    @if (_layout.Horizontal)
+                    {
+                        @SvgText(_slots["axisTitle"], XLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
+                    }
+                    else
+                    {
+                        @SvgText(_slots["axisTitle"], XLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
+                    }
+                }
+                @if (YLabel is not null)
+                {
+                    @if (_layout.Horizontal)
+                    {
+                        @SvgText(_slots["axisTitle"], YLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
+                    }
+                    else
+                    {
+                        @SvgText(_slots["axisTitle"], YLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
+                    }
+                }
+
+                @for (var s = 0; s < _series.Count; s++)
+                {
+                    var shape = _layout.Series[s];
+                    var color = _series[s].Color.Value;
+                    var pattern = $"url(#{_id}-p{s})";
+                    <g data-color="@color" data-series="@s">
+                        @if (Type == BxChartType.Area)
+                        {
+                            @foreach (var area in shape.Areas)
+                            {
+                                <path d="@area" fill="@pattern" stroke="none" />
+                            }
+                        }
+                        @if (Type != BxChartType.Bar)
+                        {
+                            @foreach (var line in shape.Lines)
+                            {
+                                <path d="@line" class="@_slots["line"]" stroke-dasharray="@Dash(s)" stroke-linejoin="round" stroke-linecap="round" />
+                            }
+                        }
+                        else
+                        {
+                            @foreach (var bar in shape.Bars)
+                            {
+                                <rect x="@Num(bar.X)" y="@Num(bar.Y)" width="@Num(bar.Width)" height="@Num(bar.Height)" rx="2" fill="@pattern" class="@_slots["bar"]" />
+                            }
+                        }
+                    </g>
+                }
+
+                @foreach (var hit in _layout.Hits)
+                {
+                    var row = hit.Row;
+                    <g data-hit="" data-index="@row" class="@_slots["hit"]">
+                        <rect x="@Num(hit.X)" y="@Num(hit.Y)" width="@Num(hit.Width)" height="@Num(hit.Height)" class="@_slots["hitArea"]" />
+                        @if (Type != BxChartType.Bar)
+                        {
+                            @for (var s = 0; s < _series.Count; s++)
+                            {
+                                if (_points[s].TryGetValue(row, out var point))
+                                {
+                                    <path d="@MarkerPath(s, point.X, point.Y)" data-color="@_series[s].Color.Value" class="@_slots["marker"]" />
+                                }
+                            }
+                        }
+                    </g>
+                }
+            }
+            else
+            {
+                @foreach (var slice in _layout.Slices)
+                {
+                    <path d="@slice.Path" data-hit="" data-index="@slice.Row" data-color="@_series[slice.Row].Color.Value"
+                          fill="url(#@(_id)-p@(slice.Row))" class="@_slots["slice"]" />
+                }
+            }
+        </svg>
+        @if (AriaDescription is not null)
+        {
+            <span id="@(_id + "-description")" class="sr-only">@AriaDescription</span>
+        }
+        @if (Type == BxChartType.Donut && Center is not null)
+        {
+            <div class="@_slots["center"]">@Center</div>
+        }
+        @if (_interactive)
+        {
+            <div class="@_slots["tooltip"]" data-slot="tooltip" aria-hidden="true"></div>
+            <div role="status" class="@_slots["status"]" data-slot="status"></div>
+            <div hidden data-slot="tips">
+                @foreach (var row in _tipRows)
+                {
+                    <div data-tip="@row" data-text="@TipText(row)">
+                        <p class="@_slots["tooltipTitle"]">@_index[row]</p>
+                        @if (Type == BxChartType.Donut)
+                        {
+                            var slice = _layout.Slices.First(s => s.Row == row);
+                            <p class="@_slots["tooltipRow"]" data-color="@_series[row].Color.Value">
+                                <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
+                                <span class="@_slots["tooltipLabel"]">@Categories[0].Name</span>
+                                <span class="@_slots["tooltipValue"]">@FormatValue(slice.Value) (@slice.Fraction.ToString("P0", CultureInfo.CurrentCulture))</span>
+                            </p>
+                        }
+                        else
+                        {
+                            @for (var s = 0; s < _series.Count; s++)
+                            {
+                                if (_values[s][row] is { } value)
+                                {
+                                    <p class="@_slots["tooltipRow"]" data-color="@_series[s].Color.Value">
+                                        <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
+                                        <span class="@_slots["tooltipLabel"]">@_series[s].Name</span>
+                                        <span class="@_slots["tooltipValue"]">@FormatValue(value)</span>
+                                    </p>
+                                }
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    @if (_showLegend)
+    {
+        <ul class="@_slots["legend"]" aria-label="@Options.Strings.ChartLegend">
+            @for (var i = 0; i < LegendCount; i++)
+            {
+                var item = i;
+                <li class="@_slots["legendItem"]" data-color="@_series[item].Color.Value">
+                    <svg viewBox="0 0 20 12" aria-hidden="true" class="@_slots["legendSwatch"]">
+                        @if (Type == BxChartType.Line)
+                        {
+                            <path d="M1 6H19" stroke-width="2" fill="none" stroke-dasharray="@Dash(item)" stroke-linecap="round" />
+                            @if (Points)
+                            {
+                                <path d="@MarkerPath(item, 10, 6)" stroke-width="2" style="fill:var(--blux-bg)" />
+                            }
+                        }
+                        else
+                        {
+                            <rect x="0.5" y="0.5" width="19" height="11" rx="2" stroke-width="1" fill="url(#@(_id)-p@(item))" />
+                        }
+                    </svg>
+                    <span class="@_slots["legendLabel"]">@_series[item].Name</span>
+                    @if (Type == BxChartType.Donut)
+                    {
+                        <span class="@_slots["legendValue"]">@FormatValue(_values[0][item] ?? 0)</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    @if (Table == BxChartTable.Toggle)
+    {
+        <details class="@_slots["details"]">
+            <summary class="@_slots["summary"]">@Options.Strings.ChartTable</summary>
+            <div class="@_slots["tableWrapper"]">@DataTable</div>
+        </details>
+    }
+    else
+    {
+        <div class="@_slots["tableWrapper"]">@DataTable</div>
+    }
+</bx-chart>
+
+@code {
+    private sealed record SeriesInfo(string Name, BxColor Color);
+
+    private static readonly BxColor[] Palette =
+        [BxColor.Primary, BxColor.Secondary, BxColor.Info, BxColor.Error, BxColor.Success, BxColor.Warning, BxColor.Neutral];
+
+    private static readonly string?[] Dashes = [null, "7 4", "2 4", "9 4 2 4", "1 3"];
+
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private ChartLayout _layout = default!;
+    private List<SeriesInfo> _series = [];
+    private List<string> _index = [];
+    private List<double?[]> _values = [];
+    private Dictionary<int, ChartPoint>[] _points = [];
+    private List<int> _tipRows = [];
+    private string _kind = "";
+    private string _label = "";
+    private bool _interactive;
+    private bool _showLegend;
+    private double _naturalWidth;
+
+    /// <summary>The rows to plot: one per x value, or per slice with <see cref="BxChartType.Donut"/>.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<TItem> Data { get; set; } = [];
+
+    /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the current culture.</summary>
+    [Parameter, EditorRequired] public Func<TItem, object?> Index { get; set; } = default!;
+
+    /// <summary>The series, in drawing order. With a donut the first one gives the size of each slice.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxChartCategory<TItem>> Categories { get; set; } = [];
+    [Parameter] public BxChartType Type { get; set; } = BxChartType.Line;
+
+    /// <summary>Draws bars along the x axis, with the index on the y axis. Only applies to <see cref="BxChartType.Bar"/>.</summary>
+    [Parameter] public bool Horizontal { get; set; }
+
+    /// <summary>Stacks the series instead of drawing them side by side or over one another. Only applies to area and bar.</summary>
+    [Parameter] public bool Stacked { get; set; }
+
+    /// <summary>The shape of the line between values. Only applies to line and area.</summary>
+    [Parameter] public BxChartCurve Curve { get; set; } = BxChartCurve.Linear;
+
+    /// <summary>Always shows a marker at each value of a line chart. Without it the marker shows on the value under the pointer or the keyboard.</summary>
+    [Parameter] public bool Points { get; set; }
+
+    /// <summary>Draws the grid lines at the ticks of the value axis.</summary>
+    [Parameter] public bool Grid { get; set; } = true;
+
+    /// <summary>Shows the labels of the index axis (the x axis, or the y axis of horizontal bars).</summary>
+    [Parameter] public bool XAxis { get; set; } = true;
+
+    /// <summary>Shows the ticks and labels of the value axis.</summary>
+    [Parameter] public bool YAxis { get; set; } = true;
+
+    /// <summary>A title along the index axis.</summary>
+    [Parameter] public string? XLabel { get; set; }
+
+    /// <summary>A title along the value axis.</summary>
+    [Parameter] public string? YLabel { get; set; }
+
+    /// <summary>Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut.</summary>
+    [Parameter] public bool? Legend { get; set; }
+
+    /// <summary>Formats the values on the value axis, in the tooltip and in the table. Defaults to the current culture.</summary>
+    [Parameter] public Func<double, string>? Format { get; set; }
+
+    /// <summary>The format string of an index that is formattable (a date, a number).</summary>
+    [Parameter] public string? IndexFormat { get; set; }
+
+    /// <summary>
+    /// Shows the value under the pointer, and under the focus when the chart is focused: the arrow keys move between points.
+    /// It runs in the browser, so it works in static rendering too.
+    /// </summary>
+    [Parameter] public bool Tooltip { get; set; } = true;
+
+    /// <summary>The width of the ring in pixels. Only applies to <see cref="BxChartType.Donut"/>.</summary>
+    [Parameter] public int Thickness { get; set; } = 24;
+
+    /// <summary>The height of the drawing in pixels, at <see cref="Width"/>. The chart scales down with its container.</summary>
+    [Parameter] public int Height { get; set; } = 300;
+
+    /// <summary>The width of the drawing in pixels, and the widest the chart gets.</summary>
+    [Parameter] public int Width { get; set; } = 640;
+
+    /// <summary>The colors of the series in order, in place of the default palette. A color set on a category wins.</summary>
+    [Parameter] public IReadOnlyList<BxColor>? Colors { get; set; }
+
+    /// <summary>The accessible name of the chart. Without it the chart is described by a generated summary of its values.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>A longer description for assistive technology, in addition to the name.</summary>
+    [Parameter] public string? AriaDescription { get; set; }
+
+    /// <summary>Where the table with the chart's data goes. It is always rendered; by default it is visually hidden.</summary>
+    [Parameter] public BxChartTable Table { get; set; } = BxChartTable.Hidden;
+
+    /// <summary>Content over the hole of a donut: a total, a caption.</summary>
+    [Parameter] public RenderFragment? Center { get; set; }
+    [Parameter] public ChartUi? Ui { get; set; }
+
+    private int PatternCount => _series.Count;
+
+    private int LegendCount => _series.Count;
+
+    private static string Num(double value) => ChartLayout.N(value);
+
+    private string FormatValue(double value) =>
+        Format is not null ? Format(value) : (value == 0 ? 0 : value).ToString("#,0.##", CultureInfo.CurrentCulture);
+
+    private string IndexText(object? value) => value switch
+    {
+        null => "",
+        DateTime date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
+        DateTimeOffset date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
+        DateOnly date => date.ToString(IndexFormat ?? "d", CultureInfo.CurrentCulture),
+        IFormattable formattable => formattable.ToString(IndexFormat, CultureInfo.CurrentCulture),
+        _ => value.ToString() ?? "",
+    };
+
+    // Not <text> in the markup: Razor reads that tag as its own text block.
+    private static RenderFragment SvgText(string @class, string text, double x, double y, string anchor, string? dy = null, bool rotated = false) => builder =>
+    {
+        builder.OpenElement(0, "text");
+        builder.AddAttribute(1, "x", Num(x));
+        builder.AddAttribute(2, "y", Num(y));
+        builder.AddAttribute(3, "dy", dy);
+        builder.AddAttribute(4, "text-anchor", anchor);
+        builder.AddAttribute(5, "transform", rotated ? $"rotate(-90 {Num(x)} {Num(y)})" : null);
+        builder.AddAttribute(6, "class", @class);
+        builder.AddContent(7, text);
+        builder.CloseElement();
+    };
+
+    private static string? Dash(int series) => Dashes[series % Dashes.Length];
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("chart");
+        var strings = Options.Strings;
+        var donut = Type == BxChartType.Donut;
+
+        _index = Data.Select(item => IndexText(Index(item))).ToList();
+        // A donut colors the slices, so it has one "series" per row; the others one per category.
+        var categories = donut ? Categories.Take(1).ToList() : Categories.ToList();
+        _values = categories.Select(c => Data.Select(item => Sanitize(c.Value(item))).ToArray()).ToList();
+        // A donut without a category has slices of no size, not a missing column.
+        if (donut && _values.Count == 0) _values.Add(new double?[Data.Count]);
+        _series = [];
+        if (donut)
+        {
+            for (var i = 0; i < Data.Count; i++)
+            {
+                _series.Add(new SeriesInfo(_index[i], ColorOf(i, null)));
+            }
+        }
+        else
+        {
+            for (var i = 0; i < categories.Count; i++)
+            {
+                _series.Add(new SeriesInfo(categories[i].Name, ColorOf(i, categories[i].Color)));
+            }
+        }
+
+        _layout = ChartLayout.Build(
+            Type, Horizontal, Stacked, Curve, _index, _values.Select(v => (IReadOnlyList<double?>)v).ToList(),
+            donut ? Height : Width, Height, XAxis, YAxis, XLabel is not null, YLabel is not null, Thickness, FormatValue);
+        _naturalWidth = _layout.Width;
+        _points = _layout.Series.Select(shape => shape.Points.ToDictionary(p => p.Row)).ToArray();
+
+        _kind = Type switch
+        {
+            BxChartType.Line => strings.ChartLine,
+            BxChartType.Area => strings.ChartArea,
+            BxChartType.Bar => Horizontal ? strings.ChartBarHorizontal : strings.ChartBar,
+            _ => strings.ChartDonut,
+        };
+        _label = AriaLabel ?? Summary();
+        _tipRows = donut ? _layout.Slices.Select(s => s.Row).ToList() : _layout.Hits.Select(h => h.Row).ToList();
+        _interactive = Tooltip && _tipRows.Count > 0;
+        _showLegend = Legend ?? (donut ? Data.Count > 1 : categories.Count > 1);
+
+        _slots = ResolveSlots(Options.Chart, new Dictionary<string, string?>
+        {
+            ["table"] = Table switch { BxChartTable.Visible => "visible", BxChartTable.Toggle => "toggle", _ => "hidden" },
+            ["points"] = VariantValue.Of(Points),
+        }, Ui, "root");
+    }
+
+    private static double? Sanitize(double? value) => value is { } v && double.IsFinite(v) ? v : null;
+
+    private BxColor ColorOf(int position, BxColor? own) =>
+        own ?? (Colors is { Count: > 0 } ? Colors[position % Colors.Count] : Palette[position % Palette.Length]);
+
+    /// <summary>The description of the chart: its kind, extent and the range of each series, or the slices of a donut.</summary>
+    private string Summary()
+    {
+        var strings = Options.Strings;
+        if (Data.Count == 0 || Categories.Count == 0)
+        {
+            return $"{_kind}. {strings.NoData}.";
+        }
+        if (Type == BxChartType.Donut)
+        {
+            var total = _layout.Slices.Sum(s => s.Value);
+            var slices = _layout.Slices.Select(s => string.Format(CultureInfo.CurrentCulture, strings.ChartSlice, _index[s.Row], FormatValue(s.Value), s.Fraction.ToString("P0", CultureInfo.CurrentCulture)));
+            return string.Format(CultureInfo.CurrentCulture, strings.ChartSummaryDonut, _kind, string.Join(", ", slices));
+        }
+        var ranges = _values.Select((v, s) =>
+        {
+            var present = v.Where(x => x is not null).Select(x => x!.Value).ToList();
+            return present.Count == 0
+                ? _series[s].Name
+                : string.Format(CultureInfo.CurrentCulture, strings.ChartRange, _series[s].Name, FormatValue(present.Min()), FormatValue(present.Max()));
+        });
+        return string.Format(CultureInfo.CurrentCulture, strings.ChartSummary, _kind, _index.Count, _index[0], _index[^1], string.Join(", ", ranges));
+    }
+
+    /// <summary>What a screen reader hears when the keyboard reaches a row: the same text as the tooltip.</summary>
+    private string TipText(int row)
+    {
+        if (Type == BxChartType.Donut)
+        {
+            var slice = _layout.Slices.First(s => s.Row == row);
+            return $"{_index[row]}: {FormatValue(slice.Value)} ({slice.Fraction.ToString("P0", CultureInfo.CurrentCulture)})";
+        }
+        var parts = _series.Select((s, i) => (s.Name, Value: _values[i][row])).Where(p => p.Value is not null).Select(p => $"{p.Name} {FormatValue(p.Value!.Value)}");
+        return $"{_index[row]}: {string.Join(", ", parts)}";
+    }
+
+    // Distinguishes series without color: the marker shape cycles circle, square, triangle, diamond.
+    private static string MarkerPath(int series, double x, double y)
+    {
+        const double r = 4;
+        return (series % 4) switch
+        {
+            0 => $"M{Num(x - r)} {Num(y)}a{Num(r)} {Num(r)} 0 1 0 {Num(2 * r)} 0a{Num(r)} {Num(r)} 0 1 0 {Num(-2 * r)} 0Z",
+            1 => $"M{Num(x - r)} {Num(y - r)}h{Num(2 * r)}v{Num(2 * r)}h{Num(-2 * r)}Z",
+            2 => $"M{Num(x)} {Num(y - r - 1)}L{Num(x + r + 1)} {Num(y + r)}L{Num(x - r - 1)} {Num(y + r)}Z",
+            _ => $"M{Num(x)} {Num(y - r - 1)}L{Num(x + r + 1)} {Num(y)}L{Num(x)} {Num(y + r + 1)}L{Num(x - r - 1)} {Num(y)}Z",
+        };
+    }
+
+    // Fills that differ without color: plain, diagonal hatch, dots, the other diagonal. Areas stay light so lines read over them.
+    private RenderFragment Pattern(int k) =>
+        @<pattern id="@($"{_id}-p{k}")" data-color="@_series[k].Color.Value" patternUnits="userSpaceOnUse" width="8" height="8">
+            <rect width="8" height="8" class="@_slots["patternBase"]" opacity="@(k % 4 == 0 && Type != BxChartType.Area ? "1" : "0.2")" />
+            @switch (k % 4)
+            {
+                case 1:
+                    <path d="M-2 2l4 -4M0 8l8 -8M6 10l4 -4" stroke-width="1.5" class="@_slots["patternMark"]" />
+                    break;
+                case 2:
+                    <circle cx="4" cy="4" r="1.3" stroke="none" class="@_slots["patternMark"]" />
+                    break;
+                case 3:
+                    <path d="M-2 6l4 4M0 0l8 8M6 -2l4 4" stroke-width="1.5" class="@_slots["patternMark"]" />
+                    break;
+            }
+        </pattern>;
+
+    private RenderFragment DataTable =>
+        @<table class="@_slots["table"]">
+            <caption class="@_slots["caption"]">@(AriaLabel ?? _kind)</caption>
+            <thead>
+                <tr class="@_slots["tr"]">
+                    <th scope="col" class="@_slots["th"]">@(XLabel ?? Options.Strings.ChartIndex)</th>
+                    @if (Type == BxChartType.Donut)
+                    {
+                        <th scope="col" class="@_slots["th"]">@(Categories.Count > 0 ? Categories[0].Name : "")</th>
+                    }
+                    else
+                    {
+                        @foreach (var series in _series)
+                        {
+                            <th scope="col" class="@_slots["th"]">@series.Name</th>
+                        }
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (var row = 0; row < _index.Count; row++)
+                {
+                    var r = row;
+                    <tr class="@_slots["tr"]">
+                        <th scope="row" class="@_slots["th"]">@_index[r]</th>
+                        @if (Type == BxChartType.Donut)
+                        {
+                            <td class="@_slots["td"]">@(_values.Count > 0 && _values[0][r] is { } v ? FormatValue(v) : "")</td>
+                        }
+                        else
+                        {
+                            @for (var s = 0; s < _series.Count; s++)
+                            {
+                                var column = s;
+                                <td class="@_slots["td"]">@(_values[column][r] is { } v ? FormatValue(v) : "")</td>
+                            }
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>;
+}

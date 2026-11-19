@@ -1,0 +1,10 @@
+@* Plain links with rel="prev" and rel="next". Without a previous page the next one stays in the second column. *@
+<div class="grid w-full gap-6">
+    <BxContentSurround Previous="_previous" Next="_next" AriaLabel="Example pages" data-testid="content-surround-example" />
+    <BxContentSurround Next="_next" AriaLabel="First page" />
+</div>
+
+@code {
+    private static readonly BxContentSurroundLink _previous = new("Installation", "/docs/installation") { Description = "Add the package and register the services." };
+    private static readonly BxContentSurroundLink _next = new("Theming", "/docs/theming") { Description = "Colors, radius and fonts, in CSS and in C#." };
+}
