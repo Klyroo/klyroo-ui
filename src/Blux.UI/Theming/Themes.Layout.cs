@@ -63,8 +63,8 @@ internal static partial class Themes
     public static ComponentTheme Sidebar() =>
         new ComponentTheme("sidebar", "root", "host", "header", "headerContent", "toggle", "toggleIcon", "content", "footer", "handle", "mobile", "mobileBody")
             .Slot("root", "group/sidebar relative hidden w-(--bx-sidebar-width) shrink-0 flex-col border-e border-(--blux-border) bg-(--blux-bg) text-(--blux-text) " +
-                          "transition-[width] duration-200 motion-reduce:transition-none lg:flex " +
-                          "data-[state=collapsed]:w-16 data-dragging:transition-none")
+                          "data-ready:transition-[width] data-ready:duration-200 data-ready:motion-reduce:transition-none lg:flex " +
+                          "data-[state=collapsed]:w-16 data-ready:data-dragging:transition-none")
             .Slot("host", "contents")
             .Slot("header", "flex h-16 shrink-0 items-center gap-2 border-b border-(--blux-border) px-4 " +
                             "group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-2")

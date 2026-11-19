@@ -22,6 +22,9 @@ public sealed partial class BluxStrings
     /// <summary>Label of the submit button of an auth form that has none.</summary>
     public string AuthFormSubmit { get; set; } = "Continue";
 
+    /// <summary>Text between the providers and the fields of an auth form, unless <c>Separator</c> is set.</summary>
+    public string AuthFormSeparator { get; set; } = "or";
+
     /// <summary>Error of an empty required field of an auth form; <c>{0}</c> is the field label.</summary>
     public string AuthFormRequired { get; set; } = "{0} is required.";
     public string AuthFormInvalidEmail { get; set; } = "Enter a valid email address.";

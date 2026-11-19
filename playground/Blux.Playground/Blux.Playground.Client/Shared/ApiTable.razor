@@ -1,7 +1,8 @@
 @using System.Diagnostics.CodeAnalysis
 @using Blux.Playground.Client.Docs
 
-<div class="overflow-x-auto rounded-xl border border-(--blux-border)">
+@* Scrolls sideways on a phone: a keyboard user needs to focus it to scroll. *@
+<div role="region" aria-label="Parameters of @Name" tabindex="0" class="overflow-x-auto rounded-xl border border-(--blux-border) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)">
     <table class="min-w-full text-sm">
         <caption class="sr-only">Parameters of @Name</caption>
         <thead class="bg-(--blux-bg-muted) text-start">

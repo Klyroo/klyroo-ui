@@ -51,7 +51,11 @@
     /// <summary>Shows the media before the text in a horizontal hero.</summary>
     [Parameter] public bool Reverse { get; set; }
 
-    /// <summary>Level of the title heading, 1 to 6: the main heading of the page by default.</summary>
+    /// <summary>
+    /// Level of the title heading, 1 to 6: 1 by default, the main heading of the page. A page has one h1: when a
+    /// <see cref="BxPageHeader"/> and a <see cref="BxPageHero"/> share a page, or either sits under another h1, set
+    /// this to 2 on the secondary one.
+    /// </summary>
     [Parameter] public int HeadingLevel { get; set; } = 1;
     [Parameter] public PageHeroUi? Ui { get; set; }
 

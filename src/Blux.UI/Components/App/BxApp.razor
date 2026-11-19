@@ -5,6 +5,9 @@
     The root wrapper of an app, placed once in the layout around @Body. It renders the toaster (so IToastService
     works), sets the language and text direction of the tree, and cascades global class overrides to every component
     through a BxTheme. Replace a hand-placed <BxToaster /> with it, never keep both.
+    The overrides are cascading values: they do not cross a render mode boundary. Where a page or a component sets its
+    own @rendermode (per-page interactivity), the components inside it do not see them: place a BxApp or BxTheme inside
+    that island too, or use AddBluxUi for overrides that must apply everywhere.
 *@
 <BxTheme Overrides="Overrides">
     <div class="@_slots["root"]" lang="@Lang" dir="@Dir" @attributes="AdditionalAttributes">

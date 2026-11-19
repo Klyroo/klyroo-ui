@@ -14,7 +14,7 @@
                 <div class="@_slots["meta"]">
                     @if (Date is { } date)
                     {
-                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat)</time>
+                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture)</time>
                     }
                     @if (Badge is not null)
                     {
@@ -27,7 +27,7 @@
                 <Heading Level="HeadingLevel" Class="@_slots["title"]">
                     @if (Href is not null)
                     {
-                        <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title</a>
+                        <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target == "_blank") {<span class="sr-only"> @Options.Strings.OpensInNewTab</span>}</a>
                     }
                     else
                     {
@@ -80,11 +80,17 @@
     [Parameter] public int HeadingLevel { get; set; } = 3;
     [Parameter] public string? Description { get; set; }
 
-    /// <summary>Release date, shown in the current culture in a <c>time</c> element.</summary>
+    /// <summary>Release date, shown in the current culture, or in <see cref="Culture"/> in a <c>time</c> element.</summary>
     [Parameter] public DateTimeOffset? Date { get; set; }
 
     /// <inheritdoc cref="BxBlogPost.DateFormat"/>
     [Parameter] public string? DateFormat { get; set; }
+
+    /// <summary>
+    /// The culture of the date. By default the current culture, which can differ between the prerender and a
+    /// WebAssembly render: set it (for example from the request) when both must show the same text.
+    /// </summary>
+    [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
     [Parameter] public string? Badge { get; set; }
     [Parameter] public BxColor BadgeColor { get; set; } = BxColor.Primary;
     [Parameter] public string? Image { get; set; }

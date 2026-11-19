@@ -75,7 +75,8 @@
         var (title, message) = _code switch
         {
             404 => (strings.ErrorNotFound, strings.ErrorNotFoundMessage),
-            401 or 403 => (strings.ErrorForbidden, strings.ErrorForbiddenMessage),
+            401 => (strings.ErrorUnauthorized, strings.ErrorUnauthorizedMessage),
+            403 => (strings.ErrorForbidden, strings.ErrorForbiddenMessage),
             _ => (strings.ErrorServer, strings.ErrorServerMessage),
         };
         _title = StatusMessage ?? title;

@@ -40,8 +40,31 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(card.GetByRole(AriaRole.Link)).ToHaveAccessibleNameAsync("Documentation");
 
         // The description is not the link: the stretched title box has to catch the click.
-        await card.GetByText("Install the package").ClickAsync();
+        // Forced: Playwright refuses to click an element that something else covers, which is what the stretched link does.
+        await card.GetByText("Install the package").ClickAsync(new() { Force = true });
 
+        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Page_card_link_covers_the_header_and_the_footer_but_not_their_buttons(string mode)
+    {
+        await Open(mode, "page-card");
+        var card = Page.GetByTestId("card-whole");
+        var share = card.GetByRole(AriaRole.Button, new() { Name = "Share" });
+
+        // The footer button is above the stretched link: a plain click reaches it and the page stays.
+        await share.ClickAsync();
+        await Page.WaitForTimeoutAsync(300);
+        Assert.EndsWith("/components/page-card", new Uri(Page.Url).AbsolutePath);
+
+        await card.GetByTestId("card-footer-text").ClickAsync(new() { Force = true });
+        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        await Page.GoBackAsync();
+        await Assertions.Expect(card).ToBeVisibleAsync();
+
+        await card.GetByTestId("card-header").ClickAsync(new() { Force = true });
         await Page.WaitForURLAsync(new Regex("/docs/installation$"));
     }
 
@@ -63,7 +86,7 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open(mode, "page-feature");
 
-        await Page.GetByTestId("feature-link").GetByText("The whole feature is one link.").ClickAsync();
+        await Page.GetByTestId("feature-link").GetByText("The whole feature is one link.").ClickAsync(new() { Force = true });
 
         await Page.WaitForURLAsync(new Regex("/docs/installation$"));
     }
