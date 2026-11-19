@@ -1,0 +1,16 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@* A timeline of versions: the line and dots come from each BxChangelogVersion. *@
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The <see cref="BxChangelogVersion"/> entries, newest first.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public ChangelogVersionsUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ChangelogVersions, new Dictionary<string, string?>(), Ui, "root");
+}

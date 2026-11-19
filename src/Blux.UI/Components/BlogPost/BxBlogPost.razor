@@ -1,0 +1,119 @@
+@namespace Blux.UI
+@using Blux.UI.Internal
+@inherits BxComponentBase
+
+@* One link per card: the title's link is stretched over the card, so nothing interactive is nested in it. *@
+<article data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Header is not null || Image is not null)
+    {
+        <div class="@_slots["header"]" data-slot="header">
+            @if (Header is not null)
+            {
+                @Header
+            }
+            else
+            {
+                <img src="@Image" alt="@(ImageAlt ?? "")" loading="lazy" class="@_slots["image"]" />
+            }
+        </div>
+    }
+    <div class="@_slots["body"]" data-slot="body">
+        @if (Date is not null || Badge is not null)
+        {
+            <div class="@_slots["meta"]">
+                @if (Date is { } date)
+                {
+                    <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat)</time>
+                }
+                @if (Badge is not null)
+                {
+                    <BxBadge Label="@Badge" Color="@BadgeColor" Variant="BxVariant.Subtle" Size="BxSize.Sm" Class="@_slots["badge"]" />
+                }
+            </div>
+        }
+        @if (Title is not null)
+        {
+            <Heading Level="HeadingLevel" Class="@_slots["title"]">
+                @if (Href is not null)
+                {
+                    <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title</a>
+                }
+                else
+                {
+                    @Title
+                }
+            </Heading>
+        }
+        @if (Description is not null)
+        {
+            <p class="@_slots["description"]" data-slot="description">@Description</p>
+        }
+        @ChildContent
+        @if (Authors.Count > 0)
+        {
+            <div class="@_slots["authors"]" data-slot="authors">
+                @if (Authors.Count == 1)
+                {
+                    var author = Authors[0];
+                    <BxUser Name="@author.Name" Description="@author.Description" AvatarSrc="@author.AvatarSrc" Href="@(Href is null ? author.Href : null)" />
+                }
+                else
+                {
+                    <BxAvatarGroup Items="@(Authors.Select(a => new BxAvatarItem(a.AvatarSrc, a.Name)).ToList())" AriaLabel="@string.Join(", ", Authors.Select(a => a.Name))" />
+                }
+            </div>
+        }
+        @if (Footer is not null)
+        {
+            <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+        }
+    </div>
+</article>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Level of the title heading: 3 by default, for a list of posts under a level 2 heading.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Publication date, shown in the current culture (see <see cref="DateFormat"/>) in a <c>time</c> element.</summary>
+    [Parameter] public DateTimeOffset? Date { get; set; }
+
+    /// <summary>A .NET date format. Without one, the long date of the current culture without the day name.</summary>
+    [Parameter] public string? DateFormat { get; set; }
+    [Parameter] public string? Badge { get; set; }
+    [Parameter] public BxColor BadgeColor { get; set; } = BxColor.Primary;
+
+    /// <summary>Cover image. Decorative unless <see cref="ImageAlt"/> says what it shows.</summary>
+    [Parameter] public string? Image { get; set; }
+    [Parameter] public string? ImageAlt { get; set; }
+
+    /// <summary>Replaces the cover image.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>One author shows a <see cref="BxUser"/>, several show a <see cref="BxAvatarGroup"/> named after them.</summary>
+    [Parameter] public IReadOnlyList<BxPostAuthor> Authors { get; set; } = [];
+
+    /// <summary>Makes the whole card a link to this address, through the title.</summary>
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Target { get; set; }
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Vertical;
+    [Parameter] public BlogPostVariant Variant { get; set; } = BlogPostVariant.Outline;
+    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+
+    /// <summary>Extra content between the description and the authors.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public BlogPostUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.BlogPost, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["orientation"] = Orientation == BxOrientation.Horizontal ? "horizontal" : "vertical",
+            ["link"] = VariantValue.Of(Href is not null),
+        }, Ui, "root");
+}

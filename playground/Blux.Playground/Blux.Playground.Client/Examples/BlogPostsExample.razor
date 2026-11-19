@@ -1,0 +1,28 @@
+<div class="w-full">
+    <BxBlogPosts>
+        @foreach (var post in Posts)
+        {
+            <BxBlogPost Title="@post.Title" Description="@post.Description" Date="post.Date" Badge="@post.Badge" Href="@post.Href"
+                        Image="@Cover(post.From, post.To)" Authors="post.Authors" />
+        }
+    </BxBlogPosts>
+</div>
+
+@code {
+    private sealed record Post(string Title, string Description, DateTimeOffset Date, string Badge, string Href, string From, string To, BxPostAuthor[] Authors);
+
+    private static readonly Post[] Posts =
+    [
+        new("Rendering the same component in four modes", "How Blux keeps one markup for server, WebAssembly, auto and static rendering.",
+            new(2026, 11, 12, 0, 0, 0, TimeSpan.Zero), "Engineering", "/docs/render-modes", "#ffd23f", "#1f6f7a", [new("Ada Lovelace")]),
+        new("A theme in 40 lines of CSS", "Rebrand every component by overriding a handful of tokens.",
+            new(2026, 10, 28, 0, 0, 0, TimeSpan.Zero), "Design", "/docs/theming", "#1f6f7a", "#0b0c0d", [new("Grace Hopper"), new("Alan Turing")]),
+        new("Accessible by default", "Each pattern follows the WAI-ARIA Authoring Practices and is checked with axe.",
+            new(2026, 10, 9, 0, 0, 0, TimeSpan.Zero), "Accessibility", "/docs", "#c0392b", "#ffd23f", [new("Margaret Hamilton") { Description = "Staff engineer" }]),
+    ];
+
+    // A gradient drawn on the fly, so the example needs no image files.
+    private static string Cover(string from, string to) =>
+        "data:image/svg+xml," + Uri.EscapeDataString(
+            $"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 9'><defs><linearGradient id='g'><stop offset='0' stop-color='{from}'/><stop offset='1' stop-color='{to}'/></linearGradient></defs><rect width='16' height='9' fill='url(#g)'/></svg>");
+}

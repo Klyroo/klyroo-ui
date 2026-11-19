@@ -22,6 +22,7 @@ import './color-picker.js';
 import './file-upload.js';
 import './carousel.js';
 import './form2.js';
+import './marketing.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
