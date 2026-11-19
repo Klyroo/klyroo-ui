@@ -6,6 +6,7 @@ import './tooltip.js';
 import './tabs.js';
 import './accordion.js';
 import './select.js';
+import './banner.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
@@ -67,7 +68,7 @@ export function afterWebStarted(blazor) {
     applyColorMode();
     hideBrokenAvatars();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
-    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select').forEach((el) => el.refresh?.());
+    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner').forEach((el) => el.refresh?.());
   });
 }
 
