@@ -1,0 +1,126 @@
+@namespace Blux.UI
+@using System.Diagnostics
+@using System.Globalization
+@inherits BxComponentBase
+
+@*
+    The model's thinking, as a collapsible block. <bx-chat-disclosure> opens it when Streaming starts and closes it a moment
+    after it ends, unless the user opened or closed it themselves in between: all of that runs in the browser. While
+    streaming, the label shimmers; afterwards it tells how long the thinking took.
+*@
+<bx-chat-disclosure data-bx-seq="@(OpenChanged.HasDelegate ? _sequence : null)"
+                    open="@Open"
+                    data-state="@(Open ? "open" : "closed")"
+                    data-streaming="@(Streaming ? "true" : null)"
+                    data-auto-open="@(AutoOpen ? "" : null)"
+                    data-close-delay="@AutoCloseDelay"
+                    class="@_slots["root"]"
+                    @onbxtoggle="ToggleHandler"
+                    @onbxtoggle:stopPropagation="true"
+                    @attributes="AdditionalAttributes">
+    <button type="button" data-bx-disclosure-trigger id="@($"{_id}-trigger")" aria-controls="@($"{_id}-content")"
+            aria-expanded="@(Open ? "true" : "false")" disabled="@Disabled" class="@_slots["trigger"]">
+        @if (Chevron == ChatChevron.Leading)
+        {
+            @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+        }
+        @if (Icon is not null)
+        {
+            <span class="@_slots["leading"]" aria-hidden="true">@Icon</span>
+        }
+        <span class="@_slots["label"]">
+            @if (Streaming)
+            {
+                <BxChatShimmer Text="@_label" />
+            }
+            else
+            {
+                @_label
+            }
+        </span>
+        @if (Chevron == ChatChevron.Trailing)
+        {
+            @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+        }
+    </button>
+    <div id="@($"{_id}-content")" data-bx-disclosure-content hidden="@(Open ? null : "until-found")" class="@_slots["content"]">
+        <div role="region" tabindex="0" aria-labelledby="@($"{_id}-trigger")" class="@_slots["body"]">
+            @ChildContent
+        </div>
+    </div>
+</bx-chat-disclosure>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private int _sequence;
+    private string _label = "";
+    private bool _wasStreaming;
+    private long _started;
+    private int? _measured;
+
+    /// <summary>The reasoning text. Updates as it streams.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Label while it streams. Defaults to the built-in "Thinking...". Afterwards it is the label too, unless a duration is known.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>The block is still receiving its content: it shimmers and, with <see cref="AutoOpen"/>, opens.</summary>
+    [Parameter] public bool Streaming { get; set; }
+
+    /// <summary>
+    /// Seconds the thinking took, for the finished label. Without it the time between the start and the end of streaming
+    /// is measured here (interactive rendering).
+    /// </summary>
+    [Parameter] public int? Duration { get; set; }
+
+    /// <summary>An icon before the label.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+    [Parameter] public ChatChevron Chevron { get; set; } = ChatChevron.Trailing;
+
+    /// <summary>Opens when streaming starts. The user's own toggle in the meantime wins over the automatic close.</summary>
+    [Parameter] public bool AutoOpen { get; set; } = true;
+
+    /// <summary>Milliseconds after streaming ends before it closes by itself. 0 keeps it open.</summary>
+    [Parameter] public int AutoCloseDelay { get; set; } = 500;
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Open state. Bind it with <c>@bind-Open</c> to hear about changes; unbound, nothing leaves the browser.</summary>
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public ChatReasoningUi? Ui { get; set; }
+
+    private EventCallback<BxToggleEventArgs> ToggleHandler =>
+        OpenChanged.HasDelegate ? EventCallback.Factory.Create<BxToggleEventArgs>(this, OnToggle) : default;
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("reasoning");
+        _slots = ResolveSlots(Options.ChatReasoning, new Dictionary<string, string?>(), Ui, "root");
+        if (Streaming && !_wasStreaming)
+        {
+            _started = Stopwatch.GetTimestamp();
+            _measured = null;
+        }
+        else if (!Streaming && _wasStreaming)
+        {
+            _measured = Math.Max(1, (int)Math.Round(Stopwatch.GetElapsedTime(_started).TotalSeconds));
+        }
+        _wasStreaming = Streaming;
+        var seconds = Duration ?? _measured;
+        _label = Streaming ? Text ?? Options.Strings.ChatThinking
+            : seconds is { } s ? string.Format(CultureInfo.CurrentCulture, Options.Strings.ChatThoughtFor, s)
+            : Text ?? Options.Strings.ChatThought;
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxToggleEventArgs))]
+    private async Task OnToggle(BxToggleEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (e.Open == Open) return;
+        Open = e.Open;
+        await OpenChanged.InvokeAsync(e.Open);
+    }
+}

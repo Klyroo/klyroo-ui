@@ -1,0 +1,92 @@
+@* A chat panel that streams its answer: an IAsyncEnumerable of tokens with a delay stands in for the model.
+   Interactive: tokens appear as they arrive and the stop button cancels the stream.
+   Static rendering: the prompt posts, the page waits for the whole answer and renders it. *@
+@implements IDisposable
+
+<div class="h-96 w-full max-w-xl overflow-hidden rounded-xl border border-(--blux-border)" data-testid="chat-palette-demo">
+    <BxChatPalette>
+        <ChildContent>
+        <BxChatMessages Status="_status" data-testid="chat-palette-messages">
+            @foreach (var message in _messages)
+            {
+                <BxChatMessage @key="message.Id" Role="message.Role" Compact Streaming="message.Streaming" Text="@message.Text"
+                               AvatarText="@(message.Role == ChatRole.Assistant ? "B" : null)" AvatarAlt="@(message.Role == ChatRole.Assistant ? "Blux assistant" : null)" />
+            }
+        </BxChatMessages>
+        </ChildContent>
+        <Prompt>
+            <BxChatPrompt FormName="chat-palette" Status="_status" OnSubmit="Send" OnStop="Stop" OnReload="Retry" Variant="FieldVariant.Subtle"
+                          Placeholder="Ask something..." Label="Message to the assistant" data-testid="chat-palette-prompt" />
+        </Prompt>
+    </BxChatPalette>
+</div>
+
+@code {
+    private sealed class Item(int id, ChatRole role, string text, bool streaming = false)
+    {
+        public int Id { get; } = id;
+        public ChatRole Role { get; } = role;
+        public string Text { get; set; } = text;
+        public bool Streaming { get; set; } = streaming;
+    }
+
+    private readonly List<Item> _messages = [new(1, ChatRole.Assistant, "Hi! Ask me how streaming works. Press Enter to send, Shift+Enter for a new line.")];
+    private ChatStatus _status;
+    private CancellationTokenSource? _cts;
+    private string? _lastPrompt;
+    private int _next = 2;
+
+    private async Task Send(string text)
+    {
+        _lastPrompt = text;
+        _messages.Add(new Item(_next++, ChatRole.User, text));
+        await Answer(text);
+    }
+
+    private async Task Retry()
+    {
+        if (_lastPrompt is not null) await Answer(_lastPrompt);
+    }
+
+    private void Stop() => _cts?.Cancel();
+
+    private async Task Answer(string prompt)
+    {
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+        var reply = new Item(_next++, ChatRole.Assistant, "", streaming: true);
+        _messages.Add(reply);
+        _status = ChatStatus.Submitted;
+        Refresh();
+        try
+        {
+            await Task.Delay(400, token);
+            _status = ChatStatus.Streaming;
+            Refresh();
+            await foreach (var chunk in ChatDemo.Tokens(ChatDemo.Reply(prompt), 50, token))
+            {
+                reply.Text += chunk;
+                Refresh();
+            }
+            _status = ChatStatus.Idle;
+        }
+        catch (OperationCanceledException)
+        {
+            // Stopped by the user: what arrived stays.
+            _status = ChatStatus.Idle;
+        }
+        finally
+        {
+            reply.Streaming = false;
+        }
+    }
+
+    // Static rendering renders once, after the handler: nothing to refresh before then.
+    private void Refresh()
+    {
+        if (RendererInfo.IsInteractive) StateHasChanged();
+    }
+
+    public void Dispose() => _cts?.Dispose();
+}

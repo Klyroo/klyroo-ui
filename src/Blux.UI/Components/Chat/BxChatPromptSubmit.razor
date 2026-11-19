@@ -1,0 +1,68 @@
+@namespace Blux.UI
+@using Microsoft.AspNetCore.Components.Web
+@inherits BxComponentBase
+
+@*
+    The button of a chat prompt, by status: send (a submit button, works in static rendering), stop while the answer is on its way,
+    retry after an error. Stop and retry need interactivity, so they are disabled until the page is interactive.
+*@
+@if (_effective == ChatStatus.Idle)
+{
+    <BxButton Type="submit" Square Color="@(Color ?? BxColor.Primary)" Variant="ButtonVariant.Solid" Size="Size" Disabled="_disabled"
+              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Send, _slots["icon"])"
+              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatSend)" data-status="idle" @attributes="AdditionalAttributes" />
+}
+else if (_effective == ChatStatus.Error)
+{
+    <BxButton Type="button" Square Color="BxColor.Error" Variant="ButtonVariant.Soft" Size="Size" Disabled="_disabled" OnClick="ReloadHandler"
+              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Retry, _slots["icon"])"
+              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatRetry)" data-status="error" @attributes="AdditionalAttributes" />
+}
+else
+{
+    <BxButton Type="button" Square Color="BxColor.Neutral" Variant="ButtonVariant.Subtle" Size="Size" Disabled="_disabled" OnClick="StopHandler"
+              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Stop, _slots["stopIcon"])"
+              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatStop)" data-status="@ChatValue.Of(_effective)" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private ButtonUi _buttonUi = new();
+    private ChatStatus _effective;
+    private bool _disabled;
+
+    [CascadingParameter] private ChatPromptContext? Prompt { get; set; }
+
+    /// <summary>The status to show. Defaults to the one of the enclosing <see cref="BxChatPrompt"/>.</summary>
+    [Parameter] public ChatStatus? Status { get; set; }
+
+    /// <summary>Accessible name. Defaults to the built-in text for the status.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The color of the send button. The stop and retry buttons keep their own.</summary>
+    [Parameter] public BxColor? Color { get; set; }
+    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Called when the button is pressed while the answer is submitted or streaming.</summary>
+    [Parameter] public EventCallback OnStop { get; set; }
+
+    /// <summary>Called when the button is pressed after an error.</summary>
+    [Parameter] public EventCallback OnReload { get; set; }
+    [Parameter] public ChatPromptSubmitUi? Ui { get; set; }
+
+    // No callback means no click handler: the button then costs nothing and is not made inert.
+    private EventCallback<MouseEventArgs> StopHandler =>
+        OnStop.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnStop.InvokeAsync()) : default;
+
+    private EventCallback<MouseEventArgs> ReloadHandler =>
+        OnReload.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnReload.InvokeAsync()) : default;
+
+    protected override void OnParametersSet()
+    {
+        _effective = Status ?? Prompt?.Status ?? ChatStatus.Idle;
+        _disabled = Disabled || Prompt?.Disabled == true;
+        _slots = ResolveSlots(Options.ChatPromptSubmit, new Dictionary<string, string?>(), Ui, "base");
+        _buttonUi = new ButtonUi { Base = _slots["base"] };
+    }
+}

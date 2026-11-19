@@ -1,0 +1,30 @@
+@* Actions sit under the message, Files above it. Copying needs interactivity, so the buttons wait for it. *@
+<div class="flex w-full max-w-xl flex-col gap-4" data-testid="chat-message-actions-example">
+    <BxChatMessage Role="ChatRole.User" Text="Can you summarize these?">
+        <Files>
+            <BxChatAttachment Name="report.pdf" Type="application/pdf" FileSize="248000" Size="BxSize.Sm" />
+            <BxChatAttachment Name="notes.txt" Type="text/plain" FileSize="1200" Size="BxSize.Sm" />
+        </Files>
+    </BxChatMessage>
+    <BxChatMessage Role="ChatRole.Assistant" Text="The report covers three themes: cost, speed and accessibility." AvatarText="B" AvatarAlt="Blux assistant">
+        <Header>Blux assistant · 9:42</Header>
+        <Actions>
+            <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy" OnClick="Copy"
+                      LeadingIcon="@BxIcons.Named("copy", "size-4")" data-testid="chat-message-copy" />
+            <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Regenerate" OnClick="Regenerate"
+                      LeadingIcon="@BxIcons.Named("refresh-cw", "size-4")" data-testid="chat-message-regenerate" />
+            @if (_note is not null)
+            {
+                <span role="status" class="text-xs" data-testid="chat-message-note">@_note</span>
+            }
+        </Actions>
+    </BxChatMessage>
+</div>
+
+@code {
+    private string? _note;
+
+    private void Copy() => _note = "Copied";
+
+    private void Regenerate() => _note = "Regenerating";
+}
