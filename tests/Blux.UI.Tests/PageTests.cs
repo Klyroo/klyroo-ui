@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Blux.UI.Tests;
@@ -425,10 +426,22 @@ public class PageTests : BluxTestContext
 
         Assert.Equal("On this page", cut.Find("nav").GetAttribute("aria-label"));
         var anchors = cut.FindAll("li a");
-        Assert.Equal("#install", anchors[0].GetAttribute("href"));
+        Assert.Equal("/#install", anchors[0].GetAttribute("href"));
         Assert.All(anchors, a => Assert.False(a.HasAttribute("aria-current")));
         Assert.Equal("true", anchors[0].QuerySelector("[aria-hidden=true]")!.GetAttribute("aria-hidden"));
         Assert.Equal("noopener noreferrer", anchors[1].GetAttribute("rel"));
+    }
+
+    [Fact]
+    public void PageAnchors_fragment_links_keep_the_current_page_so_a_base_href_cannot_redirect_them()
+    {
+        // With <base href="/">, a bare "#install" resolves to "/#install": the browser would leave the page.
+        Services.GetRequiredService<NavigationManager>().NavigateTo("/docs/theming?tab=2#old");
+        var cut = Render<BxPageAnchors>(p => p.Add(c => c.Links, new PageLinkItem[] { new("Install", "#install"), new("Other", "/elsewhere#x") }));
+
+        var anchors = cut.FindAll("li a");
+        Assert.Equal("/docs/theming?tab=2#install", anchors[0].GetAttribute("href"));
+        Assert.Equal("/elsewhere#x", anchors[1].GetAttribute("href"));
     }
 
     [Fact]

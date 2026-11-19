@@ -98,18 +98,19 @@ internal static partial class Themes
 
     public static ComponentTheme PageCard() =>
         new ComponentTheme("pageCard", "root", "spotlight", "header", "container", "wrapper", "body", "leading", "leadingIcon", "title", "description", "footer", "link")
-            .Slot("root", "group/card relative flex min-w-0 flex-col overflow-hidden rounded-[calc(var(--blux-radius)*2)] transition-colors motion-reduce:transition-none")
-            .Slot("spotlight", "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 motion-reduce:transition-none " +
+            .Slot("root", "group/card relative isolate flex min-w-0 flex-col overflow-hidden rounded-[calc(var(--blux-radius)*2)] transition-colors motion-reduce:transition-none")
+            .Slot("spotlight", "pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-300 group-hover/card:opacity-100 motion-reduce:transition-none " +
                                "bg-[radial-gradient(40rem_circle_at_50%_0%,color-mix(in_oklab,var(--bx-color)_16%,transparent),transparent_60%)]")
             .Slot("header", "relative")
-            .Slot("container", "relative flex flex-1 flex-col gap-4 p-4 sm:p-6")
+            .Slot("container", "flex flex-1 flex-col gap-4 p-4 sm:p-6")
             .Slot("wrapper", "min-w-0")
             .Slot("body", "min-w-0")
             .Slot("leading", "mb-3 inline-flex size-10 items-center justify-center rounded-(--blux-radius) bg-(--bx-color)/10 text-(--bx-color-text)")
             .Slot("leadingIcon", "size-5")
             .Slot("title", "text-base font-semibold text-(--blux-text-highlighted)")
             .Slot("description", "mt-1 text-sm text-pretty text-(--blux-text-muted)")
-            .Slot("footer", "relative px-4 pb-4 sm:px-6 sm:pb-6")
+            // Not positioned, so the stretched link (positioned against the card) covers it; its buttons and links sit above the link.
+            .Slot("footer", "px-4 pb-4 sm:px-6 sm:pb-6 [&_:is(a,button,input,select,textarea,summary)]:relative [&_:is(a,button,input,select,textarea,summary)]:z-10")
             .Slot("link", "after:absolute after:inset-0 after:z-0 focus-visible:outline-0")
             .Variant("variant", "outline", "root", "bg-(--blux-bg) ring ring-(--blux-border)")
             .Variant("variant", "soft", "root", "bg-(--blux-bg-elevated)/50")

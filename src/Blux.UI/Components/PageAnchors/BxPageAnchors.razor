@@ -1,5 +1,6 @@
 @namespace Blux.UI
 @inherits BxComponentBase
+@inject NavigationManager Navigation
 
 @*
     Plain anchors, not BxLink: a link to "#section" always points at the current page, so an address-based active state
@@ -12,7 +13,7 @@
             @foreach (var link in Links)
             {
                 <li class="@_slots["item"]">
-                    <a href="@(link.Disabled ? null : link.Href)"
+                    <a href="@(link.Disabled ? null : HrefOf(link))"
                        target="@link.Target"
                        rel="@(link.Target == "_blank" ? "noopener noreferrer" : null)"
                        role="@(link.Disabled ? "link" : null)"
@@ -40,9 +41,22 @@
 @code {
     private SlotSet _slots = default!;
 
-    /// <summary>The anchors: <c>Href</c> is typically a fragment such as <c>#installation</c>. Pass <c>aria-label</c> to rename the navigation.</summary>
+    /// <summary>
+    /// The anchors: <c>Href</c> is typically a fragment such as <c>#installation</c>. A fragment is rendered with the path
+    /// and query of the current page: in a document with a <c>base</c> element a bare fragment would resolve against the
+    /// base address and leave the page. Pass <c>aria-label</c> to rename the navigation.
+    /// </summary>
     [Parameter] public IReadOnlyList<PageLinkItem>? Links { get; set; }
     [Parameter] public PageAnchorsUi? Ui { get; set; }
+
+    private string? HrefOf(PageLinkItem link)
+    {
+        if (link.Href is not { Length: > 0 } href || href[0] != '#')
+        {
+            return link.Href;
+        }
+        return new Uri(Navigation.Uri).PathAndQuery + href;
+    }
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.PageAnchors, new Dictionary<string, string?>(), Ui, "root");

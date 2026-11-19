@@ -24,6 +24,8 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         return data;
     }
 
+    protected string BaseUrl => server.BaseUrl;
+
     protected IPage Page { get; private set; } = default!;
     private IBrowserContext _context = default!;
 

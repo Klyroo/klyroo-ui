@@ -156,17 +156,19 @@ public class MarketingTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task PricingPlans_billing_switch_changes_the_prices(string mode)
     {
         await Open(mode, "pricing-plans");
-        var yearly = Page.GetByRole(AriaRole.Button, new() { Name = "Yearly" });
+        // The page has two examples and prints the source of each: stay in the first one.
+        var example = Page.Locator("#billing-cycle-switch");
+        var yearly = example.GetByRole(AriaRole.Button, new() { Name = "Yearly" });
 
-        await Assertions.Expect(Page.GetByText("Billed monthly, cancel anytime.")).ToBeVisibleAsync();
+        await Assertions.Expect(example.GetByText("Billed monthly, cancel anytime.", new() { Exact = true })).ToBeVisibleAsync();
         await yearly.ClickAsync();
 
         await Assertions.Expect(yearly).ToHaveAttributeAsync("aria-pressed", "true");
-        await Assertions.Expect(Page.GetByText("Billed yearly, 2 months free.")).ToBeVisibleAsync();
-        await Assertions.Expect(Page.GetByText("$24", new() { Exact = true })).ToBeVisibleAsync();
+        await Assertions.Expect(example.GetByText("Billed yearly, 2 months free.", new() { Exact = true })).ToBeVisibleAsync();
+        await Assertions.Expect(example.GetByText("$24", new() { Exact = true })).ToBeVisibleAsync();
 
-        await Page.GetByRole(AriaRole.Button, new() { Name = "Monthly" }).ClickAsync();
-        await Assertions.Expect(Page.GetByText("$29", new() { Exact = true })).ToBeVisibleAsync();
+        await example.GetByRole(AriaRole.Button, new() { Name = "Monthly" }).ClickAsync();
+        await Assertions.Expect(example.GetByText("$29", new() { Exact = true })).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -174,8 +176,10 @@ public class MarketingTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open("ssr", "pricing-plans");
 
-        await Assertions.Expect(Page.GetByRole(AriaRole.Button, new() { Name = "Yearly" })).ToBeDisabledAsync();
-        await Assertions.Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Get Pro" })).ToHaveAttributeAsync("href", "/docs");
+        var example = Page.Locator("#billing-cycle-switch");
+
+        await Assertions.Expect(example.GetByRole(AriaRole.Button, new() { Name = "Yearly" })).ToBeDisabledAsync();
+        await Assertions.Expect(example.GetByRole(AriaRole.Link, new() { Name = "Get Pro" })).ToHaveAttributeAsync("href", "/docs");
     }
 
     [Theory]
@@ -197,8 +201,9 @@ public class MarketingTests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "pricing-table");
         var table = Page.GetByRole(AriaRole.Table, new() { Name = "Compare the Starter, Pro and Team plans" });
 
-        await Assertions.Expect(table.GetByRole(AriaRole.Row, new() { Name = "Audit log" }))
-            .ToContainTextAsync("Not included Included Included");
+        // Each tier cell carries its own hidden text: they read as separate cells, not as one run of words.
+        await Assertions.Expect(table.GetByRole(AriaRole.Row, new() { Name = "Audit log" }).GetByRole(AriaRole.Cell))
+            .ToHaveTextAsync(["Not included", "Included", "Included"]);
         await Assertions.Expect(table.GetByRole(AriaRole.Columnheader, new() { Name = "Pro" }).First).ToHaveCSSAsync("position", "sticky");
         await Assertions.Expect(table.GetByRole(AriaRole.Cell, new() { Name = "Unlimited" }).First).ToBeVisibleAsync();
     }

@@ -36,6 +36,9 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.EvaluateAsync("() => window.__enhanced");
     }
 
+    private async Task<string?> SidebarCookie(string name) =>
+        (await Page.Context.CookiesAsync()).FirstOrDefault(c => c.Name == name)?.Value;
+
     private async Task Reload(string mode)
     {
         await Page.ReloadAsync();
@@ -97,7 +100,8 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await Page.SetViewportSizeAsync(1280, 800);
         await Assertions.Expect(dialog).ToBeHiddenAsync();
-        Assert.False(await dialog.EvaluateAsync<bool>("d => d.open"));
+        // A closed dialog is hidden from the role query: reach it by tag.
+        Assert.False(await Page.GetByTestId("header").Locator("dialog").EvaluateAsync<bool>("d => d.open"));
         // The links are back in the header.
         await Assertions.Expect(Page.GetByTestId("header").GetByRole(AriaRole.Navigation, new() { Name = "Site" })).ToBeVisibleAsync();
     }
@@ -130,7 +134,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
         await Assertions.Expect(toggle).ToHaveAttributeAsync("aria-pressed", "true");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "64px");
-        Assert.Equal("1", await Page.EvaluateAsync<string?>("() => localStorage.getItem('blux:sidebar:playground-sidebar')"));
+        Assert.Equal("1", await SidebarCookie("blux-sidebar-playground-sidebar"));
         // Collapsed to icons, the links keep their names for assistive technology.
         await Assertions.Expect(sidebar.GetByRole(AriaRole.Link, new() { Name = "Inbox" })).ToBeVisibleAsync();
 
@@ -142,7 +146,30 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await toggle.ClickAsync();
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "expanded");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "256px");
-        Assert.Equal("0", await Page.EvaluateAsync<string?>("() => localStorage.getItem('blux:sidebar:playground-sidebar')"));
+        Assert.Equal("0", await SidebarCookie("blux-sidebar-playground-sidebar"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Sidebar_remembered_state_is_applied_on_load_without_animating(string mode)
+    {
+        // The browser remembers the state in a cookie that the server can read too.
+        await Page.Context.AddCookiesAsync([new Cookie { Name = "blux-sidebar-playground-sidebar", Value = "1", Url = BaseUrl }]);
+        await Page.Context.AddInitScriptAsync(
+            "window.__widthTransitions = 0; document.addEventListener('transitionrun', (e) => { if (e.propertyName === 'width' && e.target.dataset?.testid === 'sidebar') window.__widthTransitions++; }, true);");
+
+        await Open(mode, "sidebar");
+        var sidebar = Page.GetByTestId("sidebar");
+
+        await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
+        await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "64px");
+        // Longer than the width transition (200 ms): it would have started by now.
+        await Page.WaitForTimeoutAsync(400);
+        Assert.Equal(0, await Page.EvaluateAsync<int>("() => window.__widthTransitions"));
+        // Once initialized, a user's toggle does animate.
+        await sidebar.GetByRole(AriaRole.Button, new() { Name = "Collapse sidebar" }).ClickAsync();
+        await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "256px");
+        Assert.True(await Page.EvaluateAsync<int>("() => window.__widthTransitions") > 0);
     }
 
     [Fact]
@@ -208,7 +235,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.Keyboard.PressAsync("Home");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "192px");
         await Page.Keyboard.PressAsync("ArrowRight");
-        Assert.Equal("208", await Page.EvaluateAsync<string?>("() => localStorage.getItem('blux:sidebar:playground-sidebar-resizable:width')"));
+        Assert.Equal("208", await SidebarCookie("blux-sidebar-playground-sidebar-resizable-width"));
 
         await Reload(mode);
 

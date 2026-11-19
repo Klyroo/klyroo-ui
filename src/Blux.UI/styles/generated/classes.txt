@@ -14,6 +14,7 @@
 -translate-x-full
 -translate-y-1/2
 -translate-y-full
+-z-10
 [&::-moz-range-thumb]:bg-(--blux-bg)
 [&::-moz-range-thumb]:bg-transparent
 [&::-moz-range-thumb]:border-(--bx-color-text)
@@ -75,6 +76,8 @@
 [&>:not(:last-child)_:is(input,select,textarea,button)]:rounded-e-none
 [&>svg]:size-3
 [&[hidden]]:hidden
+[&_:is(a,button,input,select,textarea,summary)]:relative
+[&_:is(a,button,input,select,textarea,summary)]:z-10
 [&_a]:font-medium
 [&_a]:text-(--blux-primary-text)
 [&_a]:underline
@@ -312,7 +315,6 @@ data-disabled:opacity-60
 data-dragging:bg-(--blux-bg-elevated)
 data-dragging:bg-(--blux-border-accented)
 data-dragging:border-(--bx-color-text)
-data-dragging:transition-none
 data-filtered:hidden
 data-highlight:border-(--bx-color-text)
 data-highlighted:bg-(--blux-bg-elevated)
@@ -321,6 +323,10 @@ data-in-range:rounded-none
 data-invalid:ring-(--blux-error)
 data-invalid:ring-2
 data-placeholder:text-(--blux-text-dimmed)
+data-ready:data-dragging:transition-none
+data-ready:duration-200
+data-ready:motion-reduce:transition-none
+data-ready:transition-[width]
 data-selected:bg-(--bx-color)
 data-selected:hover:bg-(--bx-color)/90
 data-selected:text-(--bx-color-contrast)

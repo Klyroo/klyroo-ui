@@ -1,22 +1,30 @@
 import { Reporter } from './shared.js';
 
-const SIDEBAR_PREFIX = 'blux:sidebar:';
+// The state is remembered in cookies, so the server can render it on the next request (the app reads them and passes
+// Collapsed): blux-sidebar-{id} is "1" when collapsed, blux-sidebar-{id}-width the width in pixels.
+const SIDEBAR_PREFIX = 'blux-sidebar-';
+const ONE_YEAR = 60 * 60 * 24 * 365;
 
-function read(key) {
-  if (!key) return null;
+function read(name) {
+  if (!name) return null;
   try {
-    return localStorage.getItem(key);
+    for (const part of document.cookie.split('; ')) {
+      const at = part.indexOf('=');
+      if (at > 0 && part.slice(0, at) === name) return decodeURIComponent(part.slice(at + 1));
+    }
   } catch {
-    return null;
+    // Cookies blocked.
   }
+  return null;
 }
 
-function write(key, value) {
-  if (!key) return;
+function write(name, value) {
+  if (!name) return;
   try {
-    localStorage.setItem(key, value);
+    const secure = location.protocol === 'https:' ? '; secure' : '';
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${ONE_YEAR}; samesite=lax${secure}`;
   } catch {
-    // Storage unavailable (private window): the state lasts until the page is reloaded.
+    // Cookies blocked: the state lasts until the page is reloaded.
   }
 }
 
@@ -29,7 +37,7 @@ function write(key, value) {
  * </bx-sidebar>
  *
  * Owns the collapsed state (data-state on the aside, aria-pressed on the toggles) and the width (the --bx-sidebar-width
- * variable on this element). Both are remembered in localStorage under the id, except that a bound collapsed state
+ * variable on this element). Both are remembered in cookies under the id, except that a bound collapsed state
  * (data-bx-seq) is never read from storage: .NET owns it. A change of the collapsed state is reported with "bx-toggle",
  * where open means expanded.
  */
@@ -41,6 +49,7 @@ export class BxSidebarElement extends HTMLElement {
   #width = null;
   #ready = false;
   #drag = null;
+  #settling = null;
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
@@ -69,12 +78,12 @@ export class BxSidebarElement extends HTMLElement {
     if (!this.#ready) return;
     this.#reporter.adopt();
     this.#reporter.take('collapsed', true);
-    this.#render();
+    this.#settle();
   }
 
   get #key() {
     const id = this.getAttribute('data-bx-sidebar-id');
-    return id ? SIDEBAR_PREFIX + id : null;
+    return id ? SIDEBAR_PREFIX + encodeURIComponent(id) : null;
   }
 
   get #aside() {
@@ -111,10 +120,23 @@ export class BxSidebarElement extends HTMLElement {
     this.#reporter.take('collapsed', true);
     const stored = this.#reporter.bound ? null : read(this.#key);
     this.#collapsed = stored === null ? this.hasAttribute('collapsed') : stored === '1';
-    const width = this.hasAttribute('resizable') ? Number(read(this.#key && this.#key + ':width')) : 0;
+    const width = this.hasAttribute('resizable') ? Number(read(this.#key && this.#key + '-width')) : 0;
     this.#width = width > 0 ? this.#clamp(width) : null;
     this.#ready = true;
+    this.#settle();
+  }
+
+  /**
+   * Applies the state without the width transition, then allows it: the state of a page load or of an enhanced
+   * navigation is not something the user did, so it must not animate in.
+   */
+  #settle() {
+    const token = (this.#settling = {});
+    this.#aside?.removeAttribute('data-ready');
     this.#render();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      if (this.#settling === token && this.#ready) this.#aside?.setAttribute('data-ready', '');
+    }));
   }
 
   #applyRendered(force) {
@@ -155,7 +177,7 @@ export class BxSidebarElement extends HTMLElement {
   #setWidth(width, persist) {
     this.#width = this.#clamp(width);
     this.#renderWidth();
-    if (persist) write(this.#key && this.#key + ':width', String(this.#width));
+    if (persist) write(this.#key && this.#key + '-width', String(this.#width));
   }
 
   #onClick = (event) => {
@@ -196,7 +218,7 @@ export class BxSidebarElement extends HTMLElement {
     this.#drag = null;
     delete this.#aside?.dataset.dragging;
     delete handle.dataset.dragging;
-    if (this.#width !== null) write(this.#key && this.#key + ':width', String(this.#width));
+    if (this.#width !== null) write(this.#key && this.#key + '-width', String(this.#width));
   };
 
   #onKeyDown = (event) => {
