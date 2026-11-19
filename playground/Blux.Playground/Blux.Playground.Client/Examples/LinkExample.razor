@@ -1,0 +1,21 @@
+@inject NavigationManager Navigation
+
+@* Links to the current page, to its section (a prefix of the path) and to another page. *@
+<nav aria-label="Link states" class="flex flex-wrap items-center gap-4 text-sm">
+    <BxLink Href="@_here" Label="This page" data-testid="link-current" />
+    <BxLink Href="@_section" Label="Section" data-testid="link-section" />
+    <BxLink Href="@_section" Exact Label="Section (exact)" data-testid="link-section-exact" />
+    <BxLink Href="/docs" Label="Docs" data-testid="link-other" />
+    <BxLink Href="/docs" Label="Disabled" Disabled data-testid="link-disabled" />
+</nav>
+
+@code {
+    private string _here = "/";
+    private string _section = "/";
+
+    protected override void OnInitialized()
+    {
+        _here = new Uri(Navigation.Uri).AbsolutePath;
+        _section = _here[.._here.LastIndexOf('/')];
+    }
+}

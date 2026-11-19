@@ -148,8 +148,28 @@
     [data-bx-marquee] > [data-bx-marquee-group][aria-hidden='true'] { display: none; }
   }
 
+  bx-banner {
+    display: block;
+  }
+
+  /* A dismissed banner: the element sets [hidden], which the rule above would otherwise override. */
+  bx-banner[hidden] {
+    display: none;
+  }
+
   /* A modal dialog makes the page inert; stop it from scrolling behind. */
   html:has(bx-modal > dialog[open]) {
     overflow: hidden;
   }
+}
+
+/* Indeterminate progress bars (BxProgress): the bar is 40% wide and travels along the track. */
+@keyframes bx-progress-carousel {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@keyframes bx-progress-swing {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(150%); }
 }

@@ -1,0 +1,8 @@
+@* Add your own with BluxOptions.Icons["name"] = "<svg path data>"; an unknown name renders an empty icon. *@
+<div class="flex flex-wrap items-center gap-4">
+    @foreach (var name in new[] { "search", "bell", "mail", "calendar", "heart", "star", "download", "globe" })
+    {
+        <BxIcon Name="@name" Size="BxSize.Lg" />
+    }
+    <BxIcon Name="check" Size="BxSize.Xl" Label="Done" Class="text-(--blux-success-text)" />
+</div>
