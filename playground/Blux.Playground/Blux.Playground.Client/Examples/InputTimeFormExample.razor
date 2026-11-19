@@ -1,0 +1,26 @@
+<EditForm Model="Model" FormName="meeting" OnValidSubmit="Save" class="flex w-full max-w-xs flex-col items-start gap-3">
+    <BxFormField Label="Meeting starts" Description="Posted as HH:mm." For="() => Model!.Start" class="w-full">
+        <BxInputTime @bind-Value="Model!.Start" Hour12="false" data-testid="meeting" />
+    </BxFormField>
+    <BxButton Type="submit" Label="Schedule" />
+    @if (_saved)
+    {
+        <p role="status" class="text-sm text-(--blux-success-text)" data-testid="meeting-saved">Scheduled: @Model!.Start?.ToString("HH:mm")</p>
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "meeting")]
+    private Meeting? Model { get; set; }
+
+    private bool _saved;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private void Save() => _saved = true;
+
+    private sealed class Meeting
+    {
+        public TimeOnly? Start { get; set; }
+    }
+}

@@ -1,0 +1,14 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Alarm (24 hours)">
+        <BxInputTime @bind-Value="_alarm" Hour12="false" data-testid="alarm" />
+    </BxFormField>
+    <BxFormField Label="Reminder (12 hours, 15 minute steps)">
+        <BxInputTime @bind-Value="_reminder" Hour12="true" Step="15" data-testid="reminder" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="time-state">Alarm: @(_alarm?.ToString("HH:mm") ?? "none"), reminder: @(_reminder?.ToString("HH:mm") ?? "none")</p>
+</div>
+
+@code {
+    private TimeOnly? _alarm = new(14, 30);
+    private TimeOnly? _reminder;
+}

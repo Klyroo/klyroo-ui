@@ -15,6 +15,12 @@ import './command-palette.js';
 import './color-mode-controls.js';
 import './hotkey.js';
 import './banner.js';
+import './calendar.js';
+import './date-field.js';
+import './input-time.js';
+import './color-picker.js';
+import './file-upload.js';
+import './carousel.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
@@ -76,7 +82,7 @@ export function afterWebStarted(blazor) {
     applyColorMode();
     hideBrokenAvatars();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
-    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner').forEach((el) => el.refresh?.());
+    document.querySelectorAll('bx-popover, bx-modal, bx-tooltip, bx-select, bx-banner, bx-calendar, bx-input-time, bx-color-picker, bx-file-upload, bx-carousel').forEach((el) => el.refresh?.());
   });
 }
 

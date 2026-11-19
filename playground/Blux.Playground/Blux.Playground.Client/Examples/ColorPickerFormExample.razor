@@ -1,0 +1,26 @@
+<EditForm Model="Model" FormName="theme" OnValidSubmit="Save" class="flex w-full max-w-xs flex-col items-start gap-3">
+    <BxFormField Label="Accent color" Description="Posted as #rrggbb." For="() => Model!.Accent">
+        <BxColorPicker @bind-Value="Model!.Accent" />
+    </BxFormField>
+    <BxButton Type="submit" Label="Save theme" />
+    @if (_saved)
+    {
+        <p role="status" class="text-sm text-(--blux-success-text)" data-testid="theme-saved">Saved: @Model!.Accent</p>
+    }
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "theme")]
+    private Theme? Model { get; set; }
+
+    private bool _saved;
+
+    protected override void OnInitialized() => Model ??= new() { Accent = "#1f6f7a" };
+
+    private void Save() => _saved = true;
+
+    private sealed class Theme
+    {
+        public string? Accent { get; set; }
+    }
+}
