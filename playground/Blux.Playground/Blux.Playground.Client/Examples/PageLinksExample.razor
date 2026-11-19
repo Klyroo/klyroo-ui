@@ -1,0 +1,19 @@
+<div class="grid w-full gap-8 sm:grid-cols-2">
+    <BxPageLinks Title="Resources" Links="_resources" />
+    <BxPageLinks Title="Account" Links="_account" />
+</div>
+
+@code {
+    private readonly PageLinkItem[] _resources =
+    [
+        new("Overview", "/docs/installation") { Icon = "home", Active = true },
+        new("Components", "/components/button") { Icon = "list", Active = false },
+        new("Source code", "https://github.com/") { Icon = "code", Active = false, Target = "_blank" },
+    ];
+
+    private readonly PageLinkItem[] _account =
+    [
+        new("Profile", "/docs/installation") { Icon = "user", Active = false },
+        new("Billing", "/docs/installation") { Icon = "mail", Active = false, Disabled = true },
+    ];
+}

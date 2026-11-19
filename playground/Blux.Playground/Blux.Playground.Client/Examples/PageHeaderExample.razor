@@ -1,0 +1,13 @@
+<div class="w-full rounded-lg border border-(--blux-border) bg-(--blux-bg) px-6">
+    <BxPageHeader Headline="Changelog" Title="What shipped this month" HeadingLevel="3"
+                  Description="Every release, with the fixes and the features that came with it."
+                  Links="_links" />
+</div>
+
+@code {
+    private readonly PageLinkItem[] _links =
+    [
+        new("Subscribe", "/docs/installation") { Icon = "bell", Color = BxColor.Neutral },
+        new("All releases", "/docs/installation") { Icon = "list", Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+    ];
+}
