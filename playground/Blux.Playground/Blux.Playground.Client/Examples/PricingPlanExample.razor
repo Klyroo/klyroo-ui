@@ -1,0 +1,12 @@
+<div class="grid w-full gap-6 lg:grid-cols-2">
+    <BxPricingPlan Title="Pro" Badge="Launch offer" Description="For growing teams that ship every week."
+                   Tagline="Save 20% for the first year" Price="$120" Discount="$96" BillingCycle="/year" Terms="Renews at $120 a year."
+                   Features="@(["Unlimited projects", "Priority support", new BxPricingFeature("Early access to new components") { Icon = "zap" }])"
+                   ButtonLabel="Claim the offer" ButtonHref="/docs" Highlight />
+    <BxPricingPlan Title="Team" Description="For organizations with compliance needs." Variant="BxVariant.Solid"
+                   Price="$99" BillingCycle="/month" Features="@(["Everything in Pro", "Single sign-on", "Dedicated manager"])"
+                   ButtonLabel="Contact sales" ButtonHref="/docs" />
+    <BxPricingPlan Title="Enterprise" Description="Custom limits, invoicing and a service agreement." Variant="BxVariant.Soft"
+                   Orientation="BxOrientation.Horizontal" Price="Custom" Features="@(["Unlimited seats", "Custom contract", "On-premises option"])"
+                   ButtonLabel="Talk to us" ButtonHref="/docs" Class="lg:col-span-2" />
+</div>
