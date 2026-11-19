@@ -37,6 +37,11 @@ export class BxSplitterElement extends HTMLElement {
     this.#observer?.disconnect();
   }
 
+  /** Re-applies the layout, e.g. after enhanced navigation merged server HTML over the panel styles. */
+  refresh() {
+    this.#layout();
+  }
+
   attributeChangedCallback(name) {
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
     if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());

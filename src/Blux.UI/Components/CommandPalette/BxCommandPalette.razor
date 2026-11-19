@@ -90,7 +90,7 @@
         @<text>
             @if (item.Href is not null && !item.Disabled)
             {
-                <a role="option" href="@item.Href" class="@_slots["item"]" data-value="@item.Key" data-search="@Search(group, item)"
+                <a role="option" href="@item.Href" tabindex="-1" class="@_slots["item"]" data-value="@item.Key" data-search="@Search(group, item)"
                    data-bx-close="@(CloseOnSelect ? "" : null)">@ItemContent(item)</a>
             }
             else

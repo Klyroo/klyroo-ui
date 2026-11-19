@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Blux.UI.E2E;
 
 public class NavTests(PlaygroundServer server) : PlaygroundTest(server)
@@ -69,7 +71,7 @@ public class NavTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task Tree_selects_with_Enter_and_click(string mode)
     {
         await Open(mode, "tree");
-        var tree = Page.GetByRole(AriaRole.Tree);
+        var tree = Page.GetByRole(AriaRole.Tree, new() { Name = "Project files" });
         var readme = tree.GetByRole(AriaRole.Treeitem, new() { Name = "README.md" });
 
         await readme.ClickAsync();
@@ -209,9 +211,103 @@ public class NavTests(PlaygroundServer server) : PlaygroundTest(server)
         await trigger.ClickAsync();
 
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
-        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog, new() { Name = "Components" }).GetByRole(AriaRole.Link, new() { Name = "Tabs", Exact = true })).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Navigation, new() { Name = "Primary" }).GetByRole(AriaRole.Link, new() { Name = "Tabs", Exact = true })).ToBeVisibleAsync();
+        // A disclosure, not a dialog: the panel has no role and the trigger does not announce one.
+        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog)).ToHaveCountAsync(0);
+        Assert.Null(await trigger.GetAttributeAsync("aria-haspopup"));
         await Page.Keyboard.PressAsync("Escape");
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "false");
+    }
+
+    /// <summary>Runs an enhanced navigation to the same page and waits for Blazor to merge the response.</summary>
+    private async Task EnhancedReload()
+    {
+        await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true })); }");
+        await Page.EvaluateAsync("() => Blazor.navigateTo(location.pathname + '?enhanced=' + Date.now())");
+        await Page.EvaluateAsync("() => window.__enhanced");
+    }
+
+    [Fact]
+    public async Task Tree_keeps_its_tab_stop_after_an_enhanced_navigation()
+    {
+        await Open("ssr", "tree");
+        var tree = Page.GetByRole(AriaRole.Tree, new() { Name = "Project files" });
+        Assert.Equal(1, await tree.Locator("[role=treeitem][tabindex='0']").CountAsync());
+
+        await EnhancedReload();
+
+        Assert.Equal(1, await tree.Locator("[role=treeitem][tabindex='0']").CountAsync());
+    }
+
+    [Fact]
+    public async Task Command_palette_keeps_its_highlight_after_an_enhanced_navigation()
+    {
+        await Open("ssr", "command-palette");
+        var palette = Page.GetByTestId("palette");
+        var input = palette.GetByRole(AriaRole.Combobox);
+        await Assertions.Expect(input).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        await EnhancedReload();
+
+        await Assertions.Expect(input).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+        Assert.Equal(1, await palette.Locator("[role=option][data-highlighted]").CountAsync());
+    }
+
+    [Fact]
+    public async Task Splitter_keeps_user_sizes_after_an_enhanced_navigation()
+    {
+        await Open("ssr", "splitter");
+        var splitter = Page.GetByTestId("splitter");
+        var handle = splitter.GetByRole(AriaRole.Separator);
+        await handle.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuenow", "45");
+
+        await EnhancedReload();
+
+        await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuenow", "45");
+        Assert.Contains("45", await splitter.Locator("[data-bx-panel]").First.GetAttributeAsync("style"));
+    }
+
+    [Fact]
+    public async Task Scroll_area_keeps_its_tab_stop_after_an_enhanced_navigation()
+    {
+        await Open("ssr", "scroll-area");
+        var viewport = Page.GetByRole(AriaRole.Region, new() { Name = "Changelog" });
+        await Assertions.Expect(viewport).ToHaveAttributeAsync("tabindex", "0");
+
+        await EnhancedReload();
+
+        await Assertions.Expect(viewport).ToHaveAttributeAsync("tabindex", "0");
+    }
+
+    [Fact]
+    public async Task Tree_Enter_on_a_linked_parent_toggles_it_once()
+    {
+        await Open("ssr", "tree");
+        var tree = Page.GetByRole(AriaRole.Tree, new() { Name = "Sections" });
+        var guide = tree.GetByRole(AriaRole.Treeitem, new() { Name = "Guide", Exact = true });
+        await Assertions.Expect(guide).ToHaveAttributeAsync("aria-expanded", "false");
+
+        // Following the link would leave the page; the click still bubbles through the tree first.
+        await Page.EvaluateAsync("() => document.addEventListener('click', (e) => e.preventDefault())");
+        await guide.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(guide).ToHaveAttributeAsync("aria-expanded", "true");
+    }
+
+    [Fact]
+    public async Task Splitter_handle_shows_an_outline_when_focused_with_the_keyboard()
+    {
+        await Open("ssr", "splitter");
+        var handle = Page.GetByTestId("splitter").GetByRole(AriaRole.Separator);
+        await handle.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowRight");
+
+        var outline = await handle.EvaluateAsync<string>("e => { const s = getComputedStyle(e); return s.outlineStyle + ' ' + s.outlineWidth; }");
+
+        Assert.Equal("solid 2px", outline);
     }
 
     [Theory]

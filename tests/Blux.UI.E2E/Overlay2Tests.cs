@@ -103,7 +103,7 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task ContextMenu_opens_with_Shift_F10_navigates_and_returns_focus(string mode)
     {
         await Open(mode, "context-menu");
-        var area = Page.Locator("bx-context-menu [data-slot=trigger]");
+        var area = Page.Locator("bx-context-menu [data-slot=trigger]").First;
 
         await area.FocusAsync();
         await Page.Keyboard.PressAsync("Shift+F10");
@@ -141,6 +141,27 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.Mouse.ClickAsync(5, 5);
 
         await Assertions.Expect(menu).ToBeHiddenAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Bound_ContextMenu_stays_at_the_pointer_after_dotnet_answers(string mode)
+    {
+        await Open(mode, "context-menu");
+        var area = Page.GetByTestId("bound-context-area");
+        // Scrolling after the menu opened would dismiss it: bring the area into view and let the scroll events pass.
+        await area.ScrollIntoViewIfNeededAsync();
+        await Page.WaitForTimeoutAsync(300);
+
+        await area.ClickAsync(new() { Button = MouseButton.Right, Position = new() { X = 40, Y = 30 } });
+
+        var menu = Page.GetByRole(AriaRole.Menu);
+        await Assertions.Expect(Page.GetByTestId("bound-context-state")).ToHaveTextAsync("Open: yes");
+        await Page.WaitForTimeoutAsync(300);
+        var box = (await area.BoundingBoxAsync())!;
+        var menuBox = (await menu.BoundingBoxAsync())!;
+        Assert.InRange(menuBox.X, box.X + 40 - 2, box.X + 40 + 6);
+        Assert.InRange(menuBox.Y, box.Y + 30 - 2, box.Y + 30 + 6);
     }
 
     [Theory]
@@ -211,6 +232,61 @@ public class Overlay2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.GetByTestId("palette").GetByRole(AriaRole.Option, new() { Name = "Profile" }).ClickAsync();
 
         await Assertions.Expect(Page.GetByTestId("palette-state")).ToHaveTextAsync("Last command: Profile");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Inline_CommandPalette_below_the_fold_does_not_scroll_the_page_on_load(string mode)
+    {
+        await Page.SetViewportSizeAsync(1280, 260);
+        await Open(mode, "command-palette");
+        await Page.WaitForTimeoutAsync(300);
+
+        Assert.Equal(0, await Page.EvaluateAsync<int>("() => Math.round(window.scrollY)"));
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task CommandPalette_ignores_Enter_while_an_IME_composition_is_open(string mode)
+    {
+        await Open(mode, "command-palette");
+        var input = Page.GetByTestId("palette").GetByRole(AriaRole.Combobox);
+        await input.FocusAsync();
+
+        await input.EvaluateAsync("e => e.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', keyCode: 229, isComposing: true, bubbles: true, cancelable: true }))");
+
+        await Page.WaitForTimeoutAsync(200);
+        await Assertions.Expect(Page.GetByTestId("palette-state")).ToHaveTextAsync("Last command: none");
+    }
+
+    [Fact]
+    public async Task Hotkeys_do_not_fire_while_typing_and_skip_unavailable_targets()
+    {
+        await Open("ssr", "command-palette");
+        var errors = new List<string>();
+        Page.PageError += (_, message) => errors.Add(message);
+        await Page.EvaluateAsync(@"() => {
+            window.__hits = [];
+            const add = (tag, attrs) => { const e = document.createElement(tag); for (const k in attrs) e.setAttribute(k, attrs[k]); document.body.append(e); return e; };
+            add('input', { id: 'hk-input' });
+            const hidden = add('button', { 'data-bx-hotkey': 'j', style: 'display:none' }); hidden.addEventListener('click', () => window.__hits.push('hidden'));
+            const disabled = add('button', { 'data-bx-hotkey': 'j', disabled: '' }); disabled.addEventListener('click', () => window.__hits.push('disabled'));
+            const live = add('button', { 'data-bx-hotkey': 'j' }); live.addEventListener('click', () => window.__hits.push('live'));
+            const bare = add('button', { 'data-bx-hotkey': 'g' }); bare.addEventListener('click', () => window.__hits.push('bare'));
+            const combo = add('button', { 'data-bx-hotkey': 'ctrl+g' }); combo.addEventListener('click', () => window.__hits.push('combo'));
+        }");
+
+        await Page.Locator("#hk-input").FocusAsync();
+        await Page.Keyboard.TypeAsync("g");
+        await Assertions.Expect(Page.Locator("#hk-input")).ToHaveValueAsync("g");
+        await Page.Keyboard.PressAsync("Control+g");
+        await Page.EvaluateAsync("() => document.dispatchEvent(new Event('keydown'))");
+        await Page.Locator("#hk-input").BlurAsync();
+        await Page.Keyboard.PressAsync("j");
+
+        var hits = await Page.EvaluateAsync<string[]>("() => window.__hits");
+        Assert.Equal(["combo", "live"], hits);
+        Assert.Empty(errors);
     }
 
     [Theory]
