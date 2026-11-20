@@ -2,7 +2,7 @@
 @inherits BxComponentBase
 
 <bx-editor-toolbar role="toolbar"
-                   aria-label="@(Label ?? Options.Strings.EditorToolbar)"
+                   aria-label="@(Label ?? Messages.EditorToolbar)"
                    aria-orientation="horizontal"
                    data-layout="@(Bubble ? "bubble" : "fixed")"
                    popover="@(Bubble ? "manual" : null)"
@@ -19,7 +19,7 @@
             <div role="separator" aria-orientation="vertical" class="@_slots["separator"]"></div>
             continue;
         }
-        var label = item.Label ?? EditorActions.Label(Options.Strings, item.Action, item.Level);
+        var label = item.Label ?? EditorActions.Label(Messages, item.Action, item.Level);
         <button type="button"
                 class="@_slots["button"]"
                 data-action="@EditorActions.Name(item.Action)"
@@ -36,10 +36,10 @@
     }
     @if (HasLink)
     {
-        <div class="@_slots["linkForm"]" data-slot="link-form" role="group" aria-label="@Options.Strings.EditorLink" hidden>
-            <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="link-input" aria-label="@Options.Strings.EditorLinkUrl" placeholder="https://" />
-            <button type="button" class="@_slots["linkButton"]" data-link="apply">@Options.Strings.EditorLinkApply</button>
-            <button type="button" class="@_slots["linkButton"]" data-link="remove">@Options.Strings.EditorLinkRemove</button>
+        <div class="@_slots["linkForm"]" data-slot="link-form" role="group" aria-label="@Messages.EditorLink" hidden>
+            <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="link-input" aria-label="@Messages.EditorLinkUrl" placeholder="https://" />
+            <button type="button" class="@_slots["linkButton"]" data-link="apply">@Messages.EditorLinkApply</button>
+            <button type="button" class="@_slots["linkButton"]" data-link="remove">@Messages.EditorLinkRemove</button>
         </div>
     }
 </bx-editor-toolbar>
@@ -61,7 +61,7 @@
     private BxColor? _colorParameter;
     [Parameter] public BxSize Size { get; set; } = BxSize.Sm;
 
-    /// <summary>Accessible name of the toolbar. Defaults to <see cref="BluxStrings.EditorToolbar"/>.</summary>
+    /// <summary>Accessible name of the toolbar. Defaults to <see cref="BxMessages.EditorToolbar"/>.</summary>
     [Parameter] public string? Label { get; set; }
     [Parameter] public EditorToolbarUi? Ui { get; set; }
 

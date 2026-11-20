@@ -14,18 +14,3 @@ public sealed partial class BluxOptions
     public ComponentTheme ColorModeAvatar { get; } = Themes.ColorModeAvatar();
     public ComponentTheme ColorModeImage { get; } = Themes.ColorModeImage();
 }
-
-public sealed partial class BluxStrings
-{
-    public string SearchCommands { get; set; } = "Search commands";
-    public string NoCommandResults { get; set; } = "No results found";
-
-    /// <summary>Announced to screen readers after filtering; <c>{0}</c> is the number of results.</summary>
-    public string CommandResults { get; set; } = "{0} results available";
-    public string ContextMenu { get; set; } = "Context menu";
-    public string ToggleColorMode { get; set; } = "Toggle dark mode";
-    public string ColorMode { get; set; } = "Color mode";
-    public string ColorModeLight { get; set; } = "Light";
-    public string ColorModeDark { get; set; } = "Dark";
-    public string ColorModeSystem { get; set; } = "System";
-}

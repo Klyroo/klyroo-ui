@@ -30,7 +30,7 @@ public abstract class BxEditorMenuBase : BxComponentBase
 
     private protected abstract string DefaultChar { get; }
     private protected abstract string Kind { get; }
-    private protected abstract string DefaultLabel(BluxStrings strings);
+    private protected abstract string DefaultLabel(BxMessages strings);
     private protected abstract IEnumerable<EditorMenuOption> BuildOptions();
 
     /// <summary>Characters typed after the trigger before the menu opens.</summary>
@@ -60,7 +60,7 @@ public abstract class BxEditorMenuBase : BxComponentBase
         b.OpenElement(11, "div");
         b.AddAttribute(12, "role", "listbox");
         b.AddAttribute(13, "id", _listId);
-        b.AddAttribute(14, "aria-label", Label ?? DefaultLabel(Options.Strings));
+        b.AddAttribute(14, "aria-label", Label ?? DefaultLabel(Messages));
         b.AddAttribute(15, "class", _slots["listbox"]);
         foreach (var option in BuildOptions())
         {
@@ -109,7 +109,7 @@ public abstract class BxEditorMenuBase : BxComponentBase
         b.AddAttribute(41, "class", _slots["empty"]);
         b.AddAttribute(42, "data-slot", "empty");
         b.AddAttribute(43, "hidden", true);
-        b.AddContent(44, Options.Strings.EditorNoResults);
+        b.AddContent(44, Messages.EditorNoResults);
         b.CloseElement();
 
         b.CloseElement();
@@ -123,15 +123,15 @@ public abstract class BxEditorMenuBase : BxComponentBase
 /// </summary>
 public sealed class BxEditorSuggestionMenu : BxEditorMenuBase
 {
-    /// <summary>Entries of the menu. Defaults to <see cref="EditorSuggestionItem.Defaults"/>.</summary>
+    /// <summary>Entries of the menu. Defaults to <see cref="EditorSuggestionItem.For"/> of the messages of the locale in effect.</summary>
     [Parameter] public IReadOnlyList<EditorSuggestionItem>? Items { get; set; }
 
     private protected override string DefaultChar => "/";
     private protected override string Kind => "suggestion";
-    private protected override string DefaultLabel(BluxStrings strings) => strings.EditorSuggestionMenu;
+    private protected override string DefaultLabel(BxMessages strings) => strings.EditorSuggestionMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
-        (Items ?? EditorSuggestionItem.Defaults).Select(i => new EditorMenuOption(
+        (Items ?? EditorSuggestionItem.For(Messages)).Select(i => new EditorMenuOption(
             EditorActions.Name(i.Action), i.Label, i.Description, i.Keywords, EditorActions.Name(i.Action), i.Level, i.Disabled,
             IconPath: EditorActions.IconPath(i.Action, i.Level)));
 }
@@ -147,7 +147,7 @@ public sealed class BxEditorMentionMenu : BxEditorMenuBase
 
     private protected override string DefaultChar => "@";
     private protected override string Kind => "mention";
-    private protected override string DefaultLabel(BluxStrings strings) => strings.EditorMentionMenu;
+    private protected override string DefaultLabel(BxMessages strings) => strings.EditorMentionMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         Items.Select(i => new EditorMenuOption(i.Id, i.Label, i.Description, Disabled: i.Disabled, Prefix: "@"));
@@ -164,7 +164,7 @@ public sealed class BxEditorEmojiMenu : BxEditorMenuBase
     private protected override string DefaultChar => ":";
     private protected override string Kind => "emoji";
     private protected override int MinQuery => 1;
-    private protected override string DefaultLabel(BluxStrings strings) => strings.EditorEmojiMenu;
+    private protected override string DefaultLabel(BxMessages strings) => strings.EditorEmojiMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         (Items ?? EditorEmojiItem.Defaults).Select(i => new EditorMenuOption(i.Emoji, i.Name, null, i.Keywords, Prefix: i.Emoji));

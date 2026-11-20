@@ -730,9 +730,7 @@ public class ChatTests : BluxTestContext
     {
         public LocalizedContext() : base(o =>
         {
-            o.Strings.ChatConversation = "Conversation FR";
-            o.Strings.ChatResponding = "Reponse en cours";
-            o.Strings.ChatSend = "Envoyer";
+            o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { ChatConversation = "Conversation FR", ChatResponding = "Reponse en cours", ChatSend = "Envoyer" });
         })
         {
         }

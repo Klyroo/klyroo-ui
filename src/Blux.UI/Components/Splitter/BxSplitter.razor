@@ -29,7 +29,7 @@
             <div role="separator" tabindex="0" id="@($"{_id}-handle-{index}")" aria-orientation="@(_orientation == "horizontal" ? "vertical" : "horizontal")"
                  aria-valuenow="@Math.Round(_sizes[index])" aria-valuemin="@Math.Round(min)" aria-valuemax="@Math.Round(max)"
                  aria-controls="@($"{_id}-panel-{index}")"
-                 aria-label="@(Panels.Count == 2 ? Options.Strings.ResizePanels : $"{Options.Strings.ResizePanels} {index + 1}")"
+                 aria-label="@(Panels.Count == 2 ? Messages.ResizePanels : $"{Messages.ResizePanels} {index + 1}")"
                  class="@_slots["handle"]"></div>
         }
     }

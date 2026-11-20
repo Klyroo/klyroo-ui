@@ -12,10 +12,15 @@
                 accept="@Accept"
                 max-size="@(MaxSize?.ToString(CultureInfo.InvariantCulture))"
                 max-files="@(MaxFiles?.ToString(CultureInfo.InvariantCulture))"
-                data-text-too-large="@Options.Strings.FileTooLarge"
-                data-text-too-many="@Options.Strings.TooManyFiles"
-                data-text-not-accepted="@Options.Strings.FileNotAccepted"
-                data-text-remove="@Options.Strings.RemoveFile"
+                data-text-too-large="@Messages.FileTooLarge"
+                data-text-too-many="@Messages.TooManyFiles"
+                data-text-not-accepted="@Messages.FileNotAccepted"
+                data-text-remove="@Messages.RemoveFile"
+                data-text-size-b="@Messages.FileSizeBytes"
+                data-text-size-kb="@Messages.FileSizeKilobytes"
+                data-text-size-mb="@Messages.FileSizeMegabytes"
+                data-text-size-gb="@Messages.FileSizeGigabytes"
+                data-culture="@CurrentLocale.Culture.Name"
                 data-cls-file="@_slots["file"]"
                 data-cls-file-name="@_slots["fileName"]"
                 data-cls-file-size="@_slots["fileSize"]"
@@ -27,14 +32,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["icon"]">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12" />
         </svg>
-        <span class="@_slots["label"]">@(Label ?? Options.Strings.DropFiles)</span>
+        <span class="@_slots["label"]">@(Label ?? Messages.DropFiles)</span>
         @if (Hint is not null)
         {
             <span class="@_slots["description"]">@Hint</span>
         }
         @if (MaxSize is not null)
         {
-            <span class="@_slots["description"]">@string.Format(Options.Strings.MaximumSize, FormatSize(MaxSize.Value))</span>
+            <span class="@_slots["description"]">@string.Format(Messages.MaximumSize, FormatSize(MaxSize.Value))</span>
         }
         @if (OnChange.HasDelegate)
         {
@@ -75,7 +80,7 @@
     /// <summary>Defaults to the size of the enclosing <see cref="BxFormField"/>, or medium.</summary>
     [Parameter] public BxSize? Size { get; set; }
 
-    /// <summary>Main text of the drop zone. Defaults to <see cref="BluxStrings.DropFiles"/>.</summary>
+    /// <summary>Main text of the drop zone. Defaults to <see cref="BxMessages.DropFiles"/>.</summary>
     [Parameter] public string? Label { get; set; }
 
     /// <summary>Secondary text of the drop zone, such as the accepted formats.</summary>
@@ -98,18 +103,7 @@
             ["size"] = VariantValue.Of(Size ?? Field?.Size ?? BxSize.Md),
         }, Ui, "root");
 
-    internal static string FormatSize(long bytes)
-    {
-        string[] units = ["B", "KB", "MB", "GB"];
-        double size = bytes;
-        var unit = 0;
-        while (size >= 1024 && unit < units.Length - 1)
-        {
-            size /= 1024;
-            unit++;
-        }
-        return $"{Math.Round(size, 1).ToString(CultureInfo.CurrentCulture)} {units[unit]}";
-    }
+    private string FormatSize(long bytes) => Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale);
 
     private Dictionary<string, object> InputAttributes()
     {

@@ -26,7 +26,7 @@ Librairie de composants Blazor open source inspirée de Nuxt UI : composants sty
 | Type de `Ui` | Record typé par composant (`ButtonUi { Base, Label, LeadingIcon, ... }`). | Autocomplétion et erreurs à la compilation, contrairement à un dictionnaire. |
 | Style des états | Attributs `data-state="open"`, `data-disabled`, `data-highlighted` ciblés par `data-[state=open]:`. | Le JS peut changer l'état sans passer par un rendu C#. |
 | Icônes | Paramètres `RenderFragment` (`LeadingIcon`, `TrailingIcon`) + quelques SVG internes (fermer, chevron, check). Intégration d'un jeu d'icônes plus tard. | Pas de dépendance imposée en v1. |
-| Textes intégrés | "Fermer", "Aucun résultat"... configurables via `BluxOptions.Strings`. | Localisation sans fork. |
+| Textes intégrés | "Fermer", "Aucun résultat"... configurables via les locales (`BxLocale`, `BxMessages`). | Localisation sans fork. |
 | Dark mode | Stratégie classe `.dark` sur `<html>` (`@custom-variant dark`), script inline dans `<head>` qui applique préférence stockée ou système. | Permet de forcer clair ou sombre quel que soit l'OS. |
 | Thème partagé | `AddBluxUi(...)` appelé depuis du code partagé dans le projet `.Client`, utilisé par les deux `Program.cs`. | Sinon l'apparence change quand WASM prend le relais en Auto. |
 | Assets générés | `blux.css`, `blux.preflight.css`, `blux.sources.css` et les modules JS sont commités. La CI reconstruit et échoue si le résultat diffère. | Évite les problèmes d'ordre entre génération et découverte des static web assets. |

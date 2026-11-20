@@ -37,7 +37,7 @@
         </div>
         @if (Fields.Count > 0 && Separator != string.Empty)
         {
-            <BxSeparator Label="@(Separator ?? Options.Strings.AuthFormSeparator)" />
+            <BxSeparator Label="@(Separator ?? Messages.AuthFormSeparator)" />
         }
     }
     @if (Fields.Count > 0)
@@ -76,7 +76,7 @@
             }
             else
             {
-                <BxButton Type="submit" Block Size="BxSize.Lg" Loading="Busy" Label="@(SubmitLabel ?? Options.Strings.AuthFormSubmit)" Color="@Color" />
+                <BxButton Type="submit" Block Size="BxSize.Lg" Loading="Busy" Label="@(SubmitLabel ?? Messages.AuthFormSubmit)" Color="@Color" />
             }
         </EditForm>
     }
@@ -138,7 +138,7 @@
     /// <summary>Buttons that leave for another address (OAuth), above the fields.</summary>
     [Parameter] public IReadOnlyList<BxAuthProvider> Providers { get; set; } = [];
 
-    /// <summary>Text between the providers and the fields: <c>BluxStrings.AuthFormSeparator</c> by default. An empty string hides the line.</summary>
+    /// <summary>Text between the providers and the fields: <c>BxMessages.AuthFormSeparator</c> by default. An empty string hides the line.</summary>
     [Parameter] public string? Separator { get; set; }
     [Parameter] public string? SubmitLabel { get; set; }
 
@@ -238,7 +238,7 @@
         "password" => @<bx-password class="@_slots["passwordRoot"]">
                           <BxInput Type="password" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@(f.Autocomplete ?? "current-password")"
                                    ValueChanged="@((string? v) => Set(f, v))" Ui="@(new InputUi { Base = _slots["passwordInput"] })" />
-                          <button type="button" data-slot="toggle" class="@_slots["passwordButton"]" aria-pressed="false" aria-label="@Options.Strings.AuthFormShowPassword">
+                          <button type="button" data-slot="toggle" class="@_slots["passwordButton"]" aria-pressed="false" aria-label="@Messages.AuthFormShowPassword">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["passwordShow"]">
                                   <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
                                   <circle cx="12" cy="12" r="3" />
@@ -267,16 +267,16 @@
             {
                 if (field.Required)
                 {
-                    errors[field.Name] = string.Format(CultureInfo.CurrentCulture, Options.Strings.AuthFormRequired, label);
+                    errors[field.Name] = string.Format(CurrentLocale.Culture, Messages.AuthFormRequired, label);
                 }
             }
             else if (field.Type == "email" && !IsEmail(value!.Trim()))
             {
-                errors[field.Name] = Options.Strings.AuthFormInvalidEmail;
+                errors[field.Name] = Messages.AuthFormInvalidEmail;
             }
             else if (field.Type == "otp" && value!.Length < field.Length)
             {
-                errors[field.Name] = string.Format(CultureInfo.CurrentCulture, Options.Strings.AuthFormIncompleteCode, field.Length);
+                errors[field.Name] = string.Format(CurrentLocale.Culture, Messages.AuthFormIncompleteCode, field.Length);
             }
         }
         if (errors.Count == 0 && Validate?.Invoke(_values) is { } custom)

@@ -11,7 +11,7 @@
         }
         <thead role="rowgroup" class="@_slots["thead"]">
             <tr role="row" class="@_slots["headRow"]">
-                <th role="columnheader" scope="col" class="@_slots["corner"]"><span class="@_slots["srOnly"]">@Options.Strings.PricingFeatures</span></th>
+                <th role="columnheader" scope="col" class="@_slots["corner"]"><span class="@_slots["srOnly"]">@Messages.PricingFeatures</span></th>
                 @foreach (var tier in Tiers)
                 {
                     <th role="columnheader" scope="col" class="@_slots["tier"]" data-highlight="@(tier.Highlight ? "" : null)">
@@ -29,8 +29,8 @@
                             <span class="@_slots["tierPrice"]">
                                 @if (tier.Discount is not null)
                                 {
-                                    <del class="@_slots["tierDiscount"]"><span class="@_slots["srOnly"]">@Options.Strings.PricingOriginalPrice</span> @tier.Price</del>
-                                    <span><span class="@_slots["srOnly"]">@Options.Strings.PricingDiscountedPrice</span> @tier.Discount</span>
+                                    <del class="@_slots["tierDiscount"]"><span class="@_slots["srOnly"]">@Messages.PricingOriginalPrice</span> @tier.Price</del>
+                                    <span><span class="@_slots["srOnly"]">@Messages.PricingDiscountedPrice</span> @tier.Discount</span>
                                 }
                                 else
                                 {
@@ -71,16 +71,16 @@
                                 @if (value is true)
                                 {
                                     @BxIcons.Check($"{_slots["valueIcon"]} {_slots["included"]}")
-                                    <span class="@_slots["srOnly"]">@Options.Strings.PricingIncluded</span>
+                                    <span class="@_slots["srOnly"]">@Messages.PricingIncluded</span>
                                 }
                                 else if (value is false or null)
                                 {
                                     @BxIcons.Minus($"{_slots["valueIcon"]} {_slots["notIncluded"]}")
-                                    <span class="@_slots["srOnly"]">@Options.Strings.PricingNotIncluded</span>
+                                    <span class="@_slots["srOnly"]">@Messages.PricingNotIncluded</span>
                                 }
                                 else
                                 {
-                                    <span>@(value is IFormattable formattable ? formattable.ToString(null, System.Globalization.CultureInfo.CurrentCulture) : value.ToString())</span>
+                                    <span>@(value is IFormattable formattable ? formattable.ToString(null, CurrentLocale.Culture) : value.ToString())</span>
                                 }
                             </td>
                         }

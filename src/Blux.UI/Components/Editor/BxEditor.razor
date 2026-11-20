@@ -27,7 +27,7 @@ else
     /// <summary>The text can be selected and copied but not changed. The value still posts with the form.</summary>
     [Parameter] public bool ReadOnly { get; set; }
 
-    /// <summary>Accessible name of the editable area when there is no enclosing <see cref="BxFormField"/> label. Defaults to <see cref="BluxStrings.EditorLabel"/>.</summary>
+    /// <summary>Accessible name of the editable area when there is no enclosing <see cref="BxFormField"/> label. Defaults to <see cref="BxMessages.EditorLabel"/>.</summary>
     [Parameter] public string? Label { get; set; }
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public EditorUi? Ui { get; set; }
@@ -63,7 +63,7 @@ else
                     data-value="@(Value ?? "")"
                     data-placeholder="@Placeholder"
                     data-readonly="@(ReadOnly ? "" : null)"
-                    data-label="@(Label ?? Options.Strings.EditorLabel)"
+                    data-label="@(Label ?? Messages.EditorLabel)"
                     data-labelledby="@Field?.LabelId"
                     data-describedby="@Field?.DescribedBy"
                     data-invalid="@(binding.Invalid ? "true" : null)"

@@ -1,0 +1,23 @@
+@* Changing the Locale parameter of BxApp re-renders every component below it, in the new language and direction.
+   The buttons need interactivity (they render disabled until the page is interactive); to follow the language of the
+   user on every load, rely on the automatic locale and BxLocaleSelect instead. *@
+<div class="flex w-full flex-col gap-4">
+    <div class="flex flex-wrap gap-2" role="group" aria-label="Locale">
+        @foreach (var locale in _locales)
+        {
+            <BxButton Label="@locale.Name" Variant="@(locale == _locale ? ButtonVariant.Solid : ButtonVariant.Outline)" OnClick="() => Select(locale)" data-testid="@($"locale-switch-{locale.Code}")" />
+        }
+    </div>
+    <BxApp Locale="_locale" Toaster="false" Class="flex flex-col gap-3 rounded-lg border border-(--blux-border) p-4" data-testid="locale-switch-panel">
+        <p>Locale: <code data-testid="locale-switch-code">@_locale.Code</code>, direction: <code data-testid="locale-switch-dir">@_locale.DirAttribute</code></p>
+        <BxFileUpload MaxSize="2048" />
+        <BxPagination Total="50" Page="2" />
+    </BxApp>
+</div>
+
+@code {
+    private static readonly BxLocale[] _locales = [BxLocales.En, BxLocales.Fr, BxLocales.Ar];
+    private BxLocale _locale = BxLocales.En;
+
+    private void Select(BxLocale locale) => _locale = locale;
+}

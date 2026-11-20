@@ -4,23 +4,27 @@
 @*
     The root wrapper of an app, placed once in the layout around @Body. It renders the toaster (so IToastService
     works), sets the language and text direction of the tree, and cascades global class overrides to every component
-    through a BxTheme. Replace a hand-placed <BxToaster /> with it, never keep both.
+    through a BxTheme. It also resolves the locale (its Locale parameter, else the one of AddBluxUi, else the one matching
+    the current UI culture), cascades it to every component and writes it as lang and dir. Replace a hand-placed <BxToaster /> with it, never keep both.
     The overrides are cascading values: they do not cross a render mode boundary. Where a page or a component sets its
     own @rendermode (per-page interactivity), the components inside it do not see them: place a BxApp or BxTheme inside
     that island too, or use AddBluxUi for overrides that must apply everywhere.
 *@
-<BxTheme Overrides="Overrides">
-    <div class="@_slots["root"]" lang="@Lang" dir="@Dir" @attributes="AdditionalAttributes">
-        @ChildContent
-        @if (Toaster)
-        {
-            <BxToaster Duration="ToastDuration" />
-        }
-    </div>
-</BxTheme>
+<CascadingValue Value="_locale">
+    <BxTheme Overrides="Overrides">
+        <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir ?? _locale.DirAttribute)" @attributes="AdditionalAttributes">
+            @ChildContent
+            @if (Toaster)
+            {
+                <BxToaster Duration="ToastDuration" />
+            }
+        </div>
+    </BxTheme>
+</CascadingValue>
 
 @code {
     private SlotSet _slots = default!;
+    private BxLocale _locale = default!;
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -30,16 +34,26 @@
     /// <summary>How long a toast stays on screen.</summary>
     [Parameter] public TimeSpan ToastDuration { get; set; } = TimeSpan.FromSeconds(5);
 
-    /// <summary>Language of the content (the <c>lang</c> attribute), for example "fr". Leave it unset when the page sets it.</summary>
+    /// <summary>
+    /// The locale of every component below: texts, writing direction and the culture used to format dates and numbers.
+    /// Defaults to the locale of an enclosing <c>BxApp</c>, then <see cref="BluxOptions.Locale"/>, then the one matching
+    /// the current UI culture among <see cref="BluxOptions.Locales"/>.
+    /// </summary>
+    [Parameter] public BxLocale? Locale { get; set; }
+
+    /// <summary>Language of the content (the <c>lang</c> attribute), for example "fr". Defaults to the code of the locale.</summary>
     [Parameter] public string? Lang { get; set; }
 
-    /// <summary>Text direction (the <c>dir</c> attribute): "ltr", "rtl" or "auto".</summary>
+    /// <summary>Text direction (the <c>dir</c> attribute): "ltr", "rtl" or "auto". Defaults to the direction of the locale.</summary>
     [Parameter] public string? Dir { get; set; }
 
     /// <summary>Class overrides for every component below, by component type. See <see cref="BxTheme"/>.</summary>
     [Parameter] public IReadOnlyDictionary<Type, Blux.UI.Theming.ISlotOverrides>? Overrides { get; set; }
     [Parameter] public AppUi? Ui { get; set; }
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _locale = Locale ?? CurrentLocale;
         _slots = ResolveSlots(Options.App, new Dictionary<string, string?>(), Ui, "root");
+    }
 }

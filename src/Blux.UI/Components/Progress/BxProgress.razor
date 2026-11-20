@@ -9,7 +9,7 @@
         <div class="@_slots["status"]" aria-hidden="true">@Percent%</div>
     }
     <div role="progressbar"
-         aria-label="@(AriaLabel ?? Options.Strings.Progress)"
+         aria-label="@(AriaLabel ?? Messages.Progress)"
          aria-valuemin="0"
          aria-valuemax="@Number(MaxValue)"
          aria-valuenow="@(Indeterminate ? null : Number(Current))"
@@ -47,7 +47,7 @@
     /// <summary>Shows the percentage above the bar.</summary>
     [Parameter] public bool Status { get; set; }
 
-    /// <summary>Accessible name of the bar. Defaults to <see cref="BluxStrings.Progress"/>.</summary>
+    /// <summary>Accessible name of the bar. Defaults to <see cref="BxMessages.Progress"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
     private BxColor? _colorParameter;

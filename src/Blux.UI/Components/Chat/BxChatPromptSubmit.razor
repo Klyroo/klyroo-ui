@@ -63,7 +63,7 @@
                 _color = Color ?? BxColor.Primary;
                 _variant = ButtonVariant.Solid;
                 _icon = BxChatIcons.Draw(BxChatIcons.Send, _slots["icon"]);
-                _label = Label ?? Options.Strings.ChatSend;
+                _label = Label ?? Messages.ChatSend;
                 _dataStatus = "idle";
                 _onClick = default;
                 break;
@@ -72,7 +72,7 @@
                 _color = BxColor.Error;
                 _variant = ButtonVariant.Soft;
                 _icon = BxChatIcons.Draw(BxChatIcons.Retry, _slots["icon"]);
-                _label = Label ?? Options.Strings.ChatRetry;
+                _label = Label ?? Messages.ChatRetry;
                 _dataStatus = "error";
                 _onClick = EventCallback.Factory.Create<MouseEventArgs>(this, () => OnReload.InvokeAsync());
                 break;
@@ -81,7 +81,7 @@
                 _color = BxColor.Neutral;
                 _variant = ButtonVariant.Subtle;
                 _icon = BxChatIcons.Draw(BxChatIcons.Stop, _slots["stopIcon"]);
-                _label = Label ?? Options.Strings.ChatStop;
+                _label = Label ?? Messages.ChatStop;
                 _dataStatus = ChatValue.Of(_effective);
                 _onClick = OnStop.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnStop.InvokeAsync()) : default;
                 break;

@@ -130,13 +130,14 @@ public class ChartTests : BluxTestContext
     public void Value_labels_use_the_current_culture_and_a_custom_format_wins()
     {
         var original = CultureInfo.CurrentCulture;
+        var originalUi = CultureInfo.CurrentUICulture;
         try
         {
-            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("fr-FR");
             Sale[] big = [new("a", 1500, null), new("b", 2500, null)];
             var cut = Chart(null, big, [new("d", s => s.Desktop)]);
 
-            Assert.Contains(2000.0.ToString("#,0.##", CultureInfo.CurrentCulture), Texts(cut, "svg > text"));
+            Assert.Contains(2000.0.ToString("#,0.##", new CultureInfo("fr")), Texts(cut, "svg > text"));
 
             var formatted = Chart(p => p.Add(c => c.Format, v => $"${v}"), Sales);
             Assert.Contains("$100", Texts(formatted, "svg > text"));
@@ -144,6 +145,7 @@ public class ChartTests : BluxTestContext
         finally
         {
             CultureInfo.CurrentCulture = original;
+            CultureInfo.CurrentUICulture = originalUi;
         }
     }
 

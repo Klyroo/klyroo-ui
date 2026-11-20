@@ -511,9 +511,7 @@ public class ContentTests : BluxTestContext
 
     private sealed class Localized() : BluxTestContext(o =>
     {
-        o.Strings.ContentNavigation = "Documentation FR";
-        o.Strings.ContentToc = "Sur cette page";
-        o.Strings.ContentNext = "Suivant";
+        o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { ContentNavigation = "Documentation FR", ContentToc = "Sur cette page", ContentNext = "Suivant" });
     });
 
 

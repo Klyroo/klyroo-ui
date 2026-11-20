@@ -312,11 +312,13 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         var cookie = (await Page.Context.CookiesAsync()).Single(c => c.Name == ".AspNetCore.Culture");
         Assert.Equal("c=fr|uic=fr", Uri.UnescapeDataString(cookie.Value));
         Assert.Equal("/", cookie.Path);
-        // The server reads the cookie: statically rendered and server interactive pages show the new culture.
-        if (mode is "ssr" or "server")
+        // The server reads the cookie, and the WebAssembly client reads it too (ApplyCultureCookieAsync): every mode shows the new culture.
+        if (mode != "ssr")
         {
-            await Assertions.Expect(Page.GetByTestId("locale-current")).ToHaveTextAsync("fr");
+            await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         }
+        await Assertions.Expect(Page.GetByTestId("locale-current")).ToHaveTextAsync("fr");
+        await Assertions.Expect(Page.GetByTestId("locale-resolved")).ToHaveTextAsync("fr");
     }
 
     // ---- Theme

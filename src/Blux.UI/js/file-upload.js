@@ -1,14 +1,25 @@
 import { observeChildren } from './shared.js';
 
-function formatSize(bytes) {
-  const units = ['B', 'KB', 'MB', 'GB'];
+const SIZE_ATTRIBUTES = ['data-text-size-b', 'data-text-size-kb', 'data-text-size-mb', 'data-text-size-gb'];
+// Last resort when the markup carries no templates.
+const SIZE_FALLBACKS = ['{0} B', '{0} KB', '{0} MB', '{0} GB'];
+
+/** The size as the locale writes it: the templates and the culture come from the attributes C# rendered. */
+function formatSize(bytes, element) {
   let size = bytes;
   let unit = 0;
-  while (size >= 1024 && unit < units.length - 1) {
+  while (size >= 1024 && unit < SIZE_ATTRIBUTES.length - 1) {
     size /= 1024;
     unit++;
   }
-  return `${Math.round(size * 10) / 10} ${units[unit]}`;
+  const culture = element.getAttribute('data-culture') || undefined;
+  let number;
+  try {
+    number = new Intl.NumberFormat(culture, { maximumFractionDigits: 1 }).format(size);
+  } catch {
+    number = String(Math.round(size * 10) / 10);
+  }
+  return (element.getAttribute(SIZE_ATTRIBUTES[unit]) ?? SIZE_FALLBACKS[unit]).replace('{0}', number);
 }
 
 const format = (template, ...args) => (template ?? '').replace(/\{(\d)\}/g, (_, i) => String(args[Number(i)] ?? ''));
@@ -119,7 +130,7 @@ export class BxFileUploadElement extends HTMLElement {
     const errors = [];
     for (const file of files) {
       if (!matchesAccept(file, accept)) errors.push(format(this.getAttribute('data-text-not-accepted'), file.name));
-      else if (file.size > maxSize) errors.push(format(this.getAttribute('data-text-too-large'), file.name, formatSize(maxSize)));
+      else if (file.size > maxSize) errors.push(format(this.getAttribute('data-text-too-large'), file.name, formatSize(maxSize, this)));
       else if (accepted.length >= this.#maxFiles) {
         const message = format(this.getAttribute('data-text-too-many'), this.#maxFiles);
         if (!errors.includes(message)) errors.push(message);
@@ -144,7 +155,7 @@ export class BxFileUploadElement extends HTMLElement {
       name.textContent = file.name;
       const size = document.createElement('span');
       size.className = this.#cls('file-size');
-      size.textContent = formatSize(file.size);
+      size.textContent = formatSize(file.size, this);
       const remove = document.createElement('button');
       remove.type = 'button';
       remove.className = this.#cls('remove');

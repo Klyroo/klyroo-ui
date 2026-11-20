@@ -23,8 +23,8 @@ else
     [Parameter] public decimal Step { get; set; } = 1;
     [Parameter] public string? Placeholder { get; set; }
 
-    /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the current culture. The posted value is always invariant.</summary>
-    [Parameter] public string? Locale { get; set; }
+    /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the culture of the locale in effect. The posted value is always invariant.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>Horizontal puts the buttons on both sides of the field, vertical stacks them at its end.</summary>
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
@@ -81,7 +81,7 @@ else
                           min="@Invariant(Min)"
                           max="@Invariant(Max)"
                           step="@Invariant(Step)"
-                          locale="@(Locale ?? CultureInfo.CurrentCulture.Name)"
+                          locale="@((Culture ?? CurrentLocale.Culture).Name)"
                           disabled="@Disabled"
                           class="@_slots["root"]"
                           data-color="@Color.Value"
@@ -89,10 +89,10 @@ else
                           @onbxchange:stopPropagation="true">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Invariant(Value)" disabled="@Disabled" />
             <input @attributes="InputAttributes(binding)" />
-            <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Options.Strings.InputNumberDecrement" disabled="@Disabled">
+            <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Messages.InputNumberDecrement" disabled="@Disabled">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="@_slots["icon"]"><path d="M5 12h14" /></svg>
             </button>
-            <button type="button" tabindex="-1" class="@_slots["increment"]" data-slot="increment" aria-label="@Options.Strings.InputNumberIncrement" disabled="@Disabled">
+            <button type="button" tabindex="-1" class="@_slots["increment"]" data-slot="increment" aria-label="@Messages.InputNumberIncrement" disabled="@Disabled">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="@_slots["icon"]"><path d="M5 12h14M12 5v14" /></svg>
             </button>
         </bx-input-number>;

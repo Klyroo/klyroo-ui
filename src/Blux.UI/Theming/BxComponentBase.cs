@@ -20,6 +20,18 @@ public abstract class BxComponentBase : ComponentBase
     /// <summary>Classes added to the root element, merged last so they win over the theme.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>The locale set by an enclosing <see cref="BxApp"/> or by a cascading value.</summary>
+    [CascadingParameter] private BxLocale? CascadingLocale { get; set; }
+
+    /// <summary>
+    /// The locale of this component: the cascading one, then <see cref="BluxOptions.Locale"/>, then the one matching
+    /// the current UI culture. It is the same in every render mode for the same culture.
+    /// </summary>
+    protected BxLocale CurrentLocale => CascadingLocale ?? Options.ResolveLocale(System.Globalization.CultureInfo.CurrentUICulture);
+
+    /// <summary>The texts of <see cref="CurrentLocale"/>.</summary>
+    protected BxMessages Messages => CurrentLocale.Messages;
+
     /// <summary>The scope of the closest enclosing <see cref="BxTheme"/>, if any.</summary>
     [CascadingParameter] private protected BxThemeScope? ThemeScope { get; set; }
 

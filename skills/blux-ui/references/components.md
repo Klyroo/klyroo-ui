@@ -290,7 +290,7 @@
 `/components/input-number`. A numeric field with increment and decrement buttons, formatted for a culture.
 
 - `<BxInputNumber>`
-  - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Locale`, `Max`, `Min`, `Name`, `Orientation`, `Placeholder`, `Required`, `Size`, `Step`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `Color`, `Culture`, `Disabled`, `Id`, `Max`, `Min`, `Name`, `Orientation`, `Placeholder`, `Required`, `Size`, `Step`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
   - `Ui` (`InputNumberUi`): `Root`, `Base`, `Decrement`, `Increment`, `Icon`
 
 ### InputTags
@@ -673,10 +673,10 @@
 
 ### App
 
-`/components/app`. The root wrapper of an app: renders the toaster, sets language and direction, and cascades global class overrides.
+`/components/app`. The root wrapper of an app: renders the toaster, resolves the locale and sets language and direction, and cascades global class overrides.
 
 - `<BxApp>`
-  - Parameters: `Class`, `Dir`, `Lang`, `Overrides`, `ToastDuration`, `Toaster`, `Ui`
+  - Parameters: `Class`, `Dir`, `Lang`, `Locale`, `Overrides`, `ToastDuration`, `Toaster`, `Ui`
   - Slots: `ChildContent`
   - `Ui` (`AppUi`): `Root`
 
@@ -737,12 +737,13 @@
 
 ### LocaleSelect
 
-`/components/locale-select`. A select of cultures that writes the ASP.NET Core culture cookie and reloads the page.
+`/components/locale-select`. A select of locales that writes the ASP.NET Core culture cookie and reloads the page.
 
 - `<BxLocaleSelect>`
-  - Parameters: `AriaLabel`, `Class`, `Color`, `CookieName`, `CookiePath`, `Locales` (required), `Reload`, `Size`, `Ui`, `Value`, `Variant`
+  - Parameters: `AriaLabel`, `Class`, `Color`, `CookieName`, `CookiePath`, `Locales`, `Reload`, `Size`, `Ui`, `Value`, `Variant`
   - `Ui` (`LocaleSelectUi`): `Root`
 - `<BxLocale>`
+- `<BxMessages>`
 
 ### Theme
 

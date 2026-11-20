@@ -20,15 +20,3 @@ public sealed partial class BluxOptions
     public ComponentTheme PageAside { get; } = Themes.PageAside();
     public ComponentTheme PageBody { get; } = Themes.PageBody();
 }
-
-public sealed partial class BluxStrings
-{
-    /// <summary>Accessible name of a <c>BxPageLinks</c> list that has neither a title nor an <c>AriaLabel</c>.</summary>
-    public string PageLinks { get; set; } = "Links";
-
-    /// <summary>Accessible name of a <c>BxPageAnchors</c> list that has no <c>AriaLabel</c>.</summary>
-    public string PageAnchors { get; set; } = "On this page";
-
-    /// <summary>Hidden text added to the name of a page link that opens in a new tab.</summary>
-    public string OpensInNewTab { get; set; } = "(opens in a new tab)";
-}

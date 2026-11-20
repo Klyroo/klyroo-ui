@@ -14,7 +14,7 @@
                   class="@_slots["root"]"
                   @attributes="AdditionalAttributes">
     <div role="log" aria-live="off" aria-relevant="additions" tabindex="0" data-bx-chat-viewport
-         aria-label="@(Label ?? Options.Strings.ChatConversation)" aria-busy="@(Busy ? "true" : null)"
+         aria-label="@(Label ?? Messages.ChatConversation)" aria-busy="@(Busy ? "true" : null)"
          class="@_slots["viewport"]">
         <div class="@_slots["content"]" data-bx-chat-content-list>
             @ChildContent
@@ -34,7 +34,7 @@
                 </div>
             }
             @* Always rendered, so the text arrives in a live region that already exists and is announced. *@
-            <div role="status" class="@_slots["srOnly"]" data-slot="typing-status">@(Busy ? Options.Strings.ChatResponding : null)</div>
+            <div role="status" class="@_slots["srOnly"]" data-slot="typing-status">@(Busy ? Messages.ChatResponding : null)</div>
             @if (Status == ChatStatus.Error)
             {
                 <div role="alert" class="@_slots["error"]" data-slot="error">
@@ -44,7 +44,7 @@
                     }
                     else
                     {
-                        @Options.Strings.ChatError
+                        @Messages.ChatError
                     }
                 </div>
             }
@@ -54,7 +54,7 @@
     {
         <button type="button" hidden data-bx-chat-jump class="@_slots["jump"]">
             @BxChatIcons.Draw(BxChatIcons.ArrowDown, _slots["jumpIcon"])
-            @Options.Strings.ChatJumpToLatest
+            @Messages.ChatJumpToLatest
         </button>
     }
     <div role="status" aria-live="polite" aria-atomic="true" data-bx-chat-announce class="@_slots["status"]"></div>

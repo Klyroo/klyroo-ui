@@ -21,7 +21,7 @@
                             <th scope="col" class="@_slots["th"]" aria-sort="@AriaSort(column)">
                                 @if (column.Sortable && column.Field is not null)
                                 {
-                                    <button type="button" class="@_slots["sortButton"]" disabled="@(!RendererInfo.IsInteractive)" @onclick="() => Sort(column)">
+                                    <button type="button" class="@_slots["sortButton"]" disabled="@(!RendererInfo.IsInteractive)" title="@SortTitle(column)" @onclick="() => Sort(column)">
                                         @column.Title
                                         @if (column == _sortColumn)
                                         {
@@ -46,7 +46,7 @@
                     @if (rows.Count == 0)
                     {
                         <tr class="@_slots["tr"]">
-                            <td colspan="@_columns.Count" class="@_slots["empty"]">@(Empty ?? (RenderFragment)(b => b.AddContent(0, Options.Strings.NoData)))</td>
+                            <td colspan="@_columns.Count" class="@_slots["empty"]">@(Empty ?? (RenderFragment)(b => b.AddContent(0, Messages.NoData)))</td>
                         </tr>
                     }
                     @foreach (var item in rows)
@@ -118,6 +118,9 @@
             return _ascending ? items.OrderBy(key, Comparer<object?>.Default) : items.OrderByDescending(key, Comparer<object?>.Default);
         }
     }
+
+    private string SortTitle(BxColumn<TItem> column) =>
+        column == _sortColumn && _ascending ? Messages.SortDescending : Messages.SortAscending;
 
     private string? AriaSort(BxColumn<TItem> column) =>
         column != _sortColumn ? (column.Sortable && column.Field is not null ? "none" : null) : _ascending ? "ascending" : "descending";

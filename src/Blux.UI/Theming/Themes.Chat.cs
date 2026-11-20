@@ -64,7 +64,7 @@ internal static partial class Themes
             .Slot("indicator", "flex items-center gap-1 px-1 py-2")
             .Slot("dot", "size-1.5 rounded-full bg-(--blux-text-muted) motion-safe:animate-pulse nth-2:[animation-delay:150ms] nth-3:[animation-delay:300ms]")
             .Slot("error", "rounded-(--blux-radius) bg-(--blux-error)/10 px-3 py-2 text-sm text-(--blux-error-text)")
-            .Slot("jump", "absolute bottom-3 start-1/2 z-10 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-(--blux-bg-elevated) px-3 py-1.5 text-xs font-medium text-(--blux-text) " +
+            .Slot("jump", "absolute bottom-3 start-1/2 z-10 inline-flex -translate-x-1/2 rtl:translate-x-1/2 items-center gap-1.5 rounded-full bg-(--blux-bg-elevated) px-3 py-1.5 text-xs font-medium text-(--blux-text) " +
                           "shadow-md ring ring-inset ring-(--blux-border-accented) transition-colors hover:bg-(--blux-bg-accented) " + ChatFocus)
             .Slot("jumpIcon", "size-4")
             .Slot("srOnly", "sr-only")

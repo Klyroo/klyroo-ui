@@ -16,7 +16,7 @@ else
     private SlotSet _slots = default!;
     private int _sequence;
 
-    /// <summary>Show an AM/PM segment. Defaults to what the current culture's short time pattern uses.</summary>
+    /// <summary>Show an AM/PM segment. Defaults to what the culture's short time pattern uses.</summary>
     [Parameter] public bool? Hour12 { get; set; }
 
     /// <summary>Minutes added or removed by the arrow keys on the minute segment.</summary>
@@ -27,9 +27,9 @@ else
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public InputTimeUi? Ui { get; set; }
 
-    private bool Use12 => Hour12 ?? CultureInfo.CurrentCulture.DateTimeFormat.ShortTimePattern.Contains('h');
-    private string Am => string.IsNullOrEmpty(CultureInfo.CurrentCulture.DateTimeFormat.AMDesignator) ? "AM" : CultureInfo.CurrentCulture.DateTimeFormat.AMDesignator;
-    private string Pm => string.IsNullOrEmpty(CultureInfo.CurrentCulture.DateTimeFormat.PMDesignator) ? "PM" : CultureInfo.CurrentCulture.DateTimeFormat.PMDesignator;
+    private bool Use12 => Hour12 ?? CurrentLocale.Culture.DateTimeFormat.ShortTimePattern.Contains('h');
+    private string Am => string.IsNullOrEmpty(CurrentLocale.Culture.DateTimeFormat.AMDesignator) ? Messages.TimeAm : CurrentLocale.Culture.DateTimeFormat.AMDesignator;
+    private string Pm => string.IsNullOrEmpty(CurrentLocale.Culture.DateTimeFormat.PMDesignator) ? Messages.TimePm : CurrentLocale.Culture.DateTimeFormat.PMDesignator;
 
     private string HourLabel => Value is not { } t ? "--" : (Use12 ? (t.Hour % 12 == 0 ? 12 : t.Hour % 12) : t.Hour).ToString("00", CultureInfo.InvariantCulture);
     private string MinuteLabel => Value is not { } t ? "--" : t.Minute.ToString("00", CultureInfo.InvariantCulture);
@@ -61,9 +61,9 @@ else
         NotifyFieldChanged();
     }
 
-    private Dictionary<string, object> HourAttributes(EditBinding binding) => SegmentAttributes("hour", HourLabel, Options.Strings.Hours, Value is null, binding);
-    private Dictionary<string, object> MinuteAttributes(EditBinding binding) => SegmentAttributes("minute", MinuteLabel, Options.Strings.Minutes, Value is null, binding);
-    private Dictionary<string, object> PeriodAttributes(EditBinding binding) => SegmentAttributes("period", PeriodLabel, Options.Strings.DayPeriod, false, binding);
+    private Dictionary<string, object> HourAttributes(EditBinding binding) => SegmentAttributes("hour", HourLabel, Messages.Hours, Value is null, binding);
+    private Dictionary<string, object> MinuteAttributes(EditBinding binding) => SegmentAttributes("minute", MinuteLabel, Messages.Minutes, Value is null, binding);
+    private Dictionary<string, object> PeriodAttributes(EditBinding binding) => SegmentAttributes("period", PeriodLabel, Messages.DayPeriod, false, binding);
 
     private Dictionary<string, object> SegmentAttributes(string segment, string label, string name, bool placeholder, EditBinding binding)
     {
