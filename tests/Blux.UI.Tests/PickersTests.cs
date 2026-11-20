@@ -284,6 +284,20 @@ public class PickersTests : BluxTestContext
         Assert.Equal(expected, Blux.UI.Internal.FileSizeText.Format(bytes, BxLocales.En));
     }
 
+    [Theory]
+    [InlineData("fr", "carrousel", "diapositive")]
+    [InlineData("ja", "カルーセル", "スライド")]
+    [InlineData("de", "Karussell", "Folie")]
+    public void Carousel_role_descriptions_follow_the_locale(string code, string carousel, string slide)
+    {
+        var locale = BxLocales.All.Single(l => l.Code == code);
+
+        var cut = Render<BxCarousel>(p => p.AddCascadingValue(locale).Add(c => c.Items, Slides(2)).Add(c => c.AriaLabel, "Places"));
+
+        Assert.Equal(carousel, cut.Find("bx-carousel").GetAttribute("aria-roledescription"));
+        Assert.All(cut.FindAll("[data-slot=viewport] > [role=group]"), s => Assert.Equal(slide, s.GetAttribute("aria-roledescription")));
+    }
+
     [Fact]
     public void Carousel_follows_the_APG_pattern()
     {
@@ -291,13 +305,13 @@ public class PickersTests : BluxTestContext
 
         var host = cut.Find("bx-carousel");
         Assert.Equal("region", host.GetAttribute("role"));
-        Assert.Equal("carousel", host.GetAttribute("aria-roledescription"));
+        Assert.Equal(BxLocales.En.Messages.CarouselRoleDescription, host.GetAttribute("aria-roledescription"));
         Assert.Equal("Places", host.GetAttribute("aria-label"));
         Assert.True(host.HasAttribute("loop"));
         Assert.Equal("1", host.GetAttribute("index"));
         var slides = cut.FindAll("[data-slot=viewport] > [role=group]");
         Assert.Equal(3, slides.Count);
-        Assert.All(slides, s => Assert.Equal("slide", s.GetAttribute("aria-roledescription")));
+        Assert.All(slides, s => Assert.Equal(BxLocales.En.Messages.CarouselSlideRoleDescription, s.GetAttribute("aria-roledescription")));
         Assert.Equal(["1 of 3", "2 of 3", "3 of 3"], slides.Select(s => s.GetAttribute("aria-label")));
         var dots = cut.FindAll("[data-slot=dot]");
         Assert.Equal(["Go to slide 1", "Go to slide 2", "Go to slide 3"], dots.Select(d => d.GetAttribute("aria-label")));

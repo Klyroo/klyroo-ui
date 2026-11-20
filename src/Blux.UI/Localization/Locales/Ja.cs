@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "スライドショーの自動再生を開始",
             GoToSlide = "スライド{0}へ移動",
             SlideOf = "{0} / {1}",
+            CarouselRoleDescription = "カルーセル",
+            CarouselSlideRoleDescription = "スライド",
             SlideControls = "スライドを選択",
             FileSizeBytes = "{0} B",
             FileSizeKilobytes = "{0} KB",

@@ -109,7 +109,7 @@
             ["preview"] = VariantValue.Of(_preview),
         }, Ui, "root");
         var extension = Path.GetExtension(Name).TrimStart('.').ToUpperInvariant();
-        var computed = string.Join(" · ", new[] { extension, FileSize is { } bytes ? Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale) : "" }.Where(p => p.Length > 0));
+        var computed = string.Join(" · ", new[] { extension, FileSize is { } bytes ? Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale, FormatCulture) : "" }.Where(p => p.Length > 0));
         _description = Description ?? (computed.Length > 0 ? computed : null);
         _statusText = Status switch
         {

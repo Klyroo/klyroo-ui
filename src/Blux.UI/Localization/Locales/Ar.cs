@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "بدء العرض التلقائي",
             GoToSlide = "الانتقال إلى الشريحة {0}",
             SlideOf = "{0} من {1}",
+            CarouselRoleDescription = "عرض شرائح",
+            CarouselSlideRoleDescription = "شريحة",
             SlideControls = "اختر شريحة",
             FileSizeBytes = "{0} بايت",
             FileSizeKilobytes = "{0} ك.ب",

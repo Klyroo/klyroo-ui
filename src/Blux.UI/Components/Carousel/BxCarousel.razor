@@ -14,7 +14,7 @@
              data-label-pause="@Messages.PauseSlides"
              data-label-play="@Messages.PlaySlides"
              role="region"
-             aria-roledescription="carousel"
+             aria-roledescription="@Messages.CarouselRoleDescription"
              aria-label="@AriaLabel"
              class="@_slots["root"]"
              data-color="@Color.Value"
@@ -62,7 +62,7 @@
         {
             var item = Items[i];
             var number = i + 1;
-            <div role="group" aria-roledescription="slide" data-index="@i" class="@_slots["slide"]"
+            <div role="group" aria-roledescription="@Messages.CarouselSlideRoleDescription" data-index="@i" class="@_slots["slide"]"
                  aria-label="@(item.Label ?? string.Format(Messages.SlideOf, number, Items.Count))">
                 @item.Content
             </div>

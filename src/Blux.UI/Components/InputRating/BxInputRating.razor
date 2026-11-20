@@ -42,7 +42,7 @@ else
 
     private static string Invariant(double value) => value.ToString(CultureInfo.InvariantCulture);
 
-    private string Describe(double value) => string.Format(CurrentLocale.Culture, Messages.InputRatingValue, Invariant(value), Max);
+    private string Describe(double value) => string.Format(FormatCulture, Messages.InputRatingValue, Invariant(value), Max);
 
     // Lowest value first, in reading order: the native radio keys then move like the stars look (Right raises the
     // rating, Left lowers it). A star is filled by CSS when its own radio or any later one is checked.

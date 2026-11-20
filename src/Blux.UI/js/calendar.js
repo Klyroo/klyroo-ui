@@ -251,6 +251,17 @@ export class BxCalendarElement extends HTMLElement {
     }
   }
 
+  // The month and the year in the order and with the words of the locale ("2026年11月", "novembre 2026"), which a
+  // "{month} {year}" template cannot give. The month names of the markup are the fallback when Intl rejects the locale.
+  #monthYear(date, monthName, year) {
+    const locale = this.getAttribute('data-locale') || undefined;
+    try {
+      return new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'long', calendar: 'gregory', timeZone: 'UTC' }).format(date);
+    } catch {
+      return `${monthName} ${year}`;
+    }
+  }
+
   #render(focusTarget) {
     const body = this.#body;
     if (!body || !this.#view) return;
@@ -282,7 +293,7 @@ export class BxCalendarElement extends HTMLElement {
     heading.id = this.#headingId;
     heading.className = this.#cls('heading');
     heading.setAttribute('aria-live', 'polite');
-    heading.textContent = `${months[month] ?? month + 1} ${year}`;
+    heading.textContent = this.#monthYear(view, months[month] ?? String(month + 1), year);
     header.append(prev, heading, next);
 
     const table = document.createElement('table');

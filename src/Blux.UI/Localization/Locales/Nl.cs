@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "Automatische diavoorstelling starten",
             GoToSlide = "Ga naar dia {0}",
             SlideOf = "{0} van {1}",
+            CarouselRoleDescription = "carrousel",
+            CarouselSlideRoleDescription = "dia",
             SlideControls = "Kies een dia",
             FileSizeBytes = "{0} B",
             FileSizeKilobytes = "{0} KB",

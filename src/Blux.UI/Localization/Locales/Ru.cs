@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "Запустить автоматический показ слайдов",
             GoToSlide = "Перейти к слайду {0}",
             SlideOf = "{0} из {1}",
+            CarouselRoleDescription = "карусель",
+            CarouselSlideRoleDescription = "слайд",
             SlideControls = "Выберите слайд",
             FileSizeBytes = "{0} Б",
             FileSizeKilobytes = "{0} КБ",
