@@ -115,5 +115,5 @@ internal static partial class Themes
             .Slot("playIcon", "hidden size-4 group-data-paused/carousel:block")
             .Slot("dots", "flex items-center gap-1")
             .Slot("dot", "relative size-3 rounded-full bg-(--blux-bg-accented) ring ring-inset ring-(--blux-border-accented) transition-colors hover:bg-(--blux-border-accented) " +
-                         "after:absolute after:-inset-2 after:content-[''] aria-current:bg-(--bx-color) aria-current:ring-(--bx-color-text) " + FocusRing);
+                         "after:absolute after:-inset-x-0.5 after:-inset-y-2 after:content-[''] aria-current:bg-(--bx-color) aria-current:ring-(--bx-color-text) " + FocusRing);
 }
