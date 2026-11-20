@@ -26,6 +26,21 @@ document.addEventListener('click', async (event) => {
   setTimeout(() => label && (label.textContent = 'Copy'), 1500);
 });
 
+// Skip link: Blazor intercepts same-page hash links and only scrolls, so the focus would stay on the link and the
+// next Tab would go through the header and the sidebar again. Capture phase, so this runs before Blazor's handler.
+document.addEventListener(
+  'click',
+  (event) => {
+    const link = event.target.closest?.('a[data-skip-link]');
+    const target = link && document.getElementById(link.hash.slice(1));
+    if (!target) return;
+    event.preventDefault();
+    target.focus({ preventScroll: true });
+    target.scrollIntoView();
+  },
+  true,
+);
+
 // Dark mode toggle in the header.
 document.addEventListener('click', (event) => {
   if (!event.target.closest?.('[data-color-mode-toggle]')) return;

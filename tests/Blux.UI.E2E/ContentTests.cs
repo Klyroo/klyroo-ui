@@ -493,6 +493,23 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
             "() => { const t = document.getElementById('main'); const s = document.querySelector('[data-testid=docs-sidebar]'); return t.localName === 'main' && !!(s.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); }"));
     }
 
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Skip_link_moves_the_focus_to_the_main_landmark(string mode)
+    {
+        await Open(mode, "button");
+
+        // The page focuses its h1 after loading (FocusOnNavigate), so reach the link directly.
+        var skip = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+        await skip.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        // "#main" resolves against <base href="/">: without the site's handler it would load the home page.
+        await Assertions.Expect(Page).ToHaveURLAsync(new Regex($"/{mode}/components/button$"));
+        // The next Tab starts from main, after the header and the docs sidebar.
+        await Assertions.Expect(Page.Locator("main#main")).ToBeFocusedAsync();
+    }
+
     private static Task<string> ModLabel(ILocator kbd) =>
         kbd.EvaluateAsync<string>("e => getComputedStyle(e, '::before').content");
 
