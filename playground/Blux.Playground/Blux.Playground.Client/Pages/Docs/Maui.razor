@@ -19,6 +19,12 @@
     <CodeBlock Title="MauiProgram.cs" Code="@Program" />
     <p>The host page links the stylesheets. <code>viewport-fit=cover</code> lets the page use the whole screen; Blux keeps headers, panels and toasts inside the safe area (<code>env(safe-area-inset-*)</code>).</p>
     <CodeBlock Title="wwwroot/index.html" Code="@Index" />
+    <p>
+        <strong>Android 15 and later draw apps edge to edge</strong>, so the web view would sit under the status bar and the gesture bar, and taps on a header would land on the system bar.
+        The Android web view does not reliably report <code>env(safe-area-inset-*)</code> (those insets stay 0), so on Android let MAUI inset the page: set
+        <code>SafeAreaEdges="Container"</code> on the <code>ContentPage</code> that hosts the <code>BlazorWebView</code> (.NET MAUI 10). On iOS and Mac Catalyst the CSS insets do work with
+        <code>viewport-fit=cover</code>, and Blux uses them there; do not combine both on one platform or the space is added twice.
+    </p>
     <p>The page sends content to the head through <code>HeadOutlet</code>. Add it as a root component with the selector <code>head::after</code>, and place <code>BxHead</code> once in the layout:</p>
     <CodeBlock Title="MainPage.xaml" Code="@Xaml" />
     <p><code>BxHead</code> renders the theme variables of <code>AddBluxUi(o =&gt; o.Colors...)</code> (<code>BxThemeStyle</code>) and the self-hosted fonts (<code>BxFonts</code>) into the head. It renders nothing in a browser, where <code>App.razor</code> places them. The color mode needs nothing: the JS initializer applies the stored mode before the app renders, so <code>BxColorModeScript</code> renders nothing in a web view and <code>BxCultureMeta</code> neither.</p>
