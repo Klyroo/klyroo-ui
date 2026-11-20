@@ -603,4 +603,28 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.Keyboard.PressAsync("ArrowRight");
         await Assertions.Expect(bold).ToBeFocusedAsync();
     }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Toolbar_buttons_follow_the_action_they_stand_for_when_Items_changes_in_place(string mode)
+    {
+        await OpenEditor(mode, "editor-toolbar");
+        var toolbar = Page.GetByTestId("editor-changing").GetByRole(AriaRole.Toolbar);
+        await Surface("editor-changing").ClickAsync();
+        await Page.Keyboard.PressAsync("Control+A");
+        var second = toolbar.Locator("button[data-action]").Nth(1);
+        await Assertions.Expect(second).ToHaveAttributeAsync("data-action", "italic");
+        await Assertions.Expect(second).ToHaveAttributeAsync("aria-pressed", "true");
+
+        // Same length, only attributes differ: Blazor patches data-action and the label, not the pressed state.
+        await Page.GetByTestId("editor-changing-next").ClickAsync();
+        await Assertions.Expect(second).ToHaveAttributeAsync("data-action", "code");
+        await Assertions.Expect(second).ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 1000 });
+        await Assertions.Expect(second).ToBeEnabledAsync(new() { Timeout = 1000 });
+
+        // Redo has nothing to redo: it is disabled whatever the italic button was.
+        await Page.GetByTestId("editor-changing-next").ClickAsync();
+        await Assertions.Expect(second).ToHaveAttributeAsync("data-action", "redo");
+        await Assertions.Expect(second).ToBeDisabledAsync(new() { Timeout = 1000 });
+    }
 }

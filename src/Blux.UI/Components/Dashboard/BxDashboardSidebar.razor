@@ -1,5 +1,6 @@
 @namespace Blux.UI
 @inherits BxComponentBase
+@implements IDisposable
 
 @*
     A BxSidebar for a dashboard: the same browser-owned collapsed state and width, the same off-canvas panel below the
@@ -8,7 +9,7 @@
     buttons unless Collapsible is set. The key of the enclosing BxDashboardGroup is its storage id; with several sidebars in
     one group only the first takes it, the others take "key-2", "key-3" (or set Id), so they never share state.
 *@
-<BxSidebar Id="@(Id ?? _groupId)"
+<BxSidebar Id="@(Id ?? Context?.SidebarId(_slot))"
            Header="Header" Footer="Footer"
            Collapsible="Collapsible"
            Collapsed="Collapsed" CollapsedChanged="CollapsedChanged"
@@ -22,7 +23,8 @@
 
 @code {
     private SidebarUi _ui = new();
-    private string? _groupId;
+    private int _slot;
+    private DashboardContext? _registeredWith;
 
     [CascadingParameter] private DashboardContext? Context { get; set; }
 
@@ -62,7 +64,14 @@
     /// <summary>Slot overrides, the same as <see cref="BxSidebar"/>.</summary>
     [Parameter] public SidebarUi? Ui { get; set; }
 
-    protected override void OnInitialized() => _groupId = Context?.RegisterSidebar();
+    protected override void OnInitialized()
+    {
+        _registeredWith = Context;
+        _slot = Context?.RegisterSidebar() ?? 0;
+    }
+
+    /// <summary>Gives the slot back, so the next sidebar of the group takes it and keeps the cookie of the key.</summary>
+    public void Dispose() => _registeredWith?.ReleaseSidebar(_slot);
 
     // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
     protected override void OnParametersSet() =>

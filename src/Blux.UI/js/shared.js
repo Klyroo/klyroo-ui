@@ -99,14 +99,20 @@ export function observeChildren(host, callback, { ignore = null } = {}) {
 }
 
 /**
- * True when a modal dialog is open and does not contain the element: the page behind it is not available, though it
- * is not marked inert (a modal dialog blocks it without the attribute).
+ * What a shortcut whose element is `element` does while a modal dialog is open (the page behind it is not available,
+ * though it is not marked inert): "run" (no modal is open, or the modals open contain the element), "consume" (the only
+ * modal open is the one the element belongs to, like the hidden trigger of a search rendered next to its dialog in the
+ * same <bx-modal>: the key is taken so the browser does not run its own, but the element is not clicked, the dialog is
+ * already open) or "skip" (the page behind an unrelated modal: the key is left alone).
  */
-export function behindModal(element) {
+export function shortcutState(element) {
+  let consume = false;
   for (const dialog of document.querySelectorAll('dialog:modal')) {
-    if (!dialog.contains(element)) return true;
+    if (dialog.contains(element)) continue;
+    if (dialog.closest('bx-modal')?.contains(element)) consume = true;
+    else return 'skip';
   }
-  return false;
+  return consume ? 'consume' : 'run';
 }
 
 /** Moves focus within items with arrow keys, Home, End and first-letter typeahead. Returns true when handled. */

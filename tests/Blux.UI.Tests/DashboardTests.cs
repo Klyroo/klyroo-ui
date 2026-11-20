@@ -85,6 +85,81 @@ public class DashboardTests : BluxTestContext
         Assert.Equal(["app", "app-2", "mine"], cut.FindAll("bx-sidebar").Select(s => s.GetAttribute("data-bx-sidebar-id")));
     }
 
+    private sealed class SidebarHost : Microsoft.AspNetCore.Components.ComponentBase
+    {
+        [Microsoft.AspNetCore.Components.Parameter] public string? StorageKey { get; set; }
+        [Microsoft.AspNetCore.Components.Parameter] public bool First { get; set; } = true;
+        [Microsoft.AspNetCore.Components.Parameter] public bool Second { get; set; }
+        [Microsoft.AspNetCore.Components.Parameter] public bool Third { get; set; }
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+        {
+            b.OpenComponent<BxDashboardGroup>(0);
+            b.AddAttribute(1, nameof(BxDashboardGroup.StorageKey), StorageKey);
+            b.AddAttribute(2, nameof(BxDashboardGroup.ChildContent), (Microsoft.AspNetCore.Components.RenderFragment)(c =>
+            {
+                if (First) Sidebar(c, 10, "first");
+                if (Second) Sidebar(c, 20, "second");
+                if (Third) Sidebar(c, 30, "third");
+                c.OpenComponent<BxDashboardSidebarCollapse>(40);
+                c.CloseComponent();
+            }));
+            b.CloseComponent();
+        }
+
+        private static void Sidebar(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder c, int seq, string label)
+        {
+            c.OpenComponent<BxDashboardSidebar>(seq);
+            c.AddAttribute(seq + 1, nameof(BxDashboardSidebar.As), "div");
+            c.AddAttribute(seq + 2, nameof(BxDashboardSidebar.AriaLabel), label);
+            c.SetKey(label);
+            c.CloseComponent();
+        }
+    }
+
+    private static string?[] SidebarIds(Bunit.IRenderedComponent<SidebarHost> cut) =>
+        [.. cut.FindAll("bx-sidebar").Select(s => s.GetAttribute("data-bx-sidebar-id"))];
+
+    [Fact]
+    public void Sidebar_removed_and_added_again_keeps_the_key_of_the_group()
+    {
+        var cut = Render<SidebarHost>(p => p.Add(h => h.StorageKey, "app"));
+        Assert.Equal(["app"], SidebarIds(cut));
+
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.First, false));
+        Assert.Empty(SidebarIds(cut));
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.First, true));
+
+        Assert.Equal(["app"], SidebarIds(cut));
+        Assert.Equal("app", cut.Find("[data-bx-sidebar-collapse]").GetAttribute("data-bx-sidebar-for"));
+    }
+
+    [Fact]
+    public void Sidebar_removed_leaves_the_others_their_id_and_a_new_one_takes_the_free_slot()
+    {
+        var cut = Render<SidebarHost>(p => p.Add(h => h.StorageKey, "app").Add(h => h.Second, true));
+        Assert.Equal(["app", "app-2"], SidebarIds(cut));
+
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.First, false).Add(h => h.Second, true));
+        Assert.Equal(["app-2"], SidebarIds(cut));
+
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.First, false).Add(h => h.Second, true).Add(h => h.Third, true));
+        var ids = SidebarIds(cut);
+        Assert.Equal(["app-2", "app"], ids);
+    }
+
+    [Fact]
+    public void Sidebar_and_controls_follow_a_changed_storage_key_together()
+    {
+        var cut = Render<SidebarHost>(p => p.Add(h => h.StorageKey, "app").Add(h => h.Second, true));
+        Assert.Equal(["app", "app-2"], SidebarIds(cut));
+
+        cut.Render(p => p.Add(h => h.StorageKey, "other").Add(h => h.Second, true));
+
+        Assert.Equal(["other", "other-2"], SidebarIds(cut));
+        Assert.Equal("other", cut.Find("[data-bx-sidebar-collapse]").GetAttribute("data-bx-sidebar-for"));
+    }
+
     // ---- DashboardSidebar
 
     [Fact]
@@ -327,6 +402,17 @@ public class DashboardTests : BluxTestContext
         Assert.Equal("", keys[0].TextContent);
         Assert.Equal("K", keys[1].TextContent);
         Assert.Equal("Control+K Meta+K", cut.Find("button").GetAttribute("aria-keyshortcuts"));
+    }
+
+    [Fact]
+    public void Search_button_hosts_the_platform_hint_in_its_own_element_so_no_global_observer_is_needed()
+    {
+        var cut = Render<BxDashboardSearchButton>();
+
+        var host = cut.Find("bx-mod-keys");
+        Assert.Equal("true", host.GetAttribute("aria-hidden"));
+        Assert.Equal(2, host.QuerySelectorAll("kbd").Length);
+        Assert.NotNull(host.QuerySelector("kbd[data-bx-mod]"));
     }
 
     [Fact]

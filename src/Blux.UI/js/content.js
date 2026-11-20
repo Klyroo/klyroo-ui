@@ -1,4 +1,4 @@
-import { behindModal, observeChildren } from './shared.js';
+import { observeChildren, shortcutState } from './shared.js';
 
 /**
  * The "Content" family: documentation components.
@@ -182,9 +182,10 @@ document.addEventListener('keydown', (event) => {
     }
     // A shortcut without ctrl or meta types a character: leave it to the text field.
     if (isTyping && !combo.ctrl && !combo.meta) continue;
-    if (element.matches(':disabled') || element.closest('[inert]') || behindModal(element)) continue;
+    const state = shortcutState(element);
+    if (element.matches(':disabled') || element.closest('[inert]') || state === 'skip') continue;
     event.preventDefault();
-    element.click();
+    if (state === 'run') element.click();
     return;
   }
 });

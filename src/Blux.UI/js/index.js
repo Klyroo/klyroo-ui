@@ -29,7 +29,7 @@ import './chat.js';
 import './editor.js';
 import './chart.js';
 import './content.js';
-import { applyPlatformKeys } from './platform-keys.js';
+import './platform-keys.js';
 import { toast } from './toaster.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
@@ -90,7 +90,6 @@ export function afterWebStarted(blazor) {
   blazor.addEventListener('enhancedload', () => {
     applyColorMode();
     hideBrokenAvatars();
-    applyPlatformKeys();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
     // Every Blux element re-applies what the merge reset; no list to keep in sync with the components.
     for (const el of document.querySelectorAll('*')) {

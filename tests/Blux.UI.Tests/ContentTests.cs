@@ -454,6 +454,17 @@ public class ContentTests : BluxTestContext
     }
 
     [Fact]
+    public void Search_button_hosts_the_platform_hint_in_its_own_element_so_no_global_observer_is_needed()
+    {
+        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
+
+        var host = cut.Find("bx-mod-keys");
+        Assert.Equal("true", host.GetAttribute("aria-hidden"));
+        Assert.Equal(2, host.QuerySelectorAll("kbd").Length);
+        Assert.NotNull(host.QuerySelector("kbd[data-bx-mod]"));
+    }
+
+    [Fact]
     public void Search_button_explicit_keys_are_shown_as_given_without_a_platform_hint()
     {
         var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Keys, ["Ctrl", "K"]));

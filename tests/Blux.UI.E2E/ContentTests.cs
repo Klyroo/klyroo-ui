@@ -591,4 +591,25 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
 
         Assert.Empty(await Page.EvaluateAsync<string[]>("() => window.__hits"));
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Shortcut_of_the_open_search_is_consumed_and_leaves_it_open(string mode)
+    {
+        await Open(mode, "button");
+        await Page.EvaluateAsync("""
+            () => {
+                window.__prevented = [];
+                window.addEventListener('keydown', (e) => { if (e.ctrlKey && e.key.toLowerCase() === 'k') window.__prevented.push(e.defaultPrevented); });
+            }
+            """);
+        await Page.Keyboard.PressAsync("Control+K");
+        await Assertions.Expect(SiteSearch).ToBeVisibleAsync();
+
+        // The browser's own Ctrl+K (focus the address bar) must not run while the search is open.
+        await Page.Keyboard.PressAsync("Control+K");
+
+        Assert.Equal(new[] { true, true }, await Page.EvaluateAsync<bool[]>("() => window.__prevented"));
+        await Assertions.Expect(SiteSearch).ToBeVisibleAsync();
+    }
 }
