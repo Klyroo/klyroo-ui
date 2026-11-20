@@ -34,7 +34,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void All_holds_the_twelve_built_in_locales_once_each()
     {
-        Assert.Equal(["en", "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-CN", "ar", "ru"], BxLocales.All.Select(l => l.Code));
+        Assert.Equal(["en", "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru"], BxLocales.All.Select(l => l.Code));
         Assert.Equal(12, BxLocales.All.Select(l => l.Code).Distinct(StringComparer.OrdinalIgnoreCase).Count());
         Assert.All(BxLocales.All, l => Assert.False(string.IsNullOrWhiteSpace(l.Name)));
     }
@@ -133,7 +133,10 @@ public partial class LocalizationTests : BluxTestContext
     [InlineData("pt-PT", "pt")]
     [InlineData("pt-BR", "pt-BR")]
     [InlineData("pt-br", "pt-BR")]
-    [InlineData("zh-CN", "zh-CN")]
+    [InlineData("zh-CN", "zh-Hans")]
+    [InlineData("zh-SG", "zh-Hans")]
+    [InlineData("zh-Hans", "zh-Hans")]
+    [InlineData("zh-Hans-CN", "zh-Hans")]
     [InlineData("zh-TW", "en")]
     [InlineData("zh-HK", "en")]
     [InlineData("zh-Hant", "en")]
@@ -151,10 +154,10 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void A_language_without_a_locale_of_its_own_gets_English_instead_of_a_sibling_of_the_same_language()
     {
-        // "zh-TW" is Chinese but not zh-CN: UseRequestLocalization falls back to its default culture, so Resolve does too.
+        // "zh-TW" is Chinese but Traditional, not zh-Hans: UseRequestLocalization falls back to its default culture, so Resolve does too.
         Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-TW")).Code);
         Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-HK")).Code);
-        Assert.Equal("zh-CN", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-CN")).Code);
+        Assert.Equal("zh-Hans", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-CN")).Code);
     }
 
     [Fact]
