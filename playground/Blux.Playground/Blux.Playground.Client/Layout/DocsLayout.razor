@@ -13,7 +13,8 @@
                 <div class="border-t border-(--blux-border) p-4"><Sidebar /></div>
             </details>
         </aside>
-        <main id="main" tabindex="-1" class="focus:outline-none">
+        @* data-interactive: E2E tests wait on it before checking what the interactive render changes (the title, for one). *@
+        <main id="main" tabindex="-1" class="focus:outline-none" data-interactive="@(RendererInfo.IsInteractive ? "true" : "false")">
             <article class="max-w-4xl">
                 @Body
             </article>
