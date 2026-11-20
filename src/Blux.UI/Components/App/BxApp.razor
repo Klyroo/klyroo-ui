@@ -5,12 +5,14 @@
     The root wrapper of an app, placed once in the layout around @Body. It renders the toaster (so IToastService
     works), sets the language and text direction of the tree, and cascades global class overrides to every component
     through a BxTheme. It also resolves the locale (its Locale parameter, else the one of AddBluxUi, else the one matching
-    the current UI culture), cascades it to every component and writes it as lang and dir. Replace a hand-placed <BxToaster /> with it, never keep both.
+    the current UI culture), cascades it to every component and writes it as lang and dir. The locale is cascaded as a
+    fixed value, so a re-render of the app (each navigation re-renders the layout) does not re-render every component
+    below it; changing the locale re-creates the subtree (and the state of the components in it) with the new texts. Replace a hand-placed <BxToaster /> with it, never keep both.
     The overrides are cascading values: they do not cross a render mode boundary. Where a page or a component sets its
     own @rendermode (per-page interactivity), the components inside it do not see them: place a BxApp or BxTheme inside
     that island too, or use AddBluxUi for overrides that must apply everywhere.
 *@
-<CascadingValue Value="_locale">
+<CascadingValue Value="_locale" IsFixed="true" @key="_localeKey">
     <BxTheme Overrides="Overrides">
         <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir ?? _locale.DirAttribute)" @attributes="AdditionalAttributes">
             @ChildContent
@@ -25,6 +27,7 @@
 @code {
     private SlotSet _slots = default!;
     private BxLocale _locale = default!;
+    private int _localeKey;
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -53,7 +56,18 @@
 
     protected override void OnParametersSet()
     {
-        _locale = Locale ?? CurrentLocale;
+        var locale = Locale ?? CurrentLocale;
+        if (_locale is null)
+        {
+            _locale = locale;
+        }
+        else if (!_locale.Equals(locale))
+        {
+            // The value is cascaded as fixed, so components below do not re-render each time this app does. A new locale
+            // gets a new key: the cascading value and everything below it are created again with the new texts.
+            _locale = locale;
+            _localeKey++;
+        }
         _slots = ResolveSlots(Options.App, new Dictionary<string, string?>(), Ui, "root");
     }
 }

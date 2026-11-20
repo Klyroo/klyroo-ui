@@ -56,7 +56,7 @@ else
     /// <summary>First column of the grid. Defaults to the culture's first day of the week.</summary>
     [Parameter] public DayOfWeek? WeekStart { get; set; }
 
-    /// <summary>Source of month and day names and of the first day of the week. Defaults to the culture of the locale in effect.</summary>
+    /// <summary>Source of month and day names and of the first day of the week. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language).</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>Accessible name of the calendar.</summary>
@@ -82,7 +82,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _culture = Culture ?? CurrentLocale.Culture;
+        _culture = Culture ?? FormatCulture;
         _slots = ResolveSlots(Options.Calendar, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
     }
 

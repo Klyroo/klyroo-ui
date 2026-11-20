@@ -67,15 +67,34 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         Assert.Equal(expected, actual);
     }
 
-    /// <summary>Opens a page and waits until it can be used in its mode.</summary>
-    protected async Task Open(string mode, string component)
+    /// <summary>
+    /// A page of a browser whose language is <paramref name="browserLocale"/> (what the WebAssembly runtime starts from) and
+    /// that sends <paramref name="acceptLanguage"/> to the server, with no culture cookie.
+    /// </summary>
+    protected async Task<IPage> NewPage(string acceptLanguage, string browserLocale)
     {
-        await Page.GotoAsync($"/{mode}/components/{component}");
+        var context = await server.Browser.NewContextAsync(new()
+        {
+            BaseURL = server.BaseUrl,
+            ExtraHTTPHeaders = new Dictionary<string, string> { ["Accept-Language"] = acceptLanguage },
+        });
+        _extraContexts.Add(context);
+        // The language of the browser, which the WebAssembly runtime starts from (a Locale option would replace the header).
+        await context.AddInitScriptAsync($"Object.defineProperty(navigator, 'language', {{ get: () => '{browserLocale}' }}); Object.defineProperty(navigator, 'languages', {{ get: () => ['{browserLocale}'] }});");
+        return await context.NewPageAsync();
+    }
+
+    /// <summary>Opens a page and waits until it can be used in its mode.</summary>
+    protected Task Open(string mode, string component) => Open(Page, mode, component);
+
+    protected static async Task Open(IPage page, string mode, string component)
+    {
+        await page.GotoAsync($"/{mode}/components/{component}");
         // Blux's browser side is loaded by blazor.web.js in every mode, static included.
-        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
         if (mode != "ssr")
         {
-            await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+            await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         }
     }
 

@@ -109,7 +109,7 @@
         _wasStreaming = Streaming;
         var seconds = Duration ?? _measured;
         _label = Streaming ? Text ?? Messages.ChatThinking
-            : seconds is { } s ? string.Format(CurrentLocale.Culture, Messages.ChatThoughtFor, s)
+            : seconds is { } s ? string.Format(FormatCulture, Messages.ChatThoughtFor, s)
             : Text ?? Messages.ChatThought;
     }
 

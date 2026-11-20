@@ -5,5 +5,10 @@
 <div class="flex flex-col items-center gap-3">
     <BxLocaleSelect data-testid="locale-select" />
     <p class="text-sm text-(--blux-text-muted)">Current UI culture: <code data-testid="locale-current">@CultureInfo.CurrentUICulture.Name</code></p>
+    <div class="flex items-center gap-3" data-testid="locale-formats">
+        <BxInputTime Value="@(new TimeOnly(15, 30))" AriaLabel="Time" />
+        <BxCalendar Value="@(new DateOnly(2026, 11, 20))" Size="BxSize.Sm" AriaLabel="Calendar" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)">Formats of the components: <code data-testid="locale-format-culture">@CultureInfo.CurrentCulture.Name</code></p>
     <p class="text-sm text-(--blux-text-muted)">Locale of the components: <code data-testid="locale-resolved">@Options.ResolveLocale(CultureInfo.CurrentUICulture).Code</code></p>
 </div>

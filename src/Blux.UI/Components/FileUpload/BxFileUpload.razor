@@ -20,7 +20,7 @@
                 data-text-size-kb="@Messages.FileSizeKilobytes"
                 data-text-size-mb="@Messages.FileSizeMegabytes"
                 data-text-size-gb="@Messages.FileSizeGigabytes"
-                data-culture="@CurrentLocale.Culture.Name"
+                data-culture="@FormatCulture.Name"
                 data-cls-file="@_slots["file"]"
                 data-cls-file-name="@_slots["fileName"]"
                 data-cls-file-size="@_slots["fileSize"]"
@@ -103,7 +103,7 @@
             ["size"] = VariantValue.Of(Size ?? Field?.Size ?? DefaultSize(BxSize.Md)),
         }, Ui, "root");
 
-    private string FormatSize(long bytes) => Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale);
+    private string FormatSize(long bytes) => Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale, FormatCulture);
 
     private Dictionary<string, object> InputAttributes()
     {

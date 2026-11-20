@@ -27,9 +27,9 @@ else
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public InputTimeUi? Ui { get; set; }
 
-    private bool Use12 => Hour12 ?? CurrentLocale.Culture.DateTimeFormat.ShortTimePattern.Contains('h');
-    private string Am => string.IsNullOrEmpty(CurrentLocale.Culture.DateTimeFormat.AMDesignator) ? Messages.TimeAm : CurrentLocale.Culture.DateTimeFormat.AMDesignator;
-    private string Pm => string.IsNullOrEmpty(CurrentLocale.Culture.DateTimeFormat.PMDesignator) ? Messages.TimePm : CurrentLocale.Culture.DateTimeFormat.PMDesignator;
+    private bool Use12 => Hour12 ?? FormatCulture.DateTimeFormat.ShortTimePattern.Contains('h');
+    private string Am => string.IsNullOrEmpty(FormatCulture.DateTimeFormat.AMDesignator) ? Messages.TimeAm : FormatCulture.DateTimeFormat.AMDesignator;
+    private string Pm => string.IsNullOrEmpty(FormatCulture.DateTimeFormat.PMDesignator) ? Messages.TimePm : FormatCulture.DateTimeFormat.PMDesignator;
 
     private string HourLabel => Value is not { } t ? "--" : (Use12 ? (t.Hour % 12 == 0 ? 12 : t.Hour % 12) : t.Hour).ToString("00", CultureInfo.InvariantCulture);
     private string MinuteLabel => Value is not { } t ? "--" : t.Minute.ToString("00", CultureInfo.InvariantCulture);

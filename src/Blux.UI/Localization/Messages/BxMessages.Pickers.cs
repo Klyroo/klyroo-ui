@@ -30,6 +30,11 @@ public sealed partial record BxMessages
     public string PlaySlides { get; init; } = "Start automatic slide show";
     public string GoToSlide { get; init; } = "Go to slide {0}";
     public string SlideOf { get; init; } = "{0} of {1}";
+    /// <summary>Spoken by screen readers for the carousel itself (<c>aria-roledescription</c>).</summary>
+    public string CarouselRoleDescription { get; init; } = "carousel";
+
+    /// <summary>Spoken by screen readers for each slide (<c>aria-roledescription</c>).</summary>
+    public string CarouselSlideRoleDescription { get; init; } = "slide";
     public string SlideControls { get; init; } = "Choose a slide";
 
     /// <summary>A size in bytes (<c>{0}</c> is the number, formatted for the culture of the locale).</summary>
