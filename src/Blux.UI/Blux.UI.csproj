@@ -64,7 +64,7 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../CHANGELOG.md" Pack="true" PackagePath="/" />
     <None Include="assets/icon.png" Pack="true" PackagePath="/" />
-    <None Include="buildTransitive/Blux.UI.targets;buildTransitive/Blux.UI.Tasks.targets;buildTransitive/Blux.UI.Fonts.targets;buildTransitive/Blux.UI.Icons.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+    <None Include="buildTransitive/Blux.UI.targets;buildTransitive/Blux.UI.Tasks.targets;buildTransitive/Blux.UI.Fonts.targets;buildTransitive/Blux.UI.Icons.targets;buildTransitive/Blux.UI.Tailwind.targets" Pack="true" PackagePath="build/;buildTransitive/" />
   </ItemGroup>
 
   <!--
