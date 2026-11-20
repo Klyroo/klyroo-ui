@@ -9,13 +9,23 @@ namespace Blux.UI.Build.Fonts
     /// </summary>
     internal static class MiniJson
     {
+        private const int MaxDepth = 64;
+
+        /// <summary>Throws <see cref="FormatException"/>, and only that, for anything that is not valid JSON.</summary>
         public static object? Parse(string text)
         {
-            var p = 0;
-            var value = ReadValue(text, ref p);
-            SkipSpace(text, ref p);
-            if (p != text.Length) throw new FormatException("Unexpected data after the JSON value.");
-            return value;
+            try
+            {
+                var p = 0;
+                var value = ReadValue(text, ref p, 0);
+                SkipSpace(text, ref p);
+                if (p != text.Length) throw new FormatException("Unexpected data after the JSON value.");
+                return value;
+            }
+            catch (Exception e) when (e is IndexOutOfRangeException || e is ArgumentException || e is OverflowException || e is InvalidCastException)
+            {
+                throw new FormatException("Invalid JSON: " + e.Message, e);
+            }
         }
 
         private static void SkipSpace(string s, ref int p)
@@ -23,8 +33,9 @@ namespace Blux.UI.Build.Fonts
             while (p < s.Length && char.IsWhiteSpace(s[p])) p++;
         }
 
-        private static object? ReadValue(string s, ref int p)
+        private static object? ReadValue(string s, ref int p, int depth)
         {
+            if (depth > MaxDepth) throw new FormatException("The JSON is nested too deeply.");
             SkipSpace(s, ref p);
             if (p >= s.Length) throw new FormatException("Unexpected end of JSON.");
             switch (s[p])
@@ -41,7 +52,7 @@ namespace Blux.UI.Build.Fonts
                         var key = ReadString(s, ref p);
                         SkipSpace(s, ref p);
                         Expect(s, ref p, ':');
-                        map[key] = ReadValue(s, ref p);
+                        map[key] = ReadValue(s, ref p, depth + 1);
                         SkipSpace(s, ref p);
                         if (s[p] == ',') { p++; continue; }
                         Expect(s, ref p, '}');
@@ -56,7 +67,7 @@ namespace Blux.UI.Build.Fonts
                     if (s[p] == ']') { p++; return list; }
                     while (true)
                     {
-                        list.Add(ReadValue(s, ref p));
+                        list.Add(ReadValue(s, ref p, depth + 1));
                         SkipSpace(s, ref p);
                         if (s[p] == ',') { p++; continue; }
                         Expect(s, ref p, ']');
@@ -65,9 +76,9 @@ namespace Blux.UI.Build.Fonts
                 }
                 case '"':
                     return ReadString(s, ref p);
-                case 't': p += 4; return true;
-                case 'f': p += 5; return false;
-                case 'n': p += 4; return null;
+                case 't': Literal(s, ref p, "true"); return true;
+                case 'f': Literal(s, ref p, "false"); return false;
+                case 'n': Literal(s, ref p, "null"); return null;
                 default:
                 {
                     var start = p;
@@ -75,6 +86,12 @@ namespace Blux.UI.Build.Fonts
                     return double.Parse(s.Substring(start, p - start), CultureInfo.InvariantCulture);
                 }
             }
+        }
+
+        private static void Literal(string s, ref int p, string word)
+        {
+            if (string.CompareOrdinal(s, p, word, 0, word.Length) != 0) throw new FormatException($"Unexpected data at position {p}.");
+            p += word.Length;
         }
 
         private static void Expect(string s, ref int p, char c)

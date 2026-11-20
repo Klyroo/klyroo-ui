@@ -83,9 +83,11 @@ namespace Blux.UI.Build
             {
                 result = FontBuilder.Run(options, new HttpNetwork());
             }
-            catch (Exception e) when (e is BuildToolException || e is IOException || e is UnauthorizedAccessException)
+            catch (Exception e) when (!(e is OutOfMemoryException))
             {
-                Log.LogError(subcategory: null, errorCode: "BLUXFONT003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not generate the fonts: " + e.Message);
+                // Whatever the cause, it is reported as a diagnostic of the task rather than as an MSB4018 crash.
+                var detail = e is BuildToolException || e is IOException || e is UnauthorizedAccessException ? e.Message : e.GetType().Name + ": " + e.Message;
+                Log.LogError(subcategory: null, errorCode: "BLUXFONT003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not generate the fonts: " + detail);
                 return false;
             }
 
