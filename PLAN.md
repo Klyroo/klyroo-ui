@@ -117,7 +117,6 @@ Décisions prises pendant le spike :
 Reste à faire avant la phase 2 :
 
 - Pousser le repo sur GitHub pour faire tourner la CI (WebKit et la passe trimmée n'ont tourné qu'en local pour la seconde).
-- La couleur `warning` pleine (amber-500) reste sous 3:1 en contraste non textuel contre un fond blanc pour un Switch coché.
 
 **Phases 2 à 5 livrées (2026-11-19)** : les 20 composants du MVP, et le playground devenu site de documentation
 (accueil, guides, une page par composant avec exemples vivants, code source et table d'API générée depuis la doc XML).
@@ -134,6 +133,41 @@ Reste à faire avant la phase 2 :
 (validé : jaune signal `#ffd23f` en primary, fond quasi noir `#0a0b0c` / papier `#f5f5f2`, secondary teal), polices Geist
 et Geist Mono sur le site, accueil avec démo live « dans le navigateur / envoyé à .NET », grille de composants vivants et
 pipeline animé. Contrastes vérifiés par axe sur toutes les pages de composants, en clair et en sombre.
+
+**Catalogue Nuxt UI (2026-11-20)** : vagues A à D, 133 composants documentés dans les familles de Nuxt UI (Elements, Form,
+Overlay, Navigation, Data, Layout, Page, Dashboard, Chat, Editor), chacun avec sa page et ses exemples dans les 4 modes.
+Thèmes figés au premier rendu ; contraste garanti par des tests (3:1 pour les indicateurs, 4,5:1 pour le texte, teintes
+jusqu'à 20 %, 4 surfaces, survol et appui) ; le jaune signal garde sa teinte et reçoit un anneau là où il est le seul repère.
+
+**Intégrations à la Nuxt UI (2026-11-20)**, chacune revue par un expert, chaque constat vérifié puis corrigé test d'abord :
+
+- **Design system et variables CSS** : `o.Colors.Primary = BxPalette.Blue` (26 palettes Tailwind, `BxPalette.Custom`,
+  couleurs sémantiques ajoutées), `<BxThemeStyle />`, `o.Defaults.Color/Size`, jetons complétés (texte, fonds, bordures,
+  conteneur, header, rayons, graphiques), utilitaires Tailwind `text-default`, `bg-elevated`… Une palette qui ne peut pas
+  tenir les contrastes lève une erreur (sauf `AllowLowContrast`).
+- **i18n** : `BxLocale` (code, nom, direction, messages), 12 langues dont l'arabe en RTL, choix automatique aligné sur
+  `RequestLocalization` (repli par cultures parentes, zh-Hans), formats selon la culture régionale, `BxCultureMeta` pour
+  que le client WASM reprenne la culture du serveur. `BluxOptions.Strings` remplacé par `BxMessages` (cassant).
+- **Icônes** : noms Iconify (`i-ph-x`, `ph:x`), 49 icônes de composants remplaçables (`o.Icons.Close`), collecte au build
+  des noms utilisés, téléchargement depuis l'API Iconify avec cache, dossiers de SVG perso ; tous les SVG passent par une
+  liste blanche, identifiants rendus uniques, enregistrement déterministe en Auto.
+- **Polices** : `<BluxFont Include="Public Sans" Role="sans" Provider="google" />` télécharge au build et sert depuis le site
+  (`/_blux/fonts`, cache immuable), polices de repli calibrées, `<BxFonts />` ; le site de doc n'appelle plus Google Fonts.
+- **Images** : `<BxImage>` (`srcset`/`sizes` à la Nuxt) utilisé par Avatar, BlogPost, ChangelogVersion, ColorModeImage,
+  PageLogos, ChatAttachment ; paquets `Blux.UI.Images` (Cloudinary, imgix, ImageKit, Cloudflare, Netlify, Vercel, Bunny,
+  modèle) et `Blux.UI.Images.Local` (endpoint libvips durci : pas de traversée, SSRF bloqué, limites, cache borné).
+- **IA** : serveur MCP (`dotnet tool` `blux-ui-mcp` et `/mcp` sur le site), `llms.txt` et `llms-full.txt`, skill
+  `skills/blux-ui`, tous générés depuis le catalogue et la doc XML.
+- **Release 0.1.0 préparée** : métadonnées NuGet, symboles, icône, CHANGELOG, contrôle de paquet `build/verify-package.mjs`,
+  workflow de release sur tag `v*` (job de publication séparé, environnement `nuget`).
+
+Reste à faire :
+
+- Choisir le compte GitHub, pousser, faire tourner la CI (WebKit, passe trimmée) ; renseigner `RepositoryUrl`.
+- Héberger le site de doc : URL réelle du MCP HTTP, `Blux:SiteUrl` pour `llms.txt`, dépôt cible de `npx skills add`.
+- Faire relire les 11 traductions par des locuteurs natifs.
+- Polices de repli sous le MSBuild .NET Framework (Visual Studio) : Brotli absent, repli non calibré.
+- Signer les commits faits sans GPG (`git rebase --exec 'git commit --amend --no-edit -S' <base>`).
 
 ## Ordre de construction
 
