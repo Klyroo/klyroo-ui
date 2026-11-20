@@ -29,7 +29,7 @@
         <li>The assignment of an app icon: <code>o.Icons.Close = "ph:x"</code>.</li>
         <li>Any string that is, on its own, <code>prefix:name</code> or <code>i-prefix-name</code> with the prefix of an Iconify collection (<code>"mdi:home"</code>), anywhere in the code.</li>
     </ul>
-    <p>A bare name (<code>"book-open"</code>) counts only in the first three places, as a Lucide icon. Not detected: a name built at runtime (<code>$"i-lucide-&#123;x&#125;"</code>), a value behind an expression (<code>Icon="@@(open ? "a" : "b")"</code>) and comments are not interpreted. For those, list the names in the project file.</p>
+    <p>A bare name (<code>"book-open"</code>) counts only in the first three places, as a Lucide icon. Not detected: a name built at runtime (<code>$"i-lucide-&#123;x&#125;"</code>), a bare name behind an expression (<code>Icon="@@(open ? "a" : "b")"</code>) and comments are not interpreted. A prefixed literal inside an expression (<code>open ? "ph:eye" : "ph:eye-slash"</code>) is still found by the last rule. For those, list the names in the project file.</p>
 
     <h2>Explicit icons</h2>
     <p><code>BluxIcon</code> items are the equivalent of <code>clientBundle.icons</code> in Nuxt: names the scan cannot see, bundled whatever the sources say. <code>BluxIconScanDirectory</code> adds a folder outside the project to the scan.</p>
