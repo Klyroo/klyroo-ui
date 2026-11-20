@@ -197,10 +197,20 @@ namespace Blux.UI.Build.Fonts
 
         public IReadOnlyList<FontFace> Resolve(FontSpec spec, CachedDownloader downloader)
         {
-            var css = downloader.GetText(BuildUrl(_endpoint, spec), HttpNetwork.BrowserUserAgent);
+            var css = FetchCss(downloader, BuildUrl(_endpoint, spec), spec, Name, $"{Name} returned no font for '{spec.Family}'");
             var faces = FromBlocks(spec, GoogleCss.Parse(css));
             return ProviderChecks.Verify(spec, Name, faces, spec.EffectiveWeights.Select(w => (w, false)));
         }
+
+        /// <summary>The stylesheet of a provider, checked before it is cached: a body without any @font-face is not an answer.</summary>
+        internal static string FetchCss(CachedDownloader downloader, string url, FontSpec spec, string provider, string emptyMessage) =>
+            downloader.GetText(url, HttpNetwork.BrowserUserAgent, body =>
+            {
+                if (GoogleCss.Parse(body).Count == 0)
+                {
+                    throw new FontException($"{emptyMessage}: the answer has no @font-face rule ({provider}, {url}).");
+                }
+            });
 
         internal static List<FontFace> FromBlocks(FontSpec spec, List<CssFaceBlock> blocks) =>
             blocks.Select(b => new FontFace
@@ -239,12 +249,8 @@ namespace Blux.UI.Build.Fonts
 
         public IReadOnlyList<FontFace> Resolve(FontSpec spec, CachedDownloader downloader)
         {
-            var css = downloader.GetText(BuildUrl(_endpoint, spec), HttpNetwork.BrowserUserAgent);
+            var css = GoogleProvider.FetchCss(downloader, BuildUrl(_endpoint, spec), spec, Name, $"Font '{spec.Family}' was not found at bunny");
             var faces = GoogleProvider.FromBlocks(spec, GoogleCss.Parse(css));
-            if (faces.Count == 0)
-            {
-                throw new FontException($"Font '{spec.Family}' was not found at bunny.");
-            }
             return ProviderChecks.Verify(spec, Name, faces, ProviderChecks.ExpandStatic(spec.EffectiveWeights).Select(w => (w.Weight, w.FromRange)));
         }
     }
@@ -261,22 +267,37 @@ namespace Blux.UI.Build.Fonts
 
         public static string BuildUrl(string api, FontSpec spec) => $"{api}/{FontCss.Slug(spec.Family).ToLowerInvariant()}";
 
+        /// <summary>The answer as an object that lists variants; anything else (an HTML page, a truncated body) is not cached.</summary>
+        internal static Dictionary<string, object?> ParseAnswer(string body, FontSpec spec)
+        {
+            object? parsed;
+            try
+            {
+                parsed = MiniJson.Parse(body);
+            }
+            catch (FormatException e)
+            {
+                throw new FontException($"fontsource answered something that is not JSON for '{spec.Family}' ({e.Message}).", e);
+            }
+            if (parsed is Dictionary<string, object?> root && MiniJson.Obj(root, "variants") != null) return root;
+            throw new FontException($"Unexpected answer from fontsource for '{spec.Family}': no list of variants.");
+        }
+
         public IReadOnlyList<FontFace> Resolve(FontSpec spec, CachedDownloader downloader)
         {
             ProviderChecks.ValidateStyles(spec);
-            string json;
+            Dictionary<string, object?> root;
             try
             {
-                json = downloader.GetText(BuildUrl(_api, spec));
+                var json = downloader.GetText(BuildUrl(_api, spec), null, body => ParseAnswer(body, spec));
+                root = ParseAnswer(json, spec);
             }
             catch (DownloadException e) when (e.StatusCode == 404)
             {
                 throw new FontException($"Font '{spec.Family}' was not found at fontsource.");
             }
-            var root = MiniJson.Parse(json) as Dictionary<string, object?>
-                ?? throw new FontException($"Unexpected answer from fontsource for '{spec.Family}'.");
             var ranges = MiniJson.Obj(root, "unicodeRange");
-            var variants = MiniJson.Obj(root, "variants") ?? throw new FontException($"Fontsource lists no variant of '{spec.Family}'.");
+            var variants = MiniJson.Obj(root, "variants")!;
             var wanted = ProviderChecks.ExpandStatic(spec.EffectiveWeights);
 
             var faces = new List<FontFace>();

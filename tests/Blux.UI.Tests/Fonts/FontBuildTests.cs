@@ -12,6 +12,8 @@ internal sealed class FakeNetwork : INetwork
     public List<string> Requests { get; } = [];
     public bool Offline { get; set; }
     public byte[] FontBytes { get; set; } = File.ReadAllBytes(Fixture("geist-latin-400.woff2"));
+    /// <summary>Per-URL answers that replace <see cref="FontBytes"/>.</summary>
+    public Dictionary<string, byte[]> BytesByUrl { get; } = new();
 
     public string GetText(string url, string? userAgent)
     {
@@ -24,7 +26,7 @@ internal sealed class FakeNetwork : INetwork
     {
         Requests.Add(url);
         if (Offline) throw new HttpRequestException("no network");
-        return FontBytes;
+        return BytesByUrl.TryGetValue(url, out var bytes) ? bytes : FontBytes;
     }
 }
 
@@ -254,7 +256,7 @@ public class FontMetricsTests
     [Fact]
     public void A_file_that_is_not_a_font_is_a_clear_error()
     {
-        Assert.Throws<FontException>(() => FontMetrics.Read([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]));
+        Assert.ThrowsAny<FontException>(() => FontMetrics.Read([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]));
     }
 }
 

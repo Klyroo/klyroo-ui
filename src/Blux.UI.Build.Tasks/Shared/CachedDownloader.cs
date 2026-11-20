@@ -103,76 +103,164 @@ namespace Blux.UI.Build
             _log = log;
         }
 
-        public string GetText(string url, string? userAgent = null)
+        /// <summary>
+        /// Answer of a text API. <paramref name="validate"/> (optional) throws a <see cref="BuildToolException"/> when the body is
+        /// not what the caller can use: an answer that fails it is never cached, and a cached answer that fails it (written by an
+        /// earlier build) is evicted, so a bad body (an HTML error page served with 200) cannot stay for <c>maxAge</c>.
+        /// </summary>
+        public string GetText(string url, string? userAgent = null, Action<string>? validate = null)
         {
             var path = Path.Combine(_cacheDir, "meta", Key(url + "\n" + userAgent) + ".txt");
-            if (File.Exists(path) && (_offline || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < _maxAge))
+            var cached = TryReadText(path);
+            if (cached != null && IsAcceptable(path, cached, validate))
             {
-                return File.ReadAllText(path, Encoding.UTF8);
+                if (_offline || DateTime.UtcNow - File.GetLastWriteTimeUtc(path) < _maxAge) return cached;
+            }
+            else
+            {
+                cached = null;
             }
             if (_offline)
             {
                 throw new DownloadException($"Offline build and no cached answer for {url} (cache: {_cacheDir}).");
             }
+            string text;
             try
             {
-                var text = _network.GetText(url, userAgent);
-                Store(path, Encoding.UTF8.GetBytes(text));
-                return text;
+                text = _network.GetText(url, userAgent);
             }
-            catch (Exception e) when (File.Exists(path) && IsNetworkFailure(e))
+            catch (Exception e) when (cached != null && IsNetworkFailure(e))
             {
                 _log($"Network unavailable ({e.Message}); using the cached answer for {url}");
-                return File.ReadAllText(path, Encoding.UTF8);
+                return cached;
             }
             catch (Exception e) when (IsNetworkFailure(e))
             {
                 throw Wrap(e, $"Could not reach {url}");
             }
+            validate?.Invoke(text);
+            Store(path, Encoding.UTF8.GetBytes(text), overwrite: true);
+            return text;
         }
 
-        public byte[] GetBytes(string url)
+        /// <summary>
+        /// A file, downloaded once. <paramref name="validate"/> (optional) throws a <see cref="BuildToolException"/> when the bytes
+        /// are not what was expected (for a font: not a font); such a file is never cached, and a cached one that fails it is evicted.
+        /// </summary>
+        public byte[] GetBytes(string url, Action<byte[]>? validate = null)
         {
             var path = Path.Combine(_cacheDir, "files", Key(url) + ".bin");
-            if (File.Exists(path))
-            {
-                return File.ReadAllBytes(path);
-            }
+            var cached = TryReadBytes(path);
+            if (cached != null && IsAcceptable(path, cached, validate)) return cached;
             if (_offline)
             {
                 throw new DownloadException($"Offline build and {url} is not in the cache ({_cacheDir}).");
             }
+            byte[] bytes;
             try
             {
-                var bytes = _network.GetBytes(url);
-                if (bytes.Length == 0)
-                {
-                    throw new DownloadException($"Empty response for {url}");
-                }
-                Store(path, bytes);
-                return bytes;
+                bytes = _network.GetBytes(url);
             }
             catch (Exception e) when (IsNetworkFailure(e))
             {
                 throw Wrap(e, $"Could not download {url}");
             }
+            if (bytes.Length == 0)
+            {
+                throw new DownloadException($"Empty response for {url}");
+            }
+            validate?.Invoke(bytes);
+            // Keyed by URL, so a file that is already there is the same download: it stays (never deleted under a reader).
+            Store(path, bytes, overwrite: false);
+            return bytes;
         }
 
         private Exception Wrap(Exception e, string what) =>
             e is DownloadException { StatusCode: > 0 } ? e
             : new DownloadException($"{what}: {Flatten(e)}. Without network it must already be in the cache ({_cacheDir}); set BluxOffline=true to build from the cache only.", 0);
 
-        private static bool IsNetworkFailure(Exception e) => e is DownloadException || e is HttpRequestException || e is TaskCanceledException || e is IOException || e is WebException;
+        private static bool IsNetworkFailure(Exception e) =>
+            e is DownloadException || e is HttpRequestException || e is TaskCanceledException || e is IOException || e is WebException
+            || e is InvalidOperationException || e is NotSupportedException || e is UriFormatException || e is ArgumentException;
 
         private static string Flatten(Exception e) => e.InnerException == null ? e.Message : e.Message + " (" + Flatten(e.InnerException) + ")";
 
-        private static void Store(string path, byte[] bytes)
+        /// <summary>True when the cached content passes; otherwise it is deleted (best effort) so it is fetched again.</summary>
+        private static bool IsAcceptable<T>(string path, T content, Action<T>? validate)
+        {
+            if (validate == null) return true;
+            try
+            {
+                validate(content);
+                return true;
+            }
+            catch (BuildToolException)
+            {
+                try { File.Delete(path); } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { }
+                return false;
+            }
+        }
+
+        // Another build (another project of the solution) may delete or replace a file between the check and the read: a file
+        // that vanished is a cache miss, not a failure.
+        internal static byte[]? TryReadBytes(string path)
+        {
+            try
+            {
+                return File.ReadAllBytes(path);
+            }
+            catch (Exception e) when (e is FileNotFoundException || e is DirectoryNotFoundException)
+            {
+                return null;
+            }
+        }
+
+        private static string? TryReadText(string path)
+        {
+            var bytes = TryReadBytes(path);
+            return bytes == null ? null : Encoding.UTF8.GetString(bytes);
+        }
+
+        /// <summary>
+        /// Writes through a temporary file, then moves it into place. <c>overwrite: false</c> (files, keyed by URL): an existing
+        /// destination is the same download, so the temporary file is dropped. <c>overwrite: true</c> (API answers): the old
+        /// answer is replaced; if two writers meet, the last one wins and both wrote a valid answer.
+        /// </summary>
+        internal static void Store(string path, byte[] bytes, bool overwrite = false)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
             File.WriteAllBytes(temp, bytes);
-            if (File.Exists(path)) File.Delete(path);
-            File.Move(temp, path);
+            try
+            {
+                if (!File.Exists(path))
+                {
+                    try
+                    {
+                        File.Move(temp, path);
+                        return;
+                    }
+                    catch (IOException)
+                    {
+                        // Another writer got there first (the destination appeared between the check and the move).
+                    }
+                }
+                if (overwrite)
+                {
+                    try
+                    {
+                        File.Replace(temp, path, null);
+                    }
+                    catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                    {
+                        // A reader or another writer holds it: the existing answer is as good as this one.
+                    }
+                }
+            }
+            finally
+            {
+                try { if (File.Exists(temp)) File.Delete(temp); } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { }
+            }
         }
 
         private static string Key(string text)
