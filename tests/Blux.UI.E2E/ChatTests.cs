@@ -544,7 +544,7 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open(mode, "chat-palette");
         var prompt = Page.GetByTestId("chat-palette-prompt");
-        await Textarea("chat-palette-prompt").FillAsync("Tell me about streaming");
+        await Textarea("chat-palette-prompt").FillAsync(LongPrompt);
         var send = prompt.GetByRole(AriaRole.Button, new() { Name = "Send" });
         await send.FocusAsync();
 

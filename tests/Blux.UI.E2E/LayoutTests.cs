@@ -36,8 +36,6 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.EvaluateAsync("() => window.__enhanced");
     }
 
-    private async Task<string?> SidebarCookie(string name) =>
-        (await Page.Context.CookiesAsync()).FirstOrDefault(c => c.Name == name)?.Value;
 
     private async Task Reload(string mode)
     {
@@ -134,7 +132,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
         await Assertions.Expect(toggle).ToHaveAttributeAsync("aria-pressed", "true");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "64px");
-        Assert.Equal("1", await SidebarCookie("blux-sidebar-playground-sidebar"));
+        await ExpectCookie("blux-sidebar-playground-sidebar", "1");
         // Collapsed to icons, the links keep their names for assistive technology.
         await Assertions.Expect(sidebar.GetByRole(AriaRole.Link, new() { Name = "Inbox" })).ToBeVisibleAsync();
 
@@ -146,7 +144,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await toggle.ClickAsync();
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "expanded");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "256px");
-        Assert.Equal("0", await SidebarCookie("blux-sidebar-playground-sidebar"));
+        await ExpectCookie("blux-sidebar-playground-sidebar", "0");
     }
 
     [Theory]
@@ -249,7 +247,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.Keyboard.PressAsync("Home");
         await Assertions.Expect(sidebar).ToHaveCSSAsync("width", "192px");
         await Page.Keyboard.PressAsync("ArrowRight");
-        Assert.Equal("208", await SidebarCookie("blux-sidebar-playground-sidebar-resizable-width"));
+        await ExpectCookie("blux-sidebar-playground-sidebar-resizable-width", "208");
 
         await Reload(mode);
 
