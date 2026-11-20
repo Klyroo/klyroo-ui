@@ -360,6 +360,118 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
+    public async Task Back_closes_the_modal_not_a_tooltip_inside_it_and_leaves_the_tooltip_state_closed()
+    {
+        await Open("server", "modal");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByTestId("modal-select-trigger").ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Shipping" });
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await Page.EvaluateAsync("""
+            () => {
+              const tip = document.createElement('bx-tooltip');
+              tip.id = 'tip';
+              tip.setAttribute('delay', '0');
+              tip.innerHTML = '<span data-slot="trigger"><button id="tip-trigger" type="button">info</button></span><div popover="manual" role="tooltip">Helpful</div>';
+              document.querySelector('dialog[open]').append(tip);
+            }
+            """);
+        await Page.Locator("#tip-trigger").HoverAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Tooltip, new() { Name = "Helpful" })).ToBeVisibleAsync();
+
+        // One Back closes the modal: the tooltip is not a layer of its own, and it does not keep a stale "open" state.
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+        Assert.Equal("closed", await Page.EvaluateAsync<string>("() => document.getElementById('tip').dataset.state"));
+    }
+
+    [Fact]
+    public async Task Back_hides_a_visible_tooltip_through_its_own_hide_path_even_when_nothing_else_is_open()
+    {
+        await Open("server", "tooltip");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "top", Exact = true }).HoverAsync();
+        var tooltip = Page.GetByRole(AriaRole.Tooltip, new() { Name = "Tooltip on the top" });
+        await Assertions.Expect(tooltip).ToBeVisibleAsync();
+
+        // No real layer: Back is not used by the page (the app may leave), but the tooltip is hidden and its state is closed.
+        Assert.False(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        await Assertions.Expect(tooltip).ToBeHiddenAsync();
+        Assert.Equal("closed", await Page.EvaluateAsync<string>("() => document.querySelector('bx-tooltip[data-state]').dataset.state"));
+    }
+
+    [Fact]
+    public async Task Trusted_Enter_enters_editing_mode_and_the_arrows_then_belong_to_the_field_in_TV_mode()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        var name = Page.GetByTestId("tv-name");
+        await name.FocusAsync();
+        await name.FillAsync("abc");
+
+        // A physical keyboard (trusted events): the first Enter enters editing without submitting anything.
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(name).ToHaveAttributeAsync("data-bx-editing", "");
+        await Page.Keyboard.PressAsync("ArrowLeft");
+        Assert.Equal("tv-name", await Active(Page));
+        Assert.Equal(2, await name.EvaluateAsync<int>("(e) => e.selectionStart"));
+
+        // Escape leaves editing and the arrows move the focus again.
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(name).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        await Page.Keyboard.PressAsync("ArrowDown");
+        Assert.Equal("tv-country", await Active(Page));
+
+        // Enter while editing a single line field leaves editing again.
+        await name.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(name).ToHaveAttributeAsync("data-bx-editing", "");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(name).Not.ToHaveAttributeAsync("data-bx-editing", "");
+    }
+
+    [Fact]
+    public async Task Trusted_keys_edit_a_textarea_in_TV_mode_with_the_native_caret_and_line_breaks()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        var bio = Page.GetByTestId("tv-bio");
+        await bio.FocusAsync();
+
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(bio).ToHaveAttributeAsync("data-bx-editing", "");
+        await Page.Keyboard.TypeAsync("one");
+        await Page.Keyboard.PressAsync("Enter");
+        await Page.Keyboard.TypeAsync("two");
+        await Page.Keyboard.PressAsync("ArrowUp");
+        await Page.Keyboard.PressAsync("ArrowLeft");
+
+        Assert.Equal("tv-bio", await Active(Page));
+        Assert.Equal("one\ntwo", await bio.InputValueAsync());
+        Assert.Equal(2, await bio.EvaluateAsync<int>("(e) => e.selectionStart"));
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(bio).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        await Page.Keyboard.PressAsync("ArrowUp");
+        Assert.Equal("tv-country", await Active(Page));
+    }
+
+    [Fact]
+    public async Task Without_TV_mode_the_keyboard_keeps_its_native_behavior_in_fields()
+    {
+        await Open("server", "select");
+        var name = Page.GetByTestId("tv-name");
+        await name.FocusAsync();
+        await name.FillAsync("abc");
+
+        await Page.Keyboard.PressAsync("Enter");
+        await Page.Keyboard.PressAsync("ArrowLeft");
+
+        await Assertions.Expect(name).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        Assert.Equal("tv-name", await Active(Page));
+        Assert.Equal(2, await name.EvaluateAsync<int>("(e) => e.selectionStart"));
+    }
+
+    [Fact]
     public async Task A_dialog_that_is_not_modal_does_not_confine_the_arrows()
     {
         await Open("server", "tooltip");
