@@ -1,0 +1,166 @@
+@page "/docs/fonts"
+@layout Layout.DocsLayout
+
+<PageTitle>Fonts · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Fonts</h1>
+    <p class="pg-lead">Name a font in your project file. The build downloads it from a provider, hosts it in your app and writes the <code>@@font-face</code> rules, a fallback face that limits layout shift and a preload. The page never asks a third party for anything, which is what keeps it GDPR friendly. It works like <code>@@nuxt/fonts</code> in Nuxt UI, with MSBuild in place of the Nuxt module.</p>
+
+    <h2>Declare fonts</h2>
+    <p>Fonts are MSBuild items of the project that renders the page (the server project of a Blazor Web App). They are read at build time, so they live in the <code>.csproj</code> and not in <code>AddBluxUi</code>.</p>
+    <CodeBlock Title="Site.csproj" Code="@Declare" />
+    <p>Then add <code>BxFonts</code> to the <code>&lt;head&gt;</code> of <code>App.razor</code>, before your stylesheets:</p>
+    <CodeBlock Title="App.razor" Code="@Head" />
+    <p><code>BxFonts</code> links the generated stylesheet and preloads the main face of each font. It renders nothing when no font is declared, and it is the same in static rendering, prerendering and every interactive mode. Because the stylesheet is a static web asset, <code>@@Assets</code> gives it the fingerprint that makes the browser cache it for a year.</p>
+
+    <h2>Roles and tokens</h2>
+    <p>A font with <code>Role="sans"</code> or <code>Role="mono"</code> becomes the page's font. The generated stylesheet sets <code>--blux-font-sans</code> or <code>--blux-font-mono</code>, which the preflight, <code>font-sans</code> and <code>font-mono</code> follow in both CSS modes, so every component picks it up. The value lists the font, its fallback face and then the default system stack, so text stays readable where the font has no glyph. Without a declared font the tokens hold Tailwind's stacks and nothing changes.</p>
+    <p>A font without a role only gets its <code>@@font-face</code> rules, to use from your own CSS (the documentation site does this for its pixel font):</p>
+    <CodeBlock Title="app.css" Code="@Custom" />
+    <p>You can also set the tokens by hand, for a stack the build does not manage:</p>
+    <CodeBlock Title="app.css" Code="@ByHand" />
+
+    <h2>Options</h2>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="font-options">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Metadata of a BluxFont item</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Metadata</th><th scope="col" class="px-3 py-2 text-start">Default</th><th scope="col" class="px-3 py-2 text-start">Meaning</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Options)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Default</td>
+                        <td class="px-3 py-2 text-muted">@row.Meaning</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Providers</h2>
+    <p>Without <code>Provider</code>, the providers of <code>BluxFontsProviderPriority</code> are tried in order and the first that has the family, weights, styles and subsets wins. The error of a font that none can resolve lists what each said.</p>
+    <ul>
+        <li><strong>google</strong> asks the Google Fonts CSS2 API. A range of weights (<code>400..700</code>) comes back as one variable file per subset, which is the smallest download.</li>
+        <li><strong>bunny</strong> is Bunny Fonts, a European service that keeps no logs. Its documented API is the CSS v1 one, so weights are requested one by one: a range becomes the weights of <code>100</code> to <code>900</code> inside it.</li>
+        <li><strong>fontsource</strong> reads the Fontsource API for the list of files and takes them from its CDN. It has static files only, so a range becomes the weights the family offers inside it.</li>
+        <li><strong>local</strong> uses your own files. Point <code>Src</code> at a folder and name the files after the family with the weight and style: <code>Inter-400.woff2</code>, <code>Inter-700-italic.woff2</code>, <code>Inter-BoldItalic.woff2</code>, <code>InterVariable.woff2</code> (<code>woff2</code>, <code>woff</code>, <code>ttf</code> and <code>otf</code>; when a face exists in several, <code>woff2</code> wins).</li>
+    </ul>
+    <p>Only woff2 files of the requested weights, styles and subsets are downloaded. They are copied into your app under a name that carries a hash of their content (<code>Geist-400-700-normal-latin.19f9c925.woff2</code>), and served from <code>/_blux/fonts/</code> as static web assets, so <code>MapStaticAssets</code> gives them a year of cache in Server, WebAssembly and Auto apps alike.</p>
+
+    <h2>Fallback metrics</h2>
+    <p>While a font loads, the browser shows a system font, and the text jumps when the real one replaces it because the two have different sizes and line heights. For each family the build measures the downloaded file (its units per em, ascent, descent, line gap and the average width of lowercase letters) and writes a face named <code>Family Fallback</code> that sets <code>size-adjust</code>, <code>ascent-override</code>, <code>descent-override</code> and <code>line-gap-override</code> on Arial, Courier New or Times New Roman (their metric-compatible Liberation and Arimo equivalents on Linux), chosen by <code>Category</code>. The role tokens already list it right after the font.</p>
+    <CodeBlock Title="blux.fonts.css (generated)" Code="@Generated" />
+    <p>Measuring a woff2 file needs a Brotli decoder, which .NET Core has and the .NET Framework that Visual Studio's MSBuild runs on does not. There the fonts are still downloaded and served, and the fallback face is left out with a message in the detailed build log; build with <code>dotnet build</code> to get it.</p>
+
+    <h2>Preload</h2>
+    <p>A font with a role is preloaded by default: one upright face closest to weight 400, in the <code>latin</code> subset (or the first subset you asked for), as <code>&lt;link rel="preload" as="font" type="font/woff2" crossorigin&gt;</code>. Set <code>Preload="false"</code> for a font that only a few elements use, or <code>Preload="true"</code> to preload one without a role. The preload points at the same URL the stylesheet requests, so the file is downloaded once.</p>
+
+    <h2>Cache, CI and offline builds</h2>
+    <p>Provider answers and files are cached in <code>obj/blux/fonts-cache</code>. An answer is reused for seven days (<code>BluxFontsCacheDays</code>) and a file is never downloaded twice. When the network fails, the cached answer is used whatever its age, so a build without network works as soon as one build with network has run. Keep the folder between CI runs to build faster, or move it with <code>BluxFontsCacheDir</code>. <code>BluxOffline=true</code> never touches the network and fails with a message when something is not in the cache.</p>
+    <p>A font that cannot be resolved is a warning in a Debug build, so working offline on the first day does not stop you, and an error in a Release build, so a deployment never ships without its font. <code>BluxFontsFailOnError</code> overrides either. A build with no change in the items and files does nothing at all.</p>
+    <CodeBlock Title="Site.csproj" Code="@Properties" />
+
+    <h2>Turn it off</h2>
+    <p>Set <code>BluxFonts</code> to <code>false</code> and nothing is downloaded, generated or linked, even with the items in place. <code>BxFonts</code> then renders nothing.</p>
+
+    <h2>Without the build step</h2>
+    <p>The tokens do not depend on the build. If you prefer to host the files yourself, drop them in <code>wwwroot</code>, write the <code>@@font-face</code> rules and set the tokens:</p>
+    <CodeBlock Title="app.css" Code="@Manual" />
+
+    <h2>With Tailwind in your app</h2>
+    <p>Nothing changes. <code>blux.theme.css</code> maps <code>font-sans</code>, <code>font-mono</code> and the preflight font to the tokens with <code>@@theme inline</code>, so the utilities follow <code>--blux-font-sans</code> wherever it is set, on <code>:root</code> or on a subtree. Declare your own <code>--font-sans</code> in <code>@@theme</code> after the import only to opt out of the token.</p>
+    <p>In the library's own repository, where <code>Blux.UI</code> is a project reference and not a package, import <code>Blux.UI.Tasks.targets</code> and <code>Blux.UI.Fonts.targets</code> from <code>src/Blux.UI/buildTransitive</code> and point <code>BluxBuildTasksAssembly</code> at the built task assembly, as the documentation site does.</p>
+</div>
+
+@code {
+    private sealed record Option(string Name, string Default, string Meaning);
+
+    private static readonly Option[] Options =
+    [
+        new("Include", "(required)", "The family name, as the provider spells it: Public Sans, Geist Mono."),
+        new("Role", "(none)", "sans or mono: the font becomes --blux-font-sans or --blux-font-mono. Empty: only @font-face rules."),
+        new("Provider", "(priority list)", "google, bunny, fontsource or local. Empty: the providers of BluxFontsProviderPriority, in order."),
+        new("Weights", "400..700", "Values separated by ';' (400;700) or a range (400..700, or '400 700' as in Nuxt)."),
+        new("Styles", "normal", "normal, italic or both, separated by ';'. For local files, every style found."),
+        new("Subsets", "latin", "latin, latin-ext, cyrillic, cyrillic-ext, greek, vietnamese… Each subset is its own file with a unicode-range, so a page only downloads what it displays."),
+        new("Display", "swap", "The font-display of every face: auto, block, swap, fallback or optional."),
+        new("Preload", "true with a Role", "Preload one upright face near weight 400, in the main subset."),
+        new("Src", "(none)", "A folder of font files of the local provider, relative to the project. Setting it selects the local provider."),
+        new("Category", "sans (mono with Role=mono)", "sans, serif or mono: the system font the fallback face is computed against."),
+    ];
+
+    private const string Declare = """
+        <ItemGroup>
+          <BluxFont Include="Public Sans" Role="sans" Weights="400;500;600;700" Styles="normal;italic" Subsets="latin;latin-ext" />
+          <BluxFont Include="JetBrains Mono" Role="mono" Provider="bunny" Weights="400;700" />
+          <BluxFont Include="Inter" Provider="local" Src="Fonts" />
+        </ItemGroup>
+        """;
+
+    private const string Head = """
+        <head>
+            <meta charset="utf-8" />
+            <BxColorModeScript />
+            <BxThemeStyle />
+            <BxFonts />
+            <link rel="stylesheet" href="@Assets["app.css"]" />
+        </head>
+        """;
+
+    private const string Custom = """
+        .tagline { font-family: "Doto", "Doto Fallback", monospace; }
+        """;
+
+    private const string ByHand = """
+        :root {
+          --blux-font-sans: "Source Sans 3", system-ui, sans-serif;
+          --blux-font-mono: "Source Code Pro", ui-monospace, monospace;
+        }
+        """;
+
+    private const string Generated = """
+        @font-face {
+          font-family: "Geist";
+          font-style: normal;
+          font-weight: 400 700;
+          font-display: swap;
+          src: url("Geist-400-700-normal-latin.19f9c925.woff2") format("woff2");
+          unicode-range: U+0000-00FF, U+0131, U+0152-0153, /* … */;
+        }
+        @font-face {
+          font-family: "Geist Fallback";
+          src: local("Arial"), local("Liberation Sans"), local("Arimo");
+          size-adjust: 105.68%;
+          ascent-override: 95.1%;
+          descent-override: 27.91%;
+          line-gap-override: 0%;
+        }
+        :root {
+          --blux-font-sans: "Geist", "Geist Fallback", -apple-system, BlinkMacSystemFont, /* … */;
+        }
+        """;
+
+    private const string Properties = """
+        <PropertyGroup>
+          <BluxFontsProviderPriority>bunny;google;fontsource</BluxFontsProviderPriority>
+          <BluxFontsCacheDir>$(MSBuildProjectDirectory)/../.cache/blux-fonts</BluxFontsCacheDir>
+          <BluxFontsFailOnError>false</BluxFontsFailOnError>
+          <BluxOffline>true</BluxOffline>
+          <!-- <BluxFonts>false</BluxFonts> turns the feature off. -->
+        </PropertyGroup>
+        """;
+
+    private const string Manual = """
+        @font-face {
+          font-family: "Source Sans 3";
+          font-weight: 200 900;
+          font-display: swap;
+          src: url("/fonts/SourceSans3.woff2") format("woff2");
+        }
+        :root { --blux-font-sans: "Source Sans 3", system-ui, sans-serif; }
+        """;
+}
