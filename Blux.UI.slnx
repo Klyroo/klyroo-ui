@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Blux.UI/Blux.UI.csproj" />
+    <Project Path="src/Blux.UI.Build.Tasks/Blux.UI.Build.Tasks.csproj" />
     <Project Path="src/Blux.UI.Mcp.Model/Blux.UI.Mcp.Model.csproj" />
     <Project Path="src/Blux.UI.Mcp.Core/Blux.UI.Mcp.Core.csproj" />
     <Project Path="src/Blux.UI.Mcp/Blux.UI.Mcp.csproj" />
