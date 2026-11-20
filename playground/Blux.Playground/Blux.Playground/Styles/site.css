@@ -10,9 +10,8 @@
 @source '../wwwroot/site.js';
 
 @theme {
-  --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
-  --font-pixel: 'Doto', 'Geist Mono', ui-monospace, monospace;
+  /* font-sans and font-mono come from the Blux tokens (--blux-font-sans and --blux-font-mono, written by the BluxFont items). */
+  --font-pixel: 'Doto', 'Doto Fallback', 'Geist Mono', ui-monospace, monospace;
 }
 
 @layer base {

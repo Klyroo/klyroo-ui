@@ -1,0 +1,19 @@
+<Project>
+  <!--
+    Shared by every Blux build feature that runs code at build time (self-hosted fonts today). One task assembly,
+    Blux.UI.Build.Tasks.dll (netstandard2.0, so it loads in `dotnet build` and in Visual Studio's MSBuild alike), holds all the
+    tasks; a feature adds its UsingTask line below and its own Blux.UI.<Feature>.targets, imported from Blux.UI.targets.
+
+    Conventions of the features that download:
+      BluxCacheDir  root of the caches, one sub folder per feature (default obj/blux/); keep it between CI runs to build faster.
+      BluxOffline   true: never touch the network, everything must already be in the cache.
+      A resource that cannot be resolved is a warning in Debug and an error in Release (each feature has a switch to change that).
+  -->
+  <PropertyGroup>
+    <BluxBuildTasksAssembly Condition="'$(BluxBuildTasksAssembly)' == ''">$(MSBuildThisFileDirectory)tasks/Blux.UI.Build.Tasks.dll</BluxBuildTasksAssembly>
+    <BluxCacheDir Condition="'$(BluxCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))</BluxCacheDir>
+    <BluxOffline Condition="'$(BluxOffline)' == ''">false</BluxOffline>
+  </PropertyGroup>
+
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" />
+</Project>

@@ -16,4 +16,26 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
 
+  <!--
+    Dogfooding of the self-hosted fonts. An app gets all of this from the Blux.UI package (buildTransitive); here Blux.UI is a
+    project reference, so the task assembly is built first and the targets are imported by hand.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Blux.UI.Build.Tasks\Blux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <PropertyGroup>
+    <BluxBuildTasksAssembly>$(MSBuildThisFileDirectory)..\..\..\src\Blux.UI.Build.Tasks\bin\$(Configuration)\netstandard2.0\Blux.UI.Build.Tasks.dll</BluxBuildTasksAssembly>
+    <BluxFontsCacheDir Condition="'$(BluxFontsCacheDir)' == ''">$(MSBuildThisFileDirectory)obj\blux\fonts-cache\</BluxFontsCacheDir>
+  </PropertyGroup>
+  <Import Project="..\..\..\src\Blux.UI\buildTransitive\Blux.UI.Tasks.targets" />
+  <Import Project="..\..\..\src\Blux.UI\buildTransitive\Blux.UI.Fonts.targets" />
+
+  <!-- Fonts of the site: downloaded from the providers at build time and served from the site's own origin. -->
+  <ItemGroup>
+    <BluxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin;latin-ext" />
+    <BluxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin;latin-ext" />
+    <!-- The pixel face of the headings (font-pixel in site.css): not preloaded, it is only used by a few large titles. -->
+    <BluxFont Include="Doto" Weights="700;900" Subsets="latin" Preload="false" Category="mono" />
+  </ItemGroup>
+
 </Project>

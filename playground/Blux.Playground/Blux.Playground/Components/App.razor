@@ -9,9 +9,8 @@
     <BxColorModeScript />
     <BxCultureMeta />
     <BxThemeStyle />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Doto:wght@700;900&family=Geist+Mono:wght@400..600&family=Geist:wght@400..700&display=swap" />
+    @* Self-hosted at build time from the BluxFont items of the project (Geist, Geist Mono, Doto): no third-party request. *@
+    <BxFonts />
     <ResourcePreloader />
     @* The site compiles Tailwind itself (Blux "Tailwind in the app" mode): one stylesheet, no blux.css. *@
     <link rel="stylesheet" href="@Assets["site.css"]" />

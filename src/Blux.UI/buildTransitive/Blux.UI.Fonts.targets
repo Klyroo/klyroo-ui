@@ -1,0 +1,86 @@
+<Project>
+  <!--
+    Self-hosted fonts. The app declares fonts as items:
+
+      <BluxFont Include="Public Sans" Role="sans" Provider="google" Weights="400;700" Styles="normal;italic" Subsets="latin;latin-ext" />
+
+    At build time the BluxResolveFonts task asks the providers, downloads only the requested files (cached), and generates
+    blux.fonts.css (@font-face, a fallback face per family, the blux-font-sans and blux-font-mono variables) and the font files into
+    obj/<config>/<tfm>/blux/fonts/. They are added to the static web assets at _blux/fonts/, so MapStaticAssets serves them from
+    the app's own origin. BxFonts links the stylesheet and preloads the main face from a manifest generated into the assembly.
+    Nothing is requested from a third party when the page runs. BluxFonts=false turns the feature off.
+  -->
+  <PropertyGroup>
+    <BluxFonts Condition="'$(BluxFonts)' == ''">true</BluxFonts>
+    <BluxFontsProviderPriority Condition="'$(BluxFontsProviderPriority)' == ''">google;bunny;fontsource</BluxFontsProviderPriority>
+    <BluxFontsCacheDir Condition="'$(BluxFontsCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(BluxCacheDir), fonts-cache))</BluxFontsCacheDir>
+    <BluxFontsCacheDays Condition="'$(BluxFontsCacheDays)' == ''">7</BluxFontsCacheDays>
+    <BluxFontsFailOnError Condition="'$(BluxFontsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</BluxFontsFailOnError>
+  </PropertyGroup>
+
+  <Target Name="BluxResolveFonts"
+          BeforeTargets="ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(BluxFonts)' != 'false' And '@(BluxFont)' != ''">
+    <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the default is computed here. -->
+    <PropertyGroup>
+      <BluxFontsOutputDir Condition="'$(BluxFontsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, fonts))</BluxFontsOutputDir>
+    </PropertyGroup>
+
+    <BluxResolveFonts Fonts="@(BluxFont)"
+                      OutputDir="$(BluxFontsOutputDir)"
+                      CacheDir="$(BluxFontsCacheDir)"
+                      ProjectDirectory="$(MSBuildProjectDirectory)"
+                      ProviderPriority="$(BluxFontsProviderPriority)"
+                      FailOnError="$(BluxFontsFailOnError)"
+                      Offline="$(BluxOffline)"
+                      CacheDays="$(BluxFontsCacheDays)"
+                      ManifestSourceFile="$(BluxFontsOutputDir)BluxFontsManifest.g.cs">
+      <Output TaskParameter="GeneratedFiles" ItemName="_BluxFontFile" />
+    </BluxResolveFonts>
+
+    <ItemGroup>
+      <Compile Include="$(BluxFontsOutputDir)BluxFontsManifest.g.cs" />
+      <FileWrites Include="@(_BluxFontFile)" />
+      <FileWrites Include="$(BluxFontsOutputDir)BluxFontsManifest.g.cs" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Adds the generated files to the static web assets, served at /_blux/fonts/. They live in obj, not in wwwroot, so they are
+    defined here with their own content root (what the development server reads them from) instead of being discovered.
+    The generated file names carry a hash of their content, so a font is immutable at its URL: it gets a year of cache even
+    through the route without the SDK's own fingerprint, which is the one the generated stylesheet refers to.
+  -->
+  <Target Name="BluxFontsDefineAssets" AfterTargets="ResolveProjectStaticWebAssets" Condition="'@(_BluxFontFile)' != ''">
+    <ItemGroup>
+      <_BluxFontCandidate Include="@(_BluxFontFile)" RelativePath="_blux/fonts/%(_BluxFontFile.BluxFile)" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets CandidateAssets="@(_BluxFontCandidate)"
+                           SourceType="Computed"
+                           SourceId="$(PackageId)"
+                           ContentRoot="$(BluxFontsOutputDir)"
+                           BasePath="$(StaticWebAssetBasePath)"
+                           AssetKind="All"
+                           AssetMode="All"
+                           AssetRole="Primary"
+                           AssetMergeSource="$(StaticWebAssetMergeTarget)"
+                           FingerprintCandidates="$(StaticWebAssetsFingerprintContent)"
+                           FingerprintPatterns="@(StaticWebAssetFingerprintPattern)"
+                           CopyToOutputDirectory="Never"
+                           CopyToPublishDirectory="PreserveNewest">
+      <Output TaskParameter="Assets" ItemName="_BluxFontAsset" />
+    </DefineStaticWebAssets>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_BluxFontAsset)"
+                                   ContentTypeMappings="@(StaticWebAssetContentTypeMapping)">
+      <Output TaskParameter="Endpoints" ItemName="_BluxFontEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <ItemGroup>
+      <_BluxFontEndpoint Update="@(_BluxFontEndpoint)" ResponseHeaders="$([System.String]::new('%(_BluxFontEndpoint.ResponseHeaders)').Replace('max-age=3600, must-revalidate', 'max-age=31536000, immutable'))" Condition="!$([System.String]::new('%(_BluxFontEndpoint.Route)').EndsWith('.css'))" />
+      <StaticWebAsset Include="@(_BluxFontAsset)" />
+      <StaticWebAssetEndpoint Include="@(_BluxFontEndpoint)" />
+    </ItemGroup>
+  </Target>
+</Project>

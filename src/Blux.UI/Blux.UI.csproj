@@ -59,7 +59,16 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../CHANGELOG.md" Pack="true" PackagePath="/" />
     <None Include="assets/icon.png" Pack="true" PackagePath="/" />
-    <None Include="buildTransitive/Blux.UI.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+    <None Include="buildTransitive/Blux.UI.targets;buildTransitive/Blux.UI.Tasks.targets;buildTransitive/Blux.UI.Fonts.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+  </ItemGroup>
+
+  <!--
+    The MSBuild task assembly (self-hosted fonts and the build features to come): built first, then shipped next to the targets
+    that load it. It is never referenced by the app, so it adds no dependency.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Blux.UI.Build.Tasks\Blux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="..\Blux.UI.Build.Tasks\bin\$(Configuration)\netstandard2.0\Blux.UI.Build.Tasks.dll" Pack="true" PackagePath="build/tasks/;buildTransitive/tasks/" Visible="false" />
   </ItemGroup>
 
   <!-- Sources of the generated assets: not shipped as content. -->

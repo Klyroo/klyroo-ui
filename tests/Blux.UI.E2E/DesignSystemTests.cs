@@ -83,6 +83,7 @@ public class DesignSystemTests(PlaygroundServer server) : PlaygroundTest(server)
     [Theory]
     [InlineData("design-system")]
     [InlineData("css-variables")]
+    [InlineData("fonts")]
     [InlineData("theming")]
     public async Task Guide_has_no_accessibility_violations_in_both_color_modes(string slug)
     {
