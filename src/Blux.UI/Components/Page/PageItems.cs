@@ -12,7 +12,8 @@ public sealed record PageLinkItem(string Label, string? Href = null)
     /// <summary>Name of a built-in icon shown after the label (buttons only).</summary>
     public string? TrailingIcon { get; init; }
     public string? Target { get; init; }
-    public BxColor Color { get; init; } = BxColor.Primary;
+    /// <summary>Defaults to <see cref="BxDefaults.Color"/>, or primary.</summary>
+    public BxColor? Color { get; init; }
     public ButtonVariant Variant { get; init; } = ButtonVariant.Solid;
     public bool Disabled { get; init; }
 

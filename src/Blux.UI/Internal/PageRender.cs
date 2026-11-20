@@ -41,7 +41,10 @@ internal static class PageRender
             builder.AddComponentParameter(4, nameof(BxButton.Label), link.Label);
             builder.AddComponentParameter(5, nameof(BxButton.Href), link.Href);
             builder.AddComponentParameter(6, nameof(BxButton.Target), link.Target);
-            builder.AddComponentParameter(7, nameof(BxButton.Color), link.Color);
+            if (link.Color is { } color)
+            {
+                builder.AddComponentParameter(7, nameof(BxButton.Color), color);
+            }
             builder.AddComponentParameter(8, nameof(BxButton.Variant), link.Variant);
             builder.AddComponentParameter(9, nameof(BxButton.Size), size);
             builder.AddComponentParameter(10, nameof(BxButton.Disabled), link.Disabled);

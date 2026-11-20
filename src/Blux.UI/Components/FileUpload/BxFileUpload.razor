@@ -100,7 +100,7 @@
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.FileUpload, new Dictionary<string, string?>
         {
-            ["size"] = VariantValue.Of(Size ?? Field?.Size ?? BxSize.Md),
+            ["size"] = VariantValue.Of(Size ?? Field?.Size ?? DefaultSize(BxSize.Md)),
         }, Ui, "root");
 
     private string FormatSize(long bytes) => Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale);
