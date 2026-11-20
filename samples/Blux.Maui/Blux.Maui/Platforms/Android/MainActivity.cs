@@ -1,7 +1,9 @@
 ﻿using Android.App;
 using Android.Content;
 using Android.Content.PM;
+using Android.OS;
 using Android.Views;
+using AndroidX.Activity;
 using Android.Webkit;
 
 namespace Blux.Maui;
@@ -24,7 +26,7 @@ public class MainActivity : MauiAppCompatActivity
     /// <summary>
     /// Android TV: a web view does not reliably get the D-pad as key events, and Chromium has no legacy focus navigation for it.
     /// The remote's keys are caught here, sent into the page as Blux.tvKey('ArrowLeft'), and Blux moves the focus (spatial navigation).
-    /// Back asks the page to close its topmost overlay or go back first (Blux.tvBack) and leaves the app only when there is nothing left.
+    /// Back is not a key event here: see OnCreate.
     /// </summary>
     public override bool DispatchKeyEvent(KeyEvent? e)
     {
@@ -53,16 +55,33 @@ public class MainActivity : MauiAppCompatActivity
             return true;
         }
 
-        if (e.KeyCode == Keycode.Back)
-        {
-            if (e.Action == KeyEventActions.Up)
-            {
-                webView.EvaluateJavascript("window.Blux&&Blux.tvBack?Blux.tvBack():false", new BackResult(this));
-            }
-            return true;
-        }
-
         return base.DispatchKeyEvent(e);
+    }
+
+    /// <summary>
+    /// Back, on a phone (button or gesture) and on a TV remote. Since Android 13 it reaches the app through the back dispatcher, not as a
+    /// key event, and with no callback the system leaves the app. The page is asked first (Blux.tvBack closes the topmost overlay,
+    /// else goes back in the history); the app only goes to the background when the page had nothing left to close.
+    /// </summary>
+    protected override void OnCreate(Bundle? savedInstanceState)
+    {
+        base.OnCreate(savedInstanceState);
+        OnBackPressedDispatcher.AddCallback(this, new BackCallback(this));
+    }
+
+    private sealed class BackCallback(MainActivity activity) : OnBackPressedCallback(true)
+    {
+        public override void HandleOnBackPressed()
+        {
+            if (MainPage.Current?.WebView.Handler?.PlatformView is Android.Webkit.WebView webView)
+            {
+                webView.EvaluateJavascript("window.Blux&&Blux.tvBack?Blux.tvBack():false", new BackResult(activity));
+            }
+            else
+            {
+                activity.MoveTaskToBack(true);
+            }
+        }
     }
 
     /// <summary>The answer of Blux.tvBack(): false means nothing was left to close or go back to, so the app moves to the background.</summary>
