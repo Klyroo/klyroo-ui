@@ -91,7 +91,8 @@ if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') 
 
 function openLayers() {
   flushDialogs();
-  return [...document.querySelectorAll('dialog[open], [popover]:popover-open')].map((element, order) => ({
+  // A tooltip (popover="manual", role="tooltip") is not a layer: Back closes what it sits on, never the tooltip first.
+  return [...document.querySelectorAll('dialog[open], [popover]:popover-open:not([role="tooltip"])')].map((element, order) => ({
     element,
     order,
     stamp: stamps.get(element) ?? 0,
@@ -213,11 +214,17 @@ function move(direction, target) {
   return true;
 }
 
+/** A visible tooltip goes through its own hide path (it keeps its state), as a side effect of Back. */
+function hideTooltips() {
+  for (const tooltip of document.querySelectorAll('bx-tooltip[data-state="open"]')) tooltip.hide?.();
+}
+
 /**
  * Closes the topmost overlay, the one opened last. Returns "closed", "blocked" when it refused (a modal that is not
  * dismissible: the app must not treat Back as unused and leave), or null when there was no overlay.
  */
 function closeOverlay() {
+  hideTooltips();
   const top = pickTopmost(openLayers());
   if (!top) return null;
   const element = top.element;
@@ -254,7 +261,9 @@ function onKeyDownCapture(event) {
   // A widget list that is open (a combobox) navigates itself.
   if (target.getAttribute('aria-expanded') === 'true') return;
 
-  if (event.key === 'Enter' && !event.isTrusted) {
+  // Select/Enter puts a field in editing mode, from a forwarded key and from a real one (a physical keyboard, a WebView
+  // that delivers the D-pad as key events). While editing, a real Enter and the real arrows are left to the browser.
+  if (event.key === 'Enter' && !event.isComposing) {
     if (editing === target || target.readOnly) return;
     enterEditing(target);
     event.preventDefault();
@@ -314,6 +323,13 @@ function editArrow(target, key) {
 function onKeyDown(event) {
   if (!isSpatialNavigationOn() || event.defaultPrevented || hasModifier(event)) return;
   const target = event.target;
+
+  // A real Enter ends a single line field's editing and the browser keeps its default (submitting the form, as a keyboard
+  // does); in a textarea or an editable region it is typed.
+  if (event.isTrusted && event.key === 'Enter' && editing === target && !event.isComposing) {
+    if (enterLeaves({ tag: target.tagName.toLowerCase(), editable: target.isContentEditable })) leaveEditing();
+    return;
+  }
 
   // Untrusted events (forwarded by the app) have no default action: do what the key would have done.
   if (!event.isTrusted) {
