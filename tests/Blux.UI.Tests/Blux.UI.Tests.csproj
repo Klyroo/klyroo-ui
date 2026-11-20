@@ -14,6 +14,11 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blux.UI\Blux.UI.csproj" />
+    <ProjectReference Include="..\..\src\Blux.UI.Build.Tasks\Blux.UI.Build.Tasks.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fonts\Fixtures\*" CopyToOutputDirectory="PreserveNewest" LinkBase="Fonts\Fixtures" />
   </ItemGroup>
 
   <ItemGroup>
