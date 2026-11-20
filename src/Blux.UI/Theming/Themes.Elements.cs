@@ -8,10 +8,10 @@ internal static partial class Themes
     public static ComponentTheme Kbd() =>
         new ComponentTheme("kbd", "base")
             .Slot("base", "inline-flex items-center justify-center px-1 font-medium font-sans rounded-sm whitespace-nowrap")
-            .Variant("variant", "solid", "base", "bg-(--bx-color) text-(--bx-color-contrast)")
-            .Variant("variant", "outline", "base", "ring ring-inset ring-(--bx-color)/50 text-(--bx-color-text)")
+            .Variant("variant", "solid", "base", "bg-(--bx-color) ring ring-inset ring-(--bx-color-text) text-(--bx-color-contrast)")
+            .Variant("variant", "outline", "base", "ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text)")
             .Variant("variant", "soft", "base", "bg-(--bx-color)/10 text-(--bx-color-text)")
-            .Variant("variant", "subtle", "base", "bg-(--bx-color)/10 ring ring-inset ring-(--bx-color)/25 text-(--bx-color-text)")
+            .Variant("variant", "subtle", "base", "bg-(--bx-color)/10 ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text)")
             .Variant("size", "xs", "base", "h-4 min-w-4 text-[10px]")
             .Variant("size", "sm", "base", "h-4 min-w-4 text-[11px]")
             .Variant("size", "md", "base", "h-5 min-w-5 text-xs")
@@ -53,7 +53,7 @@ internal static partial class Themes
         new ComponentTheme("chip", "root", "base")
             .Slot("root", "relative inline-flex shrink-0 items-center justify-center")
             .Slot("base", "flex items-center justify-center rounded-full font-semibold leading-none whitespace-nowrap " +
-                          "bg-(--bx-color) text-(--bx-color-contrast) ring-2 ring-(--blux-bg)")
+                          "bg-(--bx-color) text-(--bx-color-contrast) inset-ring-1 inset-ring-(--bx-color-text) ring-2 ring-(--blux-bg)")
             .Variant("standalone", "false", "base", "absolute")
             .Variant("position", "top-right", "base", "top-0 end-0")
             .Variant("position", "top-left", "base", "top-0 start-0")
@@ -140,7 +140,7 @@ internal static partial class Themes
 
     public static ComponentTheme Banner() =>
         new ComponentTheme("banner", "root", "container", "icon", "content", "title", "description", "actions", "close")
-            .Slot("root", "relative z-50 w-full bg-(--bx-color) text-(--bx-color-contrast)")
+            .Slot("root", "relative z-50 w-full bg-(--bx-color) text-(--bx-color-contrast) ring ring-inset ring-(--bx-color-text)")
             .Slot("container", "flex items-center gap-3 px-4 py-1.5 sm:px-6 lg:px-8")
             .Slot("icon", "size-5 shrink-0")
             .Slot("content", "flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center")

@@ -54,7 +54,7 @@ internal static partial class Themes
             .Variant("variant", "outline", "root", "bg-(--blux-bg) ring ring-inset ring-(--blux-border)")
             .Variant("variant", "soft", "root", "bg-(--blux-bg-elevated)/50")
             .Variant("variant", "subtle", "root", "bg-(--blux-bg-elevated)/50 ring ring-inset ring-(--blux-border)")
-            .Variant("variant", "solid", "root", "bg-(--bx-color) text-(--bx-color-contrast)")
+            .Variant("variant", "solid", "root", "bg-(--bx-color) ring ring-inset ring-(--bx-color-text) text-(--bx-color-contrast)")
             .Variant("variant", "solid", "title", "text-current")
             .Variant("variant", "solid", "description", "text-current")
             .Variant("variant", "solid", "tagline", "text-current")

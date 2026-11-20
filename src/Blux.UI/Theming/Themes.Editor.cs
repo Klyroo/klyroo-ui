@@ -37,7 +37,7 @@ internal static partial class Themes
     {
         const string button =
             "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[calc(var(--blux-radius)_-_2px)] text-(--blux-text-muted) transition-colors " +
-            "hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-pressed:bg-(--bx-color)/10 aria-pressed:text-(--bx-color-text) " +
+            "hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-pressed:bg-(--bx-color)/10 aria-pressed:text-(--bx-color-text) aria-pressed:ring aria-pressed:ring-inset aria-pressed:ring-(--bx-color-text)/75 " +
             "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--bx-color-text)";
         return new ComponentTheme("editorToolbar", "root", "button", "icon", "separator", "linkForm", "linkInput", "linkButton")
             .Slot("root", "items-center gap-0.5")
