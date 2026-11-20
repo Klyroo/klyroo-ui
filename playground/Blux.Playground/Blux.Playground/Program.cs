@@ -17,6 +17,14 @@ builder.Services.AddRazorComponents()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+// PathBase serves the whole site below a prefix ("/sub"), as a reverse proxy or the live demos of the templates do: the E2E suite runs a second
+// instance this way to check that the library never assumes it lives at "/". UseRouting has to come right after UsePathBase, because
+// WebApplication would otherwise add it first and the prefix would never be stripped before routing. App.razor writes the matching <base href>.
+if (builder.Configuration["PathBase"] is { Length: > 0 } pathBase)
+{
+    app.UsePathBase(pathBase);
+    app.UseRouting();
+}
 app.UseBluxAi();
 if (app.Environment.IsDevelopment())
 {

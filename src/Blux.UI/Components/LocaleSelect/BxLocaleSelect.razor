@@ -45,8 +45,11 @@
     /// <summary>The cookie to write. The default is the one the ASP.NET Core request localization middleware reads.</summary>
     [Parameter] public string CookieName { get; set; } = ".AspNetCore.Culture";
 
-    /// <summary>The path of the cookie. It must cover every page that is localized.</summary>
-    [Parameter] public string CookiePath { get; set; } = "/";
+    /// <summary>
+    /// The path of the cookie. It must cover every page that is localized. By default it is the base path of the app (the path of
+    /// <c>&lt;base href&gt;</c>, "/" at the root), so two apps on one origin under different path bases keep their own culture.
+    /// </summary>
+    [Parameter] public string? CookiePath { get; set; }
 
     /// <summary>
     /// Reloads the page after the choice is saved. In a browser it is on by default (the server renders the page in the new culture).

@@ -40,6 +40,9 @@ namespace Microsoft.AspNetCore.Builder
         /// <summary>
         /// Maps the image endpoint (<c>GET /_blux/img?src=/img/a.png&amp;w=640&amp;f=webp</c>). Defaults to the
         /// <see cref="BxLocalImagesOptions.Endpoint"/> that <see cref="BxImagesLocalServiceCollectionExtensions.AddBluxImagesLocal"/> was given.
+        /// The pattern is relative to the path base: with <c>app.UsePathBase("/x")</c> the endpoint answers at <c>/x/_blux/img</c>, where the
+        /// relative URLs of <see cref="BxLocalImageProvider"/> lead. Call <c>app.UseRouting()</c> right after <c>UsePathBase</c>, because
+        /// <c>WebApplication</c> otherwise adds routing before it and the prefix is never stripped.
         /// </summary>
         public static IEndpointConventionBuilder MapBluxImages(this IEndpointRouteBuilder endpoints, string? pattern = null)
         {

@@ -20,34 +20,7 @@ public sealed class PlaygroundServer : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        var port = FreePort();
-        BaseUrl = $"http://127.0.0.1:{port}";
-        // BLUX_PLAYGROUND_PUBLISHED points to a "dotnet publish" output: the trimmed WebAssembly build is what apps ship,
-        // and trimming can remove members only reached through reflection.
-        var published = Environment.GetEnvironmentVariable("BLUX_PLAYGROUND_PUBLISHED");
-        ProcessStartInfo start;
-        if (string.IsNullOrEmpty(published))
-        {
-            var project = Path.Combine(RepoRoot(), "playground", "Blux.Playground", "Blux.Playground");
-            start = new ProcessStartInfo("dotnet", ["run", "--no-build", "--project", project, "--urls", BaseUrl]);
-            // Static web assets of referenced libraries are only served from their source folders in Development.
-            start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
-        }
-        else
-        {
-            var directory = Path.GetFullPath(published);
-            start = new ProcessStartInfo("dotnet", [Path.Combine(directory, "Blux.Playground.dll"), "--urls", BaseUrl])
-            {
-                WorkingDirectory = directory,
-            };
-            start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
-        }
-        start.RedirectStandardOutput = true;
-        start.RedirectStandardError = true;
-        _process = Process.Start(start) ?? throw new InvalidOperationException("Could not start the playground.");
-        _process.BeginOutputReadLine();
-        _process.BeginErrorReadLine();
-        await WaitUntilReady();
+        (_process, BaseUrl) = await StartPlaygroundAsync(null);
 
         _playwright = await Playwright.CreateAsync();
         var browserType = (Environment.GetEnvironmentVariable("BLUX_BROWSER") ?? "chromium") switch
@@ -71,19 +44,64 @@ public sealed class PlaygroundServer : IAsyncLifetime
         _process?.Dispose();
     }
 
-    private async Task WaitUntilReady()
+    /// <summary>
+    /// Starts one instance of the playground on a free port. <paramref name="pathBase"/> serves it below a prefix ("/sub", the
+    /// <c>PathBase</c> setting of its Program.cs); the returned address is the root of the host, the prefix is not part of it.
+    /// </summary>
+    internal static async Task<(Process Process, string BaseUrl)> StartPlaygroundAsync(string? pathBase)
+    {
+        var port = FreePort();
+        var baseUrl = $"http://127.0.0.1:{port}";
+        // BLUX_PLAYGROUND_PUBLISHED points to a "dotnet publish" output: the trimmed WebAssembly build is what apps ship,
+        // and trimming can remove members only reached through reflection.
+        var published = Environment.GetEnvironmentVariable("BLUX_PLAYGROUND_PUBLISHED");
+        ProcessStartInfo start;
+        if (string.IsNullOrEmpty(published))
+        {
+            var project = Path.Combine(RepoRoot(), "playground", "Blux.Playground", "Blux.Playground");
+            start = new ProcessStartInfo("dotnet", ["run", "--no-build", "--project", project, "--urls", baseUrl]);
+            // Static web assets of referenced libraries are only served from their source folders in Development.
+            start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+        }
+        else
+        {
+            var directory = Path.GetFullPath(published);
+            start = new ProcessStartInfo("dotnet", [Path.Combine(directory, "Blux.Playground.dll"), "--urls", baseUrl])
+            {
+                WorkingDirectory = directory,
+            };
+            start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
+        }
+        if (pathBase is not null) start.Environment["PathBase"] = pathBase;
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
+        var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start the playground.");
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        await WaitUntilReady(process, baseUrl + (pathBase ?? ""));
+        return (process, baseUrl);
+    }
+
+    /// <summary>Starts another instance of the playground below <paramref name="pathBase"/>; dispose it to stop it.</summary>
+    public async Task<PlaygroundInstance> StartAtPathBaseAsync(string pathBase)
+    {
+        var (process, baseUrl) = await StartPlaygroundAsync(pathBase);
+        return new PlaygroundInstance(process, baseUrl, pathBase);
+    }
+
+    private static async Task WaitUntilReady(Process process, string url)
     {
         using var http = new HttpClient();
         var deadline = DateTime.UtcNow.AddSeconds(60);
         while (DateTime.UtcNow < deadline)
         {
-            if (_process!.HasExited)
+            if (process.HasExited)
             {
-                throw new InvalidOperationException($"The playground exited with code {_process.ExitCode}. Build it first.");
+                throw new InvalidOperationException($"The playground exited with code {process.ExitCode}. Build it first.");
             }
             try
             {
-                if ((await http.GetAsync(BaseUrl)).IsSuccessStatusCode) return;
+                if ((await http.GetAsync(url)).IsSuccessStatusCode) return;
             }
             catch (HttpRequestException)
             {
@@ -108,5 +126,28 @@ public sealed class PlaygroundServer : IAsyncLifetime
             if (File.Exists(Path.Combine(dir.FullName, "Blux.UI.slnx"))) return dir.FullName;
         }
         throw new DirectoryNotFoundException("Blux.UI.slnx not found above the test output directory.");
+    }
+}
+
+/// <summary>A playground started by <see cref="PlaygroundServer.StartAtPathBaseAsync"/>.</summary>
+public sealed class PlaygroundInstance(Process process, string host, string pathBase) : IAsyncDisposable
+{
+    /// <summary>The origin, without the path base.</summary>
+    public string Host { get; } = host;
+
+    /// <summary>The path base, "/sub".</summary>
+    public string PathBase { get; } = pathBase;
+
+    /// <summary>The address of the app: the origin and the path base, with a trailing slash like <c>&lt;base href&gt;</c>.</summary>
+    public string BaseUrl => Host + PathBase.TrimEnd('/') + "/";
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!process.HasExited)
+        {
+            process.Kill(entireProcessTree: true);
+            await process.WaitForExitAsync();
+        }
+        process.Dispose();
     }
 }

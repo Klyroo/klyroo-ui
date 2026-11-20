@@ -83,7 +83,7 @@ public sealed class EndpointFixture : IAsyncLifetime
         return ValueTask.CompletedTask;
     }
 
-    public async Task<(WebApplication App, HttpClient Client)> StartAsync(Action<BxLocalImagesOptions>? configure = null)
+    public async Task<(WebApplication App, HttpClient Client)> StartAsync(Action<BxLocalImagesOptions>? configure = null, string? pathBase = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = WebRoot, ContentRootPath = Directory, EnvironmentName = "Production" });
         builder.WebHost.UseTestServer();
@@ -93,6 +93,12 @@ public sealed class EndpointFixture : IAsyncLifetime
             configure?.Invoke(o);
         });
         var app = builder.Build();
+        if (pathBase is not null)
+        {
+            // WebApplication adds UseRouting first on its own: a path base only applies to routing when UseRouting follows UsePathBase.
+            app.UsePathBase(pathBase);
+            app.UseRouting();
+        }
         app.MapBluxImages();
         await app.StartAsync();
         return (app, app.GetTestClient());
@@ -102,6 +108,22 @@ public sealed class EndpointFixture : IAsyncLifetime
 public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixture>
 {
     private static Image Decode(byte[] bytes) => Image.NewFromBuffer(bytes);
+
+    [Fact]
+    public async Task Under_a_path_base_the_endpoint_answers_below_it_and_the_default_url_leads_there()
+    {
+        var (app, client) = await fixture.StartAsync(pathBase: "/sub");
+        await using var _ = app;
+        var url = new BxLocalImageProvider().GetUrl("/img/photo.png", new BxImageModifiers(64, null, null, "webp", null, null));
+
+        // What the browser does with <img src> under <base href="/sub/">.
+        var resolved = new Uri(new Uri("http://localhost/sub/"), url);
+        var response = await client.GetAsync(resolved.PathAndQuery);
+
+        Assert.Equal("/sub/_blux/img", resolved.AbsolutePath);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("image/webp", response.Content.Headers.ContentType!.MediaType);
+    }
 
     [Fact]
     public async Task A_png_is_resized_and_converted_to_webp()
@@ -333,7 +355,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
 
         Assert.Equal("local", images.DefaultProvider);
         Assert.Contains("images.test", images.Domains);
-        Assert.StartsWith("/_blux/img?src=%2Fimg%2Fphoto.png&w=384&f=webp&v=7", resolved.Src);
+        Assert.StartsWith("_blux/img?src=%2Fimg%2Fphoto.png&w=384&f=webp&v=7", resolved.Src);
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler

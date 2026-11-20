@@ -1,5 +1,6 @@
 import { Reporter, ensureId } from './shared.js';
 import { isHybrid } from './host.js';
+import { appCookiePath } from './base-path.js';
 
 // The state is remembered in cookies, so the server can render it on the next request (the app reads them and passes
 // Collapsed): blux-sidebar-{id} is "1" when collapsed, blux-sidebar-{id}-width the width in pixels.
@@ -40,7 +41,7 @@ function write(name, value) {
   }
   try {
     const secure = location.protocol === 'https:' ? '; secure' : '';
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${ONE_YEAR}; samesite=lax${secure}`;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=${appCookiePath()}; max-age=${ONE_YEAR}; samesite=lax${secure}`;
   } catch {
     // Cookies blocked: the state lasts until the page is reloaded.
   }
@@ -334,7 +335,8 @@ document.addEventListener('bx-change', (event) => {
   // In a Blazor Hybrid app there is no ASP.NET Core to read the cookie: BxLocaleSelect keeps the choice in an IBxCultureStore (.NET side).
   if (isHybrid()) return;
   const name = host.getAttribute('data-bx-cookie') || '.AspNetCore.Culture';
-  const path = host.getAttribute('data-bx-cookie-path') || '/';
+  // An explicit path wins; otherwise the cookie belongs to this app's base path, so apps of one origin keep their own culture.
+  const path = host.getAttribute('data-bx-cookie-path') || appCookiePath();
   const secure = location.protocol === 'https:' ? '; secure' : '';
   try {
     document.cookie = `${name}=${encodeURIComponent(`c=${culture}|uic=${culture}`)}; path=${path}; max-age=31536000; samesite=lax${secure}`;

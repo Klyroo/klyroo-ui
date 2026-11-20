@@ -374,7 +374,7 @@ public class LayoutTests : BluxTestContext
 
         var host = cut.Find("[data-bx-locale-select]");
         Assert.Equal(".AspNetCore.Culture", host.GetAttribute("data-bx-cookie"));
-        Assert.Equal("/", host.GetAttribute("data-bx-cookie-path"));
+        Assert.False(host.HasAttribute("data-bx-cookie-path"), "without a CookiePath the browser scopes the cookie to the base path of the app");
         Assert.True(host.HasAttribute("data-bx-reload"));
         Assert.Equal("Language", cut.Find("button[role=combobox]").GetAttribute("aria-label"));
         Assert.Equal(["EN English", "FR Français"], cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")));

@@ -1,7 +1,7 @@
 namespace Blux.UI.E2E;
 
 /// <summary>
-/// The docs site runs Blux.UI.Images.Local at /_blux/img, so the BxImage page loads real resized images in every render mode.
+/// The docs site runs Blux.UI.Images.Local at _blux/img (below the base of the app), so the BxImage page loads real resized images in every render mode.
 /// </summary>
 public class ImageTests(PlaygroundServer server) : PlaygroundTest(server)
 {
@@ -108,7 +108,7 @@ public class ImageTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(image).ToBeHiddenAsync();
         await Assertions.Expect(avatar.Locator("[aria-hidden=true]")).ToHaveTextAsync("AL");
         var source = await image.GetAttributeAsync("src");
-        Assert.StartsWith("/_blux/img?src=%2Fmissing.png", source);
+        Assert.StartsWith("_blux/img?src=%2Fmissing.png", source);
         await Assertions.Expect(image).ToHaveAttributeAsync("width", "40");
     }
 

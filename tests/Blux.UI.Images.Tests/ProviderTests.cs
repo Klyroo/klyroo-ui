@@ -103,7 +103,11 @@ public class ProviderTests
         var p = new BxLocalImageProvider("/_blux/img", version: "1.2");
 
         Assert.Equal("/_blux/img?src=%2Fimg%2Fa.png&w=384&h=216&q=80&f=webp&fit=cover&v=1.2", p.GetUrl("/img/a.png", M(320, 180, 78, "webp", BxImageFit.Cover)));
-        Assert.Equal("/_blux/img?src=%2Fa.png", new BxLocalImageProvider().GetUrl("/a.png", M()));
+        Assert.Equal("_blux/img?src=%2Fa.png", new BxLocalImageProvider().GetUrl("/a.png", M()));
+        // The default endpoint has no leading slash, so the browser resolves it against <base href> (/sub/ gives /sub/_blux/img).
+        Assert.Equal("_blux/img", BxLocalImageProvider.DefaultEndpoint);
+        Assert.Equal("img/x?src=%2Fa.png&w=64", new BxLocalImageProvider("img/x/").GetUrl("/a.png", M(64)));
+        Assert.Equal(new Uri("https://h.test/sub/_blux/img?src=%2Fa.png"), new Uri(new Uri("https://h.test/sub/"), new BxLocalImageProvider().GetUrl("/a.png", M())));
         Assert.Equal(3840, BxLocalImageProvider.SnapWidth(9000));
         Assert.Equal(16, BxLocalImageProvider.SnapWidth(1));
         Assert.Equal(5, BxLocalImageProvider.SnapQuality(1));
@@ -120,7 +124,7 @@ public class ProviderTests
         Assert.Equal("local", settings.DefaultProvider);
         Assert.Equal(10, settings.Providers.Count);
         var resolved = settings.Resolve("/a.png", null, 100, 100);
-        Assert.Equal("/_blux/img?src=%2Fa.png&w=128&h=128", resolved.Src.Split(" ")[0]);
+        Assert.Equal("_blux/img?src=%2Fa.png&w=128&h=128", resolved.Src.Split(" ")[0]);
     }
 
     [Fact]
@@ -178,8 +182,8 @@ public class ProviderTests
 
         var resolved = settings.Resolve("//img.test/a.png", null, 100, null);
 
-        Assert.StartsWith("/_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png&w=128", resolved.Src);
-        Assert.Equal("/_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png", new BxLocalImageProvider().GetUrl("//img.test/a.png", M()));
+        Assert.StartsWith("_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png&w=128", resolved.Src);
+        Assert.Equal("_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png", new BxLocalImageProvider().GetUrl("//img.test/a.png", M()));
     }
 
     [Fact]
@@ -193,10 +197,10 @@ public class ProviderTests
             return settings.Resolve(src, null, 100, null).Src;
         }
 
-        Assert.StartsWith("/_blux/img", Src("img.test", "https://img.test/a.png"));
-        Assert.StartsWith("/_blux/img", Src("img.test", "https://img.test:443/a.png"));
+        Assert.StartsWith("_blux/img", Src("img.test", "https://img.test/a.png"));
+        Assert.StartsWith("_blux/img", Src("img.test", "https://img.test:443/a.png"));
         Assert.Equal("https://img.test:8443/a.png", Src("img.test", "https://img.test:8443/a.png"));
-        Assert.StartsWith("/_blux/img", Src("img.test:8443", "https://img.test:8443/a.png"));
+        Assert.StartsWith("_blux/img", Src("img.test:8443", "https://img.test:8443/a.png"));
         Assert.Equal("https://img.test/a.png", Src("img.test:8443", "https://img.test/a.png"));
         Assert.Equal("https://img.test:9000/a.png", Src("img.test:8443", "https://img.test:9000/a.png"));
     }
@@ -211,6 +215,6 @@ public class ProviderTests
         Assert.Null(settings.ResolvePlaceholder("data:image/png;base64,AAAA", null, 10, null));
         Assert.Throws<InvalidOperationException>(() => settings.ResolvePlaceholder("/a.png", new BxImageOptions { Preset = "nope" }, 10, null));
         Assert.Throws<InvalidOperationException>(() => settings.Resolve("/a.png", new BxImageOptions { Preset = "nope" }, 10, null));
-        Assert.StartsWith("/_blux/img?src=%2Fa.png&w=16", settings.ResolvePlaceholder("/a.png", null, 10, null));
+        Assert.StartsWith("_blux/img?src=%2Fa.png&w=16", settings.ResolvePlaceholder("/a.png", null, 10, null));
     }
 }
