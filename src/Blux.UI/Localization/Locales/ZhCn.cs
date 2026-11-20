@@ -2,8 +2,8 @@ namespace Blux.UI;
 
 public static partial class BxLocales
 {
-    /// <summary>简体中文 (zh-CN).</summary>
-    public static BxLocale ZhCn { get; } = new("zh-CN", "简体中文", BxDirection.Ltr,
+    /// <summary>简体中文, code zh-Hans: zh-CN, zh-SG and zh-Hans-* reach it through their parent culture, like on the server.</summary>
+    public static BxLocale ZhCn { get; } = new("zh-Hans", "简体中文", BxDirection.Ltr,
         new BxMessages
         {
             ChartLine = "折线图",
