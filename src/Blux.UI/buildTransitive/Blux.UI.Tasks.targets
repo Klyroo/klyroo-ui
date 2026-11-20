@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Shared by every Blux build feature that runs code at build time (self-hosted fonts, bundled icons). One task assembly,
+    Shared by every Blux build feature that runs code at build time (self-hosted fonts, bundled icons, Tailwind). One task assembly,
     Blux.UI.Build.Tasks.dll (netstandard2.0, so it loads in `dotnet build` and in Visual Studio's MSBuild alike), holds all the
     tasks; a feature adds its UsingTask line below and its own Blux.UI.<Feature>.targets, imported from Blux.UI.targets.
 
@@ -26,4 +26,6 @@
   <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_BluxTasksOverridden)' == 'true'" />
   <UsingTask TaskName="Blux.UI.Build.BluxResolveIcons" AssemblyFile="$(BluxBuildTasksAssembly)" Condition="'$(_BluxTasksOverridden)' != 'true'" />
   <UsingTask TaskName="Blux.UI.Build.BluxResolveIcons" AssemblyFile="$(BluxBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_BluxTasksOverridden)' == 'true'" />
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveTailwind" AssemblyFile="$(BluxBuildTasksAssembly)" Condition="'$(_BluxTasksOverridden)' != 'true'" />
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveTailwind" AssemblyFile="$(BluxBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_BluxTasksOverridden)' == 'true'" />
 </Project>

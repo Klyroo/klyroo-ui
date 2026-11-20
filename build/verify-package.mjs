@@ -8,7 +8,7 @@
 // --online to add nuget.org as a source. Needs the .NET 10 SDK and the committed generated assets (npm run build).
 import { spawn, spawnSync } from "node:child_process";
 import { inflateRawSync } from "node:zlib";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,8 +70,8 @@ try {
   for (const n of ["lib/net10.0/Blux.UI.dll", "lib/net10.0/Blux.UI.xml", "staticwebassets/blux.css", "staticwebassets/blux.preflight.css",
     "staticwebassets/blux-editor.js", "staticwebassets/blux.theme.css",
     "buildTransitive/Blux.UI.targets", "build/Blux.UI.targets", "README.md",
-    "buildTransitive/Blux.UI.Tasks.targets", "buildTransitive/Blux.UI.Fonts.targets", "buildTransitive/Blux.UI.Icons.targets", "buildTransitive/tasks/Blux.UI.Build.Tasks.dll",
-    "build/Blux.UI.Tasks.targets", "build/Blux.UI.Fonts.targets", "build/Blux.UI.Icons.targets", "build/tasks/Blux.UI.Build.Tasks.dll", "CHANGELOG.md", "icon.png", "Blux.UI.nuspec"]) {
+    "buildTransitive/Blux.UI.Tasks.targets", "buildTransitive/Blux.UI.Fonts.targets", "buildTransitive/Blux.UI.Icons.targets", "buildTransitive/Blux.UI.Tailwind.targets", "buildTransitive/tasks/Blux.UI.Build.Tasks.dll",
+    "build/Blux.UI.Tasks.targets", "build/Blux.UI.Fonts.targets", "build/Blux.UI.Icons.targets", "build/Blux.UI.Tailwind.targets", "build/tasks/Blux.UI.Build.Tasks.dll", "CHANGELOG.md", "icon.png", "Blux.UI.nuspec"]) {
     check(nupkg.has(n), `nupkg contains ${n}`);
   }
   check(names.some((n) => /^staticwebassets\/Blux\.UI(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), "nupkg contains the JS initializer (Blux.UI.lib.module.js, fingerprinted)");
@@ -265,6 +265,90 @@ try {
   for (const [label, dir] of [["server", server], ["client", client]]) {
     const copied = join(dir, "obj", "blux", "blux.theme.css");
     check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/blux/blux.theme.css copied by the targets, identical to the package's`);
+  }
+
+  // Tailwind compiled by the app at build time, without Node: BluxTailwind=true downloads the pinned standalone CLI. The download is cached
+  // outside the throwaway consumer (a second run does not download it again) and is checked against the embedded SHA-256 whenever it happens.
+  {
+    const tailwindCache = join(tmpdir(), "blux-verify-tailwind-cache");
+    // The server project sets BluxOffline=true for the icons check; the first Tailwind build needs the network (a global property wins over it).
+    const flags = ["-p:BluxOffline=false", `-p:BluxTailwindCacheDir=${tailwindCache}`];
+    const buildTw = (label, extra = flags) => {
+      const r = run("dotnet", ["build", "-c", "Release", ...extra, join(app, "Site", "Site.sln")], app, consumerEnv);
+      check(r.code === 0, `${label}: consumer builds`);
+      if (r.code !== 0) console.log(r.out);
+      check(!/warning[^\n]*Blux/i.test(r.out), `${label}: no Blux.UI warning in the consumer build`);
+      return r;
+    };
+    writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <PropertyGroup><BluxTailwind>true</BluxTailwind></PropertyGroup>\n</Project>`));
+    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n`);
+    const homeSource = readFileSync(home, "utf8");
+    const withClasses = (classes) => writeFileSync(home, `${homeSource}\n<p class="${classes}">Tailwind check</p>\n`);
+    // tracking-[0.123em] is an arbitrary value: it is in no precompiled stylesheet, only a build that scans the app's sources can produce it.
+    withClasses("tracking-[0.123em]");
+    // A source the scan must not read: obj holds generated files, and this app has no .gitignore to say so.
+    writeFileSync(join(server, "obj", "scan-trap.cs"), `// class="tracking-[0.987em]"\n`);
+    // The Blazor template ships wwwroot/app.css, the default route of the generated stylesheet: the build says so instead of the SDK's conflict error.
+    check(existsSync(join(server, "wwwroot", "app.css")), "tailwind: the template's own wwwroot/app.css is there to collide with");
+    {
+      const r = run("dotnet", ["build", "-c", "Release", ...flags, join(app, "Site", "Site.sln")], app, consumerEnv);
+      check(r.code !== 0 && /BLUXTW004[^\n]*wwwroot\/app\.css[^\n]*BluxTailwindAssetPath/.test(r.out), "tailwind: a wwwroot/app.css of the project is reported as BLUXTW004 naming BluxTailwindAssetPath");
+    }
+    // The app takes the way out the error names: it serves the generated stylesheet under another name.
+    writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("<BluxTailwind>true</BluxTailwind>", "<BluxTailwind>true</BluxTailwind><BluxTailwindAssetPath>site.tailwind.css</BluxTailwindAssetPath>"));
+    buildTw("tailwind: first build");
+    const twDir = join(server, "obj", "Release", "net10.0", "blux", "tailwind");
+    const twOut = join(twDir, "site.tailwind.css");
+    const css = () => (existsSync(twOut) ? readFileSync(twOut, "utf8") : "");
+    check(existsSync(twOut), "tailwind: the stylesheet is generated under obj/<config>/<tfm>/blux/tailwind/");
+    check(css().includes("letter-spacing:.123em"), "tailwind: the generated CSS has the utility the app uses and blux.css lacks (tracking-[0.123em])");
+    check(!readFileSync(join(root, "src", "Blux.UI", "wwwroot", "blux.css"), "utf8").includes("123em"), "tailwind: that utility is not in the precompiled blux.css, so the check proves the app's CSS was compiled");
+    check(!css().includes(".987em"), "tailwind: obj is not scanned for class names");
+    check(css().includes("--blux-primary") && css().includes(".bg-\\(--blux-bg-elevated\\)"), "tailwind: the Blux theme tokens and the classes of the Blux components are generated too");
+    check(css().trim().split("\n").length <= 3, "tailwind: Release output is minified");
+    const swa = readFileSync(manifestFile, "utf8");
+    check(swa.includes("blux/tailwind/site.tailwind.css") && swa.includes('"RelativePath":"site.tailwind#[.{fingerprint}]?.css"'), "tailwind: the stylesheet (from obj) is a static web asset");
+    check(!existsSync(join(server, "wwwroot", "site.tailwind.css")), "tailwind: nothing is written into the source tree (wwwroot)");
+
+    // Incremental: nothing changed, so the CLI does not run again; a source change does.
+    const stamp = () => statSync(twOut).mtimeMs;
+    const t1 = stamp();
+    buildTw("tailwind: second build");
+    check(stamp() === t1, "tailwind: unchanged inputs do not run the CLI again");
+    withClasses("tracking-[0.123em] leading-[1.234]");
+    buildTw("tailwind: after a source change");
+    check(stamp() > t1 && css().includes("1.234"), "tailwind: a changed .razor runs the CLI again and its new utility appears");
+
+    // An override binary: no download, whatever the cache holds. Offline with nothing cached and no override: an error that names the property.
+    const cached = existsSync(tailwindCache) ? readdirSync(tailwindCache, { recursive: true }).map((f) => join(tailwindCache, String(f))).find((f) => /tailwindcss-(linux|macos|windows)[^/\\]*$/.test(f) && statSync(f).isFile() && !f.endsWith(".tmp")) : undefined;
+    const emptyCache = join(work, "empty-tailwind-cache");
+    if (check(!!cached, "tailwind: the verified binary is in the cache folder")) {
+      withClasses("tracking-[0.123em] leading-[1.345]");
+      const r = run("dotnet", ["build", "-c", "Release", "-p:BluxOffline=true", `-p:BluxTailwindCacheDir=${emptyCache}`, `-p:BluxTailwindExecutable=${cached}`, join(app, "Site", "Site.sln")], app, consumerEnv);
+      if (r.code !== 0) console.log(r.out);
+      check(r.code === 0 && css().includes("1.345") && !existsSync(emptyCache), "tailwind: BluxTailwindExecutable is used, with no download and nothing written to the cache");
+      withClasses("tracking-[0.123em] leading-[1.456]");
+      const off = run("dotnet", ["build", "-c", "Release", "-p:BluxOffline=true", `-p:BluxTailwindCacheDir=${emptyCache}`, join(app, "Site", "Site.sln")], app, consumerEnv);
+      check(off.code !== 0 && /BLUXTW001[^\n]*BluxTailwindExecutable/.test(off.out), "tailwind: offline with an empty cache fails with an error that names BluxTailwindExecutable");
+    }
+
+    // The app serves it.
+    buildTw("tailwind: final build");
+    {
+      const port = 20000 + Math.floor(Math.random() * 20000);
+      const url = `http://127.0.0.1:${port}`;
+      const child = spawn("dotnet", [join(server, "bin", "Release", "net10.0", "Site.dll"), "--urls", url], { cwd: server, env: { ...process.env, ASPNETCORE_ENVIRONMENT: "Development", DOTNET_NOLOGO: "1" }, stdio: "ignore" });
+      let served = "";
+      for (let i = 0; i < 60 && !served; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        try { const res = await fetch(url + "/site.tailwind.css"); if (res.ok) served = await res.text(); } catch { /* not up yet */ }
+      }
+      child.kill();
+      check(served.includes("letter-spacing:.123em"), "tailwind: the app serves /site.tailwind.css with the generated utility");
+    }
+    // BluxTailwind=false: the feature adds nothing to the assets.
+    const disabled = run("dotnet", ["build", "-c", "Release", "-p:BluxTailwind=false", "-p:BluxOffline=false", join(app, "Site", "Site.sln")], app, consumerEnv);
+    check(disabled.code === 0 && !readFileSync(manifestFile, "utf8").includes("blux/tailwind/site.tailwind.css"), "tailwind off: no generated stylesheet in the static web assets");
   }
 } catch (e) {
   failures.push(String(e.message ?? e));
