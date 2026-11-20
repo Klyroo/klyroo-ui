@@ -1,4 +1,4 @@
-import { ensureId, float, observeChildren } from './shared.js';
+import { ensureId, float, isTvMode, observeChildren } from './shared.js';
 import { ValueModel, navigable } from './form2-shared.js';
 
 /**
@@ -195,7 +195,7 @@ export class BxSelectMenuElement extends HTMLElement {
   #onKeyDown = (event) => {
     const trigger = this.#trigger;
     if (event.target === trigger) {
-      if (!this.#isOpen() && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
+      if (!this.#isOpen() && !isTvMode() && ['ArrowDown', 'ArrowUp'].includes(event.key)) {
         event.preventDefault();
         this.#content.showPopover();
         this.#opened();

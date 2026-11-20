@@ -277,17 +277,29 @@
   }
 
   /*
-   * Touch screens: controls get a hit target of at least 44 x 44 CSS pixels (WCAG 2.5.5, Apple HIG; 2.5.8 asks for 24). Only a
-   * coarse primary pointer: a mouse keeps the compact sizes. Inline links in text are exempt, so anchors are not listed.
-   * data-bx-compact opts an element (a dense table action, say) out.
+   * Touch screens: controls get a hit area of at least 44 x 44 CSS pixels (WCAG 2.5.5, Apple HIG; 2.5.8 asks for 24). Only a
+   * coarse primary pointer: a mouse keeps the compact sizes. The control keeps its size and its place in the layout: an
+   * invisible ::after reaches out from its box, centered, to 44px on each axis where the box is smaller (it never shrinks
+   * the hit area of a box that is already larger). Inline links in text are exempt, so anchors are not listed, and so are
+   * rows of a list (menu items, options), which touch each other: their own height is what counts. A native select, input
+   * or textarea cannot have a ::after and keeps its size; the switch is wrapped in a label for that reason.
+   * data-bx-compact opts an element (a dense table action, say) out. --bx-hit-x and --bx-hit-y set the reach on one axis:
+   * the number stepper reaches sideways only (its two halves share the height), the remove button of a tag chip reaches 24px
+   * (WCAG 2.5.8) so it stays inside the chip, and a calendar day does not reach at all.
    */
   @media (pointer: coarse) {
-    :where(button, summary, [role='button'], [role='tab'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio'], [role='option'], [role='switch'], [role='checkbox'], [role='radio'], select):not([data-bx-compact], [hidden]) {
-      min-block-size: 2.75rem;
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-bx-compact], [hidden]) {
+      position: relative;
     }
-    :where(button, [role='button'], [role='tab'], [role='switch']):not([data-bx-compact], [hidden]):where(:has(> svg:only-child), :has(> [data-slot='icon']:only-child)) {
-      min-inline-size: 2.75rem;
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-bx-compact], [hidden])::after {
+      content: '';
+      position: absolute;
+      inset-inline: min(0px, calc((100% - var(--bx-hit-x, 2.75rem)) / 2));
+      inset-block: min(0px, calc((100% - var(--bx-hit-y, 2.75rem)) / 2));
     }
+    [data-slot='increment'], [data-slot='decrement'] { --bx-hit-y: 0px; }
+    [data-remove] { --bx-hit-x: 1.5rem; --bx-hit-y: 1.5rem; }
+    [data-date] { --bx-hit-x: 0px; --bx-hit-y: 0px; }
     /* Checkboxes and radios are small boxes: the label next to them is the target, so give it room. */
     :where(label):has(> input:is([type='checkbox'], [type='radio'])) {
       min-block-size: 2.75rem;
@@ -297,13 +309,18 @@
   /*
    * TV mode (experimental): <html data-bx-tv>, set by <BxApp SpatialNavigation="true"> or Blux.setSpatialNavigation(true).
    * Everything grows to the 10 foot scale (--bx-tv-scale, 1.25 by default: all rem sizes follow), the content stays
-   * inside the overscan safe area (--bx-tv-safe, 5% of the screen), and the focus is hard to miss from the couch.
+   * inside the overscan safe area, and the focus is hard to miss from the couch. The margin is the 5% Android recommends
+   * (48dp on the sides and 27dp at the top and bottom of a 960 x 540dp screen, developer.android.com/design/ui/tv/guides/styles/layouts):
+   * --bx-tv-safe is the side margin (5vw); the top and bottom margins are 9/16 of it, the same 5% of a 16:9 screen's height.
+   * --bx-tv-inset is what both vertical margins take from the viewport height, which BxMain subtracts from its minimum height.
    */
   html[data-bx-tv] {
     --bx-tv-scale: 1.25;
-    --bx-tv-safe: 3%;
+    --bx-tv-safe: 5vw;
+    --bx-tv-inset: calc(var(--bx-tv-safe) * 9 / 8);
     font-size: calc(100% * var(--bx-tv-scale));
-    padding: var(--bx-tv-safe);
+    padding-inline: var(--bx-tv-safe);
+    padding-block: calc(var(--bx-tv-safe) * 9 / 16);
     box-sizing: border-box;
     scroll-padding: 4rem;
   }

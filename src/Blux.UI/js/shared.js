@@ -136,3 +136,8 @@ export function rovingKey(event, items, current, { vertical = true } = {}) {
   target.focus();
   return true;
 }
+
+/** True in TV mode (remote control navigation): there the arrows move focus between controls, and a closed popup opens only with Select/Enter. */
+export function isTvMode() {
+  return document.documentElement.hasAttribute('data-bx-tv');
+}

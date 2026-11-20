@@ -622,6 +622,7 @@ has-[a:focus-visible]:-outline-offset-2
 has-[a:focus-visible]:outline-(--bx-color-text)
 has-[a:focus-visible]:outline-2
 has-[a:focus-visible]:outline-offset-4
+has-[~footer]:pb-0
 has-aria-invalid:border-(--blux-error)
 has-disabled:cursor-not-allowed
 has-disabled:opacity-60
@@ -650,6 +651,7 @@ hover:text-(--blux-text-highlighted)
 hover:text-(--blux-text-muted)
 hover:underline
 hover:underline-offset-4
+in-[[data-bx-main]]:pb-0
 inline-block
 inline-flex
 inset-0
@@ -799,7 +801,7 @@ min-h-0
 min-h-32
 min-h-4
 min-h-6
-min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))]
+min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top)_-_var(--bx-tv-inset,0px))]
 min-h-full
 min-w-0
 min-w-10

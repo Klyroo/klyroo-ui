@@ -1,0 +1,16 @@
+@* A small form to move through with a remote control (TV mode): Select/Enter edits a field, Back or Enter leaves it. *@
+<div class="flex w-full max-w-xs flex-col gap-3" data-testid="tv-form">
+    <BxFormField Label="Name"><BxInput Value="Ada Lovelace" data-testid="tv-name" /></BxFormField>
+    <BxFormField Label="Country">
+        <BxSelect @bind-Value="_country" Items="Countries" Placeholder="Choose a country" data-testid="tv-country" />
+    </BxFormField>
+    <BxFormField Label="Bio"><BxTextarea Rows="3" data-testid="tv-bio" /></BxFormField>
+    <BxButton Label="Save" data-testid="tv-save" />
+    <p class="text-sm text-(--blux-text-muted)" data-testid="tv-country-state">Selected: @(_country ?? "none")</p>
+</div>
+
+@code {
+    private string? _country;
+
+    private static readonly BxSelectItem[] Countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
+}

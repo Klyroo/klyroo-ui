@@ -3,6 +3,7 @@ using Android.Content;
 using Android.Content.PM;
 using Android.OS;
 using Android.Views;
+using Android.Views.InputMethods;
 using AndroidX.Activity;
 using Android.Webkit;
 
@@ -47,10 +48,18 @@ public class MainActivity : MauiAppCompatActivity
 
         if (key is not null)
         {
-            // One page key per press: the page handles the keydown, auto repeat included.
+            // One page key per press: the page handles the keydown, auto repeat included. Enter can enter or leave the editing
+            // mode of a field, so it also asks the page whether a text field is being edited, to show or hide the soft keyboard.
             if (e.Action == KeyEventActions.Down)
             {
-                webView.EvaluateJavascript($"window.Blux&&Blux.tvKey&&Blux.tvKey('{key}')", null);
+                if (key == "Enter")
+                {
+                    webView.EvaluateJavascript("(function(){window.Blux&&Blux.tvKey&&Blux.tvKey('Enter');return window.Blux&&Blux.tvTextEditing&&Blux.tvTextEditing()?1:0;})()", new KeyboardSync(this, webView, 0));
+                }
+                else
+                {
+                    webView.EvaluateJavascript($"window.Blux&&Blux.tvKey&&Blux.tvKey('{key}')", null);
+                }
             }
             return true;
         }
@@ -75,7 +84,8 @@ public class MainActivity : MauiAppCompatActivity
         {
             if (MainPage.Current?.WebView.Handler?.PlatformView is Android.Webkit.WebView webView)
             {
-                webView.EvaluateJavascript("window.Blux&&Blux.tvBack?Blux.tvBack():false", new BackResult(activity));
+                // The page answers 1 when it used Back (it left editing, closed an overlay or went back), plus 2 while a text field is still edited.
+                webView.EvaluateJavascript("(function(){if(!window.Blux||!Blux.tvBack)return 0;var used=Blux.tvBack();return (used?1:0)+(Blux.tvTextEditing&&Blux.tvTextEditing()?2:0);})()", new KeyboardSync(activity, webView, 1));
             }
             else
             {
@@ -84,15 +94,45 @@ public class MainActivity : MauiAppCompatActivity
         }
     }
 
-    /// <summary>The answer of Blux.tvBack(): false means nothing was left to close or go back to, so the app moves to the background.</summary>
-    private sealed class BackResult(Activity activity) : Java.Lang.Object, IValueCallback
+    /// <summary>
+    /// Shows the soft keyboard while the page edits a text field and hides it when editing ends: a script focus alone does not reliably
+    /// open it in a web view on a TV. After Back the answer also says whether the page used the key; when it did not (nothing left to
+    /// close or go back to) the app moves to the background. A non-dismissible modal counts as used, so it swallows Back.
+    /// </summary>
+    private sealed class KeyboardSync(MainActivity activity, Android.Webkit.WebView webView, int mode) : Java.Lang.Object, IValueCallback
     {
         public void OnReceiveValue(Java.Lang.Object? value)
         {
-            if (value?.ToString() != "true")
+            _ = int.TryParse(value?.ToString(), out var answer);
+            var editing = mode == 0 ? answer == 1 : (answer & 2) != 0;
+            activity.SetKeyboard(webView, editing);
+            if (mode == 1 && (answer & 1) == 0)
             {
                 activity.MoveTaskToBack(true);
             }
+        }
+    }
+
+    private bool _keyboardShown;
+
+    private void SetKeyboard(Android.Webkit.WebView webView, bool show)
+    {
+        if (GetSystemService(InputMethodService) is not InputMethodManager manager)
+        {
+            return;
+        }
+
+        if (show)
+        {
+            _keyboardShown = true;
+            webView.RequestFocus();
+            // After the page focused the field: only then has the web view an input connection to type into.
+            webView.PostDelayed(() => manager.ShowSoftInput(webView, ShowFlags.Implicit), 100);
+        }
+        else if (_keyboardShown)
+        {
+            _keyboardShown = false;
+            manager.HideSoftInputFromWindow(webView.WindowToken, HideSoftInputFlags.None);
         }
     }
 }

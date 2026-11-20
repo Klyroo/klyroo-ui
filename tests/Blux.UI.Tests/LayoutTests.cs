@@ -167,8 +167,11 @@ public class LayoutTests : BluxTestContext
         var cut = Render<BxMain>(p => p.Add(m => m.ChildContent, "<p>Page</p>"));
 
         var main = cut.Find("main");
-        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))]", main.ClassList);
+        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top)_-_var(--bx-tv-inset,0px))]", main.ClassList);
         Assert.Equal("Page", main.TextContent);
+        // The bottom inset belongs to the footer when one follows; the marker lets a dashboard inside leave it to the main block.
+        Assert.Contains("has-[~footer]:pb-0", main.ClassList);
+        Assert.True(main.HasAttribute("data-bx-main"));
     }
 
     [Fact]

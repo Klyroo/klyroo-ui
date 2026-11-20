@@ -53,7 +53,9 @@ internal static partial class Themes
 
     public static ComponentTheme Main() =>
         new ComponentTheme("main", "base")
-            .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))] pb-(--bx-safe-bottom) focus:outline-none");
+            // The bottom inset is applied once, at the outermost bottom edge: here, unless a footer follows (it takes it). The TV
+            // overscan margins (--bx-tv-inset, set on html in TV mode) are taken from the minimum height so the page does not always scroll.
+            .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top)_-_var(--bx-tv-inset,0px))] pb-(--bx-safe-bottom) has-[~footer]:pb-0 focus:outline-none");
 
     /// <summary>
     /// The aside carries <c>group/sidebar</c> and <c>data-state</c>, so anything inside it can react to the collapsed

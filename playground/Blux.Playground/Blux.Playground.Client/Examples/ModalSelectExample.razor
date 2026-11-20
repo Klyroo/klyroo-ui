@@ -1,0 +1,15 @@
+<BxModal Title="Shipping" Description="Choose where to ship the order.">
+    <ChildContent><BxButton Label="Ship order" Variant="ButtonVariant.Outline" data-testid="modal-select-trigger" /></ChildContent>
+    <Body>
+        <BxFormField Label="Country">
+            <BxSelect @bind-Value="_country" Items="Countries" Placeholder="Choose a country" data-testid="modal-country" />
+        </BxFormField>
+    </Body>
+    <Footer><BxButton Label="Close" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close /></Footer>
+</BxModal>
+
+@code {
+    private string? _country;
+
+    private static readonly BxSelectItem[] Countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
+}

@@ -36,7 +36,7 @@ import './spatial-nav.js';
 import { markHost, isHybrid } from './host.js';
 import { toast } from './toaster.js';
 import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';
-import { setSpatialNavigation, tvKey, tvBack } from './spatial-nav.js';
+import { setSpatialNavigation, tvKey, tvBack, tvTextEditing } from './spatial-nav.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
 // Before any element connects: storage choices (cookies or localStorage) depend on it.
@@ -52,6 +52,7 @@ globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
   setSpatialNavigation,
   tvKey,
   tvBack,
+  tvTextEditing,
 });
 
 // Avatar images that fail to load are hidden so the initials underneath show. "error" does not bubble: capture it.

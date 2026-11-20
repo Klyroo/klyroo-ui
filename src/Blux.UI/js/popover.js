@@ -1,4 +1,4 @@
-import { FOCUSABLE, Reporter, ensureId, float, observeChildren, rovingKey } from './shared.js';
+import { FOCUSABLE, Reporter, ensureId, float, isTvMode, observeChildren, rovingKey } from './shared.js';
 
 const MENU_ITEMS = '[role="menuitem"]:not([aria-disabled="true"])';
 
@@ -127,7 +127,7 @@ export class BxPopoverElement extends HTMLElement {
     if (!content || !this.#isMenu) return;
     const trigger = this.#trigger;
     // Menu button: arrow keys on the closed trigger open the menu on the first or last item.
-    if (event.target === trigger && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+    if (event.target === trigger && !isTvMode() && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault();
       this.#focusLast = event.key === 'ArrowUp';
       this.#show();
