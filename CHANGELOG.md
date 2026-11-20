@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Internationalization**, equivalent to the locale support of Nuxt UI. A `BxLocale` (code, name, direction, messages) carries every text a component renders. Twelve built-in locales (`BxLocales.En`, `Fr`, `De`, `Es`, `It`, `Pt`, `PtBr`, `Nl`, `Ja`, `ZhCn`, `Ar` (right to left), `Ru`, and `BxLocales.All`); `BxLocales.Extend` derives one, `new BxLocale(...)` creates one.
+- Automatic locale: components follow `CultureInfo.CurrentUICulture` (exact code, parents, language, then English), cached per culture, the same in every render mode. `BxApp Locale="..."` and `AddBluxUi(o => o.Locale = ...)` override it, `o.Locales` limits and extends the choice. `BxApp` writes `lang` and `dir` from the locale; `BxLocales.Resolve(culture)` does the same for `App.razor`.
+- `BluxCulture.ApplyCultureCookieAsync` gives a WebAssembly client the culture the server read from the cookie of `BxLocaleSelect`.
+- Components with a `Culture` parameter format with the culture of their locale by default. File sizes, AM/PM, the modifier key of shortcuts and the slash menu of the editor are localized.
+- The sort buttons of Table (tooltip) and the summary of Form (accessible name) use their messages.
+
+### Changed
+
+- **Breaking**: `BluxOptions.Strings` and the mutable `BluxStrings` are replaced by the immutable `BxMessages` record carried by a locale: `o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { Close = "Dismiss" })`. `BxLocale` is now the locale type (`BxLocale(Code, Name, Dir, Messages)`); `BxLocaleSelect.Locales` takes them and defaults to `BluxOptions.Locales`.
+- **Breaking**: `BxInputNumber.Locale` (a culture name) is now `Culture` (a `CultureInfo`), like the other components.
+- `BxApp` writes `lang` and `dir` from the locale when `Lang` and `Dir` are not set.
+- Right to left: Slideover and Drawer slide in from their logical side, the switch thumbs, the calendar and carousel arrows and the chat jump button mirror, and the marquee runs the other way.
+
+### Removed
+
+- The unused `Loading` message.
+
 ## [0.1.0] - Unreleased
 
 First public release. Components work in Interactive Server, WebAssembly, Auto and static server rendering; UI state

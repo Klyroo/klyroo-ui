@@ -1,17 +1,9 @@
 @using System.Globalization
+@inject BluxOptions Options
 @* Needs app.UseRequestLocalization with the same cultures on the server: the select only writes the culture cookie.
-   The flags are regional indicator pairs; Windows draws them as letters. *@
+   Without Locales it offers BluxOptions.Locales, the twelve built-in ones. *@
 <div class="flex flex-col items-center gap-3">
-    <BxLocaleSelect Locales="_locales" data-testid="locale-select" />
+    <BxLocaleSelect data-testid="locale-select" />
     <p class="text-sm text-(--blux-text-muted)">Current UI culture: <code data-testid="locale-current">@CultureInfo.CurrentUICulture.Name</code></p>
+    <p class="text-sm text-(--blux-text-muted)">Locale of the components: <code data-testid="locale-resolved">@Options.ResolveLocale(CultureInfo.CurrentUICulture).Code</code></p>
 </div>
-
-@code {
-    // The built-in locales, with a flag each.
-    private static readonly BxLocale[] _locales =
-    [
-        BxLocales.En with { Flag = "\U0001F1EC\U0001F1E7" },
-        BxLocales.Fr with { Flag = "\U0001F1EB\U0001F1F7" },
-        BxLocales.Es with { Flag = "\U0001F1EA\U0001F1F8" },
-    ];
-}
