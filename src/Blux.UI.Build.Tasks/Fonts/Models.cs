@@ -94,6 +94,56 @@ namespace Blux.UI.Build.Fonts
         public string FileName { get; set; } = "";
     }
 
+    /// <summary>What a provider answers is data from outside: it is checked before it is cached or written into the stylesheet.</summary>
+    internal static class FontChecks
+    {
+        // One value of unicode-range: U+hex, U+hex-hex or U+hex with trailing ? wildcards (CSS Fonts 4, 6 digits at most).
+        private static readonly System.Text.RegularExpressions.Regex RangeToken = new System.Text.RegularExpressions.Regex(
+            @"^[Uu]\+(?:[0-9A-Fa-f]{1,6}(?:-[0-9A-Fa-f]{1,6})?|(?=[0-9A-Fa-f?]{1,6}$)[0-9A-Fa-f]*\?+)$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <summary>A comma separated list of unicode-range values and nothing else (nothing that could end the declaration).</summary>
+        public static bool IsValidUnicodeRange(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return false;
+            foreach (var token in value!.Split(','))
+            {
+                var t = token.Trim();
+                if (!RangeToken.IsMatch(t)) return false;
+            }
+            return true;
+        }
+
+        /// <summary>wOF2, wOFF, TrueType (0x00010000), OpenType/CFF (OTTO) or Apple TrueType (true).</summary>
+        public static bool HasFontSignature(byte[] data)
+        {
+            if (data.Length < 12) return false;
+            var tag = System.Text.Encoding.ASCII.GetString(data, 0, 4);
+            return tag == "wOF2" || tag == "wOFF" || tag == "OTTO" || tag == "true" || (data[0] == 0 && data[1] == 1 && data[2] == 0 && data[3] == 0);
+        }
+
+        public static void RequireFont(byte[] data, string what)
+        {
+            if (!HasFontSignature(data))
+            {
+                var head = BitConverter.ToString(data, 0, Math.Min(4, data.Length));
+                throw new FontException($"{what} is not a font file (it starts with {head}; expected wOF2, wOFF, TrueType or OpenType). A provider or a proxy probably answered with an error page.");
+            }
+        }
+
+        /// <summary>A file URL from a provider answer: absolute and https, nothing else is downloaded.</summary>
+        public static void RequireHttps(string url, string family, string provider)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
+            {
+                throw new FontException($"{provider} answered a font URL that is not absolute for '{family}': '{url}'. Only absolute https URLs are downloaded.");
+            }
+            if (uri.Scheme != Uri.UriSchemeHttps)
+            {
+                throw new FontException($"{provider} answered a font URL that is not https for '{family}': '{url}'. Only https URLs are downloaded.");
+            }
+        }
+    }
+
     internal static class FontCss
     {
         public static string Format(string extension) => extension switch

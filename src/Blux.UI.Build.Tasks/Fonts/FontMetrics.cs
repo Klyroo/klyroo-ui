@@ -10,6 +10,13 @@ namespace Blux.UI.Build.Fonts
         public BrotliUnavailableException() : base("This MSBuild cannot decompress woff2 (no Brotli decoder in the .NET Framework).") { }
     }
 
+    /// <summary>The file has a font signature but its content cannot be read (truncated, corrupt compressed data).</summary>
+    internal sealed class CorruptFontException : FontException
+    {
+        public CorruptFontException(string message) : base(message) { }
+        public CorruptFontException(string message, Exception inner) : base(message, inner) { }
+    }
+
     /// <summary>
     /// Reads the few tables the metrics need from a font file: plain sfnt (ttf, otf), WOFF and WOFF2. WOFF2 is a table
     /// directory followed by one Brotli stream of every table, so the tables are cut out of the decompressed stream.
@@ -29,7 +36,7 @@ namespace Blux.UI.Build.Fonts
 
         public static Dictionary<string, byte[]> Read(byte[] data)
         {
-            if (data.Length < 12) throw new FontException("The font file is too short to be a font.");
+            if (data.Length < 12) throw new CorruptFontException("The font file is too short to be a font.");
             var signature = Encoding.ASCII.GetString(data, 0, 4);
             return signature switch
             {
@@ -131,21 +138,27 @@ namespace Blux.UI.Build.Fonts
                 value = (value << 7) | (b & 0x7f);
                 if ((b & 0x80) == 0) return value;
             }
-            throw new FontException("Invalid WOFF2 table directory.");
+            throw new CorruptFontException("Invalid WOFF2 table directory.");
         }
 
         private static byte[] Slice(byte[] d, int offset, int length)
         {
-            if (offset < 0 || length < 0 || offset + length > d.Length) throw new FontException("The font file is truncated or corrupted.");
+            if (offset < 0 || length < 0 || offset + length > d.Length) throw new CorruptFontException("The font file is truncated or corrupted.");
             var result = new byte[length];
             Buffer.BlockCopy(d, offset, result, 0, length);
             return result;
         }
 
+        private static Type? BrotliType() =>
+            Type.GetType("System.IO.Compression.BrotliStream, System.IO.Compression.Brotli", false)
+            ?? Type.GetType("System.IO.Compression.BrotliStream, System.IO.Compression", false);
+
+        /// <summary>Whether this MSBuild can decompress woff2 (and so compute the fallback faces).</summary>
+        public static bool IsBrotliAvailable() => BrotliType() != null;
+
         private static byte[] Brotli(byte[] compressed)
         {
-            var type = Type.GetType("System.IO.Compression.BrotliStream, System.IO.Compression.Brotli", false)
-                ?? Type.GetType("System.IO.Compression.BrotliStream, System.IO.Compression", false);
+            var type = BrotliType();
             if (type == null) throw new BrotliUnavailableException();
             using var input = new MemoryStream(compressed);
             using var brotli = (Stream)Activator.CreateInstance(type, input, CompressionMode.Decompress)!;
@@ -179,9 +192,11 @@ namespace Blux.UI.Build.Fonts
             {
                 return ReadCore(file);
             }
-            catch (Exception e) when (e is IndexOutOfRangeException || e is ArgumentException || e is InvalidDataException || e is OverflowException)
+            // The Brotli decoder reports a corrupt stream as an InvalidOperationException, zlib as an InvalidDataException.
+            catch (Exception e) when (e is IndexOutOfRangeException || e is ArgumentException || e is InvalidDataException || e is OverflowException
+                || e is InvalidOperationException || e is FormatException || e is KeyNotFoundException || e is IOException || e is NullReferenceException)
             {
-                throw new FontException("The file is not a valid font: " + e.Message, e);
+                throw new CorruptFontException("The file is not a valid font: " + e.Message, e);
             }
         }
 
