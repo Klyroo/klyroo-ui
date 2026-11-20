@@ -7,7 +7,7 @@ public class FormControlTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task Select_is_operable_with_the_keyboard(string mode)
     {
         await Open(mode, "select");
-        var combobox = Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" });
+        var combobox = Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" }).First;
 
         await combobox.FocusAsync();
         await Page.Keyboard.PressAsync("ArrowDown");
@@ -21,7 +21,7 @@ public class FormControlTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(listbox).ToBeHiddenAsync();
         await Assertions.Expect(combobox.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "Italy");
-        await Assertions.Expect(Page.Locator("bx-select input[type=hidden]")).ToHaveValueAsync("it");
+        await Assertions.Expect(combobox.Locator("xpath=ancestor::bx-select[1]").Locator("input[type=hidden]")).ToHaveValueAsync("it");
     }
 
     [Theory]
@@ -29,7 +29,7 @@ public class FormControlTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task Select_opens_with_Space_and_stays_open(string mode)
     {
         await Open(mode, "select");
-        var combobox = Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" });
+        var combobox = Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" }).First;
 
         await combobox.FocusAsync();
         await Page.Keyboard.PressAsync(" ");
@@ -45,7 +45,7 @@ public class FormControlTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open(mode, "select");
 
-        await Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" }).ClickAsync();
+        await Page.GetByRole(AriaRole.Combobox, new() { Name = "Country" }).First.ClickAsync();
         await Page.GetByRole(AriaRole.Option, new() { Name = "Spain" }).ClickAsync();
 
         await Assertions.Expect(Page.GetByTestId("country-state")).ToHaveTextAsync("Selected: es");
