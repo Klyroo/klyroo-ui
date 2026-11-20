@@ -43,29 +43,24 @@ public sealed partial class BluxOptions
     /// <summary>Default <c>Color</c> and <c>Size</c> of the components, when a parameter is not set.</summary>
     public BxDefaults Defaults { get; } = new();
 
-    private string? _themeCss;
-    private bool _themeCssResolved;
+    private readonly Lazy<string?> _themeCss;
 
-    /// <summary>The stylesheet of <see cref="Colors"/>, resolved once (the colors become read-only), or null when they are the defaults.</summary>
-    internal string? ThemeCss
+    public BluxOptions()
     {
-        get
+        // The first resolution freezes the colors and computes the stylesheet, once, however many threads ask.
+        _themeCss = new Lazy<string?>(() =>
         {
-            if (!_themeCssResolved)
-            {
-                lock (Colors)
-                {
-                    if (!_themeCssResolved)
-                    {
-                        Colors.Freeze();
-                        _themeCss = BxThemeTokens.Compute(Colors).ToCss(Colors);
-                        _themeCssResolved = true;
-                    }
-                }
-            }
-            return _themeCss;
-        }
+            Colors.Freeze();
+            return BxThemeTokens.Compute(Colors).ToCss(Colors);
+        }, LazyThreadSafetyMode.ExecutionAndPublication);
     }
+
+    /// <summary>
+    /// The stylesheet of <see cref="Colors"/>, resolved once (the colors become read-only), or null when they are the defaults.
+    /// Throws <see cref="InvalidOperationException"/> when a palette cannot meet the contrast rules and
+    /// <see cref="BxColorOptions.AllowLowContrast"/> is off.
+    /// </summary>
+    internal string? ThemeCss => _themeCss.Value;
 
     private IReadOnlyList<BxLocale> _locales = BxLocales.All;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, BxLocale> _resolved = new(StringComparer.OrdinalIgnoreCase);

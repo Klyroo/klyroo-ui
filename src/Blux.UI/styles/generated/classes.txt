@@ -570,7 +570,6 @@ group/radio
 group/row
 group/sidebar
 group/trigger
-h-(--blux-header-height)
 h-0.5
 h-1
 h-1.5
@@ -595,6 +594,7 @@ h-9
 h-[18px]
 h-[22px]
 h-[calc(100dvh_-_1rem)]
+h-[var(--bx-header-height,var(--blux-header-height))]
 h-auto
 h-dvh
 h-full
@@ -730,7 +730,7 @@ max-h-96
 max-h-[200px]
 max-h-[85dvh]
 max-h-[calc(100dvh_-_2rem)]
-max-h-[calc(100vh-var(--blux-header-height,0px))]
+max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px)))]
 max-h-none
 max-sm:hidden
 max-w-(--blux-container)
@@ -794,7 +794,7 @@ min-h-0
 min-h-32
 min-h-4
 min-h-6
-min-h-[calc(100dvh_-_var(--blux-header-height))]
+min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]
 min-h-full
 min-w-0
 min-w-10
@@ -1112,7 +1112,7 @@ top-1.5
 top-1/2
 top-2
 top-[calc(100%-var(--bx-hi))]
-top-[var(--blux-header-height,0px)]
+top-[var(--bx-header-height,var(--blux-header-height,0px))]
 top-auto
 touch-none
 tracking-[-0.045em]

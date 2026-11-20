@@ -167,7 +167,7 @@ public class LayoutTests : BluxTestContext
         var cut = Render<BxMain>(p => p.Add(m => m.ChildContent, "<p>Page</p>"));
 
         var main = cut.Find("main");
-        Assert.Contains("min-h-[calc(100dvh_-_var(--blux-header-height))]", main.ClassList);
+        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]", main.ClassList);
         Assert.Equal("Page", main.TextContent);
     }
 
@@ -179,7 +179,7 @@ public class LayoutTests : BluxTestContext
         Assert.Empty(cut.FindAll("main"));
         var div = cut.Find("div");
         Assert.Contains("min-h-48", div.ClassList);
-        Assert.DoesNotContain("min-h-[calc(100dvh_-_var(--blux-header-height))]", div.ClassList);
+        Assert.DoesNotContain("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]", div.ClassList);
     }
 
     // ---- Sidebar

@@ -117,8 +117,8 @@ See the Internationalization guide of the documentation site.
   `:root` keeps its light value in dark mode while its paired `-contrast` token still flips. The full list: text
   (`--blux-text`, `-text-toned`, `-text-muted`, `-text-dimmed`, `-text-highlighted`, `-text-inverted`), backgrounds
   (`--blux-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--blux-border`,
-  `-border-muted`, `-border-accented`, `-border-inverted`), `--blux-radius` and its scale `--blux-radius-xs` to `-3xl`,
-  `--blux-container`, `--blux-header-height` and `--blux-chart-1` to `-6`.
+  `-border-muted`, `-border-accented`, `-border-inverted`), `--blux-radius` (the `rounded-*` scale is computed from it),
+  `--blux-container`, `--blux-header-height` and `--blux-chart-1` to `-6` (unset by default, they fall back to the semantic colors).
 - **Tailwind utilities** (Tailwind compiled by your app): `text-default`, `text-muted`, `text-dimmed`, `text-toned`,
   `text-highlighted`, `text-inverted`, `bg-default`, `bg-muted`, `bg-elevated`, `bg-accented`, `bg-inverted`,
   `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic

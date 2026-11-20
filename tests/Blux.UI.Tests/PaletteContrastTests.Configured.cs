@@ -9,6 +9,9 @@ namespace Blux.UI.Tests;
 /// </summary>
 public partial class PaletteContrastTests
 {
+    // The weakest a hairline border may be against a surface it can sit on: visible, not a cue by itself.
+    internal const double BorderRatio = 1.15;
+
     private static readonly string[] AccentRoles = ["primary", "secondary", "success", "info", "warning", "error"];
 
     public static TheoryData<string> PaletteNames()
@@ -80,6 +83,14 @@ public partial class PaletteContrastTests
             {
                 var ratio = Contrast(t[token], t["bg"]);
                 Check(ratio >= 3.0, $"{theme}: {token} on bg is {ratio:0.00}:1, needs 3:1 (control boundaries, WCAG 1.4.11)");
+            }
+            foreach (var token in new[] { "border", "border-muted" })
+            {
+                foreach (var surface in Surfaces)
+                {
+                    var ratio = Contrast(t[token], t[surface]);
+                    Check(ratio >= BorderRatio, $"{theme}: {token} on {surface} is {ratio:0.00}:1, needs {BorderRatio}:1 to stay visible");
+                }
             }
             var inverted = Contrast(t["text-inverted"], t["bg-inverted"]);
             Check(inverted >= 4.5, $"{theme}: text-inverted on bg-inverted is {inverted:0.00}:1, needs 4.5:1");
