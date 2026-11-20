@@ -1,3 +1,5 @@
+import { isHybrid } from './host.js';
+
 /**
  * What the server decided about the culture, for a WebAssembly client that has no request (see
  * BluxCulture.ApplyServerCultureAsync, which parses and validates it). A three item array, [meta, cookie, lang],
@@ -7,6 +9,8 @@
  * - the lang attribute the server wrote on the html element (the locale it rendered).
  */
 export function serverCulture(cookieName = '.AspNetCore.Culture') {
+  // A Blazor Hybrid web view has no server that decided anything: its lang attribute is the one of a static index.html.
+  if (isHybrid()) return [null, null, null];
   let cookie = null;
   try {
     for (const part of document.cookie.split(';')) {
@@ -20,4 +24,21 @@ export function serverCulture(cookieName = '.AspNetCore.Culture') {
   }
   const meta = document.head.querySelector('meta[name="blux-culture"]')?.getAttribute('content') || null;
   return [meta, cookie, document.documentElement.getAttribute('lang') || null];
+}
+
+/** The culture a Blazor Hybrid app remembered (BxLocalStorageCultureStore), or null. localStorage works in every web view. */
+export function getStoredCulture(key = 'blux-culture') {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredCulture(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // Storage blocked: the choice lasts until the app restarts.
+  }
 }

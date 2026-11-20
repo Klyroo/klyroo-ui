@@ -43,7 +43,7 @@ internal static partial class Themes
 
     public static ComponentTheme Toaster() =>
         new ComponentTheme("toast", "viewport", "root", "wrapper", "title", "description", "close")
-            .Slot("viewport", "pointer-events-none fixed end-4 bottom-4 z-[100] flex w-[calc(100%_-_2rem)] flex-col gap-2 sm:w-96")
+            .Slot("viewport", "pointer-events-none fixed end-[max(1rem,var(--bx-safe-right))] bottom-[max(1rem,var(--bx-safe-bottom))] z-[100] flex w-[calc(100%_-_2rem)] flex-col gap-2 sm:w-96")
             .Slot("root", "pointer-events-auto relative flex gap-2.5 overflow-hidden rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-overlay) p-4 shadow-lg " +
                           "before:absolute before:inset-y-0 before:start-0 before:w-1 before:bg-(--bx-color) " +
                           "transition duration-200 starting:translate-y-2 starting:opacity-0 data-[state=closed]:translate-y-2 data-[state=closed]:opacity-0")

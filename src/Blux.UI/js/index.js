@@ -1,5 +1,7 @@
-// Blazor JS initializer of Blux.UI: loaded automatically by blazor.web.js (Blazor Web App)
-// or blazor.webassembly.js / blazor.server.js (standalone hosting).
+// Blazor JS initializer of Blux.UI: loaded automatically by blazor.web.js (Blazor Web App), by
+// blazor.webassembly.js / blazor.server.js (standalone hosting) and by blazor.webview.js (Blazor Hybrid, .NET MAUI).
+// Each host runs a different pair of exports: afterWebStarted in a Web App, beforeStart and afterStarted everywhere
+// else (a Web App ignores the classic pair when the web one exists, so nothing runs twice).
 import './popover.js';
 import './modal.js';
 import './tooltip.js';
@@ -30,11 +32,27 @@ import './editor.js';
 import './chart.js';
 import './content.js';
 import './platform-keys.js';
+import './spatial-nav.js';
+import { markHost, isHybrid } from './host.js';
 import { toast } from './toaster.js';
-import { serverCulture } from './culture.js';
+import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';
+import { setSpatialNavigation, tvKey, tvBack } from './spatial-nav.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
-globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { setColorMode, getColorMode, toast, serverCulture });
+// Before any element connects: storage choices (cookies or localStorage) depend on it.
+markHost();
+
+globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
+  setColorMode,
+  getColorMode,
+  toast,
+  serverCulture,
+  getStoredCulture,
+  setStoredCulture,
+  setSpatialNavigation,
+  tvKey,
+  tvBack,
+});
 
 // Avatar images that fail to load are hidden so the initials underneath show. "error" does not bubble: capture it.
 // Images that failed before this script loaded are caught by the scan.
@@ -85,6 +103,13 @@ function registerEvents(blazor) {
   });
 }
 
+/** What an enhanced navigation merge resets: every Blux element re-applies it. No list to keep in sync with the components. */
+function refreshElements() {
+  for (const el of document.querySelectorAll('*')) {
+    if (el.localName.startsWith('bx-') && typeof el.refresh === 'function') el.refresh();
+  }
+}
+
 // Blazor Web App.
 export function afterWebStarted(blazor) {
   registerEvents(blazor);
@@ -92,14 +117,29 @@ export function afterWebStarted(blazor) {
     applyColorMode();
     hideBrokenAvatars();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
-    // Every Blux element re-applies what the merge reset; no list to keep in sync with the components.
-    for (const el of document.querySelectorAll('*')) {
-      if (el.localName.startsWith('bx-') && typeof el.refresh === 'function') el.refresh();
-    }
+    refreshElements();
   });
 }
 
-// Standalone WebAssembly or Server hosting.
+// Before Blazor starts, in a standalone WebAssembly or Server app and in a Blazor Hybrid web view. The head of a hybrid
+// page is static and its scripts run before Blazor: apply the color mode here so a dark app never opens light.
+export function beforeStart() {
+  markHost();
+  applyColorMode();
+  // The custom events must be known before the first render attaches a handler to them; the Blazor object already
+  // exists here (afterStarted still registers them when it does not).
+  if (typeof globalThis.Blazor?.registerCustomEventType === 'function') registerEvents(globalThis.Blazor);
+}
+
+// Standalone WebAssembly or Server hosting, and Blazor Hybrid.
 export function afterStarted(blazor) {
   registerEvents(blazor);
+  markHost();
+  if (isHybrid()) {
+    // A web view never merges server HTML over the page (there is no enhanced navigation), but the first render may
+    // have connected elements before the host was known: let them re-apply, and settle the color mode.
+    applyColorMode();
+    hideBrokenAvatars();
+    refreshElements();
+  }
 }

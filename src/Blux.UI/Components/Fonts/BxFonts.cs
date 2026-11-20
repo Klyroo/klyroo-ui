@@ -26,7 +26,9 @@ public sealed class BluxFontsManifestAttribute(string json) : Attribute
 /// <remarks>
 /// It renders nothing when the project declares no font (or <c>BluxFonts</c> is <c>false</c>). The manifest is read from the entry
 /// assembly, so declare the <c>BluxFont</c> items in the project that hosts the app (the server project of an Auto app): fonts
-/// declared in a Blazor WebAssembly project are a build error. The manifest is an assembly
+/// declared in a Blazor WebAssembly project are a build error. In a .NET MAUI Blazor Hybrid app, declare them in the MAUI project and
+/// render <c>BxFonts</c> through <c>BxHead</c> (a <c>HeadOutlet</c> root component renders it into the head): the manifest is found in the
+/// loaded assemblies when there is no entry assembly, and the links are the plain routes served from the app's <c>wwwroot</c>. The manifest is an assembly
 /// attribute generated at build, so it is the same in static rendering, prerendering and every interactive mode; the
 /// stylesheet link follows the fingerprint of the static web assets (<c>@Assets</c>), the preload links the stable route of the
 /// file, which is also what the stylesheet requests, so the font is downloaded once. See the Fonts guide.
@@ -35,15 +37,41 @@ public sealed class BxFonts : ComponentBase
 {
     private static readonly Lazy<FontManifest?> Generated = new(() =>
     {
-        var attribute = Assembly.GetEntryAssembly()?.GetCustomAttribute<BluxFontsManifestAttribute>();
+        var attribute = FindAttribute();
         return attribute is null ? null : FontManifest.Parse(attribute.Json);
     });
+
+    // The entry assembly in a Blazor Web App. A .NET MAUI app has none on every platform (Assembly.GetEntryAssembly() is null on
+    // Android), so the loaded assemblies are searched for the one the build stamped: the app that declares the BluxFont items.
+    private static BluxFontsManifestAttribute? FindAttribute()
+    {
+        if (Assembly.GetEntryAssembly()?.GetCustomAttribute<BluxFontsManifestAttribute>() is { } entry)
+        {
+            return entry;
+        }
+        foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+        {
+            if (assembly.IsDynamic) continue;
+            try
+            {
+                if (assembly.GetCustomAttribute<BluxFontsManifestAttribute>() is { } found) return found;
+            }
+            catch (Exception e) when (e is FileNotFoundException or FileLoadException or NotSupportedException)
+            {
+                // An assembly that cannot be inspected cannot hold the manifest.
+            }
+        }
+        return null;
+    }
 
     /// <summary>
     /// A manifest to render instead of the one generated at build, for tests and previews. Same shape as the generated
     /// <c>blux.fonts.json</c>.
     /// </summary>
     [Parameter] public string? ManifestJson { get; set; }
+
+    // A web view has no fingerprinted asset map (Assets is empty), so the route is used as it is.
+    private bool Hybrid => BluxHost.IsHybrid(RendererInfo);
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
@@ -66,7 +94,7 @@ public sealed class BxFonts : ComponentBase
         }
         builder.OpenElement(6, "link");
         builder.AddAttribute(7, "rel", "stylesheet");
-        builder.AddAttribute(8, "href", Assets[manifest.Css]);
+        builder.AddAttribute(8, "href", Hybrid ? manifest.Css : Assets[manifest.Css]);
         builder.CloseElement();
     }
 

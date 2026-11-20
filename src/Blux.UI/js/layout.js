@@ -1,12 +1,22 @@
 import { Reporter, ensureId } from './shared.js';
+import { isHybrid } from './host.js';
 
 // The state is remembered in cookies, so the server can render it on the next request (the app reads them and passes
 // Collapsed): blux-sidebar-{id} is "1" when collapsed, blux-sidebar-{id}-width the width in pixels.
+// In a Blazor Hybrid web view there is no server to read them and cookies are unreliable there (WebKit's tracking
+// prevention on iOS and macOS), so the same names are kept in localStorage.
 const SIDEBAR_PREFIX = 'blux-sidebar-';
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 function read(name) {
   if (!name) return null;
+  if (isHybrid()) {
+    try {
+      return localStorage.getItem(name);
+    } catch {
+      return null;
+    }
+  }
   try {
     for (const part of document.cookie.split('; ')) {
       const at = part.indexOf('=');
@@ -20,6 +30,14 @@ function read(name) {
 
 function write(name, value) {
   if (!name) return;
+  if (isHybrid()) {
+    try {
+      localStorage.setItem(name, String(value));
+    } catch {
+      // Storage blocked: the state lasts until the page is reloaded.
+    }
+    return;
+  }
   try {
     const secure = location.protocol === 'https:' ? '; secure' : '';
     document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${ONE_YEAR}; samesite=lax${secure}`;
@@ -313,6 +331,8 @@ document.addEventListener('bx-change', (event) => {
   const host = event.target instanceof Element ? event.target.closest('[data-bx-locale-select]') : null;
   const culture = event.detail?.value;
   if (!host || !culture) return;
+  // In a Blazor Hybrid app there is no ASP.NET Core to read the cookie: BxLocaleSelect keeps the choice in an IBxCultureStore (.NET side).
+  if (isHybrid()) return;
   const name = host.getAttribute('data-bx-cookie') || '.AspNetCore.Culture';
   const path = host.getAttribute('data-bx-cookie-path') || '/';
   const secure = location.protocol === 'https:' ? '; secure' : '';

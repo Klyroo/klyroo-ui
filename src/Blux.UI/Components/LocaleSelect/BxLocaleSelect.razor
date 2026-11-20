@@ -5,14 +5,16 @@
     A select of locales, built on BxSelect. Choosing one writes the ASP.NET Core culture cookie in the browser and
     reloads the page, so it works in static rendering and without a .NET runtime in the page. The server must run
     UseRequestLocalization with the same cultures: the cookie is only read there. Nothing is posted by the select itself.
+    In a Blazor Hybrid web view there is no server: the choice goes to the IBxCultureStore (localStorage by default) and
+    BxApp applies it at the next start. No cookie is written and the page is not reloaded, unless Reload is set to true.
 *@
 <div class="@_slots["root"]"
      data-bx-locale-select
      data-bx-cookie="@CookieName"
      data-bx-cookie-path="@CookiePath"
-     data-bx-reload="@(Reload ? "" : null)"
+     data-bx-reload="@(!IsHybrid && Reload != false ? "" : null)"
      @attributes="AdditionalAttributes">
-    <BxSelect Items="_items" Value="@_value" Size="Size" Variant="Variant" Color="Color"
+    <BxSelect Items="_items" Value="@_value" ValueChanged="SelectHandler" Size="Size" Variant="Variant" Color="Color"
               aria-label="@(AriaLabel ?? Messages.LocaleSelectLabel)" />
 </div>
 
@@ -20,6 +22,13 @@
     private SlotSet _slots = default!;
     private IReadOnlyList<BxSelectItem> _items = [];
     private string? _value;
+
+    [Inject] private IServiceProvider Services { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    // Unbound in a browser: nothing travels to .NET, the browser writes the cookie itself.
+    private EventCallback<string?> SelectHandler =>
+        IsHybrid ? EventCallback.Factory.Create<string?>(this, SelectedAsync) : default;
 
     /// <summary>The locales to offer, shown by <see cref="BxLocale.Name"/> (with <see cref="BxLocale.Flag"/> when set). Defaults to <see cref="BluxOptions.Locales"/>. Each code must be a culture the server supports.</summary>
     [Parameter] public IReadOnlyList<BxLocale>? Locales { get; set; }
@@ -36,8 +45,16 @@
     /// <summary>The path of the cookie. It must cover every page that is localized.</summary>
     [Parameter] public string CookiePath { get; set; } = "/";
 
-    /// <summary>Reloads the page after the cookie is written, so the server renders it in the new culture.</summary>
-    [Parameter] public bool Reload { get; set; } = true;
+    /// <summary>
+    /// Reloads the page after the choice is saved. In a browser it is on by default (the server renders the page in the new culture).
+    /// In a Blazor Hybrid web view it is off by default: the culture of a .NET process is read at start, so set it to true to apply the
+    /// choice right away (the culture of the process is changed and the web view reloads, losing the state of the page), or leave
+    /// it off and let the choice apply at the next start.
+    /// </summary>
+    [Parameter] public bool? Reload { get; set; }
+
+    /// <summary>Raised with the code of the chosen locale in a Blazor Hybrid web view, after it was saved. A browser has no use for it: the page reloads.</summary>
+    [Parameter] public EventCallback<string> OnLocaleChange { get; set; }
 
     /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
@@ -54,6 +71,20 @@
         var locales = Locales ?? Options.Locales;
         _items = locales.Select(l => new BxSelectItem(l.Code, l.Flag is null ? l.Name : l.Flag + " " + l.Name)).ToList();
         _value = Resolve(locales, Value ?? CurrentLocale.Code);
+    }
+
+    private async Task SelectedAsync(string? code)
+    {
+        if (string.IsNullOrEmpty(code)) return;
+        _value = code;
+        if (Services.GetService(typeof(IBxCultureStore)) is IBxCultureStore store) await store.SetAsync(code);
+        await OnLocaleChange.InvokeAsync(code);
+        if (Reload == true)
+        {
+            var culture = BxCultureStoreMatch.Match(code, null);
+            if (culture is not null) BxCultureStoreMatch.Apply(culture);
+            Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+        }
     }
 
     private static string? Resolve(IReadOnlyList<BxLocale> locales, string code)

@@ -240,10 +240,10 @@ public class SubtreeOverrideTests
 
         var options = new BluxOptions();
         var classes = string.Join(' ', new[] { options.Header, options.Main, options.PageAside }.SelectMany(t => t.AllClassTokens()));
-        Assert.Contains("h-[var(--bx-header-height,var(--blux-header-height))]", classes);
-        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]", classes);
-        Assert.Contains("top-[var(--bx-header-height,var(--blux-header-height,0px))]", classes);
-        Assert.Contains("max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px)))]", classes);
+        Assert.Contains("h-[calc(var(--bx-header-height,var(--blux-header-height))_+_var(--bx-safe-top))]", classes);
+        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))]", classes);
+        Assert.Contains("top-[calc(var(--bx-header-height,var(--blux-header-height,0px))_+_var(--bx-safe-top))]", classes);
+        Assert.Contains("max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px))-var(--bx-safe-top))]", classes);
         Assert.DoesNotMatch(@"(^|[\s:\-_])(h|top)-\(--blux-header-height\)|_var\(--blux-header-height\)\)", classes);
     }
 }

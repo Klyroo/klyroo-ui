@@ -7,6 +7,10 @@ namespace Blux.UI;
 /// Place in <c>&lt;head&gt;</c>, before the stylesheets. Applies the stored color mode (or the system one) before the
 /// first paint, so a dark page never flashes light. Toggle at runtime with <c>Blux.setColorMode('light' | 'dark' | 'system')</c>.
 /// </summary>
+/// <remarks>
+/// In a Blazor Hybrid web view it renders nothing: a script inserted into a running page never runs, and the JS initializer of
+/// Blux (<c>beforeStart</c>) applies the stored mode before the app renders, so there is nothing to flash.
+/// </remarks>
 public sealed class BxColorModeScript : ComponentBase
 {
     internal const string StorageKey = "blux-color-mode";
@@ -21,6 +25,10 @@ public sealed class BxColorModeScript : ComponentBase
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
+        if (BluxHost.IsHybrid(RendererInfo))
+        {
+            return;
+        }
         var nonce = Nonce is null ? "" : $" nonce=\"{System.Net.WebUtility.HtmlEncode(Nonce)}\"";
         builder.AddMarkupContent(0, $"<script{nonce}>{Body}</script>");
     }

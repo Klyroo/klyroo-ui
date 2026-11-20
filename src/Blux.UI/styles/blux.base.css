@@ -80,6 +80,17 @@
     --blux-header-height: 4rem;
 
     /*
+     * Safe area insets (notch, rounded corners, system bars, gesture bar), which a page only gets when it draws under them:
+     * <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> on iOS, and a Blazor Hybrid
+     * web view that extends edge to edge. They are 0 everywhere else. The header, main, footer, dashboard, panels and toaster
+     * keep their content inside them; set --bx-safe-top (and the others) on a subtree to override.
+     */
+    --bx-safe-top: env(safe-area-inset-top, 0px);
+    --bx-safe-right: env(safe-area-inset-right, 0px);
+    --bx-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --bx-safe-left: env(safe-area-inset-left, 0px);
+
+    /*
      * Fonts. The defaults are Tailwind's stacks, so nothing changes until a font is declared: a <BluxFont Role="sans"> item of
      * the project makes the build self-host the font and write these two variables (blux.fonts.css, loaded by BxFonts). Set them
      * by hand to use any other stack.
@@ -264,6 +275,50 @@
   bx-banner[hidden] {
     display: none;
   }
+
+  /*
+   * Touch screens: controls get a hit target of at least 44 x 44 CSS pixels (WCAG 2.5.5, Apple HIG; 2.5.8 asks for 24). Only a
+   * coarse primary pointer: a mouse keeps the compact sizes. Inline links in text are exempt, so anchors are not listed.
+   * data-bx-compact opts an element (a dense table action, say) out.
+   */
+  @media (pointer: coarse) {
+    :where(button, summary, [role='button'], [role='tab'], [role='menuitem'], [role='menuitemcheckbox'], [role='menuitemradio'], [role='option'], [role='switch'], [role='checkbox'], [role='radio'], select):not([data-bx-compact], [hidden]) {
+      min-block-size: 2.75rem;
+    }
+    :where(button, [role='button'], [role='tab'], [role='switch']):not([data-bx-compact], [hidden]):where(:has(> svg:only-child), :has(> [data-slot='icon']:only-child)) {
+      min-inline-size: 2.75rem;
+    }
+    /* Checkboxes and radios are small boxes: the label next to them is the target, so give it room. */
+    :where(label):has(> input:is([type='checkbox'], [type='radio'])) {
+      min-block-size: 2.75rem;
+    }
+  }
+
+  /*
+   * TV mode (experimental): <html data-bx-tv>, set by <BxApp SpatialNavigation="true"> or Blux.setSpatialNavigation(true).
+   * Everything grows to the 10 foot scale (--bx-tv-scale, 1.25 by default: all rem sizes follow), the content stays
+   * inside the overscan safe area (--bx-tv-safe, 5% of the screen), and the focus is hard to miss from the couch.
+   */
+  html[data-bx-tv] {
+    --bx-tv-scale: 1.25;
+    --bx-tv-safe: 3%;
+    font-size: calc(100% * var(--bx-tv-scale));
+    padding: var(--bx-tv-safe);
+    box-sizing: border-box;
+    scroll-padding: 4rem;
+  }
+  html[data-bx-tv] :is(:focus, :focus-visible) {
+    outline: 0.3rem solid var(--bx-color-text, var(--blux-primary-text)) !important;
+    outline-offset: 0.2rem !important;
+    transition: transform 120ms ease-out, outline-offset 120ms ease-out;
+  }
+  html[data-bx-tv] :is(button, a[href], summary, [role='button'], [role='tab'], [role='menuitem'], [role='option'], [role='switch']):is(:focus, :focus-visible) {
+    transform: scale(1.06);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html[data-bx-tv] :is(:focus, :focus-visible) { transition: none; transform: none !important; }
+  }
+  bx-spatial { display: none; }
 
   /* A modal dialog makes the page inert; stop it from scrolling behind. */
   html:has(bx-modal > dialog[open]) {

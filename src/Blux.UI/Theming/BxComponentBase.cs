@@ -20,6 +20,9 @@ public abstract class BxComponentBase : ComponentBase
     /// <summary>Classes added to the root element, merged last so they win over the theme.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>True when the component renders in a Blazor Hybrid web view (<see cref="BluxHost.IsHybrid"/>).</summary>
+    protected bool IsHybrid => BluxHost.IsHybrid(RendererInfo);
+
     /// <summary>The locale set by an enclosing <see cref="BxApp"/> or by a cascading value.</summary>
     [CascadingParameter] private BxLocale? CascadingLocale { get; set; }
 

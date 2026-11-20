@@ -345,7 +345,7 @@ bottom-(--bx-lo)
 bottom-0
 bottom-2
 bottom-3
-bottom-4
+bottom-[max(1rem,var(--bx-safe-bottom))]
 bottom-auto
 break-words
 caret-transparent
@@ -453,8 +453,8 @@ end-0
 end-0.5
 end-2
 end-2.5
-end-4
 end-[calc(100%-var(--bx-hi))]
+end-[max(1rem,var(--bx-safe-right))]
 end-auto
 field-sizing-content
 fill-(--blux-bg)
@@ -599,7 +599,7 @@ h-9
 h-[18px]
 h-[22px]
 h-[calc(100dvh_-_1rem)]
-h-[var(--bx-header-height,var(--blux-header-height))]
+h-[calc(var(--bx-header-height,var(--blux-header-height))_+_var(--bx-safe-top))]
 h-auto
 h-dvh
 h-full
@@ -735,7 +735,7 @@ max-h-96
 max-h-[200px]
 max-h-[85dvh]
 max-h-[calc(100dvh_-_2rem)]
-max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px)))]
+max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px))-var(--bx-safe-top))]
 max-h-none
 max-sm:hidden
 max-w-(--blux-container)
@@ -799,7 +799,7 @@ min-h-0
 min-h-32
 min-h-4
 min-h-6
-min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]
+min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))]
 min-h-full
 min-w-0
 min-w-10
@@ -881,12 +881,14 @@ p-3
 p-4
 p-6
 p-8
+pb-(--bx-safe-bottom)
 pb-12
 pb-2
 pb-24
 pb-3.5
 pb-4
 pb-6
+pe-(--bx-safe-right)
 pe-1
 pe-1.5
 pe-10
@@ -910,6 +912,7 @@ peer-disabled:opacity-60
 placeholder:text-(--blux-text-dimmed)
 pointer-events-auto
 pointer-events-none
+ps-(--bx-safe-left)
 ps-1.5
 ps-10
 ps-11
@@ -920,6 +923,7 @@ ps-4
 ps-7
 ps-8
 ps-9
+pt-(--bx-safe-top)
 pt-1
 pt-2
 pt-4
@@ -1116,7 +1120,7 @@ top-1.5
 top-1/2
 top-2
 top-[calc(100%-var(--bx-hi))]
-top-[var(--bx-header-height,var(--blux-header-height,0px))]
+top-[calc(var(--bx-header-height,var(--blux-header-height,0px))_+_var(--bx-safe-top))]
 top-auto
 touch-none
 tracking-[-0.045em]

@@ -47,10 +47,11 @@
         </BxSlideover>
     </div>
 </bx-sidebar>
-@if (Id is not null && !CollapsedChanged.HasDelegate)
+@if (Id is not null && !CollapsedChanged.HasDelegate && !IsHybrid)
 {
     @* Runs while the page is parsed, before the first paint: applies the remembered state so a reload does not shift.
-       The element does the same later (and alone in interactive renders, where inserted scripts never run). *@
+       The element does the same later (and alone in interactive renders, where inserted scripts never run, and in a
+       Blazor Hybrid web view, where the state lives in localStorage and there is no parsing to run ahead of). *@
     @((MarkupString)$"<script{NonceAttribute}>{FirstPaintScript}</script>")
 }
 
