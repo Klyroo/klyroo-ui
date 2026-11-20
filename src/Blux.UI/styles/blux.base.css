@@ -234,6 +234,13 @@
   [data-bx-marquee][data-reverse='true'] > [data-bx-marquee-group] {
     animation-direction: reverse;
   }
+  /* Right to left: the copies sit side by side from the right edge, so a horizontal marquee slides the other way. */
+  :dir(rtl) [data-bx-marquee][data-orientation='horizontal'] > [data-bx-marquee-group] {
+    animation-direction: reverse;
+  }
+  :dir(rtl) [data-bx-marquee][data-orientation='horizontal'][data-reverse='true'] > [data-bx-marquee-group] {
+    animation-direction: normal;
+  }
   [data-bx-marquee][data-pause-on-hover='true']:is(:hover, :focus-within) > [data-bx-marquee-group] {
     animation-play-state: paused;
   }

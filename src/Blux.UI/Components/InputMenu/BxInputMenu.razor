@@ -83,7 +83,7 @@ else
             <input value="@Text" @attributes="InputAttributes(binding)" />
             <span class="@_slots["trailing"]" aria-hidden="true">@BxIcons.ChevronDown(_slots["trailingIcon"])</span>
             <div popover="manual" class="@_slots["content"]" data-slot="content">
-                <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-label="@Options.Strings.InputMenuSuggestions">
+                <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-label="@Messages.InputMenuSuggestions">
                     @foreach (var item in Items)
                     {
                         <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
@@ -93,7 +93,7 @@ else
                         </div>
                     }
                 </div>
-                <p class="@_slots["empty"]" data-slot="empty" hidden>@Options.Strings.InputMenuNoResults</p>
+                <p class="@_slots["empty"]" data-slot="empty" hidden>@Messages.InputMenuNoResults</p>
             </div>
         </bx-input-menu>;
 }

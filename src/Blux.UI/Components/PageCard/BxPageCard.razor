@@ -64,7 +64,7 @@
         }
         else
         {
-            <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" class="@_slots["link"]" data-slot="link">@Title@if (Target == "_blank") {<span class="sr-only"> @Options.Strings.OpensInNewTab</span>}</a>
+            <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" class="@_slots["link"]" data-slot="link">@Title@if (Target == "_blank") {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
         }
     </text>;
 

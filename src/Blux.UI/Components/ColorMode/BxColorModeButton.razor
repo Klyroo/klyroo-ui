@@ -7,7 +7,7 @@
 *@
 <BxButton Color="Color" Variant="Variant" Size="Size" Square="@(Label is null)" Label="@Label" Class="@Class"
           @attributes="AdditionalAttributes"
-          aria-label="@(Label is null ? (AriaLabel ?? Options.Strings.ToggleColorMode) : null)"
+          aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)"
           data-bx-color-mode="toggle">
     <LeadingIcon>
         @ColorModeIcons.Moon(_slots["moon"])

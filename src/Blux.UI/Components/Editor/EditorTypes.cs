@@ -55,7 +55,7 @@ public sealed record EditorToolbarItem
     /// <summary>Heading level for <see cref="EditorAction.Heading"/>.</summary>
     public int Level { get; init; }
 
-    /// <summary>Accessible name and tooltip. Defaults to the text of <see cref="BluxStrings"/> for the action.</summary>
+    /// <summary>Accessible name and tooltip. Defaults to the text of <see cref="BxMessages"/> for the action.</summary>
     public string? Label { get; init; }
 
     public bool IsSeparator { get; private init; }
@@ -106,18 +106,24 @@ public sealed record EditorSuggestionItem
     public string? Keywords { get; init; }
     public bool Disabled { get; init; }
 
-    /// <summary>Text, headings, lists, quote, code block and divider: what the slash menu offers by default.</summary>
-    public static IReadOnlyList<EditorSuggestionItem> Defaults { get; } =
+    /// <summary>The default entries in English. The menu itself uses <see cref="For"/> with the messages of the locale in effect.</summary>
+    public static IReadOnlyList<EditorSuggestionItem> Defaults { get; } = For(new BxMessages());
+
+    /// <summary>
+    /// Text, headings, lists, quote, code block and divider, named and described by <paramref name="messages"/>: what the slash menu
+    /// offers by default. The keywords are markup shorthands (h1, ul, hr) and stay the same in every language.
+    /// </summary>
+    public static IReadOnlyList<EditorSuggestionItem> For(BxMessages messages) =>
     [
-        new(EditorAction.Paragraph, "Text") { Description = "Plain paragraph", Keywords = "paragraph p" },
-        new(EditorAction.Heading, "Heading 1") { Level = 1, Description = "Big section heading", Keywords = "h1 title" },
-        new(EditorAction.Heading, "Heading 2") { Level = 2, Description = "Medium section heading", Keywords = "h2 subtitle" },
-        new(EditorAction.Heading, "Heading 3") { Level = 3, Description = "Small section heading", Keywords = "h3" },
-        new(EditorAction.BulletList, "Bulleted list") { Description = "A simple list of points", Keywords = "ul unordered" },
-        new(EditorAction.OrderedList, "Numbered list") { Description = "A list with numbers", Keywords = "ol ordered" },
-        new(EditorAction.Blockquote, "Quote") { Description = "Quote a passage", Keywords = "blockquote citation" },
-        new(EditorAction.CodeBlock, "Code block") { Description = "Monospaced code", Keywords = "pre snippet" },
-        new(EditorAction.HorizontalRule, "Divider") { Description = "A horizontal line", Keywords = "hr rule separator" },
+        new(EditorAction.Paragraph, messages.EditorSuggestionText) { Description = messages.EditorDescriptionParagraph, Keywords = "paragraph p" },
+        new(EditorAction.Heading, EditorActions.Label(messages, EditorAction.Heading, 1)) { Level = 1, Description = messages.EditorDescriptionHeading1, Keywords = "h1 title" },
+        new(EditorAction.Heading, EditorActions.Label(messages, EditorAction.Heading, 2)) { Level = 2, Description = messages.EditorDescriptionHeading2, Keywords = "h2 subtitle" },
+        new(EditorAction.Heading, EditorActions.Label(messages, EditorAction.Heading, 3)) { Level = 3, Description = messages.EditorDescriptionHeading3, Keywords = "h3" },
+        new(EditorAction.BulletList, messages.EditorBulletList) { Description = messages.EditorDescriptionBulletList, Keywords = "ul unordered" },
+        new(EditorAction.OrderedList, messages.EditorOrderedList) { Description = messages.EditorDescriptionOrderedList, Keywords = "ol ordered" },
+        new(EditorAction.Blockquote, messages.EditorBlockquote) { Description = messages.EditorDescriptionBlockquote, Keywords = "blockquote citation" },
+        new(EditorAction.CodeBlock, messages.EditorCodeBlock) { Description = messages.EditorDescriptionCodeBlock, Keywords = "pre snippet" },
+        new(EditorAction.HorizontalRule, messages.EditorHorizontalRule) { Description = messages.EditorDescriptionHorizontalRule, Keywords = "hr rule separator" },
     ];
 }
 
@@ -294,7 +300,7 @@ internal static class EditorActions
         EditorAction.Bold or EditorAction.Italic or EditorAction.Strike or EditorAction.Underline or EditorAction.Code or EditorAction.Heading or
         EditorAction.BulletList or EditorAction.OrderedList or EditorAction.Blockquote or EditorAction.CodeBlock or EditorAction.Link;
 
-    public static string Label(BluxStrings strings, EditorAction action, int level) => action switch
+    public static string Label(BxMessages strings, EditorAction action, int level) => action switch
     {
         EditorAction.Bold => strings.EditorBold,
         EditorAction.Italic => strings.EditorItalic,

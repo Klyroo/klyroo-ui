@@ -37,8 +37,8 @@
                     @if (Discount is not null)
                     {
                         @* The strikethrough is visual only: spell out which price is which. *@
-                        <del class="@_slots["discount"]"><span class="@_slots["srOnly"]">@Options.Strings.PricingOriginalPrice</span> @Price</del>
-                        <span class="@_slots["price"]"><span class="@_slots["srOnly"]">@Options.Strings.PricingDiscountedPrice</span> @Discount</span>
+                        <del class="@_slots["discount"]"><span class="@_slots["srOnly"]">@Messages.PricingOriginalPrice</span> @Price</del>
+                        <span class="@_slots["price"]"><span class="@_slots["srOnly"]">@Messages.PricingDiscountedPrice</span> @Discount</span>
                     }
                     else
                     {

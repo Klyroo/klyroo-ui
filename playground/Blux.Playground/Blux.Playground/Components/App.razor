@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="@_locale.Code" dir="@_locale.DirAttribute">
 
 <head>
     <meta charset="utf-8" />
@@ -32,10 +32,13 @@
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
 
     private IComponentRenderMode? _mode;
+    private BxLocale _locale = BxLocales.En;
 
     // /ssr, /server, /wasm and /auto prefixes pick a mode, to test components in each; everything else runs in Auto.
     protected override void OnParametersSet()
     {
+        // lang and dir of the page follow the culture of the request, like the components do.
+        _locale = BxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
         _mode = PlaygroundServices.ModeFromPath(HttpContext.Request.Path) switch
         {
             "ssr" => null,

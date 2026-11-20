@@ -108,9 +108,9 @@
         }
         _wasStreaming = Streaming;
         var seconds = Duration ?? _measured;
-        _label = Streaming ? Text ?? Options.Strings.ChatThinking
-            : seconds is { } s ? string.Format(CultureInfo.CurrentCulture, Options.Strings.ChatThoughtFor, s)
-            : Text ?? Options.Strings.ChatThought;
+        _label = Streaming ? Text ?? Messages.ChatThinking
+            : seconds is { } s ? string.Format(CurrentLocale.Culture, Messages.ChatThoughtFor, s)
+            : Text ?? Messages.ChatThought;
     }
 
     [System.Diagnostics.CodeAnalysis.DynamicDependency(

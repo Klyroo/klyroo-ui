@@ -75,7 +75,7 @@ else
             ["value"] = Invariant(isHigh ? High : Low),
             ["class"] = _slots["thumb"],
             ["data-slot"] = "thumb",
-            ["aria-label"] = isHigh ? Options.Strings.SliderMaximum : Options.Strings.SliderMinimum,
+            ["aria-label"] = isHigh ? Messages.SliderMaximum : Messages.SliderMinimum,
         };
         if (!isHigh) attributes["id"] = ControlId;
         if (binding.Name is not null) attributes["name"] = binding.Name;

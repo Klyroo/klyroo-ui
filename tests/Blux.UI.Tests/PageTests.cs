@@ -313,7 +313,7 @@ public class PageTests : BluxTestContext
         Assert.Equal("Links", plain.Find("nav").GetAttribute("aria-label"));
         Assert.False(plain.Find("nav").HasAttribute("aria-labelledby"));
 
-        Services.GetRequiredService<BluxOptions>().Strings.PageLinks = "Liens";
+        Services.GetRequiredService<BluxOptions>().Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { PageLinks = "Liens" });
         var french = Render<BxPageLinks>(p => p.Add(c => c.Links, Links));
         Assert.Equal("Liens", french.Find("nav").GetAttribute("aria-label"));
     }
@@ -447,7 +447,7 @@ public class PageTests : BluxTestContext
     [Fact]
     public void PageAnchors_label_can_be_localized_or_replaced()
     {
-        Services.GetRequiredService<BluxOptions>().Strings.PageAnchors = "Sur cette page";
+        Services.GetRequiredService<BluxOptions>().Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { PageAnchors = "Sur cette page" });
         var localized = Render<BxPageAnchors>(p => p.Add(c => c.Links, new PageLinkItem[] { new("A", "#a") }));
         var named = Render<BxPageAnchors>(p => p.Add(c => c.Links, new PageLinkItem[] { new("A", "#a") }).AddUnmatched("aria-label", "Contents"));
 

@@ -8,7 +8,7 @@
     without a round trip and in static rendering). The current page carries aria-current="page", computed from the
     address with the matcher the other navigation components share, so it is right on a statically rendered page too.
 *@
-<nav aria-label="@(AriaLabel ?? Options.Strings.ContentNavigation)" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+<nav aria-label="@(AriaLabel ?? Messages.ContentNavigation)" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
     <ul class="@_slots["list"]">
         @foreach (var item in Items)
         {

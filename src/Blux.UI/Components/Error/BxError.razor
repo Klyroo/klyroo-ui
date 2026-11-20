@@ -23,7 +23,7 @@
     else if (Clear)
     {
         <div class="@_slots["actions"]">
-            <BxButton Href="@Href" Label="@(ClearLabel ?? Options.Strings.ErrorBackHome)" />
+            <BxButton Href="@Href" Label="@(ClearLabel ?? Messages.ErrorBackHome)" />
         </div>
     }
 </div>
@@ -71,7 +71,7 @@
     protected override void OnParametersSet()
     {
         _code = StatusCode ?? (Exception is not null ? 500 : null);
-        var strings = Options.Strings;
+        var strings = Messages;
         var (title, message) = _code switch
         {
             404 => (strings.ErrorNotFound, strings.ErrorNotFoundMessage),

@@ -7,7 +7,7 @@
     The browser hides what does not match with data-filtered and shows the empty state with data-empty on the element.
 *@
 <bx-command-palette class="@_slots["root"]"
-                    data-results-text="@Options.Strings.CommandResults"
+                    data-results-text="@Messages.CommandResults"
                     @onbxchange="ChangeHandler"
                     @onbxchange:stopPropagation="true"
                     @attributes="AdditionalAttributes">
@@ -15,11 +15,11 @@
         @BxCommandPaletteIcons.Search(_slots["inputIcon"])
         <input type="text" role="combobox" class="@_slots["input"]" data-slot="input"
                aria-expanded="true" aria-controls="@(_id + "-listbox")" aria-autocomplete="list"
-               aria-label="@(Label ?? Options.Strings.SearchCommands)"
+               aria-label="@(Label ?? Messages.SearchCommands)"
                placeholder="@Placeholder" autocomplete="off" spellcheck="false" />
     </div>
     <div id="@(_id + "-listbox")" role="listbox" tabindex="-1" class="@_slots["listbox"]" data-slot="listbox"
-         aria-label="@(Label ?? Options.Strings.SearchCommands)">
+         aria-label="@(Label ?? Messages.SearchCommands)">
         @for (var g = 0; g < Groups.Count; g++)
         {
             var group = Groups[g];
@@ -43,7 +43,7 @@
             }
         }
     </div>
-    <div class="@_slots["empty"]" data-slot="empty">@Options.Strings.NoCommandResults</div>
+    <div class="@_slots["empty"]" data-slot="empty">@Messages.NoCommandResults</div>
     <div role="status" class="@_slots["status"]" data-slot="status"></div>
 </bx-command-palette>
 

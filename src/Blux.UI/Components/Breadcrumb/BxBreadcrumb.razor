@@ -3,7 +3,7 @@
 @inherits BxComponentBase
 
 @* A nav landmark with an ordered list. The last item is the current page. Pure markup: works in every render mode. *@
-<nav aria-label="@(AriaLabel ?? Options.Strings.Breadcrumb)" class="@_slots["root"]" @attributes="AdditionalAttributes">
+<nav aria-label="@(AriaLabel ?? Messages.Breadcrumb)" class="@_slots["root"]" @attributes="AdditionalAttributes">
     <ol class="@_slots["list"]">
         @for (var i = 0; i < Items.Count; i++)
         {
@@ -35,7 +35,7 @@
     /// <summary>Replaces the chevron between items. Decorative: it is hidden from assistive technology.</summary>
     [Parameter] public RenderFragment? Separator { get; set; }
 
-    /// <summary>Accessible name of the landmark. Defaults to <see cref="BluxStrings.Breadcrumb"/>.</summary>
+    /// <summary>Accessible name of the landmark. Defaults to <see cref="BxMessages.Breadcrumb"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public BreadcrumbUi? Ui { get; set; }
 

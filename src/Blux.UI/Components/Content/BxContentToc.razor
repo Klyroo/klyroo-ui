@@ -11,15 +11,15 @@
     The state attributes are not rendered here, so a render never fights the browser over them.
 *@
 <bx-content-toc data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
-    <nav aria-label="@(Title ?? Options.Strings.ContentToc)">
+    <nav aria-label="@(Title ?? Messages.ContentToc)">
         @if (Collapsible)
         {
             <button type="button" data-slot="trigger" class="@_slots["trigger"]" aria-expanded="false" aria-controls="@(_id + "-content")">
-                <span>@(Title ?? Options.Strings.ContentToc)</span>
+                <span>@(Title ?? Messages.ContentToc)</span>
                 @BxIcons.ChevronDown(_slots["chevron"])
             </button>
         }
-        <p class="@_slots["title"]" data-slot="title">@(Title ?? Options.Strings.ContentToc)</p>
+        <p class="@_slots["title"]" data-slot="title">@(Title ?? Messages.ContentToc)</p>
         <div id="@(_id + "-content")" data-slot="content" class="@_slots["content"]">
             <ul class="@_slots["list"]">
                 @foreach (var link in Links)

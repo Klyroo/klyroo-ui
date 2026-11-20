@@ -201,7 +201,7 @@
     @* The group is described by these, but they are not part of its content, so they are read once. *@
     @if (_interactive)
     {
-        <span id="@(_id + "-hint")" hidden>@Options.Strings.ChartHint</span>
+        <span id="@(_id + "-hint")" hidden>@Messages.ChartHint</span>
         @if (AriaDescription is not null)
         {
             <span id="@(_id + "-description")" hidden>@AriaDescription</span>
@@ -209,7 +209,7 @@
     }
     @if (_showLegend)
     {
-        <ul class="@_slots["legend"]" aria-label="@Options.Strings.ChartLegend">
+        <ul class="@_slots["legend"]" aria-label="@Messages.ChartLegend">
             @for (var i = 0; i < LegendCount; i++)
             {
                 var item = i;
@@ -240,7 +240,7 @@
     @if (Table == BxChartTable.Toggle)
     {
         <details class="@_slots["details"]">
-            <summary class="@_slots["summary"]">@Options.Strings.ChartTable</summary>
+            <summary class="@_slots["summary"]">@Messages.ChartTable</summary>
             <div class="@_slots["tableWrapper"]">@DataTable</div>
         </details>
     }
@@ -276,7 +276,7 @@
     /// <summary>The rows to plot: one per x value, or per slice with <see cref="BxChartType.Donut"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<TItem> Data { get; set; } = [];
 
-    /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the current culture.</summary>
+    /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the culture of the locale in effect.</summary>
     [Parameter, EditorRequired] public Func<TItem, object?> Index { get; set; } = default!;
 
     /// <summary>The series, in drawing order. With a donut the first one gives the size of each slice.</summary>
@@ -313,7 +313,7 @@
     /// <summary>Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut.</summary>
     [Parameter] public bool? Legend { get; set; }
 
-    /// <summary>Formats the values on the value axis, in the tooltip and in the table. Defaults to the current culture.</summary>
+    /// <summary>Formats the values on the value axis, in the tooltip and in the table. Defaults to the culture of the locale in effect.</summary>
     [Parameter] public Func<double, string>? Format { get; set; }
 
     /// <summary>The format string of an index that is formattable (a date, a number).</summary>
@@ -352,12 +352,11 @@
 
     /// <summary>
     /// The culture of every number, date and percentage the chart writes (axis ticks, tooltip, table, summary). Defaults to the
-    /// current culture, which can differ between prerendering on the server and WebAssembly: set it when the markup must not change
-    /// at the switch, and the width the axis labels take is then the same too.
+    /// culture of the locale in effect (the same on the server and in WebAssembly for one culture).
     /// </summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
-    private CultureInfo Cult => Culture ?? CultureInfo.CurrentCulture;
+    private CultureInfo Cult => Culture ?? CurrentLocale.Culture;
 
     private string PlotDescribedBy => AriaDescription is null ? _id + "-hint" : _id + "-hint " + _id + "-description";
 
@@ -402,7 +401,7 @@
 
         // A parent render may come with a list changed in place (same reference, same count), so the layout is built again each
         // time. The chart's own renders do not go through here and reuse it.
-        var strings = Options.Strings;
+        var strings = Messages;
         var donut = Type == BxChartType.Donut;
 
         _index = Data.Select(item => IndexText(Index(item))).ToList();
@@ -460,7 +459,7 @@
     /// <summary>The description of the chart: its kind, extent and the range of each series, or the slices of a donut.</summary>
     private string Summary()
     {
-        var strings = Options.Strings;
+        var strings = Messages;
         if (Data.Count == 0 || Categories.Count == 0)
         {
             return $"{_kind}. {strings.NoData}.";
@@ -529,7 +528,7 @@
             <caption class="@_slots["caption"]">@(AriaLabel ?? _kind)</caption>
             <thead>
                 <tr class="@_slots["tr"]">
-                    <th scope="col" class="@_slots["th"]">@(XLabel ?? Options.Strings.ChartIndex)</th>
+                    <th scope="col" class="@_slots["th"]">@(XLabel ?? Messages.ChartIndex)</th>
                     @if (Type == BxChartType.Donut)
                     {
                         <th scope="col" class="@_slots["th"]">@(Categories.Count > 0 ? Categories[0].Name : "")</th>

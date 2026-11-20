@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Components;
@@ -125,7 +126,7 @@ public class Form2Tests : BluxTestContext
     public void InputNumber_renders_spinbutton_buttons_and_invariant_value()
     {
         var cut = Render<BxInputNumber>(p => p.Add(n => n.Value, 1234.5m).Add(n => n.Min, 0m).Add(n => n.Max, 2000m)
-            .Add(n => n.Step, 0.5m).Add(n => n.Locale, "fr-FR").Add(n => n.Name, "price"));
+            .Add(n => n.Step, 0.5m).Add(n => n.Culture, new CultureInfo("fr-FR")).Add(n => n.Name, "price"));
 
         var host = cut.Find("bx-input-number");
         Assert.Equal("1234.5", host.GetAttribute("value"));

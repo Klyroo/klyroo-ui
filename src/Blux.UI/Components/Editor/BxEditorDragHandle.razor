@@ -2,7 +2,7 @@
 @inherits BxComponentBase
 
 <bx-editor-drag-handle class="@_slots["root"]" data-color="@Color.Value" hidden @attributes="AdditionalAttributes">
-    <button type="button" tabindex="-1" class="@_slots["handle"]" aria-label="@(Label ?? Options.Strings.EditorDragHandle)" title="@(Label ?? Options.Strings.EditorDragHandle)">
+    <button type="button" tabindex="-1" class="@_slots["handle"]" aria-label="@(Label ?? Messages.EditorDragHandle)" title="@(Label ?? Messages.EditorDragHandle)">
         @EditorActions.Icon(EditorActions.GripPath, _slots["icon"])
     </button>
 </bx-editor-drag-handle>
@@ -11,7 +11,7 @@
     private SlotSet _slots = default!;
 
     /// <summary>
-    /// Accessible name of the handle. Defaults to <see cref="BluxStrings.EditorDragHandle"/>. The handle shows beside the block
+    /// Accessible name of the handle. Defaults to <see cref="BxMessages.EditorDragHandle"/>. The handle shows beside the block
     /// under the pointer or holding the cursor, and drags it. The keyboard alternative is Alt and the up or down arrow in the text
     /// (or the arrows on the focused handle), and the <see cref="EditorAction.MoveUp"/> and <see cref="EditorAction.MoveDown"/> toolbar buttons.
     /// </summary>

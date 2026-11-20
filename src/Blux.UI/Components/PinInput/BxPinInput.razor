@@ -65,7 +65,7 @@ else
             ["inputmode"] = Type == PinInputType.Numeric ? "numeric" : "text",
             ["maxlength"] = "1",
             ["autocomplete"] = index == 0 ? "one-time-code" : "off",
-            ["aria-label"] = string.Format(System.Globalization.CultureInfo.CurrentCulture, Options.Strings.PinInputCharacter, index + 1, Length),
+            ["aria-label"] = string.Format(CurrentLocale.Culture, Messages.PinInputCharacter, index + 1, Length),
         };
         if (index == 0) attributes["id"] = ControlId;
         if (Disabled) attributes["disabled"] = true;

@@ -80,6 +80,22 @@ Import it after Tailwind, and load only your compiled stylesheet (not `blux.css`
 
 `Class` and `Ui` then accept any utility, since your Tailwind build sees them in your Razor files.
 
+## Languages
+
+Twelve locales are built in (English, French, German, Spanish, Italian, Portuguese, Brazilian Portuguese, Dutch, Japanese, Simplified
+Chinese, Arabic and Russian). Components follow the culture of the user on their own: with ASP.NET Core request localization on the
+server, or the culture of the browser in WebAssembly, no code is needed. A `BxApp` writes `lang` and `dir` (Arabic is right to left).
+
+```razor
+<BxApp Locale="BxLocales.Fr"> @Body </BxApp>
+```
+
+```csharp
+builder.Services.AddBluxUi(o => o.Locale = BxLocales.Extend(BxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
+```
+
+See the Internationalization guide of the documentation site.
+
 ## Customize
 
 - **Palettes**: map the semantic colors to Tailwind palettes or your own, like Nuxt UI's `ui.colors`. Blux computes the

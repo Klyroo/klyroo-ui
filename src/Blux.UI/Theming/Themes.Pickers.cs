@@ -10,7 +10,7 @@ internal static partial class Themes
             .Slot("header", "mb-2 flex items-center justify-between gap-2")
             .Slot("heading", "flex-1 text-center font-medium text-(--blux-text-highlighted)")
             .Slot("nav", "inline-flex shrink-0 items-center justify-center rounded-(--blux-radius) p-1.5 text-(--blux-text-muted) transition-colors hover:bg-(--blux-bg-elevated) " +
-                         "hover:text-(--blux-text-highlighted) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 " + FocusRing)
+                         "hover:text-(--blux-text-highlighted) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 rtl:[&>svg]:rotate-180 " + FocusRing)
             .Slot("grid", "border-separate border-spacing-0.5")
             .Slot("weekday", "p-0 text-center font-normal text-(--blux-text-muted)")
             .Slot("cell", "p-0 text-center")
@@ -109,8 +109,8 @@ internal static partial class Themes
             .Slot("controls", "flex items-center justify-center gap-2")
             .Slot("control", "inline-flex items-center justify-center rounded-full border border-(--blux-border-accented) bg-(--blux-bg) p-2 text-(--blux-text) transition-colors " +
                              "hover:bg-(--blux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 " + FocusRing)
-            .Slot("prevIcon", "size-4 rotate-90")
-            .Slot("nextIcon", "size-4 -rotate-90")
+            .Slot("prevIcon", "size-4 rotate-90 rtl:-rotate-90")
+            .Slot("nextIcon", "size-4 -rotate-90 rtl:rotate-90")
             .Slot("pauseIcon", "size-4 group-data-paused/carousel:hidden")
             .Slot("playIcon", "hidden size-4 group-data-paused/carousel:block")
             .Slot("dots", "flex items-center gap-1")

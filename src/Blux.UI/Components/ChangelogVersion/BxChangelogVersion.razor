@@ -14,7 +14,7 @@
                 <div class="@_slots["meta"]">
                     @if (Date is { } date)
                     {
-                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture)</time>
+                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture ?? CurrentLocale.Culture)</time>
                     }
                     @if (Badge is not null)
                     {
@@ -27,7 +27,7 @@
                 <Heading Level="HeadingLevel" Class="@_slots["title"]">
                     @if (Href is not null)
                     {
-                        <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target == "_blank") {<span class="sr-only"> @Options.Strings.OpensInNewTab</span>}</a>
+                        <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target == "_blank") {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
                     }
                     else
                     {
@@ -80,15 +80,15 @@
     [Parameter] public int HeadingLevel { get; set; } = 3;
     [Parameter] public string? Description { get; set; }
 
-    /// <summary>Release date, shown in the current culture, or in <see cref="Culture"/> in a <c>time</c> element.</summary>
+    /// <summary>Release date, shown in the culture of the locale in effect, or in <see cref="Culture"/> in a <c>time</c> element.</summary>
     [Parameter] public DateTimeOffset? Date { get; set; }
 
     /// <inheritdoc cref="BxBlogPost.DateFormat"/>
     [Parameter] public string? DateFormat { get; set; }
 
     /// <summary>
-    /// The culture of the date. By default the current culture, which can differ between the prerender and a
-    /// WebAssembly render: set it (for example from the request) when both must show the same text.
+    /// The culture of the date. By default the culture of the locale in effect, so the prerender and a
+    /// WebAssembly render agree as long as they pick the same locale.
     /// </summary>
     [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
     [Parameter] public string? Badge { get; set; }
