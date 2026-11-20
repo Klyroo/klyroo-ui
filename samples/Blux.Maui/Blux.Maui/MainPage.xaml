@@ -4,7 +4,8 @@
              xmlns:blazor="clr-namespace:Microsoft.AspNetCore.Components.WebView.Maui;assembly=Microsoft.AspNetCore.Components.WebView.Maui"
              xmlns:web="clr-namespace:Microsoft.AspNetCore.Components.Web;assembly=Microsoft.AspNetCore.Components.Web"
              xmlns:shared="clr-namespace:Blux.Maui.Shared;assembly=Blux.Maui.Shared"
-             x:Class="Blux.Maui.MainPage">
+             x:Class="Blux.Maui.MainPage"
+             SafeAreaEdges="Container">
 
     <blazor:BlazorWebView x:Name="blazorWebView" HostPage="wwwroot/index.html">
         <blazor:BlazorWebView.RootComponents>
