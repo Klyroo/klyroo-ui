@@ -60,3 +60,20 @@ test('a small control aligned under a wide field wins over a farther wide button
   assert.equal(pickNext(terms, [bio, toggle, save], 'down'), 2);
   assert.equal(pickNext(save, [bio, toggle, terms], 'up'), 2);
 });
+
+test('among in-line candidates of an asymmetric row the one nearest the origin center wins', () => {
+  // A wide origin with a narrow item at the far left and a wider one on the right, both 50px below: the one whose
+  // center is closer to the origin's center (500) is the natural target, not the first in document order.
+  const origin = box(0, 0, 1000, 100);
+  const farLeft = box(0, 150, 300, 40);
+  const right = box(600, 150, 400, 40);
+  assert.equal(pickNext(origin, [farLeft, right], 'down'), 1);
+  assert.equal(pickNext(origin, [right, farLeft], 'down'), 0);
+});
+
+test('the center tie-break never outweighs a real distance difference', () => {
+  const origin = box(0, 0, 1000, 100);
+  const nearButOffCenter = box(0, 150, 100, 40);
+  const farButCentered = box(450, 152, 100, 40);
+  assert.equal(pickNext(origin, [nearButOffCenter, farButCentered], 'down'), 0);
+});
