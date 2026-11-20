@@ -119,6 +119,16 @@ See the Internationalization guide of the documentation site.
   (`--blux-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--blux-border`,
   `-border-muted`, `-border-accented`, `-border-inverted`), `--blux-radius` (the `rounded-*` scale is computed from it),
   `--blux-container`, `--blux-header-height` and `--blux-chart-1` to `-6` (unset by default, they fall back to the semantic colors).
+- **Fonts**: name them in the project file, and the build downloads and self-hosts them (no request to a font provider
+  when the page runs), with `@font-face`, a metrics-adjusted fallback face and a preload. Put `<BxFonts />` in `<head>`.
+  They set `--blux-font-sans` and `--blux-font-mono`, which the page font, `font-sans` and `font-mono` follow.
+
+  ```xml
+  <ItemGroup>
+    <BluxFont Include="Public Sans" Role="sans" Weights="400;700" Subsets="latin;latin-ext" />  <!-- google, bunny, fontsource or local -->
+  </ItemGroup>
+  ```
+
 - **Tailwind utilities** (Tailwind compiled by your app): `text-default`, `text-muted`, `text-dimmed`, `text-toned`,
   `text-highlighted`, `text-inverted`, `bg-default`, `bg-muted`, `bg-elevated`, `bg-accented`, `bg-inverted`,
   `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic
