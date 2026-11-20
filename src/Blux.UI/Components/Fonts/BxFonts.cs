@@ -24,7 +24,9 @@ public sealed class BluxFontsManifestAttribute(string json) : Attribute
 /// requested from a font provider while the page runs.
 /// </summary>
 /// <remarks>
-/// It renders nothing when the project declares no font (or <c>BluxFonts</c> is <c>false</c>). The manifest is an assembly
+/// It renders nothing when the project declares no font (or <c>BluxFonts</c> is <c>false</c>). The manifest is read from the entry
+/// assembly, so declare the <c>BluxFont</c> items in the project that hosts the app (the server project of an Auto app): fonts
+/// declared in a Blazor WebAssembly project are a build error. The manifest is an assembly
 /// attribute generated at build, so it is the same in static rendering, prerendering and every interactive mode; the
 /// stylesheet link follows the fingerprint of the static web assets (<c>@Assets</c>), the preload links the stable route of the
 /// file, which is also what the stylesheet requests, so the font is downloaded once. See the Fonts guide.

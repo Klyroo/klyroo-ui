@@ -10,10 +10,18 @@
       A resource that cannot be resolved is a warning in Debug and an error in Release (each feature has a switch to change that).
   -->
   <PropertyGroup>
+    <!-- Set before the default below: true when the repo or the app points at its own build of the task assembly. -->
+    <_BluxTasksOverridden Condition="'$(BluxBuildTasksAssembly)' != ''">true</_BluxTasksOverridden>
     <BluxBuildTasksAssembly Condition="'$(BluxBuildTasksAssembly)' == ''">$(MSBuildThisFileDirectory)tasks/Blux.UI.Build.Tasks.dll</BluxBuildTasksAssembly>
     <BluxCacheDir Condition="'$(BluxCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))</BluxCacheDir>
     <BluxOffline Condition="'$(BluxOffline)' == ''">false</BluxOffline>
   </PropertyGroup>
 
-  <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" />
+  <!--
+    The packaged assembly is loaded in the MSBuild process, like any package's tasks. An assembly the repo or the app points at
+    (BluxBuildTasksAssembly, for in-repo dogfooding) changes with every build of the task: it runs in a task host process that
+    ends with the build, so no reused MSBuild node keeps it loaded and locked.
+  -->
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" Condition="'$(_BluxTasksOverridden)' != 'true'" />
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_BluxTasksOverridden)' == 'true'" />
 </Project>

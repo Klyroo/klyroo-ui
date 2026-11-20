@@ -119,6 +119,9 @@ try {
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
   copyFileSync(join(root, "build", "test-assets", "fonts", "PackageCheck-400.woff2"), join(server, "Fonts", "PackageCheck-400.woff2"));
+  // The same font as .ttf and .woff, to see that every font format gets the immutable header (the SDK only knows woff2 and otf).
+  copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.ttf"), join(server, "Fonts", "PackageCheck-700.ttf"));
+  copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.woff"), join(server, "Fonts", "PackageCheck-300.woff"));
   const serverProj = join(server, "Site.csproj");
   writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxFont Include="PackageCheck" Role="sans" Provider="local" Src="Fonts" /></ItemGroup>\n</Project>`));
   const imports = join(server, "Components", "_Imports.razor");
@@ -158,12 +161,18 @@ try {
   check(/--blux-font-sans: "PackageCheck", "PackageCheck Fallback", /.test(fontsCss), "fonts: --blux-font-sans lists the font and its fallback");
   const fontFile = /url\("(PackageCheck-400-normal\.[0-9a-f]{8}\.woff2)"\)/.exec(fontsCss)?.[1];
   check(!!fontFile && existsSync(join(fontsOut, fontFile)), `fonts: the font file is generated with a hashed name (${fontFile})`);
-  check(existsSync(join(fontsOut, "BluxFontsManifest.g.cs")), "fonts: the manifest source is generated");
+  check(existsSync(join(fontsOut, "..", "BluxFontsManifest.g.cs")) && !existsSync(join(fontsOut, "BluxFontsManifest.g.cs")), "fonts: the manifest source is generated next to the fonts folder, not in it");
+  check(!manifest.includes("BluxFontsManifest") && !manifest.includes(".stamp") && !manifest.includes("blux.fonts.json"), "fonts: only fonts and the stylesheet are static web assets");
   check(manifest.includes("_blux/fonts/blux.fonts") && !!fontFile && manifest.includes(`_blux/fonts/${fontFile}`), "fonts: stylesheet and font file are static web assets under _blux/fonts/");
   const endpointsFile = join(server, "obj", "Release", "net10.0", "staticwebassets.build.endpoints.json");
   const endpoints = existsSync(endpointsFile) ? JSON.parse(readFileSync(endpointsFile, "utf8")).Endpoints : [];
   const fontEndpoints = endpoints.filter((e) => fontFile && e.Route.startsWith("_blux/fonts/PackageCheck-400") && e.Route.endsWith(".woff2"));
   check(fontEndpoints.length >= 2 && fontEndpoints.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable")), "fonts: every route of the font is served with a year of immutable cache");
+  for (const [ext, mime] of [["ttf", "font/ttf"], ["woff", "font/woff"]]) {
+    const routes = endpoints.filter((e) => e.Route.startsWith("_blux/fonts/PackageCheck-") && e.Route.endsWith("." + ext));
+    check(routes.length >= 2 && routes.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable") && e.ResponseHeaders.some((h) => h.Name === "Content-Type" && h.Value === mime)), `fonts: every route of the .${ext} font is served as ${mime} with a year of immutable cache`);
+  }
+  check(!endpoints.some((e) => /\.(cs|json|stamp)$/.test(e.Route) && e.Route.startsWith("_blux/fonts/")), "fonts: no generated source, manifest or stamp is published as an endpoint");
 
   // Run the app and fetch what the page links: the font is served from the app, the preload and stylesheet are in the head.
   {
