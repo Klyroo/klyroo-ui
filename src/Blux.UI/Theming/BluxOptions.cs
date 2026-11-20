@@ -8,7 +8,12 @@ namespace Blux.UI;
 /// Global configuration of Blux UI. Register it from code shared by the server and the WebAssembly client,
 /// otherwise components change appearance when an Auto render mode switches runtime.
 /// </summary>
-/// <remarks>Partial: each family of components declares its themes in its own file.</remarks>
+/// <remarks>
+/// Partial: each family of components declares its themes in its own file.
+/// Configure the themes in <c>AddBluxUi</c>: a theme becomes read-only the first time a component renders with it,
+/// and a later change throws <see cref="InvalidOperationException"/>. <c>AddBluxUi</c> may be called several times
+/// (a library and the app); every call configures the same options.
+/// </remarks>
 public sealed partial class BluxOptions
 {
     public ComponentTheme Button { get; } = Themes.Button();
