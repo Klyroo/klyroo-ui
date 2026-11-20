@@ -123,6 +123,9 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
 
     protected async Task AssertNoAccessibilityViolations()
     {
+        // The head outlet renders the title again when a page turns interactive (WebAssembly can do it late on a busy
+        // machine): a scan in that window reports an empty <title> the page does not really have.
+        await Page.WaitForFunctionAsync("() => document.title.length > 0");
         var result = await Page.RunAxe();
         var violations = result.Violations
             .SelectMany(v => v.Nodes.Select(n => $"{v.Id}: {n.Html} -> {string.Join("; ", n.Any.Select(c => c.Message))}"))
