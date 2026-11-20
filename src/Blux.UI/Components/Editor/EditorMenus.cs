@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace Blux.UI;
 
 /// <summary>An option of a suggestion menu, as rendered.</summary>
-internal sealed record EditorMenuOption(string Value, string Label, string? Description = null, string? Keywords = null, string? Action = null, int Level = 0, bool Disabled = false, string? IconPath = null, string? Prefix = null);
+internal sealed record EditorMenuOption(string Value, string Label, string? Description = null, string? Keywords = null, string? Action = null, int Level = 0, bool Disabled = false, string? IconName = null, string? Prefix = null);
 
 /// <summary>
 /// Base of the menus that open when a trigger character is typed in the editor. The options are rendered as a listbox;
@@ -75,9 +75,9 @@ public abstract class BxEditorMenuBase : BxComponentBase
             b.AddAttribute(24, "data-level", option.Level > 0 ? option.Level.ToString(System.Globalization.CultureInfo.InvariantCulture) : null);
             b.AddAttribute(25, "aria-selected", "false");
             b.AddAttribute(26, "aria-disabled", option.Disabled ? "true" : null);
-            if (option.IconPath is not null)
+            if (option.IconName is not null)
             {
-                b.AddContent(27, EditorActions.Icon(option.IconPath, _slots["icon"]));
+                b.AddContent(27, RenderIcon(option.IconName, _slots["icon"]));
             }
             else if (option.Prefix is not null)
             {
@@ -133,7 +133,7 @@ public sealed class BxEditorSuggestionMenu : BxEditorMenuBase
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         (Items ?? EditorSuggestionItem.For(Messages)).Select(i => new EditorMenuOption(
             EditorActions.Name(i.Action), i.Label, i.Description, i.Keywords, EditorActions.Name(i.Action), i.Level, i.Disabled,
-            IconPath: EditorActions.IconPath(i.Action, i.Level)));
+            IconName: EditorActions.IconName(i.Action, i.Level, Options.Icons)));
 }
 
 /// <summary>

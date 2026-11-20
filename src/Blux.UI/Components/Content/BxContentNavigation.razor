@@ -71,7 +71,7 @@
                 <BxCollapsible Open="@(item.Open ?? IsActive(item))" Disabled="@item.Disabled" ShowIcon="false" Ui="@(depth == 0 ? _sectionUi : _groupUi)">
                     <Trigger>
                         @Inner(item)
-                        @BxIcons.ChevronDown(_slots["chevron"])
+                        @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
                     </Trigger>
                     <ChildContent>
                         <ul class="@(depth == 0 ? _slots["sectionList"] : _slots["groupList"])">

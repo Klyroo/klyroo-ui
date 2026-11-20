@@ -53,7 +53,7 @@ else
                 <input type="checkbox" id="@id" name="@binding.Name" value="@Format(item.Value)" checked="@IsChecked(item.Value)"
                        disabled="@(item.Disabled || Disabled)" aria-describedby="@FormFieldContext.Join(descriptionId)"
                        aria-invalid="@(binding.Invalid ? "true" : null)" class="@_slots["base"]" @onchange="onChange" />
-                @BxIcons.Check(_slots["icon"])
+                @RenderIcon(Options.Icons.Check, _slots["icon"])
             </div>
             <div class="@_slots["wrapper"]">
                 <label for="@id" class="@_slots["label"]">@item.Label</label>

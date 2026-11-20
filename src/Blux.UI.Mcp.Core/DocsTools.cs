@@ -188,14 +188,14 @@ public sealed class DocsTools(DocsService docs)
     }
 
     [McpServerTool(Name = "search-icons", Title = "Search icons", ReadOnly = true, Idempotent = true, OpenWorld = false)]
-    [Description("Searches the built-in icon names usable as `<BxIcon Name=\"...\" />` (Lucide). The set is small for now; an Iconify-based icon system, with any icon by name, is planned and will replace this list.")]
+    [Description("Searches the Lucide icons built into Blux UI, usable as `<BxIcon Name=\"search\" />` (or `i-lucide-search`, `lucide:search`) with no setup. Any other Iconify icon (200,000+ in 280 collections, browse https://icones.js.org) works by name too, as `i-{collection}-{name}` or `{collection}:{name}` (`ph:house`, `mdi:home`, `simple-icons:github`): the app's build downloads the icons it writes as literals and bundles them (see the Icons guide). The icons components draw (close, check, chevrons...) are replaced with `o.Icons.Close = \"ph:x\"` in AddBluxUi.")]
     public string SearchIcons(
         [Description("A word of the icon name. Omit to list the built-in icons.")] string? query = null,
         [Description("Maximum number of results (default 30).")] int limit = 30)
     {
         var icons = docs.SearchIcons(query, Math.Max(1, limit));
-        if (icons.Count == 0) return $"No built-in icon matches \"{query}\". {docs.Bundle.Icons.Count} icons are built in; call this tool without a query to list them.\n";
-        return $"{icons.Count} of {docs.Bundle.Icons.Count} built-in icons. Use `<BxIcon Name=\"name\" />`; custom icons can be added through `BluxOptions.Icons`.\n\n"
+        if (icons.Count == 0) return $"No built-in icon matches \"{query}\". {docs.Bundle.Icons.Count} Lucide icons are built in (call this tool without a query to list them), and any icon of the other Iconify collections works by name (`ph:house`, `i-mdi-home`): search them at https://icones.js.org and write the name as a literal, the build bundles it (Icons guide).\n";
+        return $"{icons.Count} of {docs.Bundle.Icons.Count} built-in Lucide icons. Use `<BxIcon Name=\"name\" />`. Any other Iconify icon works by name as `prefix:name` or `i-prefix-name` (`ph:house`, `simple-icons:github`), bundled at build time when written as a literal; custom SVGs come from a `BluxIconCollection` folder or `BluxOptions.Icons.Register`.\n\n"
             + string.Join('\n', icons.Select(i => $"- {i}")) + "\n";
     }
 

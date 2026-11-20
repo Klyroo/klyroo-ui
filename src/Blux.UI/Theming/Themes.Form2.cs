@@ -234,11 +234,11 @@ internal static partial class Themes
             .Slot("star", "group relative block cursor-pointer overflow-hidden peer-disabled:cursor-not-allowed " +
                           // Filled when its own radio (just before it) or a later one is checked. peer-checked would
                           // also match every star after the checked one.
-                          "[input:checked+&_svg]:fill-(--bx-color) [input:checked+&_svg]:stroke-(--bx-color-text) " +
-                          "[&:has(~input:checked)_svg]:fill-(--bx-color) [&:has(~input:checked)_svg]:stroke-(--bx-color-text)")
-            .Slot("icon", "block fill-transparent stroke-(--blux-text-dimmed) transition-colors")
+                          "[input:checked+&_svg_*]:fill-(--bx-color) [input:checked+&_svg_*]:stroke-(--bx-color-text) " +
+                          "[&:has(~input:checked)_svg_*]:fill-(--bx-color) [&:has(~input:checked)_svg_*]:stroke-(--bx-color-text)")
+            .Slot("icon", "block **:fill-transparent **:stroke-(--blux-text-dimmed) **:stroke-[1.5] **:transition-colors")
             .Slot("fill", "absolute inset-y-0 start-0 overflow-hidden data-[fill=full]:w-full data-[fill=half]:w-1/2")
-            .Slot("filledIcon", "block max-w-none fill-(--bx-color) stroke-(--bx-color-text)")
+            .Slot("filledIcon", "block max-w-none **:fill-(--bx-color) **:stroke-(--bx-color-text) **:stroke-[1.5]")
             .Variant("readonly", "false", "root", "flex-row")
             .Variant("readonly", "true", "root", "flex-row")
             .Variant("half", "true", "icon", "absolute inset-y-0 max-w-none group-data-[half=left]:start-0 group-data-[half=right]:end-0")

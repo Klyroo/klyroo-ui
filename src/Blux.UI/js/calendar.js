@@ -19,27 +19,6 @@ const addMonths = (date, n) => {
 const firstOfMonth = (date) => new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
 const sameMonth = (a, b) => a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth();
 
-const CHEVRON = {
-  prev: 'm15 18-6-6 6-6',
-  next: 'm9 18 6-6-6-6',
-};
-
-function icon(path, className) {
-  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-  svg.setAttribute('viewBox', '0 0 24 24');
-  svg.setAttribute('fill', 'none');
-  svg.setAttribute('stroke', 'currentColor');
-  svg.setAttribute('stroke-width', '2');
-  svg.setAttribute('stroke-linecap', 'round');
-  svg.setAttribute('stroke-linejoin', 'round');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('class', className);
-  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-  p.setAttribute('d', path);
-  svg.append(p);
-  return svg;
-}
-
 /**
  * Month calendar following the WAI-ARIA date picker grid pattern. Selection, month navigation and keyboard
  * handling run here; the grid is built into the empty [data-slot=body] element Blazor renders, so Blazor and
@@ -363,7 +342,8 @@ export class BxCalendarElement extends HTMLElement {
     button.className = this.#cls('nav');
     button.dataset.nav = direction;
     button.setAttribute('aria-label', this.getAttribute(`label-${direction}`) ?? direction);
-    button.append(icon(CHEVRON[direction], 'size-4'));
+    // The icons are the app's ChevronLeft and ChevronRight, drawn by .NET (BluxOptions.Icons).
+    button.innerHTML = (direction === 'prev' ? this.dataset.iconPrev : this.dataset.iconNext) ?? '';
     const iso = fmt(edge);
     const blocked = direction === 'prev' ? this.#min && iso < this.#min : this.#max && iso > this.#max;
     if (blocked || this.hasAttribute('disabled')) button.setAttribute('aria-disabled', 'true');

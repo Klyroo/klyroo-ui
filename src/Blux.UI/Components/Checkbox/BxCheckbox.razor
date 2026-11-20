@@ -15,7 +15,7 @@
         {
             <input type="checkbox" name="@Name" value="true" checked="@Value" @attributes="Attributes()" />
         }
-        @BxIcons.Check(_slots["icon"])
+        @RenderIcon(Options.Icons.Check, _slots["icon"])
     </div>
     @if (Label is not null || Description is not null)
     {

@@ -6,7 +6,7 @@
     the browser (js/dashboard.js). In a collapsed sidebar only the icon is left; the label stays for screen readers.
 *@
 <button type="button" class="@_slots["root"]" aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" data-bx-search-open @attributes="AdditionalAttributes">
-    @BxIcons.Named("search", _slots["icon"])
+    @RenderIcon(Options.Icons.Search, _slots["icon"])
     <span class="@_slots["label"]">@(Label ?? Messages.DashboardSearchButton)</span>
     @if (Keys is null || Keys.Count > 0)
     {

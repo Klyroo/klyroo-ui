@@ -26,12 +26,11 @@
                 data-cls-file-size="@_slots["fileSize"]"
                 data-cls-remove="@_slots["remove"]"
                 data-cls-icon="@_slots["icon"]"
+data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "size-4")"
                 class="@_slots["root"]"
                 @attributes="AdditionalAttributes">
     <label data-slot="dropzone" for="@ControlId" class="@_slots["dropzone"]">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["icon"]">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12" />
-        </svg>
+        @RenderIcon(Options.Icons.Upload, _slots["icon"])
         <span class="@_slots["label"]">@(Label ?? Messages.DropFiles)</span>
         @if (Hint is not null)
         {

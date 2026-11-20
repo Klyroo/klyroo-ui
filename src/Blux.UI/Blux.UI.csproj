@@ -50,6 +50,11 @@
     <PackageReference Include="TailwindMerge.NET" />
   </ItemGroup>
 
+  <!-- The name parser and the SVG reader are shared with the build task, so the library and the task read an icon name the same way. -->
+  <ItemGroup>
+    <Compile Include="..\Blux.UI.Build.Tasks\Icons\IconNames.cs;..\Blux.UI.Build.Tasks\Icons\IconCollections.g.cs;..\Blux.UI.Build.Tasks\Icons\SvgImport.cs" LinkBase="Internal\Icons" />
+  </ItemGroup>
+
   <ItemGroup>
     <InternalsVisibleTo Include="Blux.UI.Tests" />
     <InternalsVisibleTo Include="Blux.UI.ClassExtractor" />
@@ -59,7 +64,7 @@
     <None Include="../../README.md" Pack="true" PackagePath="/" />
     <None Include="../../CHANGELOG.md" Pack="true" PackagePath="/" />
     <None Include="assets/icon.png" Pack="true" PackagePath="/" />
-    <None Include="buildTransitive/Blux.UI.targets;buildTransitive/Blux.UI.Tasks.targets;buildTransitive/Blux.UI.Fonts.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+    <None Include="buildTransitive/Blux.UI.targets;buildTransitive/Blux.UI.Tasks.targets;buildTransitive/Blux.UI.Fonts.targets;buildTransitive/Blux.UI.Icons.targets" Pack="true" PackagePath="build/;buildTransitive/" />
   </ItemGroup>
 
   <!--

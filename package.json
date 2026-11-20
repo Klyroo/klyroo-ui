@@ -8,11 +8,14 @@
     "css": "tailwindcss -i src/Blux.UI/styles/blux.css -o src/Blux.UI/wwwroot/blux.css --minify && tailwindcss -i src/Blux.UI/styles/blux.preflight.css -o src/Blux.UI/wwwroot/blux.preflight.css --minify",
     "js": "esbuild src/Blux.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/Blux.UI.lib.module.js",
     "editor": "esbuild src/Blux.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/blux-editor.js",
-    "build": "npm run classes && npm run css && npm run js && npm run editor && npm run site:css",
+    "icons": "node build/gen-icons.mjs",
+    "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor && npm run site:css",
     "site:css": "tailwindcss -i playground/Blux.Playground/Blux.Playground/Styles/site.css -o playground/Blux.Playground/Blux.Playground/wwwroot/site.css --minify"
   },
   "devDependencies": {
     "@floating-ui/dom": "1.8.0",
+    "@iconify-json/lucide": "1.2.157",
+    "@iconify/collections": "1.0.767",
     "@tailwindcss/cli": "4.3.5",
     "@tiptap/core": "3.34.0",
     "@tiptap/extension-mention": "3.34.0",

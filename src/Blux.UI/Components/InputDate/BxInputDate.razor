@@ -24,9 +24,7 @@
         <BxPopover Placement="bottom-end" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
             <ChildContent>
                 <button type="button" class="@_slots["triggerButton"]" aria-label="@Messages.ChooseDate" disabled="@Disabled">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["triggerIcon"]">
-                        <path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
-                    </svg>
+                    @RenderIcon(Options.Icons.Calendar, _slots["triggerIcon"])
                 </button>
             </ChildContent>
             <Content>

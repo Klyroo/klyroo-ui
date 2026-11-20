@@ -164,9 +164,9 @@ public static class BundleBuilder
 
     private static IReadOnlyList<string> Icons()
     {
-        // The registry is internal to the library; reading it by reflection keeps the library untouched.
-        var registry = typeof(BxButton).Assembly.GetType("Blux.UI.IconRegistry");
-        var builtin = registry?.GetField("Builtin", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as IReadOnlyDictionary<string, string>;
+        // The Lucide icons embedded in the library; the class is internal, so it is read by reflection.
+        var registry = typeof(BxButton).Assembly.GetType("Blux.UI.BuiltinIcons");
+        var builtin = registry?.GetField("Lucide", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as IReadOnlyDictionary<string, string>;
         return builtin is null ? [] : [.. builtin.Keys.Order(StringComparer.Ordinal)];
     }
 

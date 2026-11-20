@@ -90,10 +90,10 @@ else
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Invariant(Value)" disabled="@Disabled" />
             <input @attributes="InputAttributes(binding)" />
             <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Messages.InputNumberDecrement" disabled="@Disabled">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="@_slots["icon"]"><path d="M5 12h14" /></svg>
+                @RenderIcon(Options.Icons.Minus, _slots["icon"])
             </button>
             <button type="button" tabindex="-1" class="@_slots["increment"]" data-slot="increment" aria-label="@Messages.InputNumberIncrement" disabled="@Disabled">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="@_slots["icon"]"><path d="M5 12h14M12 5v14" /></svg>
+                @RenderIcon(Options.Icons.Plus, _slots["icon"])
             </button>
         </bx-input-number>;
 }

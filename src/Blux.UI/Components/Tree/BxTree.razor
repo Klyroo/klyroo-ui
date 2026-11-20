@@ -75,7 +75,7 @@
                      data-disabled="@(item.Disabled ? "true" : null)" class="@_slots["row"]">
                     @if (hasChildren)
                     {
-                        @NavIcons.ChevronRight(_slots["chevron"])
+                        @RenderIcon(Options.Icons.ChevronRight, _slots["chevron"])
                     }
                     else
                     {

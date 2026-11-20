@@ -54,7 +54,7 @@
     protected override void OnParametersSet() => _groups = ToGroups(Pages);
 
     // Groups keep the order of their first page; inside a group, a page comes right before its headings.
-    private static IReadOnlyList<BxCommandGroup> ToGroups(IReadOnlyList<BxContentSearchPage> pages)
+    private IReadOnlyList<BxCommandGroup> ToGroups(IReadOnlyList<BxContentSearchPage> pages)
     {
         var order = new List<string?>();
         var items = new Dictionary<string, List<BxCommandItem>>(StringComparer.Ordinal);
@@ -70,7 +70,7 @@
                 Description = page.Description,
                 Keywords = page.Keywords,
                 Href = page.Href,
-                Icon = page.Icon == "" ? null : BxIcons.Named(page.Icon ?? "file", "size-5"),
+                Icon = page.Icon == "" ? null : RenderIcon(page.Icon ?? Options.Icons.File, "size-5"),
             });
             foreach (var heading in page.Headings ?? [])
             {
@@ -82,7 +82,7 @@
                     Description = page.Title,
                     Keywords = page.Keywords,
                     Href = href,
-                    Icon = b => b.AddContent(0, "#"),
+                    Icon = RenderIcon(Options.Icons.Hash, "size-5"),
                 });
             }
         }

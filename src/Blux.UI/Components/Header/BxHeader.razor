@@ -34,7 +34,7 @@
             <div class="@_slots["menu"]">
                 <BxSlideover Title="@(MenuTitle ?? Messages.HeaderMenu)" Side="MenuSide" data-bx-layout-menu>
                     <ChildContent>
-                        <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" LeadingIcon="@(BxIcons.Named("menu", "size-5"))"
+                        <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"
                                   aria-label="@Messages.OpenHeaderMenu" />
                     </ChildContent>
                     <Body>
