@@ -52,6 +52,21 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         return await context.NewPageAsync();
     }
 
+    /// <summary>
+    /// Waits until the browser context holds a cookie with that value. A <c>document.cookie</c> write reaches the
+    /// context's cookie store asynchronously (Chromium's network process), so reading it once can see the old value.
+    /// </summary>
+    protected async Task ExpectCookie(string name, string expected)
+    {
+        string? actual = null;
+        for (var deadline = DateTime.UtcNow.AddSeconds(5); DateTime.UtcNow < deadline; await Task.Delay(50))
+        {
+            actual = (await Page.Context.CookiesAsync()).FirstOrDefault(c => c.Name == name)?.Value;
+            if (actual == expected) return;
+        }
+        Assert.Equal(expected, actual);
+    }
+
     /// <summary>Opens a page and waits until it can be used in its mode.</summary>
     protected async Task Open(string mode, string component)
     {
