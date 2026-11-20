@@ -24,6 +24,19 @@ public class AiTests(PlaygroundServer server)
     }
 
     [Fact]
+    public async Task Links_follow_the_forwarded_scheme_and_host_of_a_trusted_proxy()
+    {
+        // The test client reaches the server over loopback, a proxy the server trusts by default.
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"{server.BaseUrl}/llms.txt");
+        request.Headers.Add("X-Forwarded-Proto", "https");
+        request.Headers.Add("X-Forwarded-Host", "docs.example.test");
+
+        var text = await (await Http.SendAsync(request, TestContext.Current.CancellationToken)).Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+
+        Assert.Contains("](https://docs.example.test/components/button)", text);
+    }
+
+    [Fact]
     public async Task Every_link_of_llms_txt_leads_to_a_page_that_exists()
     {
         var text = await Http.GetStringAsync($"{server.BaseUrl}/llms.txt", TestContext.Current.CancellationToken);

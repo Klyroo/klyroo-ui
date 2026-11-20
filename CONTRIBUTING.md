@@ -78,6 +78,11 @@ guide pages. Nothing generated is committed, except the skill's component refere
 - After changing components or the catalog, refresh `skills/blux-ui/references/components.md` with
   `dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference`; a test fails while it is stale.
 - Every Razor sample in `skills/blux-ui` is checked against the library by `tests/Blux.UI.Mcp.Tests`, so a renamed parameter shows up there.
+- The docs site serves `/mcp`, `/llms.txt` and `/llms-full.txt` (`playground/.../AiEndpoints.cs`). In production set `Blux:SiteUrl` (env `Blux__SiteUrl`)
+  to the public address: the links then never come from the request's `Host` header and the text is generated once. Behind a TLS proxy the
+  forwarded headers (`X-Forwarded-Proto/Host/For`) are honoured from loopback and from the IPs in `Blux:KnownProxies`. `/mcp` is limited per client IP
+  (`Blux:Ai:RequestsPerMinute`, default 120) and times out after `Blux:Ai:RequestTimeoutSeconds` (default 30). Input to the search is capped
+  (`DocsService.MaxQueryLength`, `MaxQueryTokens`) so a long query cannot cost more CPU than a short one.
 - Document parameters with XML comments: they are the descriptions the tools return.
 
 ## Commands
@@ -105,12 +110,12 @@ dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-b
 
 Versions follow [Semantic Versioning](https://semver.org). While below 1.0 a minor version (0.2.0) may contain breaking
 changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.1`). The version lives in one place,
-`VersionPrefix` and `VersionSuffix` in `src/Blux.UI/Blux.UI.csproj` (an empty suffix is a stable release).
+`VersionPrefix` and `VersionSuffix` in `build/Version.props`, imported by the library and the dotnet tool (an empty suffix is a stable release).
 
 1. Make sure `main` is green: build, unit tests, and `npm run build` leaves the generated assets unchanged.
 2. In `CHANGELOG.md`, move the `[Unreleased]` content into a `## [X.Y.Z] - YYYY-MM-DD` section (Added, Changed, Fixed,
    Removed) and leave a fresh empty `## [Unreleased]` above it.
-3. Set `VersionPrefix` / `VersionSuffix` in `Blux.UI.csproj` to the release version.
+3. Set `VersionPrefix` / `VersionSuffix` in `build/Version.props` to the release version.
 4. Run the packaging check locally: `node build/verify-package.mjs`. It packs in Release, checks the `.nupkg` and `.snupkg`
    contents, and builds a throwaway Blazor Web App against the package in both CSS modes. It restores from the local NuGet
    cache; add `--online` if framework packages are missing from it.

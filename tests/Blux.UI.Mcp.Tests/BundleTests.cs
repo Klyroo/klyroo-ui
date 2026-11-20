@@ -142,7 +142,7 @@ public class BundleTests
     public void The_tool_has_the_version_of_the_library()
     {
         string Read(string tag) =>
-            Regex.Match(File.ReadAllText(Path.Combine(TestSupport.RepoRoot, "src", "Blux.UI", "Blux.UI.csproj")), $"<{tag}>([^<]*)</{tag}>").Groups[1].Value;
+            Regex.Match(File.ReadAllText(Path.Combine(TestSupport.RepoRoot, "build", "Version.props")), $"<{tag}>([^<]*)</{tag}>").Groups[1].Value;
 
         var library = Read("VersionPrefix") + (Read("VersionSuffix") is { Length: > 0 } suffix ? "-" + suffix : "");
         Assert.Equal(library, TestSupport.Bundle.Version);

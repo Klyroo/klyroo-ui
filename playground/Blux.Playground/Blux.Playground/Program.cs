@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddPlaygroundBlux();
-builder.Services.AddBluxAi();
+builder.Services.AddBluxAi(builder.Configuration);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -14,6 +14,7 @@ builder.Services.AddRazorComponents()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseBluxAi();
 if (app.Environment.IsDevelopment())
 {
     app.UseWebAssemblyDebugging();

@@ -1,0 +1,8 @@
+<Project>
+  <!-- The version of Blux UI, in one place: imported by the library (src/Blux.UI) and by the dotnet tool (src/Blux.UI.Mcp),
+       so they cannot drift. A release changes it here (an empty suffix is a stable release). -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+    <VersionSuffix>alpha</VersionSuffix>
+  </PropertyGroup>
+</Project>

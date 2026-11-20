@@ -42,14 +42,15 @@
                       Exclude="$(RepoRoot)src/Blux.UI/bin/**;$(RepoRoot)src/Blux.UI/obj/**" />
   </ItemGroup>
 
-  <Target Name="GenerateDocsBundle" Inputs="@(DocsBundleGenerator);@(_DocsBundleInput)" Outputs="$(DocsBundleFile)">
+  <!-- An IDE design-time build only needs the item list, and on a fresh clone the generator is not built yet: do not run it there. -->
+  <Target Name="GenerateDocsBundle" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="@(DocsBundleGenerator);@(_DocsBundleInput)" Outputs="$(DocsBundleFile)">
     <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(DocsBundleFile)'))" />
     <Exec Command="&quot;$(DotNetHost)&quot; &quot;@(DocsBundleGenerator)&quot; --repo &quot;$(RepoRoot)&quot; --out &quot;$(DocsBundleFile)&quot;" />
   </Target>
 
   <Target Name="EmbedDocsBundle" AfterTargets="ResolveProjectReferences" BeforeTargets="PrepareResourceNames" DependsOnTargets="GenerateDocsBundle">
     <ItemGroup>
-      <EmbeddedResource Include="$(DocsBundleFile)" LogicalName="docs-bundle.json" />
+      <EmbeddedResource Include="$(DocsBundleFile)" Condition="Exists('$(DocsBundleFile)')" LogicalName="docs-bundle.json" />
     </ItemGroup>
   </Target>
 

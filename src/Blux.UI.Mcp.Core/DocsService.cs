@@ -67,6 +67,14 @@ public sealed partial class DocsService
         "a", "an", "the", "to", "for", "of", "in", "on", "with", "and", "or", "i", "need", "want", "how", "do", "can", "use", "using", "component", "components", "blazor", "bx", "blux", "ui",
     };
 
+    /// <summary>Longest query or name looked at, in characters; the rest is ignored so the cost of a lookup does not grow with the input.</summary>
+    public const int MaxQueryLength = 200;
+
+    /// <summary>Most words of a query that are scored.</summary>
+    public const int MaxQueryTokens = 8;
+
+    private static string Clip(string text) => text.Length <= MaxQueryLength ? text : text[..MaxQueryLength];
+
     private readonly Dictionary<string, BundleComponent> _byKey = new(StringComparer.Ordinal);
     private readonly Lazy<IReadOnlyList<DocPassage>> _passages;
 
@@ -110,11 +118,12 @@ public sealed partial class DocsService
 
     /// <summary>The component a name designates (slug, name or the name of one of its types), or null.</summary>
     public BundleComponent? FindComponent(string? name) =>
-        string.IsNullOrWhiteSpace(name) ? null : _byKey.GetValueOrDefault(Normalize(name));
+        string.IsNullOrWhiteSpace(name) ? null : _byKey.GetValueOrDefault(Normalize(Clip(name)));
 
     /// <summary>Components with a name close to <paramref name="name"/>, best first: for the "did you mean" of an unknown name.</summary>
     public IReadOnlyList<BundleComponent> CloseComponents(string name, int count = 5)
     {
+        name = Clip(name);
         var key = Normalize(name);
         var scored = Bundle.Components
             .Select(c => (Component: c, Score: Closeness(key, Normalize(c.Slug))))
@@ -139,8 +148,9 @@ public sealed partial class DocsService
         if (candidate.StartsWith(key, StringComparison.Ordinal)) return 900 - (candidate.Length - key.Length);
         if (candidate.Contains(key, StringComparison.Ordinal)) return 700 - (candidate.Length - key.Length);
         if (key.Contains(candidate, StringComparison.Ordinal) && candidate.Length >= 4) return 500;
-        var distance = Levenshtein(key, candidate);
         var allowed = Math.Max(2, key.Length / 3);
+        if (Math.Abs(key.Length - candidate.Length) > allowed) return 0;
+        var distance = Levenshtein(key, candidate);
         return distance <= allowed ? 400 - distance * 50 : 0;
     }
 
@@ -157,18 +167,20 @@ public sealed partial class DocsService
             return [.. candidates.Select(c => new SearchHit<BundleComponent>(c, 0))];
         }
 
+        query = Clip(query);
         var whole = Normalize(query);
         var tokens = Tokens(query);
+        var aliasKeys = AliasKeys(whole, tokens).ToList();
         var hits = new List<SearchHit<BundleComponent>>();
         foreach (var component in candidates)
         {
-            var score = Score(component, whole, tokens);
+            var score = Score(component, whole, tokens, aliasKeys);
             if (score > 0) hits.Add(new(component, score));
         }
         return [.. hits.OrderByDescending(h => h.Score).ThenBy(h => h.Item.Name, StringComparer.Ordinal).Take(Math.Max(1, limit))];
     }
 
-    private int Score(BundleComponent component, string whole, IReadOnlyList<string> tokens)
+    private int Score(BundleComponent component, string whole, IReadOnlyList<string> tokens, IReadOnlyList<(string Key, int Weight)> aliasKeys)
     {
         var slugKey = Normalize(component.Slug);
         var nameKey = Normalize(component.Name);
@@ -180,7 +192,7 @@ public sealed partial class DocsService
 
         // Alternate names and intents: the whole query ranks highest, then runs of words ("rich text"), then a single word,
         // which is the weakest because words like "text" or "list" appear in many intents.
-        foreach (var (key, weight) in AliasKeys(whole, tokens))
+        foreach (var (key, weight) in aliasKeys)
         {
             if (Aliases.TryGetValue(key, out var targets))
             {
@@ -209,7 +221,7 @@ public sealed partial class DocsService
             else if (examples.Contains(token)) best = 60;
             else if (parameters.Contains(token)) best = 40;
             else if (string.Equals(component.Group, token, StringComparison.OrdinalIgnoreCase)) best = 30;
-            else if (token.Length >= 5 && words.Any(w => w.Length >= 5 && Levenshtein(token, w) <= 1)) best = 150;
+            else if (token.Length >= 5 && words.Any(w => Math.Abs(w.Length - token.Length) <= 1 && w.Length >= 5 && Levenshtein(token, w) <= 1)) best = 150;
             if (best > 0) matched++;
             tokenScore += best;
         }
@@ -222,7 +234,7 @@ public sealed partial class DocsService
     private static IEnumerable<(string Key, int Weight)> AliasKeys(string whole, IReadOnlyList<string> tokens)
     {
         yield return (whole, 7_000);
-        for (var length = tokens.Count - 1; length >= 2; length--)
+        for (var length = Math.Min(tokens.Count - 1, 3); length >= 2; length--)
         {
             for (var start = 0; start + length <= tokens.Count; start++)
             {
@@ -233,7 +245,7 @@ public sealed partial class DocsService
     }
 
     private static IReadOnlyList<string> Tokens(string query) =>
-        [.. WordSplit().Split(query.ToLowerInvariant()).Where(t => t.Length > 0 && !StopWords.Contains(t)).Select(Stem).Distinct()];
+        [.. WordSplit().Split(query.ToLowerInvariant()).Where(t => t.Length > 0 && !StopWords.Contains(t)).Select(Stem).Distinct().Take(MaxQueryTokens)];
 
     private static HashSet<string> Words(string text) =>
         [.. WordSplit().Split(CamelBoundary().Replace(text, "$1 $2").ToLowerInvariant()).Where(t => t.Length > 0).Select(Stem)];
@@ -277,7 +289,7 @@ public sealed partial class DocsService
     public (BundleComponent Component, BundleExample Example)? FindExample(string? name)
     {
         if (string.IsNullOrWhiteSpace(name)) return null;
-        var key = Normalize(name);
+        var key = Normalize(Clip(name));
         foreach (var item in AllExamples)
         {
             var id = Normalize(item.Example.Id);
@@ -288,7 +300,7 @@ public sealed partial class DocsService
 
     public IReadOnlyList<(BundleComponent Component, BundleExample Example)> CloseExamples(string name, int count = 5)
     {
-        var key = Normalize(name);
+        var key = Normalize(Clip(name));
         return [.. AllExamples
             .Select(x => (x.Component, x.Example, Score: Closeness(key, Normalize(x.Example.Id))))
             .Where(x => x.Score > 0)
