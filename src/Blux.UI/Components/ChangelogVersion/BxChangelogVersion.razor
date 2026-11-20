@@ -43,7 +43,7 @@
         @if (Image is not null)
         {
             <div class="@_slots["image"]" data-slot="image">
-                <img src="@Image" alt="@(ImageAlt ?? "")" loading="lazy" class="@_slots["imageElement"]" />
+                <BxImage Src="@Image" Alt="@(ImageAlt ?? "")" ImageOptions="ImageOptions" Class="@_slots["imageElement"]" />
             </div>
         }
         @if (ChildContent is not null)
@@ -96,6 +96,9 @@
     private BxColor? _badgeColor;
     [Parameter] public string? Image { get; set; }
     [Parameter] public string? ImageAlt { get; set; }
+
+    /// <inheritdoc cref="BxBlogPost.ImageOptions"/>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
     [Parameter] public IReadOnlyList<BxPostAuthor> Authors { get; set; } = [];
 
     /// <summary>Links the title. Unlike a blog post the card is not stretched, so the rich content keeps its own links.</summary>

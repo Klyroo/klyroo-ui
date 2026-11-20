@@ -13,7 +13,7 @@
     <span class="@_slots["leading"]" data-slot="leading">
         @if (_preview)
         {
-            <img src="@Url" alt="@(Variant == ChatAttachmentVariant.Thumbnail ? Name : "")" class="@_slots["image"]" loading="lazy" data-bx-avatar-image />
+            <BxImage Src="@Url" Alt="@(Variant == ChatAttachmentVariant.Thumbnail ? Name : "")" Width="_pixels" Height="_pixels" ImageOptions="ImageOptions" Class="@_slots["image"]" data-bx-avatar-image />
         }
         else if (Status == ChatAttachmentStatus.Uploading)
         {
@@ -96,10 +96,21 @@
     [Parameter] public EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> OnRemove { get; set; }
     [Parameter] public ChatAttachmentUi? Ui { get; set; }
 
+    /// <summary>
+    /// Image settings forwarded to the preview of an image, see <see cref="BxImage"/>. A horizontal card passes the size of its square preview
+    /// as the width and the height; a thumbnail or a vertical card takes the size of its container, so give <c>Sizes</c> to get a <c>srcset</c>.
+    /// </summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
+
+    private int? _pixels;
+
     protected override void OnParametersSet()
     {
         _preview = Url is not null && Type?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;
         _status = ChatValue.Of(Status);
+        _pixels = Variant == ChatAttachmentVariant.Card && Orientation == BxOrientation.Horizontal
+            ? Size switch { BxSize.Xs => 24, BxSize.Sm => 28, BxSize.Lg => 40, BxSize.Xl => 48, _ => 36 }
+            : null;
         _slots = ResolveSlots(Options.ChatAttachment, new Dictionary<string, string?>
         {
             ["variant"] = Variant == ChatAttachmentVariant.Thumbnail ? "thumbnail" : "card",
