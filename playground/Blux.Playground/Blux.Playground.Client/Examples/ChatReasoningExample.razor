@@ -28,7 +28,7 @@
         _thinking = true;
         _thought = "";
         StateHasChanged();
-        await foreach (var token in ChatDemo.Tokens("First I look at what was asked. Then I pick the simplest approach and check it against the constraints.", 80))
+        await foreach (var token in ChatDemo.Tokens("First I look at what was asked and what is already on the page. Then I list two or three ways to answer, pick the simplest one and check it against the constraints: it has to work in every render mode, stay readable for screen readers and keep the text the user typed. That one holds, so I write it down.", 80))
         {
             _thought += token;
             StateHasChanged();
