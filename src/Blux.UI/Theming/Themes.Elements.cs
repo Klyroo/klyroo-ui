@@ -119,7 +119,7 @@ internal static partial class Themes
             .Slot("root", "flex w-full flex-col gap-2")
             .Slot("status", "text-end font-medium text-(--blux-text-muted)")
             .Slot("base", "relative w-full overflow-hidden rounded-full bg-(--blux-bg-elevated) ring-1 ring-inset ring-(--blux-border-accented)")
-            .Slot("indicator", "h-full rounded-full bg-(--bx-color)")
+            .Slot("indicator", "h-full rounded-full bg-(--bx-color) ring-1 ring-inset ring-(--bx-color-text)")
             .Slot("steps", "flex justify-between text-sm")
             .Slot("step", "text-(--blux-text-muted) data-[state=active]:font-medium data-[state=active]:text-(--bx-color-text) data-[state=completed]:text-(--blux-text)")
             .Variant("size", "xs", "base", "h-1")

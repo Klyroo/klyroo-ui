@@ -16,7 +16,7 @@ internal static partial class Themes
             .Slot("cell", "p-0 text-center")
             .Slot("day", "inline-flex cursor-pointer items-center justify-center rounded-(--blux-radius) transition-colors hover:bg-(--blux-bg-elevated) " + FocusRing + " " +
                          "data-today:ring-1 data-today:ring-inset data-today:ring-(--bx-color-text) data-in-range:rounded-none data-in-range:bg-(--bx-color)/15 " +
-                         "data-selected:bg-(--bx-color) data-selected:text-(--bx-color-contrast) data-selected:hover:bg-(--bx-color)/90 " +
+                         "data-selected:bg-(--bx-color) data-selected:ring-1 data-selected:ring-inset data-selected:ring-(--bx-color-text) data-selected:text-(--bx-color-contrast) data-selected:hover:bg-(--bx-color)/90 " +
                          "aria-disabled:cursor-not-allowed aria-disabled:text-(--blux-text-dimmed) aria-disabled:line-through aria-disabled:hover:bg-transparent")
             .Variant("size", "xs", "day", "size-7 text-xs").Variant("size", "xs", "weekday", "text-xs").Variant("size", "xs", "heading", "text-xs")
             .Variant("size", "sm", "day", "size-8 text-xs").Variant("size", "sm", "weekday", "text-xs").Variant("size", "sm", "heading", "text-xs")
@@ -115,5 +115,5 @@ internal static partial class Themes
             .Slot("playIcon", "hidden size-4 group-data-paused/carousel:block")
             .Slot("dots", "flex items-center gap-1")
             .Slot("dot", "relative size-3 rounded-full bg-(--blux-bg-accented) ring ring-inset ring-(--blux-border-accented) transition-colors hover:bg-(--blux-border-accented) " +
-                         "after:absolute after:-inset-2 after:content-[''] aria-current:bg-(--bx-color) aria-current:ring-(--bx-color) " + FocusRing);
+                         "after:absolute after:-inset-2 after:content-[''] aria-current:bg-(--bx-color) aria-current:ring-(--bx-color-text) " + FocusRing);
 }

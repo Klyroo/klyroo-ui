@@ -67,7 +67,7 @@ internal static partial class Themes
             .Slot("root", "group relative flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
             .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-[calc(var(--blux-radius)_-_2px)] bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color) disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " + ControlInvalid)
             .Slot("icon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-checked:opacity-100")
             .Slot("wrapper", "flex flex-col")
@@ -88,7 +88,7 @@ internal static partial class Themes
             .Slot("item", "group flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
             .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-full bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color) disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " +
                           // aria-invalid belongs to the radio group, not to each radio.
                           "group-aria-invalid/radio:ring-2 group-aria-invalid/radio:ring-(--blux-error)")
