@@ -18,6 +18,7 @@
 
     <h2>Global theme</h2>
     <p>Every component has slots, variants and defaults declared in C#. Classes you add win over the defaults.</p>
+    <p>Configure themes in <code>AddBluxUi</code>, which may be called more than once (a library, then the app). A theme becomes read-only the first time a component renders with it, because resolved classes are cached: changing it afterwards throws an <code>InvalidOperationException</code>. The <code>Slots</code>, <code>Variants</code>, <code>CompoundVariants</code> and <code>DefaultVariants</code> properties are read-only views; use <code>Slot</code>, <code>Variant</code>, <code>Compound</code> and <code>Default</code> to configure. <code>BxTheme</code> scopes are unaffected, they only add classes per subtree.</p>
     <CodeBlock Title="Program.cs" Code="@Global" />
 
     <h2>Per instance</h2>

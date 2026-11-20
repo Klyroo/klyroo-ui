@@ -117,7 +117,6 @@ Décisions prises pendant le spike :
 Reste à faire avant la phase 2 :
 
 - Pousser le repo sur GitHub pour faire tourner la CI (WebKit et la passe trimmée n'ont tourné qu'en local pour la seconde).
-- Figer les thèmes après `AddBluxUi` (aujourd'hui modifiables après enregistrement, alors qu'un cache singleton les lit).
 - La couleur `warning` pleine (amber-500) reste sous 3:1 en contraste non textuel contre un fond blanc pour un Switch coché.
 
 **Phases 2 à 5 livrées (2026-11-19)** : les 20 composants du MVP, et le playground devenu site de documentation
