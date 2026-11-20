@@ -5,7 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Accessible, themable Blazor components for every render mode." />
-    <base href="/" />
+    @* The site can be served below a path base (see Program.cs): every relative URL, the stylesheets, the framework and the image endpoint included, follows this. *@
+    <base href="@(HttpContext.Request.PathBase.Value?.TrimEnd('/') + "/")" />
     <BxColorModeScript />
     <BxCultureMeta />
     <BxThemeStyle />
