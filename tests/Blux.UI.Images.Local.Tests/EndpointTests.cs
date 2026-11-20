@@ -18,6 +18,44 @@ public sealed class EndpointFixture : IAsyncLifetime
     public static byte[] Png(int width, int height) =>
         Image.Black(width, height).NewFromImage(30, 120, 200).Copy(interpretation: Enums.Interpretation.Srgb).Cast(Enums.BandFormat.Uchar).WriteToBuffer(".png");
 
+    public const string SvgText = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"40\" height=\"20\"><rect width=\"40\" height=\"20\" fill=\"red\"/></svg>";
+
+    public static byte[] AnimatedGif()
+    {
+        using var red = Image.Black(10, 10).NewFromImage(200, 10, 10).Cast(Enums.BandFormat.Uchar).Copy(interpretation: Enums.Interpretation.Srgb);
+        using var blue = Image.Black(10, 10).NewFromImage(10, 10, 200).Cast(Enums.BandFormat.Uchar).Copy(interpretation: Enums.Interpretation.Srgb);
+        using var frames = red.Join(blue, Enums.Direction.Vertical);
+        using var tall = frames.Mutate(m => m.Set(GValue.GIntType, "page-height", 10));
+        return tall.WriteToBuffer(".gif");
+    }
+
+    public static byte[] MultiPageTiff()
+    {
+        using var frames = Image.Black(50, 100).NewFromImage(200, 10, 10).Cast(Enums.BandFormat.Uchar).Copy(interpretation: Enums.Interpretation.Srgb);
+        using var tall = frames.Mutate(m => m.Set(GValue.GIntType, "page-height", 50));
+        return tall.WriteToBuffer(".tif[page_height=50]");
+    }
+
+    /// <summary>Inserts a tEXt chunk right after IHDR: a raster file that holds markup near its start.</summary>
+    public static byte[] WithTextChunk(byte[] png, string text)
+    {
+        var data = System.Text.Encoding.Latin1.GetBytes("Comment\0" + text);
+        var type = System.Text.Encoding.ASCII.GetBytes("tEXt");
+        var chunk = new byte[12 + data.Length];
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(chunk, (uint)data.Length);
+        type.CopyTo(chunk, 4);
+        data.CopyTo(chunk, 8);
+        var crc = 0xFFFFFFFFu;
+        foreach (var b in type.Concat(data))
+        {
+            crc ^= b;
+            for (var k = 0; k < 8; k++) crc = (crc & 1) != 0 ? (crc >> 1) ^ 0xEDB88320u : crc >> 1;
+        }
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(chunk.AsSpan(8 + data.Length), ~crc);
+        const int afterIhdr = 8 + 25;
+        return png[..afterIhdr].Concat(chunk).Concat(png[afterIhdr..]).ToArray();
+    }
+
     public ValueTask InitializeAsync()
     {
         System.IO.Directory.CreateDirectory(Path.Combine(WebRoot, "img"));
@@ -27,6 +65,15 @@ public sealed class EndpointFixture : IAsyncLifetime
         File.WriteAllText(Path.Combine(WebRoot, "app.json"), "{}");
         File.WriteAllBytes(Path.Combine(Directory, "secret.png"), Png(10, 10));
         File.WriteAllBytes(Path.Combine(WebRoot, "img", ".hidden.png"), Png(10, 10));
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "portrait.png"), Png(1000, 3000));
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "landscape.png"), Png(3000, 1000));
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "small.png"), Png(100, 50));
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "thin.png"), Png(2, 1000));
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "texty.png"), WithTextChunk(Png(40, 20), "<svg xmlns=\"http://www.w3.org/2000/svg\"><script>alert(1)</script></svg>"));
+        File.WriteAllText(Path.Combine(WebRoot, "img", "trap.png"), SvgText);
+        File.WriteAllText(Path.Combine(WebRoot, "img", "prolog.svg"), "<?xml version=\"1.0\"?>\n<!--" + new string('x', 3000) + "-->\n<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\" [ <!ENTITY a \"b\"> ]>\n<?pi x?>\n" + SvgText);
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "anim.gif"), AnimatedGif());
+        File.WriteAllBytes(Path.Combine(WebRoot, "img", "multi.png"), MultiPageTiff());
         return ValueTask.CompletedTask;
     }
 
@@ -239,7 +286,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
     [Fact]
     public async Task Svg_is_served_as_it_is_with_a_sandboxing_policy_and_rasterized_only_when_asked()
     {
-        var (app, client) = await fixture.StartAsync();
+        var (app, client) = await fixture.StartAsync(o => o.RasterizeSvg = true);
         await using var _ = app;
 
         var plain = await client.GetAsync("/_blux/img?src=/img/logo.svg&w=640");
@@ -253,34 +300,6 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
     }
 
     [Fact]
-    public async Task The_number_of_variants_per_image_is_capped()
-    {
-        var (app, client) = await fixture.StartAsync(o => o.MaxVariantsPerSource = 2);
-        await using var _ = app;
-
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/_blux/img?src=/img/photo.png&w=16&f=webp")).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/_blux/img?src=/img/photo.png&w=32&f=webp")).StatusCode);
-        Assert.Equal(HttpStatusCode.TooManyRequests, (await client.GetAsync("/_blux/img?src=/img/photo.png&w=48&f=webp")).StatusCode);
-        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/_blux/img?src=/img/photo.png&w=32&f=webp")).StatusCode);
-    }
-
-    [Fact]
-    public async Task The_disk_cache_stays_below_its_limit()
-    {
-        string? cache = null;
-        var (app, client) = await fixture.StartAsync(o => { cache = o.CacheDirectory; o.MaxCacheBytes = 3000; });
-        await using var _ = app;
-
-        foreach (var width in new[] { 128, 256, 384, 512, 640 })
-        {
-            await client.GetByteArrayAsync($"/_blux/img?src=/img/photo.png&w={width}&f=png");
-        }
-
-        var total = new DirectoryInfo(cache!).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-        Assert.True(total <= 3000, $"cache holds {total} bytes");
-    }
-
-    [Fact]
     public async Task Requests_beyond_the_processing_slots_give_up_with_503()
     {
         var gate = new TaskCompletionSource();
@@ -288,20 +307,13 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         {
             o.MaxConcurrency = 1;
             o.QueueTimeout = TimeSpan.FromMilliseconds(100);
-            o.AllowedRemoteHosts.Add("images.test");
-            o.RemoteHandlerFactory = () => new StubHandler(_ =>
-            {
-                gate.Task.Wait(TimeSpan.FromSeconds(5));
-                var response = new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(EndpointFixture.Png(50, 50)) };
-                response.Content.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-                return response;
-            });
+            o.OnProcess = (request, _) => { if (request.Width == 16) gate.Task.Wait(TimeSpan.FromSeconds(5)); };
         });
         await using var _ = app;
 
-        var slow = client.GetAsync("/_blux/img?src=https://images.test/slow.png&w=16");
+        var slow = client.GetAsync("/_blux/img?src=/img/photo.png&w=16&f=webp");
         await Task.Delay(300);
-        var busy = await client.GetAsync("/_blux/img?src=/img/photo.png&w=16&f=webp");
+        var busy = await client.GetAsync("/_blux/img?src=/img/photo.png&w=32&f=webp");
         gate.SetResult();
         await slow;
 

@@ -20,7 +20,7 @@ public class ParserTests
         var request = result.Request!;
         Assert.Equal("/img/a.png", request.Source);
         Assert.Equal(384, request.Width);
-        Assert.Equal(200, request.Height);
+        Assert.Equal(256, request.Height);
         Assert.Equal(80, request.Quality);
         Assert.Equal("jpeg", request.Format);
         Assert.Equal(BxImageFit.Contain, request.Fit);
@@ -81,7 +81,6 @@ public class ParserTests
     [InlineData("w", "abc")]
     [InlineData("h", "1.5")]
     [InlineData("q", "high")]
-    [InlineData("f", "gif")]
     [InlineData("f", "bmp")]
     [InlineData("fit", "sideways")]
     [InlineData("fit", "99")]
@@ -136,6 +135,36 @@ public class ParserTests
     [InlineData("fe80::1", false)]
     [InlineData("fd00::1", false)]
     [InlineData("::ffff:10.0.0.1", false)]
+    [InlineData("64:ff9b::7f00:1", false)]
+    [InlineData("64:ff9b::a00:1", false)]
+    [InlineData("64:ff9b::808:808", true)]
+    [InlineData("64:ff9b:1::1", false)]
+    [InlineData("2002:7f00:1::", false)]
+    [InlineData("2002:a9fe:a9fe::1", false)]
+    [InlineData("2002:808:808::1", true)]
+    [InlineData("::127.0.0.1", false)]
+    [InlineData("::10.0.0.1", false)]
+    [InlineData("::192.168.0.1", false)]
+    [InlineData("::8.8.8.8", true)]
+    [InlineData("::", false)]
+    [InlineData("::ffff:169.254.169.254", false)]
+    [InlineData("::ffff:8.8.8.8", true)]
+    [InlineData("100.127.255.255", false)]
+    [InlineData("100.128.0.1", true)]
+    [InlineData("198.18.0.1", false)]
+    [InlineData("198.19.255.255", false)]
+    [InlineData("192.0.2.1", false)]
+    [InlineData("198.51.100.1", false)]
+    [InlineData("203.0.113.1", false)]
+    [InlineData("192.0.0.8", false)]
+    [InlineData("240.0.0.1", false)]
+    [InlineData("255.255.255.255", false)]
+    [InlineData("224.0.0.1", false)]
+    [InlineData("2001:db8::1", false)]
+    [InlineData("2001::1", false)]
+    [InlineData("ff02::1", false)]
+    [InlineData("fec0::1", false)]
+    [InlineData("5efe::1", false)]
     [InlineData("93.184.216.34", true)]
     [InlineData("2606:2800:220:1:248:1893:25c8:1946", true)]
     public void Only_public_addresses_are_fetched(string address, bool expected)

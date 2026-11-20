@@ -1,41 +1,68 @@
 using System.Net;
 using System.Net.Sockets;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Logging;
 using NetVips;
 
 namespace Blux.UI.Images.Local;
 
-internal sealed class BxImageException(int status, string message) : Exception(message)
+internal sealed class BxImageException(int status, string message, int? retryAfterSeconds = null) : Exception(message)
 {
     public int Status { get; } = status;
+
+    public int? RetryAfterSeconds { get; } = retryAfterSeconds;
 }
 
-/// <summary>A finished variant on disk, ready to be sent.</summary>
-internal sealed record BxImageFile(string Path, string ContentType, string ETag, bool Svg);
+/// <summary>
+/// A finished variant: on disk (<see cref="Path"/>), and for one that was just computed also in memory (<see cref="Bytes"/>), so sending it
+/// does not depend on a cache file that an eviction may have removed in the meantime.
+/// </summary>
+internal sealed record BxImageFile(string? Path, byte[]? Bytes, string ContentType, string ETag, bool Svg);
+
+internal readonly record struct BxRemoteSource(byte[] Bytes, string Stamp);
 
 /// <summary>
 /// Loads the source (local or remote), resizes and converts it with libvips, and keeps the result in a size-limited disk cache.
-/// Every step is bounded: input size, pixels, remote time, variants per image, concurrent work and cache bytes.
+/// Every step is bounded: input size, pixels, output size, remote time, variants per image, concurrent work and cache bytes. Identical requests
+/// share one computation, a remote fetch has its own limit and never holds a processing slot, and work stops when nobody waits for it.
 /// </summary>
 internal sealed class BxImageProcessor : IDisposable
 {
     private static readonly string[] ImageMediaTypes = ["image/png", "image/jpeg", "image/webp", "image/avif", "image/gif", "image/svg+xml"];
 
+    // The libvips loaders the endpoint may use; everything else is blocked in libvips itself, on top of the check of the loader name.
+    private static readonly string[] AllowedLoaderClasses = ["VipsForeignLoadJpeg", "VipsForeignLoadPng", "VipsForeignLoadWebp", "VipsForeignLoadHeif", "VipsForeignLoadNsgif"];
+    private static int s_svgUnblocked;
+
     private readonly BxLocalImagesOptions _options;
     private readonly IWebHostEnvironment _environment;
     private readonly ILogger<BxImageProcessor> _logger;
     private readonly SemaphoreSlim _slots;
+    private readonly SemaphoreSlim _fetchSlots;
     private readonly HttpClient _http;
-    private readonly object _pruneGate = new();
-    private long _cacheBytes = -1;
+    private readonly BxImageCache _cache;
+    private readonly BxFlights<BxImageFile> _variants = new();
+    private readonly BxFlights<BxRemoteSource> _fetches = new();
 
     static BxImageProcessor()
     {
-        // The operation cache would keep decoded pixels alive between requests: the disk cache is the cache.
-        try { Cache.Max = 0; Cache.MaxMem = 0; } catch (Exception) { /* a missing native library surfaces on the first image */ }
+        try
+        {
+            // The operation cache would keep decoded pixels alive between requests: the disk cache is the cache.
+            Cache.Max = 0;
+            Cache.MaxMem = 0;
+            Cache.MaxFiles = 0;
+            // Defense in depth: libvips refuses the loaders it flags untrusted, and every loader outside the list above.
+            NetVips.NetVips.BlockUntrusted = true;
+            Operation.Block("VipsForeignLoad", true);
+            foreach (var loader in AllowedLoaderClasses) Operation.Block(loader, false);
+            Operation.Block("VipsForeignLoadSvg", true);
+        }
+        catch (Exception)
+        {
+            // A missing native library surfaces on the first image.
+        }
     }
 
     public BxImageProcessor(BxLocalImagesOptions options, IWebHostEnvironment environment, ILogger<BxImageProcessor> logger)
@@ -43,90 +70,168 @@ internal sealed class BxImageProcessor : IDisposable
         _options = options;
         _environment = environment;
         _logger = logger;
-        _slots = new SemaphoreSlim(Math.Max(1, options.MaxConcurrency));
+        _cache = new BxImageCache(options, logger);
+        var concurrency = Math.Max(1, options.MaxConcurrency);
+        _slots = new SemaphoreSlim(concurrency);
+        _fetchSlots = new SemaphoreSlim(Math.Max(1, options.MaxRemoteFetches));
         _http = new HttpClient(options.RemoteHandlerFactory?.Invoke() ?? CreateHandler(options), disposeHandler: true) { Timeout = Timeout.InfiniteTimeSpan };
+        try
+        {
+            // Each job gets its share of the cores instead of every job spawning a thread per core.
+            NetVips.NetVips.Concurrency = Math.Max(1, Environment.ProcessorCount / concurrency);
+            // An SVG is only handed to the renderer when rasterizing is on; once any instance asks for it, it stays available.
+            if (options.RasterizeSvg && Interlocked.Exchange(ref s_svgUnblocked, 1) == 0) Operation.Block("VipsForeignLoadSvg", false);
+        }
+        catch (Exception)
+        {
+            // See the static constructor.
+        }
     }
 
     public void Dispose()
     {
         _http.Dispose();
         _slots.Dispose();
+        _fetchSlots.Dispose();
     }
 
-    public string ETagOf(BxImageRequest request, string stamp) => "\"" + BxImageRequestParser.Hash(request.CanonicalKey(stamp))[..32] + "\"";
+    internal BxImageCache DiskCache => _cache;
 
-    /// <summary>The stamp of a local source (its modification time and length), or null when it does not exist. Remote sources have no stamp.</summary>
-    public (IFileInfo? File, string Stamp) Stat(BxImageRequest request)
+    // Under a case-insensitive file system, spellings that differ by case are one file and must share one key.
+    private BxImageRequest Canonical(BxImageRequest request) =>
+        !request.IsRemote && _cache.CaseInsensitive ? request with { Source = request.Source.ToLowerInvariant() } : request;
+
+    private string SourceDirectory(BxImageRequest request) => _cache.DirectoryOf(Canonical(request).Source);
+
+    public string ETagOf(BxImageRequest request, string stamp) => "\"" + BxImageRequestParser.Hash(Canonical(request).CanonicalKey(stamp))[..32] + "\"";
+
+    /// <summary>
+    /// The stamp of a source: a local one is stamped by its modification time and length (and does not exist when it is missing); a remote one by what
+    /// was fetched last, which is only known while it is within <see cref="BxLocalImagesOptions.RemoteCacheTtl"/> (otherwise null: the origin
+    /// has to be asked again before anything can be said about it).
+    /// </summary>
+    public (IFileInfo? File, string? Stamp) Stat(BxImageRequest request)
     {
-        if (request.IsRemote) return (null, "remote");
+        if (request.IsRemote)
+        {
+            return _cache.ReadMeta(SourceDirectory(request)) is { } meta && DateTime.UtcNow - meta.FetchedUtc <= _options.RemoteCacheTtl ? (null, meta.Stamp) : (null, null);
+        }
         var provider = _options.FileProvider ?? _environment.WebRootFileProvider;
         var file = provider.GetFileInfo(request.Source);
         return file.Exists && !file.IsDirectory ? (file, $"{file.LastModified.UtcTicks}-{file.Length}") : (null, "");
     }
 
-    public async Task<BxImageFile> GetAsync(BxImageRequest request, IFileInfo? file, string stamp, CancellationToken cancellation)
+    /// <summary>What a cached variant of this request is, for answering a revalidation without computing anything. Null when it is not on disk.</summary>
+    public BxCachedVariant? FindCached(BxImageRequest request, string stamp)
+    {
+        var key = BxImageRequestParser.Hash(Canonical(request).CanonicalKey(stamp));
+        return _cache.TryGet(SourceDirectory(request), key, out var variant) ? variant : null;
+    }
+
+    /// <summary>The variant for a request. <paramref name="admit"/> is called once, only when this call has to do work that costs CPU or bandwidth (not for cache hits or when joining work in progress), and throws to refuse (429).</summary>
+    public async Task<BxImageFile> GetAsync(BxImageRequest request, IFileInfo? file, string? stamp, Action admit, CancellationToken cancellation)
     {
         if (!request.IsRemote && file is null) throw new BxImageException(404, "Image not found.");
         if (file is not null && file.Length > _options.MaxSourceBytes) throw new BxImageException(413, "The image is too large.");
 
-        var key = BxImageRequestParser.Hash(request.CanonicalKey(stamp));
-        var directory = Path.Combine(_options.CacheDirectory, BxImageRequestParser.Hash(request.Source + "|" + stamp)[..32]);
-        var etag = "\"" + key[..32] + "\"";
-        if (TryFindCached(directory, key, request, out var cached)) return cached with { ETag = etag };
+        var canonical = Canonical(request);
+        var directory = _cache.DirectoryOf(canonical.Source);
+        BxRemoteSource? fetched = null;
 
-        if (Directory.Exists(directory) && Directory.EnumerateFiles(directory).Count() >= _options.MaxVariantsPerSource)
+        if (stamp is not null && TryServeCached(canonical, directory, stamp, out var hit)) return hit;
+
+        if (request.IsRemote)
         {
-            throw new BxImageException(429, "Too many variants of this image.");
+            // Stale or unknown: ask the origin (once for everyone who is waiting for the same address).
+            var source = await _fetches.RunAsync(canonical.Source, token => FetchAndRecordAsync(canonical, directory, admit, token), cancellation).ConfigureAwait(false);
+            fetched = source;
+            stamp = source.Stamp;
+            if (TryServeCached(canonical, directory, stamp, out hit)) return hit;
+        }
+
+        var key = BxImageRequestParser.Hash(canonical.CanonicalKey(stamp!));
+        var etag = "\"" + key[..32] + "\"";
+        return await _variants.RunAsync(key, token => ComputeAsync(request, canonical, file, fetched?.Bytes, directory, key, etag, admit, token), cancellation).ConfigureAwait(false);
+    }
+
+    private bool TryServeCached(BxImageRequest canonical, string directory, string stamp, out BxImageFile file)
+    {
+        var key = BxImageRequestParser.Hash(canonical.CanonicalKey(stamp));
+        if (_cache.TryGet(directory, key, out var variant))
+        {
+            file = new BxImageFile(variant.Path, null, variant.ContentType, "\"" + key[..32] + "\"", variant.ContentType == "image/svg+xml");
+            return true;
+        }
+        file = default!;
+        return false;
+    }
+
+    private async Task<BxRemoteSource> FetchAndRecordAsync(BxImageRequest canonical, string directory, Action admit, CancellationToken cancellation)
+    {
+        admit();
+        if (!await _fetchSlots.WaitAsync(_options.QueueTimeout, cancellation).ConfigureAwait(false))
+        {
+            throw new BxImageException(503, "The image server is busy.", 1);
+        }
+        byte[] bytes;
+        try
+        {
+            bytes = await FetchRemoteAsync(canonical.RemoteUri!, cancellation).ConfigureAwait(false);
+        }
+        finally
+        {
+            _fetchSlots.Release();
+        }
+        // What identifies the remote content is the content: the validators of an origin are optional and not always honest.
+        var stamp = BxImageRequestParser.Hash(Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)))[..16];
+        await _cache.WriteMetaAsync(directory, stamp, cancellation).ConfigureAwait(false);
+        return new BxRemoteSource(bytes, stamp);
+    }
+
+    private async Task<BxImageFile> ComputeAsync(BxImageRequest request, BxImageRequest canonical, IFileInfo? file, byte[]? remoteBytes, string directory, string key, string etag, Action admit, CancellationToken cancellation)
+    {
+        // The source bytes are read before a slot is taken: reading a file or waiting for a disk must not hold up the processing of others.
+        byte[] bytes;
+        if (remoteBytes is not null)
+        {
+            bytes = remoteBytes;
+        }
+        else
+        {
+            admit();
+            bytes = await ReadLocalAsync(file!, cancellation).ConfigureAwait(false);
         }
 
         if (!await _slots.WaitAsync(_options.QueueTimeout, cancellation).ConfigureAwait(false))
         {
-            throw new BxImageException(503, "The image server is busy.");
+            throw new BxImageException(503, "The image server is busy.", 1);
         }
+        (byte[] Bytes, string ContentType) output;
         try
         {
-            if (TryFindCached(directory, key, request, out cached)) return cached with { ETag = etag };
-
-            var (bytes, remoteType) = request.IsRemote
-                ? await FetchRemoteAsync(request.RemoteUri!, cancellation).ConfigureAwait(false)
-                : (await ReadLocalAsync(file!, cancellation).ConfigureAwait(false), null);
-
-            var (output, contentType) = await Task.Run(() => Process(bytes, remoteType, request), cancellation).ConfigureAwait(false);
-
-            Directory.CreateDirectory(directory);
-            var target = Path.Combine(directory, key + ExtensionOf(contentType));
-            var temporary = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            await File.WriteAllBytesAsync(temporary, output, cancellation).ConfigureAwait(false);
-            File.Move(temporary, target, overwrite: true);
-            Track(output.LongLength);
-            return new BxImageFile(target, contentType, etag, contentType == "image/svg+xml");
+            // Not canceled by the token: the work stops by itself when the token fires (libvips is told to kill the evaluation), and the slot
+            // is only given back once libvips is really done.
+            output = await Task.Run(() => Process(bytes, request, cancellation), CancellationToken.None).ConfigureAwait(false);
         }
         finally
         {
             _slots.Release();
         }
-    }
 
-    private bool TryFindCached(string directory, string key, BxImageRequest request, out BxImageFile file)
-    {
-        file = default!;
-        if (!Directory.Exists(directory)) return false;
-        foreach (var path in Directory.EnumerateFiles(directory, key + ".*"))
+        string? path = null;
+        try
         {
-            if (path.EndsWith(".tmp", StringComparison.Ordinal)) continue;
-            if (request.IsRemote && DateTime.UtcNow - File.GetLastWriteTimeUtc(path) > _options.RemoteCacheTtl)
-            {
-                try { File.Delete(path); } catch (IOException) { }
-                return false;
-            }
-            var contentType = ContentTypeOf(Path.GetExtension(path));
-            file = new BxImageFile(path, contentType, "", contentType == "image/svg+xml");
-            return true;
+            path = await _cache.StoreAsync(directory, key, ExtensionOf(output.ContentType), output.Bytes, CancellationToken.None).ConfigureAwait(false);
         }
-        return false;
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+        {
+            // A full or read-only disk costs the caching, not the response.
+            _logger.LogWarning(e, "The image cache could not store a variant");
+        }
+        return new BxImageFile(path, output.Bytes, output.ContentType, etag, output.ContentType == "image/svg+xml");
     }
 
-    private async Task<byte[]> ReadLocalAsync(IFileInfo file, CancellationToken cancellation)
+    private static async Task<byte[]> ReadLocalAsync(IFileInfo file, CancellationToken cancellation)
     {
         await using var stream = file.CreateReadStream();
         var buffer = new byte[file.Length];
@@ -134,7 +239,7 @@ internal sealed class BxImageProcessor : IDisposable
         return buffer;
     }
 
-    private async Task<(byte[] Bytes, string? ContentType)> FetchRemoteAsync(Uri uri, CancellationToken cancellation)
+    private async Task<byte[]> FetchRemoteAsync(Uri uri, CancellationToken cancellation)
     {
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellation);
         timeout.CancelAfter(_options.RemoteTimeout);
@@ -148,12 +253,17 @@ internal sealed class BxImageProcessor : IDisposable
                 using var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, timeout.Token).ConfigureAwait(false);
                 if (response.StatusCode is HttpStatusCode.MovedPermanently or HttpStatusCode.Found or HttpStatusCode.SeeOther or HttpStatusCode.TemporaryRedirect or HttpStatusCode.PermanentRedirect)
                 {
-                    // Only inside the same host: a redirect is how an allowed host would point the server at another one.
+                    // Only to the same scheme, host and port: a redirect is how an allowed host would point the server at another one,
+                    // at a service on another port, or at the same host without TLS.
                     var location = response.Headers.Location;
                     var next = location is null ? null : location.IsAbsoluteUri ? location : new Uri(current, location);
-                    if (next is null || !string.Equals(next.Host, uri.Host, StringComparison.OrdinalIgnoreCase) || next.Scheme is not ("http" or "https") || !string.IsNullOrEmpty(next.UserInfo))
+                    if (next is null
+                        || !string.Equals(next.Scheme, uri.Scheme, StringComparison.OrdinalIgnoreCase)
+                        || !string.Equals(next.Host, uri.Host, StringComparison.OrdinalIgnoreCase)
+                        || next.Port != uri.Port
+                        || !string.IsNullOrEmpty(next.UserInfo))
                     {
-                        throw new BxImageException(502, "The remote image redirects to another host.");
+                        throw new BxImageException(502, "The remote image redirects somewhere it may not go.");
                     }
                     current = next;
                     continue;
@@ -173,7 +283,7 @@ internal sealed class BxImageProcessor : IDisposable
                     if (memory.Length + read > _options.MaxRemoteBytes) throw new BxImageException(413, "The remote image is too large.");
                     memory.Write(chunk, 0, read);
                 }
-                return (memory.ToArray(), contentType);
+                return memory.ToArray();
             }
             throw new BxImageException(502, "The remote image redirects too many times.");
         }
@@ -188,12 +298,26 @@ internal sealed class BxImageProcessor : IDisposable
         }
     }
 
-    private (byte[] Bytes, string ContentType) Process(byte[] bytes, string? declaredType, BxImageRequest request)
+    private sealed class NoProgress : IProgress<int>
     {
-        var svg = declaredType == "image/svg+xml" || LooksLikeSvg(bytes);
+        public static readonly NoProgress Instance = new();
+
+        public void Report(int value)
+        {
+        }
+    }
+
+    private (byte[] Bytes, string ContentType) Process(byte[] bytes, BxImageRequest request, CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        _options.OnProcess?.Invoke(request, cancellation);
+        cancellation.ThrowIfCancellationRequested();
+
+        // What the bytes are is decided by the bytes, never by a declared type or a file name.
+        var svg = BxSvgSniffer.IsSvg(bytes);
         if (svg)
         {
-            // Served as it is, never rasterized unless the request names a raster format.
+            // Served as it is, never rasterized unless the option is on and the request names a raster format.
             if (request.Format is null or "svg") return (bytes, "image/svg+xml");
             if (!_options.RasterizeSvg) throw new BxImageException(400, "Rasterizing SVG is disabled.");
         }
@@ -205,20 +329,33 @@ internal sealed class BxImageProcessor : IDisposable
         try
         {
             using var header = Image.NewFromBuffer(bytes, access: Enums.Access.Sequential);
-            if ((long)header.Width * header.Height > _options.MaxInputPixels) throw new BxImageException(413, "The image has too many pixels.");
-            // An animated GIF or WebP loses its animation when resized: it is served untouched.
-            if (header.Contains("n-pages") && header.Get("n-pages") is int pages and > 1)
+            var loader = header.Contains("vips-loader") ? header.Get("vips-loader") as string : null;
+            var kind = LoaderKind(loader);
+            if (kind is null || (kind == "svg" && !(svg && _options.RasterizeSvg)) || (svg && kind != "svg"))
             {
-                return (bytes, header.Contains("vips-loader") && header.Get("vips-loader") is string loader && loader.StartsWith("gif", StringComparison.Ordinal) ? "image/gif" : "image/webp");
+                // A loader that is not on the list, or an SVG renderer reached by something that was not recognized as an SVG.
+                throw new BxImageException(415, "The file is not a supported image.");
+            }
+            if ((long)header.Width * header.Height > _options.MaxInputPixels) throw new BxImageException(413, "The image has too many pixels.");
+
+            // An animated GIF or WebP loses its animation when resized: it is served untouched, with its own type.
+            if (kind is "gif" or "webp" && header.Contains("n-pages") && header.Get("n-pages") is int pages and > 1)
+            {
+                return (bytes, kind == "gif" ? "image/gif" : "image/webp");
             }
 
-            var sourceWidth = header.Width;
-            var sourceHeight = header.Height;
-            using var resized = Resize(bytes, request, sourceWidth, sourceHeight);
+            var (sourceWidth, sourceHeight) = OrientedSize(header);
+            var format = request.Format ?? FormatOfSource(kind);
+            var plan = BxImageGeometry.Plan(sourceWidth, sourceHeight, request.Width, request.Height, request.Fit, _options.MaxWidth, _options.MaxHeight);
+            cancellation.ThrowIfCancellationRequested();
+
+            using var resized = Resize(bytes, plan, format, kind);
             var output = request.Blur > 0 ? resized.Gaussblur(request.Blur) : resized;
             try
             {
-                var format = request.Format ?? FormatOfSource(header);
+                // From here the pipeline is evaluated by the encoder: a fired token kills that evaluation.
+                output.SetProgress(NoProgress.Instance, cancellation);
+                cancellation.ThrowIfCancellationRequested();
                 return Encode(output, format, request.Quality);
             }
             finally
@@ -228,56 +365,80 @@ internal sealed class BxImageProcessor : IDisposable
         }
         catch (VipsException e)
         {
+            cancellation.ThrowIfCancellationRequested();
             _logger.LogWarning(e, "libvips could not process an image");
             throw new BxImageException(415, "The file is not a supported image.");
         }
     }
 
-    private static Image Resize(byte[] bytes, BxImageRequest request, int sourceWidth, int sourceHeight)
+    private static (int Width, int Height) OrientedSize(Image header)
     {
-        const int Unbounded = 1_000_000;
-        var w = request.Width;
-        var h = request.Height;
-        if (w is null && h is null)
-        {
-            return Image.NewFromBuffer(bytes, access: Enums.Access.Sequential).Autorot();
-        }
+        // EXIF orientations 5 to 8 turn the picture a quarter: the size that matters is the one after autorot.
+        var turned = header.Contains("orientation") && header.Get("orientation") is int orientation and >= 5 and <= 8;
+        return turned ? (header.Height, header.Width) : (header.Width, header.Height);
+    }
 
-        var bothSides = w is not null && h is not null;
-        switch (request.Fit)
+    private static Image Resize(byte[] bytes, BxGeometryPlan plan, string format, string kind)
+    {
+        switch (plan.Kind)
         {
-            case BxImageFit.Fill when bothSides:
-                return Image.ThumbnailBuffer(bytes, w!.Value, height: h!.Value, size: Enums.Size.Force);
-            case BxImageFit.Contain:
-                return Image.ThumbnailBuffer(bytes, w ?? Unbounded, height: h ?? Unbounded, size: Enums.Size.Both);
-            case BxImageFit.Inside:
-                return Image.ThumbnailBuffer(bytes, w ?? Unbounded, height: h ?? Unbounded, size: Enums.Size.Down);
-            case BxImageFit.Outside when bothSides:
+            case BxPlanKind.Letterbox:
             {
-                // The smallest size that covers the box, without cropping.
-                var scale = Math.Max((double)w!.Value / sourceWidth, (double)h!.Value / sourceHeight);
-                return Image.ThumbnailBuffer(bytes, Math.Max(1, (int)Math.Ceiling(sourceWidth * scale)), size: Enums.Size.Down);
+                using var inner = Image.ThumbnailBuffer(bytes, plan.InnerWidth, height: plan.InnerHeight, size: Enums.Size.Force);
+                return Pad(inner, plan.Width, plan.Height, format);
             }
-            case BxImageFit.Cover when bothSides:
-                return Image.ThumbnailBuffer(bytes, w!.Value, height: h!.Value, size: Enums.Size.Down, crop: Enums.Interesting.Centre);
+            case BxPlanKind.Crop:
+                return Image.ThumbnailBuffer(bytes, plan.Width, height: plan.Height, size: Enums.Size.Both, crop: Enums.Interesting.Centre);
+            case BxPlanKind.CropFromSource:
+            {
+                // The covering size would be enormous: cut the region with the ratio of the box out of the source first. Random access, because
+                // autorot and cropping need it; this only happens for extreme ratios.
+                using var full = Image.NewFromBuffer(bytes, access: Enums.Access.Random);
+                using var upright = full.Autorot();
+                using var region = upright.ExtractArea(plan.CropX, plan.CropY, Math.Min(plan.CropWidth, upright.Width - plan.CropX), Math.Min(plan.CropHeight, upright.Height - plan.CropY));
+                return region.ThumbnailImage(plan.Width, height: plan.Height, size: Enums.Size.Force);
+            }
             default:
-                return Image.ThumbnailBuffer(bytes, w ?? Unbounded, height: h ?? Unbounded, size: Enums.Size.Down);
+                return Image.ThumbnailBuffer(bytes, plan.Width, height: plan.Height, size: Enums.Size.Force);
         }
     }
 
-    private static string FormatOfSource(Image header)
+    // Centers the image in a box of exactly width by height: transparent where the format has alpha, white where it does not.
+    private static Image Pad(Image inner, int width, int height, string format)
     {
-        var loader = header.Contains("vips-loader") ? header.Get("vips-loader") as string : null;
-        return loader switch
+        var x = (width - inner.Width) / 2;
+        var y = (height - inner.Height) / 2;
+        using var eight = inner.Format == Enums.BandFormat.Uchar ? inner.Copy() : inner.Cast(Enums.BandFormat.Uchar, shift: true);
+        if (format is "png" or "webp" or "avif" or "gif")
         {
-            not null when loader.StartsWith("png", StringComparison.Ordinal) => "png",
-            not null when loader.StartsWith("webp", StringComparison.Ordinal) => "webp",
-            not null when loader.StartsWith("heif", StringComparison.Ordinal) => "avif",
-            // GIF and SVG sources become PNG (a single frame with transparency); a request can still ask for another format.
-            not null when loader.StartsWith("gif", StringComparison.Ordinal) || loader.StartsWith("svg", StringComparison.Ordinal) => "png",
-            _ => "jpeg",
-        };
+            using var withAlpha = eight.HasAlpha() ? eight.Copy() : eight.Bandjoin([255.0]);
+            return withAlpha.Embed(x, y, width, height, Enums.Extend.Background, [0.0]);
+        }
+        using var flat = eight.HasAlpha() ? eight.Flatten(background: [255.0]) : eight.Copy();
+        return flat.Embed(x, y, width, height, Enums.Extend.Background, [255.0]);
     }
+
+    // The loader names libvips reports: jpegload_buffer, pngload_buffer, webpload_buffer, heifload_buffer, gifload_buffer (nsgif), svgload_buffer.
+    private static string? LoaderKind(string? loader) => loader switch
+    {
+        null => null,
+        _ when loader.StartsWith("jpeg", StringComparison.Ordinal) => "jpeg",
+        _ when loader.StartsWith("png", StringComparison.Ordinal) => "png",
+        _ when loader.StartsWith("webp", StringComparison.Ordinal) => "webp",
+        _ when loader.StartsWith("heif", StringComparison.Ordinal) => "heif",
+        _ when loader.StartsWith("gif", StringComparison.Ordinal) => "gif",
+        _ when loader.StartsWith("svg", StringComparison.Ordinal) => "svg",
+        _ => null,
+    };
+
+    // GIF and SVG sources become PNG (a single frame with transparency); a request can still ask for another format.
+    private static string FormatOfSource(string kind) => kind switch
+    {
+        "png" or "gif" or "svg" => "png",
+        "webp" => "webp",
+        "heif" => "avif",
+        _ => "jpeg",
+    };
 
     private static (byte[] Bytes, string ContentType) Encode(Image image, string format, int quality)
     {
@@ -289,6 +450,8 @@ internal sealed class BxImageProcessor : IDisposable
                 return (image.WriteToBuffer($".avif[Q={quality},strip]"), "image/avif");
             case "png":
                 return (image.WriteToBuffer(".png[strip,compression=9]"), "image/png");
+            case "gif":
+                return (image.WriteToBuffer(".gif[strip]"), "image/gif");
             default:
             {
                 // JPEG has no alpha channel: flatten onto white instead of letting transparent pixels turn black.
@@ -298,13 +461,7 @@ internal sealed class BxImageProcessor : IDisposable
         }
     }
 
-    private static bool LooksLikeSvg(byte[] bytes)
-    {
-        var head = System.Text.Encoding.UTF8.GetString(bytes, 0, Math.Min(bytes.Length, 1024));
-        return head.Contains("<svg", StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string ExtensionOf(string contentType) => contentType switch
+    internal static string ExtensionOf(string contentType) => contentType switch
     {
         "image/webp" => ".webp",
         "image/avif" => ".avif",
@@ -314,7 +471,7 @@ internal sealed class BxImageProcessor : IDisposable
         _ => ".jpg",
     };
 
-    private static string ContentTypeOf(string extension) => extension.ToLowerInvariant() switch
+    internal static string ContentTypeOf(string extension) => extension.ToLowerInvariant() switch
     {
         ".webp" => "image/webp",
         ".avif" => "image/avif",
@@ -323,45 +480,6 @@ internal sealed class BxImageProcessor : IDisposable
         ".svg" => "image/svg+xml",
         _ => "image/jpeg",
     };
-
-    // The cache is bounded: once the total exceeds the limit, the oldest files go until it is back to 90 percent.
-    private void Track(long added)
-    {
-        if (Interlocked.Read(ref _cacheBytes) < 0)
-        {
-            lock (_pruneGate)
-            {
-                if (_cacheBytes < 0) _cacheBytes = Directory.Exists(_options.CacheDirectory) ? SumBytes() : 0;
-            }
-        }
-        if (Interlocked.Add(ref _cacheBytes, added) > _options.MaxCacheBytes) Prune();
-    }
-
-    private long SumBytes() => new DirectoryInfo(_options.CacheDirectory).EnumerateFiles("*", SearchOption.AllDirectories).Sum(f => f.Length);
-
-    private void Prune()
-    {
-        lock (_pruneGate)
-        {
-            var root = new DirectoryInfo(_options.CacheDirectory);
-            if (!root.Exists) return;
-            var files = root.EnumerateFiles("*", SearchOption.AllDirectories).OrderBy(f => f.LastWriteTimeUtc).ToList();
-            var total = files.Sum(f => f.Length);
-            var target = (long)(_options.MaxCacheBytes * 0.9);
-            foreach (var file in files)
-            {
-                if (total <= target) break;
-                try
-                {
-                    total -= file.Length;
-                    file.Delete();
-                    if (file.Directory is { } dir && !dir.EnumerateFileSystemInfos().Any()) dir.Delete();
-                }
-                catch (IOException) { }
-            }
-            Interlocked.Exchange(ref _cacheBytes, total);
-        }
-    }
 
     private static SocketsHttpHandler CreateHandler(BxLocalImagesOptions options) => new()
     {
@@ -390,17 +508,5 @@ internal sealed class BxImageProcessor : IDisposable
         },
     };
 
-    internal static bool IsPublic(IPAddress address)
-    {
-        if (address.IsIPv4MappedToIPv6) address = address.MapToIPv4();
-        if (IPAddress.IsLoopback(address) || address.Equals(IPAddress.Any) || address.Equals(IPAddress.IPv6Any) || address.IsIPv6LinkLocal || address.IsIPv6Multicast || address.IsIPv6SiteLocal) return false;
-        var b = address.GetAddressBytes();
-        if (b.Length == 16) return (b[0] & 0xFE) != 0xFC;
-        return !(b[0] == 0 || b[0] == 10 || b[0] >= 224
-            || (b[0] == 100 && b[1] is >= 64 and <= 127)
-            || (b[0] == 169 && b[1] == 254)
-            || (b[0] == 172 && b[1] is >= 16 and <= 31)
-            || (b[0] == 192 && b[1] == 168)
-            || (b[0] == 192 && b[1] == 0 && b[2] == 0));
-    }
+    internal static bool IsPublic(IPAddress address) => BxAddressPolicy.IsPublic(address);
 }
