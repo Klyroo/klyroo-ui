@@ -399,6 +399,8 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "false");
         await trigger.ClickAsync();
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
+        // The toggles only count if they happened while the block was still streaming.
+        Assert.Contains("Thinking...", await trigger.InnerTextAsync());
 
         await Assertions.Expect(trigger).ToContainTextAsync(new Regex("Thought for [0-9]+ seconds"), new() { Timeout = 30_000 });
         await Page.WaitForTimeoutAsync(1500);
