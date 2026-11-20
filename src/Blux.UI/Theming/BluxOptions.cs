@@ -153,6 +153,7 @@ public static class BluxServiceCollectionExtensions
         services.TryAddSingleton<IClassMerger, TailwindClassMerger>();
         services.TryAddSingleton<ThemeResolver>();
         services.TryAddScoped<IToastService, ToastService>();
+        services.TryAddScoped<IBxCultureStore, BxLocalStorageCultureStore>();
         return services;
     }
 }

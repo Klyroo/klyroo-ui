@@ -198,7 +198,7 @@ internal static partial class Themes
 
     public static ComponentTheme PageAside() =>
         new ComponentTheme("pageAside", "root", "top", "body", "bottom")
-            .Slot("root", "sticky top-[var(--bx-header-height,var(--blux-header-height,0px))] hidden max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px)))] overflow-y-auto py-8 lg:block")
+            .Slot("root", "sticky top-[calc(var(--bx-header-height,var(--blux-header-height,0px))_+_var(--bx-safe-top))] hidden max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px))-var(--bx-safe-top))] overflow-y-auto py-8 lg:block")
             .Slot("top", "mb-4 border-b border-(--blux-border) pb-4")
             .Slot("body", "")
             .Slot("bottom", "mt-4 border-t border-(--blux-border) pt-4");

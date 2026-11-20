@@ -9,21 +9,30 @@ import { FOCUSABLE, ensureId, float, observeChildren } from './shared.js';
  * Shows on hover (after a delay) and on keyboard focus, stays while the pointer is over the tooltip,
  * hides on Escape, blur or leave (WCAG 1.4.13). Purely visual: never reported to .NET.
  */
+const LONG_PRESS = 500;
+const TOUCH_LINGER = 2500;
+
 export class BxTooltipElement extends HTMLElement {
   #content = null;
   #timer = 0;
+  #pressTimer = 0;
+  #pressed = false;
   #stopFloating = null;
   #observer = null;
 
   connectedCallback() {
     this.addEventListener('pointerover', this.#onPointerOver);
     this.addEventListener('pointerout', this.#onPointerOut);
+    this.addEventListener('pointerdown', this.#onPointerDown);
+    this.addEventListener('pointerup', this.#onPointerEnd);
+    this.addEventListener('pointercancel', this.#onPointerEnd);
     this.addEventListener('focusin', this.#onFocusIn);
     this.addEventListener('focusout', this.#onFocusOut);
     this.#observer = observeChildren(this, () => this.#sync());
   }
 
   disconnectedCallback() {
+    clearTimeout(this.#pressTimer);
     this.#observer?.disconnect();
     this.#hide();
   }
@@ -76,10 +85,35 @@ export class BxTooltipElement extends HTMLElement {
     if (this.#content) this.dataset.state = this.#content.dataset.state = 'closed';
   }
 
-  #onPointerOver = () => this.#schedule(true);
+  // A finger has no hover: the pointerover of a tap must not open the tooltip (it would cover the control just tapped and
+  // stay until the next tap). Touch opens it on a long press instead, and it closes shortly after the finger lifts.
+  #onPointerOver = (event) => {
+    if (event.pointerType === 'touch') return;
+    this.#schedule(true);
+  };
 
   #onPointerOut = (event) => {
+    if (event.pointerType === 'touch') return;
     if (!this.contains(event.relatedTarget)) this.#schedule(false);
+  };
+
+  #onPointerDown = (event) => {
+    if (event.pointerType !== 'touch') return;
+    clearTimeout(this.#pressTimer);
+    this.#pressTimer = setTimeout(() => {
+      this.#pressed = true;
+      this.#show();
+    }, LONG_PRESS);
+  };
+
+  #onPointerEnd = (event) => {
+    if (event.pointerType !== 'touch') return;
+    clearTimeout(this.#pressTimer);
+    if (this.#pressed) {
+      this.#pressed = false;
+      clearTimeout(this.#timer);
+      this.#timer = setTimeout(() => this.#hide(), TOUCH_LINGER);
+    }
   };
 
   #onFocusIn = (event) => {

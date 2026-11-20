@@ -8,7 +8,7 @@ internal static partial class Themes
 
     public static ComponentTheme DashboardGroup() =>
         new ComponentTheme("dashboardGroup", "root")
-            .Slot("root", "relative flex size-full min-h-0 min-w-0 overflow-hidden bg-(--blux-bg) text-(--blux-text)");
+            .Slot("root", "relative flex size-full min-h-0 min-w-0 overflow-hidden bg-(--blux-bg) pt-(--bx-safe-top) pb-(--bx-safe-bottom) ps-(--bx-safe-left) pe-(--bx-safe-right) text-(--blux-text)");
 
     public static ComponentTheme DashboardPanel() =>
         new ComponentTheme("dashboardPanel", "root", "header", "body", "footer")

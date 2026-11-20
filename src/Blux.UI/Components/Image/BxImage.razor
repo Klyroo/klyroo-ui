@@ -86,7 +86,8 @@
 
     /// <summary>
     /// Adds <c>&lt;link rel="preload" as="image" imagesrcset imagesizes&gt;</c> to the document head, and loads eagerly. It goes through
-    /// <c>HeadContent</c>, so the app needs a <c>HeadOutlet</c> (the Blazor Web App template has one).
+    /// <c>HeadContent</c>, so the app needs a <c>HeadOutlet</c> (the Blazor Web App template has one). In a Blazor Hybrid web view no link is
+    /// added (the image only loads eagerly with a high priority).
     /// </summary>
     [Parameter] public bool? Preload { get; set; }
 
@@ -120,9 +121,11 @@
         var width = PixelsOf(Width, out _width);
         var height = PixelsOf(Height, out _height);
         _resolved = Options.Images.Resolve(Src, options, width, height);
-        _preload = options.Preload == true && !string.IsNullOrEmpty(_resolved.Src);
-        _loadingText = (options.Loading ?? (_preload ? BxImageLoading.Eager : BxImageLoading.Lazy)) == BxImageLoading.Eager ? "eager" : "lazy";
-        var priority = FetchPriority ?? (_preload ? BxFetchPriority.High : BxFetchPriority.Auto);
+        var preloadAsked = options.Preload == true && !string.IsNullOrEmpty(_resolved.Src);
+        // A web view has no server rendered head, and the files come from the device: no preload link, but the image still loads eagerly.
+        _preload = preloadAsked && !IsHybrid;
+        _loadingText = (options.Loading ?? (preloadAsked ? BxImageLoading.Eager : BxImageLoading.Lazy)) == BxImageLoading.Eager ? "eager" : "lazy";
+        var priority = FetchPriority ?? (preloadAsked ? BxFetchPriority.High : BxFetchPriority.Auto);
         _priorityText = priority == BxFetchPriority.Auto ? null : priority.ToString().ToLowerInvariant();
 
         var placeholder = PlaceholderUrl(options);

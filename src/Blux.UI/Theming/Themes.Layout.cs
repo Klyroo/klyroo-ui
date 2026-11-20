@@ -17,7 +17,7 @@ internal static partial class Themes
     /// <summary>Header height comes from <c>--bx-header-height</c> or <c>--blux-header-height</c> (4rem by default), read at the element, which <see cref="Main"/> subtracts from the viewport.</summary>
     public static ComponentTheme Header() =>
         new ComponentTheme("header", "root", "container", "left", "title", "center", "right", "menu")
-            .Slot("root", "z-40 h-[var(--bx-header-height,var(--blux-header-height))] w-full border-b border-(--blux-border) bg-(--blux-bg) text-(--blux-text)")
+            .Slot("root", "z-40 h-[calc(var(--bx-header-height,var(--blux-header-height))_+_var(--bx-safe-top))] w-full pt-(--bx-safe-top) ps-(--bx-safe-left) pe-(--bx-safe-right) border-b border-(--blux-border) bg-(--blux-bg) text-(--blux-text)")
             .Slot("container", "mx-auto flex h-full w-full max-w-(--blux-container) items-center gap-4 px-4 sm:px-6 lg:px-8")
             .Slot("left", "flex min-w-0 items-center gap-2 lg:flex-1")
             .Slot("title", "inline-flex items-center gap-2 rounded-sm text-lg font-semibold text-(--blux-text-highlighted) " + LayoutFocus)
@@ -29,7 +29,7 @@ internal static partial class Themes
 
     public static ComponentTheme Footer() =>
         new ComponentTheme("footer", "root", "top", "container", "left", "center", "right", "bottom")
-            .Slot("root", "w-full border-t border-(--blux-border) bg-(--blux-bg) text-(--blux-text-muted)")
+            .Slot("root", "w-full border-t border-(--blux-border) bg-(--blux-bg) pb-(--bx-safe-bottom) ps-(--bx-safe-left) pe-(--bx-safe-right) text-(--blux-text-muted)")
             .Slot("top", "mx-auto w-full max-w-(--blux-container) border-b border-(--blux-border) px-4 py-8 sm:px-6 lg:px-8 lg:py-12")
             .Slot("container", "mx-auto flex w-full max-w-(--blux-container) flex-col items-center gap-3 px-4 py-8 text-sm sm:px-6 lg:flex-row lg:px-8")
             .Slot("left", "flex items-center justify-center gap-1.5 lg:order-1 lg:flex-1 lg:justify-start")
@@ -53,7 +53,7 @@ internal static partial class Themes
 
     public static ComponentTheme Main() =>
         new ComponentTheme("main", "base")
-            .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))] focus:outline-none");
+            .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top))] pb-(--bx-safe-bottom) focus:outline-none");
 
     /// <summary>
     /// The aside carries <c>group/sidebar</c> and <c>data-state</c>, so anything inside it can react to the collapsed

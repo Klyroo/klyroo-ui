@@ -11,23 +11,34 @@
     The overrides are cascading values: they do not cross a render mode boundary. Where a page or a component sets its
     own @rendermode (per-page interactivity), the components inside it do not see them: place a BxApp or BxTheme inside
     that island too, or use AddBluxUi for overrides that must apply everywhere.
+    In a Blazor Hybrid web view the culture chosen with BxLocaleSelect (IBxCultureStore) is applied before the content renders.
+    SpatialNavigation turns on the remote control mode for TV screens (experimental).
 *@
-<CascadingValue Value="_locale" IsFixed="true" @key="_localeKey">
-    <BxTheme Overrides="Overrides">
-        <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir ?? _locale.DirAttribute)" @attributes="AdditionalAttributes">
-            @ChildContent
-            @if (Toaster)
-            {
-                <BxToaster Duration="ToastDuration" />
-            }
-        </div>
-    </BxTheme>
-</CascadingValue>
+@if (_locale is not null)
+{
+    <CascadingValue Value="_locale" IsFixed="true" @key="_localeKey">
+        <BxTheme Overrides="Overrides">
+            <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir ?? _locale.DirAttribute)" @attributes="AdditionalAttributes">
+                @if (SpatialNavigation)
+                {
+                    <bx-spatial hidden></bx-spatial>
+                }
+                @ChildContent
+                @if (Toaster)
+                {
+                    <BxToaster Duration="ToastDuration" />
+                }
+            </div>
+        </BxTheme>
+    </CascadingValue>
+}
 
 @code {
     private SlotSet _slots = default!;
-    private BxLocale _locale = default!;
+    private BxLocale? _locale;
     private int _localeKey;
+
+    [Inject] private IServiceProvider Services { get; set; } = default!;
 
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
@@ -50,13 +61,42 @@
     /// <summary>Text direction (the <c>dir</c> attribute): "ltr", "rtl" or "auto". Defaults to the direction of the locale.</summary>
     [Parameter] public string? Dir { get; set; }
 
+    /// <summary>
+    /// Turns on the remote control mode for TV screens (experimental, opt in): the arrow keys move focus to the nearest focusable element in
+    /// that direction, the focus ring is thick and the sizes are larger (<c>data-bx-tv</c> on the <c>html</c> element). See the MAUI guide.
+    /// </summary>
+    [Parameter] public bool SpatialNavigation { get; set; }
+
+    /// <summary>
+    /// In a Blazor Hybrid web view, applies the culture saved by <see cref="BxLocaleSelect"/> (<see cref="IBxCultureStore"/>) before the content
+    /// renders, unless <see cref="Locale"/> is set. Turn it off when the app applies its own culture in <c>MauiProgram</c>. It does nothing in a browser.
+    /// </summary>
+    [Parameter] public bool ApplyStoredCulture { get; set; } = true;
+
     /// <summary>Class overrides for every component below, by component type. See <see cref="BxTheme"/>.</summary>
     [Parameter] public IReadOnlyDictionary<Type, Blux.UI.Theming.ISlotOverrides>? Overrides { get; set; }
     [Parameter] public AppUi? Ui { get; set; }
 
+    private System.Globalization.CultureInfo? _stored;
+    private bool _storedApplied;
+
+    // Only reads the store here: a culture assigned inside an async method does not flow back to the caller.
+    protected override async Task OnInitializedAsync()
+    {
+        if (!IsHybrid || !ApplyStoredCulture || Locale is not null) return;
+        if (Services.GetService(typeof(IBxCultureStore)) is not IBxCultureStore store) return;
+        var supported = Options.Locales.Select(l => l.Code).ToArray();
+        _stored = BxCultureStoreMatch.Match(await store.GetAsync(), supported);
+    }
+
     protected override void OnParametersSet()
     {
-        var locale = Locale ?? CurrentLocale;
+        if (_stored is not null && !_storedApplied)
+        {
+            _storedApplied = true;
+            BxCultureStoreMatch.Apply(_stored);
+        }
+        var locale = Locale ?? (_stored is not null ? Options.ResolveLocale(_stored) : CurrentLocale);
         if (_locale is null)
         {
             _locale = locale;
