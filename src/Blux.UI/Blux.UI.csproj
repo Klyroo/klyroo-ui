@@ -15,6 +15,29 @@
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
+  <!-- Package metadata. -->
+  <PropertyGroup>
+    <Authors>blux-ui contributors</Authors>
+    <Copyright>Copyright (c) 2026 blux-ui contributors</Copyright>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReleaseNotes>See CHANGELOG.md, included in this package.</PackageReleaseNotes>
+    <RepositoryType>git</RepositoryType>
+    <!-- TODO(release): set both once the hosting account is decided (for example https://github.com/OWNER/blux-ui).
+         Left empty on purpose: the pack neither warns nor fails without them, but no repository link appears on nuget.org. -->
+    <RepositoryUrl></RepositoryUrl>
+    <PackageProjectUrl></PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- Reproducible build and debugging experience. SourceLink for GitHub is built into the .NET SDK (8+): no package reference. -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
   <ItemGroup>
     <SupportedPlatform Include="browser" />
   </ItemGroup>
@@ -31,6 +54,8 @@
 
   <ItemGroup>
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../CHANGELOG.md" Pack="true" PackagePath="/" />
+    <None Include="assets/icon.png" Pack="true" PackagePath="/" />
     <None Include="buildTransitive/Blux.UI.targets" Pack="true" PackagePath="build/;buildTransitive/" />
   </ItemGroup>
 
