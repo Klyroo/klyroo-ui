@@ -91,6 +91,7 @@ public class DashboardTests : BluxTestContext
         [Microsoft.AspNetCore.Components.Parameter] public bool First { get; set; } = true;
         [Microsoft.AspNetCore.Components.Parameter] public bool Second { get; set; }
         [Microsoft.AspNetCore.Components.Parameter] public bool Third { get; set; }
+        [Microsoft.AspNetCore.Components.Parameter] public string? FirstId { get; set; }
 
         protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
         {
@@ -98,7 +99,7 @@ public class DashboardTests : BluxTestContext
             b.AddAttribute(1, nameof(BxDashboardGroup.StorageKey), StorageKey);
             b.AddAttribute(2, nameof(BxDashboardGroup.ChildContent), (Microsoft.AspNetCore.Components.RenderFragment)(c =>
             {
-                if (First) Sidebar(c, 10, "first");
+                if (First) Sidebar(c, 10, "first", FirstId);
                 if (Second) Sidebar(c, 20, "second");
                 if (Third) Sidebar(c, 30, "third");
                 c.OpenComponent<BxDashboardSidebarCollapse>(40);
@@ -107,11 +108,12 @@ public class DashboardTests : BluxTestContext
             b.CloseComponent();
         }
 
-        private static void Sidebar(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder c, int seq, string label)
+        private static void Sidebar(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder c, int seq, string label, string? id = null)
         {
             c.OpenComponent<BxDashboardSidebar>(seq);
             c.AddAttribute(seq + 1, nameof(BxDashboardSidebar.As), "div");
             c.AddAttribute(seq + 2, nameof(BxDashboardSidebar.AriaLabel), label);
+            c.AddAttribute(seq + 3, nameof(BxDashboardSidebar.Id), id);
             c.SetKey(label);
             c.CloseComponent();
         }
@@ -146,6 +148,19 @@ public class DashboardTests : BluxTestContext
         cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.First, false).Add(h => h.Second, true).Add(h => h.Third, true));
         var ids = SidebarIds(cut);
         Assert.Equal(["app-2", "app"], ids);
+    }
+
+    [Fact]
+    public void Sidebar_with_its_own_id_leaves_the_key_of_the_group_to_the_next_one()
+    {
+        var cut = Render<SidebarHost>(p => p.Add(h => h.StorageKey, "app").Add(h => h.FirstId, "mine").Add(h => h.Second, true));
+        Assert.Equal(["mine", "app"], SidebarIds(cut));
+
+        // Dropping the Id takes the free slot; setting it again gives the slot back.
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.FirstId, null).Add(h => h.Second, true));
+        Assert.Equal(["app-2", "app"], SidebarIds(cut));
+        cut.Render(p => p.Add(h => h.StorageKey, "app").Add(h => h.FirstId, "mine").Add(h => h.Second, true).Add(h => h.Third, true));
+        Assert.Equal(["mine", "app", "app-2"], SidebarIds(cut));
     }
 
     [Fact]
