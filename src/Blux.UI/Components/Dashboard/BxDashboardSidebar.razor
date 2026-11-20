@@ -5,9 +5,10 @@
     A BxSidebar for a dashboard: the same browser-owned collapsed state and width, the same off-canvas panel below the
     lg breakpoint. What differs is that the controls live elsewhere: BxDashboardSidebarCollapse collapses it and
     BxDashboardSidebarToggle opens the panel, both usually in a navbar, so the sidebar renders neither of its own
-    buttons unless Collapsible is set. The key of the enclosing BxDashboardGroup is its storage id.
+    buttons unless Collapsible is set. The key of the enclosing BxDashboardGroup is its storage id; with several sidebars in
+    one group only the first takes it, the others take "key-2", "key-3" (or set Id), so they never share state.
 *@
-<BxSidebar Id="@(Id ?? Context?.Key)"
+<BxSidebar Id="@(Id ?? _groupId)"
            Header="Header" Footer="Footer"
            Collapsible="Collapsible"
            Collapsed="Collapsed" CollapsedChanged="CollapsedChanged"
@@ -21,6 +22,7 @@
 
 @code {
     private SidebarUi _ui = new();
+    private string? _groupId;
 
     [CascadingParameter] private DashboardContext? Context { get; set; }
 
@@ -33,7 +35,10 @@
     /// <summary>Bottom of the sidebar: the signed-in user.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
 
-    /// <summary>Overrides the storage id taken from the group.</summary>
+    /// <summary>
+    /// Overrides the storage id taken from the group. The first sidebar of a group uses the key of the group, the next ones
+    /// that key followed by "-2", "-3"; set an Id to name one yourself, and give it to the controls with <c>For</c>.
+    /// </summary>
     [Parameter] public string? Id { get; set; }
 
     /// <summary>Also shows a collapse button in the header of the sidebar, besides <see cref="BxDashboardSidebarCollapse"/>.</summary>
@@ -56,6 +61,8 @@
 
     /// <summary>Slot overrides, the same as <see cref="BxSidebar"/>.</summary>
     [Parameter] public SidebarUi? Ui { get; set; }
+
+    protected override void OnInitialized() => _groupId = Context?.RegisterSidebar();
 
     // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
     protected override void OnParametersSet() =>

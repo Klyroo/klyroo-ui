@@ -382,8 +382,11 @@ export class BxEditorToolbarElement extends HTMLElement {
     const index = tools.indexOf(event.target);
     if (index < 0) return;
     let target = null;
-    if (event.key === 'ArrowRight') target = tools[(index + 1) % tools.length];
-    else if (event.key === 'ArrowLeft') target = tools[(index - 1 + tools.length) % tools.length];
+    // The buttons follow the writing direction: in a right-to-left page the next one is to the left.
+    const forward = getComputedStyle(this).direction === 'rtl' ? 'ArrowLeft' : 'ArrowRight';
+    const backward = forward === 'ArrowRight' ? 'ArrowLeft' : 'ArrowRight';
+    if (event.key === forward) target = tools[(index + 1) % tools.length];
+    else if (event.key === backward) target = tools[(index - 1 + tools.length) % tools.length];
     else if (event.key === 'Home') target = tools[0];
     else if (event.key === 'End') target = tools[tools.length - 1];
     else if (event.key === 'Escape') {

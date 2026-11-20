@@ -42,8 +42,9 @@ export class Reporter {
     this.#host = host;
   }
 
-  report(type, detail) {
-    this.#host.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { ...detail, sequence: ++this.#sequence } }));
+  /** Dispatches the event on the host, or on `target` when the .NET listener sits on another element (a childless sink). */
+  report(type, detail, target = this.#host) {
+    target.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { ...detail, sequence: ++this.#sequence } }));
   }
 
   /** True when the attribute change being processed comes from a render older than the last report. */

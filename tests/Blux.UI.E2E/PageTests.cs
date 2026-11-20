@@ -61,10 +61,19 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await card.GetByTestId("card-footer-text").ClickAsync(new() { Force = true });
         await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        // The address changes as soon as the link is followed, before an interactive router has rendered the new page:
+        // going back at that moment races with the render, and the card would still be the old one on screen.
+        await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Installation", Level = 1 })).ToBeVisibleAsync();
         await Page.GoBackAsync();
+        await Page.WaitForURLAsync(new Regex($"/{mode}/components/page-card$"));
+        await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "PageCard", Level = 1 })).ToBeVisibleAsync();
         await Assertions.Expect(card).ToBeVisibleAsync();
 
-        await card.GetByTestId("card-header").ClickAsync(new() { Force = true });
+        // A forced click lands on whatever is at the center of the header: bring it clear of the sticky site header and of the
+        // scroll position the back navigation restores, so that is the card link.
+        var header = card.GetByTestId("card-header");
+        await header.EvaluateAsync("e => e.scrollIntoView({ block: 'center' })");
+        await header.ClickAsync(new() { Force = true });
         await Page.WaitForURLAsync(new Regex("/docs/installation$"));
     }
 

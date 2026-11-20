@@ -54,5 +54,5 @@ internal static partial class Themes
                           "group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-0")
             .Slot("icon", "size-5 shrink-0")
             .Slot("label", "min-w-0 flex-1 truncate text-start group-data-[state=collapsed]/sidebar:sr-only")
-            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5 group-data-[state=collapsed]/sidebar:hidden");
+            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5 group-data-[state=collapsed]/sidebar:hidden [&>kbd[data-bx-mod]]:before:content-[attr(data-label)]");
 }

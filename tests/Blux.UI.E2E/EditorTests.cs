@@ -373,7 +373,7 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(options.Last).ToHaveAttributeAsync("aria-selected", "true");
 
         await Page.Keyboard.TypeAsync("zzz");
-        await Assertions.Expect(Page.GetByText("No results").First).ToBeVisibleAsync();
+        await Assertions.Expect(Page.Locator("bx-editor-menu[data-char='/']").GetByText("No results")).ToBeVisibleAsync();
         await Page.Keyboard.PressAsync("Escape");
         await Assertions.Expect(list).ToBeHiddenAsync();
         await Assertions.Expect(surface).ToHaveAttributeAsync("role", "textbox");
@@ -583,5 +583,24 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
 
         // New paragraphs are added inside what ProseMirror renders: the host has nothing to wire.
         Assert.True(await Page.EvaluateAsync<int>("() => window.__wires") <= 1, "the editor host looked for its parts while the user typed");
+    }
+
+    // ---- Review findings (second review of waves C and D)
+
+    [Fact]
+    public async Task Toolbar_arrow_keys_follow_the_writing_direction()
+    {
+        await OpenEditor("ssr");
+        await Page.EvaluateAsync("() => { document.documentElement.dir = 'rtl'; }");
+        var toolbar = Page.GetByTestId("editor").GetByRole(AriaRole.Toolbar);
+        await Surface("editor").ClickAsync();
+        await Page.Keyboard.PressAsync("Alt+F10");
+        var bold = toolbar.GetByRole(AriaRole.Button, new() { Name = "Bold" });
+        await Assertions.Expect(bold).ToBeFocusedAsync();
+
+        await Page.Keyboard.PressAsync("ArrowLeft");
+        await Assertions.Expect(toolbar.GetByRole(AriaRole.Button, new() { Name = "Italic" })).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(bold).ToBeFocusedAsync();
     }
 }

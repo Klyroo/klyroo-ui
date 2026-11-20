@@ -45,6 +45,46 @@ public class DashboardTests : BluxTestContext
         Assert.All(cut.FindAll("[data-bx-sidebar-collapse]"), c => Assert.Equal("app", c.GetAttribute("data-bx-sidebar-for")));
     }
 
+    [Fact]
+    public void Group_listens_for_its_sizes_on_a_childless_sink_and_not_on_itself()
+    {
+        var reported = new List<IReadOnlyList<double>>();
+        var cut = Render<BxDashboardGroup>(p => p
+            .Add(g => g.Sizes, [30.0, 70.0])
+            .Add(g => g.SizesChanged, (IReadOnlyList<double> sizes) => reported.Add(sizes))
+            .AddChildContent("<p>child</p>"));
+
+        // A listener on the group element would also hear the bx-change of any component inside it.
+        Assert.Throws<Bunit.MissingEventHandlerException>(() => cut.Find("bx-dashboard-group").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "1,99", Sequence = 1 }));
+        var sink = cut.Find("bx-dashboard-group > [data-bx-dashboard-sink]");
+        Assert.Equal(0, sink.ChildElementCount);
+
+        sink.TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "20,80", Sequence = 3 });
+
+        Assert.Equal([20.0, 80.0], Assert.Single(reported));
+        Assert.Equal("3", cut.Find("bx-dashboard-group").GetAttribute("data-bx-seq"));
+    }
+
+    [Fact]
+    public void Group_gives_its_key_to_the_first_sidebar_only_and_numbers_the_next_ones()
+    {
+        var cut = Render<BxDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent(b =>
+        {
+            b.OpenComponent<BxDashboardSidebar>(0);
+            b.AddAttribute(1, nameof(BxDashboardSidebar.As), "div");
+            b.CloseComponent();
+            b.OpenComponent<BxDashboardSidebar>(2);
+            b.AddAttribute(3, nameof(BxDashboardSidebar.As), "div");
+            b.CloseComponent();
+            b.OpenComponent<BxDashboardSidebar>(4);
+            b.AddAttribute(5, nameof(BxDashboardSidebar.As), "div");
+            b.AddAttribute(6, nameof(BxDashboardSidebar.Id), "mine");
+            b.CloseComponent();
+        }));
+
+        Assert.Equal(["app", "app-2", "mine"], cut.FindAll("bx-sidebar").Select(s => s.GetAttribute("data-bx-sidebar-id")));
+    }
+
     // ---- DashboardSidebar
 
     [Fact]
@@ -271,8 +311,32 @@ public class DashboardTests : BluxTestContext
         Assert.Equal("dialog", button.GetAttribute("aria-haspopup"));
         Assert.True(button.HasAttribute("data-bx-search-open"));
         Assert.Equal("Search", button.QuerySelector("span")!.TextContent);
-        Assert.Equal(["Ctrl", "K"], cut.FindAll("kbd").Select(k => k.TextContent));
         Assert.Contains("group-data-[state=collapsed]/sidebar:sr-only", button.QuerySelector("span")!.ClassList);
+    }
+
+    [Fact]
+    public void Search_button_default_hint_follows_the_platform_in_the_browser_and_announces_the_shortcut()
+    {
+        var cut = Render<BxDashboardSearchButton>();
+
+        var keys = cut.FindAll("kbd");
+        Assert.Equal(2, keys.Count);
+        // The modifier is an attribute label the browser sets ("⌘" on Apple), never text Blazor owns.
+        Assert.True(keys[0].HasAttribute("data-bx-mod"));
+        Assert.Equal("Ctrl", keys[0].GetAttribute("data-label"));
+        Assert.Equal("", keys[0].TextContent);
+        Assert.Equal("K", keys[1].TextContent);
+        Assert.Equal("Control+K Meta+K", cut.Find("button").GetAttribute("aria-keyshortcuts"));
+    }
+
+    [Fact]
+    public void Search_button_explicit_keys_are_shown_as_given_without_a_platform_hint()
+    {
+        var cut = Render<BxDashboardSearchButton>(p => p.Add(b => b.Keys, ["Ctrl", "K"]));
+
+        Assert.Equal(["Ctrl", "K"], cut.FindAll("kbd").Select(k => k.TextContent));
+        Assert.Empty(cut.FindAll("[data-bx-mod]"));
+        Assert.False(cut.Find("button").HasAttribute("aria-keyshortcuts"));
     }
 
     [Fact]

@@ -5,15 +5,24 @@
     The button that opens the BxDashboardSearch of its dashboard, showing the shortcut with BxKbd. A click is handled in
     the browser (js/dashboard.js). In a collapsed sidebar only the icon is left; the label stays for screen readers.
 *@
-<button type="button" class="@_slots["root"]" aria-haspopup="dialog" data-bx-search-open @attributes="AdditionalAttributes">
+<button type="button" class="@_slots["root"]" aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" data-bx-search-open @attributes="AdditionalAttributes">
     @BxIcons.Named("search", _slots["icon"])
     <span class="@_slots["label"]">@(Label ?? Options.Strings.DashboardSearchButton)</span>
-    @if (Keys.Count > 0)
+    @if (Keys is null || Keys.Count > 0)
     {
         <span class="@_slots["kbds"]" aria-hidden="true">
-            @foreach (var key in Keys)
+            @if (Keys is null)
             {
-                <BxKbd Value="@key" Size="BxSize.Sm" />
+                @* The modifier follows the platform: the browser sets the label (js/platform-keys.js), "Ctrl" until then. *@
+                <BxKbd Size="BxSize.Sm" data-bx-mod="" data-label="Ctrl" />
+                <BxKbd Value="K" Size="BxSize.Sm" />
+            }
+            else
+            {
+                @foreach (var key in Keys)
+                {
+                    <BxKbd Value="@key" Size="BxSize.Sm" />
+                }
             }
         </span>
     }
@@ -25,8 +34,12 @@
     /// <summary>The text of the button. Defaults to the built-in text.</summary>
     [Parameter] public string? Label { get; set; }
 
-    /// <summary>The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search.</summary>
-    [Parameter] public IReadOnlyList<string> Keys { get; set; } = ["Ctrl", "K"];
+    /// <summary>
+    /// The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search. Left out, the
+    /// hint follows the platform in the browser (the command key and K on Apple devices, Ctrl and K elsewhere), matching the
+    /// default <c>mod+k</c> shortcut, and the button announces <c>aria-keyshortcuts</c>. Keys you give are shown as given.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? Keys { get; set; }
     [Parameter] public DashboardSearchButtonUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

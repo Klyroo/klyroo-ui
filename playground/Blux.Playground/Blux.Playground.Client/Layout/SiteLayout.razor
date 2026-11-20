@@ -1,0 +1,58 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+
+<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-(--blux-bg) focus:px-3 focus:py-2 focus:ring-2 focus:ring-(--blux-primary)">Skip to content</a>
+
+<header class="sticky top-0 z-40 border-b border-(--blux-border) bg-(--blux-bg)">
+    <div class="mx-auto flex h-16 max-w-(--breakpoint-2xl) items-center gap-4 px-4 sm:px-6 lg:px-8">
+        <a href="/" class="flex items-center gap-2.5 font-mono text-[15px] font-semibold text-(--blux-text-highlighted)">
+            <Logo Class="size-7" />
+            <span>blux<span class="text-(--blux-text-dimmed)">/</span>ui</span>
+        </a>
+        <span class="hidden rounded-md border border-(--blux-border) px-1.5 py-0.5 font-mono text-[11px] text-(--blux-text-muted) sm:inline">v0.1-alpha</span>
+        <nav aria-label="Main" class="ms-6 hidden items-center gap-6 text-sm md:flex">
+            @* The guides exist only in the default render mode; component pages keep the mode of the page. *@
+            <a href="/docs" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
+            <a href="@($"{_prefix}/components/button")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Components</a>
+            <a href="/docs/theming" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Theming</a>
+        </nav>
+        <div class="ms-auto flex items-center gap-1">
+            <BxContentSearchButton Collapsed="false" Class="me-1 min-w-0 sm:w-56" />
+            <ColorModeButton />
+        </div>
+    </div>
+</header>
+
+@* The search of the whole site, over the catalog: Ctrl+K (Cmd+K on a Mac) or the button in the header. *@
+<BxContentSearch Pages="Blux.Playground.Client.Docs.DocsNavigation.SearchPages(_prefix)" />
+
+@* The page puts its own main landmark in Body (MainLayout, DocsLayout), so the skip link can jump over what comes before it. *@
+@Body
+
+<footer class="border-t border-(--blux-border)">
+    <div class="mx-auto flex max-w-(--breakpoint-2xl) flex-col gap-2 px-4 py-8 text-sm text-(--blux-text-muted) sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+        <p class="font-mono text-xs uppercase tracking-widest">blux/ui · MIT</p>
+        <p>Built with Blazor and Tailwind CSS.</p>
+    </div>
+</footer>
+
+<BxToaster />
+
+<div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
+    An unhandled error has occurred.
+    <a href="." class="reload underline">Reload</a>
+    <span class="dismiss ms-4 cursor-pointer">🗙</span>
+</div>
+
+@code {
+    private string _prefix = "";
+
+    // As the sidebar does: /server/components/button keeps its links in the server mode, and the default mode has no prefix.
+    // Taken once, because the layout lives as long as the render mode of the page does.
+    protected override void OnInitialized()
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        var mode = PlaygroundServices.ModeFromPath(path);
+        _prefix = mode is null ? "" : "/" + mode;
+    }
+}

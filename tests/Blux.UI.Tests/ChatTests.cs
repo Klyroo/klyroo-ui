@@ -282,7 +282,8 @@ public class ChatTests : BluxTestContext
     [Fact]
     public void Prompt_with_a_form_name_posts_in_static_rendering_and_is_not_live()
     {
-        var cut = Render<BxChatPrompt>(p => p.Add(x => x.FormName, "chat").Add(x => x.OnSubmit, (string _) => { }));
+        using var context = new StaticContext();
+        var cut = context.Render<BxChatPrompt>(p => p.Add(x => x.FormName, "chat").Add(x => x.OnSubmit, (string _) => { }));
 
         var form = cut.Find("form");
         Assert.Equal("post", form.GetAttribute("method"));
@@ -320,6 +321,15 @@ public class ChatTests : BluxTestContext
 
         Assert.False(cut.Find("bx-chat-prompt").HasAttribute("data-bx-live"));
         Assert.True(cut.Find("bx-chat-prompt").HasAttribute("data-bx-post"));
+    }
+
+    [Fact]
+    public void Prompt_with_a_form_name_does_not_post_while_prerendering_an_interactive_page()
+    {
+        var cut = Render<BxChatPrompt>(p => p.Add(x => x.FormName, "chat").Add(x => x.OnSubmit, (string _) => { })
+            .SetAssignedRenderMode(new Microsoft.AspNetCore.Components.Web.InteractiveServerRenderMode()));
+
+        Assert.False(cut.Find("bx-chat-prompt").HasAttribute("data-bx-post"));
     }
 
     [Fact]
@@ -431,6 +441,45 @@ public class ChatTests : BluxTestContext
         Assert.Equal(name, button.GetAttribute("aria-label"));
         button.Click();
         Assert.Equal(status == ChatStatus.Error ? (0, 1) : (1, 0), (stopped, reloaded));
+    }
+
+    [Fact]
+    public void Submit_is_one_button_whatever_the_status_so_focus_survives_a_status_change()
+    {
+        // A different branch of the markup would be a new button component and a new element, and a focused element
+        // that is replaced loses focus. The same component instance is updated in place.
+        var cut = Render<BxChatPromptSubmit>(p => p.Add(s => s.OnStop, () => { }).Add(s => s.OnReload, () => { }));
+        var first = cut.FindComponent<BxButton>().Instance;
+
+        foreach (var status in new[] { ChatStatus.Submitted, ChatStatus.Streaming, ChatStatus.Error, ChatStatus.Idle })
+        {
+            cut.Render(p => p.Add(s => s.Status, status).Add(s => s.OnStop, () => { }).Add(s => s.OnReload, () => { }));
+
+            Assert.True(ReferenceEquals(first, cut.FindComponent<BxButton>().Instance), $"The button was replaced when the status became {status}.");
+        }
+    }
+
+    [Fact]
+    public void Submit_error_without_a_retry_handler_is_the_send_button()
+    {
+        var cut = Render<BxChatPromptSubmit>(p => p.Add(s => s.Status, ChatStatus.Error));
+
+        var button = cut.Find("button");
+        Assert.Equal("submit", button.GetAttribute("type"));
+        Assert.Equal("Send", button.GetAttribute("aria-label"));
+        Assert.False(button.HasAttribute("disabled"));
+    }
+
+    [Theory]
+    [InlineData(ChatStatus.Submitted)]
+    [InlineData(ChatStatus.Streaming)]
+    public void Submit_stop_without_a_stop_handler_is_disabled(ChatStatus status)
+    {
+        var cut = Render<BxChatPromptSubmit>(p => p.Add(s => s.Status, status));
+
+        var button = cut.Find("button");
+        Assert.Equal("Stop", button.GetAttribute("aria-label"));
+        Assert.True(button.HasAttribute("disabled"));
     }
 
     [Fact]
@@ -594,8 +643,19 @@ public class ChatTests : BluxTestContext
         Assert.NotNull(collapsible.Find("bx-chat-disclosure button[data-bx-disclosure-trigger]"));
         Assert.Equal("false", collapsible.Find("button").GetAttribute("aria-expanded"));
         Assert.Equal("until-found", collapsible.Find("[data-bx-disclosure-content]").GetAttribute("hidden"));
-        Assert.Equal("out", collapsible.Find("[role=region] p").TextContent);
+        Assert.Equal("out", collapsible.Find("[data-bx-disclosure-content] p").TextContent);
         Assert.False(collapsible.Find("bx-chat-disclosure").HasAttribute("data-auto-open"));
+    }
+
+    [Fact]
+    public void Tool_body_is_a_named_group_and_not_a_region_landmark()
+    {
+        var cut = Render<BxChatTool>(p => p.Add(t => t.Text, "Searched").Add(t => t.ChildContent, "<p>out</p>"));
+
+        var body = cut.Find("[data-bx-disclosure-content] > div");
+        Assert.Equal("group", body.GetAttribute("role"));
+        Assert.Equal(cut.Find("button").GetAttribute("id"), body.GetAttribute("aria-labelledby"));
+        Assert.Empty(cut.FindAll("[role=region]"));
     }
 
     [Fact]

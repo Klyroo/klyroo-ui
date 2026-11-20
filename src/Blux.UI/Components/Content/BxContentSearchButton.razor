@@ -7,19 +7,28 @@
     trigger of its modal, so it works in static rendering and focus returns to the button when the search closes.
 *@
 <BxButton Color="Color" Variant="Variant" Size="Size" Square="Collapsed" Class="@_slots["root"]" Ui="_buttonUi"
-          aria-haspopup="dialog" aria-label="@(Collapsed ? ButtonLabel : null)" data-bx-content-search-open="@For"
+          aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" aria-label="@(Collapsed ? ButtonLabel : null)" data-bx-content-search-open="@For"
           @attributes="AdditionalAttributes">
     <LeadingIcon>@BxIcons.Named("search", "size-5")</LeadingIcon>
     <ChildContent>
         @if (!Collapsed)
         {
             <span class="@_slots["label"]">@ButtonLabel</span>
-            @if (Keys.Count > 0)
+            @if (Keys is null || Keys.Count > 0)
             {
                 <span class="@_slots["kbds"]" aria-hidden="true">
-                    @foreach (var key in Keys)
+                    @if (Keys is null)
                     {
-                        <BxKbd Value="@key" Size="BxSize.Sm" />
+                        @* The modifier follows the platform: the browser sets the label (js/platform-keys.js), "Ctrl" until then. *@
+                        <BxKbd Size="BxSize.Sm" data-bx-mod="" data-label="Ctrl" />
+                        <BxKbd Value="K" Size="BxSize.Sm" />
+                    }
+                    else
+                    {
+                        @foreach (var key in Keys)
+                        {
+                            <BxKbd Value="@key" Size="BxSize.Sm" />
+                        }
                     }
                 </span>
             }
@@ -40,8 +49,12 @@
     /// <summary>Shows only the icon, as a square button. Without it the button shows its label and its shortcut.</summary>
     [Parameter] public bool Collapsed { get; set; } = true;
 
-    /// <summary>The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search.</summary>
-    [Parameter] public IReadOnlyList<string> Keys { get; set; } = ["Ctrl", "K"];
+    /// <summary>
+    /// The keys of the shortcut to show, one <see cref="BxKbd"/> each. Match the <c>Shortcut</c> of the search. Left out, the
+    /// hint follows the platform in the browser (the command key and K on Apple devices, Ctrl and K elsewhere), matching the
+    /// default <c>mod+k</c> shortcut, and the button announces <c>aria-keyshortcuts</c>. Keys you give are shown as given.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? Keys { get; set; }
 
     /// <summary>The <c>Name</c> of the search to open. Without it the button opens the unnamed one.</summary>
     [Parameter] public string For { get; set; } = "";
