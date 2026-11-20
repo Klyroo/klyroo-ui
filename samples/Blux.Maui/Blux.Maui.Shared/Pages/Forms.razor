@@ -1,0 +1,64 @@
+@page "/forms"
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Forms</PageTitle>
+
+<h1 class="text-2xl font-semibold text-(--blux-text-highlighted)">Forms</h1>
+
+@* FormName is how the form posts in a Blazor Web App without interactivity. In a web view the page is always interactive, so the same form just submits. *@
+<BxForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" ShowSummary class="flex w-full max-w-md flex-col gap-4">
+    <BxFormField Label="Name" Required For="() => Model!.Name">
+        <BxInput @bind-Value="Model!.Name" data-testid="name" />
+    </BxFormField>
+    <BxFormField Label="Country" For="() => Model!.Country">
+        <BxSelect @bind-Value="Model!.Country" Items="_countries" Placeholder="Choose a country" data-testid="country" />
+    </BxFormField>
+    <BxFormField Label="Bio">
+        <BxTextarea @bind-Value="Model!.Bio" Rows="3" />
+    </BxFormField>
+    <BxSwitch @bind-Value="Model!.Notify" Label="Email notifications" />
+    <BxCheckbox @bind-Value="Model!.Terms" Label="I accept the terms" />
+    <BxButton Type="submit" Label="Save profile" data-testid="save" />
+    @if (_saved)
+    {
+        <p role="status" class="text-sm text-(--blux-success-text)" data-testid="saved">Saved @Model!.Name.</p>
+    }
+</BxForm>
+
+@code {
+    [SupplyParameterFromForm(FormName = "profile")]
+    private Profile? Model { get; set; }
+
+    private bool _saved;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private static readonly BxSelectItem[] _countries =
+    [
+        new("fr", "France"),
+        new("de", "Germany"),
+        new("it", "Italy"),
+        new("es", "Spain"),
+    ];
+
+    private async Task SaveAsync()
+    {
+        await Task.Delay(200);
+        _saved = true;
+    }
+
+    private sealed class Profile
+    {
+        [Required(ErrorMessage = "The name is required.")]
+        public string? Name { get; set; }
+
+        public string? Country { get; set; }
+
+        public string? Bio { get; set; }
+
+        public bool Notify { get; set; } = true;
+
+        [Range(typeof(bool), "true", "true", ErrorMessage = "Accept the terms to continue.")]
+        public bool Terms { get; set; }
+    }
+}

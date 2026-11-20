@@ -155,6 +155,13 @@ o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Blux.UI.Images: also
 
 See the "Images" guide of the docs site.
 
+## MAUI and Blazor Hybrid
+
+Blux runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
+`maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `BxHead` and a
+`HeadOutlet` root component); the local image optimizer is web only. Tooltips follow touch, targets are 44 px on coarse pointers, safe areas are respected, and an experimental
+TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See `samples/Blux.Maui` and the "MAUI and Blazor Hybrid" guide.
+
 ## AI tooling
 
 Agents can read the real API instead of guessing it. All of it is generated from the docs catalog and the library, so it follows every change.

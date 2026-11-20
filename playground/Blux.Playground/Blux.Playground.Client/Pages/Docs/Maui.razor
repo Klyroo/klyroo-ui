@@ -1,0 +1,114 @@
+@page "/docs/maui"
+@layout Layout.DocsLayout
+
+<PageTitle>MAUI and Blazor Hybrid · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>MAUI and Blazor Hybrid</h1>
+    <p class="pg-lead">Blux runs in a <code>BlazorWebView</code>, so one set of pages can ship as a web app and as an app for Android, Windows, iOS and macOS. The <code>maui-blazor-web</code> template (a shared Razor class library, a web project and a MAUI project) is the intended starting point; <code>samples/Blux.Maui</code> in the repository is that template with Blux in it.</p>
+
+    <h2>What a web view changes</h2>
+    <ul>
+        <li>The renderer is <code>RendererInfo.Name == "WebView"</code>: always interactive, no prerendering, no <code>HttpContext</code>, no server to render the <code>&lt;head&gt;</code>. <code>BluxHost.IsHybrid(RendererInfo)</code> tells, and every component that depends on a server degrades by itself.</li>
+        <li>Only the classic JS initializer exports run (<code>beforeStart</code> and <code>afterStarted</code>). Blux exports both, next to <code>afterWebStarted</code> for Blazor Web Apps, so custom elements, the <code>bxtoggle</code> and <code>bxchange</code> events and the color mode are set up in every host.</li>
+        <li>Static web assets of the library are served at <code>_content/Blux.UI/...</code> from the app's <code>wwwroot/index.html</code>, like in a browser.</li>
+    </ul>
+
+    <h2>Set up</h2>
+    <p>Reference the package from the shared library and the MAUI project, call <code>AddBluxUi</code> from code both hosts run, and use the same layout everywhere.</p>
+    <CodeBlock Title="MauiProgram.cs" Code="@Program" />
+    <p>The host page links the stylesheets. <code>viewport-fit=cover</code> lets the page use the whole screen; Blux keeps headers, panels and toasts inside the safe area (<code>env(safe-area-inset-*)</code>).</p>
+    <CodeBlock Title="wwwroot/index.html" Code="@Index" />
+    <p>The page sends content to the head through <code>HeadOutlet</code>. Add it as a root component with the selector <code>head::after</code>, and place <code>BxHead</code> once in the layout:</p>
+    <CodeBlock Title="MainPage.xaml" Code="@Xaml" />
+    <p><code>BxHead</code> renders the theme variables of <code>AddBluxUi(o =&gt; o.Colors...)</code> (<code>BxThemeStyle</code>) and the self-hosted fonts (<code>BxFonts</code>) into the head. It renders nothing in a browser, where <code>App.razor</code> places them. The color mode needs nothing: the JS initializer applies the stored mode before the app renders, so <code>BxColorModeScript</code> renders nothing in a web view and <code>BxCultureMeta</code> neither.</p>
+
+    <h2>Fonts and icons</h2>
+    <p>Declare <code>BluxFont</code> items and import the Blux targets in the <strong>MAUI project</strong> (a package reference does it for you). The fonts are static web assets under <code>_blux/fonts/</code>, which MAUI copies into the app as assets served from <code>wwwroot</code>; <code>BxFonts</code> finds its manifest in the loaded assemblies (a MAUI app has no entry assembly on every platform) and links the plain route, because a web view has no asset fingerprint map. Icons are bundled by name at build time as on the web; add the shared project with <code>&lt;BluxIconScanDirectory Include="..\Shared" /&gt;</code>.</p>
+
+    <h2>Images</h2>
+    <p>The default provider stays <code>none</code>: images keep their <code>src</code>, files under <code>wwwroot</code> load from the device. CDN providers (<code>Blux.UI.Images</code>) work as on the web. <code>Blux.UI.Images.Local</code> is an ASP.NET Core endpoint and is web only. <code>BxImage Preload</code> adds no head link in a web view (the image still loads eagerly).</p>
+
+    <h2>Language</h2>
+    <p>The culture of a .NET process comes from the device, and changing it takes effect after a restart. <code>BxLocaleSelect</code> in a web view writes no cookie and does not reload: it saves the choice in an <code>IBxCultureStore</code> (the <code>localStorage</code> of the web view by default) and <code>BxApp</code> applies it before its content renders. Set <code>Reload="true"</code> to apply it at once (the process culture changes and the web view reloads). To start in the right language with no flash, keep the choice in MAUI <code>Preferences</code> and read it in <code>MauiProgram</code>:</p>
+    <CodeBlock Title="PreferencesCultureStore.cs" Code="@Store" />
+    <p><code>BxCultureMeta</code> and <code>ApplyServerCultureAsync</code> are server features: they do nothing in a web view.</p>
+
+    <h2>Storage</h2>
+    <p>Color mode, the banner, the dashboard sizes and, in a web view, the sidebar state use <code>localStorage</code>, which works on every platform. Cookies are unreliable in a web view (WebKit's tracking prevention on iOS and macOS) and are not used there. The sidebar and dashboard cannot be rendered with their remembered state on a server, because there is none.</p>
+
+    <h2>Forms</h2>
+    <p>A <code>FormName</code> is only how a form posts in a Blazor Web App without interactivity. A web view is always interactive, so <code>BxForm</code>, <code>BxAuthForm</code> and <code>BxChatPrompt</code> submit through their events; synchronous JS interop is not available, and Blux does not use it.</p>
+
+    <h2>Touch</h2>
+    <ul>
+        <li>Tooltips ignore the tap; they open on a long press or on keyboard focus.</li>
+        <li>On a coarse pointer, buttons, tabs, menu items and options are at least 44 by 44 pixels. Add <code>data-bx-compact</code> to opt an element out.</li>
+        <li>Nothing is reachable only by hover.</li>
+    </ul>
+
+    <h2>Platforms</h2>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Platform support</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Platform</th><th scope="col" class="px-3 py-2 text-start">Minimum</th><th scope="col" class="px-3 py-2 text-start">Status</th></tr>
+            </thead>
+            <tbody>
+                <tr><th scope="row" class="px-3 py-2 text-start">Android</th><td class="px-3 py-2">7.0 (API 24), with an up to date Android System WebView (Chromium 114 or later for the popover API)</td><td class="px-3 py-2">Built and run on an emulator</td></tr>
+                <tr><th scope="row" class="px-3 py-2 text-start">iOS</th><td class="px-3 py-2"><strong>17</strong> (MAUI itself: 16.4). Blux uses the native popover API, which WebKit ships from 17</td><td class="px-3 py-2">Built in CI</td></tr>
+                <tr><th scope="row" class="px-3 py-2 text-start">Mac Catalyst</th><td class="px-3 py-2">17.0 (macOS 14)</td><td class="px-3 py-2">Built in CI</td></tr>
+                <tr><th scope="row" class="px-3 py-2 text-start">Windows</th><td class="px-3 py-2">10 1809, with WebView2</td><td class="px-3 py-2">Built in CI</td></tr>
+                <tr><th scope="row" class="px-3 py-2 text-start">Android TV</th><td class="px-3 py-2">As Android</td><td class="px-3 py-2">Experimental</td></tr>
+                <tr><th scope="row" class="px-3 py-2 text-start">Tizen</th><td class="px-3 py-2">-</td><td class="px-3 py-2">Not supported: no official BlazorWebView</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h2>TV mode (experimental)</h2>
+    <p>Turn it on with <code>&lt;BxApp SpatialNavigation="true" /&gt;</code> (or <code>Blux.setSpatialNavigation(true)</code>, or <code>data-bx-tv</code> on <code>html</code>). The arrow keys move focus to the nearest focusable element in that direction; widgets that use the arrows (menus, tabs, listboxes) keep them, overlays keep focus inside; Enter activates; Back closes the topmost overlay. <code>html[data-bx-tv]</code> scales the UI by <code>--bx-tv-scale</code> (1.25), keeps content inside <code>--bx-tv-safe</code> of the screen edge and draws a thick focus ring.</p>
+    <p>A web view on Android TV may not receive the D-pad as key events, so the Activity forwards them into the page with <code>Blux.tvKey('ArrowLeft')</code>, and asks <code>Blux.tvBack()</code> on Back, leaving the app only when it returns false. The sample's <code>MainActivity</code> does this, and its manifest declares the leanback launcher with <code>touchscreen</code> not required, so one APK installs on phones and TVs. <code>-p:BluxTv=true</code> forces TV mode on any device.</p>
+
+    <h2>Not available</h2>
+    <ul>
+        <li>Static rendering, prerendering, enhanced navigation, the culture cookie and <code>Blux.UI.Images.Local</code>.</li>
+        <li>The inline head scripts of the web: the color mode is applied by the initializer instead.</li>
+    </ul>
+</div>
+
+@code {
+    private const string Program = """
+        builder.Services.AddMauiBlazorWebView();
+        builder.Services.AddBluxUi(o => o.Colors.Primary = BxPalette.Blue); // the same call as the web host
+        builder.Services.AddSingleton<IBxCultureStore, PreferencesCultureStore>(); // optional
+        """;
+
+    private const string Index = """
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <base href="/" />
+        <link rel="stylesheet" href="_content/Blux.UI/blux.preflight.css" />
+        <link rel="stylesheet" href="_content/Blux.UI/blux.css" />
+        ...
+        <div id="app">Loading...</div>
+        <script src="_framework/blazor.webview.js" autostart="false"></script>
+        """;
+
+    private const string Xaml = """
+        <BlazorWebView HostPage="wwwroot/index.html">
+            <BlazorWebView.RootComponents>
+                <RootComponent Selector="#app" ComponentType="{x:Type shared:Routes}" />
+                <RootComponent Selector="head::after" ComponentType="{x:Type web:HeadOutlet}" />
+            </BlazorWebView.RootComponents>
+        </BlazorWebView>
+        """;
+
+    private const string Store = """
+        public sealed class PreferencesCultureStore : IBxCultureStore
+        {
+            public ValueTask<string?> GetAsync() => ValueTask.FromResult(Preferences.Default.Get<string?>("blux-culture", null));
+            public ValueTask SetAsync(string culture) { Preferences.Default.Set("blux-culture", culture); return ValueTask.CompletedTask; }
+        }
+        // MauiProgram, before the first page:
+        // CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(Preferences.Default.Get("blux-culture", "en"));
+        """;
+}

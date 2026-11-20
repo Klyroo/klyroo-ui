@@ -26,6 +26,9 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
 
     protected string BaseUrl => server.BaseUrl;
 
+    /// <summary>chromium, firefox or webkit.</summary>
+    protected string BrowserName => server.Browser.BrowserType.Name;
+
     protected IPage Page { get; private set; } = default!;
     private IBrowserContext _context = default!;
 
@@ -42,6 +45,15 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
     }
 
     private readonly List<IBrowserContext> _extraContexts = [];
+
+    /// <summary>A browser context with its own options, disposed with the test.</summary>
+    protected async Task<IBrowserContext> NewContext(BrowserNewContextOptions options)
+    {
+        options.BaseURL ??= server.BaseUrl;
+        var context = await server.Browser.NewContextAsync(options);
+        _extraContexts.Add(context);
+        return context;
+    }
 
     /// <summary>A page of a browser that reports an Apple platform, where the "mod" of a shortcut is the command key.</summary>
     protected async Task<IPage> NewApplePage()

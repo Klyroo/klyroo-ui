@@ -161,8 +161,16 @@ jusqu'à 20 %, 4 surfaces, survol et appui) ; le jaune signal garde sa teinte et
 - **Release 0.1.0 préparée** : métadonnées NuGet, symboles, icône, CHANGELOG, contrôle de paquet `build/verify-package.mjs`,
   workflow de release sur tag `v*` (job de publication séparé, environnement `nuget`).
 
+**MAUI Blazor Hybrid (2026-11-20)** : Blux tourne dans un `BlazorWebView` (Android testé, Windows/iOS 17+/Mac Catalyst compilés en CI, Android TV expérimental, Tizen non supporté).
+Décisions : détection par `RendererInfo.Name == "WebView"` côté .NET (`BluxHost`, `IsHybrid`) et par le pont `window.external.sendMessage/receiveMessage` côté JS
+(`html[data-bx-host=webview]`) ; l'initialiseur exporte `beforeStart`/`afterStarted` (seuls exécutés dans une WebView) en plus de `afterWebStarted` ; état du sidebar en
+localStorage, culture via `IBxCultureStore` (localStorage par défaut, Preferences dans l'exemple), `BxHead` + `HeadOutlet` en `head::after` pour le thème et les polices (le
+script du mode de couleur est remplacé par l'initialiseur), pas de préchargement d'image, cibles 44 px en `pointer: coarse`, `env(safe-area-inset-*)`, tooltips au appui long,
+mode TV (`BxApp SpatialNavigation`) avec navigation spatiale. Exemple : `samples/Blux.Maui` (TFM `net10.0`, `-p:BluxSampleTfm=net11.0` avec la charge de travail .NET 11).
+
 Reste à faire :
 
+- Faire tourner l'exemple sur un émulateur Android (phone et TV), vérifier `HeadOutlet`, les polices servies et les touches D-pad ; builds iOS, Mac Catalyst et Windows seulement en CI.
 - Choisir le compte GitHub, pousser, faire tourner la CI (WebKit, passe trimmée) ; renseigner `RepositoryUrl`.
 - Héberger le site de doc : URL réelle du MCP HTTP, `Blux:SiteUrl` pour `llms.txt`, dépôt cible de `npx skills add`.
 - Faire relire les 11 traductions par des locuteurs natifs.
