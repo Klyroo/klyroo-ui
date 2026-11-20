@@ -683,7 +683,7 @@
 `/components/app`. The root wrapper of an app: renders the toaster, resolves the locale and sets language and direction, and cascades global class overrides.
 
 - `<BxApp>`
-  - Parameters: `Class`, `Dir`, `Lang`, `Locale`, `Overrides`, `ToastDuration`, `Toaster`, `Ui`
+  - Parameters: `ApplyStoredCulture`, `Class`, `Dir`, `Lang`, `Locale`, `Overrides`, `SpatialNavigation`, `ToastDuration`, `Toaster`, `Ui`
   - Slots: `ChildContent`
   - `Ui` (`AppUi`): `Root`
 
@@ -748,6 +748,7 @@
 
 - `<BxLocaleSelect>`
   - Parameters: `AriaLabel`, `Class`, `Color`, `CookieName`, `CookiePath`, `Locales`, `Reload`, `Size`, `Ui`, `Value`, `Variant`
+  - Events: `OnLocaleChange`
   - `Ui` (`LocaleSelectUi`): `Root`
 - `<BxLocale>`
 - `<BxMessages>`
