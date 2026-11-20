@@ -82,7 +82,8 @@ public class NavigationTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await Open(mode, "avatar");
 
-        var broken = Page.Locator("img[src='/missing.png']");
+        // The docs site serves images through the local optimizer, so the src is /_blux/img?src=%2Fmissing.png&...
+        var broken = Page.Locator("img[data-bx-avatar-image][src*='missing.png']");
         // Lazy images can load late under load (Firefox): allow more than the default 5 s.
         await Assertions.Expect(broken).ToBeHiddenAsync(new() { Timeout = 15_000 });
         await Assertions.Expect(broken.Locator("xpath=..").GetByText("AL", new() { Exact = true })).ToBeVisibleAsync();

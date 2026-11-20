@@ -126,7 +126,7 @@ public class ImageTests(PlaygroundServer server) : PlaygroundTest(server)
     [Fact]
     public async Task Images_guide_has_no_accessibility_violations()
     {
-        await Page.GotoAsync("/docs/images");
+        await OpenGuide("/docs/images");
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Images", Level = 1 })).ToBeVisibleAsync();
 
         await AssertNoAccessibilityViolations();

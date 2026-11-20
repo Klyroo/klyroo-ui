@@ -98,6 +98,17 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// Opens a guide page (/docs/...). Guides run in Auto: the head outlet renders the title again once the page is
+    /// interactive, so a scan made before that can see an empty title. Waits for the interactive render and the title.
+    /// </summary>
+    protected async Task OpenGuide(string path)
+    {
+        await Page.GotoAsync(path);
+        await Assertions.Expect(Page.Locator("main#main")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover') && document.title.length > 0");
+    }
+
     protected async Task AssertNoAccessibilityViolations()
     {
         var result = await Page.RunAxe();

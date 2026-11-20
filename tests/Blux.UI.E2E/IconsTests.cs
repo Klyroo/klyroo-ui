@@ -108,8 +108,7 @@ public class IconsTests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "icon");
         await AssertNoAccessibilityViolations();
 
-        await Page.GotoAsync("/docs/icons");
-        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await OpenGuide("/docs/icons");
         await AssertNoAccessibilityViolations();
     }
 
