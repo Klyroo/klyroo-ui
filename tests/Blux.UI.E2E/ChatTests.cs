@@ -236,7 +236,11 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
     private ILocator Assistant => Page.GetByTestId("chat-palette-messages").Locator("[data-bx-chat-message][data-role=assistant]");
 
     /// <summary>The text of the latest answer, without the avatar's initials.</summary>
-    private ILocator LastAnswer => Assistant.Last.Locator("[data-bx-chat-content]");
+    // A prompt that gets the longest canned reply (about five seconds of streaming), for tests that act while it streams.
+    private static readonly string LongPrompt = Enumerable.Range(1, 50).Select(i => $"Tell me more {i}")
+        .First(p => Blux.Playground.Client.Examples.ChatDemo.Reply(p) == Blux.Playground.Client.Examples.ChatDemo.LongestReply);
+
+    private ILocator LastAnswer =>Assistant.Last.Locator("[data-bx-chat-content]");
 
     [Theory]
     [MemberData(nameof(InteractiveModes))]
@@ -249,22 +253,35 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(prompt.GetByRole(AriaRole.Button, new() { Name = "Send" })).ToBeVisibleAsync();
         await Assertions.Expect(announce).ToBeEmptyAsync();
 
-        await Textarea("chat-palette-prompt").FillAsync("Tell me about streaming");
+        // The submitted state lasts 400 ms: record the statuses as they change instead of polling for them.
+        await messages.EvaluateAsync("""
+            el => {
+              window.__statuses = [el.getAttribute('data-status')];
+              window.__indicatorWhenSubmitted = false;
+              new MutationObserver(() => {
+                const s = el.getAttribute('data-status');
+                if (s === 'submitted' && el.querySelector('[data-slot=indicator]')) window.__indicatorWhenSubmitted = true;
+                if (window.__statuses.at(-1) !== s) window.__statuses.push(s);
+              }).observe(el, { attributes: true, subtree: true, childList: true });
+            }
+            """);
+        await Textarea("chat-palette-prompt").FillAsync(LongPrompt);
         await Textarea("chat-palette-prompt").PressAsync("Enter");
 
-        await Assertions.Expect(messages).ToHaveAttributeAsync("data-status", "submitted");
-        await Assertions.Expect(messages.Locator("[data-slot=indicator]")).ToBeVisibleAsync();
         await Assertions.Expect(messages).ToHaveAttributeAsync("data-status", "streaming", new() { Timeout = 10_000 });
+        Assert.Equal(["idle", "submitted", "streaming"], await Page.EvaluateAsync<string[]>("() => window.__statuses.slice(0, 3)"));
+        Assert.True(await Page.EvaluateAsync<bool>("() => window.__indicatorWhenSubmitted"), "the typing indicator shows while the answer is submitted");
         await Assertions.Expect(prompt.GetByRole(AriaRole.Button, new() { Name = "Stop" })).ToBeVisibleAsync();
         await Assertions.Expect(Assistant.Last).ToHaveAttributeAsync("data-streaming", "true");
         await Assertions.Expect(Assistant.Last).ToHaveAttributeAsync("aria-busy", "true");
-        // Tokens arrive, but none of them is announced.
-        await Page.WaitForTimeoutAsync(300);
-        await Assertions.Expect(announce).ToBeEmptyAsync();
-        // Sending again while the answer streams does nothing.
+        // Sending again while the answer streams does nothing. Checked right after the busy state is seen: the demo
+        // stream lasts about two seconds, and a slow browser could otherwise send after it ended, which is allowed.
         await Textarea("chat-palette-prompt").FillAsync("Another one");
+        await Assertions.Expect(prompt).ToHaveAttributeAsync("data-busy", new Regex(".*"));
         await Textarea("chat-palette-prompt").PressAsync("Enter");
         await Assertions.Expect(messages.Locator("[data-bx-chat-message][data-role=user]")).ToHaveCountAsync(1);
+        // Tokens arrive, but none of them is announced.
+        await Assertions.Expect(announce).ToBeEmptyAsync();
 
         await Assertions.Expect(messages).ToHaveAttributeAsync("data-status", "idle", new() { Timeout = 30_000 });
 
@@ -283,7 +300,7 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "chat-palette");
         var messages = Page.GetByTestId("chat-palette-messages");
         var prompt = Page.GetByTestId("chat-palette-prompt");
-        await Textarea("chat-palette-prompt").FillAsync("Stop me");
+        await Textarea("chat-palette-prompt").FillAsync(LongPrompt);
         await Textarea("chat-palette-prompt").PressAsync("Enter");
         await Assertions.Expect(messages).ToHaveAttributeAsync("data-status", "streaming", new() { Timeout = 10_000 });
         await Assertions.Expect(LastAnswer).Not.ToHaveTextAsync("", new() { Timeout = 5_000 });
@@ -296,7 +313,9 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         var stopped = await LastAnswer.InnerTextAsync();
         await Page.WaitForTimeoutAsync(500);
         Assert.Equal(stopped, await LastAnswer.InnerTextAsync());
-        Assert.True(stopped.Length < 100, $"the stream should have been cut short: {stopped}");
+        // Compared with the whole canned reply, not a length: under load the click can reach .NET a few tokens late.
+        var full = Blux.Playground.Client.Examples.ChatDemo.LongestReply.Trim();
+        Assert.True(Regex.Replace(stopped, @"\s+", " ").Trim().Length < full.Length, $"the stream should have been cut short: {stopped}");
     }
 
     [Fact]

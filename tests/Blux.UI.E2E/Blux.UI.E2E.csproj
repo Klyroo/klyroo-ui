@@ -18,6 +18,11 @@
     <ProjectReference Include="..\..\playground\Blux.Playground\Blux.Playground\Blux.Playground.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
+  <!-- The canned chat replies, so chat tests compare with the whole answer instead of guessing a length. -->
+  <ItemGroup>
+    <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Examples\ChatDemo.cs" Link="ChatDemo.cs" />
+  </ItemGroup>
+
   <!-- One browser page per test class at a time: by default xUnit uses one thread per core, and that many pages
        booting WebAssembly at once time out (Firefox first). -->
   <ItemGroup>
