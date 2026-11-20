@@ -5,8 +5,8 @@
     Both avatars are rendered and CSS shows the one matching the "dark" class of the page: no script, no flash,
     correct on static pages. The hidden one is display:none, so it is not in the accessibility tree.
 *@
-<BxAvatar Src="@Light" Alt="@Alt" Text="@Text" Icon="Icon" Size="Size" Ui="Ui" Class="@_light" @attributes="AdditionalAttributes" />
-<BxAvatar Src="@(Dark ?? Light)" Alt="@Alt" Text="@Text" Icon="Icon" Size="Size" Ui="Ui" Class="@_dark" @attributes="AdditionalAttributes" />
+<BxAvatar Src="@Light" Alt="@Alt" Text="@Text" Icon="Icon" Size="Size" Ui="Ui" ImageOptions="ImageOptions" Class="@_light" @attributes="AdditionalAttributes" />
+<BxAvatar Src="@(Dark ?? Light)" Alt="@Alt" Text="@Text" Icon="Icon" Size="Size" Ui="Ui" ImageOptions="ImageOptions" Class="@_dark" @attributes="AdditionalAttributes" />
 
 @code {
     private string _light = "";
@@ -23,6 +23,9 @@
     [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
     private BxSize? _sizeParameter;
     [Parameter] public AvatarUi? Ui { get; set; }
+
+    /// <summary>Image settings forwarded to both avatars, see <see cref="BxAvatar.ImageOptions"/>.</summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
 
     protected override void OnParametersSet()
     {
