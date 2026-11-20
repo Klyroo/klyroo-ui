@@ -4,6 +4,7 @@
 @* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
 <BxHead />
+<SystemBars />
 
 <BxApp SpatialNavigation="@FormFactor.IsTv">
     <BxHeader Title="Blux on MAUI" Items="_items" AriaLabel="Main" MenuTitle="Menu">

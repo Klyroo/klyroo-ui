@@ -29,6 +29,18 @@
     <CodeBlock Title="MainPage.xaml" Code="@Xaml" />
     <p><code>BxHead</code> renders the theme variables of <code>AddBluxUi(o =&gt; o.Colors...)</code> (<code>BxThemeStyle</code>) and the self-hosted fonts (<code>BxFonts</code>) into the head. It renders nothing in a browser, where <code>App.razor</code> places them. The color mode needs nothing: the JS initializer applies the stored mode before the app renders, so <code>BxColorModeScript</code> renders nothing in a web view and <code>BxCultureMeta</code> neither.</p>
 
+    <h2>System bars and the Back button (Android)</h2>
+    <p>
+        With edge to edge, the status bar and the gesture bar show whatever is behind the page: the MAUI page background. To make them follow the color mode, the sample watches
+        <code>bx-color-mode</code> (Blux dispatches it on every change), passes <code>dark</code> to the host, and the MAUI side sets the page background to <code>--blux-bg</code>
+        and <code>AppearanceLightStatusBars</code> / <code>AppearanceLightNavigationBars</code> on <code>WindowCompat.GetInsetsController</code> (see <code>SystemBars</code> in the sample).
+    </p>
+    <p>
+        Since Android 13 Back is not a key event but goes through <code>OnBackPressedDispatcher</code>, and with no callback the system leaves the app (on a TV, to the launcher) even with a dialog open.
+        Register a callback in <code>MainActivity.OnCreate</code> that evaluates <code>Blux.tvBack()</code> in the web view: it closes the topmost dialog or popover, else goes back in the history, and
+        returns <code>false</code> only when nothing is left, which is when the app goes to the background.
+    </p>
+
     <h2>Fonts and icons</h2>
     <p>Declare <code>BluxFont</code> items and import the Blux targets in the <strong>MAUI project</strong> (a package reference does it for you). The fonts are static web assets under <code>_blux/fonts/</code>, which MAUI copies into the app as assets served from <code>wwwroot</code>; <code>BxFonts</code> finds its manifest in the loaded assemblies (a MAUI app has no entry assembly on every platform) and links the plain route, because a web view has no asset fingerprint map. Icons are bundled by name at build time as on the web; add the shared project with <code>&lt;BluxIconScanDirectory Include="..\Shared" /&gt;</code>.</p>
 

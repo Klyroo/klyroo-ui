@@ -23,6 +23,7 @@ public static class MauiProgram
 
         // Device specific services used by the shared project.
         builder.Services.AddSingleton<IFormFactor, FormFactor>();
+        builder.Services.AddSingleton<ISystemBars, SystemBars>();
 
         builder.Services.AddMauiBlazorWebView();
         builder.Services.AddSampleBlux();

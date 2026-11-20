@@ -176,6 +176,22 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
+    public async Task Header_mobile_menu_opens_with_a_tap_in_a_web_view()
+    {
+        var context = await NewContext(new() { HasTouch = true, IsMobile = true, ViewportSize = new() { Width = 390, Height = 800 } });
+        await context.AddInitScriptAsync(Bridge);
+        var page = await context.NewPageAsync();
+        await Open(page, "server", "header");
+        var dialog = page.GetByRole(AriaRole.Dialog, new() { Name = "Site menu" });
+
+        await page.GetByTestId("header").GetByRole(AriaRole.Button, new() { Name = "Open menu" }).TapAsync();
+
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await page.EvaluateAsync("() => Blux.tvBack()");
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+
+    [Fact]
     public async Task Coarse_pointers_get_targets_of_at_least_44_pixels()
     {
         var context = await NewContext(new() { HasTouch = true, IsMobile = true, ViewportSize = new() { Width = 390, Height = 800 } });
