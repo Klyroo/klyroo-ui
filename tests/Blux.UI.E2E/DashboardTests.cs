@@ -353,4 +353,59 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         var width = await button.EvaluateAsync<double>("e => e.getBoundingClientRect().width");
         Assert.InRange(width, 20, 48.5);
     }
+
+    [Fact]
+    public async Task Search_button_hint_says_Ctrl_on_other_platforms_and_the_command_key_on_Apple()
+    {
+        await Open("ssr", "dashboard-search-button");
+        var kbd = Page.GetByTestId("dashboard-search-example-button").Locator("kbd[data-bx-mod]");
+        Assert.Equal("\"Ctrl\"", await kbd.EvaluateAsync<string>("e => getComputedStyle(e, '::before').content"));
+        await Assertions.Expect(Page.GetByTestId("dashboard-search-example-button")).ToHaveAttributeAsync("aria-keyshortcuts", "Control+K Meta+K");
+
+        var apple = await NewApplePage();
+        await apple.GotoAsync("/ssr/components/dashboard-search-button");
+        await apple.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        var appleKbd = apple.GetByTestId("dashboard-search-example-button").Locator("kbd[data-bx-mod]");
+
+        Assert.Equal("\"⌘\"", await appleKbd.EvaluateAsync<string>("e => getComputedStyle(e, '::before').content"));
+    }
+
+    // ---- Review findings (second review of waves C and D)
+
+    private Task<string[]> FirstGroupFlex() =>
+        Page.EvaluateAsync<string[]>("() => [...document.querySelector('bx-dashboard-group').querySelectorAll('[data-bx-dash-panel]')].map((p) => p.style.flex)");
+
+    [Fact]
+    public async Task Group_takes_the_sizes_of_the_dashboard_it_becomes_after_an_enhanced_navigation()
+    {
+        await Open("ssr", "dashboard-group");
+        Assert.Equal(["35 1 0%", "65 1 0%"], await FirstGroupFlex());
+
+        // Two panels on both pages, so only the id of the group tells that the sizes in memory belong to another dashboard.
+        await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true })); }");
+        await Page.EvaluateAsync("() => Blazor.navigateTo('/ssr/components/dashboard-resize-handle')");
+        await Page.EvaluateAsync("() => window.__enhanced");
+        await Page.WaitForURLAsync(new Regex("/dashboard-resize-handle$"));
+
+        Assert.Equal(["50 1 0%", "50 1 0%"], await FirstGroupFlex());
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Bound_group_ignores_a_bx_change_that_a_component_inside_it_reports(string mode)
+    {
+        await Open(mode, "dashboard-group");
+        var sizes = Page.GetByTestId("dashboard-bound-sizes");
+        await Assertions.Expect(sizes).ToHaveTextAsync("Sizes: 40,60");
+
+        // Any component inside the group may report a bx-change: its value is not the sizes of the panels.
+        await Page.GetByTestId("dashboard-bound-sidebar").EvaluateAsync(
+            "e => e.dispatchEvent(new CustomEvent('bx-change', { bubbles: true, detail: { value: '10,90', sequence: 99 } }))");
+        await Page.WaitForTimeoutAsync(500);
+
+        await Assertions.Expect(sizes).ToHaveTextAsync("Sizes: 40,60");
+        // The real report still arrives.
+        await Page.GetByTestId("dashboard-bound-set").ClickAsync();
+        await Assertions.Expect(sizes).ToHaveTextAsync("Sizes: 25,75");
+    }
 }

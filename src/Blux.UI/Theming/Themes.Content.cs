@@ -80,7 +80,7 @@ internal static partial class Themes
             .Slot("root", "min-w-0")
             .Slot("buttonLabel", "flex min-w-0 flex-1 items-center gap-2")
             .Slot("label", "min-w-0 flex-1 truncate text-start text-(--blux-text-muted)")
-            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5")
+            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5 [&>kbd[data-bx-mod]]:before:content-[attr(data-label)]")
             .Variant("collapsed", "false", "root", "gap-2 pe-1.5")
             .Default("collapsed", "true");
 }

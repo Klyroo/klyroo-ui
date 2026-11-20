@@ -440,6 +440,30 @@ public class ContentTests : BluxTestContext
     }
 
     [Fact]
+    public void Search_button_default_hint_follows_the_platform_in_the_browser_and_announces_the_shortcut()
+    {
+        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
+
+        var keys = cut.FindAll("kbd");
+        Assert.Equal(2, keys.Count);
+        Assert.True(keys[0].HasAttribute("data-bx-mod"));
+        Assert.Equal("Ctrl", keys[0].GetAttribute("data-label"));
+        Assert.Equal("", keys[0].TextContent);
+        Assert.Equal("K", keys[1].TextContent);
+        Assert.Equal("Control+K Meta+K", cut.Find("button").GetAttribute("aria-keyshortcuts"));
+    }
+
+    [Fact]
+    public void Search_button_explicit_keys_are_shown_as_given_without_a_platform_hint()
+    {
+        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Keys, ["Ctrl", "K"]));
+
+        Assert.Equal(["Ctrl", "K"], cut.FindAll("kbd").Select(k => k.TextContent.Trim()));
+        Assert.Empty(cut.FindAll("[data-bx-mod]"));
+        Assert.False(cut.Find("button").HasAttribute("aria-keyshortcuts"));
+    }
+
+    [Fact]
     public void Search_button_names_the_search_it_opens()
     {
         var cut = Render<BxContentSearchButton>(p => p.Add(b => b.For, "docs").Add(b => b.Collapsed, false).Add(b => b.Variant, ButtonVariant.Soft));

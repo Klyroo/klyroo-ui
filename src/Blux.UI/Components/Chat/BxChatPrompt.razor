@@ -5,7 +5,8 @@
     A message form. <bx-chat-prompt> grows the textarea, submits on Enter (Shift+Enter adds a line, composing with an IME
     never submits) and decides how the text leaves:
     - interactive: it reports the text with bx-change on the hidden sink element and clears the field; no form post;
-    - static server rendering: the form posts under FormName, and the text comes back as the posted form.
+    - static server rendering: the form posts under FormName, and the text comes back as the posted form. A page that renders
+      interactively posts nothing, not even while it prerenders: Enter then does nothing until the page is live.
     The sink is a separate element so a nested component's bx-change (a model select in the footer) is never read as a message.
 *@
 <bx-chat-prompt data-color="@Color.Value"
@@ -13,7 +14,7 @@
                 data-busy="@(Busy ? "" : null)"
                 data-disabled="@(Disabled ? "" : null)"
                 data-bx-live="@(Live ? "" : null)"
-                data-bx-post="@(FormName is not null ? "" : null)"
+                data-bx-post="@(Posts ? "" : null)"
                 data-submit-on-enter="@(SubmitOnEnter ? null : "false")"
                 data-max-rows="@MaxRows"
                 class="@_slots["root"]"
@@ -57,7 +58,8 @@
 
     /// <summary>
     /// Name of the form. Required to send in static server rendering, where the page receives the form post and calls
-    /// <see cref="OnSubmit"/>; one prompt per page and name.
+    /// <see cref="OnSubmit"/>; one prompt per page and name. Posting is for static rendering only: under an interactive
+    /// render mode (prerendering included) the form never posts, and Enter does nothing until the page is interactive.
     /// </summary>
     [Parameter] public string? FormName { get; set; }
 
@@ -112,6 +114,9 @@
     [Parameter] public ChatPromptUi? Ui { get; set; }
 
     private bool Busy => Status is ChatStatus.Submitted or ChatStatus.Streaming;
+
+    // The form posts only when no render mode is assigned: an interactive page, prerendered or not, never posts.
+    private bool Posts => FormName is not null && AssignedRenderMode is null && !RendererInfo.IsInteractive;
 
     // The text goes through bx-change once the page is interactive; before that, or without a handler, the form posts.
     private bool Live => OnSubmit.HasDelegate && RendererInfo.IsInteractive;

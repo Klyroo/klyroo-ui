@@ -29,7 +29,7 @@
             <div class="@_slots["actions"]" data-slot="actions">@Actions</div>
         }
         <div id="@($"{_id}-content")" data-bx-disclosure-content hidden="@(Open ? null : "until-found")" class="@_slots["content"]">
-            <div role="region" tabindex="0" aria-labelledby="@($"{_id}-trigger")" class="@_slots["body"]">
+            <div role="group" tabindex="0" aria-labelledby="@($"{_id}-trigger")" class="@_slots["body"]">
                 @ChildContent
             </div>
         </div>

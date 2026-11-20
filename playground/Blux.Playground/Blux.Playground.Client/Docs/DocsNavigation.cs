@@ -36,17 +36,33 @@ public static class DocsNavigation
         return items;
     }
 
-    /// <summary>The pages the header search finds: the guides and every component, grouped like the sidebar.</summary>
-    public static IReadOnlyList<BxContentSearchPage> SearchPages { get; } =
-    [
-        .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = "Getting started", Icon = "" }),
-        .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"/components/{c.Slug}")
+    private static readonly Dictionary<string, IReadOnlyList<BxContentSearchPage>> SearchPagesByPrefix = [];
+
+    /// <summary>
+    /// The pages the header search finds: the guides and every component, grouped like the sidebar. <paramref name="prefix"/> is
+    /// the render mode prefix of the page, as for <see cref="Sidebar"/>: component links keep it, and the guides, which exist
+    /// only in the default mode, stay as they are.
+    /// </summary>
+    public static IReadOnlyList<BxContentSearchPage> SearchPages(string prefix)
+    {
+        lock (SearchPagesByPrefix)
         {
-            Group = c.Group,
-            Icon = "",
-            Keywords = c.Slug.Replace('-', ' '),
-        }),
-    ];
+            if (!SearchPagesByPrefix.TryGetValue(prefix, out var pages))
+            {
+                SearchPagesByPrefix[prefix] = pages =
+                [
+                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = "Getting started", Icon = "" }),
+                    .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
+                    {
+                        Group = c.Group,
+                        Icon = "",
+                        Keywords = c.Slug.Replace('-', ' '),
+                    }),
+                ];
+            }
+            return pages;
+        }
+    }
 
     /// <summary>The links to the components before and after <paramref name="slug"/>, in sidebar order.</summary>
     public static (BxContentSurroundLink? Previous, BxContentSurroundLink? Next) Surround(string slug, string prefix)

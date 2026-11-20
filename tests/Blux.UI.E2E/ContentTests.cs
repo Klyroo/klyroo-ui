@@ -285,14 +285,22 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
     [Fact]
     public async Task Surround_has_no_previous_link_on_the_first_page_and_no_next_link_on_the_last()
     {
+        // The catalog grows, so the first and the last page are read from the sidebar, which lists the components in the same order.
         await Open("ssr", "button");
+        var pages = await Page.GetByTestId("docs-sidebar").First.Locator("a[href*='/components/']")
+            .EvaluateAllAsync<string[][]>("links => links.map((a) => [a.getAttribute('href').split('/').pop(), a.textContent.trim()])");
+        var (first, second) = (pages[0], pages[1]);
+        var (last, beforeLast) = (pages[^1], pages[^2]);
+
+        await Open("ssr", first[0]);
         await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToHaveCountAsync(1);
         await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToContainTextAsync("Next");
+        await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToContainTextAsync(second[1]);
 
-        await Open("ssr", "dashboard-search-button");
+        await Open("ssr", last[0]);
         await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToHaveCountAsync(1);
         await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToContainTextAsync("Previous");
-        await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToContainTextAsync("DashboardSearch");
+        await Assertions.Expect(Surround.GetByRole(AriaRole.Link)).ToContainTextAsync(beforeLast[1]);
     }
 
     [Fact]
@@ -440,6 +448,70 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
 
 
     // ---- Review findings (waves C and D)
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("ssr")]
+    public async Task Header_and_search_links_to_components_keep_the_render_mode_and_the_guides_stay_as_they_are(string mode)
+    {
+        await Open(mode, "button");
+
+        var main = Page.GetByRole(AriaRole.Navigation, new() { Name = "Main" });
+        await Assertions.Expect(main.GetByRole(AriaRole.Link, new() { Name = "Components" })).ToHaveAttributeAsync("href", $"/{mode}/components/button");
+        await Assertions.Expect(main.GetByRole(AriaRole.Link, new() { Name = "Docs" })).ToHaveAttributeAsync("href", "/docs");
+        await Assertions.Expect(main.GetByRole(AriaRole.Link, new() { Name = "Theming" })).ToHaveAttributeAsync("href", "/docs/theming");
+
+        await Page.Keyboard.PressAsync("Control+K");
+        var input = SiteSearch.GetByRole(AriaRole.Combobox);
+        await input.PressSequentiallyAsync("badge");
+        var component = SiteSearch.GetByRole(AriaRole.Option, new() { Name = "Badge" });
+        await Assertions.Expect(component).ToBeVisibleAsync();
+        Assert.Equal($"/{mode}/components/badge", await component.EvaluateAsync<string>("e => e.getAttribute('href') ?? e.querySelector('a')?.getAttribute('href')"));
+
+        await input.FillAsync("");
+        await input.PressSequentiallyAsync("theming");
+        var guide = SiteSearch.GetByRole(AriaRole.Option, new() { Name = "Theming" }).First;
+        Assert.Equal("/docs/theming", await guide.EvaluateAsync<string>("e => e.getAttribute('href') ?? e.querySelector('a')?.getAttribute('href')"));
+    }
+
+    [Fact]
+    public async Task Skip_link_lands_on_a_main_landmark_that_does_not_hold_the_docs_sidebar()
+    {
+        await Open("ssr", "button");
+
+        var main = Page.GetByRole(AriaRole.Main);
+        await Assertions.Expect(main).ToHaveCountAsync(1);
+        await Assertions.Expect(main.GetByRole(AriaRole.Heading, new() { Name = "Button", Level = 1 })).ToBeVisibleAsync();
+        // The sidebar (and its copy for narrow screens) sits beside the main landmark, so the skip link jumps over it.
+        await Assertions.Expect(main.GetByTestId("docs-sidebar")).ToHaveCountAsync(0);
+        await Assertions.Expect(Page.Locator("main aside:has([data-testid=docs-sidebar])")).ToHaveCountAsync(0);
+
+        // The target of the skip link is that main landmark, and it comes after the sidebar in the document.
+        var skip = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+        await Assertions.Expect(skip).ToHaveAttributeAsync("href", "#main");
+        Assert.True(await Page.EvaluateAsync<bool>(
+            "() => { const t = document.getElementById('main'); const s = document.querySelector('[data-testid=docs-sidebar]'); return t.localName === 'main' && !!(s.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING); }"));
+    }
+
+    private static Task<string> ModLabel(ILocator kbd) =>
+        kbd.EvaluateAsync<string>("e => getComputedStyle(e, '::before').content");
+
+    [Fact]
+    public async Task Search_button_hint_says_Ctrl_on_other_platforms_and_the_command_key_on_Apple()
+    {
+        await Open("ssr", "content-search-button");
+        var header = Page.Locator("header").GetByRole(AriaRole.Button, new() { Name = "Search" });
+        Assert.Equal("\"Ctrl\"", await ModLabel(header.Locator("kbd[data-bx-mod]")));
+        await Assertions.Expect(header).ToHaveAttributeAsync("aria-keyshortcuts", "Control+K Meta+K");
+
+        var apple = await NewApplePage();
+        await apple.GotoAsync("/ssr/components/content-search-button");
+        await apple.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        var appleHeader = apple.Locator("header").GetByRole(AriaRole.Button, new() { Name = "Search" });
+
+        Assert.Equal("\"⌘\"", await ModLabel(appleHeader.Locator("kbd[data-bx-mod]")));
+        await Assertions.Expect(appleHeader.Locator("kbd[data-bx-mod]")).ToHaveTextAsync("");
+    }
 
     [Fact]
     public async Task Toc_keeps_following_when_the_headings_are_replaced_by_elements_with_the_same_ids()

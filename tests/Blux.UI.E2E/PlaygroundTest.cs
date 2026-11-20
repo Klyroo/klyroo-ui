@@ -35,7 +35,22 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         Page = await _context.NewPageAsync();
     }
 
-    public async ValueTask DisposeAsync() => await _context.DisposeAsync();
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var extra in _extraContexts) await extra.DisposeAsync();
+        await _context.DisposeAsync();
+    }
+
+    private readonly List<IBrowserContext> _extraContexts = [];
+
+    /// <summary>A page of a browser that reports an Apple platform, where the "mod" of a shortcut is the command key.</summary>
+    protected async Task<IPage> NewApplePage()
+    {
+        var context = await server.Browser.NewContextAsync(new() { BaseURL = server.BaseUrl });
+        _extraContexts.Add(context);
+        await context.AddInitScriptAsync("Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' });");
+        return await context.NewPageAsync();
+    }
 
     /// <summary>Opens a page and waits until it can be used in its mode.</summary>
     protected async Task Open(string mode, string component)

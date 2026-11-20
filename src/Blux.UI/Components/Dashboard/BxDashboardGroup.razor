@@ -12,9 +12,11 @@
                         class="@_slots["root"]"
                         data-bx-dashboard-id="@StorageKey"
                         sizes="@(Sizes is null ? null : string.Join(',', Sizes.Select(s => s.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))))"
-                        @onbxchange="ChangeHandler"
-                        @onbxchange:stopPropagation="true"
                         @attributes="AdditionalAttributes">
+        @* The listener is on a childless element, so the bx-change of a component inside the group is never read as sizes. *@
+        <span hidden data-bx-dashboard-sink
+              @onbxchange="ChangeHandler"
+              @onbxchange:stopPropagation="true"></span>
         @ChildContent
     </bx-dashboard-group>
 </CascadingValue>
@@ -56,7 +58,6 @@
         typeof(BxChangeEventArgs))]
     private async Task OnChange(BxChangeEventArgs e)
     {
-        // Other components inside the group report with the same event: only a list of numbers is ours.
         var parts = (e.Value ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
         var sizes = new double[parts.Length];
         for (var i = 0; i < parts.Length; i++)

@@ -4,32 +4,27 @@
 
 @*
     The button of a chat prompt, by status: send (a submit button, works in static rendering), stop while the answer is on its way,
-    retry after an error. Stop and retry need interactivity, so they are disabled until the page is interactive.
+    retry after an error. Stop and retry need interactivity, so they are disabled until the page is interactive. Without
+    an OnStop handler the stop button is disabled (nothing could happen); without an OnReload handler an error shows the
+    send button, since a retry that does nothing is worse than a button that sends again.
 *@
-@if (_effective == ChatStatus.Idle)
-{
-    <BxButton Type="submit" Square Color="@(Color ?? BxColor.Primary)" Variant="ButtonVariant.Solid" Size="Size" Disabled="_disabled"
-              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Send, _slots["icon"])"
-              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatSend)" data-status="idle" @attributes="AdditionalAttributes" />
-}
-else if (_effective == ChatStatus.Error)
-{
-    <BxButton Type="button" Square Color="BxColor.Error" Variant="ButtonVariant.Soft" Size="Size" Disabled="_disabled" OnClick="ReloadHandler"
-              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Retry, _slots["icon"])"
-              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatRetry)" data-status="error" @attributes="AdditionalAttributes" />
-}
-else
-{
-    <BxButton Type="button" Square Color="BxColor.Neutral" Variant="ButtonVariant.Subtle" Size="Size" Disabled="_disabled" OnClick="StopHandler"
-              LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Stop, _slots["stopIcon"])"
-              Ui="_buttonUi" aria-label="@(Label ?? Options.Strings.ChatStop)" data-status="@ChatValue.Of(_effective)" @attributes="AdditionalAttributes" />
-}
+@* One button for every status: Blazor updates it in place, so focus stays on it when the status changes. *@
+<BxButton Type="@_type" Square Color="_color" Variant="_variant" Size="Size" Disabled="_disabled" OnClick="_onClick"
+          LeadingIcon="_icon"
+          Ui="_buttonUi" aria-label="@_label" data-status="@_dataStatus" @attributes="AdditionalAttributes" />
 
 @code {
     private SlotSet _slots = default!;
     private ButtonUi _buttonUi = new();
     private ChatStatus _effective;
     private bool _disabled;
+    private string _type = "submit";
+    private BxColor _color = BxColor.Primary;
+    private ButtonVariant _variant = ButtonVariant.Solid;
+    private RenderFragment _icon = default!;
+    private string _label = "";
+    private string _dataStatus = "idle";
+    private EventCallback<MouseEventArgs> _onClick;
 
     [CascadingParameter] private ChatPromptContext? Prompt { get; set; }
 
@@ -51,18 +46,46 @@ else
     [Parameter] public EventCallback OnReload { get; set; }
     [Parameter] public ChatPromptSubmitUi? Ui { get; set; }
 
-    // No callback means no click handler: the button then costs nothing and is not made inert.
-    private EventCallback<MouseEventArgs> StopHandler =>
-        OnStop.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnStop.InvokeAsync()) : default;
-
-    private EventCallback<MouseEventArgs> ReloadHandler =>
-        OnReload.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnReload.InvokeAsync()) : default;
-
     protected override void OnParametersSet()
     {
-        _effective = Status ?? Prompt?.Status ?? ChatStatus.Idle;
-        _disabled = Disabled || Prompt?.Disabled == true;
+        var status = Status ?? Prompt?.Status ?? ChatStatus.Idle;
+        // A retry nobody handles is not offered: the button sends, as when idle.
+        _effective = status == ChatStatus.Error && !OnReload.HasDelegate ? ChatStatus.Idle : status;
         _slots = ResolveSlots(Options.ChatPromptSubmit, new Dictionary<string, string?>(), Ui, "base");
         _buttonUi = new ButtonUi { Base = _slots["base"] };
+
+        // No callback means no click handler: the button then costs nothing and is not made inert.
+        switch (_effective)
+        {
+            case ChatStatus.Idle:
+                _type = "submit";
+                _color = Color ?? BxColor.Primary;
+                _variant = ButtonVariant.Solid;
+                _icon = BxChatIcons.Draw(BxChatIcons.Send, _slots["icon"]);
+                _label = Label ?? Options.Strings.ChatSend;
+                _dataStatus = "idle";
+                _onClick = default;
+                break;
+            case ChatStatus.Error:
+                _type = "button";
+                _color = BxColor.Error;
+                _variant = ButtonVariant.Soft;
+                _icon = BxChatIcons.Draw(BxChatIcons.Retry, _slots["icon"]);
+                _label = Label ?? Options.Strings.ChatRetry;
+                _dataStatus = "error";
+                _onClick = EventCallback.Factory.Create<MouseEventArgs>(this, () => OnReload.InvokeAsync());
+                break;
+            default:
+                _type = "button";
+                _color = BxColor.Neutral;
+                _variant = ButtonVariant.Subtle;
+                _icon = BxChatIcons.Draw(BxChatIcons.Stop, _slots["stopIcon"]);
+                _label = Label ?? Options.Strings.ChatStop;
+                _dataStatus = ChatValue.Of(_effective);
+                _onClick = OnStop.HasDelegate ? EventCallback.Factory.Create<MouseEventArgs>(this, () => OnStop.InvokeAsync()) : default;
+                break;
+        }
+        // Stop without a handler would be an enabled button that does nothing.
+        _disabled = Disabled || Prompt?.Disabled == true || (_effective is ChatStatus.Submitted or ChatStatus.Streaming && !OnStop.HasDelegate);
     }
 }

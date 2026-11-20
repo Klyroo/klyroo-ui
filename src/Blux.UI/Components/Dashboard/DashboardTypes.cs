@@ -7,6 +7,19 @@ internal sealed class DashboardContext
 {
     /// <summary>The storage key of the group: the sidebar remembers its state under it, and the controls find it by it.</summary>
     public string? Key { get; set; }
+
+    private int _sidebars;
+
+    /// <summary>
+    /// Counts a sidebar of the group, in document order, and gives its storage id: the first one has the key of the group, the
+    /// following ones <c>key-2</c>, <c>key-3</c>, so two sidebars never share a cookie and the controls without a target keep
+    /// finding the first.
+    /// </summary>
+    public string? RegisterSidebar()
+    {
+        var index = ++_sidebars;
+        return index == 1 || Key is null ? Key : $"{Key}-{index}";
+    }
 }
 
 /// <summary>Per-instance class overrides of <see cref="BxDashboardGroup"/> slots.</summary>

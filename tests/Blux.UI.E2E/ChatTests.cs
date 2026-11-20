@@ -190,13 +190,13 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         await WaitAtBottom(viewport);
 
         await Page.GetByTestId("chat-messages-reply").ClickAsync();
-        await Assertions.Expect(root.GetByText("New answer", new() { Exact = false })).ToHaveCountAsync(1);
+        await Assertions.Expect(root.Locator("[data-bx-chat-content]").GetByText("New answer")).ToHaveCountAsync(1);
         await WaitAtBottom(viewport);
 
         await viewport.EvaluateAsync("v => { v.scrollTop = 0; }");
         await Assertions.Expect(jump).ToBeVisibleAsync();
         await Page.GetByTestId("chat-messages-reply").ClickAsync();
-        await Assertions.Expect(root.GetByText("New answer", new() { Exact = false })).ToHaveCountAsync(2);
+        await Assertions.Expect(root.Locator("[data-bx-chat-content]").GetByText("New answer")).ToHaveCountAsync(2);
         await Page.WaitForTimeoutAsync(300);
         Assert.True(await viewport.EvaluateAsync<double>("v => v.scrollTop") < 40, "an answer must not pull a user who scrolled up");
         await Assertions.Expect(jump).ToBeVisibleAsync();
@@ -406,7 +406,7 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
         var tool = Page.GetByTestId("chat-tool-done");
         await tool.GetByRole(AriaRole.Button).ClickAsync();
         await Assertions.Expect(tool.GetByRole(AriaRole.Button)).ToHaveAttributeAsync("aria-expanded", "true");
-        await Assertions.Expect(tool.GetByRole(AriaRole.Region)).ToContainTextAsync("3 results");
+        await Assertions.Expect(tool.GetByRole(AriaRole.Group)).ToContainTextAsync("3 results");
         await Page.GetByTestId("chat-tool-failed").GetByRole(AriaRole.Button).ClickAsync();
         await AssertNoAccessibilityViolations();
     }
@@ -515,5 +515,25 @@ public class ChatTests(PlaygroundServer server) : PlaygroundTest(server)
             """);
 
         Assert.True(await Page.EvaluateAsync<int>("() => window.__scans") <= 1, "every token rescanned all the assistant messages");
+    }
+
+    // ---- Review findings (second review of waves C and D)
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Prompt_button_keeps_the_focus_when_the_status_changes(string mode)
+    {
+        await Open(mode, "chat-palette");
+        var prompt = Page.GetByTestId("chat-palette-prompt");
+        await Textarea("chat-palette-prompt").FillAsync("Tell me about streaming");
+        var send = prompt.GetByRole(AriaRole.Button, new() { Name = "Send" });
+        await send.FocusAsync();
+
+        await Page.Keyboard.PressAsync("Enter");
+
+        // Send becomes Stop while the answer streams, and then Send again: always the same element, so the focus stays on it.
+        var stop = prompt.GetByRole(AriaRole.Button, new() { Name = "Stop" });
+        await Assertions.Expect(stop).ToBeFocusedAsync();
+        await Assertions.Expect(prompt.GetByRole(AriaRole.Button, new() { Name = "Send" })).ToBeFocusedAsync(new() { Timeout = 30_000 });
     }
 }

@@ -26,6 +26,7 @@ function parse(text, count) {
 
 /**
  * <bx-dashboard-group data-bx-dashboard-id="app" sizes="30,70">
+ *   <span hidden data-bx-dashboard-sink @onbxchange></span>
  *   <bx-sidebar>…</bx-sidebar>
  *   <div data-bx-dash-panel data-size="30" data-min="20" data-max="60">… <div role="separator" data-bx-dash-handle></div></div>
  *   <div data-bx-dash-panel>…</div>
@@ -35,14 +36,16 @@ function parse(text, count) {
  * boundary between the panel it sits in (or follows) and the next one. Sizes are remembered in localStorage under the
  * id, except that bound sizes (data-bx-seq) are never read from storage: .NET owns them. The collapsed state and the
  * width of the sidebar belong to <bx-sidebar>, which is also told when controls are added around it.
- * Reports "bx-change" (value: sizes joined by commas) when a resize gesture ends.
+ * Reports "bx-change" (value: sizes joined by commas) when a resize gesture ends, on the sink element (see BxDashboardGroup).
  */
 export class BxDashboardGroupElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'sizes'];
+  static observedAttributes = ['data-bx-seq', 'sizes', 'data-bx-dashboard-id'];
 
   #reporter = new Reporter(this);
   #observer = null;
   #sizes = [];
+  // The id the sizes belong to: sizes computed for another dashboard must not be applied to this one.
+  #sizesKey = null;
   #drag = null;
   #ready = false;
 
@@ -59,21 +62,36 @@ export class BxDashboardGroupElement extends HTMLElement {
     this.#observer?.disconnect();
     this.#ready = false;
     this.#sizes = [];
+    this.#sizesKey = null;
   }
 
   attributeChangedCallback(name) {
     if (!this.#ready) return;
     // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
     if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
-    else this.#applyRendered(false);
+    else if (name === 'data-bx-dashboard-id') {
+      // An enhanced navigation can turn this element into another dashboard: its panels are merged after the attribute.
+      this.#sizesKey = undefined;
+      queueMicrotask(() => this.#reinit());
+    } else this.#applyRendered(false);
   }
 
   /** Re-applies the sizes an enhanced navigation merge reset to what the server rendered. */
   refresh() {
     if (!this.#ready) return;
     this.#reporter.adopt();
+    if (this.#sizesKey !== this.#key) this.#reinit();
     this.#layout();
     this.#syncSidebars();
+  }
+
+  /** Computes the sizes again, as for a dashboard that has just appeared (stored sizes of its id, else what it rendered). */
+  #reinit() {
+    if (!this.#ready) return;
+    const panels = this.#panels();
+    this.#sizes = panels.length === 0 ? [] : this.#initial(panels);
+    this.#sizesKey = this.#key;
+    this.#layout();
   }
 
   get #key() {
@@ -109,6 +127,7 @@ export class BxDashboardGroupElement extends HTMLElement {
     if (panels.length === 0) return;
     if (this.#sizes.length !== panels.length) {
       this.#sizes = this.#initial(panels);
+      this.#sizesKey = this.#key;
     }
     this.#layout();
   }
@@ -131,6 +150,7 @@ export class BxDashboardGroupElement extends HTMLElement {
     const sizes = value ? parse(value, panels.length) : null;
     if (!sizes) return;
     this.#sizes = sizes;
+    this.#sizesKey = this.#key;
     this.#layout();
   }
 
@@ -191,7 +211,8 @@ export class BxDashboardGroupElement extends HTMLElement {
   #commit() {
     const value = this.#sizes.map((s) => +s.toFixed(2)).join(',');
     if (!this.#reporter.bound && this.#key) write(this.#key, value);
-    this.#reporter.report('bx-change', { value });
+    // The .NET listener sits on a childless sink, so a bx-change of a component inside the group is never read as sizes.
+    this.#reporter.report('bx-change', { value }, this.querySelector(':scope > [data-bx-dashboard-sink]') ?? this);
   }
 
   get #rtl() {
