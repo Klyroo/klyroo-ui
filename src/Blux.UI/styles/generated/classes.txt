@@ -236,7 +236,7 @@ aria-[current=page]:text-(--blux-text-highlighted)
 aria-[current=page]:text-(--bx-color-contrast)
 aria-[current=page]:text-(--bx-color-text)
 aria-current:bg-(--bx-color)
-aria-current:ring-(--bx-color)
+aria-current:ring-(--bx-color-text)
 aria-disabled:bg-(--bx-color)
 aria-disabled:cursor-not-allowed
 aria-disabled:hover:bg-transparent
@@ -333,7 +333,9 @@ bottom-auto
 break-words
 caret-transparent
 checked:bg-(--bx-color)
-checked:ring-(--bx-color)
+checked:ring-(--bx-color-text)
+checked:ring-1
+checked:ring-inset
 columns-1
 contents
 cursor-col-resize
@@ -404,6 +406,9 @@ data-ready:motion-reduce:transition-none
 data-ready:transition-[width]
 data-selected:bg-(--bx-color)
 data-selected:hover:bg-(--bx-color)/90
+data-selected:ring-(--bx-color-text)
+data-selected:ring-1
+data-selected:ring-inset
 data-selected:text-(--bx-color-contrast)
 data-today:ring-(--bx-color-text)
 data-today:ring-1

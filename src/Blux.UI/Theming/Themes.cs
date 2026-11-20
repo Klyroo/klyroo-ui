@@ -67,7 +67,7 @@ internal static partial class Themes
             .Slot("root", "group relative flex items-start gap-2.5")
             .Slot("container", "relative inline-flex shrink-0 items-center")
             .Slot("input", "peer appearance-none shrink-0 cursor-pointer rounded-full bg-(--blux-control) transition-colors " +
-                           "checked:bg-(--bx-color) disabled:cursor-not-allowed disabled:opacity-60 " +
+                           "checked:bg-(--bx-color) checked:ring-1 checked:ring-inset checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
                            "aria-invalid:ring-2 aria-invalid:ring-(--blux-error) " + FocusRing)
             .Slot("thumb", "pointer-events-none absolute start-0.5 rounded-full bg-white shadow-sm ring-0 transition peer-checked:bg-(--bx-color-contrast) peer-disabled:opacity-60")
             .Slot("wrapper", "flex flex-col")
