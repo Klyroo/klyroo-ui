@@ -29,10 +29,10 @@ internal static partial class Themes
             .Variant("side", "right", "container", "max-w-[75%] flex-row-reverse")
             .Variant("side", "right", "wrapper", "items-end")
 
-            .Variant("variant", "solid", "content", surface + " bg-(--bx-color) text-(--bx-color-contrast)")
-            .Variant("variant", "outline", "content", surface + " ring ring-inset ring-(--bx-color)/50 text-(--blux-text)")
+            .Variant("variant", "solid", "content", surface + " bg-(--bx-color) ring ring-inset ring-(--bx-color-text) text-(--bx-color-contrast)")
+            .Variant("variant", "outline", "content", surface + " ring ring-inset ring-(--bx-color-text)/75 text-(--blux-text)")
             .Variant("variant", "soft", "content", surface + " bg-(--bx-color)/10 text-(--blux-text)")
-            .Variant("variant", "subtle", "content", surface + " bg-(--bx-color)/10 ring ring-inset ring-(--bx-color)/25 text-(--blux-text)")
+            .Variant("variant", "subtle", "content", surface + " bg-(--bx-color)/10 ring ring-inset ring-(--bx-color-text)/75 text-(--blux-text)")
             .Variant("variant", "naked", "content", "py-1")
 
             .Variant("role", "system", "root", "justify-center")

@@ -5,7 +5,7 @@ internal static partial class Themes
 {
     private const string NavLink =
         "inline-flex min-w-0 items-center gap-2 rounded-(--blux-radius) px-2.5 py-1.5 text-sm font-medium text-(--blux-text-muted) transition-colors " +
-        "hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-[current=page]:bg-(--bx-color)/10 aria-[current=page]:text-(--bx-color-text) " +
+        "hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-[current=page]:bg-(--bx-color)/10 aria-[current=page]:text-(--bx-color-text) aria-[current=page]:ring aria-[current=page]:ring-inset aria-[current=page]:ring-(--bx-color-text)/75 " +
         "aria-disabled:cursor-not-allowed aria-disabled:opacity-60 " +
         "focus-visible:outline-2 focus-visible:outline-(--bx-color-text)";
 
@@ -29,7 +29,7 @@ internal static partial class Themes
             .Slot("list", "flex flex-wrap items-center gap-1")
             .Slot("item", "inline-flex")
             .Slot("page", "inline-flex items-center justify-center rounded-(--blux-radius) font-medium tabular-nums text-(--blux-text) transition-colors " +
-                          "hover:bg-(--blux-bg-elevated) aria-[current=page]:bg-(--bx-color) aria-[current=page]:text-(--bx-color-contrast) " +
+                          "hover:bg-(--blux-bg-elevated) aria-[current=page]:bg-(--bx-color) aria-[current=page]:text-(--bx-color-contrast) aria-[current=page]:ring-1 aria-[current=page]:ring-inset aria-[current=page]:ring-(--bx-color-text) " +
                           "aria-[current=page]:hover:bg-(--bx-color) disabled:cursor-not-allowed disabled:opacity-60 " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text)")
             .Slot("control", "inline-flex items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) transition-colors " +
@@ -56,10 +56,10 @@ internal static partial class Themes
             .Slot("item", "relative flex")
             .Slot("track", "flex items-center gap-2")
             .Slot("indicator", "relative inline-flex shrink-0 items-center justify-center rounded-full border-2 border-(--blux-border-accented) bg-(--blux-bg) font-medium text-(--blux-text-muted) transition-colors " +
-                               "data-[state=completed]:border-transparent data-[state=completed]:bg-(--bx-color) data-[state=completed]:text-(--bx-color-contrast) " +
-                               "data-[state=active]:border-transparent data-[state=active]:bg-(--bx-color) data-[state=active]:text-(--bx-color-contrast) data-[state=active]:ring-4 data-[state=active]:ring-(--bx-color)/25 " +
+                               "data-[state=completed]:border-(--bx-color-text) data-[state=completed]:bg-(--bx-color) data-[state=completed]:text-(--bx-color-contrast) " +
+                               "data-[state=active]:border-(--bx-color-text) data-[state=active]:bg-(--bx-color) data-[state=active]:text-(--bx-color-contrast) data-[state=active]:ring-4 data-[state=active]:ring-(--bx-color)/25 " +
                                "disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text)")
-            .Slot("separator", "rounded-full bg-(--blux-border-accented) data-[state=completed]:bg-(--bx-color)")
+            .Slot("separator", "rounded-full bg-(--blux-border-accented) data-[state=completed]:bg-(--bx-color-text)")
             .Slot("text", "flex min-w-0 flex-col")
             .Slot("title", "text-sm font-medium text-(--blux-text)")
             .Slot("description", "text-sm text-(--blux-text-muted)")
@@ -87,8 +87,8 @@ internal static partial class Themes
             .Slot("item", "relative flex")
             .Slot("track", "flex items-center gap-2")
             .Slot("indicator", "inline-flex shrink-0 items-center justify-center rounded-full border-2 border-(--blux-border-accented) bg-(--blux-bg) text-(--blux-text-muted) " +
-                               "data-[state=active]:border-transparent data-[state=active]:bg-(--bx-color) data-[state=active]:text-(--bx-color-contrast)")
-            .Slot("separator", "rounded-full bg-(--blux-border-accented) data-[state=active]:bg-(--bx-color)")
+                               "data-[state=active]:border-(--bx-color-text) data-[state=active]:bg-(--bx-color) data-[state=active]:text-(--bx-color-contrast)")
+            .Slot("separator", "rounded-full bg-(--blux-border-accented) data-[state=active]:bg-(--bx-color-text)")
             .Slot("text", "flex min-w-0 flex-col gap-0.5")
             .Slot("date", "text-xs text-(--blux-text-muted)")
             .Slot("title", "text-sm font-medium text-(--blux-text)")

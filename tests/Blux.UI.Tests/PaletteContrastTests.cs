@@ -12,10 +12,11 @@ public partial class PaletteContrastTests
     private static readonly string[] Colors = ["primary", "secondary", "success", "info", "warning", "error", "neutral"];
 
     // Surfaces a control can sit on.
-    private static readonly string[] Surfaces = ["bg", "bg-overlay", "bg-muted"];
+    private static readonly string[] Surfaces = ["bg", "bg-overlay", "bg-muted", "bg-elevated"];
 
-    // The soft/subtle variants tint the surface with the color at 10%; hover and pressed states go up to 15%.
-    private const double SoftAlpha = 0.15;
+    // The soft/subtle variants tint the surface with the color at 10%; hover, pressed and active states go higher. The
+    // guard uses the highest tint any theme puts under text (derived from the classes, see Highest_tint_*).
+    private static readonly double SoftAlpha = HighestTintAlpha();
 
     private static readonly Dictionary<string, Dictionary<string, string>> Themes = Load();
 
@@ -69,6 +70,23 @@ public partial class PaletteContrastTests
             var soft = Contrast(text, Blend(Token(theme, color), background, SoftAlpha));
             Assert.True(soft >= 4.5, $"{theme} {color}: text {text} on soft {surface} is {soft:0.00}:1, needs 4.5:1");
         }
+    }
+
+    private static double HighestTintAlpha() =>
+        new BluxOptions().AllThemes
+            .SelectMany(t => t.AllClassTokens())
+            .Select(token => Regex.Match(token, @"(?:^|:)bg-\(--bx-color\)/(?<alpha>\d+)$"))
+            .Where(m => m.Success && int.Parse(m.Groups["alpha"].Value) <= 50)
+            .Select(m => int.Parse(m.Groups["alpha"].Value) / 100.0)
+            .DefaultIfEmpty(0.10)
+            .Max();
+
+    [Fact]
+    public void Highest_tint_under_text_is_known_and_covered()
+    {
+        // Solid hover/active use /80 and /90 of the fill, so only tints up to 50% count. A new, higher tint fails the
+        // text-on-soft-background test below until the -text tokens are darkened for it.
+        Assert.InRange(SoftAlpha, 0.20, 0.50);
     }
 
     private static string Token(string theme, string name) => Themes[theme][name];

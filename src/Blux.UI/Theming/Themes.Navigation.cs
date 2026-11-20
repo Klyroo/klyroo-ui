@@ -13,10 +13,10 @@ internal static partial class Themes
             .Slot("content", "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text)")
             .Variant("variant", "pill", "list", "gap-1 rounded-[calc(var(--blux-radius)_+_2px)] bg-(--blux-bg-elevated) p-1")
             .Variant("variant", "pill", "trigger", "rounded-(--blux-radius) px-3 py-1.5 text-sm text-(--blux-text-muted) hover:text-(--blux-text) " +
-                                                   "aria-selected:bg-(--blux-bg) aria-selected:text-(--blux-text) aria-selected:shadow-xs")
+                                                   "aria-selected:bg-(--blux-bg) aria-selected:text-(--blux-text) aria-selected:shadow-xs aria-selected:ring aria-selected:ring-inset aria-selected:ring-(--blux-text-muted)")
             .Variant("variant", "link", "list", "gap-1 border-b border-(--blux-border)")
             .Variant("variant", "link", "trigger", "-mb-px border-b-2 border-transparent px-3 py-2 text-sm text-(--blux-text-muted) hover:text-(--blux-text) " +
-                                                   "aria-selected:border-(--bx-color) aria-selected:text-(--bx-color-text)")
+                                                   "aria-selected:border-(--bx-color-text) aria-selected:text-(--bx-color-text)")
             .Variant("orientation", "vertical", "root", "flex-row")
             .Variant("orientation", "vertical", "list", "flex-col self-start")
             .Default("variant", "pill")
