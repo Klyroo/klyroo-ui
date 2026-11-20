@@ -7,7 +7,7 @@
     lg breakpoint. What differs is that the controls live elsewhere: BxDashboardSidebarCollapse collapses it and
     BxDashboardSidebarToggle opens the panel, both usually in a navbar, so the sidebar renders neither of its own
     buttons unless Collapsible is set. The key of the enclosing BxDashboardGroup is its storage id; with several sidebars in
-    one group only the first takes it, the others take "key-2", "key-3" (or set Id), so they never share state.
+    one group only the first takes it, the others take "key-2", "key-3" (or set Id, which takes no number), so they never share state.
 *@
 <BxSidebar Id="@(Id ?? Context?.SidebarId(_slot))"
            Header="Header" Footer="Footer"
@@ -39,7 +39,9 @@
 
     /// <summary>
     /// Overrides the storage id taken from the group. The first sidebar of a group uses the key of the group, the next ones
-    /// that key followed by "-2", "-3"; set an Id to name one yourself, and give it to the controls with <c>For</c>.
+    /// that key followed by "-2", "-3"; set an Id to name one yourself, and give it to the controls with <c>For</c>. A sidebar
+    /// with an Id takes no number, so the first sidebar without one still gets the key of the group. Don't give it the key
+    /// of the group itself, or it shares its saved state and the controls without a target with that first sidebar.
     /// </summary>
     [Parameter] public string? Id { get; set; }
 
@@ -64,16 +66,24 @@
     /// <summary>Slot overrides, the same as <see cref="BxSidebar"/>.</summary>
     [Parameter] public SidebarUi? Ui { get; set; }
 
-    protected override void OnInitialized()
-    {
-        _registeredWith = Context;
-        _slot = Context?.RegisterSidebar() ?? 0;
-    }
+    protected override void OnInitialized() => _registeredWith = Context;
 
     /// <summary>Gives the slot back, so the next sidebar of the group takes it and keeps the cookie of the key.</summary>
-    public void Dispose() => _registeredWith?.ReleaseSidebar(_slot);
+    public void Dispose() => ReleaseSlot();
 
-    // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        // Only a sidebar named by the group takes a slot: one with its own Id leaves "key" to the next sidebar without one.
+        if (Id is null && _slot == 0) _slot = _registeredWith?.RegisterSidebar() ?? 0;
+        else if (Id is not null) ReleaseSlot();
+
+        // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
         _ui = (Ui ?? new SidebarUi()) with { Mobile = Ui?.Mobile ?? "contents" };
+    }
+
+    private void ReleaseSlot()
+    {
+        if (_slot != 0) _registeredWith?.ReleaseSidebar(_slot);
+        _slot = 0;
+    }
 }
