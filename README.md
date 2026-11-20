@@ -24,6 +24,22 @@ Status: early development. 133 components, in the same families as Nuxt UI:
 
 Each one has a documentation page with live examples in the four render modes.
 
+## Platforms
+
+The same components run on the web and in .NET MAUI Blazor Hybrid apps (a `BlazorWebView`), so one set of pages can ship as a web app and as a native app.
+
+| Target | Status |
+| --- | --- |
+| Web: static SSR, Server, WebAssembly, Auto | Tested in all four render modes, same markup |
+| Android (phone) | Built and tested on the emulator |
+| iOS 17 or later (the native popover is required) | CI build job set up but not run yet; not run on a device |
+| Windows | CI build job set up but not run yet; not run on a device |
+| macOS (Mac Catalyst) | CI build job set up but not run yet; not run on a device |
+| Android TV | Experimental: D-pad navigation, editing mode for text fields, Back closes overlays. Tested on the emulator; the soft keyboard has not been seen yet (the TV emulator has none) |
+| Tizen (Samsung TV) | Not supported: there is no BlazorWebView |
+
+See [`samples/Blux.Maui`](samples/Blux.Maui) and the "MAUI and Blazor Hybrid" guide of the docs site.
+
 ## Install
 
 Requires .NET 10.
@@ -160,7 +176,7 @@ See the "Images" guide of the docs site.
 Blux runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
 `maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `BxHead` and a
 `HeadOutlet` root component); the local image optimizer is web only. Tooltips follow touch, targets are 44 px on coarse pointers, safe areas are respected, and an experimental
-TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See `samples/Blux.Maui` and the "MAUI and Blazor Hybrid" guide.
+TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Blux.Maui` and the "MAUI and Blazor Hybrid" guide.
 
 ## AI tooling
 

@@ -16,6 +16,7 @@ Every component works in Interactive Server, WebAssembly, Auto and static server
 - **In .NET**: the values you bind (`@bind-Value`, `@bind-Open`), click handlers, validation.
 - Register `AddBluxUi` with the same options in the server project and, for WebAssembly or Auto, in the `.Client` project. A shared extension method keeps both in sync.
 - Use the standard Blazor render mode attributes; nothing Blux-specific is needed.
+- **MAUI Blazor Hybrid** (a `BlazorWebView`) has no render modes: it is always interactive, with no prerendering and no `HttpContext`. Call `AddBluxUi` from `MauiProgram.cs`, link the stylesheets from `wwwroot/index.html`, and add a `HeadOutlet` root component (`head::after`) so `BxHead` can write the theme and fonts into the head. `BluxHost.IsHybrid(RendererInfo)` tells the host; server-only features (`Blux.UI.Images.Local`, the culture cookie) do nothing there. Coarse pointers get 44 px hit areas. TV mode (`<BxApp SpatialNavigation="true">`) is experimental. Read `/docs/maui` before writing code for a MAUI host.
 
 ## Binding
 

@@ -5,7 +5,7 @@ description: Build Blazor user interfaces with Blux UI (Bx components, Tailwind 
 
 # Blux UI
 
-Blux UI is a Blazor component library of 133 accessible components, styled with Tailwind CSS v4 and modeled on Nuxt UI. Components are prefixed `Bx` (`<BxButton>`), work in Interactive Server, WebAssembly, Auto and static server rendering, and keep UI state (open, focus, selection, keyboard navigation) in the browser.
+Blux UI is a Blazor component library of 133 accessible components, styled with Tailwind CSS v4 and modeled on Nuxt UI. Components are prefixed `Bx` (`<BxButton>`), work in Interactive Server, WebAssembly, Auto and static server rendering, and keep UI state (open, focus, selection, keyboard navigation) in the browser. They also run in .NET MAUI Blazor Hybrid apps (a `BlazorWebView`): Android is tested on an emulator, iOS 17 or later, Windows and macOS (Mac Catalyst) have CI build jobs that have not run yet and are untested on devices, Android TV is experimental, Tizen is not supported (see `/docs/maui`).
 
 ## Use the MCP server for API details
 
@@ -34,7 +34,7 @@ If the server is not available, add it (local, offline): `dotnet tool install --
 |---|---|
 | Colors, tokens, dark mode, `Class`, `Ui`, `AddBluxUi`, `BxTheme` | `references/design-system.md` |
 | Choosing between components (modal or drawer, select or listbox, tabs or navigation) | `references/component-selection.md` |
-| Render modes, `Bx` prefix, `@bind`, static rendering, inert buttons, events | `references/conventions.md` |
+| Render modes, MAUI Blazor Hybrid hosts, `Bx` prefix, `@bind`, static rendering, inert buttons, events | `references/conventions.md` |
 | Forms, validation, `EditForm`, `BxForm`, `BxFormField`, static posts | `references/forms.md` |
 | Dashboard, docs site, chat, editor or landing page layouts | `references/layouts.md` |
 | Data table, sign-in, overlays, navigation | `references/recipes.md` |

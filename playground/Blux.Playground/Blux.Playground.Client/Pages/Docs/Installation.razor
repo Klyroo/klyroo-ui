@@ -23,6 +23,14 @@
     <h2>4. Use the components</h2>
     <CodeBlock Title="_Imports.razor" Code="@("@using Blux.UI")" />
     <p>Remove Bootstrap from the Blazor template, or import it in a cascade layer: CSS outside layers overrides Tailwind's.</p>
+
+    <h2>MAUI Blazor Hybrid apps</h2>
+    <p>
+        In a MAUI app the package and the stylesheets are the same, but there are no render modes and no server. Call <code>AddBluxUi</code>
+        from <code>MauiProgram.cs</code> (after <code>AddMauiBlazorWebView</code>), link <code>_content/Blux.UI/blux.preflight.css</code> and
+        <code>blux.css</code> from <code>wwwroot/index.html</code>, and add <code>HeadOutlet</code> as a root component so <code>BxHead</code> can
+        write the theme and fonts into the head. The <a href="/docs/maui">MAUI and Blazor Hybrid</a> guide has the details and the status of each platform.
+    </p>
 </div>
 
 @code {
