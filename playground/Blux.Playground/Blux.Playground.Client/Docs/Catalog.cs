@@ -78,6 +78,7 @@ public static partial class Catalog
         ("/docs", "Introduction"),
         ("/docs/installation", "Installation"),
         ("/docs/theming", "Theming"),
+        ("/docs/internationalization", "Internationalization"),
         ("/docs/render-modes", "Render modes"),
     ];
 }

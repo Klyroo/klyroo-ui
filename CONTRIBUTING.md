@@ -39,7 +39,12 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
    `outline-(--bx-color-text)` or `outline-(--blux-primary-text)`. Sizes are `BxSize` (xs to xl) where they apply.
 7. **Static ids and loops.** Ids come from `NewId(...)`. In a Razor `for` loop, copy the index into a local before any
    child component content or lambda uses it.
-8. **Interop is primitive.** Calls into JS pass strings and numbers, never anonymous objects (trimming).
+8. **No text in components.** Every text a person reads or hears (labels, placeholders, announcements, units, key names) is a
+   `BxMessages` property read as `Messages.X` (and `CurrentLocale` for the culture), never a literal. Browser code gets texts through
+   `data-*` attributes rendered by .NET; a JS default is a last resort. Date and number formatting defaults to
+   `CurrentLocale.Culture`, an explicit `Culture` parameter wins. Use logical utilities (`ms-`, `pe-`, `start-`, `rounded-s`) and give
+   arrows and chevrons an `rtl:` variant. The tests fail when a locale lacks a message or changes its placeholders.
+9. **Interop is primitive.** Calls into JS pass strings and numbers, never anonymous objects (trimming).
 
 ## Where things go (one family = one set of files)
 
@@ -48,7 +53,9 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 | Component | `src/Blux.UI/Components/<Name>/Bx<Name>.razor` (+ `.razor.cs`), item records next to it |
 | Slot overrides | `<Name>Ui` record implementing `ISlotOverrides`, in the component folder |
 | Theme | `src/Blux.UI/Theming/Themes.<Family>.cs`: `internal static partial class Themes` |
-| Options | `src/Blux.UI/Theming/BluxOptions.<Family>.cs`: `public sealed partial class BluxOptions` (theme properties) and `public sealed partial class BluxStrings` (texts) |
+| Options | `src/Blux.UI/Theming/BluxOptions.<Family>.cs`: `public sealed partial class BluxOptions` (theme properties) |
+| Texts | `src/Blux.UI/Localization/Messages/BxMessages.<Family>.cs`: `public sealed partial record BxMessages` (init-only strings, English defaults) |
+| Translations | one file per language in `src/Blux.UI/Localization/Locales/<Code>.cs`: add every new message to all twelve |
 | Browser behavior | `src/Blux.UI/js/<name>.js`, imported in `js/index.js`; use `js/shared.js` helpers |
 | Docs examples | `playground/Blux.Playground/Blux.Playground.Client/Examples/<Name><What>Example.razor` (unique names) |
 | Docs catalog | `Docs/Catalog.<Family>.cs`: `public static partial class Catalog { private static readonly ComponentDoc[] <Family> = [...]; }`, then add `.. <Family>` to `Components` in `Catalog.cs` |

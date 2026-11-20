@@ -31,9 +31,10 @@ import './chart.js';
 import './content.js';
 import './platform-keys.js';
 import { toast } from './toaster.js';
+import { cultureFromCookie } from './culture.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 
-globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { setColorMode, getColorMode, toast });
+globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { setColorMode, getColorMode, toast, cultureFromCookie });
 
 // Avatar images that fail to load are hidden so the initials underneath show. "error" does not bubble: capture it.
 // Images that failed before this script loaded are caught by the scan.

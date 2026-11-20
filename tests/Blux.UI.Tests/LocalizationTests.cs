@@ -396,6 +396,29 @@ public partial class LocalizationTests : BluxTestContext
         Assert.Equal(expected, Blux.UI.Internal.FileSizeText.Format(bytes, ByCode(code)));
     }
 
+    private sealed record Person(string Name);
+
+    [Fact]
+    public void The_sort_button_of_a_column_says_what_a_click_does_in_the_language_of_the_locale()
+    {
+        var cut = Render<BxTable<Person>>(p => p.AddCascadingValue(BxLocales.Fr).Add(t => t.Items, [new Person("Zoe")])
+            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true)));
+
+        Assert.Equal("Tri croissant", cut.Find("th button").GetAttribute("title"));
+        cut.Find("th button").Click();
+        Assert.Equal("Tri décroissant", cut.Find("th button").GetAttribute("title"));
+    }
+
+    [Fact]
+    public void The_form_summary_is_named_by_its_message()
+    {
+        var english = Render<BxForm>(p => p.Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
+        var french = Render<BxForm>(p => p.AddCascadingValue(BxLocales.Fr).Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
+
+        Assert.Equal("Please fix the following errors", english.Find("[data-slot=summary]").GetAttribute("aria-label"));
+        Assert.Equal("Veuillez corriger les erreurs suivantes", french.Find("[data-slot=summary]").GetAttribute("aria-label"));
+    }
+
     // ---- Culture formatting follows the locale
 
     [Fact]

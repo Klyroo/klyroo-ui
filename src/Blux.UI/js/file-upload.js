@@ -130,7 +130,7 @@ export class BxFileUploadElement extends HTMLElement {
     const errors = [];
     for (const file of files) {
       if (!matchesAccept(file, accept)) errors.push(format(this.getAttribute('data-text-not-accepted'), file.name));
-      else if (file.size > maxSize) errors.push(format(this.getAttribute('data-text-too-large'), file.name, formatSize(maxSize)));
+      else if (file.size > maxSize) errors.push(format(this.getAttribute('data-text-too-large'), file.name, formatSize(maxSize, this)));
       else if (accepted.length >= this.#maxFiles) {
         const message = format(this.getAttribute('data-text-too-many'), this.#maxFiles);
         if (!errors.includes(message)) errors.push(message);

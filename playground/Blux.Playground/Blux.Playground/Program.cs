@@ -1,4 +1,5 @@
 using Blux.Playground.Client;
+using Blux.UI;
 using Blux.Playground.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,11 +22,13 @@ else
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-// Reads the culture cookie that BxLocaleSelect writes (the default provider list includes it).
+// Reads the culture cookie that BxLocaleSelect writes (the default provider list includes it). Blux components follow
+// the UI culture on their own: the supported cultures are the codes of the built-in locales.
+var cultures = BxLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
-    .AddSupportedCultures("en", "fr", "es")
-    .AddSupportedUICultures("en", "fr", "es"));
+    .AddSupportedCultures(cultures)
+    .AddSupportedUICultures(cultures));
 app.UseAntiforgery();
 
 app.MapStaticAssets();
