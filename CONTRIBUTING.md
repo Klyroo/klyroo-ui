@@ -76,6 +76,14 @@ The site compiles its own Tailwind (`npm run site:css`), so it exercises the "Ta
 Generated files (`src/Blux.UI/wwwroot`, `src/Blux.UI/styles/generated`, the site's `wwwroot/site.css`) are committed;
 CI fails if `npm run build` changes them.
 
+## Images
+
+`BxImage` and the provider abstraction (`IBxImageProvider`, `BxImageSettings`, in `src/Blux.UI/Images`) live in the library. Components that show a
+picture render a `BxImage` and expose `ImageOptions`; never write an `img` by hand. `src/Blux.UI.Images` holds the CDN providers
+(read the vendor's documentation, cite its page in the XML comment, and test against the examples of that page) and `src/Blux.UI.Images.Local` the
+endpoint, whose limits are part of its security: a new parameter must be clamped, snapped or rejected in `BxImageRequestParser` with a test. Both
+packages share the version of `build/Version.props` and are packed by CI and the release workflow.
+
 ## AI tooling
 
 The MCP server (`src/Blux.UI.Mcp`, shared code in `src/Blux.UI.Mcp.Core`), `llms.txt` and the skill reference read one docs bundle that
@@ -103,6 +111,8 @@ npm run build              # theme classes, blux.css, JS bundle, site.css: commi
 dotnet build Blux.UI.slnx  # warnings are errors
 dotnet test --project tests/Blux.UI.Tests
 dotnet test --project tests/Blux.UI.Mcp.Tests   # bundle, MCP tools, llms.txt, skill
+dotnet test --project tests/Blux.UI.Images.Tests         # provider URLs
+dotnet test --project tests/Blux.UI.Images.Local.Tests   # optimizer parameters, security, resizing
 dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-build -- --filter-class Blux.UI.E2E.<Family>Tests
 ```
 
@@ -132,7 +142,7 @@ changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.
 6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tagged commit is
    on `main`, that the tag equals the package version and that the changelog section is dated, rebuilds, tests and runs
    the packaging check. A separate `publish` job then pushes the `.nupkg` and `.snupkg` of Blux.UI and of the
-   `blux-ui-mcp` tool (Blux.UI.Mcp, same version) to nuget.org with the
+   `blux-ui-mcp` tool (Blux.UI.Mcp) and of the image packages (Blux.UI.Images, Blux.UI.Images.Local), all with the same version, to nuget.org with the
    `NUGET_API_KEY` secret of the `nuget` environment. Create that environment in the repository settings, with required
    reviewers if every release should be approved by hand.
 
