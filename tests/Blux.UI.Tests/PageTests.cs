@@ -313,8 +313,9 @@ public class PageTests : BluxTestContext
         Assert.Equal("Links", plain.Find("nav").GetAttribute("aria-label"));
         Assert.False(plain.Find("nav").HasAttribute("aria-labelledby"));
 
-        Services.GetRequiredService<BluxOptions>().Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { PageLinks = "Liens" });
-        var french = Render<BxPageLinks>(p => p.Add(c => c.Links, Links));
+        // BluxOptions.Locale is read-only once a component has resolved a locale: a locale for one subtree is a cascading value.
+        var liens = BxLocales.Extend(BxLocales.En, messages: m => m with { PageLinks = "Liens" });
+        var french = Render<BxPageLinks>(p => p.AddCascadingValue(liens).Add(c => c.Links, Links));
         Assert.Equal("Liens", french.Find("nav").GetAttribute("aria-label"));
     }
 

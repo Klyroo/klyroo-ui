@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "开始自动播放",
             GoToSlide = "转到第 {0} 张幻灯片",
             SlideOf = "{0} / {1}",
+            CarouselRoleDescription = "轮播",
+            CarouselSlideRoleDescription = "幻灯片",
             SlideControls = "选择幻灯片",
             FileSizeBytes = "{0} B",
             FileSizeKilobytes = "{0} KB",

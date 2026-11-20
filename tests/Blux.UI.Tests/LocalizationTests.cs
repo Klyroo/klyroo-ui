@@ -1,3 +1,4 @@
+using Blux.UI.Theming;
 using System.Globalization;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -133,18 +134,40 @@ public partial class LocalizationTests : BluxTestContext
     [InlineData("pt-BR", "pt-BR")]
     [InlineData("pt-br", "pt-BR")]
     [InlineData("zh-CN", "zh-CN")]
-    [InlineData("zh-Hans", "zh-CN")]
-    [InlineData("zh-Hans-CN", "zh-CN")]
-    [InlineData("zh-TW", "zh-CN")]
+    [InlineData("zh-TW", "en")]
+    [InlineData("zh-HK", "en")]
+    [InlineData("zh-Hant", "en")]
     [InlineData("ja-JP", "ja")]
     [InlineData("ar-EG", "ar")]
     [InlineData("ru-RU", "ru")]
     [InlineData("nl-BE", "nl")]
     [InlineData("sv-SE", "en")]
     [InlineData("", "en")]
-    public void A_culture_picks_the_exact_code_then_its_parents_then_its_language_then_English(string culture, string expected)
+    public void A_culture_picks_the_exact_code_then_its_parents_then_English_like_the_server(string culture, string expected)
     {
         Assert.Equal(expected, BxLocales.Resolve(CultureInfo.GetCultureInfo(culture)).Code);
+    }
+
+    [Fact]
+    public void A_language_without_a_locale_of_its_own_gets_English_instead_of_a_sibling_of_the_same_language()
+    {
+        // "zh-TW" is Chinese but not zh-CN: UseRequestLocalization falls back to its default culture, so Resolve does too.
+        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-TW")).Code);
+        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-HK")).Code);
+        Assert.Equal("zh-CN", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-CN")).Code);
+    }
+
+    [Fact]
+    public void Portuguese_reaches_its_parent_but_a_parent_never_reaches_a_region()
+    {
+        BxLocale[] onlyPt = [BxLocales.En, BxLocales.Pt];
+        BxLocale[] onlyBrazil = [BxLocales.En, BxLocales.PtBr];
+
+        Assert.Equal("pt", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), BxLocales.All).Code);
+        Assert.Equal("pt", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), onlyPt).Code);
+        Assert.Equal("pt-BR", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), BxLocales.All).Code);
+        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt"), onlyBrazil).Code);
+        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), onlyBrazil).Code);
     }
 
     [Fact]
@@ -172,9 +195,10 @@ public partial class LocalizationTests : BluxTestContext
         private readonly CultureInfo _culture = CultureInfo.CurrentCulture;
         private readonly CultureInfo _ui = CultureInfo.CurrentUICulture;
 
-        public CultureScope(string name)
+        public CultureScope(string name, string? uiName = null)
         {
-            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(name);
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(name);
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(uiName ?? name);
         }
 
         public void Dispose()
@@ -257,14 +281,48 @@ public partial class LocalizationTests : BluxTestContext
     }
 
     [Fact]
-    public void Changing_the_locales_of_the_options_clears_the_cache()
+    public void The_locales_of_the_options_are_read_only_once_a_locale_was_resolved()
     {
         var options = Services.GetRequiredService<BluxOptions>();
-        Assert.Same(BxLocales.Fr, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        options.Locales = [BxLocales.En];
+        Assert.Same(BxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+
+        var locales = Assert.Throws<InvalidOperationException>(() => options.Locales = [BxLocales.Fr]);
+        var locale = Assert.Throws<InvalidOperationException>(() => options.Locale = BxLocales.Fr);
+
+        Assert.Contains("Locales", locales.Message);
+        Assert.Contains("Locale", locale.Message);
+        Assert.Same(BxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        Assert.Null(options.Locale);
+    }
+
+    [Fact]
+    public void The_locales_can_be_changed_until_the_first_resolution()
+    {
+        var options = Services.GetRequiredService<BluxOptions>();
 
         options.Locales = [BxLocales.En];
+        options.Locales = [BxLocales.Fr, BxLocales.En];
+        options.Locale = BxLocales.De;
 
-        Assert.Same(BxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        Assert.Equal(["fr", "en"], options.Locales.Select(l => l.Code));
+        Assert.Same(BxLocales.De, options.ResolveLocale(CultureInfo.GetCultureInfo("ja")));
+    }
+
+    [Fact]
+    public void Assigning_the_locales_copies_the_list_so_the_caller_cannot_change_it_later()
+    {
+        var options = Services.GetRequiredService<BluxOptions>();
+        var mine = new List<BxLocale> { BxLocales.En, BxLocales.Fr };
+
+        options.Locales = mine;
+        mine.Clear();
+        mine.Add(BxLocales.Ja);
+
+        Assert.Equal(["en", "fr"], options.Locales.Select(l => l.Code));
+        Assert.True(((IList<BxLocale>)options.Locales).IsReadOnly);
+        Assert.Same(BxLocales.Fr, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        Assert.Throws<ArgumentNullException>(() => options.Locales = null!);
     }
 
     // ---- BxApp
@@ -330,6 +388,52 @@ public partial class LocalizationTests : BluxTestContext
 
         Assert.Equal("閉じる", cut.Find("button[aria-label]").GetAttribute("aria-label"));
         Assert.Equal("ja", cut.Find("div.isolate").GetAttribute("lang"));
+    }
+
+    private sealed class RenderProbe : BxComponentBase
+    {
+        public static int Renders;
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            Renders++;
+            builder.AddContent(0, Messages.Close);
+        }
+    }
+
+    private static void Probe(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
+    {
+        b.OpenComponent<RenderProbe>(0);
+        b.CloseComponent();
+    }
+
+    [Fact]
+    public void Rendering_the_app_again_with_the_same_locale_does_not_render_the_components_below()
+    {
+        RenderProbe.Renders = 0;
+        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+        Assert.Equal(1, RenderProbe.Renders);
+        Assert.Contains("Fermer", cut.Markup);
+
+        // A navigation re-renders the layout, hence the app, with the same locale (here an equal copy, as a derived locale built inline would be).
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Extend(BxLocales.Fr)).Add(a => a.ChildContent, Probe));
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+
+        Assert.Equal(1, RenderProbe.Renders);
+        Assert.Contains("Fermer", cut.Markup);
+    }
+
+    [Fact]
+    public void Changing_the_locale_of_the_app_renders_the_components_below_in_the_new_language()
+    {
+        RenderProbe.Renders = 0;
+        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.De).Add(a => a.ChildContent, Probe));
+
+        Assert.Contains("Schließen", cut.Markup);
+        Assert.DoesNotContain("Fermer", cut.Markup);
+        Assert.Equal(2, RenderProbe.Renders);
     }
 
     [Fact]
@@ -460,6 +564,81 @@ public partial class LocalizationTests : BluxTestContext
         Assert.Equal("de", number.Find("bx-input-number").GetAttribute("locale"));
     }
 
+    private IRenderedComponent<BxCalendar> Calendar(BxLocale locale) =>
+        Render<BxCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 11, 20)));
+
+    [Fact]
+    public void A_regional_culture_of_the_language_of_the_locale_formats_dates_and_starts_the_week_its_own_way()
+    {
+        using (new CultureScope("en-GB", "en"))
+        {
+            var british = Calendar(BxLocales.En).Find("bx-calendar");
+            Assert.Equal("en-GB", british.GetAttribute("data-locale"));
+            Assert.Equal("1", british.GetAttribute("week-start"));
+        }
+
+        using (new CultureScope("en-US", "en"))
+        {
+            var american = Calendar(BxLocales.En).Find("bx-calendar");
+            Assert.Equal("en-US", american.GetAttribute("data-locale"));
+            Assert.Equal("0", american.GetAttribute("week-start"));
+        }
+
+        using (new CultureScope("fr-CA", "fr"))
+        {
+            Assert.Equal("fr-CA", Calendar(BxLocales.Fr).Find("bx-calendar").GetAttribute("data-locale"));
+        }
+    }
+
+    [Fact]
+    public void A_locale_of_another_language_than_the_culture_formats_with_the_culture_of_the_locale()
+    {
+        using var _ = new CultureScope("en-US", "en");
+
+        var cut = Calendar(BxLocales.Fr).Find("bx-calendar");
+
+        Assert.Equal("fr", cut.GetAttribute("data-locale"));
+        Assert.Equal("1", cut.GetAttribute("week-start"));
+        Assert.Contains("novembre", cut.GetAttribute("months"));
+    }
+
+    [Fact]
+    public void An_explicit_Culture_wins_over_the_regional_culture()
+    {
+        using var _ = new CultureScope("en-GB", "en");
+
+        var cut = Render<BxCalendar>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Value, new DateOnly(2026, 11, 20)));
+
+        Assert.Equal("de-DE", cut.Find("bx-calendar").GetAttribute("data-locale"));
+    }
+
+    [Fact]
+    public void Dates_numbers_and_clocks_follow_the_regional_culture_of_the_language_of_the_locale()
+    {
+        using var _ = new CultureScope("en-GB", "en");
+        var date = new DateTimeOffset(2026, 11, 20, 0, 0, 0, TimeSpan.Zero);
+
+        var post = Render<BxBlogPost>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.Date, date));
+        var number = Render<BxInputNumber>(p => p.AddCascadingValue(BxLocales.En).Add(n => n.Value, 1234.5m));
+        var time = Render<BxInputTime>(p => p.AddCascadingValue(BxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
+        var upload = Render<BxFileUpload>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.MaxSize, 1536L));
+
+        Assert.Equal("20 November 2026", post.Find("time").TextContent);
+        Assert.Equal("en-GB", number.Find("bx-input-number").GetAttribute("locale"));
+        Assert.Empty(time.FindAll("[data-segment=period]"));
+        Assert.Equal("en-GB", upload.Find("[data-culture]").GetAttribute("data-culture"));
+    }
+
+    [Fact]
+    public void Without_a_regional_match_the_clock_follows_the_locale()
+    {
+        using var _ = new CultureScope("fr-FR", "fr");
+
+        var american = Render<BxInputTime>(p => p.AddCascadingValue(BxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
+
+        Assert.NotEmpty(american.FindAll("[data-segment=period]"));
+    }
+
     [Fact]
     public void InputTime_uses_the_AM_PM_of_the_locale_when_the_culture_has_none()
     {
@@ -467,6 +646,97 @@ public partial class LocalizationTests : BluxTestContext
 
         Assert.Equal("時", cut.Find("[data-segment=hour]").GetAttribute("aria-label"));
         Assert.Equal("分", cut.Find("[data-segment=minute]").GetAttribute("aria-label"));
+    }
+
+    // ---- The culture of the client follows the server
+
+    private static readonly string[] Supported = [.. BxLocales.All.Select(l => l.Code)];
+
+    private static string Show(BluxCulture.ChosenCulture? chosen) => chosen is null ? "none" : $"{chosen.Culture.Name}/{chosen.UICulture.Name}";
+
+    [Theory]
+    [InlineData("c=en-GB|uic=en", null, "en/en")]
+    [InlineData("c=fr|uic=fr", "es", "fr/fr")]
+    [InlineData("c=fr", null, "fr/fr")]
+    [InlineData("uic=ja", null, "ja/ja")]
+    [InlineData("c=pt-PT|uic=pt-PT", null, "pt/pt")]
+    [InlineData("c=zh-TW|uic=zh-TW", "es", "es/es")]
+    [InlineData("c=xx-nonsense|uic=xx-nonsense", "de", "de/de")]
+    [InlineData("garbage", "ar", "ar/ar")]
+    [InlineData(null, "es", "es/es")]
+    [InlineData(null, "pt-BR", "pt-BR/pt-BR")]
+    [InlineData(null, "pt-PT", "pt/pt")]
+    [InlineData("c=fr-CA|uic=ca", null, "fr/fr")]
+    [InlineData(null, "zh-TW", "none")]
+    [InlineData(null, "", "none")]
+    [InlineData(null, null, "none")]
+    public void The_client_takes_the_cookie_then_the_lang_attribute_within_the_supported_cultures(string? cookie, string? lang, string expected)
+    {
+        Assert.Equal(expected, Show(BluxCulture.Choose(null, cookie, lang, Supported)));
+    }
+
+    [Theory]
+    [InlineData("c=en-GB|uic=en", "c=fr|uic=fr", "es", "en-GB/en")]
+    [InlineData("c=ca|uic=ca", null, "es", "ca/ca")]
+    [InlineData("c=|uic=", "c=fr|uic=fr", "es", "fr/fr")]
+    [InlineData("c=not a culture!", "c=fr|uic=fr", "es", "fr/fr")]
+    public void The_meta_element_of_the_server_wins_over_the_cookie_and_the_attribute_and_needs_no_list(string? meta, string? cookie, string? lang, string expected)
+    {
+        Assert.Equal(expected, Show(BluxCulture.Choose(meta, cookie, lang, Supported)));
+    }
+
+    [Fact]
+    public void The_meta_element_writes_the_culture_and_the_UI_culture_of_the_request()
+    {
+        using var _ = new CultureScope("en-GB", "en");
+
+        var cut = Render<BxCultureMeta>();
+
+        Assert.Equal("blux-culture", cut.Find("meta").GetAttribute("name"));
+        Assert.Equal("c=en-GB|uic=en", cut.Find("meta").GetAttribute("content"));
+    }
+
+    [Fact]
+    public void Without_a_list_of_supported_cultures_any_known_culture_is_accepted()
+    {
+        Assert.Equal("ca/ca", Show(BluxCulture.Choose(null, "c=ca|uic=ca", null, null)));
+        Assert.Equal("en-GB/en", Show(BluxCulture.Choose(null, "c=en-GB|uic=en", null, null)));
+        Assert.Equal("zh-TW/zh-TW", Show(BluxCulture.Choose(null, null, "zh-TW", null)));
+        Assert.Equal("none", Show(BluxCulture.Choose(null, "c=not a culture!", null, null)));
+    }
+
+    [Fact]
+    public async Task The_culture_and_the_UI_culture_of_the_cookie_are_applied_separately()
+    {
+        JSInterop.Setup<string?[]>("Blux.serverCulture", ".AspNetCore.Culture").SetResult(["c=en-GB|uic=en", "c=fr|uic=fr", "fr"]);
+        var before = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            await Services.ApplyServerCultureAsync(Supported);
+
+            Assert.Equal("en-GB", CultureInfo.CurrentCulture.Name);
+            Assert.Equal("en", CultureInfo.CurrentUICulture.Name);
+            Assert.Equal("en-GB", CultureInfo.DefaultThreadCurrentCulture?.Name);
+            Assert.Equal("en", CultureInfo.DefaultThreadCurrentUICulture?.Name);
+        }
+        finally
+        {
+            CultureInfo.DefaultThreadCurrentCulture = null;
+            CultureInfo.DefaultThreadCurrentUICulture = null;
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = before;
+        }
+    }
+
+    [Fact]
+    public async Task The_client_keeps_the_browser_culture_when_the_server_left_nothing()
+    {
+        JSInterop.Setup<string?[]>("Blux.serverCulture", ".AspNetCore.Culture").SetResult([null, null, null]);
+        var before = CultureInfo.CurrentUICulture;
+
+        await Services.ApplyServerCultureAsync(Supported);
+
+        Assert.Same(before, CultureInfo.CurrentUICulture);
+        Assert.Null(CultureInfo.DefaultThreadCurrentUICulture);
     }
 
     // ---- No English left behind

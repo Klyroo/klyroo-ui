@@ -23,7 +23,7 @@ else
     [Parameter] public decimal Step { get; set; } = 1;
     [Parameter] public string? Placeholder { get; set; }
 
-    /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the culture of the locale in effect. The posted value is always invariant.</summary>
+    /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language). The posted value is always invariant.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>Horizontal puts the buttons on both sides of the field, vertical stacks them at its end.</summary>
@@ -81,7 +81,7 @@ else
                           min="@Invariant(Min)"
                           max="@Invariant(Max)"
                           step="@Invariant(Step)"
-                          locale="@((Culture ?? CurrentLocale.Culture).Name)"
+                          locale="@((Culture ?? FormatCulture).Name)"
                           disabled="@Disabled"
                           class="@_slots["root"]"
                           data-color="@Color.Value"

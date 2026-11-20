@@ -1,10 +1,13 @@
+using System.Globalization;
+
 namespace Blux.UI.Internal;
 
 /// <summary>A size in bytes as a short text in the language and culture of a locale: "512 B", "1,5 Ko", "2 MB".</summary>
 internal static class FileSizeText
 {
-    public static string Format(long bytes, BxLocale locale)
+    public static string Format(long bytes, BxLocale locale, CultureInfo? culture = null)
     {
+        culture ??= locale.Culture;
         var messages = locale.Messages;
         string[] templates = [messages.FileSizeBytes, messages.FileSizeKilobytes, messages.FileSizeMegabytes, messages.FileSizeGigabytes];
         double size = bytes;
@@ -14,7 +17,7 @@ internal static class FileSizeText
             size /= 1024;
             unit++;
         }
-        var number = Math.Round(size, 1).ToString(locale.Culture);
-        return string.Format(locale.Culture, templates[unit], number);
+        var number = Math.Round(size, 1).ToString(culture);
+        return string.Format(culture, templates[unit], number);
     }
 }

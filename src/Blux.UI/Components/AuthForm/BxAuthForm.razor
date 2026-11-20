@@ -267,7 +267,7 @@
             {
                 if (field.Required)
                 {
-                    errors[field.Name] = string.Format(CurrentLocale.Culture, Messages.AuthFormRequired, label);
+                    errors[field.Name] = string.Format(FormatCulture, Messages.AuthFormRequired, label);
                 }
             }
             else if (field.Type == "email" && !IsEmail(value!.Trim()))
@@ -276,7 +276,7 @@
             }
             else if (field.Type == "otp" && value!.Length < field.Length)
             {
-                errors[field.Name] = string.Format(CurrentLocale.Culture, Messages.AuthFormIncompleteCode, field.Length);
+                errors[field.Name] = string.Format(FormatCulture, Messages.AuthFormIncompleteCode, field.Length);
             }
         }
         if (errors.Count == 0 && Validate?.Invoke(_values) is { } custom)

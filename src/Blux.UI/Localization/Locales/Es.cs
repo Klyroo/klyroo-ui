@@ -177,6 +177,8 @@ public static partial class BxLocales
             PlaySlides = "Iniciar la presentación automática",
             GoToSlide = "Ir a la diapositiva {0}",
             SlideOf = "{0} de {1}",
+            CarouselRoleDescription = "carrusel",
+            CarouselSlideRoleDescription = "diapositiva",
             SlideControls = "Elegir una diapositiva",
             FileSizeBytes = "{0} B",
             FileSizeKilobytes = "{0} KB",

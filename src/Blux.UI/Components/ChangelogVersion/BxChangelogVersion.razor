@@ -14,7 +14,7 @@
                 <div class="@_slots["meta"]">
                     @if (Date is { } date)
                     {
-                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture ?? CurrentLocale.Culture)</time>
+                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture ?? FormatCulture)</time>
                     }
                     @if (Badge is not null)
                     {
@@ -80,14 +80,14 @@
     [Parameter] public int HeadingLevel { get; set; } = 3;
     [Parameter] public string? Description { get; set; }
 
-    /// <summary>Release date, shown in the culture of the locale in effect, or in <see cref="Culture"/> in a <c>time</c> element.</summary>
+    /// <summary>Release date, shown in the format culture of the locale in effect (the regional current culture when it has the same language), or in <see cref="Culture"/> in a <c>time</c> element.</summary>
     [Parameter] public DateTimeOffset? Date { get; set; }
 
     /// <inheritdoc cref="BxBlogPost.DateFormat"/>
     [Parameter] public string? DateFormat { get; set; }
 
     /// <summary>
-    /// The culture of the date. By default the culture of the locale in effect, so the prerender and a
+    /// The culture of the date. By default the format culture of the locale in effect (the regional current culture when it has the same language), so the prerender and a
     /// WebAssembly render agree as long as they pick the same locale.
     /// </summary>
     [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }

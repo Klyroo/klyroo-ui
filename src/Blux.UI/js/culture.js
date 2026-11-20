@@ -1,19 +1,23 @@
 /**
- * The UI culture stored in the ASP.NET Core culture cookie ("c=fr|uic=fr", URL encoded), which BxLocaleSelect writes.
- * WebAssembly has no request, so the client reads the cookie to pick the same culture as the server did
- * (see BluxCulture.ApplyCultureCookieAsync). Returns null when there is none.
+ * What the server decided about the culture, for a WebAssembly client that has no request (see
+ * BluxCulture.ApplyServerCultureAsync, which parses and validates it). A three item array, [meta, cookie, lang],
+ * where a missing value is null:
+ * - the content of the blux-culture meta element the server rendered (BxCultureMeta), "c=en-GB|uic=en";
+ * - the decoded value of the ASP.NET Core culture cookie ("c=fr|uic=fr", which BxLocaleSelect writes);
+ * - the lang attribute the server wrote on the html element (the locale it rendered).
  */
-export function cultureFromCookie(cookieName = '.AspNetCore.Culture') {
+export function serverCulture(cookieName = '.AspNetCore.Culture') {
+  let cookie = null;
   try {
     for (const part of document.cookie.split(';')) {
       const [name, ...rest] = part.trim().split('=');
       if (name !== cookieName) continue;
-      const value = decodeURIComponent(rest.join('='));
-      const fields = Object.fromEntries(value.split('|').map((field) => field.split('=')));
-      return fields.uic || fields.c || null;
+      cookie = decodeURIComponent(rest.join('='));
+      break;
     }
   } catch {
-    // Cookies blocked or malformed: nothing to read.
+    // Cookies blocked or malformed: the other sources still tell.
   }
-  return null;
+  const meta = document.head.querySelector('meta[name="blux-culture"]')?.getAttribute('content') || null;
+  return [meta, cookie, document.documentElement.getAttribute('lang') || null];
 }
