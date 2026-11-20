@@ -36,6 +36,8 @@ jobs:
           changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
           if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
 
+      - name: Browser code unit tests (spatial navigation geometry)
+        run: npm run test:js
       - run: dotnet build Blux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
@@ -99,3 +101,41 @@ jobs:
         run: dotnet test --project tests/Blux.UI.E2E --no-build
         env:
           BLUX_PLAYGROUND_PUBLISHED: published
+
+  # The Blazor Hybrid sample (samples/Blux.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
+  # iOS and Mac Catalyst need macOS, Windows needs Windows. Not run locally except for Android.
+  maui:
+    name: MAUI sample (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: android, os: ubuntu-latest, workload: maui-android, framework: net10.0-android }
+          - { name: windows, os: windows-latest, workload: maui-windows, framework: net10.0-windows10.0.19041.0 }
+          - { name: ios, os: macos-latest, workload: maui-ios, framework: net10.0-ios, args: "-p:RuntimeIdentifier=iossimulator-arm64" }
+          - { name: maccatalyst, os: macos-latest, workload: maui-maccatalyst, framework: net10.0-maccatalyst, args: "-p:EnableCodeSigning=false" }
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v5
+        if: matrix.name == 'android'
+        with:
+          distribution: microsoft
+          java-version: 17
+      - run: npm ci
+      - name: Install the MAUI workload
+        run: dotnet workload install ${{ matrix.workload }}
+      - name: Build the sample
+        working-directory: samples/Blux.Maui
+        run: dotnet build Blux.Maui/Blux.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}
+      - name: Build the web host of the sample
+        if: matrix.name == 'android'
+        working-directory: samples/Blux.Maui
+        run: dotnet build Blux.Maui.Web/Blux.Maui.Web.csproj -c Release
