@@ -20,7 +20,7 @@ internal sealed record BxImageRequest(
 
     /// <summary>The canonical text the cache key is built from: equal requests give equal text, whatever the order or spelling of the query.</summary>
     public string CanonicalKey(string sourceStamp) =>
-        string.Create(CultureInfo.InvariantCulture, $"{Source}|{sourceStamp}|w{Width}|h{Height}|q{Quality}|f{Format}|{Fit}|b{Blur}");
+        string.Create(CultureInfo.InvariantCulture, $"g2|{Source}|{sourceStamp}|w{Width}|h{Height}|q{Quality}|f{Format}|{Fit}|b{Blur}");
 }
 
 internal readonly record struct BxImageParseResult(BxImageRequest? Request, int Status, string? Message)
@@ -34,7 +34,7 @@ internal static class BxImageRequestParser
     internal const int MaxSourceLength = 2048;
 
     private static readonly string[] SourceExtensions = [".png", ".jpg", ".jpeg", ".webp", ".avif", ".gif", ".svg"];
-    private static readonly string[] RasterFormats = ["webp", "avif", "jpeg", "png"];
+    private static readonly string[] RasterFormats = ["webp", "avif", "jpeg", "png", "gif"];
 
     /// <param name="get">Reads a query value, null when absent.</param>
     /// <param name="options">The limits and allowlists.</param>
@@ -56,11 +56,14 @@ internal static class BxImageRequestParser
             {
                 return BxImageParseResult.Fail(400, "Invalid src.");
             }
-            if (!options.AllowedRemoteHosts.Any(h => string.Equals(h, remote.Host, StringComparison.OrdinalIgnoreCase)))
+            if (!options.IsAllowedRemote(remote))
             {
                 return BxImageParseResult.Fail(403, "This host is not allowed.");
             }
-            source = remote.AbsoluteUri;
+            // One spelling per address: lower-case scheme and host, no default port, no fragment, no credentials. The query is kept as it is,
+            // because an origin may take its image id or a signature from it.
+            source = remote.GetComponents(UriComponents.HttpRequestUrl, UriFormat.UriEscaped);
+            remote = new Uri(source);
         }
         else
         {
@@ -69,11 +72,13 @@ internal static class BxImageRequestParser
             {
                 return BxImageParseResult.Fail(400, "Invalid src.");
             }
-            source = src.StartsWith('/') ? src : "/" + src;
-            foreach (var segment in source.Split('/'))
+            // One spelling per file: empty segments collapse, so /img/a.png, /img//a.png and img///a.png are the same source.
+            var segments = src.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            foreach (var segment in segments)
             {
                 if (segment is "." or "..") return BxImageParseResult.Fail(400, "Invalid src.");
             }
+            source = "/" + string.Join('/', segments);
         }
 
         var path = remote?.AbsolutePath ?? source;
@@ -84,14 +89,18 @@ internal static class BxImageRequestParser
         }
 
         int? width = null, height = null;
+        int? requestedWidth = null;
         if (get("w") is { } w)
         {
             if (!int.TryParse(w, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) || parsed < 1) return BxImageParseResult.Fail(400, "Invalid w.");
+            requestedWidth = parsed;
             width = SnapWidth(Math.Min(parsed, options.MaxWidth), options);
         }
         if (get("h") is { } h)
         {
             if (!int.TryParse(h, NumberStyles.None, CultureInfo.InvariantCulture, out var parsed) || parsed < 1) return BxImageParseResult.Fail(400, "Invalid h.");
+            // When the width was snapped or clamped, the height follows by the same factor so the crop keeps the ratio that was asked for.
+            if (width is { } snapped && requestedWidth is { } asked && snapped != asked) parsed = (int)Math.Max(1, Math.Round((double)parsed * snapped / asked));
             height = Math.Min(parsed, options.MaxHeight);
         }
 
