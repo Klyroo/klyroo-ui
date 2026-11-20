@@ -18,8 +18,8 @@
         </div>
         <div class="lg:pb-2">
             <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty">
-                @Count accessible components for Server, WebAssembly, Auto and static pages, and for MAUI Blazor Hybrid apps
-                on Android, iOS, Windows and macOS. Menus, dialogs and tabs answer in the browser; .NET only hears what you bind.
+                @Count accessible components for Server, WebAssembly, Auto and static pages, and in MAUI Blazor Hybrid apps
+                (tested on Android phones and TV so far). Menus, dialogs and tabs answer in the browser; .NET only hears what you bind.
             </p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
                 <BxButton Label="Get started" Href="/docs/installation" Size="BxSize.Xl" Class="rounded-lg px-5">
@@ -49,7 +49,7 @@
     <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
             <h2 id="platforms" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-                One codebase:<br /><span class="pg-accent">web, phone, desktop, TV.</span>
+                One codebase:<br /><span class="pg-accent">web, phone, TV.</span>
             </h2>
             <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
                 The same components run in a browser and inside a MAUI Blazor Hybrid app (a <code class="font-mono text-base">BlazorWebView</code>).
@@ -60,7 +60,7 @@
         <div class="mt-14 flex flex-wrap items-end justify-center gap-x-14 gap-y-10 rounded-2xl border border-(--blux-border) bg-(--blux-bg-muted)/60 p-6 sm:p-10">
             <figure class="w-56 max-w-full lg:w-64">
                 <div class="rounded-[2rem] border-[5px] border-(--blux-border-accented) bg-black p-1">
-                    <BxImage Src="/img/platform-phone-forms-dark.webp" Provider="none" Alt="The Forms page of the sample app on an Android phone, dark mode: name, country and bio fields, a switch, a checkbox and a Save button." Width="540" Height="1200" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-[1.6rem]" data-testid="platform-phone" />
+                    <BxImage Src="/img/platform-phone-home-dark.webp" Provider="none" Alt="The home page of the sample app on an Android phone, dark mode: a card reports the WebView renderer, the Phone form factor and Android 16." Width="540" Height="1200" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-[1.6rem]" data-testid="platform-phone" />
                 </div>
                 <figcaption class="mt-4 text-center font-mono text-xs uppercase tracking-[0.2em] text-(--blux-text-muted)">Android phone, touch</figcaption>
             </figure>
@@ -90,7 +90,7 @@
             <BxButton Label="Read the MAUI guide" Href="/docs/maui" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg">
                 <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
             </BxButton>
-            <p class="text-sm text-(--blux-text-muted)">Touch hit areas of 44 px, system bars that follow the color mode, safe areas, and an experimental TV mode.</p>
+            <p class="text-sm text-(--blux-text-muted)">44 px touch hit areas on controls, safe areas, and an experimental TV mode.</p>
         </div>
     </div>
 </section>
@@ -228,10 +228,10 @@
     [
         ("Web", "Static SSR, Server, WebAssembly and Auto, with the same markup.", "Tested", BxColor.Success),
         ("Android", "Phone. Built and run in the emulator.", "Tested on emulator", BxColor.Success),
-        ("Android TV", "D-pad navigation, editing mode for fields, Back closes overlays. Soft keyboard not yet confirmed on a real TV.", "Experimental", BxColor.Warning),
-        ("iOS 17+", "Needs the native popover. Built in CI, not yet run on a device.", "CI build", BxColor.Info),
-        ("Windows", "Built in CI, not yet run on a device.", "CI build", BxColor.Info),
-        ("macOS", "Mac Catalyst. Built in CI, not yet run on a device.", "CI build", BxColor.Info),
+        ("Android TV", "D-pad navigation, editing mode for fields, Back closes overlays. Soft keyboard not yet seen: the TV emulator has none.", "Experimental", BxColor.Warning),
+        ("iOS 17+", "Needs the native popover. A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
+        ("Windows", "A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
+        ("macOS", "Mac Catalyst. A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
         ("Tizen", "Samsung TV has no BlazorWebView.", "Not supported", BxColor.Neutral),
     ];
 

@@ -32,10 +32,10 @@ The same components run on the web and in .NET MAUI Blazor Hybrid apps (a `Blazo
 | --- | --- |
 | Web: static SSR, Server, WebAssembly, Auto | Tested in all four render modes, same markup |
 | Android (phone) | Built and tested on the emulator |
-| iOS 17 or later (the native popover is required) | Built in CI, not yet run on a device |
-| Windows | Built in CI, not yet run on a device |
-| macOS (Mac Catalyst) | Built in CI, not yet run on a device |
-| Android TV | Experimental: D-pad navigation, editing mode for text fields, Back closes overlays. Tested on the emulator; the soft keyboard is not yet confirmed on a real TV |
+| iOS 17 or later (the native popover is required) | CI build job set up but not run yet; not run on a device |
+| Windows | CI build job set up but not run yet; not run on a device |
+| macOS (Mac Catalyst) | CI build job set up but not run yet; not run on a device |
+| Android TV | Experimental: D-pad navigation, editing mode for text fields, Back closes overlays. Tested on the emulator; the soft keyboard has not been seen yet (the TV emulator has none) |
 | Tizen (Samsung TV) | Not supported: there is no BlazorWebView |
 
 See [`samples/Blux.Maui`](samples/Blux.Maui) and the "MAUI and Blazor Hybrid" guide of the docs site.
