@@ -256,6 +256,7 @@ export class BxEditorToolbarElement extends HTMLElement {
   #host = null;
   #stop = null;
   #observer = null;
+  #attributes = null;
   #tool = null;
 
   connectedCallback() {
@@ -264,6 +265,10 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('focusout', this.#onFocusOut);
     this.#observer = observeChildren(this, () => this.update());
+    // Blazor patches a button in place when Items changes the action at that position: data-action, the label and the icon
+    // change but the pressed and disabled state it rendered stays the same, so show the state of the action it now stands for.
+    this.#attributes = new MutationObserver(() => this.update());
+    this.#attributes.observe(this, { attributes: true, subtree: true, attributeFilter: ['data-action', 'data-toggle', 'data-level'] });
   }
 
   disconnectedCallback() {
@@ -272,6 +277,8 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.removeEventListener('keydown', this.#onKeyDown);
     this.removeEventListener('focusout', this.#onFocusOut);
     this.#observer?.disconnect();
+    this.#attributes?.disconnect();
+    this.#attributes = null;
     this.#stop?.();
   }
 

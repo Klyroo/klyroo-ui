@@ -14,9 +14,10 @@
 <bx-chart class="@_slots["root"]" data-type="@_kind" @attributes="AdditionalAttributes">
     <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
          role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
-         aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? _id + "-hint" : null)">
-        <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="img" aria-label="@_label"
-             aria-describedby="@(AriaDescription is null ? null : _id + "-description")" class="@_slots["svg"]">
+         aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? PlotDescribedBy : null)">
+        <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="@(_interactive ? null : "img")" aria-label="@(_interactive ? null : _label)"
+             aria-hidden="@(_interactive ? "true" : null)"
+             aria-describedby="@(AriaDescription is null || _interactive ? null : _id + "-description")" class="@_slots["svg"]">
             @if (Type != BxChartType.Line && _series.Count > 0)
             {
                 <defs>
@@ -152,11 +153,7 @@
                 }
             }
         </svg>
-        @if (_interactive)
-        {
-            <span id="@(_id + "-hint")" class="sr-only">@Options.Strings.ChartHint</span>
-        }
-        @if (AriaDescription is not null)
+        @if (AriaDescription is not null && !_interactive)
         {
             <span id="@(_id + "-description")" class="sr-only">@AriaDescription</span>
         }
@@ -201,6 +198,15 @@
             </div>
         }
     </div>
+    @* The group is described by these, but they are not part of its content, so they are read once. *@
+    @if (_interactive)
+    {
+        <span id="@(_id + "-hint")" hidden>@Options.Strings.ChartHint</span>
+        @if (AriaDescription is not null)
+        {
+            <span id="@(_id + "-description")" hidden>@AriaDescription</span>
+        }
+    }
     @if (_showLegend)
     {
         <ul class="@_slots["legend"]" aria-label="@Options.Strings.ChartLegend">
@@ -351,7 +357,8 @@
     [Parameter] public CultureInfo? Culture { get; set; }
 
     private CultureInfo Cult => Culture ?? CultureInfo.CurrentCulture;
-    private object?[]? _key;
+
+    private string PlotDescribedBy => AriaDescription is null ? _id + "-hint" : _id + "-hint " + _id + "-description";
 
     private int PatternCount => _series.Count;
 
@@ -392,19 +399,8 @@
     {
         _id ??= NewId("chart");
 
-        // Everything below depends only on these: a parent that renders again with the same values (same Data list,
-        // same delegates) keeps the layout it already built. A list changed in place is only noticed when its length changes.
-        object?[] key =
-        [
-            Data, Data.Count, Index, Categories, Categories.Count, Type, Horizontal, Stacked, Curve, Points, Grid, XAxis, YAxis,
-            XLabel, YLabel, Legend, Format, IndexFormat, Tooltip, Thickness, Height, Width, Colors, AriaLabel, Table, Ui, Class,
-            Cult, ThemeScope, Options,
-        ];
-        if (_key is not null && _key.AsSpan().SequenceEqual(key))
-        {
-            return;
-        }
-        _key = key;
+        // A parent render may come with a list changed in place (same reference, same count), so the layout is built again each
+        // time. The chart's own renders do not go through here and reuse it.
         var strings = Options.Strings;
         var donut = Type == BxChartType.Donut;
 

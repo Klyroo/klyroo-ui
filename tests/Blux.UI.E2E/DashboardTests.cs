@@ -408,4 +408,25 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.GetByTestId("dashboard-bound-set").ClickAsync();
         await Assertions.Expect(sizes).ToHaveTextAsync("Sizes: 25,75");
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Shortcut_of_the_open_search_is_consumed_and_leaves_it_open(string mode)
+    {
+        await Open(mode, "dashboard-search");
+        await Page.EvaluateAsync("""
+            () => {
+                window.__prevented = [];
+                window.addEventListener('keydown', (e) => { if (e.ctrlKey && e.key.toLowerCase() === 'k') window.__prevented.push(e.defaultPrevented); });
+            }
+            """);
+        await Page.Keyboard.PressAsync("Control+K");
+        await Assertions.Expect(SearchDialog).ToBeVisibleAsync();
+
+        // The browser's own Ctrl+K (focus the address bar) must not run while the search is open.
+        await Page.Keyboard.PressAsync("Control+K");
+
+        Assert.Equal(new[] { true, true }, await Page.EvaluateAsync<bool[]>("() => window.__prevented"));
+        await Assertions.Expect(SearchDialog).ToBeVisibleAsync();
+    }
 }

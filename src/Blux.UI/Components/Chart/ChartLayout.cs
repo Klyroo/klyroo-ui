@@ -61,8 +61,19 @@ internal sealed class ChartLayout
     /// <summary>Position along the value axis (y for vertical charts, x for horizontal bars).</summary>
     public double ValuePosition(double value)
     {
-        // Halves: exact, and the span of two finite values may not be finite.
-        var t = (value / 2 - DomainMin / 2) / (DomainMax / 2 - DomainMin / 2);
+        // The direct span, unless it overflows: halving would turn subnormal values into zeros (0 / 0 is NaN).
+        var span = DomainMax - DomainMin;
+        double t;
+        if (double.IsFinite(span))
+        {
+            t = span > 0 ? (value - DomainMin) / span : 0.5;
+        }
+        else
+        {
+            t = (value / 2 - DomainMin / 2) / (DomainMax / 2 - DomainMin / 2);
+        }
+        // A range that cannot be told apart places every value in the middle, at a coordinate that is always finite.
+        if (!double.IsFinite(t)) t = 0.5;
         return Horizontal ? Left + t * (Right - Left) : Bottom - t * (Bottom - Top);
     }
 

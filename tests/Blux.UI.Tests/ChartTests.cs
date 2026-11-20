@@ -33,6 +33,10 @@ public class ChartTests : BluxTestContext
             configure?.Invoke(p);
         });
 
+    /// <summary>The name of the chart: on the svg image, or on the focusable group when the chart is interactive.</summary>
+    private static string AccessibleName(IRenderedComponent<BxChart<Sale>> cut) =>
+        cut.Find("svg").GetAttribute("aria-label") ?? cut.Find("[data-slot=plot]").GetAttribute("aria-label")!;
+
     private static string[] Texts(IRenderedComponent<BxChart<Sale>> cut, string selector) =>
         cut.FindAll(selector).Select(e => e.TextContent.Trim()).ToArray();
 
@@ -67,7 +71,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Chart_is_an_image_with_a_generated_summary()
     {
-        var cut = Chart();
+        var cut = Chart(p => p.Add(c => c.Tooltip, false));
 
         var svg = cut.Find("svg[role=img]");
         var label = svg.GetAttribute("aria-label")!;
@@ -80,7 +84,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void An_aria_label_replaces_the_summary_and_a_description_is_linked()
     {
-        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month").Add(c => c.AriaDescription, "Desktop leads every month but April."));
+        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month").Add(c => c.AriaDescription, "Desktop leads every month but April.").Add(c => c.Tooltip, false));
 
         var svg = cut.Find("svg[role=img]");
         Assert.Equal("Sales by month", svg.GetAttribute("aria-label"));
@@ -396,7 +400,7 @@ public class ChartTests : BluxTestContext
         Assert.True(W(bars[1]) > W(bars[0]));
         var january = cut.FindAll("svg > text").First(t => t.TextContent == "January");
         Assert.Equal("end", january.GetAttribute("text-anchor"));
-        Assert.Contains("Horizontal bar chart", cut.Find("svg").GetAttribute("aria-label"));
+        Assert.Contains("Horizontal bar chart", AccessibleName(cut));
         // The grid lines are vertical.
         var line = cut.FindAll("svg > line")[0];
         Assert.Equal(line.GetAttribute("x1"), line.GetAttribute("x2"));
@@ -426,7 +430,7 @@ public class ChartTests : BluxTestContext
         Assert.Equal(["primary", "secondary", "info", "error", "success", "warning"], slices.Select(s => s.GetAttribute("data-color")));
         Assert.Equal(6, cut.FindAll("ul li").Count);
         Assert.Equal("186", cut.FindAll("ul li")[0].QuerySelector("span:last-child")!.TextContent);
-        var label = cut.Find("svg").GetAttribute("aria-label")!;
+        var label = AccessibleName(cut);
         Assert.StartsWith("Donut chart. Slices: January 186 (", label);
         // The table has one column of values: the first category.
         Assert.Equal(["Category", "Desktop"], cut.FindAll("thead th").Select(t => t.TextContent.Trim()));
@@ -490,7 +494,7 @@ public class ChartTests : BluxTestContext
         var plot = cut.Find("[data-slot=plot]");
         Assert.Equal("0", plot.GetAttribute("tabindex"));
         Assert.Equal("group", plot.GetAttribute("role"));
-        Assert.Equal(cut.Find("svg").GetAttribute("aria-label"), plot.GetAttribute("aria-label"));
+        Assert.StartsWith("Line chart with 6 data points", plot.GetAttribute("aria-label"));
         var tips = cut.FindAll("[data-slot=tips] > [data-tip]");
         Assert.Equal(6, tips.Count);
         Assert.NotNull(cut.Find("[data-slot=tips]").GetAttribute("hidden"));
@@ -612,7 +616,7 @@ public class ChartTests : BluxTestContext
     }
 
     [Fact]
-    public void Chart_does_not_rebuild_its_layout_when_the_parameters_have_not_changed()
+    public async Task Chart_rebuilds_its_layout_on_a_parent_render_and_not_on_its_own_renders()
     {
         var calls = 0;
         Func<Sale, object?> index = s => { calls++; return s.Month; };
@@ -622,13 +626,38 @@ public class ChartTests : BluxTestContext
         var first = calls;
         Assert.True(first > 0);
 
-        cut.Render(parameters);
-        cut.Render(parameters);
-
+        // The chart's own re-renders (state changes inside the chart) reuse the layout.
+        var stateHasChanged = typeof(Microsoft.AspNetCore.Components.ComponentBase)
+            .GetMethod("StateHasChanged", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        await cut.InvokeAsync(() => stateHasChanged.Invoke(cut.Instance, null));
+        await cut.InvokeAsync(() => stateHasChanged.Invoke(cut.Instance, null));
         Assert.Equal(first, calls);
 
-        cut.Render(p => parameters(p.Add(c => c.Stacked, true)));
+        // A parent render may come with a list changed in place: the layout is built again.
+        cut.Render(parameters);
         Assert.True(calls > first);
+    }
+
+    [Fact]
+    public void Chart_shows_new_values_when_the_data_list_changed_in_place_with_the_same_count()
+    {
+        var data = new List<Sale> { new("a", 1, null), new("b", 2, null), new("c", 3, null) };
+        var categories = new[] { new BxChartCategory<Sale>("desktop", s => s.Desktop) };
+        Func<Sale, object?> index = s => s.Month;
+        Action<ComponentParameterCollectionBuilder<BxChart<Sale>>> parameters = p =>
+            p.Add(c => c.Data, data).Add(c => c.Index, index).Add(c => c.Categories, categories);
+        var cut = Render(parameters);
+        Assert.Contains("a: desktop 1", cut.Find("[data-tip='0']").GetAttribute("data-text"));
+
+        data[0] = new("a", 100, null);
+        cut.Render(parameters);
+        Assert.Contains("a: desktop 100", cut.Find("[data-tip='0']").GetAttribute("data-text"));
+
+        data.RemoveAt(0);
+        data.Add(new("d", 42, null));
+        cut.Render(parameters);
+        Assert.Contains("d: desktop 42", cut.Find("[data-tip='2']").GetAttribute("data-text"));
+        Assert.Contains("b: desktop 2", cut.Find("[data-tip='0']").GetAttribute("data-text"));
     }
 
     [Fact]
@@ -654,5 +683,62 @@ public class ChartTests : BluxTestContext
         Assert.Equal("Sales by month", plot.GetAttribute("aria-label"));
         var hint = cut.Find("#" + plot.GetAttribute("aria-describedby"));
         Assert.Equal("Chart values. Use the arrow keys to move between points.", hint.TextContent.Trim());
+    }
+
+    [Fact]
+    public void Interactive_chart_names_the_group_once_and_hides_the_drawing_and_the_hint_from_its_content()
+    {
+        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month"));
+
+        var plot = cut.Find("[data-slot=plot]");
+        var svg = plot.QuerySelector("svg")!;
+        Assert.Equal("true", svg.GetAttribute("aria-hidden"));
+        Assert.Null(svg.GetAttribute("role"));
+        Assert.Null(svg.GetAttribute("aria-label"));
+        // The hint describes the group but is not part of its content.
+        var hintId = plot.GetAttribute("aria-describedby");
+        Assert.NotNull(hintId);
+        Assert.Null(plot.QuerySelector("#" + hintId));
+        Assert.True(cut.Find("#" + hintId).HasAttribute("hidden"));
+    }
+
+    [Fact]
+    public void Static_chart_keeps_a_named_image()
+    {
+        var cut = Chart(p => p.Add(c => c.AriaLabel, "Sales by month").Add(c => c.Tooltip, false));
+
+        var svg = cut.Find("[data-slot=plot] svg");
+        Assert.Equal("img", svg.GetAttribute("role"));
+        Assert.Equal("Sales by month", svg.GetAttribute("aria-label"));
+        Assert.Null(svg.GetAttribute("aria-hidden"));
+        Assert.Null(cut.Find("[data-slot=plot]").GetAttribute("role"));
+    }
+
+    [Fact]
+    public void Interactive_chart_keeps_the_description_on_the_group()
+    {
+        var cut = Chart(p => p.Add(c => c.AriaDescription, "Peak in February"));
+
+        var plot = cut.Find("[data-slot=plot]");
+        var ids = plot.GetAttribute("aria-describedby")!.Split(' ');
+        Assert.Equal(2, ids.Length);
+        Assert.Contains("Peak in February", cut.Find("#" + ids[1]).TextContent);
+        Assert.Null(plot.QuerySelector("#" + ids[1]));
+    }
+
+    [Theory]
+    [InlineData(BxChartType.Line)]
+    [InlineData(BxChartType.Bar)]
+    [InlineData(BxChartType.Area)]
+    public void Subnormal_domains_render_finite_coordinates(BxChartType type)
+    {
+        foreach (var (a, b) in new[] { (0.0, double.Epsilon), (-double.Epsilon, double.Epsilon) })
+        {
+            var data = new List<Sale> { new("a", a, null), new("b", b, null) };
+            var cut = Chart(p => p.Add(c => c.Type, type), data, [new("desktop", s => s.Desktop)]);
+
+            Assert.DoesNotContain("NaN", cut.Markup);
+            Assert.DoesNotContain("Infinity", cut.Markup);
+        }
     }
 }

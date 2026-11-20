@@ -16,10 +16,10 @@
             <span class="@_slots["label"]">@ButtonLabel</span>
             @if (Keys is null || Keys.Count > 0)
             {
-                <span class="@_slots["kbds"]" aria-hidden="true">
+                <bx-mod-keys class="@_slots["kbds"]" aria-hidden="true">
                     @if (Keys is null)
                     {
-                        @* The modifier follows the platform: the browser sets the label (js/platform-keys.js), "Ctrl" until then. *@
+                        @* The modifier follows the platform: the browser sets the label (<bx-mod-keys>, js/platform-keys.js), "Ctrl" until then. *@
                         <BxKbd Size="BxSize.Sm" data-bx-mod="" data-label="Ctrl" />
                         <BxKbd Value="K" Size="BxSize.Sm" />
                     }
@@ -30,7 +30,7 @@
                             <BxKbd Value="@key" Size="BxSize.Sm" />
                         }
                     }
-                </span>
+                </bx-mod-keys>
             }
         }
     </ChildContent>

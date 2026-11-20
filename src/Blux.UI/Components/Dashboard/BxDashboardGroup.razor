@@ -7,7 +7,7 @@
     width in cookies under the same key (js/layout.js). .NET hears about sizes only when Sizes is bound.
     It fills its parent, so the parent needs a height: a frame with a fixed height, or the page itself.
 *@
-<CascadingValue Value="_context" IsFixed="true">
+<CascadingValue Value="_context">
     <bx-dashboard-group data-bx-seq="@(SizesChanged.HasDelegate ? _sequence : null)"
                         class="@_slots["root"]"
                         data-bx-dashboard-id="@StorageKey"
@@ -23,7 +23,8 @@
 
 @code {
     private SlotSet _slots = default!;
-    private readonly DashboardContext _context = new();
+    private readonly SidebarSlots _sidebarSlots = new();
+    private DashboardContext _context = default!;
     private int _sequence;
 
     /// <summary>The sidebar, the panels and anything else of the dashboard, laid out in a row.</summary>
@@ -49,7 +50,7 @@
 
     protected override void OnParametersSet()
     {
-        _context.Key = StorageKey;
+        if (_context is null || _context.Key != StorageKey) _context = new DashboardContext(StorageKey, _sidebarSlots);
         _slots = ResolveSlots(Options.DashboardGroup, new Dictionary<string, string?>(), Ui, "root");
     }
 

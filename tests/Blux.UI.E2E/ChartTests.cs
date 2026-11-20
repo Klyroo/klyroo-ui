@@ -49,7 +49,10 @@ public class ChartTests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "chart");
         var chart = Chart("chart-line");
 
-        var image = chart.GetByRole(AriaRole.Img);
+        // The chart is interactive: the focusable group carries the name and the drawing is hidden from assistive technology.
+        var image = chart.Locator("[data-slot=plot]");
+        await Assertions.Expect(chart.GetByRole(AriaRole.Img)).ToHaveCountAsync(0);
+        await Assertions.Expect(chart.Locator("[data-slot=plot] > svg")).ToHaveAttributeAsync("aria-hidden", "true");
         await Assertions.Expect(image).ToHaveAttributeAsync("aria-label", new Regex(@"^Line chart with 6 data points from Jan to Jun\. Series: Desktop \(73 to 305\), Mobile \(80 to 200\)\.$"));
         // The table is visually hidden, not removed: assistive technology still reads it.
         var table = chart.GetByRole(AriaRole.Table);
@@ -188,7 +191,7 @@ public class ChartTests(PlaygroundServer server) : PlaygroundTest(server)
         // Focusing alone shows nothing: the chart is named and waits for a key.
         await Assertions.Expect(tooltip).Not.ToBeVisibleAsync();
         // Named by the chart, described by the hint on how to explore it.
-        Assert.Equal(await chart.GetByRole(AriaRole.Img).GetAttributeAsync("aria-label"), await plot.GetAttributeAsync("aria-label"));
+        Assert.StartsWith("Line chart with 6 data points", await plot.GetAttributeAsync("aria-label"));
         await Assertions.Expect(chart.Locator("#" + await plot.GetAttributeAsync("aria-describedby"))).ToHaveTextAsync("Chart values. Use the arrow keys to move between points.");
 
         await Page.Keyboard.PressAsync("ArrowRight");
