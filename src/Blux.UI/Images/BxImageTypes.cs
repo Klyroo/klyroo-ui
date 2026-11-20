@@ -3,9 +3,9 @@ namespace Blux.UI;
 /// <summary>How the image fills the requested width and height, like the <c>fit</c> prop of <c>NuxtImg</c>. Providers map it to their own vocabulary.</summary>
 public enum BxImageFit
 {
-    /// <summary>Fill the box and crop what overflows (the default of Nuxt Image).</summary>
+    /// <summary>Fill the box and crop what overflows (the default of Nuxt Image). The local optimizer enlarges a smaller picture to fill the box.</summary>
     Cover,
-    /// <summary>Fit inside the box without cropping and without distorting.</summary>
+    /// <summary>Fit inside the box without cropping and without distorting. The local optimizer then pads to exactly the box (transparent, or white for JPEG); other providers leave the free space out.</summary>
     Contain,
     /// <summary>Stretch to the box, distorting the picture when the ratios differ.</summary>
     Fill,
@@ -74,6 +74,13 @@ public interface IBxImageProvider
 
     /// <summary>True when the provider can blur (see <see cref="BxImageModifiers.Blur"/>), which makes <c>Placeholder</c> look better. Defaults to false.</summary>
     bool SupportsBlur => false;
+
+    /// <summary>
+    /// The width, in pixels, of the image the URL for <paramref name="width"/> will really return, for the <c>w</c> descriptors of the <c>srcset</c>.
+    /// A provider that rounds widths to a fixed set (<c>local</c>, <c>vercel</c>) returns the rounded one, so that a "400w" candidate is not a 512 pixel
+    /// image; the others produce the width they are asked for. Defaults to <paramref name="width"/>.
+    /// </summary>
+    int GetEffectiveWidth(int width) => width;
 
     /// <summary>
     /// True when <see cref="BxImageSettings.Domains"/> applies: a remote source (<c>https://host/...</c>) whose host is not listed is passed through

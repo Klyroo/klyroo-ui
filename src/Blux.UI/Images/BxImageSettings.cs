@@ -42,7 +42,8 @@ public sealed class BxImageSettings
 
     /// <summary>
     /// Hosts of the remote images a provider with <see cref="IBxImageProvider.ValidateDomains"/> may process (<c>"images.example.com"</c>;
-    /// a full URL is reduced to its host). A remote <c>src</c> from any other host is passed through untouched, like Nuxt Image does.
+    /// a full URL is reduced to its host). Only the default port of the scheme matches unless the entry names a port (<c>"images.example.com:8443"</c>).
+    /// A remote <c>src</c> from any other host is passed through untouched, like Nuxt Image does.
     /// </summary>
     public ICollection<string> Domains { get; }
 
@@ -120,11 +121,64 @@ public sealed class BxImageSettings
     public BxResolvedImage Resolve(string? src, BxImageOptions? options = null, int? width = null, int? height = null)
     {
         Freeze();
-        if (string.IsNullOrEmpty(src) || src.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || src.StartsWith("blob:", StringComparison.OrdinalIgnoreCase))
+        if (IsPassThrough(src)) return new BxResolvedImage(src ?? "", null, null);
+
+        var (provider, merged, path, allowed) = Prepare(src!, options);
+        if (!allowed) return new BxResolvedImage(src!, null, null);
+
+        var densities = ParseDensities(merged.Densities) ?? _densities;
+        string Url(int? w, int? h) => provider.GetUrl(path, new BxImageModifiers(w, h, merged.Quality, merged.Format, merged.Fit, Extra: merged.Modifiers));
+
+        if (!provider.CanResize)
         {
-            return new BxResolvedImage(src ?? "", null, null);
+            return new BxResolvedImage(provider is NoneProvider ? src! : Url(width, height), null, null);
         }
 
+        var sizes = ParseSizes(merged.Sizes);
+        if (sizes.Count == 0)
+        {
+            // Densities only: the same picture at 1x, 2x… Nothing to scale without a width or a height.
+            if (width is null && height is null)
+            {
+                return new BxResolvedImage(Url(null, null), null, null);
+            }
+            // Densities that a provider rounds to the same width give the same URL: one candidate is enough.
+            var variants = densities
+                .OrderBy(d => d)
+                .Select(d => (Density: d, Url: Url(width * d, height * d)))
+                .DistinctBy(v => v.Url)
+                .ToList();
+            return new BxResolvedImage(
+                variants[0].Url,
+                string.Join(", ", variants.Select(v => $"{EscapeForSrcSet(v.Url)} {v.Density}x")),
+                null);
+        }
+
+        return ResolveSizes(sizes, densities, width, height, Url, provider.GetEffectiveWidth);
+    }
+
+    /// <summary>
+    /// The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for <c>Placeholder="true"</c>.
+    /// Null when the source is not resolvable (empty, <c>data:</c>, <c>blob:</c>), the provider cannot resize or the image is remote and not allowed.
+    /// Unknown providers and presets throw like <see cref="Resolve"/>.
+    /// </summary>
+    public string? ResolvePlaceholder(string? src, BxImageOptions? options, int width, int? height)
+    {
+        Freeze();
+        if (IsPassThrough(src)) return null;
+        var (provider, merged, path, allowed) = Prepare(src!, options);
+        if (!provider.CanResize || !allowed) return null;
+        return provider.GetUrl(path, new BxImageModifiers(width, height, 50, merged.Format, merged.Fit, provider.SupportsBlur ? 3 : null, merged.Modifiers));
+    }
+
+    // Sources that no provider can resize: nothing, inline data and object URLs.
+    private static bool IsPassThrough(string? src) =>
+        string.IsNullOrEmpty(src) || src.StartsWith("data:", StringComparison.OrdinalIgnoreCase) || src.StartsWith("blob:", StringComparison.OrdinalIgnoreCase);
+
+    // What Resolve and ResolvePlaceholder both need, in one place so they cannot disagree: the merged options, the provider (unknown names throw),
+    // the source as the provider takes it, and whether the provider may be given it (a remote source of a host that is not allowed may not).
+    private (IBxImageProvider Provider, BxImageOptions Merged, string Path, bool Allowed) Prepare(string src, BxImageOptions? options)
+    {
         options ??= new BxImageOptions();
         BxImageOptions? preset = null;
         if (options.Preset is { Length: > 0 } presetName && !Presets.TryGetValue(presetName, out preset))
@@ -140,64 +194,13 @@ public sealed class BxImageSettings
             throw new InvalidOperationException($"Unknown image provider '{providerName}'. Register it with BluxOptions.Images.AddProvider.");
         }
 
-        var remote = IsRemote(src, out var host);
-        if (provider.ValidateDomains && remote && !AllowedHost(host))
-        {
-            return new BxResolvedImage(src, null, null);
-        }
-
+        var remote = IsRemote(src, out var host, out var port, out var defaultPort);
+        var allowed = !(provider.ValidateDomains && remote && !AllowedHost(host, port, defaultPort));
         var path = remote || src.StartsWith('/') ? src : "/" + src;
-        var densities = ParseDensities(merged.Densities) ?? _densities;
-        string Url(int? w, int? h) => provider.GetUrl(path, new BxImageModifiers(w, h, merged.Quality, merged.Format, merged.Fit, Extra: merged.Modifiers));
-
-        if (!provider.CanResize)
-        {
-            return new BxResolvedImage(provider is NoneProvider ? src : Url(width, height), null, null);
-        }
-
-        var sizes = ParseSizes(merged.Sizes);
-        if (sizes.Count == 0)
-        {
-            // Densities only: the same picture at 1x, 2x… Nothing to scale without a width or a height.
-            if (width is null && height is null)
-            {
-                return new BxResolvedImage(Url(null, null), null, null);
-            }
-            var variants = densities
-                .OrderBy(d => d)
-                .Select(d => (Density: d, Url: Url(width * d, height * d)))
-                .ToList();
-            return new BxResolvedImage(
-                variants[0].Url,
-                string.Join(", ", variants.Select(v => $"{EscapeForSrcSet(v.Url)} {v.Density}x")),
-                null);
-        }
-
-        return ResolveSizes(sizes, densities, width, height, Url);
+        return (provider, merged, path, allowed);
     }
 
-    /// <summary>
-    /// The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for <c>Placeholder="true"</c>.
-    /// Null when the provider cannot resize or the image is remote and not allowed.
-    /// </summary>
-    public string? ResolvePlaceholder(string? src, BxImageOptions? options, int width, int? height)
-    {
-        Freeze();
-        if (string.IsNullOrEmpty(src) || src.StartsWith("data:", StringComparison.OrdinalIgnoreCase)) return null;
-        options ??= new BxImageOptions();
-        BxImageOptions? preset = null;
-        if (options.Preset is { Length: > 0 } presetName) Presets.TryGetValue(presetName, out preset);
-        var merged = options.OverDefaultsOf(preset);
-        IBxImageProvider? provider;
-        lock (_gate) _providers.TryGetValue(merged.Provider ?? _defaultProvider, out provider);
-        if (provider is not { CanResize: true }) return null;
-        var remote = IsRemote(src, out var host);
-        if (provider.ValidateDomains && remote && !AllowedHost(host)) return null;
-        var path = remote || src.StartsWith('/') ? src : "/" + src;
-        return provider.GetUrl(path, new BxImageModifiers(width, height, 50, merged.Format, merged.Fit, provider.SupportsBlur ? 3 : null, merged.Modifiers));
-    }
-
-    private BxResolvedImage ResolveSizes(List<KeyValuePair<string, string>> sizes, IReadOnlyList<int> densities, int? width, int? height, Func<int?, int?, string> url)
+    private BxResolvedImage ResolveSizes(List<KeyValuePair<string, string>> sizes, IReadOnlyList<int> densities, int? width, int? height, Func<int?, int?, string> url, Func<int, int> effectiveWidth)
     {
         var hwRatio = width is > 0 && height is > 0 ? (double)height.Value / width.Value : 0;
         var parsed = new List<SizeVariant>();
@@ -227,7 +230,9 @@ public sealed class BxImageSettings
             sizeVariants.Add((variant.Size, variant.ScreenMaxWidth, $"(max-width: {variant.ScreenMaxWidth - 1}px)"));
             foreach (var density in densities)
             {
-                srcset.Add((variant.CWidth * density, url(variant.CWidth * density, variant.CHeight is { } h ? h * density : null)));
+                // The descriptor is the width the provider will really produce (a provider may round it), so the browser's choice is not misled.
+                var requested = variant.CWidth * density;
+                srcset.Add((effectiveWidth(requested), url(requested, variant.CHeight is { } h ? h * density : null)));
             }
         }
 
@@ -329,21 +334,47 @@ public sealed class BxImageSettings
             : throw new ArgumentException($"Densities '{input}' hold no usable value; use \"x1\" to render the regular size only.");
     }
 
-    private static bool IsRemote(string src, out string host)
+    private static bool IsRemote(string src, out string host, out int port, out bool defaultPort)
     {
         host = "";
-        var start = src.StartsWith("//", StringComparison.Ordinal) ? "http:" + src : src;
+        port = 0;
+        defaultPort = true;
+        var start = src.StartsWith("//", StringComparison.Ordinal) ? "https:" + src : src;
         if (!Uri.TryCreate(start, UriKind.Absolute, out var uri) || uri.Scheme is not ("http" or "https")) return false;
         host = uri.Host;
+        port = uri.Port;
+        defaultPort = uri.IsDefaultPort;
         return true;
     }
 
-    private bool AllowedHost(string host)
+    // The rule of the local endpoint: the host must be listed, and the port must be the default one unless the entry names it ("host:8443").
+    private bool AllowedHost(string host, int port, bool defaultPort)
     {
         foreach (var domain in Domains)
         {
-            var entry = domain.Contains("://", StringComparison.Ordinal) && Uri.TryCreate(domain, UriKind.Absolute, out var uri) ? uri.Host : domain.Trim();
-            if (string.Equals(entry, host, StringComparison.OrdinalIgnoreCase)) return true;
+            var text = domain.Trim();
+            string entryHost;
+            int? entryPort = null;
+            if (text.Contains("://", StringComparison.Ordinal) && Uri.TryCreate(text, UriKind.Absolute, out var uri))
+            {
+                entryHost = uri.Host;
+                if (!uri.IsDefaultPort) entryPort = uri.Port;
+            }
+            else
+            {
+                var colon = text.LastIndexOf(':');
+                if (colon > 0 && text.IndexOf(':') == colon && int.TryParse(text.AsSpan(colon + 1), NumberStyles.None, CultureInfo.InvariantCulture, out var number))
+                {
+                    entryHost = text[..colon];
+                    entryPort = number;
+                }
+                else
+                {
+                    entryHost = text;
+                }
+            }
+            if (!string.Equals(entryHost, host, StringComparison.OrdinalIgnoreCase)) continue;
+            if (entryPort is { } named ? port == named : defaultPort) return true;
         }
         return false;
     }

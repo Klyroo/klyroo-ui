@@ -122,4 +122,95 @@ public class ProviderTests
         var resolved = settings.Resolve("/a.png", null, 100, 100);
         Assert.Equal("/_blux/img?src=%2Fa.png&w=128&h=128", resolved.Src.Split(" ")[0]);
     }
+
+    [Fact]
+    public void Srcset_descriptors_are_the_widths_the_local_endpoint_will_really_produce()
+    {
+        var settings = new BxImageSettings();
+        settings.AddLocal(makeDefault: true);
+
+        var resolved = settings.Resolve("/a.png", new BxImageOptions { Sizes = "400px", Densities = "x1" }, 400, null);
+
+        Assert.Contains(" 512w", resolved.SrcSet);
+        Assert.DoesNotContain(" 400w", resolved.SrcSet);
+        Assert.Contains("w=512", resolved.SrcSet);
+    }
+
+    [Fact]
+    public void Candidates_that_snap_to_the_same_width_collapse_into_one()
+    {
+        var settings = new BxImageSettings();
+        settings.AddLocal(makeDefault: true);
+
+        var resolved = settings.Resolve("/a.png", new BxImageOptions { Sizes = "sm:360px md:370px" }, 360, null);
+
+        Assert.Equal(["384w", "750w"], resolved.SrcSet!.Split(", ").Select(c => c.Split(' ')[^1]).ToArray());
+    }
+
+    [Fact]
+    public void The_descriptor_of_a_provider_that_snaps_widths_follows_its_sizes()
+    {
+        var settings = new BxImageSettings();
+        settings.AddVercel([640, 750, 1080], makeDefault: true);
+
+        var resolved = settings.Resolve("/a.png", new BxImageOptions { Sizes = "700px", Densities = "x1 x2" }, 700, null);
+
+        Assert.Equal(["750w", "1080w"], resolved.SrcSet!.Split(", ").Select(c => c.Split(' ')[^1]).ToArray());
+    }
+
+    [Fact]
+    public void Providers_that_do_not_snap_keep_the_requested_width_as_the_descriptor()
+    {
+        var settings = new BxImageSettings();
+        settings.AddCloudinary("demo", makeDefault: true);
+
+        var resolved = settings.Resolve("/a.png", new BxImageOptions { Sizes = "400px", Densities = "x1" }, 400, null);
+
+        Assert.Contains(" 400w", resolved.SrcSet);
+    }
+
+    [Fact]
+    public void A_protocol_relative_source_is_sent_to_the_endpoint_as_https()
+    {
+        var settings = new BxImageSettings();
+        settings.Domains.Add("img.test");
+        settings.AddLocal(makeDefault: true);
+
+        var resolved = settings.Resolve("//img.test/a.png", null, 100, null);
+
+        Assert.StartsWith("/_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png&w=128", resolved.Src);
+        Assert.Equal("/_blux/img?src=https%3A%2F%2Fimg.test%2Fa.png", new BxLocalImageProvider().GetUrl("//img.test/a.png", M()));
+    }
+
+    [Fact]
+    public void Domains_follow_the_server_rule_for_ports()
+    {
+        string Src(string entry, string src)
+        {
+            var settings = new BxImageSettings();
+            settings.Domains.Add(entry);
+            settings.AddLocal(makeDefault: true);
+            return settings.Resolve(src, null, 100, null).Src;
+        }
+
+        Assert.StartsWith("/_blux/img", Src("img.test", "https://img.test/a.png"));
+        Assert.StartsWith("/_blux/img", Src("img.test", "https://img.test:443/a.png"));
+        Assert.Equal("https://img.test:8443/a.png", Src("img.test", "https://img.test:8443/a.png"));
+        Assert.StartsWith("/_blux/img", Src("img.test:8443", "https://img.test:8443/a.png"));
+        Assert.Equal("https://img.test/a.png", Src("img.test:8443", "https://img.test/a.png"));
+        Assert.Equal("https://img.test:9000/a.png", Src("img.test:8443", "https://img.test:9000/a.png"));
+    }
+
+    [Fact]
+    public void The_placeholder_shares_the_source_and_preset_rules_of_resolve()
+    {
+        var settings = new BxImageSettings();
+        settings.AddLocal(makeDefault: true);
+
+        Assert.Null(settings.ResolvePlaceholder("blob:https://x/1", null, 10, null));
+        Assert.Null(settings.ResolvePlaceholder("data:image/png;base64,AAAA", null, 10, null));
+        Assert.Throws<InvalidOperationException>(() => settings.ResolvePlaceholder("/a.png", new BxImageOptions { Preset = "nope" }, 10, null));
+        Assert.Throws<InvalidOperationException>(() => settings.Resolve("/a.png", new BxImageOptions { Preset = "nope" }, 10, null));
+        Assert.StartsWith("/_blux/img?src=%2Fa.png&w=16", settings.ResolvePlaceholder("/a.png", null, 10, null));
+    }
 }

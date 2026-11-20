@@ -86,6 +86,8 @@ public sealed class CloudinaryImageProvider(string cloudName, string name = "clo
 /// <c>blur</c> 0 to 2000 (https://docs.imgix.com/apis/rendering/stylize/blur); <c>auto=format</c> when the format is <c>auto</c>
 /// (https://docs.imgix.com/apis/rendering/auto/auto). Fit mapping: cover is <c>crop</c>, contain <c>clip</c>, fill <c>scale</c>, inside <c>max</c>;
 /// outside has no equivalent and uses <c>crop</c>. <paramref name="domain"/> is the host of your source, for example <c>assets.imgix.net</c>.
+/// Absolute sources (imgix Web Proxy sources) are not supported: they need a signing key, which cannot be part of a public URL built on both
+/// the server and the client. Use a Web Folder or S3 source and give paths.
 /// </summary>
 public sealed class ImgixImageProvider(string domain, string name = "imgix") : IBxImageProvider
 {
@@ -239,9 +241,11 @@ public sealed class VercelImageProvider(IReadOnlyList<int>? sizes = null, string
     public bool CanResize => true;
     public bool ValidateDomains => true;
 
+    public int GetEffectiveWidth(int width) => _sizes.FirstOrDefault(s => s >= width, _sizes[^1]);
+
     public string GetUrl(string src, BxImageModifiers m)
     {
-        var width = m.Width is { } w ? _sizes.FirstOrDefault(s => s >= w, _sizes[^1]) : _sizes[^1];
+        var width = m.Width is { } w ? GetEffectiveWidth(w) : _sizes[^1];
         var quality = m.Quality is { } q ? ProviderUrl.Quality(q) : 75;
         return $"/_vercel/image?url={ProviderUrl.ReadableEscape(src)}&w={ProviderUrl.Num(width)}&q={ProviderUrl.Num(quality)}";
     }
@@ -293,7 +297,7 @@ public sealed class TemplateImageProvider(string name, string template, bool val
 /// URLs of the endpoint of <c>Blux.UI.Images.Local</c> (<c>app.MapBluxImages("/_blux/img")</c>). This class only builds URLs, so it is safe
 /// in a WebAssembly client: register it on the server and the client with <see cref="BxImageProviders.AddLocal"/>.
 /// Widths are rounded up to <see cref="Steps"/> and the quality to a multiple of 5, so a page can only ask for a bounded set of variants; a height
-/// is scaled with its width so the aspect ratio holds. <c>v</c> is a cache-busting token of yours (an application version): with it the server
+/// is scaled with its width so the aspect ratio holds, and <see cref="GetEffectiveWidth"/> reports the rounded width for the <c>srcset</c>. <c>v</c> is a cache-busting token of yours (an application version): with it the server
 /// answers with <c>immutable</c> caching.
 /// </summary>
 public sealed class BxLocalImageProvider(string endpoint = "/_blux/img", string? version = null, string name = "local") : IBxImageProvider
@@ -311,8 +315,12 @@ public sealed class BxLocalImageProvider(string endpoint = "/_blux/img", string?
     /// <summary>The quality rounded up to a multiple of 5 within 5 to 100.</summary>
     public static int SnapQuality(int quality) => Math.Clamp((Math.Clamp(quality, 1, 100) + 4) / 5 * 5, 5, 100);
 
+    public int GetEffectiveWidth(int width) => SnapWidth(width);
+
     public string GetUrl(string src, BxImageModifiers m)
     {
+        // The endpoint takes absolute URLs only (a protocol-relative one is how a path would be smuggled in): the scheme-less form is https.
+        if (src.StartsWith("//", StringComparison.Ordinal)) src = "https:" + src;
         var pairs = new List<(string, string)> { ("src", src) };
         int? width = m.Width, height = m.Height;
         if (width is { } w)
