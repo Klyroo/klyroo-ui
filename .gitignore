@@ -489,3 +489,6 @@ $RECYCLE.BIN/
 
 # Agent worktrees
 .claude/
+
+# Playwright MCP browser snapshots from local debugging
+.playwright-mcp/
