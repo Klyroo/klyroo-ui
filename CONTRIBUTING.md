@@ -58,6 +58,15 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 Form controls derive from `BxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
 uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-popover>` / `<bx-modal>` patterns.
 
+## Documentation site
+
+The documentation site lives in `playground/`. Run it with
+`ASPNETCORE_ENVIRONMENT=Development dotnet run --project playground/Blux.Playground/Blux.Playground`, then open `/`.
+Component pages are at `/components/{name}` (Auto mode) and `/{ssr|server|wasm|auto}/components/{name}`.
+The site compiles its own Tailwind (`npm run site:css`), so it exercises the "Tailwind in the app" mode.
+Generated files (`src/Blux.UI/wwwroot`, `src/Blux.UI/styles/generated`, the site's `wwwroot/site.css`) are committed;
+CI fails if `npm run build` changes them.
+
 ## Commands
 
 ```bash
@@ -77,3 +86,24 @@ dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-b
 - The component renders and behaves in all four modes, with a docs entry, live examples and an API table.
 - `dotnet build` has no warnings, all unit tests pass, the family's E2E tests pass (Chromium at least).
 - Generated assets are rebuilt and committed.
+
+## Cutting a release
+
+Versions follow [Semantic Versioning](https://semver.org). While below 1.0 a minor version (0.2.0) may contain breaking
+changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.1`). The version lives in one place,
+`VersionPrefix` and `VersionSuffix` in `src/Blux.UI/Blux.UI.csproj` (an empty suffix is a stable release).
+
+1. Make sure `main` is green: build, unit tests, and `npm run build` leaves the generated assets unchanged.
+2. In `CHANGELOG.md`, move the `[Unreleased]` content into a `## [X.Y.Z] - YYYY-MM-DD` section (Added, Changed, Fixed,
+   Removed) and leave a fresh empty `## [Unreleased]` above it.
+3. Set `VersionPrefix` / `VersionSuffix` in `Blux.UI.csproj` to the release version.
+4. Run the packaging check locally: `node build/verify-package.mjs`. It packs in Release, checks the `.nupkg` and `.snupkg`
+   contents, and builds a throwaway Blazor Web App against the package in both CSS modes. It restores from the local NuGet
+   cache; add `--online` if framework packages are missing from it.
+5. Commit (`Release X.Y.Z`), then tag `vX.Y.Z` on that commit and push the branch and the tag.
+6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tag equals the
+   package version and that the changelog has the section, rebuilds, tests, runs the packaging check, then pushes the
+   `.nupkg` and `.snupkg` to nuget.org with the `NUGET_API_KEY` repository secret.
+
+Before the first release, fill in `RepositoryUrl` and `PackageProjectUrl` (marked TODO) in `Blux.UI.csproj` once the
+repository is hosted, so nuget.org shows the repository link and SourceLink can map sources.
