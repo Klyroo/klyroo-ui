@@ -22,6 +22,7 @@ public sealed class BxColorOptions
     private readonly Dictionary<string, BxPalette> _extra = new(StringComparer.Ordinal);
     private readonly object _gate = new();
     private volatile bool _frozen;
+    private volatile bool _allowLowContrast;
 
     /// <summary>The names of the built-in semantic colors.</summary>
     public static IReadOnlyList<string> BuiltInNames => SemanticNames;
@@ -35,6 +36,24 @@ public sealed class BxColorOptions
 
     /// <summary>Drives the text, background and border tokens too, like Nuxt UI's neutral palette.</summary>
     public BxPalette Neutral { get => Get("neutral"); set => Set("neutral", value); }
+
+    /// <summary>
+    /// What happens when a palette cannot meet the contrast rules (a flat palette, a neutral whose shades are too close to each
+    /// other…). False, the default, throws an <see cref="InvalidOperationException"/> naming the color, the palette and the rule
+    /// the first time the stylesheet is resolved; true keeps the best combination found, which may be below the ratios.
+    /// </summary>
+    public bool AllowLowContrast
+    {
+        get => _allowLowContrast;
+        set
+        {
+            lock (_gate)
+            {
+                ThrowIfFrozen();
+                _allowLowContrast = value;
+            }
+        }
+    }
 
     /// <summary>Extra semantic colors added with <see cref="Add"/>, usable as <c>Color="@("tertiary")"</c>.</summary>
     public IReadOnlyDictionary<string, BxPalette> Extra

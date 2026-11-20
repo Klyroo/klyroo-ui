@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace Blux.UI.Theming;
 
@@ -14,7 +15,7 @@ internal static class BxColorMath
         }
         if (value.StartsWith("oklch(", StringComparison.OrdinalIgnoreCase) && value.EndsWith(')'))
         {
-            return ParseOklch(value[6..^1]);
+            return ParseOklch(css, value[6..^1]);
         }
         throw new FormatException($"Unsupported color '{css}': use #rgb, #rrggbb or oklch(L C H).");
     }
@@ -33,7 +34,12 @@ internal static class BxColorMath
         return (Convert.ToInt32(digits[..2], 16), Convert.ToInt32(digits[2..4], 16), Convert.ToInt32(digits[4..], 16));
     }
 
-    private static (int, int, int) ParseOklch(string body)
+    // A number or a percentage, then an optional CSS unit; "NaN", "Infinity" and trailing garbage do not match.
+    private static readonly Regex Component = new(
+        @"^(?<number>[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?)(?<unit>%|deg|grad|rad|turn)?$",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+    private static (int, int, int) ParseOklch(string css, string body)
     {
         var slash = body.IndexOf('/');
         if (slash >= 0)
@@ -43,25 +49,42 @@ internal static class BxColorMath
         var parts = body.Split([' ', ','], StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length != 3)
         {
-            throw new FormatException($"Invalid oklch color 'oklch({body})'.");
+            throw new FormatException($"Invalid oklch color '{css}': expected three components, oklch(L C H).");
         }
 
-        static double Number(string text)
+        // The value and its unit ("" for a plain number); 'none' is 0.
+        (double Value, string Unit) Read(string text, string name, params string[] units)
         {
             if (text.Equals("none", StringComparison.OrdinalIgnoreCase))
             {
-                return 0;
+                return (0, "");
             }
-            return double.Parse(text.TrimEnd('%', 'd', 'e', 'g'), CultureInfo.InvariantCulture);
+            var match = Component.Match(text);
+            if (!match.Success
+                || !double.TryParse(match.Groups["number"].Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var number)
+                || !double.IsFinite(number)
+                || !units.Contains(match.Groups["unit"].Value.ToLowerInvariant()))
+            {
+                var allowed = units.Length > 1 ? $" (a number or a unit among {string.Join(", ", units.Where(u => u != ""))})" : "";
+                throw new FormatException($"Invalid oklch color '{css}': '{text}' is not a valid {name}{allowed}.");
+            }
+            return (number, match.Groups["unit"].Value.ToLowerInvariant());
         }
 
-        var l = Number(parts[0]);
-        if (parts[0].EndsWith('%'))
+        // CSS Color 4: L is a number 0..1 or a percentage, C a number or a percentage (100% is 0.4), H an angle (a number is degrees).
+        var (lValue, lUnit) = Read(parts[0], "lightness", "", "%");
+        var l = Math.Clamp(lUnit == "%" ? lValue / 100 : lValue, 0, 1);
+        var (cValue, cUnit) = Read(parts[1], "chroma", "", "%");
+        var c = Math.Max(0, cUnit == "%" ? cValue / 100 * 0.4 : cValue);
+        var (hValue, hUnit) = Read(parts[2], "hue", "", "deg", "grad", "rad", "turn");
+        var degrees = hUnit switch
         {
-            l /= 100;
-        }
-        var c = Number(parts[1]);
-        var h = Number(parts[2]) * Math.PI / 180;
+            "grad" => hValue * 0.9,
+            "rad" => hValue * 180 / Math.PI,
+            "turn" => hValue * 360,
+            _ => hValue,
+        };
+        var h = degrees * Math.PI / 180;
 
         var a = c * Math.Cos(h);
         var b = c * Math.Sin(h);

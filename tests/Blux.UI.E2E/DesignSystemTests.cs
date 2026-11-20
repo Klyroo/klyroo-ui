@@ -99,6 +99,47 @@ public class DesignSystemTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
+    public async Task A_subtree_override_of_the_primary_color_reaches_the_chart_series_inside_it()
+    {
+        await Open("ssr", "chart");
+        var series = Page.GetByTestId("chart-line").Locator("g[data-series][data-color='chart-1']").First;
+        Assert.Equal("#ffd23f", await series.EvaluateAsync<string>("e => getComputedStyle(e).getPropertyValue('--bx-color').trim()"));
+
+        // The chart tokens are not fixed on :root: the series resolve --blux-primary at their own element.
+        await Page.GetByTestId("chart-line").EvaluateAsync("e => e.style.setProperty('--blux-primary', '#ff0000')");
+        Assert.Equal("#ff0000", await series.EvaluateAsync<string>("e => getComputedStyle(e).getPropertyValue('--bx-color').trim()"));
+
+        // A global --blux-chart-1 still wins over the semantic color.
+        await Page.GetByTestId("chart-line").EvaluateAsync("e => e.style.setProperty('--blux-chart-1', '#00ff00')");
+        Assert.Equal("#00ff00", await series.EvaluateAsync<string>("e => getComputedStyle(e).getPropertyValue('--bx-color').trim()"));
+    }
+
+    [Fact]
+    public async Task A_subtree_override_of_the_radius_resizes_the_rounded_utilities_inside_it()
+    {
+        await Open("ssr", "theme-style");
+        var radii = await Page.EvaluateAsync<string[]>("""
+            () => {
+              const make = (host) => {
+                const box = document.createElement('div');
+                box.className = 'rounded-sm';
+                host.appendChild(box);
+                return box;
+              };
+              const outside = make(document.body);
+              const wrapper = document.createElement('div');
+              wrapper.style.setProperty('--blux-radius', '2rem');
+              document.body.appendChild(wrapper);
+              const inside = make(wrapper);
+              return [getComputedStyle(outside).borderTopLeftRadius, getComputedStyle(inside).borderTopLeftRadius];
+            }
+            """);
+
+        Assert.Equal("4px", radii[0]);   // 0.5rem * 0.5
+        Assert.Equal("16px", radii[1]);  // 2rem * 0.5
+    }
+
+    [Fact]
     public async Task The_tailwind_utilities_follow_the_runtime_tokens_of_the_site()
     {
         await Page.GotoAsync("/docs/css-variables");

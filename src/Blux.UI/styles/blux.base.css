@@ -9,7 +9,8 @@
 /*
  * Tailwind utilities that follow the runtime tokens (hence `inline`: the utility reads var(--blux-*) at the element, so
  * .dark and overrides apply). text-default, text-muted, bg-elevated, border-accented, bg-primary, text-primary… exist in
- * both modes, and rounded-* follow --blux-radius. Custom semantic colors need their own mapping, see the Theming guide.
+ * both modes, and rounded-* are computed from --blux-radius at the element, so --blux-radius set on a subtree resizes them
+ * there. Custom semantic colors need their own mapping, see the Theming guide.
  */
 @theme inline {
   --color-primary: var(--blux-primary);
@@ -52,31 +53,25 @@
   --outline-color-accented: var(--blux-border-accented);
   --outline-color-inverted: var(--blux-border-inverted);
 
-  --radius-xs: var(--blux-radius-xs);
-  --radius-sm: var(--blux-radius-sm);
-  --radius-md: var(--blux-radius-md);
-  --radius-lg: var(--blux-radius-lg);
-  --radius-xl: var(--blux-radius-xl);
-  --radius-2xl: var(--blux-radius-2xl);
-  --radius-3xl: var(--blux-radius-3xl);
+  --radius-xs: calc(var(--blux-radius) * 0.25);
+  --radius-sm: calc(var(--blux-radius) * 0.5);
+  --radius-md: calc(var(--blux-radius) * 0.75);
+  --radius-lg: var(--blux-radius);
+  --radius-xl: calc(var(--blux-radius) * 1.5);
+  --radius-2xl: calc(var(--blux-radius) * 2);
+  --radius-3xl: calc(var(--blux-radius) * 3);
 }
 
 @layer base {
   :root {
     --blux-radius: 0.5rem;
-    /* The radius scale follows --blux-radius (with the default it is Tailwind's own scale, so rounded-* keep their size). */
-    --blux-radius-xs: calc(var(--blux-radius) * 0.25);
-    --blux-radius-sm: calc(var(--blux-radius) * 0.5);
-    --blux-radius-md: calc(var(--blux-radius) * 0.75);
-    --blux-radius-lg: var(--blux-radius);
-    --blux-radius-xl: calc(var(--blux-radius) * 1.5);
-    --blux-radius-2xl: calc(var(--blux-radius) * 2);
-    --blux-radius-3xl: calc(var(--blux-radius) * 3);
-
     /* Maximum width of BxContainer, the header and the footer. */
     --blux-container: 80rem;
-    /* Height of BxHeader, which BxMain subtracts from the viewport. --bx-header-height still works as an override. */
-    --blux-header-height: var(--bx-header-height, 4rem);
+    /*
+     * Height of BxHeader, which BxMain subtracts from the viewport. Components read var(--bx-header-height, var(--blux-header-height))
+     * at the element, so either name set on a subtree applies there (--bx-header-height wins when both are set).
+     */
+    --blux-header-height: 4rem;
 
     /* Each color: a fill, the text color to use on light surfaces (-text), and the text color on the fill (-contrast). */
     --blux-primary: #ffd23f;
@@ -115,8 +110,8 @@
     --blux-bg-overlay: #ffffff;
     /* The opposite of the page: dark in light mode, light in dark mode. */
     --blux-bg-inverted: #0b0c0d;
-    --blux-border: #dcdcd7;
-    --blux-border-muted: #dcdcd7;
+    --blux-border: #d8d8d3;
+    --blux-border-muted: #d8d8d3;
     /* Boundaries of form controls: at least 3:1 against the page (WCAG 1.4.11). */
     --blux-border-accented: #85898c;
     --blux-border-inverted: #0b0c0d;
@@ -159,7 +154,7 @@
     --blux-bg-accented: #23272a;
     --blux-bg-overlay: #131618;
     --blux-bg-inverted: #edefef;
-    --blux-border: #202427;
+    --blux-border: #272b2f;
     --blux-border-muted: #2e3337;
     --blux-border-accented: #5c6369;
     --blux-border-inverted: #edefef;
@@ -176,25 +171,16 @@
   [data-color='neutral'] { --bx-color: var(--blux-neutral); --bx-color-text: var(--blux-neutral-text); --bx-color-contrast: var(--blux-neutral-contrast); }
 
   /*
-   * Series colors of BxChart, in order: chart-1 follows the primary color. They alias the semantic colors, so a configured
-   * palette reaches the charts; override them to give the charts their own colors (the -text and -contrast variants too).
-   * Declared on .dark as well, so a nested .dark scope resolves them with its own tokens.
+   * Series colors of BxChart, in order: chart-1 follows the primary color. --blux-chart-N (and -text, -contrast) are not
+   * defined by default: the rules fall back to the semantic colors at the element, so a palette or a --blux-primary set on a
+   * subtree reaches the charts inside it. Set --blux-chart-N globally or on a subtree to give the charts their own colors.
    */
-  :root,
-  .dark {
-    --blux-chart-1: var(--blux-primary); --blux-chart-1-text: var(--blux-primary-text); --blux-chart-1-contrast: var(--blux-primary-contrast);
-    --blux-chart-2: var(--blux-secondary); --blux-chart-2-text: var(--blux-secondary-text); --blux-chart-2-contrast: var(--blux-secondary-contrast);
-    --blux-chart-3: var(--blux-info); --blux-chart-3-text: var(--blux-info-text); --blux-chart-3-contrast: var(--blux-info-contrast);
-    --blux-chart-4: var(--blux-error); --blux-chart-4-text: var(--blux-error-text); --blux-chart-4-contrast: var(--blux-error-contrast);
-    --blux-chart-5: var(--blux-success); --blux-chart-5-text: var(--blux-success-text); --blux-chart-5-contrast: var(--blux-success-contrast);
-    --blux-chart-6: var(--blux-warning); --blux-chart-6-text: var(--blux-warning-text); --blux-chart-6-contrast: var(--blux-warning-contrast);
-  }
-  [data-color='chart-1'] { --bx-color: var(--blux-chart-1); --bx-color-text: var(--blux-chart-1-text); --bx-color-contrast: var(--blux-chart-1-contrast); }
-  [data-color='chart-2'] { --bx-color: var(--blux-chart-2); --bx-color-text: var(--blux-chart-2-text); --bx-color-contrast: var(--blux-chart-2-contrast); }
-  [data-color='chart-3'] { --bx-color: var(--blux-chart-3); --bx-color-text: var(--blux-chart-3-text); --bx-color-contrast: var(--blux-chart-3-contrast); }
-  [data-color='chart-4'] { --bx-color: var(--blux-chart-4); --bx-color-text: var(--blux-chart-4-text); --bx-color-contrast: var(--blux-chart-4-contrast); }
-  [data-color='chart-5'] { --bx-color: var(--blux-chart-5); --bx-color-text: var(--blux-chart-5-text); --bx-color-contrast: var(--blux-chart-5-contrast); }
-  [data-color='chart-6'] { --bx-color: var(--blux-chart-6); --bx-color-text: var(--blux-chart-6-text); --bx-color-contrast: var(--blux-chart-6-contrast); }
+  [data-color='chart-1'] { --bx-color: var(--blux-chart-1, var(--blux-primary)); --bx-color-text: var(--blux-chart-1-text, var(--blux-primary-text)); --bx-color-contrast: var(--blux-chart-1-contrast, var(--blux-primary-contrast)); }
+  [data-color='chart-2'] { --bx-color: var(--blux-chart-2, var(--blux-secondary)); --bx-color-text: var(--blux-chart-2-text, var(--blux-secondary-text)); --bx-color-contrast: var(--blux-chart-2-contrast, var(--blux-secondary-contrast)); }
+  [data-color='chart-3'] { --bx-color: var(--blux-chart-3, var(--blux-info)); --bx-color-text: var(--blux-chart-3-text, var(--blux-info-text)); --bx-color-contrast: var(--blux-chart-3-contrast, var(--blux-info-contrast)); }
+  [data-color='chart-4'] { --bx-color: var(--blux-chart-4, var(--blux-error)); --bx-color-text: var(--blux-chart-4-text, var(--blux-error-text)); --bx-color-contrast: var(--blux-chart-4-contrast, var(--blux-error-contrast)); }
+  [data-color='chart-5'] { --bx-color: var(--blux-chart-5, var(--blux-success)); --bx-color-text: var(--blux-chart-5-text, var(--blux-success-text)); --bx-color-contrast: var(--blux-chart-5-contrast, var(--blux-success-contrast)); }
+  [data-color='chart-6'] { --bx-color: var(--blux-chart-6, var(--blux-warning)); --bx-color-text: var(--blux-chart-6-text, var(--blux-warning-text)); --bx-color-contrast: var(--blux-chart-6-contrast, var(--blux-warning-contrast)); }
 
   /* Structural wrappers of custom elements must not affect layout. */
   bx-popover,

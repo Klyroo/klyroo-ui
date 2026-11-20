@@ -14,10 +14,10 @@ internal static partial class Themes
         new ComponentTheme("app", "root")
             .Slot("root", "isolate");
 
-    /// <summary>Header height comes from <c>--blux-header-height</c> (4rem by default), which <see cref="Main"/> subtracts from the viewport.</summary>
+    /// <summary>Header height comes from <c>--bx-header-height</c> or <c>--blux-header-height</c> (4rem by default), read at the element, which <see cref="Main"/> subtracts from the viewport.</summary>
     public static ComponentTheme Header() =>
         new ComponentTheme("header", "root", "container", "left", "title", "center", "right", "menu")
-            .Slot("root", "z-40 h-(--blux-header-height) w-full border-b border-(--blux-border) bg-(--blux-bg) text-(--blux-text)")
+            .Slot("root", "z-40 h-[var(--bx-header-height,var(--blux-header-height))] w-full border-b border-(--blux-border) bg-(--blux-bg) text-(--blux-text)")
             .Slot("container", "mx-auto flex h-full w-full max-w-(--blux-container) items-center gap-4 px-4 sm:px-6 lg:px-8")
             .Slot("left", "flex min-w-0 items-center gap-2 lg:flex-1")
             .Slot("title", "inline-flex items-center gap-2 rounded-sm text-lg font-semibold text-(--blux-text-highlighted) " + LayoutFocus)
@@ -53,7 +53,7 @@ internal static partial class Themes
 
     public static ComponentTheme Main() =>
         new ComponentTheme("main", "base")
-            .Slot("base", "min-h-[calc(100dvh_-_var(--blux-header-height))] focus:outline-none");
+            .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))] focus:outline-none");
 
     /// <summary>
     /// The aside carries <c>group/sidebar</c> and <c>data-state</c>, so anything inside it can react to the collapsed

@@ -33,7 +33,8 @@ public sealed partial class BxThemeStyle : ComponentBase
 
     /// <summary>
     /// A simple selector (<c>#preview</c>, <c>.demo</c>) that receives the variables instead of <c>:root</c>: the elements
-    /// inside it get these colors, in light and dark mode.
+    /// inside it get these colors, in light and dark mode. Every token is written for the scope, even with the default colors,
+    /// so the preview looks the same inside a page that configured other colors.
     /// </summary>
     [Parameter] public string? Scope { get; set; }
 
@@ -64,6 +65,6 @@ public sealed partial class BxThemeStyle : ComponentBase
         builder.AddMarkupContent(0, $"<style data-bx-theme{nonce}>{css}</style>");
     }
 
-    [GeneratedRegex(@"^(:root|[#.][A-Za-z_][\w-]*)$")]
+    [GeneratedRegex(@"^(:root|[#.][A-Za-z_][\w-]*)\z")]
     private static partial Regex ScopePattern();
 }

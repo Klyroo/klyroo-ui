@@ -70,8 +70,9 @@
             </tbody>
         </table>
     </div>
-    <p>The radius scale reproduces Tailwind's: with the default <code>--blux-radius</code> of <code>0.5rem</code>, <code>rounded-lg</code> is <code>0.5rem</code>, <code>rounded-md</code> <code>0.375rem</code>, and so on. Change <code>--blux-radius</code> and every <code>rounded-*</code> utility, in the components and in your own markup, follows. <code>BxHeader</code> reads <code>--blux-header-height</code> and <code>BxMain</code> subtracts it from the viewport; <code>BxContainer</code>, the header and the footer cap their width at <code>--blux-container</code>.</p>
-    <p>The chart variables alias the semantic colors (<code>chart-1</code> is the primary color), so a configured palette reaches the charts. Override <code>--blux-chart-N</code> together with its <code>-text</code> and <code>-contrast</code> companions to give the charts their own palette.</p>
+    <p>The radius scale reproduces Tailwind's: with the default <code>--blux-radius</code> of <code>0.5rem</code>, <code>rounded-lg</code> is <code>0.5rem</code>, <code>rounded-md</code> <code>0.375rem</code>, and so on. Each <code>rounded-*</code> utility is computed from <code>--blux-radius</code> at the element, so changing it, globally or on a subtree, resizes <strong>every</strong> <code>rounded-*</code> in Tailwind mode, in the components and in your own markup alike. <code>BxHeader</code> reads <code>--bx-header-height</code> or <code>--blux-header-height</code> (the first wins when both are set) at the element and <code>BxMain</code> subtracts it from the viewport, so either can be set on a subtree; <code>BxContainer</code>, the header and the footer cap their width at <code>--blux-container</code>.</p>
+    <p>The chart series read <code>--blux-chart-N</code> and fall back to a semantic color at the element (<code>chart-1</code> is the primary color), so a configured palette, or a <code>--blux-primary</code> set on a subtree, reaches the charts inside it. The chart variables have no value by default: set <code>--blux-chart-N</code> together with its <code>-text</code> and <code>-contrast</code> companions, globally or on a subtree, to give the charts their own palette.</p>
+    <p>If your app declares its own <code>@@theme</code> radius or colors (<code>--radius-*</code>, <code>--color-primary</code>…) before it imports <code>blux.theme.css</code>, the import overrides them: declare yours after the import to win.</p>
 
     <h2>Override in :root and .dark</h2>
     <p>Override in both selectors: a color overridden only in <code>:root</code> keeps its light value in dark mode, while its paired <code>-contrast</code> token still flips. Your stylesheet's unlayered rules beat the library's layered ones.</p>
@@ -144,8 +145,8 @@
         new("bg-accented", "#dfdfda", "#23272a", "Stronger fills, pressed.", "bg-accented"),
         new("bg-overlay", "#ffffff", "#131618", "Popovers, modals, menus.", "(none)"),
         new("bg-inverted", "#0b0c0d", "#edefef", "The opposite of the page.", "bg-inverted"),
-        new("border", "#dcdcd7", "#202427", "Dividers and card borders.", "border-default"),
-        new("border-muted", "#dcdcd7", "#2e3337", "Quieter borders.", "border-muted"),
+        new("border", "#d8d8d3", "#272b2f", "Dividers and card borders.", "border-default"),
+        new("border-muted", "#d8d8d3", "#2e3337", "Quieter borders.", "border-muted"),
         new("border-accented", "#85898c", "#5c6369", "Control boundaries, 3:1 on the page.", "border-accented"),
         new("border-inverted", "#0b0c0d", "#edefef", "Borders on inverted surfaces.", "border-inverted"),
         new("control", "#85898c", "#5c6369", "Unchecked track of switches.", "(none)"),
@@ -154,10 +155,10 @@
     private static readonly Row[] Sizes =
     [
         new("radius", "0.5rem", Use: "The base radius of controls and cards."),
-        new("radius-xs … radius-3xl", "0.125rem, 0.25rem, 0.375rem, 0.5rem, 0.75rem, 1rem, 1.5rem", Use: "Multiples of --blux-radius: 0.25, 0.5, 0.75, 1, 1.5, 2, 3. Mapped to rounded-xs … rounded-3xl."),
+        new("rounded-xs … rounded-3xl", "0.125rem, 0.25rem, 0.375rem, 0.5rem, 0.75rem, 1rem, 1.5rem", Use: "Computed from --blux-radius at the element: 0.25, 0.5, 0.75, 1, 1.5, 2, 3 times it. There is no variable per step."),
         new("container", "80rem", Use: "Maximum width of BxContainer, the header and the footer."),
-        new("header-height", "4rem", Use: "Height of BxHeader; BxMain and the page aside subtract it."),
-        new("chart-1 … chart-6", "primary, secondary, info, error, success, warning", Use: "Series colors of BxChart, each with -text and -contrast."),
+        new("header-height", "4rem", Use: "Height of BxHeader; BxMain and the page aside subtract it. --bx-header-height, when set, wins; both work on a subtree."),
+        new("chart-1 … chart-6", "(not set) primary, secondary, info, error, success, warning", Use: "Series colors of BxChart, each with -text and -contrast. Unset, a series falls back to the semantic color at the element."),
     ];
 
     private static readonly Row[] Utilities =
@@ -166,7 +167,7 @@
         new("bg-default, bg-muted, bg-elevated, bg-accented, bg-inverted", "--blux-bg, -bg-muted, -bg-elevated, -bg-accented, -bg-inverted"),
         new("border-default, border-muted, border-accented, border-inverted", "--blux-border, -border-muted, -border-accented, -border-inverted (also ring-*, divide-*, outline-*)"),
         new("bg-primary, text-primary, border-primary, ring-primary … (secondary, success, info, warning, error, neutral)", "--blux-primary … --blux-neutral, the fills"),
-        new("rounded-xs, rounded-sm, rounded-md, rounded-lg, rounded-xl, rounded-2xl, rounded-3xl", "--blux-radius-xs … --blux-radius-3xl"),
+        new("rounded-xs, rounded-sm, rounded-md, rounded-lg, rounded-xl, rounded-2xl, rounded-3xl", "--blux-radius, at the element (xs 0.25, sm 0.5, md 0.75, lg 1, xl 1.5, 2xl 2, 3xl 3 times)"),
     ];
 
     private const string Override = """

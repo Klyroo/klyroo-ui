@@ -100,8 +100,7 @@ public partial class DefaultTokenTests
         [
             "--blux-text-toned", "--blux-text-inverted", "--blux-bg-inverted", "--blux-border-muted", "--blux-border-inverted",
             "--blux-container", "--blux-header-height",
-            "--blux-radius-xs", "--blux-radius-sm", "--blux-radius-md", "--blux-radius-lg", "--blux-radius-xl", "--blux-radius-2xl", "--blux-radius-3xl",
-            "--blux-chart-1", "--blux-chart-2", "--blux-chart-3", "--blux-chart-4", "--blux-chart-5", "--blux-chart-6",
+            "--blux-radius",
         ];
         var root = FindLibraryRoot();
         foreach (var file in new[] { Path.Combine("styles", "blux.base.css"), Path.Combine("wwwroot", "blux.theme.css"), Path.Combine("wwwroot", "blux.css") })
@@ -168,7 +167,7 @@ public partial class DefaultTokenTests
         Assert.Contains("." + utility + "{" + declaration, site);
     }
 
-    private static string FindLibraryRoot()
+    internal static string FindLibraryRoot()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
@@ -179,6 +178,73 @@ public partial class DefaultTokenTests
             }
         }
         throw new DirectoryNotFoundException("src/Blux.UI not found above the test output directory.");
+    }
+}
+
+/// <summary>
+/// A variable set on a subtree must reach everything inside it: an expression that reads another variable has to be evaluated
+/// at the element, not once on <c>:root</c>, so the generated stylesheets must not derive tokens on <c>:root</c>.
+/// </summary>
+public class SubtreeOverrideTests
+{
+    private static string Read(params string[] path) =>
+        File.ReadAllText(Path.Combine([DefaultTokenTests.FindLibraryRoot(), .. path]));
+
+    private static string Squash(string css) => Regex.Replace(css, @"\s+", "");
+
+    public static TheoryData<string> Stylesheets() => ["styles/blux.base.css", "wwwroot/blux.theme.css", "wwwroot/blux.css"];
+
+    [Theory]
+    [MemberData(nameof(Stylesheets))]
+    public void Chart_series_resolve_at_the_element_with_the_semantic_colors_as_fallback(string file)
+    {
+        var css = Squash(Read(file.Split('/')));
+        var pairs = new[] { ("1", "primary"), ("2", "secondary"), ("3", "info"), ("4", "error"), ("5", "success"), ("6", "warning") };
+        foreach (var (n, role) in pairs)
+        {
+            foreach (var suffix in new[] { "", "-text", "-contrast" })
+            {
+                var target = suffix == "" ? "--bx-color" : "--bx-color" + suffix;
+                Assert.Contains($"{target}:var(--blux-chart-{n}{suffix},var(--blux-{role}{suffix}))", css);
+            }
+        }
+        // Nothing on :root or .dark gives the chart tokens a value: that value would be fixed there for every subtree.
+        Assert.DoesNotMatch(@"--blux-chart-\d(-text|-contrast)?:", css);
+    }
+
+    [Theory]
+    [MemberData(nameof(Stylesheets))]
+    public void The_radius_utilities_compute_from_blux_radius_at_the_element(string file)
+    {
+        var css = Squash(Read(file.Split('/')));
+        Assert.DoesNotMatch(@"--blux-radius-(xs|sm|md|lg|xl|2xl|3xl):", css);
+        if (file.EndsWith("blux.css", StringComparison.Ordinal))
+        {
+            Assert.Matches(@"\.rounded-sm\{border-radius:calc\(var\(--blux-radius\)\*(\.5|0\.5)\)\}", css);
+            Assert.Matches(@"\.rounded-xl\{border-radius:calc\(var\(--blux-radius\)\*1\.5\)\}", css);
+        }
+        else
+        {
+            Assert.Contains("--radius-sm:calc(var(--blux-radius)*0.5);", css);
+            Assert.Contains("--radius-lg:var(--blux-radius);", css);
+            Assert.Contains("--radius-3xl:calc(var(--blux-radius)*3);", css);
+        }
+    }
+
+    [Fact]
+    public void The_header_height_is_read_at_the_element_from_either_name()
+    {
+        // :root only holds the plain default, so a subtree override of --bx-header-height or --blux-header-height both apply.
+        var theme = Squash(Read("styles", "blux.base.css"));
+        Assert.Contains("--blux-header-height:4rem;", theme);
+
+        var options = new BluxOptions();
+        var classes = string.Join(' ', new[] { options.Header, options.Main, options.PageAside }.SelectMany(t => t.AllClassTokens()));
+        Assert.Contains("h-[var(--bx-header-height,var(--blux-header-height))]", classes);
+        Assert.Contains("min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height)))]", classes);
+        Assert.Contains("top-[var(--bx-header-height,var(--blux-header-height,0px))]", classes);
+        Assert.Contains("max-h-[calc(100vh-var(--bx-header-height,var(--blux-header-height,0px)))]", classes);
+        Assert.DoesNotMatch(@"(^|[\s:\-_])(h|top)-\(--blux-header-height\)|_var\(--blux-header-height\)\)", classes);
     }
 }
 
@@ -291,6 +357,55 @@ public class DefaultThemeStyleTests : BluxTestContext
         Assert.Throws<ArgumentException>(() => colors.Add("Tertiary", BxPalette.Blue));
         Assert.Throws<ArgumentException>(() => colors.Add("chart-1", BxPalette.Blue));
         Assert.Throws<ArgumentException>(() => colors.Add("tertiary", BxPalette.Blux));
+    }
+}
+
+public class DefaultsReachEveryComponentTests
+{
+    private sealed class Ctx : BluxTestContext
+    {
+        public Ctx(Action<BluxOptions>? configure) : base(configure) { }
+    }
+
+    [Fact]
+    public void Defaults_size_reaches_the_file_upload()
+    {
+        using var large = new Ctx(o => o.Defaults.Size = BxSize.Xl);
+        using var plain = new Ctx(null);
+
+        static string Stable(string markup) => Regex.Replace(markup, "bx-fileupload-[0-9a-f]+", "id");
+        var byDefault = Stable(large.Render<BxFileUpload>().Markup);
+        Assert.Equal(Stable(plain.Render<BxFileUpload>(p => p.Add(f => f.Size, BxSize.Xl)).Markup), byDefault);
+        Assert.NotEqual(Stable(plain.Render<BxFileUpload>().Markup), byDefault);
+    }
+
+    [Fact]
+    public void Defaults_color_reaches_the_submit_button_of_the_chat_prompt()
+    {
+        using var ctx = new Ctx(o => o.Defaults.Color = BxColor.Secondary);
+        Assert.Equal("secondary", ctx.Render<BxChatPromptSubmit>().Find("button").GetAttribute("data-color"));
+    }
+
+    [Fact]
+    public void Defaults_color_reaches_the_badges_of_a_blog_post_and_a_changelog_version()
+    {
+        using var ctx = new Ctx(o => o.Defaults.Color = BxColor.Secondary);
+        var post = ctx.Render<BxBlogPost>(p => p.Add(c => c.Badge, "New"));
+        Assert.Contains(post.FindAll("span[data-color]"), e => e.TextContent.Trim() == "New" && e.GetAttribute("data-color") == "secondary");
+        var version = ctx.Render<BxChangelogVersion>(p => p.Add(c => c.Badge, "New"));
+        Assert.Contains(version.FindAll("span[data-color]"), e => e.TextContent.Trim() == "New" && e.GetAttribute("data-color") == "secondary");
+    }
+
+    [Fact]
+    public void Defaults_color_reaches_the_buttons_of_a_pricing_table_and_of_page_links()
+    {
+        using var ctx = new Ctx(o => o.Defaults.Color = BxColor.Secondary);
+        var table = ctx.Render<BxPricingTable>(p => p.Add(c => c.Tiers, new BxPricingTier[] { new("a", "A") { ButtonLabel = "Go", ButtonHref = "/a" } }));
+        Assert.Equal("secondary", table.Find("a").GetAttribute("data-color"));
+
+        var hero = ctx.Render<BxPageHero>(p => p.Add(c => c.Links, new[] { new PageLinkItem("Start", "/s"), new PageLinkItem("Docs", "/d") { Color = BxColor.Error } }));
+        var colors = hero.FindAll("a[data-color]").Select(a => a.GetAttribute("data-color")).ToArray();
+        Assert.Equal(["secondary", "error"], colors);
     }
 }
 
