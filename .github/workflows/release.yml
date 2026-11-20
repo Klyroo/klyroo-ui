@@ -54,10 +54,14 @@ jobs:
       - run: dotnet build Blux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
+      - name: MCP tests
+        run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Package check
         run: node build/verify-package.mjs --online
-      - name: Pack
-        run: dotnet pack src/Blux.UI -c Release --no-build -o artifacts
+      - name: Pack the library and the MCP tool (same version)
+        run: |
+          dotnet pack src/Blux.UI -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v7
         with:
           name: nuget
@@ -80,7 +84,7 @@ jobs:
         with:
           name: nuget
           path: artifacts
-      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI package.
+      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI and Blux.UI.Mcp packages.
       - name: Push
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
