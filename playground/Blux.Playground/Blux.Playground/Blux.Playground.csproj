@@ -11,6 +11,9 @@
   <ItemGroup>
     <ProjectReference Include="..\Blux.Playground.Client\Blux.Playground.Client.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <!-- The MCP server at /mcp and the llms.txt files, generated from the docs bundle. -->
+    <ProjectReference Include="..\..\..\src\Blux.UI.Mcp.Core\Blux.UI.Mcp.Core.csproj" />
+    <PackageReference Include="ModelContextProtocol.AspNetCore" />
   </ItemGroup>
 
 </Project>

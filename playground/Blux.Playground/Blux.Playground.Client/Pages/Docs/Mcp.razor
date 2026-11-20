@@ -1,0 +1,93 @@
+@page "/docs/mcp"
+@layout Layout.DocsLayout
+
+<PageTitle>MCP server · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">AI</p>
+    <h1>MCP server</h1>
+    <p class="pg-lead">Give your AI coding agent the real API of every component, so it stops guessing parameter names.</p>
+
+    <h2>What it does</h2>
+    <p>
+        The Model Context Protocol server answers from the same documentation as this site: the catalog, the parameters, events and slots read
+        from the library, the theme slots, the source of every example and the guides. It is generated at build time, so it cannot drift from the code.
+    </p>
+    <p>Tools, all read-only:</p>
+    <ul>
+        <li><code>search-components</code>: find components by name, family, alternate name (dialog finds Modal) or intent. Without a query it lists them all.</li>
+        <li><code>get-component</code>: one component as Markdown, by section: <code>usage</code>, <code>examples</code>, <code>api</code>, <code>theme</code>.</li>
+        <li><code>get-component-metadata</code>: parameters, events, slots and <code>Ui</code> slots as JSON, compact by default, <code>full</code> for descriptions and allowed values.</li>
+        <li><code>list-examples</code> and <code>get-example</code>: the live examples of this site and their Razor source.</li>
+        <li><code>search-documentation</code> and <code>get-documentation-page</code>: full-text search and pages of the guides and components.</li>
+        <li><code>search-icons</code>: the built-in icon names.</li>
+        <li><code>get-installation-guide</code>: setup for a render mode (<code>auto</code>, <code>server</code>, <code>wasm</code>, <code>ssr</code>) and a CSS mode (<code>precompiled</code>, <code>tailwind</code>).</li>
+    </ul>
+    <p>
+        Prompts: <code>find-component-for-usecase</code> and <code>implement-component-with-props</code>. Resources:
+        <code>resource://blux-ui/components</code>, <code>resource://blux-ui/examples</code> and <code>resource://blux-ui/documentation-pages</code>.
+    </p>
+
+    <h2>Local server, over stdio</h2>
+    <p>The <code>Blux.UI.Mcp</code> dotnet tool runs offline and carries the documentation of the Blux UI version it was built with. It needs the .NET 10 runtime.</p>
+    <CodeBlock Code="dotnet tool install --global Blux.UI.Mcp --prerelease" />
+    <p>Register it with Claude Code:</p>
+    <CodeBlock Code="claude mcp add --transport stdio blux-ui -- blux-ui-mcp" />
+    <p>Add <code>--scope project</code> to share it through the <code>.mcp.json</code> of the repository. Everything after <code>--</code> is the command, so options go there:</p>
+    <CodeBlock Code="claude mcp add --transport stdio blux-ui -- blux-ui-mcp --tools search-components,get-component,get-component-metadata" />
+
+    <h2>Remote server, over HTTP</h2>
+    <p>This site serves the same server at <code>/mcp</code> (Streamable HTTP, stateless). Replace the address with the host of the site:</p>
+    <CodeBlock Code="claude mcp add --transport http blux-ui https://your-docs-host/mcp" />
+    <p>To expose only some tools, send their names in the <code>X-MCP-Tools</code> header:</p>
+    <CodeBlock Code="@HttpHeader" />
+
+    <h2>Cursor</h2>
+    <p>In <code>.cursor/mcp.json</code> (or <code>~/.cursor/mcp.json</code>):</p>
+    <CodeBlock Title="mcp.json" Code="@Cursor" />
+
+    <h2>VS Code</h2>
+    <p>In <code>.vscode/mcp.json</code>:</p>
+    <CodeBlock Title="mcp.json" Code="@VsCode" />
+
+    <h2>Windsurf</h2>
+    <p>In <code>~/.codeium/windsurf/mcp_config.json</code>:</p>
+    <CodeBlock Title="mcp_config.json" Code="@Windsurf" />
+
+    <h2>Options of the local tool</h2>
+    <ul>
+        <li><code>--tools a,b</code> exposes only those tools, like the <code>X-MCP-Tools</code> header.</li>
+        <li><code>--site-url https://...</code> puts the address of the docs site in front of page paths in answers.</li>
+        <li><code>--list-tools</code> and <code>--version</code> print and exit.</li>
+    </ul>
+</div>
+
+@code {
+    private const string HttpHeader = """
+        claude mcp add --transport http blux-ui https://your-docs-host/mcp --header "X-MCP-Tools: search-components,get-component"
+        """;
+
+    private const string Cursor = """
+        {
+          "mcpServers": {
+            "blux-ui": { "command": "blux-ui-mcp" }
+          }
+        }
+        """;
+
+    private const string VsCode = """
+        {
+          "servers": {
+            "blux-ui": { "type": "stdio", "command": "blux-ui-mcp" },
+            "blux-ui-remote": { "type": "http", "url": "https://your-docs-host/mcp" }
+          }
+        }
+        """;
+
+    private const string Windsurf = """
+        {
+          "mcpServers": {
+            "blux-ui": { "command": "blux-ui-mcp" }
+          }
+        }
+        """;
+}

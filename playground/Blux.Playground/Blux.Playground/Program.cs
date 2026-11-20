@@ -1,3 +1,4 @@
+using Blux.Playground;
 using Blux.Playground.Client;
 using Blux.Playground.Components;
 
@@ -5,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddPlaygroundBlux();
+builder.Services.AddBluxAi();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -29,6 +31,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+app.MapBluxAi();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()

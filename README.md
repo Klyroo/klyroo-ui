@@ -89,6 +89,17 @@ Import it after Tailwind, and load only your compiled stylesheet (not `blux.css`
 - **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
   utilities, so they need Tailwind compiled by your app; without it, only classes already in `blux.css` or your own CSS apply.
 
+## AI tooling
+
+Agents can read the real API instead of guessing it. All of it is generated from the docs catalog and the library, so it follows every change.
+
+- **MCP server**: `dotnet tool install --global Blux.UI.Mcp --prerelease`, then `claude mcp add --transport stdio blux-ui -- blux-ui-mcp`. It searches components,
+  returns parameters, events, slots and theme, example sources and guides. The docs site serves the same server at `/mcp`.
+- **llms.txt**: `/llms.txt` (overview with links) and `/llms-full.txt` (everything) on the docs site.
+- **Skill**: `skills/blux-ui` holds conventions, patterns and a routing table for coding agents (`npx skills add <repo>`).
+
+See the "AI" guides of the docs site.
+
 ## License
 
 MIT

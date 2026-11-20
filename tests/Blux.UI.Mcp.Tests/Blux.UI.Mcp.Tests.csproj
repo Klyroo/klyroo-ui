@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Every test awaits a short in-process or child-process exchange; there is nothing worth cancelling early. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Blux.UI.Mcp.Core\Blux.UI.Mcp.Core.csproj" />
+    <ProjectReference Include="..\..\build\Blux.UI.DocsBundle\Blux.UI.DocsBundle.csproj" />
+    <!-- Built first: the stdio test starts it as a process. -->
+    <ProjectReference Include="..\..\src\Blux.UI.Mcp\Blux.UI.Mcp.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

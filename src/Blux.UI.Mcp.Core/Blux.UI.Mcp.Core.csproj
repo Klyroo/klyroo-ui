@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The documentation tooling shared by the stdio tool (src/Blux.UI.Mcp) and the HTTP endpoint of the docs site:
+       the docs bundle, the MCP tools, prompts and resources, and llms.txt. Not shipped on its own: the tool packs it. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Blux.UI.Mcp</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <ProjectReference Include="..\Blux.UI.Mcp.Model\Blux.UI.Mcp.Model.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Blux.UI.Mcp.Tests" />
+  </ItemGroup>
+
+  <!--
+    The docs bundle is generated from the docs catalog, the XML documentation and themes of Blux.UI, the example sources
+    and the guide pages, and embedded here. It is rebuilt whenever one of those changes, so it cannot go stale: nothing
+    generated is committed. The generator is a project reference (built first, never linked), run from its output folder.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\build\Blux.UI.DocsBundle\Blux.UI.DocsBundle.csproj" ReferenceOutputAssembly="false" Private="false" OutputItemType="DocsBundleGenerator" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RepoRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildProjectDirectory)', '..', '..'))</RepoRoot>
+    <DocsBundleFile>$([MSBuild]::NormalizePath('$(MSBuildProjectDirectory)', '$(BaseIntermediateOutputPath)', 'docs-bundle.json'))</DocsBundleFile>
+    <DotNetHost Condition="'$(DOTNET_HOST_PATH)' != ''">$(DOTNET_HOST_PATH)</DotNetHost>
+    <DotNetHost Condition="'$(DotNetHost)' == ''">dotnet</DotNetHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_DocsBundleInput Include="$(RepoRoot)playground/Blux.Playground/Blux.Playground.Client/**/*.cs;$(RepoRoot)playground/Blux.Playground/Blux.Playground.Client/**/*.razor"
+                      Exclude="$(RepoRoot)playground/**/bin/**;$(RepoRoot)playground/**/obj/**" />
+    <_DocsBundleInput Include="$(RepoRoot)src/Blux.UI/**/*.cs;$(RepoRoot)src/Blux.UI/**/*.razor"
+                      Exclude="$(RepoRoot)src/Blux.UI/bin/**;$(RepoRoot)src/Blux.UI/obj/**" />
+  </ItemGroup>
+
+  <Target Name="GenerateDocsBundle" Inputs="@(DocsBundleGenerator);@(_DocsBundleInput)" Outputs="$(DocsBundleFile)">
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(DocsBundleFile)'))" />
+    <Exec Command="&quot;$(DotNetHost)&quot; &quot;@(DocsBundleGenerator)&quot; --repo &quot;$(RepoRoot)&quot; --out &quot;$(DocsBundleFile)&quot;" />
+  </Target>
+
+  <Target Name="EmbedDocsBundle" AfterTargets="ResolveProjectReferences" BeforeTargets="PrepareResourceNames" DependsOnTargets="GenerateDocsBundle">
+    <ItemGroup>
+      <EmbeddedResource Include="$(DocsBundleFile)" LogicalName="docs-bundle.json" />
+    </ItemGroup>
+  </Target>
+
+</Project>
