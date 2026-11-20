@@ -10,6 +10,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Blux.Playground.Client\Blux.Playground.Client.csproj" />
+    <!-- The image optimizer behind /_blux/img: the docs show real resized images. -->
+    <ProjectReference Include="..\..\..\src\Blux.UI.Images.Local\Blux.UI.Images.Local.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <!-- The MCP server at /mcp and the llms.txt files, generated from the docs bundle. -->
     <ProjectReference Include="..\..\..\src\Blux.UI.Mcp.Core\Blux.UI.Mcp.Core.csproj" />

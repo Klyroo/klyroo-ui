@@ -138,6 +138,23 @@ See the Internationalization guide of the documentation site.
 - **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
   utilities, so they need Tailwind compiled by your app; without it, only classes already in `blux.css` or your own CSS apply.
 
+## Images
+
+`BxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in, like `NuxtImg`;
+the avatar, blog post, changelog, logos and chat attachment components use it and take an `ImageOptions` parameter.
+Without a provider images are rendered as they are. Pick one in `AddBluxUi`:
+
+```csharp
+o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Blux.UI.Images: also imgix, ImageKit, Cloudflare, Netlify, Vercel, Bunny
+// or resize on your own server with Blux.UI.Images.Local:  services.AddBluxImagesLocal();  app.MapBluxImages();
+```
+
+```razor
+<BxImage Src="/img/team.jpg" Alt="The team" Width="640" Height="360" Sizes="100vw md:640px" Format="webp" />
+```
+
+See the "Images" guide of the docs site.
+
 ## AI tooling
 
 Agents can read the real API instead of guessing it. All of it is generated from the docs catalog and the library, so it follows every change.
