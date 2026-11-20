@@ -60,7 +60,7 @@
         }
         else if (logo.Src is not null)
         {
-            <img src="@logo.Src" alt="@logo.Alt" loading="lazy" class="@_slots["image"]" />
+            <BxImage Src="@logo.Src" Alt="@(logo.Alt ?? "")" ImageOptions="ImageOptions" Class="@_slots["image"]" />
         }
     </text>;
 
@@ -82,6 +82,9 @@
     /// <summary>Level of the title heading, 1 to 6; null renders a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; } = 2;
     [Parameter] public PageLogosUi? Ui { get; set; }
+
+    /// <summary>Image settings forwarded to <see cref="BxImage"/> for every image logo.</summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.PageLogos, new Dictionary<string, string?>(), Ui, "root");

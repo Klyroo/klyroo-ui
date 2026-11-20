@@ -1,5 +1,5 @@
-// Packaging check: packs Blux.UI in Release, inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App
-// (Auto interactivity) that consumes the package from a local folder feed, in both CSS modes.
+// Packaging check: packs Blux.UI (and the image packages Blux.UI.Images and Blux.UI.Images.Local) in Release, inspects the .nupkg and
+// .snupkg files, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
 //
 //   node build/verify-package.mjs [--online] [--keep]
 //
@@ -56,8 +56,8 @@ try {
   mkdirSync(feed);
   const pack = run("dotnet", ["pack", "src/Blux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack -c Release succeeds without warnings")) console.log(pack.out);
-  const nupkgName = readdirSync(feed).find((f) => f.endsWith(".nupkg"));
-  const snupkgName = readdirSync(feed).find((f) => f.endsWith(".snupkg"));
+  const nupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.nupkg$/.test(f));
+  const snupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.snupkg$/.test(f));
   check(!!nupkgName, ".nupkg produced");
   check(!!snupkgName, ".snupkg produced");
   if (!nupkgName || !snupkgName) throw new Error("pack produced no package");
@@ -98,6 +98,28 @@ try {
   check(snupkg.has("lib/net10.0/Blux.UI.pdb"), "snupkg contains lib/net10.0/Blux.UI.pdb");
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
+  // 3b. The image packages: same version, readme, icon, documentation, and the dependencies they promise.
+  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local"]) {
+    const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
+    if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
+    const file = `${id}.${version}.nupkg`;
+    if (!check(existsSync(join(feed, file)), `${id}: .nupkg has the version of Blux.UI (${version})`)) continue;
+    check(existsSync(join(feed, `${id}.${version}.snupkg`)), `${id}: .snupkg produced`);
+    const pkg = readZip(join(feed, file));
+    for (const n of [`lib/net10.0/${id}.dll`, `lib/net10.0/${id}.xml`, "README.md", "icon.png", `${id}.nuspec`]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
+    check([...pkg.keys()].every((n) => !n.endsWith(".pdb")), `${id}: no .pdb in the .nupkg`);
+    const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
+    check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
+    // The local optimizer reaches Blux.UI through Blux.UI.Images.
+    const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : "Blux\\.UI";
+    check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    if (id.endsWith(".Local")) {
+      check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
+      check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
+      check(/LGPL/.test(pkg.get("README.md")().toString("utf8")), `${id}: the readme mentions the LGPL licence of libvips`);
+    }
+  }
+
   // 4. Consumer app, from the folder feed and the local NuGet cache.
   const cache = process.env.NUGET_PACKAGES || join(homedir(), ".nuget", "packages");
   const app = join(work, "app");
@@ -107,14 +129,15 @@ try {
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Blux.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
   if (!check(created.code === 0, "dotnet new blazor (Auto)")) { console.log(created.out); throw new Error("template failed"); }
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
-  for (const proj of [join(server, "Site.csproj"), join(client, "Site.Client.csproj")]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /></ItemGroup>\n</Project>`));
+  // The server also uses the local image optimizer; the client only needs the URL builder.
+  for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /></ItemGroup>\n</Project>`));
   }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
@@ -124,7 +147,7 @@ try {
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Blux.UI\n`);
   const prog = join(server, "Program.cs");
-  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\n\nvar app = builder.Build();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
+  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
   const home = join(server, "Components", "Pages", "Home.razor");
   writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n`);
   const appRazor = join(server, "Components", "App.razor");

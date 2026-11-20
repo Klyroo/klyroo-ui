@@ -1,0 +1,18 @@
+<div class="flex flex-wrap items-start gap-6">
+    @* 320 by 180 pixels, converted to WebP: the srcset holds the 1x and 2x candidates the local optimizer produced. *@
+    <figure class="flex flex-col gap-2">
+        <BxImage Src="/img/sample-gradient.png" Alt="A warm gradient with a pale sun" Width="320" Height="180" Format="webp" Quality="80"
+                 Class="rounded-lg" data-testid="image-basic" />
+        <figcaption class="text-sm text-(--blux-text-muted)">Width, Height, Format</figcaption>
+    </figure>
+    @* The same source cropped to a square (fit cover, the default) and shrunk to fit inside it (fit contain). *@
+    <figure class="flex flex-col gap-2">
+        <BxImage Src="/img/sample-grid.png" Alt="A grid of colored circles" Width="160" Height="160" Format="webp" Class="rounded-lg" data-testid="image-cover" />
+        <figcaption class="text-sm text-(--blux-text-muted)">Fit cover</figcaption>
+    </figure>
+    <figure class="flex flex-col gap-2">
+        <BxImage Src="/img/sample-gradient.png" Alt="A warm gradient with a pale sun" Width="160" Height="160" Format="webp" Fit="BxImageFit.Contain"
+                 Class="rounded-lg bg-(--blux-bg-muted)" data-testid="image-contain" />
+        <figcaption class="text-sm text-(--blux-text-muted)">Fit contain</figcaption>
+    </figure>
+</div>
