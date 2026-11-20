@@ -25,13 +25,14 @@ else
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
-// Reads the culture cookie that BxLocaleSelect writes (the default provider list includes it). Blux components follow
-// the UI culture on their own: the supported cultures are the codes of the built-in locales.
-var cultures = BxLocales.All.Select(locale => locale.Code).ToArray();
+// Reads the query string, the culture cookie that BxLocaleSelect writes and Accept-Language (the default provider list).
+// Blux components follow the UI culture on their own: the supported UI cultures are the codes of the built-in locales.
+// The supported cultures add two regional ones, so that dates and clocks keep the format of an en-GB or fr-CA user.
+var uiCultures = BxLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
-    .AddSupportedCultures(cultures)
-    .AddSupportedUICultures(cultures));
+    .AddSupportedCultures([.. uiCultures, "en-GB", "fr-CA"])
+    .AddSupportedUICultures(uiCultures));
 app.UseAntiforgery();
 
 app.MapStaticAssets();

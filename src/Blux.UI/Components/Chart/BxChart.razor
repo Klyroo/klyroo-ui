@@ -276,7 +276,7 @@
     /// <summary>The rows to plot: one per x value, or per slice with <see cref="BxChartType.Donut"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<TItem> Data { get; set; } = [];
 
-    /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the culture of the locale in effect.</summary>
+    /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language).</summary>
     [Parameter, EditorRequired] public Func<TItem, object?> Index { get; set; } = default!;
 
     /// <summary>The series, in drawing order. With a donut the first one gives the size of each slice.</summary>
@@ -313,7 +313,7 @@
     /// <summary>Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut.</summary>
     [Parameter] public bool? Legend { get; set; }
 
-    /// <summary>Formats the values on the value axis, in the tooltip and in the table. Defaults to the culture of the locale in effect.</summary>
+    /// <summary>Formats the values on the value axis, in the tooltip and in the table. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language).</summary>
     [Parameter] public Func<double, string>? Format { get; set; }
 
     /// <summary>The format string of an index that is formattable (a date, a number).</summary>
@@ -356,7 +356,7 @@
     /// </summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
-    private CultureInfo Cult => Culture ?? CurrentLocale.Culture;
+    private CultureInfo Cult => Culture ?? FormatCulture;
 
     private string PlotDescribedBy => AriaDescription is null ? _id + "-hint" : _id + "-hint " + _id + "-description";
 

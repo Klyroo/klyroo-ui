@@ -37,14 +37,21 @@
     <p>
         This is the equivalent of the <code>@@nuxtjs/i18n</code> integration of Nuxt UI, and it needs no component code.
         A component picks its locale from <code>CultureInfo.CurrentUICulture</code>: the exact code (<code>pt-BR</code>),
-        then its parents (<code>zh-Hans-CN</code> to <code>zh-Hans</code> to <code>zh</code>), then the first locale of the same
-        language (<code>pt-PT</code> gets <code>pt</code>, <code>zh-TW</code> gets <code>zh-CN</code>), then English.
-        The choice is cached per culture, and it is the same on the server and in WebAssembly for the same culture.
+        then its parent cultures (<code>pt-PT</code> gets <code>pt</code>, <code>zh-Hans-CN</code> tries <code>zh-Hans</code> then
+        <code>zh</code>), then English. That is exactly what <code>UseRequestLocalization</code> does with the supported cultures, on purpose:
+        there is no "same language" step, so <code>zh-TW</code> gets English unless you offer a <code>zh-TW</code> or a <code>zh</code> locale,
+        and a server and a client that follow the same culture never pick different locales.
+        The choice is cached per culture.
     </p>
     <p>
         On the server, ASP.NET Core request localization sets the culture of each request, in static rendering and in
-        Interactive Server alike. A WebAssembly client has no request: it uses the language of the browser, unless you hand it the culture
-        the server chose, so the prerender and the client agree.
+        Interactive Server alike. A WebAssembly client has no request, and its runtime starts from the language of the browser,
+        which can differ from what the server chose (a visitor with <code>Accept-Language: ca,es;q=0.9</code> gets Spanish from the server but Catalan from the browser).
+        <code>ApplyServerCultureAsync</code> gives the client the culture the server rendered with. It reads, in this order:
+        the <code>blux-culture</code> meta element that <code>&lt;BxCultureMeta /&gt;</code> renders in <code>&lt;head&gt;</code>
+        (the exact culture and UI culture of the request, whichever provider chose them), then the culture cookie,
+        then the <code>lang</code> attribute of the <code>html</code> element. Pass the supported cultures so that a cookie or an attribute
+        outside the list is ignored, as the server ignores it.
     </p>
     <CodeBlock Title="Program.cs (server)" Code="@ServerSetup" />
     <CodeBlock Title="Program.cs (client)" Code="@ClientSetup" />
@@ -89,8 +96,12 @@
     <h2>Dates, numbers and sizes</h2>
     <p>
         Components with a <code>Culture</code> parameter (Calendar, InputDate, InputTime, InputNumber, InputRating, BlogPost, ChangelogVersion, Chart,
-        PricingTable) format with the culture of their locale, so a page in French shows French dates even when the thread culture is something else.
-        An explicit <code>Culture</code> still wins. File sizes use the units of the locale (<code>1,5 Ko</code> in French).
+        PricingTable), the file size of FileUpload and the numbers inside messages format with the regional culture of the user when it speaks the
+        language of the locale: an <code>en-GB</code> user with the English locale keeps <code>20/11/2026</code>, Monday as first day and a 24 hour clock,
+        and <code>fr-CA</code> keeps its formats with the French locale. When the locale is another language than the culture of the user
+        (a French <code>BxApp</code> on an <code>en-GB</code> page), the culture of the locale is used, so the page shows French dates.
+        An explicit <code>Culture</code> parameter still wins. File sizes use the units of the locale (<code>1,5 Ko</code> in French).
+        To keep a regional culture on the server, list it in <code>AddSupportedCultures</code>; the WebAssembly client receives it through <code>BxCultureMeta</code>.
     </p>
 
     <h2>Language select</h2>
@@ -109,18 +120,20 @@
     ];
 
     private const string ServerSetup = """
-        // The supported cultures are the codes of the locales you offer.
-        var cultures = BxLocales.All.Select(locale => locale.Code).ToArray();
+        // The supported UI cultures are the codes of the locales you offer. Add regional cultures
+        // to the supported cultures to format dates and numbers for them (en-GB: 20/11/2026, 24 hour clock).
+        var uiCultures = BxLocales.All.Select(locale => locale.Code).ToArray();
         app.UseRequestLocalization(new RequestLocalizationOptions()
             .SetDefaultCulture("en")
-            .AddSupportedCultures(cultures)
-            .AddSupportedUICultures(cultures));
+            .AddSupportedCultures([.. uiCultures, "en-GB", "fr-CA"])
+            .AddSupportedUICultures(uiCultures));
         """;
 
     private const string ClientSetup = """
         var host = builder.Build();
-        // Reads the culture cookie (written by BxLocaleSelect) so the client picks the same locale as the server.
-        await host.Services.ApplyCultureCookieAsync();
+        // Takes the culture the server rendered with (meta element, culture cookie, then the lang attribute of <html>)
+        // instead of the language of the browser, so the client picks the same locale as the server.
+        await host.Services.ApplyServerCultureAsync(BxLocales.All.Select(locale => locale.Code));
         await host.RunAsync();
         """;
 
@@ -136,7 +149,8 @@
             // A fixed locale for the whole app, whatever the culture of the user:
             // o.Locale = BxLocales.De;
 
-            // Or limit and extend what the automatic choice picks from:
+            // Or limit and extend what the automatic choice picks from. The list is copied here, and
+            // Locale and Locales become read-only when the first component resolves a locale:
             o.Locales = [BxLocales.En, BxLocales.Fr, BxLocales.Ar];
         });
         """;

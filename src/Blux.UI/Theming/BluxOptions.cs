@@ -63,18 +63,40 @@ public sealed partial class BluxOptions
     internal string? ThemeCss => _themeCss.Value;
 
     private IReadOnlyList<BxLocale> _locales = BxLocales.All;
+    private BxLocale? _locale;
+    private volatile bool _localesFrozen;
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, BxLocale> _resolved = new(StringComparer.OrdinalIgnoreCase);
+
+    private void ThrowIfLocalesFrozen(string name)
+    {
+        if (_localesFrozen)
+        {
+            throw new InvalidOperationException($"{nameof(BluxOptions)}.{name} cannot change once a component has resolved a locale: the choice of each culture is cached. Set it in AddBluxUi, before the app starts rendering.");
+        }
+    }
 
     /// <summary>
     /// The locale every component uses unless a <see cref="BxApp"/> (or a <c>CascadingValue</c> of <see cref="BxLocale"/>)
     /// above it sets one. Leave it unset to follow the culture of the user: the locale is then picked from
     /// <see cref="Locales"/> by <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>.
+    /// Like the themes, it becomes read-only the first time a locale is resolved: set it in <c>AddBluxUi</c>.
     /// </summary>
-    public BxLocale? Locale { get; set; }
+    public BxLocale? Locale
+    {
+        get => _locale;
+        set
+        {
+            ThrowIfLocalesFrozen(nameof(Locale));
+            _locale = value;
+        }
+    }
 
     /// <summary>
     /// The locales the automatic selection chooses from, and that <see cref="BxLocaleSelect"/> offers by default.
-    /// Defaults to <see cref="BxLocales.All"/>; set a smaller list, or add your own locales to it.
+    /// Defaults to <see cref="BxLocales.All"/>; assign a new list to choose fewer or to add your own, for example
+    /// <c>o.Locales = [.. BxLocales.All, australian]</c>. The list is copied when assigned, so changing the original
+    /// afterwards has no effect, and it becomes read-only the first time a locale is resolved (a later assignment throws
+    /// <see cref="InvalidOperationException"/>).
     /// English (code "en"), or the first locale when there is none, is the fallback of an unmatched culture.
     /// </summary>
     public IReadOnlyList<BxLocale> Locales
@@ -82,18 +104,23 @@ public sealed partial class BluxOptions
         get => _locales;
         set
         {
-            _locales = value ?? throw new ArgumentNullException(nameof(value));
-            _resolved.Clear();
+            ArgumentNullException.ThrowIfNull(value);
+            ThrowIfLocalesFrozen(nameof(Locales));
+            var copy = value.ToArray();
+            if (Array.IndexOf(copy, null) >= 0) throw new ArgumentException("The list of locales cannot contain null.", nameof(value));
+            _locales = Array.AsReadOnly(copy);
         }
     }
 
     /// <summary>
     /// The locale for a culture: <see cref="Locale"/> when set, otherwise the match in <see cref="Locales"/>
-    /// (see <see cref="BxLocales.Resolve"/>). The result of each culture is cached.
+    /// (see <see cref="BxLocales.Resolve"/>). The result of each culture is cached, and the first call makes
+    /// <see cref="Locale"/> and <see cref="Locales"/> read-only.
     /// </summary>
     public BxLocale ResolveLocale(System.Globalization.CultureInfo culture)
     {
-        if (Locale is { } fixedLocale) return fixedLocale;
+        _localesFrozen = true;
+        if (_locale is { } fixedLocale) return fixedLocale;
         return _resolved.TryGetValue(culture.Name, out var cached)
             ? cached
             : _resolved.GetOrAdd(culture.Name, _ => BxLocales.Resolve(culture, _locales));

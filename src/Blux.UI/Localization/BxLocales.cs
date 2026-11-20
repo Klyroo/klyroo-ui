@@ -40,9 +40,9 @@ public static partial class BxLocales
     }
 
     /// <summary>
-    /// Picks the locale for a culture, the way the Nuxt UI integration with <c>@nuxtjs/i18n</c> does: the exact code
-    /// ("pt-BR"), then its parents ("zh-Hans-CN" to "zh-Hans" to "zh"), then the first locale of the same language
-    /// ("pt-PT" gets "pt", "zh-TW" gets "zh-CN"), then English.
+    /// Picks the locale for a culture the way <c>UseRequestLocalization</c> picks a supported culture, so the server and the
+    /// WebAssembly client agree: the exact code ("pt-BR"), then its parent cultures ("pt-PT" gets "pt", "zh-Hans-CN" tries
+    /// "zh-Hans" then "zh"), then English. There is no "same language" step: "zh-TW" gets English unless the list holds "zh-TW" or "zh".
     /// </summary>
     /// <param name="culture">The culture to match. Defaults to <see cref="CultureInfo.CurrentUICulture"/>.</param>
     /// <param name="locales">The locales to choose from. Defaults to <see cref="All"/>. English, or the first one when there is no English, is the fallback.</param>
@@ -61,27 +61,10 @@ public static partial class BxLocales
             }
         }
 
-        var language = culture.TwoLetterISOLanguageName;
-        if (language.Length > 0)
-        {
-            BxLocale? sameLanguage = null;
-            foreach (var locale in locales)
-            {
-                if (string.Equals(LanguageOf(locale.Code), language, StringComparison.OrdinalIgnoreCase)) sameLanguage ??= locale;
-            }
-            if (sameLanguage is not null) return sameLanguage;
-        }
-
         foreach (var locale in locales)
         {
             if (string.Equals(locale.Code, "en", StringComparison.OrdinalIgnoreCase)) return locale;
         }
         return locales.Count > 0 ? locales[0] : En;
-    }
-
-    private static string LanguageOf(string code)
-    {
-        var dash = code.IndexOf('-');
-        return dash < 0 ? code : code[..dash];
     }
 }

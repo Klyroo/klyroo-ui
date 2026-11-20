@@ -28,7 +28,7 @@ public static partial class Catalog
              new("Error boundary", typeof(Examples.ErrorBoundaryExample), "Pass the exception from ErrorContent; the details are shown only on request.")],
             [typeof(BxError)]),
         new("locale-select", "LocaleSelect", "Layout", "A select of locales that writes the ASP.NET Core culture cookie and reloads the page.",
-            [new("Locale select", typeof(Examples.LocaleSelectExample), "Server setup: app.UseRequestLocalization(...) with the same cultures; the default cookie provider reads the cookie. Components follow the culture automatically. In WebAssembly, call ApplyCultureCookieAsync in the client Program.cs so the client picks the same culture."),
+            [new("Locale select", typeof(Examples.LocaleSelectExample), "Server setup: app.UseRequestLocalization(...) with the same cultures; the default cookie provider reads the cookie. Components follow the culture automatically. In WebAssembly, render BxCultureMeta in the head and call ApplyServerCultureAsync in the client Program.cs so the client picks the same culture."),
              new("Locales per subtree", typeof(Examples.LocalePanelsExample), "BxApp Locale sets the texts, the direction and the date and number culture of everything inside it. Arabic is right to left."),
              new("Switching at runtime", typeof(Examples.LocaleSwitchExample), "Changing the Locale parameter re-renders the components below in the new language. The buttons need interactivity."),
              new("Extending a locale", typeof(Examples.LocaleExtendExample), "BxLocales.Extend keeps every message you do not override.")],

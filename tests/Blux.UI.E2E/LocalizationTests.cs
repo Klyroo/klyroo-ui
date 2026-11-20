@@ -137,4 +137,61 @@ public class LocalizationTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.Locator("html")).ToHaveAttributeAsync("dir", "ltr");
         await Assertions.Expect(Page.GetByTestId("locale-select").GetByRole(AriaRole.Combobox, new() { Name = "Idioma" })).ToBeVisibleAsync();
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Without_a_cookie_the_server_and_the_client_pick_the_first_supported_Accept_Language(string mode)
+    {
+        // Catalan is not offered, Spanish is: the server renders Spanish and the client, whose browser speaks Catalan, must follow it.
+        var page = await NewPage("ca,es;q=0.9", "ca");
+        await Open(page, mode, "locale-select");
+
+        await Assertions.Expect(page.GetByTestId("locale-current")).ToHaveTextAsync("es");
+        await Assertions.Expect(page.GetByTestId("locale-resolved")).ToHaveTextAsync("es");
+        await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "es");
+        await Assertions.Expect(page.GetByTestId("locale-select").Locator("bx-select")).ToHaveAttributeAsync("value", "es");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_Chinese_culture_without_its_own_locale_gets_English_on_the_server_and_in_the_client(string mode)
+    {
+        var page = await NewPage("zh-TW", "zh-TW");
+        await Open(page, mode, "locale-select");
+
+        await Assertions.Expect(page.GetByTestId("locale-current")).ToHaveTextAsync("en");
+        await Assertions.Expect(page.GetByTestId("locale-resolved")).ToHaveTextAsync("en");
+        await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "en");
+        await Assertions.Expect(page.GetByTestId("locale-select").GetByRole(AriaRole.Combobox, new() { Name = "Language" })).ToBeVisibleAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_regional_culture_of_the_language_of_the_locale_keeps_its_formats_in_every_mode(string mode)
+    {
+        var british = await NewPage("en-GB", "en-US");
+        await Open(british, mode, "locale-select");
+        var american = await NewPage("en-US", "en-US");
+        await Open(american, mode, "locale-select");
+
+        // en-GB: 24 hour clock, on the server and in the client (whose browser says en-US).
+        await Assertions.Expect(british.GetByTestId("locale-format-culture")).ToHaveTextAsync("en-GB");
+        await Assertions.Expect(british.GetByTestId("locale-resolved")).ToHaveTextAsync("en");
+        await Assertions.Expect(british.Locator("[data-testid=locale-formats] [data-segment=hour]")).ToHaveAttributeAsync("data-label", "15");
+        await Assertions.Expect(british.Locator("[data-testid=locale-formats] [data-segment=period]")).ToHaveCountAsync(0);
+
+        await Assertions.Expect(american.GetByTestId("locale-format-culture")).ToHaveTextAsync("en");
+        await Assertions.Expect(american.Locator("[data-testid=locale-formats] [data-segment=hour]")).ToHaveAttributeAsync("data-label", "03");
+        await Assertions.Expect(american.Locator("[data-testid=locale-formats] [data-segment=period]")).ToHaveAttributeAsync("data-label", "PM");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_calendar_heading_puts_the_month_and_the_year_in_the_order_of_the_locale(string mode)
+    {
+        await Open(mode, "locale-select");
+
+        await Assertions.Expect(Page.GetByTestId("locale-panel-ja").Locator("div[aria-live=polite]")).ToHaveTextAsync("2026年3月");
+        await Assertions.Expect(Page.GetByTestId("locale-panel-fr").Locator("div[aria-live=polite]")).ToHaveTextAsync("mars 2026");
+    }
 }
