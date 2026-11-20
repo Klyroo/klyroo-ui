@@ -7,6 +7,27 @@
     <h1>MAUI and Blazor Hybrid</h1>
     <p class="pg-lead">Blux runs in a <code>BlazorWebView</code>, so one set of pages can ship as a web app and as an app for Android, Windows, iOS and macOS. The <code>maui-blazor-web</code> template (a shared Razor class library, a web project and a MAUI project) is the intended starting point; <code>samples/Blux.Maui</code> in the repository is that template with Blux in it.</p>
 
+    <p>The two screens below are the sample app in the Android emulator: a phone in dark mode, and Android TV in light mode with a switch focused by the D-pad.</p>
+    <div class="not-prose my-6 grid items-end gap-6 sm:grid-cols-[minmax(0,13rem)_minmax(0,1fr)]">
+        <figure class="m-0 w-full max-w-52 sm:justify-self-start">
+            <BxImage Src="/img/platform-phone-forms-dark.webp" Provider="none" Alt="The Forms page of the sample app on an Android phone, dark mode: name, country and bio fields, a switch, a checkbox and a Save button." Width="540" Height="1200" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-[1.75rem] border-4 border-(--blux-border-accented)" data-testid="maui-phone" />
+            <figcaption class="mt-2 text-xs text-muted">Android phone</figcaption>
+        </figure>
+        <figure class="m-0 w-full">
+            <BxImage Src="/img/platform-tv-forms-light.webp" Provider="none" Alt="The Forms page of the sample app on Android TV, light mode: a thick blue focus ring around the Email notifications switch." Width="1280" Height="720" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-lg border-4 border-(--blux-border-accented)" data-testid="maui-tv" />
+            <figcaption class="mt-2 text-xs text-muted">Android TV, TV mode</figcaption>
+        </figure>
+    </div>
+
+    <h2>Status by platform</h2>
+    <ul>
+        <li><strong>Web</strong>: all four Blazor render modes (static SSR, Server, WebAssembly, Auto), with the same markup.</li>
+        <li><strong>Android</strong> (phone): built and tested on the emulator.</li>
+        <li><strong>iOS 17 and later</strong> (the native popover is required), <strong>Windows</strong> and <strong>macOS</strong> (Mac Catalyst): built in CI jobs, not yet run on devices.</li>
+        <li><strong>Android TV</strong>: experimental, tested on the Android TV emulator. The soft keyboard is not yet confirmed on a real TV.</li>
+        <li><strong>Tizen</strong> (Samsung TV): not supported, there is no BlazorWebView there.</li>
+    </ul>
+
     <h2>What a web view changes</h2>
     <ul>
         <li>The renderer is <code>RendererInfo.Name == "WebView"</code>: always interactive, no prerendering, no <code>HttpContext</code>, no server to render the <code>&lt;head&gt;</code>. <code>BluxHost.IsHybrid(RendererInfo)</code> tells, and every component that depends on a server degrades by itself.</li>
