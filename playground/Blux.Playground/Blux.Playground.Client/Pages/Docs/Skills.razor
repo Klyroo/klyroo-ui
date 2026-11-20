@@ -1,0 +1,29 @@
+@page "/docs/skills"
+@layout Layout.DocsLayout
+
+<PageTitle>Agent skill · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">AI</p>
+    <h1>Agent skill</h1>
+    <p class="pg-lead">Teach an AI coding agent how to build with Blux UI: the conventions, the patterns, and when to ask the MCP server.</p>
+
+    <h2>What it contains</h2>
+    <p>
+        The skill lives in <code>skills/blux-ui</code> of the repository. <code>SKILL.md</code> holds the core rules and a table that sends the agent to the
+        reference file for its task, so it only loads what it needs:
+    </p>
+    <ul>
+        <li><strong>Guidelines</strong>: design system (tokens, colors, <code>Class</code> and <code>Ui</code>, global themes), choosing a component, conventions (render modes, the <code>Bx</code> prefix, binding, static rendering), forms.</li>
+        <li><strong>Layouts</strong>: dashboard, docs, chat, editor, landing page.</li>
+        <li><strong>Recipes</strong>: data tables, authentication, overlays, navigation.</li>
+        <li><strong>Components</strong>: a quick reference of every component, generated from the same bundle as the MCP server.</li>
+    </ul>
+    <p>The skill never lists parameters from memory. For the exact API it tells the agent to call the <a href="/docs/mcp">MCP server</a>.</p>
+
+    <h2>Install</h2>
+    <p>With the skills CLI, from the repository that hosts Blux UI:</p>
+    <CodeBlock Code="npx skills add OWNER/blux-ui" />
+    <p>Or point your agent at the folder: copy <code>skills/blux-ui</code> into the skills directory of the tool, for Claude Code <code>.claude/skills/blux-ui</code> in a project or <code>~/.claude/skills/blux-ui</code> for every project.</p>
+    <CodeBlock Code="cp -r skills/blux-ui .claude/skills/blux-ui" />
+    <p>Then add the MCP server, so the skill and the tools work together: see <a href="/docs/mcp">MCP server</a>.</p>
+</div>

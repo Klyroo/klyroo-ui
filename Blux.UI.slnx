@@ -1,9 +1,13 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Blux.UI/Blux.UI.csproj" />
+    <Project Path="src/Blux.UI.Mcp.Model/Blux.UI.Mcp.Model.csproj" />
+    <Project Path="src/Blux.UI.Mcp.Core/Blux.UI.Mcp.Core.csproj" />
+    <Project Path="src/Blux.UI.Mcp/Blux.UI.Mcp.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Blux.UI.Tests/Blux.UI.Tests.csproj" />
+    <Project Path="tests/Blux.UI.Mcp.Tests/Blux.UI.Mcp.Tests.csproj" />
     <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />
   </Folder>
   <Folder Name="/playground/">
@@ -12,5 +16,6 @@
   </Folder>
   <Folder Name="/build/">
     <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />
+    <Project Path="build/Blux.UI.DocsBundle/Blux.UI.DocsBundle.csproj" />
   </Folder>
 </Solution>

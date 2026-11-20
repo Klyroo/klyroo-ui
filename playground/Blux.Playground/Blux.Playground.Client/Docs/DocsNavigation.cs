@@ -19,14 +19,12 @@ public static class DocsNavigation
     /// </summary>
     public static IReadOnlyList<BxContentNavigationItem> Sidebar(string prefix)
     {
-        var items = new List<BxContentNavigationItem>
+        var items = new List<BxContentNavigationItem>();
+        items.AddRange(Catalog.Guides.Select(g => g.Section).Distinct().Select(section => new BxContentNavigationItem(section)
         {
-            new("Getting started")
-            {
-                Open = true,
-                Children = [.. Catalog.Guides.Select(g => new BxContentNavigationItem(g.Title) { Href = g.Href, Exact = true })],
-            },
-        };
+            Open = true,
+            Children = [.. Catalog.Guides.Where(g => g.Section == section).Select(g => new BxContentNavigationItem(g.Title) { Href = g.Href, Exact = true })],
+        }));
         items.AddRange(Catalog.Groups.Where(group => Catalog.Components.Any(c => c.Group == group)).Select(group => new BxContentNavigationItem(group)
         {
             Open = true,
@@ -51,7 +49,7 @@ public static class DocsNavigation
             {
                 SearchPagesByPrefix[prefix] = pages =
                 [
-                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = "Getting started", Icon = "" }),
+                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = g.Section, Icon = "" }),
                     .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
                     {
                         Group = c.Group,

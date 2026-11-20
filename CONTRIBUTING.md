@@ -67,6 +67,19 @@ The site compiles its own Tailwind (`npm run site:css`), so it exercises the "Ta
 Generated files (`src/Blux.UI/wwwroot`, `src/Blux.UI/styles/generated`, the site's `wwwroot/site.css`) are committed;
 CI fails if `npm run build` changes them.
 
+## AI tooling
+
+The MCP server (`src/Blux.UI.Mcp`, shared code in `src/Blux.UI.Mcp.Core`), `llms.txt` and the skill reference read one docs bundle that
+`build/Blux.UI.DocsBundle` generates from the docs catalog, the XML documentation and themes of the library, the example sources and the
+guide pages. Nothing generated is committed, except the skill's component reference. So:
+
+- A new component needs nothing extra beyond its catalog entry and examples; the bundle, the tools and `llms.txt` pick it up on the next build.
+- A guide page needs a line in `Catalog.Guides` and a Razor page with the same route, whose prose sits in `<div class="pg-prose">` (headings, paragraphs, lists, `CodeBlock`).
+- After changing components or the catalog, refresh `skills/blux-ui/references/components.md` with
+  `dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference`; a test fails while it is stale.
+- Every Razor sample in `skills/blux-ui` is checked against the library by `tests/Blux.UI.Mcp.Tests`, so a renamed parameter shows up there.
+- Document parameters with XML comments: they are the descriptions the tools return.
+
 ## Commands
 
 ```bash
@@ -75,6 +88,7 @@ npm ci                     # or symlink node_modules from the main checkout
 npm run build              # theme classes, blux.css, JS bundle, site.css: commit the results
 dotnet build Blux.UI.slnx  # warnings are errors
 dotnet test --project tests/Blux.UI.Tests
+dotnet test --project tests/Blux.UI.Mcp.Tests   # bundle, MCP tools, llms.txt, skill
 dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-build -- --filter-class Blux.UI.E2E.<Family>Tests
 ```
 
