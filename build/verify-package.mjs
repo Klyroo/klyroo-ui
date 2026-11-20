@@ -1,5 +1,5 @@
-// Packaging check: packs Blux.UI in Release, inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App
-// (Auto interactivity) that consumes the package from a local folder feed, in both CSS modes.
+// Packaging check: packs Blux.UI (and the image packages Blux.UI.Images and Blux.UI.Images.Local) in Release, inspects the .nupkg and
+// .snupkg files, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
 //
 //   node build/verify-package.mjs [--online] [--keep]
 //
@@ -56,8 +56,8 @@ try {
   mkdirSync(feed);
   const pack = run("dotnet", ["pack", "src/Blux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack -c Release succeeds without warnings")) console.log(pack.out);
-  const nupkgName = readdirSync(feed).find((f) => f.endsWith(".nupkg"));
-  const snupkgName = readdirSync(feed).find((f) => f.endsWith(".snupkg"));
+  const nupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.nupkg$/.test(f));
+  const snupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.snupkg$/.test(f));
   check(!!nupkgName, ".nupkg produced");
   check(!!snupkgName, ".snupkg produced");
   if (!nupkgName || !snupkgName) throw new Error("pack produced no package");
@@ -98,6 +98,28 @@ try {
   check(snupkg.has("lib/net10.0/Blux.UI.pdb"), "snupkg contains lib/net10.0/Blux.UI.pdb");
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
+  // 3b. The image packages: same version, readme, icon, documentation, and the dependencies they promise.
+  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local"]) {
+    const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
+    if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
+    const file = `${id}.${version}.nupkg`;
+    if (!check(existsSync(join(feed, file)), `${id}: .nupkg has the version of Blux.UI (${version})`)) continue;
+    check(existsSync(join(feed, `${id}.${version}.snupkg`)), `${id}: .snupkg produced`);
+    const pkg = readZip(join(feed, file));
+    for (const n of [`lib/net10.0/${id}.dll`, `lib/net10.0/${id}.xml`, "README.md", "icon.png", `${id}.nuspec`]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
+    check([...pkg.keys()].every((n) => !n.endsWith(".pdb")), `${id}: no .pdb in the .nupkg`);
+    const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
+    check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
+    // The local optimizer reaches Blux.UI through Blux.UI.Images.
+    const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : "Blux\\.UI";
+    check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    if (id.endsWith(".Local")) {
+      check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
+      check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
+      check(/LGPL/.test(pkg.get("README.md")().toString("utf8")), `${id}: the readme mentions the LGPL licence of libvips`);
+    }
+  }
+
   // 4. Consumer app, from the folder feed and the local NuGet cache.
   const cache = process.env.NUGET_PACKAGES || join(homedir(), ".nuget", "packages");
   const app = join(work, "app");
@@ -107,24 +129,28 @@ try {
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Blux.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
   if (!check(created.code === 0, "dotnet new blazor (Auto)")) { console.log(created.out); throw new Error("template failed"); }
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
-  for (const proj of [join(server, "Site.csproj"), join(client, "Site.Client.csproj")]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /></ItemGroup>\n</Project>`));
+  // The server also uses the local image optimizer; the client only needs the URL builder.
+  for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /></ItemGroup>\n</Project>`));
   }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
   copyFileSync(join(root, "build", "test-assets", "fonts", "PackageCheck-400.woff2"), join(server, "Fonts", "PackageCheck-400.woff2"));
+  // The same font as .ttf and .woff, to see that every font format gets the immutable header (the SDK only knows woff2 and otf).
+  copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.ttf"), join(server, "Fonts", "PackageCheck-700.ttf"));
+  copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.woff"), join(server, "Fonts", "PackageCheck-300.woff"));
   const serverProj = join(server, "Site.csproj");
   writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxFont Include="PackageCheck" Role="sans" Provider="local" Src="Fonts" /></ItemGroup>\n</Project>`));
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Blux.UI\n`);
   const prog = join(server, "Program.cs");
-  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\n\nvar app = builder.Build();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
+  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
   const home = join(server, "Components", "Pages", "Home.razor");
   writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n`);
   const appRazor = join(server, "Components", "App.razor");
@@ -158,12 +184,18 @@ try {
   check(/--blux-font-sans: "PackageCheck", "PackageCheck Fallback", /.test(fontsCss), "fonts: --blux-font-sans lists the font and its fallback");
   const fontFile = /url\("(PackageCheck-400-normal\.[0-9a-f]{8}\.woff2)"\)/.exec(fontsCss)?.[1];
   check(!!fontFile && existsSync(join(fontsOut, fontFile)), `fonts: the font file is generated with a hashed name (${fontFile})`);
-  check(existsSync(join(fontsOut, "BluxFontsManifest.g.cs")), "fonts: the manifest source is generated");
+  check(existsSync(join(fontsOut, "..", "BluxFontsManifest.g.cs")) && !existsSync(join(fontsOut, "BluxFontsManifest.g.cs")), "fonts: the manifest source is generated next to the fonts folder, not in it");
+  check(!manifest.includes("BluxFontsManifest") && !manifest.includes(".stamp") && !manifest.includes("blux.fonts.json"), "fonts: only fonts and the stylesheet are static web assets");
   check(manifest.includes("_blux/fonts/blux.fonts") && !!fontFile && manifest.includes(`_blux/fonts/${fontFile}`), "fonts: stylesheet and font file are static web assets under _blux/fonts/");
   const endpointsFile = join(server, "obj", "Release", "net10.0", "staticwebassets.build.endpoints.json");
   const endpoints = existsSync(endpointsFile) ? JSON.parse(readFileSync(endpointsFile, "utf8")).Endpoints : [];
   const fontEndpoints = endpoints.filter((e) => fontFile && e.Route.startsWith("_blux/fonts/PackageCheck-400") && e.Route.endsWith(".woff2"));
   check(fontEndpoints.length >= 2 && fontEndpoints.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable")), "fonts: every route of the font is served with a year of immutable cache");
+  for (const [ext, mime] of [["ttf", "font/ttf"], ["woff", "font/woff"]]) {
+    const routes = endpoints.filter((e) => e.Route.startsWith("_blux/fonts/PackageCheck-") && e.Route.endsWith("." + ext));
+    check(routes.length >= 2 && routes.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable") && e.ResponseHeaders.some((h) => h.Name === "Content-Type" && h.Value === mime)), `fonts: every route of the .${ext} font is served as ${mime} with a year of immutable cache`);
+  }
+  check(!endpoints.some((e) => /\.(cs|json|stamp)$/.test(e.Route) && e.Route.startsWith("_blux/fonts/")), "fonts: no generated source, manifest or stamp is published as an endpoint");
 
   // Run the app and fetch what the page links: the font is served from the app, the preload and stylesheet are in the head.
   {

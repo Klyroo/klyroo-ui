@@ -59,6 +59,32 @@ public class FontsTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
+    public async Task Every_font_file_of_the_stylesheet_is_served_and_nothing_else_of_the_folder_is()
+    {
+        await Page.GotoAsync("/");
+        var hrefs = await Page.EvaluateAsync<string[]>("[...document.querySelectorAll('link[rel=stylesheet]')].map(l => l.getAttribute('href'))");
+        var css = await (await Page.APIRequest.GetAsync(hrefs.First(h => h.Contains("blux.fonts")))).TextAsync();
+        var files = System.Text.RegularExpressions.Regex.Matches(css, "url\\(\"([^\"]+)\"\\)").Select(m => m.Groups[1].Value).Distinct().ToList();
+        Assert.NotEmpty(files);
+        // Doto's 700 and 900 are the same bytes: one file, two rules.
+        Assert.Equal(files.Count, files.Select(f => f.Split('.')[^2]).Distinct().Count());
+
+        var published = Environment.GetEnvironmentVariable("BLUX_PLAYGROUND_PUBLISHED") is { Length: > 0 };
+        foreach (var file in files)
+        {
+            var response = await Page.APIRequest.GetAsync("_blux/fonts/" + file);
+            Assert.True(response.Ok, file);
+            if (published) Assert.Equal("max-age=31536000, immutable", response.Headers["cache-control"]);
+        }
+
+        // The generated source and the build's own files stay out of the served folder.
+        foreach (var name in new[] { "BluxFontsManifest.g.cs", "blux.fonts.json", ".stamp" })
+        {
+            Assert.False((await Page.APIRequest.GetAsync("_blux/fonts/" + name)).Ok, name);
+        }
+    }
+
+    [Fact]
     public async Task The_stylesheet_is_linked_before_the_site_stylesheet_and_declares_a_fallback_face()
     {
         await Page.GotoAsync("/");

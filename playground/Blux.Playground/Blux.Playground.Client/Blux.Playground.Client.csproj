@@ -26,6 +26,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
     <ProjectReference Include="..\..\..\src\Blux.UI\Blux.UI.csproj" />
+    <!-- Only the URL builder of the local image optimizer: the endpoint itself runs on the server. -->
+    <ProjectReference Include="..\..\..\src\Blux.UI.Images\Blux.UI.Images.csproj" />
   </ItemGroup>
 
   <!--
