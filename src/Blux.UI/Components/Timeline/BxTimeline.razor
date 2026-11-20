@@ -44,8 +44,10 @@
     /// <summary>Index of the last highlighted item. Null highlights none.</summary>
     [Parameter] public int? Active { get; set; }
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Vertical;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Accessible name of the list.</summary>
     [Parameter] public string? AriaLabel { get; set; }

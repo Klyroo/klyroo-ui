@@ -34,7 +34,8 @@
     /// <summary>Fallback text instead of the initials of <see cref="Alt"/>.</summary>
     [Parameter] public string? Text { get; set; }
     [Parameter] public RenderFragment? Icon { get; set; }
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public AvatarUi? Ui { get; set; }
 
     private string Initials => Text ?? string.Concat((Alt ?? "")

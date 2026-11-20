@@ -25,7 +25,8 @@
 
     [Parameter, EditorRequired] public IReadOnlyList<BxNavigationItem> Items { get; set; } = [];
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Accessible name of the navigation landmark. Needed when the page has several.</summary>
     [Parameter] public string? AriaLabel { get; set; }

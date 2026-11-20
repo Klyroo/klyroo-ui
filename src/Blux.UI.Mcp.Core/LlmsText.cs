@@ -32,7 +32,7 @@ public static class LlmsText
             sb.Append($"\n## {section}\n\n");
             foreach (var guide in bundle.Guides.Where(g => g.Section == section))
             {
-                sb.Append($"- [{guide.Title}]({baseUrl}{guide.Path}): {Lead(guide.Markdown)}\n");
+                sb.Append($"- [{guide.Title}]({baseUrl}{guide.Path}): {Absolute(Lead(guide.Markdown), baseUrl)}\n");
             }
         }
 
@@ -66,7 +66,7 @@ public static class LlmsText
             foreach (var guide in bundle.Guides.Where(g => g.Section == section))
             {
                 sb.Append($"\n## {guide.Title}\n\nSource: {baseUrl}{guide.Path}\n\n");
-                sb.Append(ShiftHeadings(StripTitle(guide.Markdown), 1).TrimEnd()).Append('\n');
+                sb.Append(Absolute(ShiftHeadings(StripTitle(guide.Markdown), 1), baseUrl).TrimEnd()).Append('\n');
             }
         }
 
@@ -82,6 +82,10 @@ public static class LlmsText
         }
         return sb.ToString();
     }
+
+    /// <summary>Makes the site-relative Markdown links of a guide (<c>[x](/docs/...)</c>) absolute, so they work outside the site.</summary>
+    internal static string Absolute(string markdown, string baseUrl) =>
+        baseUrl.Length == 0 ? markdown : System.Text.RegularExpressions.Regex.Replace(markdown, @"\]\((/[^)\s]*)\)", m => $"]({baseUrl}{m.Groups[1].Value})");
 
     /// <summary>The first paragraph of a guide after its title: what it is for.</summary>
     internal static string Lead(string markdown)

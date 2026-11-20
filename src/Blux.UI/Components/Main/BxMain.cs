@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace Blux.UI;
 
 /// <summary>
-/// The main landmark of a page. Its minimum height is the viewport minus the header (<c>--bx-header-height</c>, 4rem by
+/// The main landmark of a page. Its minimum height is the viewport minus the header (<c>--blux-header-height</c>, 4rem by
 /// default), so a short page still pushes the footer to the bottom of the screen.
 /// </summary>
 public sealed class BxMain : BxComponentBase

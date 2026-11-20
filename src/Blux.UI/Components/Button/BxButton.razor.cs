@@ -40,9 +40,11 @@ public partial class BxButton
 {
     [Parameter] public string? Label { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Solid;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public RenderFragment? LeadingIcon { get; set; }
     [Parameter] public RenderFragment? TrailingIcon { get; set; }
 

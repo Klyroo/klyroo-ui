@@ -20,7 +20,8 @@
 
     [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Visible text next to the icon. Without it the button is icon-only and needs <see cref="AriaLabel"/>.</summary>
     [Parameter] public string? Label { get; set; }

@@ -60,7 +60,8 @@
     [Parameter] public string For { get; set; } = "";
     [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Outline;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public ContentSearchButtonUi? Ui { get; set; }
 
     protected override void OnParametersSet()

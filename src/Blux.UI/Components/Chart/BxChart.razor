@@ -253,8 +253,9 @@
 @code {
     private sealed record SeriesInfo(string Name, BxColor Color);
 
+    // The default series colors are the chart tokens (--blux-chart-1..6, aliases of the semantic colors), then neutral.
     private static readonly BxColor[] Palette =
-        [BxColor.Primary, BxColor.Secondary, BxColor.Info, BxColor.Error, BxColor.Success, BxColor.Warning, BxColor.Neutral];
+        ["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6", BxColor.Neutral];
 
     private static readonly string?[] Dashes = [null, "7 4", "2 4", "9 4 2 4", "1 3"];
 

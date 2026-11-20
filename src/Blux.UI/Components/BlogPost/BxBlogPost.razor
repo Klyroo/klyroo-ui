@@ -108,7 +108,8 @@
     [Parameter] public string? Target { get; set; }
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Vertical;
     [Parameter] public BlogPostVariant Variant { get; set; } = BlogPostVariant.Outline;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Extra content between the description and the authors.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }

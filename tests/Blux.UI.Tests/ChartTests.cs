@@ -220,8 +220,8 @@ public class ChartTests : BluxTestContext
     {
         var cut = Chart(null, null, [new("desktop", s => s.Desktop), new("mobile", s => s.Mobile) { Color = BxColor.Success }]);
 
-        Assert.Equal(["primary", "success"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
-        Assert.Equal(["primary", "success"], cut.FindAll("li[data-color]").Select(g => g.GetAttribute("data-color")));
+        Assert.Equal(["chart-1", "success"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
+        Assert.Equal(["chart-1", "success"], cut.FindAll("li[data-color]").Select(g => g.GetAttribute("data-color")));
         var html = cut.Markup;
         Assert.DoesNotContain("fill=\"#", html);
         Assert.DoesNotContain("stroke=\"#", html);
@@ -271,7 +271,7 @@ public class ChartTests : BluxTestContext
 
         var patterns = bars.FindAll("defs pattern");
         Assert.Equal(2, patterns.Count);
-        Assert.Equal(["primary", "secondary"], patterns.Select(x => x.GetAttribute("data-color")));
+        Assert.Equal(["chart-1", "chart-2"], patterns.Select(x => x.GetAttribute("data-color")));
         Assert.NotEmpty(patterns[1].QuerySelectorAll("path"));
         Assert.Empty(patterns[0].QuerySelectorAll("path"));
         var id = patterns[1].GetAttribute("id");
@@ -427,7 +427,7 @@ public class ChartTests : BluxTestContext
 
         var slices = cut.FindAll("path[data-hit]");
         Assert.Equal(6, slices.Count);
-        Assert.Equal(["primary", "secondary", "info", "error", "success", "warning"], slices.Select(s => s.GetAttribute("data-color")));
+        Assert.Equal(["chart-1", "chart-2", "chart-3", "chart-4", "chart-5", "chart-6"], slices.Select(s => s.GetAttribute("data-color")));
         Assert.Equal(6, cut.FindAll("ul li").Count);
         Assert.Equal("186", cut.FindAll("ul li")[0].QuerySelector("span:last-child")!.TextContent);
         var label = AccessibleName(cut);
@@ -502,7 +502,7 @@ public class ChartTests : BluxTestContext
         Assert.Equal("February", tips[1].QuerySelector("p")!.TextContent);
         var rows = tips[1].QuerySelectorAll("p").Skip(1).ToList();
         Assert.Equal(["Desktop", "305"], rows[0].QuerySelectorAll("span").Where(s => s.TextContent.Length > 0).Select(s => s.TextContent));
-        Assert.Equal("primary", rows[0].GetAttribute("data-color"));
+        Assert.Equal("chart-1", rows[0].GetAttribute("data-color"));
         Assert.Equal("true", cut.Find("[data-slot=tooltip]").GetAttribute("aria-hidden"));
         Assert.Equal("status", cut.Find("[data-slot=status]").GetAttribute("role"));
         Assert.Empty(cut.Find("[data-slot=tooltip]").Children);

@@ -84,7 +84,8 @@
 
     /// <summary>Card only: a vertical card gives an image a large preview.</summary>
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
 
     /// <summary>Replaces the file icon.</summary>

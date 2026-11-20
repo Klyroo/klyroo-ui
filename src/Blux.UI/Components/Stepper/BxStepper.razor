@@ -63,8 +63,10 @@
     /// <summary>Bind it to let users click a step; without it the stepper only displays progress.</summary>
     [Parameter] public EventCallback<int> CurrentChanged { get; set; }
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Accessible name of the list of steps.</summary>
     [Parameter] public string? AriaLabel { get; set; }

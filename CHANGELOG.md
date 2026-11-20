@@ -11,6 +11,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **AI tooling**, generated from the docs catalog and the library so it cannot go stale: the `Blux.UI.Mcp` dotnet tool (`blux-ui-mcp`, an MCP server over stdio),
   the same server over HTTP at `/mcp` on the docs site (`X-MCP-Tools` restricts the tools), `/llms.txt` and `/llms-full.txt`, and the `blux-ui` agent skill in `skills/blux-ui`.
   An "AI" section in the docs explains how to install each.
+- Design system like Nuxt UI's: `BxPalette` (the 26 Tailwind v4 palettes, `BxPalette.Custom`, and `BxPalette.Blux` for the hand-tuned defaults), `o.Colors.Primary` to `o.Colors.Neutral`, `o.Colors.Add("tertiary", palette)` and `BxThemeStyle`, which renders the computed `:root` and `.dark` variables and a `[data-color]` rule for every extra color. The fill, text and on-fill tokens are picked from the shades so the contrast rules hold.
+- `o.Defaults.Color` and `o.Defaults.Size`, used by components when the parameter is not set.
+- Tokens `--blux-text-toned`, `--blux-text-inverted`, `--blux-bg-inverted`, `--blux-border-muted`, `--blux-border-inverted`, `--blux-container`, `--blux-header-height`, the radius scale `--blux-radius-xs` to `--blux-radius-3xl` and `--blux-chart-1` to `--blux-chart-6`.
+- Tailwind mode utilities: `text-default`, `text-muted`, `bg-elevated`, `border-accented`, `bg-primary`… that follow the runtime variables, and `rounded-*` that follows `--blux-radius`.
+- Docs: Design system and CSS variables guides, and the ThemeStyle page.
+
+### Changed
+
+- The light secondary, success, info and error fills and their text colors are slightly darker, so white text on them stays at 4.5:1 on the hover and pressed states (the fills at 90% and 80% over the page).
+- `BxChart` series default to `data-color="chart-1"` to `chart-6` (aliases of the semantic colors, same look).
+- `--bx-header-height` is now `--blux-header-height` (`--bx-header-height` still works as an override); the container width reads `--blux-container`.
 
 ## [0.1.0] - Unreleased
 

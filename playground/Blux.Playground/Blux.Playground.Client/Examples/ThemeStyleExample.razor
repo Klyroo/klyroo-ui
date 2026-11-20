@@ -1,0 +1,47 @@
+@* A live preview: the palettes are rendered by BxThemeStyle into a scope, so only this block changes color.
+   In your app the same options go in AddBluxUi and BxThemeStyle sits in <head> without parameters.
+   Choosing a palette needs interactivity: in static rendering the buttons stay disabled on Indigo. *@
+<div id="palette-demo" data-testid="palette-demo" class="flex w-full max-w-xl flex-col gap-5">
+    <BxThemeStyle Colors="_colors" Scope="#palette-demo" />
+
+    <div role="group" aria-label="Primary palette" class="flex flex-wrap gap-2">
+        @foreach (var palette in _palettes)
+        {
+            var current = palette;
+            <BxButton Label="@current.Name" Size="BxSize.Sm" Color="BxColor.Neutral"
+                      Variant="@(current == _primary ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                      aria-pressed="@(current == _primary ? "true" : "false")"
+                      data-testid="@($"palette-{current.Name}")"
+                      OnClick="@(() => Select(current))" />
+        }
+    </div>
+
+    <div class="flex flex-wrap items-center gap-3">
+        <BxButton Label="Primary" data-testid="palette-primary" />
+        <BxButton Label="Soft" Variant="ButtonVariant.Soft" />
+        <BxButton Label="Outline" Variant="ButtonVariant.Outline" />
+        <BxBadge Label="Primary" Variant="BxVariant.Subtle" />
+        <BxBadge Label="tertiary" Color="@("tertiary")" Variant="BxVariant.Solid" data-testid="palette-tertiary" />
+    </div>
+</div>
+
+@code {
+    private static readonly BxPalette[] _palettes = [BxPalette.Indigo, BxPalette.Emerald, BxPalette.Rose, BxPalette.Amber, BxPalette.Sky];
+
+    private BxPalette _primary = BxPalette.Indigo;
+    private BxColorOptions _colors = Build(BxPalette.Indigo);
+
+    // Like AddBluxUi(o => { o.Colors.Primary = ...; o.Colors.Add("tertiary", ...); }), built per choice because options freeze.
+    private static BxColorOptions Build(BxPalette primary)
+    {
+        var colors = new BxColorOptions { Primary = primary };
+        colors.Add("tertiary", primary == BxPalette.Rose ? BxPalette.Violet : BxPalette.Rose);
+        return colors;
+    }
+
+    private void Select(BxPalette palette)
+    {
+        _primary = palette;
+        _colors = Build(palette);
+    }
+}

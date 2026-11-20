@@ -79,6 +79,8 @@ public static partial class Catalog
         ("/docs", "Introduction", "Getting started"),
         ("/docs/installation", "Installation", "Getting started"),
         ("/docs/theming", "Theming", "Getting started"),
+        ("/docs/design-system", "Design system", "Getting started"),
+        ("/docs/css-variables", "CSS variables", "Getting started"),
         ("/docs/render-modes", "Render modes", "Getting started"),
         ("/docs/mcp", "MCP server", "AI"),
         ("/docs/llms-txt", "llms.txt", "AI"),

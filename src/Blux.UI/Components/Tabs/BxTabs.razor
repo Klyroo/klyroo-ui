@@ -51,7 +51,8 @@
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
     [Parameter] public TabsVariant Variant { get; set; } = TabsVariant.Pill;
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Accessible name of the tab list.</summary>
     [Parameter] public string? AriaLabel { get; set; }

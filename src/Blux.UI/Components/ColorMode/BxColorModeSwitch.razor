@@ -26,8 +26,10 @@
     private SlotSet _slots = default!;
     private string _id = default!;
 
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Visible label. Without it the switch needs <see cref="AriaLabel"/>.</summary>
     [Parameter] public string? Label { get; set; }

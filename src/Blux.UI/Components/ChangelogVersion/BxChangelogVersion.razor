@@ -103,7 +103,8 @@
 
     /// <summary>Shows the dot and the line that join the versions of a <see cref="BxChangelogVersions"/>.</summary>
     [Parameter] public bool Indicator { get; set; } = true;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Rich description: paragraphs, lists, links.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }

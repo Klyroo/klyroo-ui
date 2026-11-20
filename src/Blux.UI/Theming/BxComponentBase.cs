@@ -47,6 +47,10 @@ public abstract class BxComponentBase : ComponentBase
         return new SlotSet(result);
     }
 
+    // Null-safe: Blazor and reflection-based tooling may read a parameter before the services are injected.
+    private protected BxColor DefaultColor(BxColor fallback) => Options is null ? fallback : Options.Defaults.ColorOr(fallback);
+    private protected BxSize DefaultSize(BxSize fallback) => Options is null ? fallback : Options.Defaults.SizeOr(fallback);
+
     private protected static string NewId(string prefix) => $"bx-{prefix}-{Guid.NewGuid():N}"[..(prefix.Length + 12)];
 }
 

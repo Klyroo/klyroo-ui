@@ -53,7 +53,8 @@
 
     /// <summary>Size change of an arrow key press, in percent.</summary>
     [Parameter] public double Step { get; set; } = 5;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public SplitterUi? Ui { get; set; }
 
     private EventCallback<BxChangeEventArgs> ChangeHandler =>

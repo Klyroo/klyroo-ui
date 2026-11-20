@@ -44,6 +44,7 @@ Styles come in two modes. Without Tailwind in your app, load the precompiled sty
 ```razor
 @* App.razor, in <head> *@
 <BxColorModeScript />
+<BxThemeStyle /> @* only needed when you configure palettes *@
 <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
 <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
 ```
@@ -81,10 +82,32 @@ Import it after Tailwind, and load only your compiled stylesheet (not `blux.css`
 
 ## Customize
 
+- **Palettes**: map the semantic colors to Tailwind palettes or your own, like Nuxt UI's `ui.colors`. Blux computes the
+  fill, text and on-fill tokens so the contrast rules still hold, and `BxThemeStyle` (in `<head>`, next to
+  `BxColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
+
+  ```csharp
+  builder.Services.AddBluxUi(o =>
+  {
+      o.Colors.Primary = BxPalette.Blue;                 // 26 Tailwind v4 palettes, or BxPalette.Custom("brand", shades)
+      o.Colors.Neutral = BxPalette.Zinc;                 // also drives the text, background and border tokens
+      o.Colors.Add("tertiary", BxPalette.Indigo);        // then Color="@("tertiary")", no CSS to write
+      o.Defaults.Color = BxColor.Secondary;              // used when a component's Color is not set (Size likewise)
+  });
+  ```
+
 - **Tokens** (works everywhere): override `--blux-primary`, `--blux-radius`, `--blux-bg`… in your CSS, in both
   `:root` and `.dark`. Your unlayered `:root` rule beats the library's dark values, so a color overridden only in
-  `:root` keeps its light value in dark mode while its paired `-contrast` token still flips.
-- **Custom color**: `Color="@("brand")"` plus `[data-color='brand'] { --bx-color: …; --bx-color-text: …; --bx-color-contrast: …; }`.
+  `:root` keeps its light value in dark mode while its paired `-contrast` token still flips. The full list: text
+  (`--blux-text`, `-text-toned`, `-text-muted`, `-text-dimmed`, `-text-highlighted`, `-text-inverted`), backgrounds
+  (`--blux-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--blux-border`,
+  `-border-muted`, `-border-accented`, `-border-inverted`), `--blux-radius` and its scale `--blux-radius-xs` to `-3xl`,
+  `--blux-container`, `--blux-header-height` and `--blux-chart-1` to `-6`.
+- **Tailwind utilities** (Tailwind compiled by your app): `text-default`, `text-muted`, `text-dimmed`, `text-toned`,
+  `text-highlighted`, `text-inverted`, `bg-default`, `bg-muted`, `bg-elevated`, `bg-accented`, `bg-inverted`,
+  `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic
+  colors (`bg-primary`, `text-error`…) and `rounded-*`, which follows `--blux-radius`.
+- **Custom color by hand**: `Color="@("brand")"` plus `[data-color='brand'] { --bx-color: …; --bx-color-text: …; --bx-color-contrast: …; }`.
 - **Global theme**: `AddBluxUi(o => o.Button.Slot("base", "font-semibold"))`.
 - **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
   utilities, so they need Tailwind compiled by your app; without it, only classes already in `blux.css` or your own CSS apply.

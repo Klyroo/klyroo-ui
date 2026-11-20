@@ -108,7 +108,8 @@
     /// top is the <c>--bx-sticky-offset</c> CSS variable (0 by default), for pages with a fixed header.
     /// </summary>
     [Parameter] public bool Sticky { get; set; } = true;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public PricingTableUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -44,7 +44,8 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public RenderFragment? Icon { get; set; }
     [Parameter] public RenderFragment? Actions { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public BxVariant Variant { get; set; } = BxVariant.Solid;
 
     /// <summary>Shows a close button that removes the alert.</summary>

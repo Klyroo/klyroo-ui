@@ -158,7 +158,8 @@
     /// <summary>Called with the values by field name once they are valid. The form is busy until the task completes.</summary>
     [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnValidSubmit { get; set; }
     [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnInvalidSubmit { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Replaces the title block.</summary>
     [Parameter] public RenderFragment? Header { get; set; }

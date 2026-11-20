@@ -20,7 +20,8 @@
     [Parameter] public string? Alt { get; set; }
     [Parameter] public string? Text { get; set; }
     [Parameter] public RenderFragment? Icon { get; set; }
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public AvatarUi? Ui { get; set; }
 
     protected override void OnParametersSet()
