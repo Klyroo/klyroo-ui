@@ -14,6 +14,8 @@ internal sealed class ThemeResolver(IClassMerger merger)
 
     public IReadOnlyDictionary<string, string> Resolve(ComponentTheme theme, IReadOnlyDictionary<string, string?> selection)
     {
+        // From here the theme is read-only: the cache below would otherwise serve classes computed before a later change.
+        theme.Freeze();
         var effective = Effective(theme, selection);
         var key = string.Join('|', effective.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => p.Key + "=" + p.Value));
         var perTheme = _cache.GetOrAdd(theme, _ => new());
