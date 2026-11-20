@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-134 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+135 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -31,7 +31,7 @@
 `/components/avatar`. An image of a person, falling back to initials when there is none or it fails to load.
 
 - `<BxAvatar>`
-  - Parameters: `Alt`, `Class`, `Size`, `Src`, `Text`, `Ui`
+  - Parameters: `Alt`, `Class`, `ImageOptions`, `Size`, `Src`, `Text`, `Ui`
   - Slots: `Icon`
   - `Ui` (`AvatarUi`): `Root`, `Image`, `Fallback`
 
@@ -157,6 +157,13 @@
 - `<BxAvatarGroup>`
   - Parameters: `AriaLabel`, `Class`, `Items` (required), `Max`, `Size`, `Ui`
   - `Ui` (`AvatarGroupUi`): `Root`, `Avatar`
+
+### Image
+
+`/components/image`. An img with the width, height, srcset, sizes and loading a provider fills in, like NuxtImg of Nuxt Image.
+
+- `<BxImage>`
+  - Parameters: `Alt` (required), `Class`, `Densities`, `FetchPriority`, `Fit`, `Format`, `Height`, `ImageOptions`, `Loading`, `Modifiers`, `Placeholder`, `Preload`, `Preset`, `Provider`, `Quality`, `Sizes`, `Src` (required), `Width`
 
 ### FieldGroup
 
@@ -483,7 +490,7 @@
 `/components/color-mode-avatar`. An avatar with one image per color mode.
 
 - `<BxColorModeAvatar>`
-  - Parameters: `Alt`, `Class`, `Dark`, `Light`, `Size`, `Text`, `Ui`
+  - Parameters: `Alt`, `Class`, `Dark`, `ImageOptions`, `Light`, `Size`, `Text`, `Ui`
   - Slots: `Icon`
   - `Ui` (`AvatarUi`): `Root`, `Image`, `Fallback`
 
@@ -492,7 +499,7 @@
 `/components/color-mode-image`. An image with one source per color mode.
 
 - `<BxColorModeImage>`
-  - Parameters: `Alt`, `Class`, `Dark`, `Light` (required)
+  - Parameters: `Alt`, `Class`, `Dark`, `ImageOptions`, `Light` (required)
 
 ## Navigation
 
@@ -868,7 +875,7 @@
 `/components/page-logos`. A strip of logos, optionally scrolling as a marquee.
 
 - `<BxPageLogos>`
-  - Parameters: `Class`, `Duration`, `HeadingLevel`, `Items`, `Marquee`, `Title`, `Ui`
+  - Parameters: `Class`, `Duration`, `HeadingLevel`, `ImageOptions`, `Items`, `Marquee`, `Title`, `Ui`
   - Slots: `ChildContent`
   - `Ui` (`PageLogosUi`): `Root`, `Title`, `Items`, `Item`, `Icon`, `Image`, `Marquee`
 - `<PageLogoItem>`
@@ -941,7 +948,7 @@
 `/components/blog-post`. A post card with a cover image, a culture formatted date, a badge and authors. The title is the only link and covers the card.
 
 - `<BxBlogPost>`
-  - Parameters: `Authors`, `Badge`, `BadgeColor`, `Class`, `Color`, `Culture`, `Date`, `DateFormat`, `Description`, `HeadingLevel`, `Href`, `Image`, `ImageAlt`, `Orientation`, `Target`, `Title`, `Ui`, `Variant`
+  - Parameters: `Authors`, `Badge`, `BadgeColor`, `Class`, `Color`, `Culture`, `Date`, `DateFormat`, `Description`, `HeadingLevel`, `Href`, `Image`, `ImageAlt`, `ImageOptions`, `Orientation`, `Target`, `Title`, `Ui`, `Variant`
   - Slots: `Footer`, `Header`, `ChildContent`
   - `Ui` (`BlogPostUi`): `Root`, `Header`, `Image`, `Body`, `Meta`, `Date`, `Badge`, `Title`, `Link`, `Description`, `Authors`, `Footer`
 
@@ -959,7 +966,7 @@
 `/components/changelog-version`. One release: version, date, badge, rich description and authors, with a timeline indicator.
 
 - `<BxChangelogVersion>`
-  - Parameters: `Authors`, `Badge`, `BadgeColor`, `Class`, `Color`, `Culture`, `Date`, `DateFormat`, `Description`, `HeadingLevel`, `Href`, `Image`, `ImageAlt`, `Indicator`, `Target`, `Title`, `Ui`
+  - Parameters: `Authors`, `Badge`, `BadgeColor`, `Class`, `Color`, `Culture`, `Date`, `DateFormat`, `Description`, `HeadingLevel`, `Href`, `Image`, `ImageAlt`, `ImageOptions`, `Indicator`, `Target`, `Title`, `Ui`
   - Slots: `Actions`, `Footer`, `ChildContent`
   - `Ui` (`ChangelogVersionUi`): `Root`, `Indicator`, `Container`, `Header`, `Meta`, `Date`, `Badge`, `Title`, `Link`, `Description`, `Image`, `ImageElement`, `Body`, `Authors`, `Actions`, `Footer`
 
@@ -1111,7 +1118,7 @@
 `/components/chat-attachment`. A file as a chip: an icon or an image preview, its name and size, and a remove button.
 
 - `<BxChatAttachment>`
-  - Parameters: `Class`, `Color`, `Description`, `FileSize`, `Name` (required), `Orientation`, `Removable`, `Size`, `Status`, `Type`, `Ui`, `Url`, `Variant`
+  - Parameters: `Class`, `Color`, `Description`, `FileSize`, `ImageOptions`, `Name` (required), `Orientation`, `Removable`, `Size`, `Status`, `Type`, `Ui`, `Url`, `Variant`
   - Events: `OnRemove`
   - Slots: `Icon`
   - `Ui` (`ChatAttachmentUi`): `Root`, `Leading`, `LeadingIcon`, `Image`, `Wrapper`, `Name`, `Description`, `Remove`, `RemoveIcon`
