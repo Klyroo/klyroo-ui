@@ -11,6 +11,11 @@ internal sealed class FakeNetwork : INetwork
     public Dictionary<string, string> Texts { get; } = new();
     public List<string> Requests { get; } = [];
     public bool Offline { get; set; }
+    /// <summary>
+    /// What the Iconify API really does for a collection it does not have: HTTP 200 with the body <c>404</c> (confirmed against api.iconify.design),
+    /// not an HTTP 404. Off by default, because the font providers do answer 404.
+    /// </summary>
+    public bool UnknownUrlAnswers200With404 { get; set; }
     public byte[] FontBytes { get; set; } = File.ReadAllBytes(Fixture("geist-latin-400.woff2"));
     /// <summary>Per-URL answers that replace <see cref="FontBytes"/>.</summary>
     public Dictionary<string, byte[]> BytesByUrl { get; } = new();
@@ -19,7 +24,9 @@ internal sealed class FakeNetwork : INetwork
     {
         Requests.Add(url);
         if (Offline) throw new HttpRequestException("no network");
-        return Texts.TryGetValue(url, out var text) ? text : throw new DownloadException("404 Not Found for " + url, 404);
+        if (Texts.TryGetValue(url, out var text)) return text;
+        if (UnknownUrlAnswers200With404) return "404";
+        throw new DownloadException("404 Not Found for " + url, 404);
     }
 
     public byte[] GetBytes(string url)

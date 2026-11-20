@@ -59,16 +59,39 @@ public class IconScannerTests
     }
 
     [Fact]
-    public void A_standalone_prefixed_string_is_found_loosely()
+    public void A_standalone_i_prefix_string_is_found_loosely()
     {
         var found = Scan("""
-            var a = "simple-icons:github";
             var b = "i-simple-icons-nuget";
-            var c = cond ? "ph:sun" : "ph:moon";
+            var c = cond ? "i-ph-sun" : "i-ph-moon";
             """);
 
-        Assert.Equal(["ph:moon", "ph:sun", "simple-icons:github", "simple-icons:nuget"], Keys(found));
+        Assert.Equal(["ph:moon", "ph:sun", "simple-icons:nuget"], Keys(found));
         Assert.All(found, m => Assert.Equal(IconDetection.Loose, m.Detection));
+    }
+
+    [Theory]
+    [InlineData("var a = \"memory:cache\";")]
+    [InlineData("var a = \"token:abc\";")]
+    [InlineData("var a = \"map:view\"; var b = \"geo:point\"; var c = \"mi:x\"; var d = \"ix:y\"; var e = \"ri:z\";")]
+    [InlineData("var names = new[] { \"ph:house\", \"mdi:home\" };")]
+    [InlineData("var a = \"simple-icons:github\";")]
+    public void A_prefix_name_string_outside_an_icon_context_is_not_sent_to_the_api(string text)
+    {
+        // Many collection prefixes are ordinary words: "memory:cache" in the code must not cost a download (or, in Release, a failure).
+        Assert.Empty(Scan(text));
+    }
+
+    [Fact]
+    public void The_prefix_name_form_is_read_in_every_icon_context()
+    {
+        var found = Scan("""
+            <BxIcon Name="memory:chip" /> <BxButton LeadingIcon="map:pin" />
+            var x = BxIcons.Named("geo:point"); o.Icons.Close = "ri:close-line";
+            """);
+
+        Assert.Equal(["geo:point", "map:pin", "memory:chip", "ri:close-line"], Keys(found));
+        Assert.All(found, m => Assert.Equal(IconDetection.Context, m.Detection));
     }
 
     [Fact]
@@ -83,7 +106,7 @@ public class IconScannerTests
     public void Custom_prefixes_are_known_to_the_scan_when_the_project_declares_the_collection()
     {
         var found = Scan("""
-            <BxIcon Name="custom:logo" /> <BxIcon Name="i-custom-mark" /> var s = "custom:other";
+            <BxIcon Name="custom:logo" /> <BxIcon Name="i-custom-mark" /> var s = "i-custom-other";
             """, p => p == "custom");
 
         Assert.Equal(["custom:logo", "custom:mark", "custom:other"], Keys(found));
@@ -107,9 +130,7 @@ public class IconScannerTests
     [InlineData("var x = Icons.Close; var y = Icons.Close == \"ph:x\";")]
     public void Does_not_take_ordinary_strings_for_icons(string text)
     {
-        // "ph:x" in the comparison above is a standalone string, the one case allowed through: it is a real icon name.
-        var found = Scan(text).Where(m => m.Icon.Key != "ph:x").ToList();
-        Assert.Empty(found);
+        Assert.Empty(Scan(text));
     }
 
     [Fact]

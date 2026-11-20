@@ -39,9 +39,6 @@ namespace Blux.UI.Internal
         private static readonly Regex Comments = new Regex(@"<!--.*?-->", RegexOptions.Singleline | RegexOptions.Compiled);
         private static readonly Regex Prolog = new Regex(@"<\?.*?\?>|<!DOCTYPE[^>]*>", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Root = new Regex(@"<svg\b(?<attrs>(?:[^>""']|""[^""]*""|'[^']*')*)>", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex Dropped = new Regex(@"<(?<tag>script|foreignObject|title|desc|metadata)\b.*?</\k<tag>\s*>|<(?:script|foreignObject|title|desc|metadata)\b[^>]*/>", RegexOptions.Singleline | RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex EventHandlers = new Regex(@"\s+on[a-z]+\s*=\s*(""[^""]*""|'[^']*')", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex ScriptLinks = new Regex(@"\s+(?:xlink:)?href\s*=\s*(""\s*javascript:[^""]*""|'\s*javascript:[^']*')", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex StyleElement = new Regex(@"<style\b", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex Attribute = new Regex(@"(?<name>[A-Za-z_:][\w:.-]*)\s*=\s*(?:""(?<v>[^""]*)""|'(?<v>[^']*)')", RegexOptions.Compiled);
 
@@ -50,29 +47,25 @@ namespace Blux.UI.Internal
         {
             if (svg == null) throw new ArgumentNullException(nameof(svg));
             var text = Prolog.Replace(Comments.Replace(svg, ""), "");
-            var open = Root.Match(text);
-            if (!open.Success) throw new FormatException("There is no <svg> element.");
-            if (open.Value.EndsWith("/>", StringComparison.Ordinal)) throw new FormatException("The <svg> element is empty.");
+            var root = Root.Match(text);
+            if (!root.Success) throw new FormatException("There is no <svg> element.");
+            if (root.Value.EndsWith("/>", StringComparison.Ordinal)) throw new FormatException("The <svg> element is empty.");
             var close = text.LastIndexOf("</svg", StringComparison.OrdinalIgnoreCase);
-            if (close < open.Index + open.Length) throw new FormatException("The <svg> element is not closed.");
+            if (close < root.Index + root.Length) throw new FormatException("The <svg> element is not closed.");
 
-            var inner = text.Substring(open.Index + open.Length, close - open.Index - open.Length);
+            var inner = text.Substring(root.Index + root.Length, close - root.Index - root.Length);
             if (StyleElement.IsMatch(inner))
             {
                 throw new FormatException("It contains a <style> element, whose rules would apply to the whole page. Use presentation attributes (fill, stroke...) instead.");
             }
-            inner = Dropped.Replace(inner, "");
-            inner = EventHandlers.Replace(inner, "");
-            inner = ScriptLinks.Replace(inner, "");
-            inner = Regex.Replace(inner, @">\s+<", "><").Trim();
-            if (inner.Length == 0) throw new FormatException("The <svg> element is empty.");
-
             var attributes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (Match m in Attribute.Matches(open.Groups["attrs"].Value))
+            foreach (Match m in Attribute.Matches(root.Groups["attrs"].Value))
             {
                 attributes[m.Groups["name"].Value] = m.Groups["v"].Value;
             }
 
+            // The presentation attributes of the root go on a group, then everything is read as XML and written again from an allowlist
+            // (see SvgSanitizer): a filter over the text could not be made safe.
             var group = new StringBuilder();
             foreach (var name in RootPresentation)
             {
@@ -81,9 +74,16 @@ namespace Blux.UI.Internal
                     group.Append(' ').Append(name).Append("=\"").Append(value).Append('"');
                 }
             }
-            if (group.Length > 0) inner = "<g" + group + ">" + inner + "</g>";
+            var namespaces = attributes.Where(a => a.Key.StartsWith("xmlns:", StringComparison.OrdinalIgnoreCase)).ToList();
+            var body = SvgSanitizer.Sanitize(inner, namespaces).Trim();
+            if (body.Length == 0) throw new FormatException("The <svg> element is empty (or holds only content that cannot be inlined: scripts, images, links to other files).");
+            if (group.Length > 0)
+            {
+                var wrapper = SvgSanitizer.Sanitize("<g" + group + "/>", namespaces);
+                body = (wrapper.EndsWith("/>", StringComparison.Ordinal) ? wrapper.Substring(0, wrapper.Length - 2) + ">" : "<g>") + body + "</g>";
+            }
 
-            return new IconBody(inner, ViewBoxOf(attributes));
+            return new IconBody(body, ViewBoxOf(attributes));
         }
 
         private static string ViewBoxOf(Dictionary<string, string> attributes)

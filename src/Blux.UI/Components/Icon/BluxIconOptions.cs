@@ -282,7 +282,7 @@ public sealed class BluxIconOptions
     /// Registers an icon under a name, to use it like any other: <c>o.Icons.Register("custom:logo", "&lt;path d=\"...\" /&gt;", 24, 24)</c>.
     /// <paramref name="body"/> is the markup inside the <c>&lt;svg&gt;</c> element (what Iconify calls an icon's body): give the paths
     /// their own <c>fill</c> or <c>stroke</c> (<c>currentColor</c> follows the text color). A bare name replaces a built-in Lucide icon.
-    /// It is markup written by the app, rendered as it is: never register content from users.
+    /// It is markup written by the app, rendered as it is, so never register content from end users (<see cref="RegisterSvg"/> sanitizes its input, this method does not).
     /// </summary>
     /// <param name="name">The name, in any form (<c>custom:logo</c>, <c>i-custom-logo</c>, <c>logo</c>).</param>
     /// <param name="body">Markup of the icon.</param>
@@ -294,7 +294,10 @@ public sealed class BluxIconOptions
         Register(name, new IconBody(body ?? "", FormattableString.Invariant($"0 0 {width} {height}")));
     }
 
-    /// <summary>Registers an icon from the text of an SVG file: its content becomes the body and its <c>viewBox</c> the drawing area.</summary>
+    /// <summary>
+    /// Registers an icon from the text of an SVG file: its content becomes the body and its <c>viewBox</c> the drawing area. The file is sanitized like the icons
+    /// the build bundles (scripts, handlers, images, external references and styles are removed), but it is still markup your app owns: never register content from end users.
+    /// </summary>
     public void RegisterSvg(string name, string svg)
     {
         IconBody parsed;

@@ -9,6 +9,9 @@
 
     downloads what its cache lacks from the Iconify API, and generates a C# file, added to the compilation, whose module initializer
     registers the icons with Blux.UI. Nothing is requested when the app runs, and a build without network works from the cache.
+    The scan reads "i-prefix-name" strings anywhere and "prefix:name" only in icon places (Icon="...", Name= on BxIcon, BxIcons.Named, o.Icons.X =); it skips
+    dot folders, links and files over 1 MiB, and does nothing when no source, item, option or icon file changed. Every icon body is sanitized (see the Icons guide).
+    When no icon is bundled the generated file is removed and not compiled.
 
       BluxIcons=false         turns the whole feature off (no scan, no download, no generated file).
       BluxIconsScan=false     keeps the BluxIcon and BluxIconCollection items but does not scan the sources.
@@ -25,8 +28,13 @@
     <BluxIconsFailOnError Condition="'$(BluxIconsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</BluxIconsFailOnError>
   </PropertyGroup>
 
+  <!--
+    The generated file must be in @(Compile) before _GenerateCompileDependencyCache hashes the compile inputs (CompileDependsOn runs it just before
+    CoreCompile): a file added after that is not in CoreCompileInputs.cache, so removing it later (BluxIcons=false, no icon left) would not make
+    CoreCompile run again and the old initializer would stay in the assembly.
+  -->
   <Target Name="BluxResolveIcons"
-          BeforeTargets="CoreCompile"
+          BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
           Condition="'$(BluxIcons)' != 'false' And '$(DesignTimeBuild)' != 'true'">
     <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the default is computed here. -->
     <PropertyGroup>
@@ -48,12 +56,32 @@
                       Api="$(BluxIconsApi)"
                       FailOnError="$(BluxIconsFailOnError)"
                       Offline="$(BluxOffline)"
-                      CacheDays="$(BluxIconsCacheDays)" />
+                      CacheDays="$(BluxIconsCacheDays)">
+      <Output TaskParameter="HasIcons" PropertyName="_BluxIconsHasIcons" />
+    </BluxResolveIcons>
 
-    <ItemGroup>
+    <!-- No icon bundled: the task has removed the file, and it stays out of the compilation. -->
+    <ItemGroup Condition="'$(_BluxIconsHasIcons)' == 'true'">
       <Compile Include="$(BluxIconsOutputDir)BluxIcons.g.cs" />
       <FileWrites Include="$(BluxIconsOutputDir)BluxIcons.g.cs" />
     </ItemGroup>
+    <ItemGroup>
+      <FileWrites Include="$(BluxIconsOutputDir)BluxIcons.g.cs.inputs" Condition="Exists('$(BluxIconsOutputDir)BluxIcons.g.cs.inputs')" />
+    </ItemGroup>
+  </Target>
+
+  <!-- BluxIcons=false: a file left by an earlier build with icons is deleted and kept out of the compilation, so the next compile does not register icons that are switched off. -->
+  <Target Name="BluxIconsOff"
+          BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
+          Condition="'$(BluxIcons)' == 'false' And '$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_BluxIconsOffDir Condition="'$(BluxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</_BluxIconsOffDir>
+      <_BluxIconsOffDir Condition="'$(_BluxIconsOffDir)' == ''">$(BluxIconsOutputDir)</_BluxIconsOffDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="$(_BluxIconsOffDir)BluxIcons.g.cs" />
+    </ItemGroup>
+    <Delete Files="$(_BluxIconsOffDir)BluxIcons.g.cs;$(_BluxIconsOffDir)BluxIcons.g.cs.inputs" ContinueOnError="true" />
   </Target>
 
   <!-- Design-time builds (an IDE refreshing IntelliSense) never scan or download: they only keep the file of the last real build in the compilation. -->

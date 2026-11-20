@@ -230,9 +230,10 @@ namespace Blux.UI.Build
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temp = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
-            File.WriteAllBytes(temp, bytes);
             try
             {
+                // Inside the try: a write that fails half way (disk full) must not leave the temporary file behind.
+                File.WriteAllBytes(temp, bytes);
                 if (!File.Exists(path))
                 {
                     try

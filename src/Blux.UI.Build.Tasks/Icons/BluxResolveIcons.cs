@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Microsoft.Build.Framework;
 
 namespace Blux.UI.Build
@@ -45,6 +47,10 @@ namespace Blux.UI.Build
         /// <summary>How long a cached icon is trusted before it is asked again.</summary>
         public int CacheDays { get; set; } = 30;
 
+        /// <summary>False when no icon is bundled: the file is then removed, and the targets leave it out of the compilation.</summary>
+        [Output] public bool HasIcons { get; set; }
+
+
         public override bool Execute()
         {
             try
@@ -82,25 +88,35 @@ namespace Blux.UI.Build
                 options.Folders.Add(new IconFolder(directory, item.GetMetadata("Prefix")));
             }
 
+            var sources = new List<IconSourceStat>();
             if (Scan)
             {
-                var skip = new HashSet<string>(ExcludeDirectories.Select(d => Normalize(d.ItemSpec)), StringComparer.Ordinal);
+                var skip = new HashSet<string>(ExcludeDirectories.Select(d => IconSourceFinder.Normalize(d.ItemSpec)), StringComparer.Ordinal);
                 var roots = new List<string> { project };
                 roots.AddRange(ScanDirectories.Select(d => Path.GetFullPath(Path.Combine(project, d.ItemSpec))));
-                foreach (var root in roots.Distinct(StringComparer.Ordinal))
+                sources = IconSourceFinder.Find(roots, skip, m => Log.LogMessage(MessageImportance.Low, "Blux icons: " + m));
+            }
+
+            // Nothing that decides the bundle changed since the last build that came out clean: the files are not even read.
+            var stamp = OutputFile + ".inputs";
+            var key = InputsKey(project, sources);
+            if (ReadStamp(stamp, out var stampKey, out var stampHasIcons) && stampKey == key && stampHasIcons == File.Exists(OutputFile))
+            {
+                HasIcons = stampHasIcons;
+                Log.LogMessage(MessageImportance.Low, "Blux icons: nothing changed since the last build, the bundle is up to date.");
+                return true;
+            }
+
+            foreach (var source in sources)
+            {
+                try
                 {
-                    if (!Directory.Exists(root)) continue;
-                    foreach (var path in Enumerate(root, skip))
-                    {
-                        try
-                        {
-                            options.Sources.Add(new IconSourceFile(path, File.ReadAllText(path)));
-                        }
-                        catch (IOException)
-                        {
-                            // A file being written by another tool: it is scanned by the next build.
-                        }
-                    }
+                    options.Sources.Add(new IconSourceFile(source.Path, File.ReadAllText(source.Path)));
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    // A file being written by another tool, or one we may not read: it is scanned by the next build.
+                    Log.LogMessage(MessageImportance.Low, "Blux icons: {0} could not be read ({1}) and is not scanned.", source.Path, e.Message);
                 }
             }
 
@@ -133,51 +149,109 @@ namespace Blux.UI.Build
                 }
             }
 
-            Directory.CreateDirectory(Path.GetDirectoryName(OutputFile)!);
-            if (!File.Exists(OutputFile) || File.ReadAllText(OutputFile) != result.Source)
+            if (result.CacheWarning != null)
             {
-                File.WriteAllText(OutputFile, result.Source);
+                Log.LogWarning(subcategory: null, warningCode: "BLUXICON004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: result.CacheWarning);
+            }
+
+            HasIcons = result.IconCount > 0;
+            Directory.CreateDirectory(Path.GetDirectoryName(OutputFile)!);
+            if (HasIcons)
+            {
+                if (!File.Exists(OutputFile) || File.ReadAllText(OutputFile) != result.Source)
+                {
+                    File.WriteAllText(OutputFile, result.Source);
+                }
+            }
+            else if (File.Exists(OutputFile))
+            {
+                // No icon left: the file goes (a leftover would keep registering icons nobody asks for), and the targets drop it from the compilation.
+                File.Delete(OutputFile);
             }
             Log.LogMessage(MessageImportance.Normal, "Blux icons: {0} icon(s) bundled, {1} downloaded.", result.IconCount, result.Downloaded);
+
+            // Only a clean run is remembered: a problem is reported again by the next build until it is fixed.
+            if (!Log.HasLoggedErrors && result.CacheWarning == null && !result.Problems.Any(p => p.Fatal))
+            {
+                WriteStamp(stamp, key, HasIcons);
+            }
+            else
+            {
+                TryDelete(stamp);
+            }
             return !Log.HasLoggedErrors;
         }
 
-        private static readonly string[] Extensions = { ".razor", ".cshtml", ".cs" };
-        private static readonly string[] SkippedNames = { "bin", "obj", "node_modules", ".git", ".vs", "wwwroot" };
-
-        private static IEnumerable<string> Enumerate(string directory, HashSet<string> skip)
+        /// <summary>
+        /// What decides the bundle: the paths, sizes and times of the scanned files and of the files of the collections, the items, the options,
+        /// the day of the cache window (so a cache that expires is refreshed) and this task's assembly (a new Blux.UI may read or write differently).
+        /// </summary>
+        private string InputsKey(string project, List<IconSourceStat> sources)
         {
-            var stack = new Stack<string>();
-            stack.Push(directory);
-            while (stack.Count > 0)
+            var sb = new StringBuilder();
+            sb.Append("task=").Append(typeof(BluxResolveIcons).Assembly.ManifestModule.ModuleVersionId).Append('\n');
+            sb.Append("scan=").Append(Scan).Append(";api=").Append(Api).Append(";fail=").Append(FailOnError).Append(";offline=").Append(Offline)
+              .Append(";cache=").Append(CacheDir).Append(";output=").Append(OutputFile).Append('\n');
+            var days = Math.Max(1, CacheDays);
+            sb.Append("window=").Append(Offline ? 0 : (long)(DateTime.UtcNow - new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc)).TotalDays / days).Append('\n');
+            foreach (var item in Icons.Select(i => i.ItemSpec).OrderBy(i => i, StringComparer.Ordinal)) sb.Append("icon=").Append(item).Append('\n');
+            foreach (var item in Collections)
             {
-                var current = stack.Pop();
-                string[] files;
-                string[] children;
+                var directory = Path.GetFullPath(Path.Combine(project, item.ItemSpec));
+                sb.Append("collection=").Append(directory).Append(';').Append(item.GetMetadata("Prefix")).Append('\n');
                 try
                 {
-                    files = Directory.GetFiles(current);
-                    children = Directory.GetDirectories(current);
+                    foreach (var file in Directory.GetFiles(directory, "*.svg", SearchOption.AllDirectories).OrderBy(f => f, StringComparer.Ordinal))
+                    {
+                        var info = new FileInfo(file);
+                        sb.Append(file).Append('|').Append(info.Length).Append('|').Append(info.LastWriteTimeUtc.Ticks).Append('\n');
+                    }
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
-                    continue;
+                    sb.Append("unreadable\n");
                 }
-                foreach (var file in files.OrderBy(f => f, StringComparer.Ordinal))
-                {
-                    var extension = Path.GetExtension(file);
-                    if (Extensions.Any(x => string.Equals(x, extension, StringComparison.OrdinalIgnoreCase))) yield return file;
-                }
-                foreach (var child in children.OrderByDescending(c => c, StringComparer.Ordinal))
-                {
-                    var name = Path.GetFileName(child);
-                    if (SkippedNames.Contains(name, StringComparer.OrdinalIgnoreCase) || skip.Contains(Normalize(child))) continue;
-                    stack.Push(child);
-                }
+            }
+            foreach (var source in sources) sb.Append(source.Path).Append('|').Append(source.Length).Append('|').Append(source.Ticks).Append('\n');
+            using (var sha = SHA256.Create())
+            {
+                return BitConverter.ToString(sha.ComputeHash(Encoding.UTF8.GetBytes(sb.ToString()))).Replace("-", "");
             }
         }
 
-        private static string Normalize(string path) =>
-            Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        private static bool ReadStamp(string stamp, out string key, out bool hasIcons)
+        {
+            key = "";
+            hasIcons = false;
+            try
+            {
+                var lines = File.ReadAllLines(stamp);
+                if (lines.Length < 2) return false;
+                key = lines[0];
+                hasIcons = lines[1] == "1";
+                return true;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        private static void WriteStamp(string stamp, string key, bool hasIcons)
+        {
+            try
+            {
+                File.WriteAllText(stamp, key + "\n" + (hasIcons ? "1" : "0") + "\n");
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // Without a stamp the next build does the work again.
+            }
+        }
+
+        private static void TryDelete(string path)
+        {
+            try { File.Delete(path); } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { }
+        }
     }
 }
