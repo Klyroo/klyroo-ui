@@ -125,7 +125,12 @@ public class MainActivity : MauiAppCompatActivity
         if (show)
         {
             _keyboardShown = true;
-            webView.RequestFocus();
+            // RequestFocus() defaults to FOCUS_DOWN: a web view that gains focus that way moves the page's focus to its
+            // first focusable element. The web view already has focus while the user navigates it with the remote.
+            if (!webView.HasFocus)
+            {
+                webView.RequestFocus();
+            }
             // After the page focused the field: only then has the web view an input connection to type into.
             webView.PostDelayed(() => manager.ShowSoftInput(webView, ShowFlags.Implicit), 100);
         }

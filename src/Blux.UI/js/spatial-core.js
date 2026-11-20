@@ -50,11 +50,14 @@ export function score(origin, candidate, direction) {
   const shared = horizontal
     ? overlap(origin.top, origin.bottom, candidate.top, candidate.bottom)
     : overlap(origin.left, origin.right, candidate.left, candidate.right);
-  const oc = center(origin);
-  const cc = center(candidate);
-  const across = horizontal ? Math.abs(cc.y - oc.y) : Math.abs(cc.x - oc.x);
-  const penalty = shared > 0 ? 0 : 1000;
-  return along + 2 * across + penalty;
+  // A candidate that shares a row (or column) with the origin is in line: no sideways cost, whatever their sizes, so a
+  // small control aligned under a wide field is reached before a farther one. Otherwise the cost is the gap between
+  // the edges across the axis, plus a penalty so that any in-line candidate wins.
+  if (shared > 0) return along;
+  const across = horizontal
+    ? Math.max(candidate.top - origin.bottom, origin.top - candidate.bottom)
+    : Math.max(candidate.left - origin.right, origin.left - candidate.right);
+  return along + 2 * Math.max(0, across) + 1000;
 }
 
 function center(rect) {

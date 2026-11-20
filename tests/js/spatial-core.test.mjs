@@ -48,3 +48,15 @@ test('elements that overlap on the axis of travel count when their center lies b
 test('maps the arrow keys to directions', () => {
   assert.deepEqual(DIRECTIONS, { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' });
 });
+
+test('a small control aligned under a wide field wins over a farther wide button', () => {
+  // A form: a full-width textarea, a small switch and a checkbox aligned on its left edge, then a full-width button.
+  const bio = box(156, 488, 1120, 176);
+  const toggle = box(156, 706, 90, 50);
+  const terms = box(156, 800, 40, 40);
+  const save = box(156, 886, 1120, 80);
+  assert.equal(pickNext(bio, [toggle, terms, save], 'down'), 0);
+  assert.equal(pickNext(toggle, [bio, terms, save], 'down'), 1);
+  assert.equal(pickNext(terms, [bio, toggle, save], 'down'), 2);
+  assert.equal(pickNext(save, [bio, toggle, terms], 'up'), 2);
+});
