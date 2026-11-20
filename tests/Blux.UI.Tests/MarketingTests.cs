@@ -423,14 +423,15 @@ public class MarketingTests : BluxTestContext
     {
         var date = new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero);
         var previous = CultureInfo.CurrentCulture;
+        var previousUi = CultureInfo.CurrentUICulture;
         try
         {
-            CultureInfo.CurrentCulture = new CultureInfo("en-US");
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("en-US");
             var english = Render<BxBlogPost>(p => p.Add(c => c.Date, date));
             Assert.Equal("2026-11-12", english.Find("time").GetAttribute("datetime"));
             Assert.Equal("November 12, 2026", english.Find("time").TextContent);
 
-            CultureInfo.CurrentCulture = new CultureInfo("fr-FR");
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("fr-FR");
             var french = Render<BxBlogPost>(p => p.Add(c => c.Date, date));
             Assert.Equal("12 novembre 2026", french.Find("time").TextContent);
 
@@ -440,6 +441,7 @@ public class MarketingTests : BluxTestContext
         finally
         {
             CultureInfo.CurrentCulture = previous;
+            CultureInfo.CurrentUICulture = previousUi;
         }
     }
 
@@ -563,9 +565,7 @@ public class MarketingTests : BluxTestContext
         {
             Services.AddBluxUi(o =>
             {
-                o.Strings.AuthFormShowPassword = "Afficher le mot de passe";
-                o.Strings.AuthFormSubmit = "Continuer";
-                o.Strings.AuthFormSeparator = "ou";
+                o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { AuthFormShowPassword = "Afficher le mot de passe", AuthFormSubmit = "Continuer", AuthFormSeparator = "ou" });
             });
             SetRendererInfo(new RendererInfo("Server", true));
         }

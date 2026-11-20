@@ -118,9 +118,9 @@
         _role = ChatValue.Of(Role);
         _author = Role switch
         {
-            ChatRole.User => Options.Strings.ChatUser,
-            ChatRole.System => Options.Strings.ChatSystem,
-            _ => Options.Strings.ChatAssistant,
+            ChatRole.User => Messages.ChatUser,
+            ChatRole.System => Messages.ChatSystem,
+            _ => Messages.ChatAssistant,
         };
         _hasLeading = Leading is not null || Icon is not null || AvatarSrc is not null || AvatarAlt is not null || AvatarText is not null;
         var side = Side ?? (Role == ChatRole.User ? ChatSide.Right : ChatSide.Left);

@@ -8,7 +8,7 @@
 <div class="@_slots["root"]" data-color="@Color.Value" @attributes="AdditionalAttributes">
     <div class="@_slots["container"]">
         <input type="checkbox" role="switch" id="@_id" class="@_slots["input"]" data-bx-color-mode="switch"
-               aria-label="@(Label is null ? (AriaLabel ?? Options.Strings.ToggleColorMode) : null)" />
+               aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)" />
         <span class="@_slots["thumb"]" aria-hidden="true" data-slot="thumb">
             @ColorModeIcons.Moon(_slots["moon"])
             @ColorModeIcons.Sun(_slots["sun"])

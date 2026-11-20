@@ -8,7 +8,7 @@
     {
         <div class="@_slots["left"]">@Left</div>
     }
-    <nav aria-label="@(AriaLabel ?? Options.Strings.FooterLinks)" class="@_slots["nav"]">
+    <nav aria-label="@(AriaLabel ?? Messages.FooterLinks)" class="@_slots["nav"]">
         @foreach (var column in Columns)
         {
             <div class="@_slots["column"]">

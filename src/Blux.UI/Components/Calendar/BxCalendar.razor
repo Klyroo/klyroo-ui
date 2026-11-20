@@ -56,7 +56,7 @@ else
     /// <summary>First column of the grid. Defaults to the culture's first day of the week.</summary>
     [Parameter] public DayOfWeek? WeekStart { get; set; }
 
-    /// <summary>Source of month and day names and of the first day of the week. Defaults to the current culture.</summary>
+    /// <summary>Source of month and day names and of the first day of the week. Defaults to the culture of the locale in effect.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>Accessible name of the calendar.</summary>
@@ -82,7 +82,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _culture = Culture ?? CultureInfo.CurrentCulture;
+        _culture = Culture ?? CurrentLocale.Culture;
         _slots = ResolveSlots(Options.Calendar, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
     }
 
@@ -136,8 +136,8 @@ else
                       months="@string.Join('|', _culture.DateTimeFormat.MonthNames.Take(12))"
                       weekdays="@string.Join('|', _culture.DateTimeFormat.ShortestDayNames)"
                       weekdays-long="@string.Join('|', _culture.DateTimeFormat.DayNames)"
-                      label-prev="@Options.Strings.PreviousMonth"
-                      label-next="@Options.Strings.NextMonth"
+                      label-prev="@Messages.PreviousMonth"
+                      label-next="@Messages.NextMonth"
                       disabled="@(Disabled ? "" : null)"
                       class="@_slots["root"]"
                       data-color="@Color.Value"

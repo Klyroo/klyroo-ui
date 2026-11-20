@@ -281,16 +281,7 @@ public class PickersTests : BluxTestContext
     [InlineData(5L * 1024 * 1024, "5 MB")]
     public void FileUpload_formats_sizes(long bytes, string expected)
     {
-        var previous = CultureInfo.CurrentCulture;
-        CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
-        try
-        {
-            Assert.Equal(expected, BxFileUpload.FormatSize(bytes));
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = previous;
-        }
+        Assert.Equal(expected, Blux.UI.Internal.FileSizeText.Format(bytes, BxLocales.En));
     }
 
     [Fact]

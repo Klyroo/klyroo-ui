@@ -6,7 +6,7 @@
     Plain anchors, not BxLink: a link to "#section" always points at the current page, so an address-based active state
     would mark every anchor as current. Which anchor is in view is up to the page.
 *@
-<nav aria-label="@Options.Strings.PageAnchors" class="@_slots["root"]" @attributes="AdditionalAttributes">
+<nav aria-label="@Messages.PageAnchors" class="@_slots["root"]" @attributes="AdditionalAttributes">
     @if (Links is { Count: > 0 })
     {
         <ul class="@_slots["list"]" data-slot="list">
@@ -29,7 +29,7 @@
                         @if (link.Target == "_blank")
                         {
                             <BxIcon Name="arrow-up-right" Class="@_slots["externalIcon"]" />
-                            <span class="sr-only"> @Options.Strings.OpensInNewTab</span>
+                            <span class="sr-only"> @Messages.OpensInNewTab</span>
                         }
                     </a>
                 </li>

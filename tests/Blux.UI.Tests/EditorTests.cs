@@ -331,10 +331,7 @@ public class EditorLocalizedTests : BluxTestContext
 {
     public EditorLocalizedTests() : base(o =>
     {
-        o.Strings.EditorBold = "Gras";
-        o.Strings.EditorToolbar = "Mise en forme";
-        o.Strings.EditorNoResults = "Aucun resultat";
-        o.Strings.EditorDragHandle = "Deplacer";
+        o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { EditorBold = "Gras", EditorToolbar = "Mise en forme", EditorNoResults = "Aucun resultat", EditorDragHandle = "Deplacer" });
     })
     {
     }

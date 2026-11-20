@@ -55,7 +55,7 @@
     @if (Removable)
     {
         <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="OnRemove"
-                  aria-label="@string.Format(Options.Strings.ChatRemoveAttachment, Name)" Class="@_slots["remove"]"
+                  aria-label="@string.Format(Messages.ChatRemoveAttachment, Name)" Class="@_slots["remove"]"
                   LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Close, _slots["removeIcon"])" />
     }
 </div>
@@ -108,12 +108,12 @@
             ["preview"] = VariantValue.Of(_preview),
         }, Ui, "root");
         var extension = Path.GetExtension(Name).TrimStart('.').ToUpperInvariant();
-        var computed = string.Join(" · ", new[] { extension, FileSize is { } bytes ? ChatValue.Bytes(bytes) : "" }.Where(p => p.Length > 0));
+        var computed = string.Join(" · ", new[] { extension, FileSize is { } bytes ? Blux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale) : "" }.Where(p => p.Length > 0));
         _description = Description ?? (computed.Length > 0 ? computed : null);
         _statusText = Status switch
         {
-            ChatAttachmentStatus.Uploading => Options.Strings.ChatAttachmentUploading,
-            ChatAttachmentStatus.Error => Options.Strings.ChatAttachmentFailed,
+            ChatAttachmentStatus.Uploading => Messages.ChatAttachmentUploading,
+            ChatAttachmentStatus.Error => Messages.ChatAttachmentFailed,
             _ => null,
         };
     }

@@ -21,9 +21,9 @@
         <input name="@Name" type="date" value="@Iso.Date(Value)" @attributes="Attributes()" />
     }
     <span class="@_slots["trigger"]">
-        <BxPopover Placement="bottom-end" AriaLabel="@Options.Strings.ChooseDate" Class="@_slots["content"]">
+        <BxPopover Placement="bottom-end" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
             <ChildContent>
-                <button type="button" class="@_slots["triggerButton"]" aria-label="@Options.Strings.ChooseDate" disabled="@Disabled">
+                <button type="button" class="@_slots["triggerButton"]" aria-label="@Messages.ChooseDate" disabled="@Disabled">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["triggerIcon"]">
                         <path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z" />
                     </svg>
@@ -45,7 +45,7 @@
     /// <summary>Latest date, for the input and the calendar.</summary>
     [Parameter] public DateOnly? Max { get; set; }
 
-    /// <summary>Source of the calendar's month and day names. Defaults to the current culture.</summary>
+    /// <summary>Source of the calendar's month and day names. Defaults to the culture of the locale in effect.</summary>
     [Parameter] public CultureInfo? Culture { get; set; }
 
     /// <summary>First column of the calendar. Defaults to the culture's first day of the week.</summary>

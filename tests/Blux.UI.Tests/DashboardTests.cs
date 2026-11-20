@@ -453,9 +453,7 @@ public class DashboardTests : BluxTestContext
 
 public class DashboardTextsTests() : BluxTestContext(o =>
 {
-    o.Strings.DashboardSearch = "Rechercher";
-    o.Strings.DashboardSearchButton = "Chercher";
-    o.Strings.CollapseSidebar = "Replier";
+    o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { DashboardSearch = "Rechercher", DashboardSearchButton = "Chercher", CollapseSidebar = "Replier" });
 })
 {
     [Fact]

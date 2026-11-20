@@ -107,14 +107,6 @@ internal static class ChatValue
         _ => throw new ArgumentOutOfRangeException(nameof(status), status, null),
     };
 
-    /// <summary>Bytes as a short text: 512 B, 1.5 KB, 2 MB.</summary>
-    public static string Bytes(long bytes) => bytes switch
-    {
-        < 1024 => string.Create(CultureInfo.InvariantCulture, $"{bytes} B"),
-        < 1024 * 1024 => string.Create(CultureInfo.InvariantCulture, $"{bytes / 1024.0:0.#} KB"),
-        < 1024L * 1024 * 1024 => string.Create(CultureInfo.InvariantCulture, $"{bytes / (1024.0 * 1024):0.#} MB"),
-        _ => string.Create(CultureInfo.InvariantCulture, $"{bytes / (1024.0 * 1024 * 1024):0.#} GB"),
-    };
 }
 
 /// <summary>Icons that only the chat components use, so the shared icon set stays as it is.</summary>
