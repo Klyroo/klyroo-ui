@@ -98,7 +98,9 @@ public class MarketingTests : BluxTestContext
         watch.Stop();
 
         Assert.Equal("Enter a valid email address.", cut.Find("p[data-slot=error]").TextContent.Trim());
-        Assert.True(watch.ElapsedMilliseconds < 100, $"validation took {watch.ElapsedMilliseconds} ms");
+        // The guard is the 254-character cap before the regex (and the regex timeout behind it): without them this input
+        // backtracks for seconds. The bound covers the render of the form too, so it stays loose enough for a loaded machine.
+        Assert.True(watch.ElapsedMilliseconds < 1000, $"validation took {watch.ElapsedMilliseconds} ms");
     }
 
     [Fact]
