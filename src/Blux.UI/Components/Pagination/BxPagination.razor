@@ -7,7 +7,7 @@
     Without it the pages are buttons that report through PageChanged and stay disabled until the page is interactive.
 *@
 <nav aria-label="@(AriaLabel ?? Messages.Pagination)" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
-    <ul class="@_slots["list"]">
+    <ul class="@_slots["list"]" data-bx-tight>
         @if (ShowFirstLast)
         {
             <li class="@_slots["item"]">@Control(1, Messages.FirstPage, p => RenderIcon(Options.Icons.ChevronDoubleLeft, p), _page <= 1)</li>

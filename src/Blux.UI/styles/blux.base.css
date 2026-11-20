@@ -297,6 +297,29 @@
       inset-inline: min(0px, calc((100% - var(--bx-hit-x, 2.75rem)) / 2));
       inset-block: min(0px, calc((100% - var(--bx-hit-y, 2.75rem)) / 2));
     }
+    /*
+     * A hit area is painted after the controls before it, so it would cover the right edge of the previous control of a row
+     * (two 24px buttons 4px apart: a tap 4px inside the first one went to the second). Nothing in CSS knows how far the
+     * neighbours are, so a control that shares its parent with others, or sits alone in a wrapper (a list item, a tooltip
+     * trigger) that does, gets no reach along the row: it keeps its own box. The reach across the row (above and below) stays,
+     * which is where a row has free space. Rows that wrap or stack (a vertical group, data-bx-tight on a wrapping list of small
+     * buttons such as the pagination and the editor toolbar) have no free space on either axis and keep their boxes.
+     */
+    :where(:is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(:only-child), :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child, :not(:only-child) > :only-child > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --bx-hit-x: 100%;
+    }
+    :where([data-bx-tight], [data-bx-tight] *) {
+      --bx-hit-x: 100%;
+      --bx-hit-y: 100%;
+    }
+    :where(:where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])),
+    :where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --bx-hit-y: 100%;
+    }
+    /* The items of a list stack, wherever the control sits inside the item (a menu entry, a collapsible's trigger). */
+    :where(li:not(:only-child) :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch']))) {
+      --bx-hit-y: 100%;
+    }
     [data-slot='increment'], [data-slot='decrement'] { --bx-hit-y: 0px; }
     [data-remove] { --bx-hit-x: 1.5rem; --bx-hit-y: 1.5rem; }
     [data-date] { --bx-hit-x: 0px; --bx-hit-y: 0px; }

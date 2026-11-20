@@ -53,7 +53,13 @@ export function score(origin, candidate, direction) {
   // A candidate that shares a row (or column) with the origin is in line: no sideways cost, whatever their sizes, so a
   // small control aligned under a wide field is reached before a farther one. Otherwise the cost is the gap between
   // the edges across the axis, plus a penalty so that any in-line candidate wins.
-  if (shared > 0) return along;
+  // Among in-line candidates at the same distance, the one whose center is nearest the origin's center across the axis
+  // wins (a secondary term, /1000 so it never outweighs a real distance difference of a pixel or more).
+  if (shared > 0) {
+    const oc = center(origin);
+    const cc = center(candidate);
+    return along + Math.abs(horizontal ? cc.y - oc.y : cc.x - oc.x) / 1000;
+  }
   const across = horizontal
     ? Math.max(candidate.top - origin.bottom, origin.top - candidate.bottom)
     : Math.max(candidate.left - origin.right, origin.left - candidate.right);
