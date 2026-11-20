@@ -1,10 +1,12 @@
 namespace Blux.UI.E2E;
 
-/// <summary>The "web, phone, desktop, TV" section of the home page and the screenshots of the MAUI guide.</summary>
+/// <summary>The "web, phone, TV" section of the home page and the screenshots of the MAUI guide.</summary>
 public class PlatformsTests(PlaygroundServer server) : PlaygroundTest(server)
 {
-    private Task<bool> Loaded(string testId) => Page.GetByTestId(testId)
-        .EvaluateAsync<bool>("e => e.complete && e.naturalWidth > 0");
+    /// <summary>Waits until a lazy image is loaded and decoded (naturalWidth is 0 for a broken one).</summary>
+    private Task WaitForImage(string testId) => Page.WaitForFunctionAsync(
+        "id => { const i = document.querySelector(`[data-testid=${id}]`); return i && i.complete && i.naturalWidth > 0; }",
+        testId, new() { Timeout = 30_000 });
 
     private async Task OpenHome()
     {
@@ -21,13 +23,17 @@ public class PlatformsTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(Page.GetByTestId("platform-phone")).ToHaveAttributeAsync("width", "540");
         await Assertions.Expect(Page.GetByTestId("platform-tv")).ToHaveAttributeAsync("width", "1280");
-        await Page.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-testid^=platform-]')].every(e => e.complete)");
-        Assert.True(await Loaded("platform-phone"));
-        Assert.True(await Loaded("platform-tv"));
+        await WaitForImage("platform-phone");
+        await WaitForImage("platform-tv");
         var list = Page.GetByRole(AriaRole.List, new() { Name = "Platform support" });
         await Assertions.Expect(list.GetByRole(AriaRole.Listitem)).ToHaveCountAsync(7);
         await Assertions.Expect(list).ToContainTextAsync("Experimental");
         await Assertions.Expect(list).ToContainTextAsync("Not supported");
+        // Targets that were never built or run must not read as tested.
+        foreach (var target in new[] { "iOS 17+", "Windows", "macOS" })
+        {
+            await Assertions.Expect(list.GetByRole(AriaRole.Listitem).Filter(new() { HasText = target })).ToContainTextAsync("Untested");
+        }
         await Assertions.Expect(Page.GetByRole(AriaRole.Link, new() { Name = "Read the MAUI guide" })).ToHaveAttributeAsync("href", "/docs/maui");
     }
 
@@ -36,10 +42,8 @@ public class PlatformsTests(PlaygroundServer server) : PlaygroundTest(server)
     {
         await OpenGuide("/docs/maui");
         await Page.GetByTestId("maui-tv").ScrollIntoViewIfNeededAsync();
-        await Page.WaitForFunctionAsync("() => [...document.querySelectorAll('[data-testid^=maui-]')].every(e => e.complete)");
-
-        Assert.True(await Loaded("maui-phone"));
-        Assert.True(await Loaded("maui-tv"));
+        await WaitForImage("maui-phone");
+        await WaitForImage("maui-tv");
     }
 
     [Fact]
