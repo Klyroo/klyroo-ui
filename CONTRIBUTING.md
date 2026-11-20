@@ -101,9 +101,12 @@ changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.
    contents, and builds a throwaway Blazor Web App against the package in both CSS modes. It restores from the local NuGet
    cache; add `--online` if framework packages are missing from it.
 5. Commit (`Release X.Y.Z`), then tag `vX.Y.Z` on that commit and push the branch and the tag.
-6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tag equals the
-   package version and that the changelog has the section, rebuilds, tests, runs the packaging check, then pushes the
-   `.nupkg` and `.snupkg` to nuget.org with the `NUGET_API_KEY` repository secret.
+6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tagged commit is
+   on `main`, that the tag equals the package version and that the changelog section is dated, rebuilds, tests and runs
+   the packaging check. A separate `publish` job then pushes the `.nupkg` and `.snupkg` to nuget.org with the
+   `NUGET_API_KEY` secret of the `nuget` environment. Create that environment in the repository settings, with required
+   reviewers if every release should be approved by hand.
 
 Before the first release, fill in `RepositoryUrl` and `PackageProjectUrl` (marked TODO) in `Blux.UI.csproj` once the
-repository is hosted, so nuget.org shows the repository link and SourceLink can map sources.
+repository is hosted, so nuget.org shows the repository link and SourceLink can map sources. Until then the package
+carries no repository URL, even when built in CI.

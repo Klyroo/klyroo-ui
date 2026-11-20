@@ -33,7 +33,8 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- Only once RepositoryUrl is set: otherwise the pack would fill it from the git origin (in CI, the checkout's URL). -->
+    <PublishRepositoryUrl Condition="'$(RepositoryUrl)' != ''">true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
