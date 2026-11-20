@@ -5,6 +5,7 @@
 @code {
     private DotNetObjectReference<SystemBars>? _self;
     private IJSObjectReference? _module;
+    private IJSObjectReference? _watch;
 
     // Follows the color mode of Blux (class "dark" on html) and passes it to the host, which colors the system bars.
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -12,7 +13,7 @@
         if (!firstRender) return;
         _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Blux.Maui.Shared/host.js");
         _self = DotNetObjectReference.Create(this);
-        await _module.InvokeVoidAsync("watchDark", _self);
+        _watch = await _module.InvokeAsync<IJSObjectReference>("watchDark", _self);
     }
 
     [JSInvokable]
@@ -20,10 +21,14 @@
 
     public async ValueTask DisposeAsync()
     {
-        _self?.Dispose();
-        if (_module is not null)
+        try
         {
-            try { await _module.DisposeAsync(); } catch (JSDisconnectedException) { }
+            // Removes the bx-color-mode listener: left in place it would keep calling into a disposed reference.
+            if (_watch is not null) await _watch.InvokeVoidAsync("dispose");
+            if (_watch is not null) await _watch.DisposeAsync();
+            if (_module is not null) await _module.DisposeAsync();
         }
+        catch (JSDisconnectedException) { }
+        finally { _self?.Dispose(); }
     }
 }
