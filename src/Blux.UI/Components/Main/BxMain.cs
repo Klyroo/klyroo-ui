@@ -25,8 +25,10 @@ public sealed class BxMain : BxComponentBase
     {
         builder.OpenElement(0, As);
         builder.AddAttribute(1, "class", _slots["base"]);
-        builder.AddMultipleAttributes(2, AdditionalAttributes);
-        builder.AddContent(3, ChildContent);
+        // Marks the block that owns the bottom safe area inset when no footer follows (a dashboard inside leaves it to it).
+        builder.AddAttribute(2, "data-bx-main", "");
+        builder.AddMultipleAttributes(3, AdditionalAttributes);
+        builder.AddContent(4, ChildContent);
         builder.CloseElement();
     }
 }

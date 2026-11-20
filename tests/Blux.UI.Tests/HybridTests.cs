@@ -154,6 +154,24 @@ public class HybridTests : BluxTestContext
     }
 
     [Fact]
+    public async Task LocaleSelect_in_a_web_view_keeps_the_choice_when_the_parent_renders_again()
+    {
+        JSInterop.Mode = JSRuntimeMode.Loose;
+        UseWebView();
+        var cut = Render<BxLocaleSelect>(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "en"));
+        await cut.InvokeAsync(() => cut.Find("bx-select").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "fr", Sequence = 1 }));
+
+        // An OnLocaleChange handler that renders the parent again hands the same parameters back: the culture in effect is
+        // still the old one (the choice applies at the next start), but the select must not snap back to it.
+        cut.Render(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "en"));
+        Assert.Equal("fr", cut.Find("bx-select").GetAttribute("value"));
+
+        // A new Value from the parent is a new decision of the app: it wins.
+        cut.Render(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "de"));
+        Assert.Equal("de", cut.Find("bx-select").GetAttribute("value"));
+    }
+
+    [Fact]
     public void App_spatial_navigation_renders_the_element_that_turns_tv_mode_on_only_when_asked()
     {
         Assert.Empty(Render<BxApp>().FindAll("bx-spatial"));

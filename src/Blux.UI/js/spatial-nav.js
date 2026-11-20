@@ -1,28 +1,35 @@
 import { DIRECTIONS, pickNext } from './spatial-core.js';
+import { pickTopmost, pickConfinement } from './overlay-core.js';
+import { editKind, wantsKeyboard, enterLeaves, stepOf, caretAfter } from './tv-edit-core.js';
 
 /**
  * Remote control (D-pad) navigation for TV screens. Experimental and opt in: it runs only while <html> carries
  * data-bx-tv, which <BxApp SpatialNavigation="true">, the <bx-spatial> element or Blux.setSpatialNavigation(true) set.
  *
  * - The arrow keys move focus to the nearest focusable element in that direction (see spatial-core.js). Widgets that
- *   already use the arrows (menus, tabs, listboxes, sliders) call preventDefault, so their own navigation wins;
- *   text fields and native radio groups keep the arrows they need.
- * - Inside a modal dialog or an open popover, focus stays in it (candidates are limited to that container).
+ *   already use the arrows (open menus, tabs, listboxes, sliders) call preventDefault, so their own navigation wins.
+ *   A field never keeps the arrows by itself: a forwarded key has no default action, so a text field, a textarea, a
+ *   select or a number would trap the focus. Select/Enter puts a field in editing mode (data-bx-editing): text
+ *   fields get the caret (and the soft keyboard, see Blux.tvTextEditing), number, range and native selects take the
+ *   arrows as value changes. Back, or Enter in a single line field, leaves it.
+ * - Inside the topmost modal dialog, or an open popover holding the focus, focus stays in it.
  * - A web view on Android TV may not receive the D-pad as key events: the app forwards them from the Activity with
  *   Blux.tvKey('ArrowLeft'), which dispatches a synthetic keydown. Synthetic Enter clicks the focused element and
- *   synthetic Escape (the Back button) closes the topmost overlay, because untrusted events have no default action.
- * - Blux.tvBack() closes the topmost overlay or goes back in the history, and returns false when there is nothing
- *   left to close, so the app can leave the screen.
+ *   synthetic Escape (the Back button) leaves editing mode or closes the topmost overlay, because untrusted events
+ *   have no default action.
+ * - Blux.tvBack() leaves editing mode, else closes the topmost overlay (the one opened last; a modal that is not
+ *   dismissible swallows Back), else goes back in the history. It returns false when there is nothing left, so the
+ *   app can leave the screen.
  */
 const ATTRIBUTE = 'data-bx-tv';
+const EDITING = 'data-bx-editing';
 const FOCUSABLE_TV =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), ' +
   '[tabindex]:not([tabindex="-1"]), summary, [contenteditable="true"]';
 
-const TEXT_INPUTS = new Set(['text', 'search', 'email', 'url', 'tel', 'password', '']);
-
 let owners = 0;
 let enabled = false;
+let editing = null;
 
 export function isSpatialNavigationOn() {
   return document.documentElement.hasAttribute(ATTRIBUTE);
@@ -34,6 +41,7 @@ export function setSpatialNavigation(on) {
     root.setAttribute(ATTRIBUTE, '');
     start();
   } else {
+    leaveEditing();
     root.removeAttribute(ATTRIBUTE);
   }
 }
@@ -41,11 +49,54 @@ export function setSpatialNavigation(on) {
 function start() {
   if (enabled) return;
   enabled = true;
+  // Capture: the arrows and Back are decided before a widget of the field (a number stepper, a modal) sees them.
+  document.addEventListener('keydown', onKeyDownCapture, true);
   document.addEventListener('keydown', onKeyDown);
+  document.addEventListener('focusout', onFocusOut);
   // Something must have focus for the arrows to move from.
   requestAnimationFrame(() => {
     if (isSpatialNavigationOn() && (document.activeElement === document.body || !document.activeElement)) focusFirst(container(null));
   });
+}
+
+// Overlays, in the order they opened. The DOM does not tell what is on top: a popover opened from a dialog comes later
+// in the document, but a menu can also open from a page that is earlier in it. "beforetoggle" fires synchronously when a
+// popover opens; a dialog has no such event, so its "open" attribute is watched (pending records are flushed before every
+// stamp and read, which keeps the order of two overlays opened in the same task).
+const stamps = new WeakMap();
+let sequence = 0;
+let dialogWatch = null;
+
+function flushDialogs() {
+  if (!dialogWatch) return;
+  for (const record of dialogWatch.takeRecords()) {
+    const dialog = record.target;
+    if (record.oldValue === null && dialog.hasAttribute('open')) stamps.set(dialog, ++sequence);
+  }
+}
+
+if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') {
+  dialogWatch = new MutationObserver(flushDialogs);
+  dialogWatch.observe(document, { subtree: true, attributes: true, attributeFilter: ['open'], attributeOldValue: true });
+  document.addEventListener(
+    'beforetoggle',
+    (event) => {
+      if (event.newState !== 'open') return;
+      flushDialogs();
+      stamps.set(event.target, ++sequence);
+    },
+    true,
+  );
+}
+
+function openLayers() {
+  flushDialogs();
+  return [...document.querySelectorAll('dialog[open], [popover]:popover-open')].map((element, order) => ({
+    element,
+    order,
+    stamp: stamps.get(element) ?? 0,
+    modal: element.matches('dialog:modal'),
+  }));
 }
 
 function visible(element) {
@@ -54,12 +105,12 @@ function visible(element) {
   return getComputedStyle(element).visibility !== 'hidden';
 }
 
-/** The element that confines navigation: the topmost modal dialog, an open popover holding the focus, else the document. */
+/** The element that confines navigation: the topmost modal dialog, an open popover holding the focus that opened after it, else the document. */
 function container(from) {
-  const dialogs = document.querySelectorAll('dialog[open]');
-  if (dialogs.length > 0) return dialogs[dialogs.length - 1];
-  const popover = from?.closest?.('[popover]:popover-open');
-  return popover ?? document;
+  const layers = openLayers();
+  const modals = layers.filter((layer) => layer.modal);
+  const holders = from instanceof Element ? layers.filter((layer) => layer.element.hasAttribute('popover') && layer.element.contains(from)) : [];
+  return pickConfinement(modals, holders)?.element ?? document;
 }
 
 function candidates(scope) {
@@ -82,21 +133,68 @@ function focusFirst(scope) {
   return true;
 }
 
-/** Arrows that the focused element needs for itself. */
-function keepsArrow(target, key) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target.isContentEditable) return true;
-  if (target instanceof HTMLInputElement) {
-    const type = target.type;
-    if (type === 'radio' || type === 'range' || type === 'number') return true;
-    if (TEXT_INPUTS.has(type)) {
-      if (key === 'ArrowUp' || key === 'ArrowDown') return false;
-      const { selectionStart: start, selectionEnd: end, value } = target;
-      if (start === null || start !== end) return true;
-      return key === 'ArrowLeft' ? start > 0 : start < value.length;
-    }
+function kindOf(element) {
+  if (!(element instanceof HTMLElement)) return null;
+  return editKind({ tag: element.tagName.toLowerCase(), type: element.type ?? '', editable: element.isContentEditable });
+}
+
+function enterEditing(element) {
+  if (editing === element) return;
+  leaveEditing();
+  editing = element;
+  element.setAttribute(EDITING, '');
+  element.focus();
+  const length = element.value?.length;
+  // The caret goes to the end; types without a selection API (email, number) have none to place.
+  if (typeof length === 'number' && element.selectionStart !== null && element.setSelectionRange) element.setSelectionRange(length, length);
+  else if (element.isContentEditable) placeCaretAtEnd(element);
+  announce(true);
+}
+
+function leaveEditing() {
+  if (!editing) return;
+  const element = editing;
+  editing = null;
+  element.removeAttribute(EDITING);
+  announce(false, element);
+}
+
+function placeCaretAtEnd(element) {
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  const selection = getSelection();
+  selection?.removeAllRanges();
+  selection?.addRange(range);
+}
+
+/**
+ * Tells the host app that a field entered or left editing mode: a "bx-tv-edit" event on the document (detail.editing,
+ * detail.keyboard) and the optional Blux.onEditField(editing, keyboard) callback. The Android TV sample uses it to show
+ * and hide the soft keyboard, which a script focus alone may not open.
+ */
+function announce(on, element = editing) {
+  const keyboard = on && element ? wantsKeyboard(kindOf(element), element.type) : false;
+  document.dispatchEvent(new CustomEvent('bx-tv-edit', { detail: { editing: on, keyboard, element } }));
+  try {
+    globalThis.Blux?.onEditField?.(on, keyboard);
+  } catch {
+    // An app callback must not break navigation.
   }
-  return false;
+}
+
+/** True while a field that is typed into (text, textarea, number) is in editing mode: the soft keyboard is wanted. */
+export function tvTextEditing() {
+  return editing !== null && wantsKeyboard(kindOf(editing), editing.type);
+}
+
+function onFocusOut(event) {
+  const element = event.target;
+  if (editing !== element) return;
+  // The window losing focus also fires it, with the field still the active element: not a move of the focus.
+  setTimeout(() => {
+    if (editing === element && document.activeElement !== element) leaveEditing();
+  });
 }
 
 function move(direction, target) {
@@ -115,27 +213,116 @@ function move(direction, target) {
   return true;
 }
 
-/** Closes the topmost overlay. Returns true when it closed one. */
+/**
+ * Closes the topmost overlay, the one opened last. Returns "closed", "blocked" when it refused (a modal that is not
+ * dismissible: the app must not treat Back as unused and leave), or null when there was no overlay.
+ */
 function closeOverlay() {
-  const dialogs = document.querySelectorAll('dialog[open]');
-  if (dialogs.length > 0) {
-    dialogs[dialogs.length - 1].close();
-    return true;
+  const top = pickTopmost(openLayers());
+  if (!top) return null;
+  const element = top.element;
+  if (element instanceof HTMLDialogElement) {
+    // The "cancel" a close request (Escape) raises: <bx-modal> cancels it unless it is dismissible.
+    const request = new Event('cancel', { cancelable: true });
+    element.dispatchEvent(request);
+    if (request.defaultPrevented) return 'blocked';
+    element.close();
+    return 'closed';
   }
-  const popovers = document.querySelectorAll('[popover]:popover-open');
-  if (popovers.length > 0) {
-    popovers[popovers.length - 1].hidePopover();
-    return true;
+  element.hidePopover();
+  return 'closed';
+}
+
+function hasModifier(event) {
+  return event.ctrlKey || event.altKey || event.metaKey;
+}
+
+function onKeyDownCapture(event) {
+  if (!isSpatialNavigationOn() || event.defaultPrevented || hasModifier(event)) return;
+  const target = event.target;
+  if (editing && target !== editing) leaveEditing();
+
+  if (editing && (event.key === 'Escape' || event.key === 'GoBack')) {
+    leaveEditing();
+    event.preventDefault();
+    event.stopPropagation();
+    return;
   }
-  return false;
+
+  const kind = kindOf(target);
+  if (!kind) return;
+  // A widget list that is open (a combobox) navigates itself.
+  if (target.getAttribute('aria-expanded') === 'true') return;
+
+  if (event.key === 'Enter' && !event.isTrusted) {
+    if (editing === target || target.readOnly) return;
+    enterEditing(target);
+    event.preventDefault();
+    event.stopPropagation();
+    return;
+  }
+
+  const direction = DIRECTIONS[event.key];
+  if (!direction || event.shiftKey || editing === target) return;
+  if (move(direction, target)) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+}
+
+function insertNewline(target) {
+  if (target.isContentEditable) {
+    document.execCommand?.('insertLineBreak');
+    return;
+  }
+  target.setRangeText('\n', target.selectionStart, target.selectionEnd, 'end');
+  target.dispatchEvent(new InputEvent('input', { bubbles: true, inputType: 'insertLineBreak' }));
+}
+
+/** What an arrow does to the field being edited, since a forwarded key has no default action. */
+function editArrow(target, key) {
+  const kind = kindOf(target);
+  if (kind === 'text') {
+    if (target.isContentEditable) {
+      const vertical = key === 'ArrowUp' || key === 'ArrowDown';
+      getSelection()?.modify?.('move', key === 'ArrowLeft' || key === 'ArrowUp' ? 'backward' : 'forward', vertical ? 'line' : 'character');
+    } else if (target.selectionStart !== null && target.setSelectionRange) {
+      const caret = caretAfter(target.value, target.selectionStart, key, target instanceof HTMLTextAreaElement);
+      target.setSelectionRange(caret, caret);
+    }
+    return;
+  }
+  const step = stepOf(key);
+  if (kind === 'step') {
+    try {
+      if (step > 0) target.stepUp();
+      else target.stepDown();
+    } catch {
+      return;
+    }
+  } else if (kind === 'select') {
+    const index = Math.min(Math.max(target.selectedIndex - step, 0), target.options.length - 1);
+    if (index === target.selectedIndex) return;
+    target.selectedIndex = index;
+  } else {
+    return;
+  }
+  target.dispatchEvent(new Event('input', { bubbles: true }));
+  target.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
 function onKeyDown(event) {
-  if (!isSpatialNavigationOn() || event.defaultPrevented || event.ctrlKey || event.altKey || event.metaKey) return;
+  if (!isSpatialNavigationOn() || event.defaultPrevented || hasModifier(event)) return;
   const target = event.target;
 
   // Untrusted events (forwarded by the app) have no default action: do what the key would have done.
   if (!event.isTrusted) {
+    if (event.key === 'Enter' && editing === target) {
+      event.preventDefault();
+      if (enterLeaves({ tag: target.tagName.toLowerCase(), editable: target.isContentEditable })) leaveEditing();
+      else insertNewline(target);
+      return;
+    }
     if (event.key === 'Enter' || event.key === ' ') {
       if (target instanceof HTMLElement && target !== document.body) {
         event.preventDefault();
@@ -150,7 +337,16 @@ function onKeyDown(event) {
   }
 
   const direction = DIRECTIONS[event.key];
-  if (!direction || event.shiftKey || keepsArrow(target, event.key)) return;
+  if (!direction || event.shiftKey) return;
+  if (editing === target) {
+    if (!event.isTrusted) {
+      event.preventDefault();
+      editArrow(target, event.key);
+    }
+    return;
+  }
+  // A field that could not move the focus (nothing in that direction) leaves the key alone.
+  if (kindOf(target)) return;
   if (move(direction, target)) event.preventDefault();
 }
 
@@ -162,8 +358,15 @@ export function tvKey(key) {
   return event.defaultPrevented;
 }
 
-/** The Back button: closes the topmost overlay, else goes back in the history. False when nothing is left to go back to. */
+/**
+ * The Back button: leaves editing mode, else closes the topmost overlay, else goes back in the history. A modal that is
+ * not dismissible swallows it (true: the page used the key). False when nothing is left to go back to.
+ */
 export function tvBack() {
+  if (editing) {
+    leaveEditing();
+    return true;
+  }
   if (closeOverlay()) return true;
   const navigation = globalThis.navigation;
   if (navigation && typeof navigation.canGoBack === 'boolean') {

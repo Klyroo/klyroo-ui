@@ -20,6 +20,24 @@
         </Footer>
     </BxModal>
 
+    <BxModal Title="Delete project?" Description="Back and Escape do nothing here: choose a button." Dismissible="false" Close="false" Size="BxSize.Sm">
+        <ChildContent><BxButton Label="Confirm modal" Variant="ButtonVariant.Outline" data-testid="confirm-trigger" /></ChildContent>
+        <Footer>
+            <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-bx-close />
+            <BxButton Label="Delete" Color="BxColor.Error" data-bx-close />
+        </Footer>
+    </BxModal>
+
+    <BxModal Title="Shipping" Description="Back closes the open list first, then the modal.">
+        <ChildContent><BxButton Label="Modal with select" Variant="ButtonVariant.Outline" data-testid="modal-select-trigger" /></ChildContent>
+        <Body>
+            <BxFormField Label="Country">
+                <BxSelect @bind-Value="_country" Items="_countries" Placeholder="Choose a country" />
+            </BxFormField>
+        </Body>
+        <Footer><BxButton Label="Close" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close /></Footer>
+    </BxModal>
+
     <BxSlideover Title="Settings" Description="A panel docked to an edge.">
         <ChildContent><BxButton Label="Slideover" Variant="ButtonVariant.Outline" data-testid="slideover-trigger" /></ChildContent>
         <Body><p class="text-sm text-(--blux-text-muted)">The panel keeps clear of the notch and the gesture bar.</p></Body>
@@ -45,6 +63,9 @@
 @code {
     private bool _modal;
     private string? _last;
+    private string? _country;
+
+    private static readonly BxSelectItem[] _countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
 
     private static readonly BxMenuItem[] _items =
     [

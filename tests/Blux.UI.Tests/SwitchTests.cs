@@ -17,7 +17,7 @@ public class SwitchTests : BluxTestContext
         Assert.Equal("notify", input.GetAttribute("name"));
         Assert.Equal("true", input.GetAttribute("value"));
         Assert.True(input.HasAttribute("checked"));
-        Assert.Equal(input.Id, cut.Find("label").GetAttribute("for"));
+        Assert.Equal(input.Id, cut.Find("label[for]").GetAttribute("for"));
     }
 
     [Fact]

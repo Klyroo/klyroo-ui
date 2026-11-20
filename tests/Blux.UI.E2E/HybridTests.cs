@@ -158,7 +158,7 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
         Assert.Equal("Show error", await Page.EvaluateAsync<string>("() => document.activeElement.textContent.trim()"));
         await Page.EvaluateAsync("() => Blux.tvKey('Enter')");
 
-        await Assertions.Expect(Page.GetByText("Upload failed")).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByText("Upload failed", new() { Exact = true })).ToBeVisibleAsync();
     }
 
     [Fact]
@@ -173,6 +173,211 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
 
         Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
         await Assertions.Expect(Page.GetByRole(AriaRole.Dialog)).ToBeHiddenAsync();
+    }
+
+    // What the Android TV activity does: a key is sent into the page as an untrusted keydown.
+    private static Task<bool> Key(IPage page, string key) => page.EvaluateAsync<bool>("(k) => Blux.tvKey(k)", key);
+
+    private static Task<string?> Active(IPage page) =>
+        page.EvaluateAsync<string?>("() => document.activeElement?.closest('[data-testid]')?.getAttribute('data-testid') ?? document.activeElement?.tagName");
+
+    private static Task<int> OpenPopovers(IPage page) =>
+        page.EvaluateAsync<int>("() => document.querySelectorAll('[popover]:popover-open').length");
+
+    [Fact]
+    public async Task A_form_can_be_walked_through_with_the_remote_in_both_directions()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByTestId("tv-name").FocusAsync();
+
+        // Arrows leave a text field, a select and a textarea: none of them keeps the focus.
+        foreach (var expected in new[] { "tv-country", "tv-bio", "tv-save" })
+        {
+            await Key(Page, "ArrowDown");
+            Assert.Equal(expected, await Active(Page));
+        }
+        foreach (var expected in new[] { "tv-bio", "tv-country", "tv-name" })
+        {
+            await Key(Page, "ArrowUp");
+            Assert.Equal(expected, await Active(Page));
+        }
+        Assert.Equal(0, await OpenPopovers(Page));
+    }
+
+    [Fact]
+    public async Task Select_opens_a_select_in_TV_mode_and_the_arrows_pick_inside_the_list()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByTestId("tv-country").FocusAsync();
+
+        await Key(Page, "Enter");
+        Assert.True(await OpenPopovers(Page) > 0);
+        await Key(Page, "ArrowDown");
+        await Key(Page, "Enter");
+
+        await Assertions.Expect(Page.GetByTestId("tv-country-state")).ToHaveTextAsync("Selected: de");
+        Assert.Equal(0, await OpenPopovers(Page));
+        Assert.Equal("tv-country", await Active(Page));
+        await Key(Page, "ArrowDown");
+        Assert.Equal("tv-bio", await Active(Page));
+    }
+
+    [Fact]
+    public async Task Text_fields_take_the_arrows_only_in_editing_mode_which_Select_enters_and_Back_leaves()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByTestId("tv-bio").FocusAsync();
+        var bio = Page.GetByTestId("tv-bio");
+
+        await Key(Page, "Enter");
+        await Assertions.Expect(bio).ToHaveAttributeAsync("data-bx-editing", "");
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvTextEditing()"));
+        await Page.Keyboard.TypeAsync("one");
+        await Key(Page, "Enter");
+        await Page.Keyboard.TypeAsync("two");
+        await Key(Page, "ArrowUp");
+        await Key(Page, "ArrowLeft");
+        // Editing: the arrows stayed in the field and moved the caret, Enter was a line break.
+        Assert.Equal("tv-bio", await Active(Page));
+        Assert.Equal("one\ntwo", await bio.InputValueAsync());
+        Assert.Equal(2, await bio.EvaluateAsync<int>("(e) => e.selectionStart"));
+
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        await Assertions.Expect(bio).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        Assert.False(await Page.EvaluateAsync<bool>("() => Blux.tvTextEditing()"));
+        await Key(Page, "ArrowUp");
+        Assert.Equal("tv-country", await Active(Page));
+    }
+
+    [Fact]
+    public async Task Enter_leaves_editing_a_single_line_field()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        var name = Page.GetByTestId("tv-name");
+        await name.FocusAsync();
+
+        await Key(Page, "Enter");
+        await Assertions.Expect(name).ToHaveAttributeAsync("data-bx-editing", "");
+        await Key(Page, "ArrowRight");
+        Assert.Equal("tv-name", await Active(Page));
+        await Key(Page, "Enter");
+
+        await Assertions.Expect(name).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        await Key(Page, "ArrowDown");
+        Assert.Equal("tv-country", await Active(Page));
+    }
+
+    [Fact]
+    public async Task Forwarded_arrows_change_a_number_a_range_and_a_native_select_in_editing_mode()
+    {
+        await Open("server", "select");
+        await Page.EvaluateAsync("""
+            () => {
+              const box = document.createElement('div');
+              box.innerHTML = '<input id="n" type="number" value="5" step="1" /><input id="r" type="range" min="0" max="10" value="2" /><select id="s"><option>a</option><option>b</option><option>c</option></select>';
+              document.querySelector('[data-testid=tv-form]').after(box);
+              Blux.setSpatialNavigation(true);
+            }
+            """);
+        foreach (var (id, expected, key) in new[] { ("n", "6", "ArrowUp"), ("r", "1", "ArrowLeft"), ("s", "b", "ArrowDown") })
+        {
+            await Page.Locator("#" + id).FocusAsync();
+            // Not editing: the arrow moves the focus away and the value stays.
+            await Key(Page, key);
+            Assert.NotEqual(id, await Page.EvaluateAsync<string>("() => document.activeElement.id"));
+            await Page.Locator("#" + id).FocusAsync();
+            await Key(Page, "Enter");
+            await Key(Page, key);
+            Assert.Equal(expected, await Page.Locator("#" + id).EvaluateAsync<string>("(e) => e.tagName === 'SELECT' ? e.value : String(e.value)"));
+            await Key(Page, "Escape");
+            await Assertions.Expect(Page.Locator("#" + id)).Not.ToHaveAttributeAsync("data-bx-editing", "");
+        }
+    }
+
+    [Fact]
+    public async Task Back_does_not_close_a_modal_that_is_not_dismissible_and_does_not_leave_the_app()
+    {
+        await Open("server", "modal");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Delete project" }).ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Delete project?" });
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+
+        // True: the page took the key (the app must not go to the background either), and the modal stays.
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        Assert.True(await Key(Page, "Escape"));
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+
+        await dialog.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+        Assert.False(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+    }
+
+    [Fact]
+    public async Task Back_closes_the_open_list_of_a_select_in_a_modal_before_the_modal()
+    {
+        await Open("server", "modal");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        await Page.GetByTestId("modal-select-trigger").ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Shipping" });
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await Page.GetByTestId("modal-country").ClickAsync();
+        Assert.Equal(1, await OpenPopovers(Page));
+
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        Assert.Equal(0, await OpenPopovers(Page));
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+
+    [Fact]
+    public async Task Back_closes_the_overlay_opened_last_even_when_it_comes_first_in_the_document()
+    {
+        await Open("server", "button");
+        await Page.EvaluateAsync("""
+            () => {
+              Blux.setSpatialNavigation(true);
+              const box = document.createElement('div');
+              box.innerHTML = '<div id="pop" popover>menu</div><dialog id="dlg"><button>ok</button></dialog>';
+              document.body.append(box);
+              document.getElementById('dlg').showModal();
+              document.getElementById('pop').showPopover();
+            }
+            """);
+
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        Assert.False(await Page.EvaluateAsync<bool>("() => document.getElementById('pop').matches(':popover-open')"));
+        Assert.True(await Page.EvaluateAsync<bool>("() => document.getElementById('dlg').open"));
+
+        Assert.True(await Page.EvaluateAsync<bool>("() => Blux.tvBack()"));
+        Assert.False(await Page.EvaluateAsync<bool>("() => document.getElementById('dlg').open"));
+    }
+
+    [Fact]
+    public async Task A_dialog_that_is_not_modal_does_not_confine_the_arrows()
+    {
+        await Open("server", "tooltip");
+        await Page.EvaluateAsync("""
+            () => {
+              Blux.setSpatialNavigation(true);
+              const dialog = document.createElement('dialog');
+              dialog.innerHTML = '<button id="inside">inside</button>';
+              document.body.append(dialog);
+              dialog.show();
+            }
+            """);
+        await Page.Locator("main button", new() { HasTextRegex = new Regex("^top$") }).FocusAsync();
+
+        await Key(Page, "ArrowRight");
+
+        Assert.NotEqual("inside", await Page.EvaluateAsync<string>("() => document.activeElement.id"));
+        Assert.NotEqual("top", await Page.EvaluateAsync<string>("() => document.activeElement.textContent.trim()"));
     }
 
     [Fact]
@@ -191,16 +396,171 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 
-    [Fact]
-    public async Task Coarse_pointers_get_targets_of_at_least_44_pixels()
+    private async Task<IPage> NewTouchPage()
     {
         var context = await NewContext(new() { HasTouch = true, IsMobile = true, ViewportSize = new() { Width = 390, Height = 800 } });
-        var page = await context.NewPageAsync();
+        return await context.NewPageAsync();
+    }
+
+    private static Task<double[]> Size(ILocator locator) =>
+        locator.EvaluateAsync<double[]>("(e) => { const r = e.getBoundingClientRect(); return [r.width, r.height]; }");
+
+    // The element at a point, as the id of the element or of its closest control: what a finger there would press.
+    private static Task<string?> HitAt(IPage page, double x, double y) =>
+        page.EvaluateAsync<string?>("([x, y]) => { const e = document.elementFromPoint(x, y); const c = e?.closest('button, label, input, [data-slot]'); return c?.getAttribute('data-hit') ?? c?.tagName.toLowerCase() ?? null; }", new[] { x, y });
+
+    private static Task<string> HitDate(IPage page, double x, double y) =>
+        page.EvaluateAsync<string>(FormattableString.Invariant($"() => document.elementFromPoint({x}, {y})?.closest('button')?.dataset.date ?? ''"));
+
+    [Fact]
+    public async Task Coarse_pointers_get_a_hit_area_of_44_pixels_around_an_icon_button_without_changing_its_size()
+    {
+        var page = await NewTouchPage();
+        await Open(page, "server", "button");
+        var icon = page.Locator("main button:has(svg:only-child)").First;
+        var before = await Size(icon);
+        Assert.True(before[0] < 44 || before[1] < 44, $"the test needs a button under 44px, got {before[0]}x{before[1]}");
+        var reaches = await icon.EvaluateAsync<bool[]>("""
+            (b) => {
+              b.scrollIntoView({ block: 'center' });
+              const r = b.getBoundingClientRect();
+              const x = r.x + r.width / 2;
+              const y = r.y + r.height / 2;
+              return [[20, 0], [-20, 0], [0, 20], [0, -20]].map(([dx, dy]) => { const e = document.elementFromPoint(x + dx, y + dy); return !!e && b.contains(e); });
+            }
+            """);
+
+        Assert.All(reaches, reached => Assert.True(reached, "a point 20px from the icon center does not hit the button"));
+        Assert.Equal(before, await Size(icon));
+    }
+
+    [Fact]
+    public async Task Coarse_pointers_keep_the_size_of_the_buttons_in_the_layout()
+    {
+        var page = await NewTouchPage();
         await Open(page, "server", "button");
 
-        var heights = await page.EvaluateAsync<double[]>("() => [...document.querySelectorAll('main button')].filter((b) => b.getClientRects().length).map((b) => b.getBoundingClientRect().height)");
+        var small = await page.EvaluateAsync<double[]>("() => [...document.querySelectorAll('main button')].filter((b) => b.getClientRects().length).map((b) => b.getBoundingClientRect().height).filter((h) => h < 40)");
 
-        Assert.NotEmpty(heights);
-        Assert.All(heights, h => Assert.True(h >= 43.5, $"button of {h}px"));
+        // A mouse and a finger see the same layout: the 36px (and smaller) buttons are still there, with no min-height forced on them.
+        Assert.NotEmpty(small);
+    }
+
+    [Fact]
+    public async Task Coarse_pointers_keep_the_switch_track_at_its_size_and_toggle_it_from_the_hit_area()
+    {
+        var page = await NewTouchPage();
+        await Open(page, "server", "switch");
+        var toggle = page.GetByRole(AriaRole.Switch, new() { Name = "Email notifications" });
+
+        Assert.Equal(new[] { 36d, 20d }, await Size(toggle));
+
+        var box = await toggle.BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+        var wasChecked = await toggle.IsCheckedAsync();
+        // 10px above the track is outside it but inside the 44px hit area: the tap toggles.
+        await page.Touchscreen.TapAsync(box.X + box.Width / 2, box.Y - 10);
+        Assert.NotEqual(wasChecked, await toggle.IsCheckedAsync());
+    }
+
+    [Fact]
+    public async Task Coarse_pointers_do_not_make_the_vertical_steppers_overlap()
+    {
+        var page = await NewTouchPage();
+        await Open(page, "server", "input-number");
+        await page.EvaluateAsync("() => document.querySelectorAll('bx-input-number').forEach((n) => { n.querySelector('[data-slot=increment]')?.setAttribute('data-hit', 'increment'); n.querySelector('[data-slot=decrement]')?.setAttribute('data-hit', 'decrement'); })");
+        var vertical = page.Locator("bx-input-number:has([data-slot='increment'][class*='h-1/2'])").First;
+        await Assertions.Expect(vertical).ToBeVisibleAsync();
+
+        var increment = vertical.Locator("[data-slot='increment']");
+        var decrement = vertical.Locator("[data-slot='decrement']");
+        var up = await increment.BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+        var down = await decrement.BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+
+        Assert.True(up.Height < 44 && down.Height < 44, "the steppers keep the height of the field halves");
+        Assert.True(up.Y + up.Height <= down.Y + 0.5, "the halves do not overlap");
+        Assert.Equal("increment", await HitAt(page, up.X + up.Width / 2, up.Y + up.Height / 2));
+        Assert.Equal("increment", await HitAt(page, up.X + up.Width / 2, up.Y + 1));
+        Assert.Equal("increment", await HitAt(page, up.X + up.Width / 2, up.Y + up.Height - 1));
+        Assert.Equal("decrement", await HitAt(page, down.X + down.Width / 2, down.Y + 1));
+        Assert.Equal("decrement", await HitAt(page, down.X + down.Width / 2, down.Y + down.Height / 2));
+    }
+
+    [Fact]
+    public async Task Coarse_pointers_keep_the_size_of_calendar_days_and_tag_chip_buttons()
+    {
+        var page = await NewTouchPage();
+        await Open(page, "server", "calendar");
+        var day = page.Locator("button[data-date]").First;
+        var daySize = await Size(day);
+        Assert.True(daySize[0] < 44 && daySize[1] < 44, $"day of {daySize[0]}x{daySize[1]}");
+        var dayBox = await day.BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+        var next = await page.Locator("button[data-date]").Nth(1).BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+        // The hit areas of neighbouring days do not eat into each other: the middle of each cell hits its own day.
+        Assert.True(double.IsFinite(dayBox.X + dayBox.Y + dayBox.Width + dayBox.Height), $"box {dayBox.X} {dayBox.Y} {dayBox.Width} {dayBox.Height}");
+        var first = await HitDate(page, dayBox.X + dayBox.Width / 2, dayBox.Y + dayBox.Height - 1);
+        Assert.Equal(await day.GetAttributeAsync("data-date"), first);
+        Assert.True(next.X > dayBox.X);
+
+        await Open(page, "server", "input-tags");
+        var remove = page.Locator("button[data-remove]").First;
+        var removeSize = await Size(remove);
+        var chip = await page.Locator("button[data-remove]").First.EvaluateAsync<double>("(e) => e.parentElement.getBoundingClientRect().height");
+        Assert.True(removeSize[0] <= 24 && removeSize[1] <= 24, $"remove of {removeSize[0]}x{removeSize[1]}");
+        Assert.True(chip < 44);
+    }
+
+    [Fact]
+    public async Task The_bottom_safe_area_inset_is_applied_once()
+    {
+        await Open("server", "main");
+        await Page.EvaluateAsync("() => document.documentElement.style.setProperty('--bx-safe-bottom', '20px')");
+        var main = Page.GetByTestId("main");
+
+        // A footer follows the main block: it owns the inset.
+        Assert.Equal("0px", await main.EvaluateAsync<string>("(e) => getComputedStyle(e).paddingBottom"));
+        Assert.Equal("20px", await main.Locator("xpath=following-sibling::footer").EvaluateAsync<string>("(e) => getComputedStyle(e).paddingBottom"));
+
+        // Without one, the main block is the bottom edge (a bare main with the theme's padding classes; the example's own padding class replaces them).
+        var bare = await Page.EvaluateAsync<string[]>("""
+            () => {
+              const box = document.createElement('div');
+              box.innerHTML = '<main class="pb-(--bx-safe-bottom) has-[~footer]:pb-0"></main><footer></footer>';
+              document.body.append(box);
+              const main = box.querySelector('main');
+              const withFooter = getComputedStyle(main).paddingBottom;
+              box.querySelector('footer').remove();
+              return [withFooter, getComputedStyle(main).paddingBottom];
+            }
+            """);
+        Assert.Equal(new[] { "0px", "20px" }, bare);
+    }
+
+    [Fact]
+    public async Task A_dashboard_inside_the_main_block_leaves_the_bottom_inset_to_it()
+    {
+        await Open("server", "dashboard-group");
+        await Page.EvaluateAsync("() => document.documentElement.style.setProperty('--bx-safe-bottom', '20px')");
+        var dashboard = Page.Locator("bx-dashboard-group").First;
+
+        Assert.Equal("20px", await dashboard.EvaluateAsync<string>("(e) => getComputedStyle(e).paddingBottom"));
+        await dashboard.EvaluateAsync("(e) => e.parentElement.setAttribute('data-bx-main', '')");
+        Assert.Equal("0px", await dashboard.EvaluateAsync<string>("(e) => getComputedStyle(e).paddingBottom"));
+    }
+
+    [Fact]
+    public async Task The_viewport_high_minimum_of_main_fits_inside_the_TV_overscan_margins()
+    {
+        await Open("server", "main");
+        await Page.EvaluateAsync("() => Blux.setSpatialNavigation(true)");
+        // BxMain's minimum height is the viewport minus --bx-tv-inset, which TV mode sets to both vertical margins of the html element.
+        var overflow = await Page.EvaluateAsync<double>("""
+            () => {
+              const probe = document.createElement('div');
+              probe.style.minHeight = 'calc(100dvh - var(--bx-tv-inset, 0px))';
+              document.body.replaceChildren(probe);
+              return document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            }
+            """);
+        Assert.True(overflow <= 1, $"the page scrolls by {overflow}px in TV mode");
     }
 }

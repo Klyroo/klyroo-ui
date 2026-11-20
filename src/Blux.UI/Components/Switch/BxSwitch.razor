@@ -2,7 +2,8 @@
 @inherits BxFieldBase<bool>
 
 <div class="@_slots["root"]" data-color="@Color.Value" data-disabled="@(Disabled ? "" : null)">
-    <div class="@_slots["container"]">
+    @* A label, so the hit area that reaches 44px on a touch screen (an ::after of the container) toggles the input. *@
+    <label class="@_slots["container"]">
         @if (UseEditContext)
         {
             @* Inside an EditForm: validation, aria-invalid and the form field name come from InputBase. *@
@@ -18,7 +19,7 @@
             <input type="checkbox" name="@Name" value="true" checked="@Value" @attributes="Attributes()" />
         }
         <span class="@_slots["thumb"]" aria-hidden="true" data-slot="thumb"></span>
-    </div>
+    </label>
     @if (Label is not null || Description is not null)
     {
         <div class="@_slots["wrapper"]" data-slot="wrapper">

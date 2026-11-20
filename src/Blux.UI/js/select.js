@@ -1,4 +1,4 @@
-import { Reporter, ensureId, float, observeChildren } from './shared.js';
+import { Reporter, ensureId, float, isTvMode, observeChildren } from './shared.js';
 
 /**
  * Select-only combobox (WAI-ARIA APG): focus stays on the button, the active option is announced through
@@ -163,7 +163,9 @@ export class BxSelectElement extends HTMLElement {
     if (event.target !== trigger) return;
     const options = this.#enabled();
     if (!this.#isOpen()) {
-      if (['ArrowDown', 'ArrowUp', 'Enter', ' '].includes(event.key)) {
+      // In TV mode the arrows move the focus out of a closed select: only Select/Enter opens it.
+      const opening = isTvMode() ? ['Enter', ' '] : ['ArrowDown', 'ArrowUp', 'Enter', ' '];
+      if (opening.includes(event.key)) {
         event.preventDefault();
         this.#content.showPopover();
         this.#opened();
