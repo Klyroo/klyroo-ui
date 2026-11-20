@@ -1,0 +1,8 @@
+@* Placeholder="true" paints a tiny version from the provider behind the image while the real one loads.
+   Eager loading with a high fetch priority is for the image visible at first paint. *@
+<div class="flex flex-wrap items-start gap-6">
+    <BxImage Src="/img/sample-gradient.png" Alt="A warm gradient with a pale sun" Width="320" Height="180" Format="webp"
+             Placeholder="@true" Class="rounded-lg" data-testid="image-placeholder" />
+    <BxImage Src="/img/sample-waves.png" Alt="Layered waves from blue to violet" Width="320" Height="180" Format="webp"
+             Loading="BxImageLoading.Eager" FetchPriority="BxFetchPriority.High" Class="rounded-lg" data-testid="image-eager" />
+</div>

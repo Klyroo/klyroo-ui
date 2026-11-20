@@ -8,6 +8,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddPlaygroundBlux();
 builder.Services.AddBluxAi(builder.Configuration);
+// Resizes and converts the images of wwwroot on demand, so the docs show real srcset candidates. No remote host is allowed.
+builder.Services.AddBluxImagesLocal(o => o.Endpoint = PlaygroundServices.ImageEndpoint);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();
@@ -36,6 +38,7 @@ app.UseAntiforgery();
 
 app.MapStaticAssets();
 app.MapBluxAi();
+app.MapBluxImages();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode()
