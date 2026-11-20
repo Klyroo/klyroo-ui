@@ -81,6 +81,9 @@ public abstract class BxComponentBase : ComponentBase
     private protected BxColor DefaultColor(BxColor fallback) => Options is null ? fallback : Options.Defaults.ColorOr(fallback);
     private protected BxSize DefaultSize(BxSize fallback) => Options is null ? fallback : Options.Defaults.SizeOr(fallback);
 
+    /// <summary>An icon of the app as a render fragment: <paramref name="name"/> is a key of <c>Options.Icons</c> (<c>Options.Icons.Close</c>) or any icon name.</summary>
+    private protected RenderFragment RenderIcon(string name, string? @class = null) => IconRender.Fragment(Options?.Icons, name, @class);
+
     private protected static string NewId(string prefix) => $"bx-{prefix}-{Guid.NewGuid():N}"[..(prefix.Length + 12)];
 }
 

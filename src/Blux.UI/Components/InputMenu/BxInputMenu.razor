@@ -81,7 +81,7 @@ else
                         @onbxchange:stopPropagation="true">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
             <input value="@Text" @attributes="InputAttributes(binding)" />
-            <span class="@_slots["trailing"]" aria-hidden="true">@BxIcons.ChevronDown(_slots["trailingIcon"])</span>
+            <span class="@_slots["trailing"]" aria-hidden="true">@RenderIcon(Options.Icons.ChevronDown, _slots["trailingIcon"])</span>
             <div popover="manual" class="@_slots["content"]" data-slot="content">
                 <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-label="@Messages.InputMenuSuggestions">
                     @foreach (var item in Items)
@@ -89,7 +89,7 @@ else
                         <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
                              aria-selected="@(Strict && item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
                             <span class="@_slots["itemLabel"]">@item.Label</span>
-                            @BxIcons.Check(_slots["itemIcon"])
+                            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
                         </div>
                     }
                 </div>

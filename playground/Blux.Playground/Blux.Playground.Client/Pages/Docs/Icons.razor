@@ -1,0 +1,200 @@
+@page "/docs/icons"
+@layout Layout.DocsLayout
+
+<PageTitle>Icons · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Icons</h1>
+    <p class="pg-lead">Any icon of any Iconify collection works by name, and the icons components draw can be replaced by name. The build bundles the icons your app uses into the app, so nothing is requested from a third party when the page runs. It works like the icon system of Nuxt UI, with MSBuild in place of the Nuxt module.</p>
+
+    <h2>Names</h2>
+    <p>Three forms name an icon, and <code>BxIcon</code> accepts all of them wherever a name is expected (<code>Name</code>, <code>Icon</code>, <code>LeadingIcon</code> of items, <code>BluxOptions.Icons</code>):</p>
+    <ul>
+        <li><code>i-{collection}-{name}</code> is the form of Nuxt UI: <code>i-lucide-lightbulb</code>, <code>i-ph-house</code>, <code>i-simple-icons-github</code>.</li>
+        <li><code>{collection}:{name}</code> is the form of Iconify itself: <code>lucide:lightbulb</code>, <code>ph:house</code>, <code>simple-icons:github</code>.</li>
+        <li>A bare name is a Lucide icon, as it always was: <code>lightbulb</code>, <code>chevron-down</code>.</li>
+    </ul>
+    <p>A collection prefix can contain dashes (<code>simple-icons</code>, <code>material-symbols-light</code>), so in the <code>i-</code> form the prefix is the longest one that is the prefix of a known Iconify collection: <code>i-mdi-light-home</code> is <code>mdi-light:home</code>, not <code>mdi:light-home</code>. The <code>prefix:name</code> form never needs that list, and is the one to use for the prefix of your own collection when it contains a dash. Browse the icons of every collection at <a href="https://icones.js.org">icones.js.org</a>.</p>
+    <CodeBlock Title="Any form" Code="@Names" />
+
+    <h2>The built-in set</h2>
+    <p>The Lucide icons that components draw, and the ones earlier versions shipped, are embedded in the library (about 75), generated at build time from <code>@@iconify-json/lucide</code>. They work with no setup and no network. Every other icon, Lucide ones included, is bundled when the app is built.</p>
+
+    <h2>Bundled at build time</h2>
+    <p>The <code>BluxResolveIcons</code> task runs when your project is compiled. It looks through the <code>.razor</code>, <code>.cshtml</code> and <code>.cs</code> files of the project for icon names written as literals, downloads the ones it does not have from the Iconify API (<code>https://api.iconify.design</code>), keeps them in a cache and generates a C# file, compiled into your assembly, that registers them with Blux at startup. The app serves the icon data as part of its own code: no request, no client bundle to configure, and it works the same in static rendering, Server, WebAssembly and Auto, trimmed or not.</p>
+    <p>What the scan recognizes is deliberately narrow, so a stray string never costs a download:</p>
+    <ul>
+        <li>The value of an attribute or property whose name ends in <code>Icon</code>, when it is a plain string literal: <code>Icon="ph:house"</code>, <code>LeadingIcon="i-mdi-home"</code>, <code>new("Home") &#123; Icon = "lucide:house" &#125;</code>.</li>
+        <li>The <code>Name</code> of a <code>&lt;BxIcon&gt;</code> and the argument of <code>BxIcons.Named("...")</code>.</li>
+        <li>The assignment of an app icon: <code>o.Icons.Close = "ph:x"</code>.</li>
+        <li>Any string that is, on its own, <code>prefix:name</code> or <code>i-prefix-name</code> with the prefix of an Iconify collection (<code>"mdi:home"</code>), anywhere in the code.</li>
+    </ul>
+    <p>A bare name (<code>"book-open"</code>) counts only in the first three places, as a Lucide icon. Not detected: a name built at runtime (<code>$"i-lucide-&#123;x&#125;"</code>), a value behind an expression (<code>Icon="@@(open ? "a" : "b")"</code>) and comments are not interpreted. For those, list the names in the project file.</p>
+
+    <h2>Explicit icons</h2>
+    <p><code>BluxIcon</code> items are the equivalent of <code>clientBundle.icons</code> in Nuxt: names the scan cannot see, bundled whatever the sources say. <code>BluxIconScanDirectory</code> adds a folder outside the project to the scan.</p>
+    <CodeBlock Title="Site.csproj" Code="@Explicit" />
+    <p>The <code>Icon</code> example of the components below builds its names at runtime and relies on exactly this.</p>
+
+    <h2>Custom collections</h2>
+    <p>A folder of <code>.svg</code> files is a collection of your own, the equivalent of <code>icon.customCollections</code>. The prefix is the one you give; the name is the file name in lowercase, with dashes for spaces and sub folders (<code>brand/logo.svg</code> is <code>custom:brand-logo</code>). Every file of the folder is bundled. Use <code>currentColor</code> for the paint of the shapes so the icon follows the text color; the <code>viewBox</code> of the file is kept. A file with a <code>&lt;style&gt;</code> element is refused (its rules would apply to the whole page), and scripts, event handlers and <code>foreignObject</code> are removed.</p>
+    <CodeBlock Title="Site.csproj" Code="@Collection" />
+    <p>To add an icon from code, <code>Register</code> takes the markup that goes inside the <code>&lt;svg&gt;</code> element (what Iconify calls the body) and the size of its drawing area, and <code>RegisterSvg</code> takes the text of a whole SVG file. The markup is written by the app and rendered as it is: never register content from users.</p>
+    <CodeBlock Title="Program.cs" Code="@Register" />
+
+    <h2>Icons of the components</h2>
+    <p>Components draw their icons from <code>BluxOptions.Icons</code>, as <code>ui.icons</code> of Nuxt UI does. Each property is an icon name with a Lucide default. Set one in <code>AddBluxUi</code> and every component that uses it follows, in every render mode (register the options from code shared by the server and the client):</p>
+    <CodeBlock Title="Program.cs" Code="@AppIcons" />
+    <p>A name that is not a built-in Lucide icon is bundled because the assignment is a literal. Setting the value from a variable needs a <code>BluxIcon</code> item. The values become read-only once a component has drawn an icon.</p>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="icon-keys">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Icons of BluxOptions.Icons</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Property</th><th scope="col" class="px-3 py-2 text-start">Default</th><th scope="col" class="px-3 py-2 text-start">Used for</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Keys)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Default</td>
+                        <td class="px-3 py-2 text-muted">@row.Meaning@(row.Extra ? " (not a key of Nuxt UI)" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Icons that are not found</h2>
+    <p>An icon that cannot be resolved at run time renders an empty icon carrying <code>data-bx-missing-icon="name"</code>, so it is easy to find in the page (<code>[data-bx-missing-icon]</code> in the browser's search). At build time, a name in one of the first three places above that does not exist in a known collection, and any <code>BluxIcon</code> item that does not exist, is a warning in a Debug build and an error in a Release build (<code>BluxIconsFailOnError</code> overrides either), with the file and line. A bare name or a standalone string that is not found is only mentioned in the detailed build log, because it may be an icon you register yourself.</p>
+
+    <h2>Cache, CI and offline builds</h2>
+    <p>Every icon is cached on its own in <code>obj/blux/icons-cache</code>, so a later build asks the API only for the icons it lacks, and an icon that does not exist is remembered too. A cached icon is trusted for 30 days (<code>BluxIconsCacheDays</code>); when the network fails the cached one is used whatever its age. With <code>BluxOffline=true</code> the network is never touched and every icon must be in the cache, so keep <code>BluxCacheDir</code> between CI runs. The first build of a project needs network access to <code>api.iconify.design</code>, or a self-hosted API set with <code>BluxIconsApi</code> (an https address).</p>
+    <CodeBlock Title="Site.csproj" Code="@Properties" />
+
+    <h2>Turn it off</h2>
+    <p><code>BluxIcons=false</code> disables the feature: nothing is scanned, downloaded or generated, and only the built-in Lucide icons and the icons registered in code are available. <code>BluxIconsScan=false</code> keeps the <code>BluxIcon</code> items and the custom collections but does not read your sources.</p>
+
+    <h2>Migrating from the dictionary</h2>
+    <p><code>BluxOptions.Icons</code> was a dictionary from a name to the <code>d</code> of a single path, drawn as a round 2px stroke. It is now the object above. <code>BxIcons.Close()</code>, <code>Check()</code>, <code>ChevronDown()</code> and the other helpers are gone: use <code>BxIcons.Named("x")</code> or an <code>&lt;BxIcon&gt;</code>.</p>
+    <CodeBlock Title="Before and after" Code="@Migration" />
+    <p>The markup of an icon is now stored whole, so the stroke is part of the icon instead of part of the component: give a registered path its own <code>fill</code> or <code>stroke</code>.</p>
+
+    <h2>Modes</h2>
+    <p>Icons are drawn as inline <code>&lt;svg&gt;</code> elements. Nuxt UI's CSS mode (an icon as a mask in a class) is not implemented: it brings no capability the inline mode lacks for Blazor, and multicolor icons would need the SVG anyway.</p>
+</div>
+
+@code {
+    private sealed record Key(string Name, string Default, string Meaning, bool Extra);
+
+    private static readonly Key[] Keys =
+    [
+        new("ArrowDown", "i-lucide-arrow-down", "Arrow pointing down.", false),
+        new("ArrowLeft", "i-lucide-arrow-left", "Arrow pointing left (previous page of a content surround).", false),
+        new("ArrowRight", "i-lucide-arrow-right", "Arrow pointing right.", false),
+        new("ArrowUp", "i-lucide-arrow-up", "Arrow pointing up (sort ascending, send a chat message).", false),
+        new("Caution", "i-lucide-circle-alert", "Something needs attention (chat attachment error).", false),
+        new("Check", "i-lucide-check", "A check mark: checkboxes, selected items, steps.", false),
+        new("ChevronDoubleLeft", "i-lucide-chevrons-left", "First page.", false),
+        new("ChevronDoubleRight", "i-lucide-chevrons-right", "Last page.", false),
+        new("ChevronDown", "i-lucide-chevron-down", "Disclosure chevrons, carousel arrows and select triggers.", false),
+        new("ChevronLeft", "i-lucide-chevron-left", "Previous page, back.", false),
+        new("ChevronRight", "i-lucide-chevron-right", "Next page, breadcrumb separator, tree chevron.", false),
+        new("ChevronUp", "i-lucide-chevron-up", "Chevron pointing up.", false),
+        new("Close", "i-lucide-x", "Dismiss buttons of alerts, banners, modals, drawers and slideovers, tag removal.", false),
+        new("Copy", "i-lucide-copy", "Copy to the clipboard.", false),
+        new("CopyCheck", "i-lucide-copy-check", "Copied.", false),
+        new("Dark", "i-lucide-moon", "Dark color mode.", false),
+        new("Drag", "i-lucide-grip-vertical", "Drag handle.", false),
+        new("Edit", "i-lucide-pencil", "Edit.", false),
+        new("Ellipsis", "i-lucide-ellipsis", "More actions.", false),
+        new("Error", "i-lucide-circle-x", "Error.", false),
+        new("External", "i-lucide-arrow-up-right", "Link to another site.", false),
+        new("Eye", "i-lucide-eye", "Show a password.", false),
+        new("EyeOff", "i-lucide-eye-off", "Hide a password.", false),
+        new("File", "i-lucide-file", "A file.", false),
+        new("Folder", "i-lucide-folder", "A closed folder.", false),
+        new("FolderOpen", "i-lucide-folder-open", "An open folder.", false),
+        new("Hash", "i-lucide-hash", "Hash, anchor.", false),
+        new("Info", "i-lucide-info", "Information.", false),
+        new("Light", "i-lucide-sun", "Light color mode.", false),
+        new("Loading", "i-lucide-loader-circle", "Spinner of loading buttons and busy states (spun by the component).", false),
+        new("Menu", "i-lucide-menu", "Opens a navigation menu.", false),
+        new("Minus", "i-lucide-minus", "Decrement, not included.", false),
+        new("PanelClose", "i-lucide-panel-left-close", "Collapse a side panel.", false),
+        new("PanelOpen", "i-lucide-panel-left-open", "Expand a side panel.", false),
+        new("Plus", "i-lucide-plus", "Increment, add.", false),
+        new("Reload", "i-lucide-rotate-ccw", "Retry, reload.", false),
+        new("Search", "i-lucide-search", "Search.", false),
+        new("Stop", "i-lucide-square", "Stop a running action.", false),
+        new("Star", "i-lucide-star", "A rating star.", false),
+        new("Success", "i-lucide-circle-check", "Success.", false),
+        new("System", "i-lucide-monitor", "System color mode.", false),
+        new("Tip", "i-lucide-lightbulb", "A tip.", false),
+        new("Trash", "i-lucide-trash", "Delete.", false),
+        new("Upload", "i-lucide-upload", "Upload a file.", false),
+        new("Warning", "i-lucide-triangle-alert", "Warning.", false),
+        new("ChevronUpDown", "i-lucide-chevrons-up-down", "Trigger of selects and sortable columns.", true),
+        new("Calendar", "i-lucide-calendar", "Opens the calendar of a date input.", true),
+        new("Play", "i-lucide-play", "Resume a carousel autoplay.", true),
+        new("Pause", "i-lucide-pause", "Pause a carousel autoplay.", true),
+    ];
+
+    private const string Names = """
+        <BxIcon Name="i-lucide-lightbulb" />
+        <BxIcon Name="ph:house" />
+        <BxIcon Name="simple-icons:github" />
+        <BxButton Label="Open" LeadingIcon="BxIcons.Named("i-mdi-folder-open")" />
+        """;
+
+    private const string Explicit = """
+        <ItemGroup>
+          <!-- Names built at runtime: i-ph-cube$(weight) -->
+          <BluxIcon Include="ph:cube;ph:cube-fill;ph:cube-bold" />
+          <BluxIconScanDirectory Include="../Shared" />
+        </ItemGroup>
+        """;
+
+    private const string Collection = """
+        <ItemGroup>
+          <BluxIconCollection Include="Assets/icons" Prefix="custom" />
+        </ItemGroup>
+        """;
+
+    private const string Register = """
+        builder.Services.AddBluxUi(o =>
+        {
+            o.Icons.Register("brand:mark", "<path fill=\"currentColor\" d=\"M3 3h18v18H3z\" />", 24, 24);
+            o.Icons.RegisterSvg("brand:logo", File.ReadAllText("logo.svg"));
+        });
+        """;
+
+    private const string AppIcons = """
+        builder.Services.AddBluxUi(o =>
+        {
+            o.Icons.Close = "ph:x";
+            o.Icons.Loading = "i-mdi-loading";
+            o.Icons.ChevronDown = "lucide:chevron-down";
+        });
+        """;
+
+    private const string Properties = """
+        <PropertyGroup>
+          <BluxOffline>true</BluxOffline>
+          <BluxCacheDir>$(MSBuildProjectDirectory)/.blux-cache/</BluxCacheDir>
+          <BluxIconsCacheDays>90</BluxIconsCacheDays>
+          <BluxIconsFailOnError>false</BluxIconsFailOnError>
+          <BluxIconsApi>https://icons.example.com</BluxIconsApi>
+        </PropertyGroup>
+        """;
+
+    private const string Migration = """
+        // before
+        o.Icons["brand"] = "M3 3h18v18H3z";
+        BxIcons.Close("size-4")
+
+        // after
+        o.Icons.Register("brand", "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M3 3h18v18H3z\" />");
+        BxIcons.Named("x", "size-4")
+        """;
+}

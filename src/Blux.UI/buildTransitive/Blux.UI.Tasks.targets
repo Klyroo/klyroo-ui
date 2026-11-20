@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Shared by every Blux build feature that runs code at build time (self-hosted fonts today). One task assembly,
+    Shared by every Blux build feature that runs code at build time (self-hosted fonts, bundled icons). One task assembly,
     Blux.UI.Build.Tasks.dll (netstandard2.0, so it loads in `dotnet build` and in Visual Studio's MSBuild alike), holds all the
     tasks; a feature adds its UsingTask line below and its own Blux.UI.<Feature>.targets, imported from Blux.UI.targets.
 
@@ -16,4 +16,5 @@
   </PropertyGroup>
 
   <UsingTask TaskName="Blux.UI.Build.BluxResolveFonts" AssemblyFile="$(BluxBuildTasksAssembly)" />
+  <UsingTask TaskName="Blux.UI.Build.BluxResolveIcons" AssemblyFile="$(BluxBuildTasksAssembly)" />
 </Project>

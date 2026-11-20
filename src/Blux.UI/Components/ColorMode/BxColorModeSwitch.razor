@@ -10,8 +10,8 @@
         <input type="checkbox" role="switch" id="@_id" class="@_slots["input"]" data-bx-color-mode="switch"
                aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)" />
         <span class="@_slots["thumb"]" aria-hidden="true" data-slot="thumb">
-            @ColorModeIcons.Moon(_slots["moon"])
-            @ColorModeIcons.Sun(_slots["sun"])
+            @RenderIcon(Options.Icons.Dark, _slots["moon"])
+            @RenderIcon(Options.Icons.Light, _slots["sun"])
         </span>
     </div>
     @if (Label is not null)

@@ -21,7 +21,7 @@
             @Line
             @if (Chevron == ChatChevron.Trailing)
             {
-                @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+                @RenderIcon(Options.Icons.ChevronDown, _slots["chevronIcon"])
             }
         </button>
         @if (Actions is not null)
@@ -91,15 +91,15 @@ else
     private RenderFragment Line => @<text>
         @if (ChildContent is not null && Chevron == ChatChevron.Leading)
         {
-            @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+            @RenderIcon(Options.Icons.ChevronDown, _slots["chevronIcon"])
         }
         @if (Loading)
         {
-            @BxChatIcons.Draw(BxChatIcons.Spinner, _slots["leadingIcon"] + " " + _slots["spin"])
+            @RenderIcon(Options.Icons.Loading, _slots["leadingIcon"] + " " + _slots["spin"])
         }
         else if (Error)
         {
-            @BxChatIcons.Draw(BxChatIcons.Alert, _slots["leadingIcon"])
+            @RenderIcon(Options.Icons.Caution, _slots["leadingIcon"])
         }
         else if (Icon is not null)
         {

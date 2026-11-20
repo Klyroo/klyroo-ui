@@ -64,11 +64,11 @@
                 <li class="@_slots["feature"]">
                     @if (feature.Icon is not null)
                     {
-                        @BxIcons.Named(feature.Icon, _slots["featureIcon"])
+                        @RenderIcon(feature.Icon, _slots["featureIcon"])
                     }
                     else
                     {
-                        @BxIcons.Check(_slots["featureIcon"])
+                        @RenderIcon(Options.Icons.Check, _slots["featureIcon"])
                     }
                     <span>@feature.Title</span>
                 </li>

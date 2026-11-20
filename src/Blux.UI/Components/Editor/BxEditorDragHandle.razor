@@ -3,7 +3,7 @@
 
 <bx-editor-drag-handle class="@_slots["root"]" data-color="@Color.Value" hidden @attributes="AdditionalAttributes">
     <button type="button" tabindex="-1" class="@_slots["handle"]" aria-label="@(Label ?? Messages.EditorDragHandle)" title="@(Label ?? Messages.EditorDragHandle)">
-        @EditorActions.Icon(EditorActions.GripPath, _slots["icon"])
+        @RenderIcon(Options.Icons.Drag, _slots["icon"])
     </button>
 </bx-editor-drag-handle>
 

@@ -1,8 +1,6 @@
 import { observeChildren } from './shared.js';
 import { ValueModel } from './form2-shared.js';
 
-const CLOSE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>';
-
 /**
  * Text field that turns typed values into removable tags. Enter or a comma adds, Backspace on an empty field
  * removes the last tag. The tags are drawn into the empty <span data-slot="tags">, which Blazor renders empty.
@@ -71,7 +69,8 @@ export class BxInputTagsElement extends HTMLElement {
     remove.dataset.remove = value;
     remove.className = this.dataset.removeClass ?? '';
     remove.setAttribute('aria-label', (this.dataset.removeLabel ?? 'Remove {0}').replace('{0}', value));
-    remove.innerHTML = CLOSE;
+    // The icon is the app's Close icon, drawn by .NET (BluxOptions.Icons.Close).
+    remove.innerHTML = this.dataset.iconClose ?? '';
     remove.disabled = this.hasAttribute('disabled');
     chip.append(text, remove);
     return chip;

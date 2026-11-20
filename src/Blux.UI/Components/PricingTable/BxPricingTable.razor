@@ -70,12 +70,12 @@
                             <td role="cell" data-label="@tier.Title" class="@_slots["cell"]">
                                 @if (value is true)
                                 {
-                                    @BxIcons.Check($"{_slots["valueIcon"]} {_slots["included"]}")
+                                    @RenderIcon(Options.Icons.Check, $"{_slots["valueIcon"]} {_slots["included"]}")
                                     <span class="@_slots["srOnly"]">@Messages.PricingIncluded</span>
                                 }
                                 else if (value is false or null)
                                 {
-                                    @BxIcons.Minus($"{_slots["valueIcon"]} {_slots["notIncluded"]}")
+                                    @RenderIcon(Options.Icons.Minus, $"{_slots["valueIcon"]} {_slots["notIncluded"]}")
                                     <span class="@_slots["srOnly"]">@Messages.PricingNotIncluded</span>
                                 }
                                 else

@@ -1,3 +1,9 @@
+**:fill-(--bx-color)
+**:fill-transparent
+**:stroke-(--blux-text-dimmed)
+**:stroke-(--bx-color-text)
+**:stroke-[1.5]
+**:transition-colors
 *:break-inside-avoid
 *:focus-within:z-10
 *:mb-8
@@ -62,8 +68,8 @@
 [&::-webkit-slider-thumb]:size-4
 [&::-webkit-slider-thumb]:size-5
 [&::-webkit-slider-thumb]:size-6
-[&:has(~input:checked)_svg]:fill-(--bx-color)
-[&:has(~input:checked)_svg]:stroke-(--bx-color-text)
+[&:has(~input:checked)_svg_*]:fill-(--bx-color)
+[&:has(~input:checked)_svg_*]:stroke-(--bx-color-text)
 [&:not(:popover-open)]:hidden
 [&>:first-child]:pt-0
 [&>:last-child]:pb-0
@@ -187,8 +193,8 @@
 [background-image:linear-gradient(to_right,red,yellow,lime,cyan,blue,magenta,red)]
 [background-image:linear-gradient(to_top,black,transparent),linear-gradient(to_right,white,transparent)]
 [direction:rtl]
-[input:checked+&_svg]:fill-(--bx-color)
-[input:checked+&_svg]:stroke-(--bx-color-text)
+[input:checked+&_svg_*]:fill-(--bx-color)
+[input:checked+&_svg_*]:stroke-(--bx-color-text)
 [scrollbar-color:var(--blux-border-accented)_transparent]
 [scrollbar-width:none]
 [scrollbar-width:thin]
@@ -453,7 +459,6 @@ end-auto
 field-sizing-content
 fill-(--blux-bg)
 fill-(--blux-text-muted)
-fill-(--bx-color)
 fill-(--bx-color-text)
 fill-current
 fill-none
@@ -1069,7 +1074,6 @@ sticky
 stroke-(--blux-bg)
 stroke-(--blux-border)
 stroke-(--blux-border-accented)
-stroke-(--blux-text-dimmed)
 stroke-(--bx-color-text)
 stroke-1
 stroke-2

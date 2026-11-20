@@ -30,7 +30,7 @@
                 title="@label"
                 tabindex="@(first ? 0 : -1)"
                 disabled>
-            @EditorActions.Icon(EditorActions.IconPath(item.Action, item.Level), _slots["icon"])
+            @RenderIcon(EditorActions.IconName(item.Action, item.Level, Options.Icons), _slots["icon"])
         </button>
         first = false;
     }

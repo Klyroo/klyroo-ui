@@ -1,0 +1,16 @@
+{
+  "_": "Lucide icons embedded in Blux.UI: the defaults of BluxOptions.Icons, what components use besides them, and the names earlier versions shipped. build/gen-icons.mjs writes them to src/Blux.UI/Components/Icon/BuiltinIcons.g.cs.",
+  "icons": [
+    "arrow-down", "arrow-left", "arrow-right", "arrow-up", "circle-alert", "check", "chevrons-left", "chevrons-right",
+    "chevron-down", "chevron-left", "chevron-right", "chevron-up", "x", "copy", "copy-check", "moon", "grip-vertical",
+    "pencil", "ellipsis", "circle-x", "arrow-up-right", "eye", "eye-off", "file", "folder", "folder-open", "hash", "info",
+    "sun", "loader-circle", "menu", "minus", "panel-left-close", "panel-left-open", "plus", "rotate-ccw", "search", "square",
+    "star", "circle-check", "monitor", "lightbulb", "trash", "upload", "triangle-alert",
+    "chevrons-up-down", "calendar", "play", "pause",
+    "circle-help", "panel-left", "list", "home", "user", "mail", "bell", "clock", "download", "external-link", "link", "lock",
+    "heart", "bookmark", "inbox", "image", "message-square", "globe", "map-pin", "zap", "code", "terminal", "log-out",
+    "refresh-cw", "loader",
+    "bold", "italic", "strikethrough", "underline", "pilcrow", "heading-1", "heading-2", "heading-3", "heading-4", "list-ordered", "quote",
+    "square-code", "remove-formatting", "undo-2", "redo-2"
+  ]
+}

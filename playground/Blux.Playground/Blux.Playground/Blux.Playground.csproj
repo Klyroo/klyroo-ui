@@ -29,6 +29,7 @@
   </PropertyGroup>
   <Import Project="..\..\..\src\Blux.UI\buildTransitive\Blux.UI.Tasks.targets" />
   <Import Project="..\..\..\src\Blux.UI\buildTransitive\Blux.UI.Fonts.targets" />
+  <Import Project="..\..\..\src\Blux.UI\buildTransitive\Blux.UI.Icons.targets" />
 
   <!-- Fonts of the site: downloaded from the providers at build time and served from the site's own origin. -->
   <ItemGroup>

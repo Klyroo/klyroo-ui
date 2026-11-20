@@ -59,7 +59,7 @@ Event parameters are `EventCallback<T>`: `OnClick` (`MouseEventArgs`), `OnSelect
 
 ## Icons
 
-`<BxIcon Name="search" />` for the built-in Lucide set (see `search-icons`), `BxIcons.Named("home", "size-5")` where a component takes a `RenderFragment` for an icon, and `BxIcons.ChevronDown()` for the common ones. Custom icons are added through `BluxOptions.Icons` (name to SVG path data on a 24x24 viewBox). An unknown name renders an empty icon.
+`<BxIcon Name="search" />` draws an icon by name, and `BxIcons.Named("home", "size-5")` does the same where a component takes a `RenderFragment` for an icon. Any Iconify icon works by name: `i-{collection}-{name}` (`i-ph-house`, `i-simple-icons-github`) or `{collection}:{name}` (`ph:house`, `mdi:home`), and a bare name is a Lucide icon. The Lucide icons that components use are built in (see `search-icons`); every other icon written as a literal in the app's `.razor`/`.cs` files is downloaded at build time and compiled into the app, so nothing is requested when the page runs. A name built at runtime is invisible to that scan: list it in the project file as `<BluxIcon Include="ph:cube;ph:cube-fill" />`. A folder of SVG files is a collection: `<BluxIconCollection Include="Assets/icons" Prefix="custom" />` gives `custom:file-name`. The icons components draw are replaced by name in `AddBluxUi`: `o.Icons.Close = "ph:x"` (keys such as `Close`, `Check`, `ChevronDown`, `Loading`, `Search`, as in Nuxt UI), and `o.Icons.Register("custom:logo", svgBody, 24, 24)` adds an icon from code. An icon that cannot be found renders an empty icon marked `data-bx-missing-icon`. See the Icons guide (`/docs/icons`).
 
 ## Loops and ids
 

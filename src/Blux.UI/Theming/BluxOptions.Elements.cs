@@ -19,8 +19,8 @@ public sealed partial class BluxOptions
     public ComponentTheme FieldGroup { get; } = Themes.FieldGroup();
 
     /// <summary>
-    /// Icons available to <c>BxIcon</c> besides the built-in Lucide set: name to SVG path data (24x24 viewBox,
-    /// drawn as a 2px round stroke in currentColor). An entry replaces a built-in icon of the same name.
+    /// The icons components draw (<c>Close</c>, <c>Check</c>, <c>ChevronDown</c>...), replaceable by name, and <c>Register</c> to add icons in code.
+    /// Any Iconify icon works by name, see <see cref="BxIcon"/>.
     /// </summary>
-    public Dictionary<string, string> Icons { get; } = new(StringComparer.Ordinal);
+    public BluxIconOptions Icons { get; } = new();
 }

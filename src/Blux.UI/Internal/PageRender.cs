@@ -26,7 +26,7 @@ public sealed class SectionHeading : ComponentBase
 internal static class PageRender
 {
     /// <summary>The links as a row of buttons; nothing when there are none.</summary>
-    public static RenderFragment Buttons(IReadOnlyList<PageLinkItem>? links, string? @class, BxSize size = BxSize.Lg) => builder =>
+    public static RenderFragment Buttons(IReadOnlyList<PageLinkItem>? links, string? @class, BxSize size = BxSize.Lg, BluxIconOptions? icons = null) => builder =>
     {
         if (links is not { Count: > 0 })
         {
@@ -48,8 +48,8 @@ internal static class PageRender
             builder.AddComponentParameter(8, nameof(BxButton.Variant), link.Variant);
             builder.AddComponentParameter(9, nameof(BxButton.Size), size);
             builder.AddComponentParameter(10, nameof(BxButton.Disabled), link.Disabled);
-            builder.AddComponentParameter(11, nameof(BxButton.LeadingIcon), link.Icon is null ? null : BxIcons.Named(link.Icon, "size-full"));
-            builder.AddComponentParameter(12, nameof(BxButton.TrailingIcon), link.TrailingIcon is null ? null : BxIcons.Named(link.TrailingIcon, "size-full"));
+            builder.AddComponentParameter(11, nameof(BxButton.LeadingIcon), link.Icon is null ? null : IconRender.Fragment(icons, link.Icon, "size-full"));
+            builder.AddComponentParameter(12, nameof(BxButton.TrailingIcon), link.TrailingIcon is null ? null : IconRender.Fragment(icons, link.TrailingIcon, "size-full"));
             builder.CloseComponent();
         }
         builder.CloseElement();

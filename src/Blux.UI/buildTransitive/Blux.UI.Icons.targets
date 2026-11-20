@@ -1,0 +1,70 @@
+<Project>
+  <!--
+    Bundled icons. Any Iconify icon works by name (<BxIcon Name="ph:house" />, "i-mdi-home", "simple-icons:github"): at build time the
+    BluxResolveIcons task scans the project's .razor, .cshtml and .cs files for literal icon names, adds what the project lists
+
+      <BluxIcon Include="ph:house;mdi:home" />                                  names the scan cannot see (built at runtime)
+      <BluxIconCollection Include="Assets/icons" Prefix="custom" />             a folder of .svg files, used as custom:file-name
+      <BluxIconScanDirectory Include="../Shared" />                             a folder outside the project whose sources are scanned too
+
+    downloads what its cache lacks from the Iconify API, and generates a C# file, added to the compilation, whose module initializer
+    registers the icons with Blux.UI. Nothing is requested when the app runs, and a build without network works from the cache.
+
+      BluxIcons=false         turns the whole feature off (no scan, no download, no generated file).
+      BluxIconsScan=false     keeps the BluxIcon and BluxIconCollection items but does not scan the sources.
+      BluxIconsApi            base address of the Iconify API (default https://api.iconify.design), for a self-hosted one.
+      BluxIconsCacheDir       the cache (default $(BluxCacheDir)icons-cache), BluxIconsCacheDays how long it is trusted (default 30).
+      BluxIconsFailOnError    an icon that cannot be found is an error (default in Release) or a warning (default in Debug).
+  -->
+  <PropertyGroup>
+    <BluxIcons Condition="'$(BluxIcons)' == ''">true</BluxIcons>
+    <BluxIconsScan Condition="'$(BluxIconsScan)' == ''">true</BluxIconsScan>
+    <BluxIconsApi Condition="'$(BluxIconsApi)' == ''">https://api.iconify.design</BluxIconsApi>
+    <BluxIconsCacheDir Condition="'$(BluxIconsCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(BluxCacheDir), icons-cache))</BluxIconsCacheDir>
+    <BluxIconsCacheDays Condition="'$(BluxIconsCacheDays)' == ''">30</BluxIconsCacheDays>
+    <BluxIconsFailOnError Condition="'$(BluxIconsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</BluxIconsFailOnError>
+  </PropertyGroup>
+
+  <Target Name="BluxResolveIcons"
+          BeforeTargets="CoreCompile"
+          Condition="'$(BluxIcons)' != 'false' And '$(DesignTimeBuild)' != 'true'">
+    <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the default is computed here. -->
+    <PropertyGroup>
+      <BluxIconsOutputDir Condition="'$(BluxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</BluxIconsOutputDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_BluxIconExclude Include="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath)))" />
+      <_BluxIconExclude Include="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseOutputPath)))" />
+    </ItemGroup>
+
+    <BluxResolveIcons Icons="@(BluxIcon)"
+                      Collections="@(BluxIconCollection)"
+                      Scan="$(BluxIconsScan)"
+                      ProjectDirectory="$(MSBuildProjectDirectory)"
+                      ScanDirectories="@(BluxIconScanDirectory)"
+                      ExcludeDirectories="@(_BluxIconExclude)"
+                      CacheDir="$(BluxIconsCacheDir)"
+                      OutputFile="$(BluxIconsOutputDir)BluxIcons.g.cs"
+                      Api="$(BluxIconsApi)"
+                      FailOnError="$(BluxIconsFailOnError)"
+                      Offline="$(BluxOffline)"
+                      CacheDays="$(BluxIconsCacheDays)" />
+
+    <ItemGroup>
+      <Compile Include="$(BluxIconsOutputDir)BluxIcons.g.cs" />
+      <FileWrites Include="$(BluxIconsOutputDir)BluxIcons.g.cs" />
+    </ItemGroup>
+  </Target>
+
+  <!-- Design-time builds (an IDE refreshing IntelliSense) never scan or download: they only keep the file of the last real build in the compilation. -->
+  <Target Name="BluxIconsDesignTime"
+          BeforeTargets="CoreCompile"
+          Condition="'$(BluxIcons)' != 'false' And '$(DesignTimeBuild)' == 'true'">
+    <PropertyGroup>
+      <BluxIconsOutputDir Condition="'$(BluxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</BluxIconsOutputDir>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(BluxIconsOutputDir)BluxIcons.g.cs')">
+      <Compile Include="$(BluxIconsOutputDir)BluxIcons.g.cs" />
+    </ItemGroup>
+  </Target>
+</Project>
