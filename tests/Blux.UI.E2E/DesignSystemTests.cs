@@ -87,12 +87,13 @@ public class DesignSystemTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task Guide_has_no_accessibility_violations_in_both_color_modes(string slug)
     {
         await Page.GotoAsync($"/docs/{slug}");
+        // Guides run in Auto: the head outlet renders the title again once the page is interactive, so wait for that first.
+        await Assertions.Expect(Page.Locator("main#main")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover') && document.title.length > 0");
         await AssertNoAccessibilityViolations();
 
         await Page.GetByRole(AriaRole.Button, new() { Name = "Toggle dark mode" }).ClickAsync();
         await Assertions.Expect(Page.Locator("html")).ToHaveClassAsync(new Regex("dark"));
-        // The head outlet re-renders the title when the page becomes interactive.
         await Page.WaitForFunctionAsync("() => document.title.length > 0");
         await AssertNoAccessibilityViolations();
     }
