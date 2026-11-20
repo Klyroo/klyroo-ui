@@ -19,7 +19,7 @@
     @if (Src is not null)
     {
         @* Hidden by Blux.UI.lib.module.js when it fails to load, uncovering the fallback. *@
-        <img src="@Src" alt="" class="@_slots["image"]" loading="lazy" data-bx-avatar-image />
+        <BxImage Src="@Src" Alt="" Width="_pixels" Height="_pixels" ImageOptions="ImageOptions" Class="@_slots["image"]" data-bx-avatar-image />
     }
 </span>
 
@@ -38,11 +38,32 @@
     private BxSize? _sizeParameter;
     [Parameter] public AvatarUi? Ui { get; set; }
 
+    /// <summary>
+    /// Image settings forwarded to <see cref="BxImage"/>, like the <c>:src</c> object of Nuxt UI's avatar: <c>new BxImageOptions { Format = "webp", Quality = 80 }</c>.
+    /// The avatar passes its size in pixels as the width and the height, so a provider can serve a picture of that size.
+    /// </summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
+
+    private int _pixels;
+
     private string Initials => Text ?? string.Concat((Alt ?? "")
         .Split(' ', StringSplitOptions.RemoveEmptyEntries)
         .Take(2)
         .Select(word => char.ToUpperInvariant(word[0])));
 
-    protected override void OnParametersSet() =>
+    // The pixel sizes of the size-6 to size-12 classes of the theme.
+    internal static int Pixels(BxSize size) => size switch
+    {
+        BxSize.Xs => 24,
+        BxSize.Sm => 28,
+        BxSize.Lg => 40,
+        BxSize.Xl => 48,
+        _ => 32,
+    };
+
+    protected override void OnParametersSet()
+    {
+        _pixels = Pixels(Size);
         _slots = ResolveSlots(Options.Avatar, new Dictionary<string, string?> { ["size"] = VariantValue.Of(Size) }, Ui, "root");
+    }
 }

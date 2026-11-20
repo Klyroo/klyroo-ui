@@ -13,7 +13,7 @@
             }
             else
             {
-                <img src="@Image" alt="@(ImageAlt ?? "")" loading="lazy" class="@_slots["image"]" />
+                <BxImage Src="@Image" Alt="@(ImageAlt ?? "")" ImageOptions="ImageOptions" Class="@_slots["image"]" />
             }
         </div>
     }
@@ -97,6 +97,9 @@
     /// <summary>Cover image. Decorative unless <see cref="ImageAlt"/> says what it shows.</summary>
     [Parameter] public string? Image { get; set; }
     [Parameter] public string? ImageAlt { get; set; }
+
+    /// <summary>Image settings forwarded to <see cref="BxImage"/> (format, quality, sizes, provider, preset…), like the <c>:image</c> object of Nuxt UI.</summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
 
     /// <summary>Replaces the cover image.</summary>
     [Parameter] public RenderFragment? Header { get; set; }

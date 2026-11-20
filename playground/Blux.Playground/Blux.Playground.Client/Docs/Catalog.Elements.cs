@@ -32,6 +32,11 @@ public static partial class Catalog
             [new("Sizes, link and vertical", typeof(Examples.UserExample))], [typeof(BxUser)]),
         new("avatar-group", "AvatarGroup", "Elements", "A stack of avatars with a +N avatar for the overflow.",
             [new("Max and overflow", typeof(Examples.AvatarGroupExample))], [typeof(BxAvatarGroup)]),
+        new("image", "Image", "Elements", "An img with the width, height, srcset, sizes and loading a provider fills in, like NuxtImg of Nuxt Image.",
+            [new("Size, format and fit", typeof(Examples.ImageExample), "Served by the local optimizer (Blux.UI.Images.Local): open the network tab to see the resized WebP files."),
+             new("Responsive sizes", typeof(Examples.ImageResponsiveExample), "Sizes use the syntax of Nuxt Image: an unprefixed entry is the default, each breakpoint applies from its width upward."),
+             new("Placeholder and priority", typeof(Examples.ImagePlaceholderExample))],
+            [typeof(BxImage)]),
         new("field-group", "FieldGroup", "Elements", "Attaches buttons and fields to each other: the children lose the inner radii, with CSS only.",
             [new("Horizontal and vertical", typeof(Examples.FieldGroupExample))], [typeof(BxFieldGroup)]),
     ];
