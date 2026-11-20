@@ -7,14 +7,14 @@
     browser (js/content.js and the command palette), so it works in static rendering. The shortcut is a fallback: a
     page that registers the same combination with data-bx-hotkey (a dashboard search) takes it first.
 *@
-<BxModal Open="Open" OpenChanged="OpenChanged" AriaLabel="@(Label ?? Options.Strings.ContentSearch)" Close="false" Ui="_modalUi"
+<BxModal Open="Open" OpenChanged="OpenChanged" AriaLabel="@(Label ?? Messages.ContentSearch)" Close="false" Ui="_modalUi"
          data-bx-content-search="@Name">
     <ChildContent>
         <button type="button" hidden tabindex="-1" data-bx-content-hotkey="@Shortcut"></button>
     </ChildContent>
     <Body>
-        <BxCommandPalette Groups="_groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Options.Strings.ContentSearch)"
-                          Placeholder="@(Placeholder ?? Options.Strings.ContentSearchPlaceholder)" Ui="Ui" />
+        <BxCommandPalette Groups="_groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Messages.ContentSearch)"
+                          Placeholder="@(Placeholder ?? Messages.ContentSearchPlaceholder)" Ui="Ui" />
     </Body>
 </BxModal>
 

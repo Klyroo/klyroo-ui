@@ -7,10 +7,11 @@
 </div>
 
 @code {
+    // The built-in locales, with a flag each.
     private static readonly BxLocale[] _locales =
     [
-        new("en", "English") { Flag = "\U0001F1EC\U0001F1E7" },
-        new("fr", "Français") { Flag = "\U0001F1EB\U0001F1F7" },
-        new("es", "Español") { Flag = "\U0001F1EA\U0001F1F8" },
+        BxLocales.En with { Flag = "\U0001F1EC\U0001F1E7" },
+        BxLocales.Fr with { Flag = "\U0001F1EB\U0001F1F7" },
+        BxLocales.Es with { Flag = "\U0001F1EA\U0001F1F8" },
     ];
 }

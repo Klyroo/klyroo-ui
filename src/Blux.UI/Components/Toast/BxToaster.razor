@@ -7,14 +7,14 @@
 *@
 @* data-permanent: enhanced navigation keeps the element, so a toast shown before a redirect stays visible. *@
 <bx-toaster data-permanent
-            data-close-label="@Options.Strings.Close"
+            data-close-label="@Messages.Close"
             data-duration="@((int)Duration.TotalMilliseconds)"
             data-ui-root="@_slots["root"]"
             data-ui-wrapper="@_slots["wrapper"]"
             data-ui-title="@_slots["title"]"
             data-ui-description="@_slots["description"]"
             data-ui-close="@_slots["close"]">
-    <section aria-label="@Options.Strings.Notifications">
+    <section aria-label="@Messages.Notifications">
         <ol class="@_slots["viewport"]" data-slot="viewport" aria-live="polite"></ol>
     </section>
 </bx-toaster>

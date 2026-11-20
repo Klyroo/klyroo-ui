@@ -37,25 +37,48 @@ public sealed partial class BluxOptions
     public ComponentTheme Accordion { get; } = Themes.Accordion();
     public ComponentTheme Table { get; } = Themes.Table();
 
-    /// <summary>Built-in texts rendered by components, for localization.</summary>
-    public BluxStrings Strings { get; } = new();
+    private IReadOnlyList<BxLocale> _locales = BxLocales.All;
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, BxLocale> _resolved = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The locale every component uses unless a <see cref="BxApp"/> (or a <c>CascadingValue</c> of <see cref="BxLocale"/>)
+    /// above it sets one. Leave it unset to follow the culture of the user: the locale is then picked from
+    /// <see cref="Locales"/> by <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>.
+    /// </summary>
+    public BxLocale? Locale { get; set; }
+
+    /// <summary>
+    /// The locales the automatic selection chooses from, and that <see cref="BxLocaleSelect"/> offers by default.
+    /// Defaults to <see cref="BxLocales.All"/>; set a smaller list, or add your own locales to it.
+    /// English (code "en"), or the first locale when there is none, is the fallback of an unmatched culture.
+    /// </summary>
+    public IReadOnlyList<BxLocale> Locales
+    {
+        get => _locales;
+        set
+        {
+            _locales = value ?? throw new ArgumentNullException(nameof(value));
+            _resolved.Clear();
+        }
+    }
+
+    /// <summary>
+    /// The locale for a culture: <see cref="Locale"/> when set, otherwise the match in <see cref="Locales"/>
+    /// (see <see cref="BxLocales.Resolve"/>). The result of each culture is cached.
+    /// </summary>
+    public BxLocale ResolveLocale(System.Globalization.CultureInfo culture)
+    {
+        if (Locale is { } fixedLocale) return fixedLocale;
+        return _resolved.TryGetValue(culture.Name, out var cached)
+            ? cached
+            : _resolved.GetOrAdd(culture.Name, _ => BxLocales.Resolve(culture, _locales));
+    }
 
     /// <summary>Every theme, whichever file declares it. Feeds the Tailwind build and the generated-assets tests.</summary>
     internal IEnumerable<ComponentTheme> AllThemes =>
         typeof(BluxOptions).GetProperties()
             .Where(p => p.PropertyType == typeof(ComponentTheme))
             .Select(p => (ComponentTheme)p.GetValue(this)!);
-}
-
-/// <remarks>Partial: each family of components declares its texts in its own file.</remarks>
-public sealed partial class BluxStrings
-{
-    public string Loading { get; set; } = "Loading";
-    public string Close { get; set; } = "Close";
-    public string Notifications { get; set; } = "Notifications";
-    public string NoData { get; set; } = "No data";
-    public string SortAscending { get; set; } = "Sort ascending";
-    public string SortDescending { get; set; } = "Sort descending";
 }
 
 public static class BluxServiceCollectionExtensions

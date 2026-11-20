@@ -23,7 +23,7 @@ else
     [Parameter] public bool Create { get; set; }
     [Parameter] public string? Placeholder { get; set; }
 
-    /// <summary>Label of the filter field. Defaults to <see cref="BluxStrings.SelectMenuSearch"/>.</summary>
+    /// <summary>Label of the filter field. Defaults to <see cref="BxMessages.SelectMenuSearch"/>.</summary>
     [Parameter] public string? SearchLabel { get; set; }
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public SelectMenuUi? Ui { get; set; }
@@ -53,7 +53,7 @@ else
                          data-multiple="@(Multiple ? "" : null)"
                          data-post-empty="@(Multiple ? null : "")"
                          data-create="@(Create ? "" : null)"
-                         data-create-label="@(Create ? Options.Strings.SelectMenuCreate : null)"
+                         data-create-label="@(Create ? Messages.SelectMenuCreate : null)"
                          disabled="@Disabled"
                          class="@_slots["root"]"
                          data-color="@Color.Value"
@@ -70,7 +70,7 @@ else
             <div popover="auto" class="@_slots["content"]" data-slot="content">
                 <div class="@_slots["searchWrapper"]">
                     <input type="text" role="combobox" class="@_slots["search"]" data-slot="search" autocomplete="off" aria-autocomplete="list" aria-expanded="true"
-                           aria-label="@(SearchLabel ?? Options.Strings.SelectMenuSearch)" />
+                           aria-label="@(SearchLabel ?? Messages.SelectMenuSearch)" />
                 </div>
                 <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)"
                      aria-multiselectable="@(Multiple ? "true" : null)">
@@ -87,7 +87,7 @@ else
                         <div role="option" class="@($"{_slots["item"]} {_slots["create"]}")" data-slot="create" data-label="" aria-selected="false" hidden></div>
                     }
                 </div>
-                <p class="@_slots["empty"]" data-slot="empty" hidden>@Options.Strings.SelectMenuNoResults</p>
+                <p class="@_slots["empty"]" data-slot="empty" hidden>@Messages.SelectMenuNoResults</p>
             </div>
         </bx-select-menu>;
 }

@@ -1,9 +1,8 @@
 @namespace Blux.UI
-@using System.Globalization
 @inherits BxComponentBase
 
 @*
-    A select of cultures, built on BxSelect. Choosing one writes the ASP.NET Core culture cookie in the browser and
+    A select of locales, built on BxSelect. Choosing one writes the ASP.NET Core culture cookie in the browser and
     reloads the page, so it works in static rendering and without a .NET runtime in the page. The server must run
     UseRequestLocalization with the same cultures: the cookie is only read there. Nothing is posted by the select itself.
 *@
@@ -14,7 +13,7 @@
      data-bx-reload="@(Reload ? "" : null)"
      @attributes="AdditionalAttributes">
     <BxSelect Items="_items" Value="@_value" Size="Size" Variant="Variant" Color="Color"
-              aria-label="@(AriaLabel ?? Options.Strings.LocaleSelectLabel)" />
+              aria-label="@(AriaLabel ?? Messages.LocaleSelectLabel)" />
 </div>
 
 @code {
@@ -22,12 +21,12 @@
     private IReadOnlyList<BxSelectItem> _items = [];
     private string? _value;
 
-    /// <summary>The cultures to offer.</summary>
-    [Parameter, EditorRequired] public IReadOnlyList<BxLocale> Locales { get; set; } = [];
+    /// <summary>The locales to offer, shown by <see cref="BxLocale.Name"/> (with <see cref="BxLocale.Flag"/> when set). Defaults to <see cref="BluxOptions.Locales"/>. Each code must be a culture the server supports.</summary>
+    [Parameter] public IReadOnlyList<BxLocale>? Locales { get; set; }
 
     /// <summary>
-    /// The selected culture code. Defaults to the current UI culture, matched by exact name and then by language
-    /// ("fr-FR" selects "fr"). In WebAssembly the client has its own culture: pass the value when it can differ from the server's.
+    /// The selected locale code. Defaults to the code of the locale in effect (the enclosing <see cref="BxApp"/>, or the one
+    /// matching the current UI culture). In WebAssembly the client has its own culture: pass the value when it can differ from the server's.
     /// </summary>
     [Parameter] public string? Value { get; set; }
 
@@ -50,15 +49,16 @@
     protected override void OnParametersSet()
     {
         _slots = ResolveSlots(Options.LocaleSelect, new Dictionary<string, string?>(), Ui, "root");
-        _items = Locales.Select(l => new BxSelectItem(l.Code, l.Flag is null ? l.Label : l.Flag + " " + l.Label)).ToList();
-        _value = Resolve(Value ?? CultureInfo.CurrentUICulture.Name);
+        var locales = Locales ?? Options.Locales;
+        _items = locales.Select(l => new BxSelectItem(l.Code, l.Flag is null ? l.Name : l.Flag + " " + l.Name)).ToList();
+        _value = Resolve(locales, Value ?? CurrentLocale.Code);
     }
 
-    private string? Resolve(string culture)
+    private static string? Resolve(IReadOnlyList<BxLocale> locales, string code)
     {
-        var exact = Locales.FirstOrDefault(l => string.Equals(l.Code, culture, StringComparison.OrdinalIgnoreCase));
+        var exact = locales.FirstOrDefault(l => string.Equals(l.Code, code, StringComparison.OrdinalIgnoreCase));
         if (exact is not null) return exact.Code;
-        var language = culture.Split('-')[0];
-        return Locales.FirstOrDefault(l => string.Equals(l.Code.Split('-')[0], language, StringComparison.OrdinalIgnoreCase))?.Code;
+        var language = code.Split('-')[0];
+        return locales.FirstOrDefault(l => string.Equals(l.Code.Split('-')[0], language, StringComparison.OrdinalIgnoreCase))?.Code;
     }
 }

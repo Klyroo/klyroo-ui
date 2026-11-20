@@ -91,14 +91,14 @@ else
                           @attributes="AdditionalAttributes">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Hex" disabled="@Disabled" />
             <div data-slot="area" class="@_slots["area"]">
-                <input type="range" min="0" max="100" data-slot="saturation" aria-label="@Options.Strings.Saturation" class="@_slots["range"]" disabled="@Disabled" />
-                <input type="range" min="0" max="100" data-slot="brightness" aria-label="@Options.Strings.Brightness" class="@_slots["range"]" disabled="@Disabled" />
+                <input type="range" min="0" max="100" data-slot="saturation" aria-label="@Messages.Saturation" class="@_slots["range"]" disabled="@Disabled" />
+                <input type="range" min="0" max="100" data-slot="brightness" aria-label="@Messages.Brightness" class="@_slots["range"]" disabled="@Disabled" />
                 <span data-slot="thumb" class="@_slots["areaThumb"]" aria-hidden="true"></span>
             </div>
-            <input type="range" min="0" max="359" data-slot="hue" aria-label="@Options.Strings.Hue" class="@_slots["hue"]" disabled="@Disabled" />
+            <input type="range" min="0" max="359" data-slot="hue" aria-label="@Messages.Hue" class="@_slots["hue"]" disabled="@Disabled" />
             <div class="@_slots["preview"]">
                 <span data-slot="swatch" class="@_slots["swatch"]" aria-hidden="true"></span>
-                <input type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="@Options.Strings.HexColor" placeholder="#000000"
+                <input type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="@Messages.HexColor" placeholder="#000000"
                        @attributes="HexAttributes(binding)" />
             </div>
         </bx-color-picker>;

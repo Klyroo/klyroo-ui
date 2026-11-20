@@ -12,7 +12,7 @@
     @if (ShowSummary)
     {
         @* Always rendered, so a screen reader announces the list when messages appear. *@
-        <div role="alert" aria-live="polite" data-slot="summary" class="@_slots["summary"]">
+        <div role="alert" aria-live="polite" aria-label="@Messages.FormSummaryTitle" data-slot="summary" class="@_slots["summary"]">
             <MessageSummary For="context" Class="@_slots["summaryList"]" />
         </div>
     }

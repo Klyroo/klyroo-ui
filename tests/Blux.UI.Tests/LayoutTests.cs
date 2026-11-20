@@ -27,7 +27,9 @@ public class LayoutTests : BluxTestContext
         var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false));
 
         Assert.Empty(cut.FindAll("bx-toaster"));
-        Assert.False(cut.Find("div").HasAttribute("lang"));
+        // Without Lang and Dir, the resolved locale (English here) writes them.
+        Assert.Equal("en", cut.Find("div").GetAttribute("lang"));
+        Assert.Equal("ltr", cut.Find("div").GetAttribute("dir"));
     }
 
     [Fact]
@@ -358,8 +360,8 @@ public class LayoutTests : BluxTestContext
 
     private static readonly BxLocale[] Locales =
     [
-        new("en", "English") { Flag = "EN" },
-        new("fr", "Français") { Flag = "FR" },
+        BxLocales.En with { Flag = "EN" },
+        BxLocales.Fr with { Flag = "FR" },
     ];
 
     [Fact]

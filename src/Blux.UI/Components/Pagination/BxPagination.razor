@@ -6,15 +6,15 @@
     With HrefTemplate every page is a link, so it works in static server rendering and the page lives in the URL.
     Without it the pages are buttons that report through PageChanged and stay disabled until the page is interactive.
 *@
-<nav aria-label="@(AriaLabel ?? Options.Strings.Pagination)" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+<nav aria-label="@(AriaLabel ?? Messages.Pagination)" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
     <ul class="@_slots["list"]">
         @if (ShowFirstLast)
         {
-            <li class="@_slots["item"]">@Control(1, Options.Strings.FirstPage, NavIcons.ChevronsLeft, _page <= 1)</li>
+            <li class="@_slots["item"]">@Control(1, Messages.FirstPage, NavIcons.ChevronsLeft, _page <= 1)</li>
         }
         @if (ShowControls)
         {
-            <li class="@_slots["item"]">@Control(_page - 1, Options.Strings.PreviousPage, NavIcons.ChevronLeft, _page <= 1)</li>
+            <li class="@_slots["item"]">@Control(_page - 1, Messages.PreviousPage, NavIcons.ChevronLeft, _page <= 1)</li>
         }
         @foreach (var entry in _entries)
         {
@@ -31,11 +31,11 @@
         }
         @if (ShowControls)
         {
-            <li class="@_slots["item"]">@Control(_page + 1, Options.Strings.NextPage, NavIcons.ChevronRight, _page >= _pageCount)</li>
+            <li class="@_slots["item"]">@Control(_page + 1, Messages.NextPage, NavIcons.ChevronRight, _page >= _pageCount)</li>
         }
         @if (ShowFirstLast)
         {
-            <li class="@_slots["item"]">@Control(_pageCount, Options.Strings.LastPage, NavIcons.ChevronsRight, _page >= _pageCount)</li>
+            <li class="@_slots["item"]">@Control(_pageCount, Messages.LastPage, NavIcons.ChevronsRight, _page >= _pageCount)</li>
         }
     </ul>
 </nav>
@@ -71,7 +71,7 @@
     [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
     [Parameter] public BxSize Size { get; set; } = BxSize.Md;
 
-    /// <summary>Accessible name of the landmark. Defaults to <see cref="BluxStrings.Pagination"/>.</summary>
+    /// <summary>Accessible name of the landmark. Defaults to <see cref="BxMessages.Pagination"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public PaginationUi? Ui { get; set; }
 
@@ -144,11 +144,11 @@
         @<text>
             @if (HasHref)
             {
-                <a href="@HrefFor(page)" aria-current="@(page == _page ? "page" : null)" aria-label="@($"{Options.Strings.Page} {page}")" class="@_slots["page"]">@(page)</a>
+                <a href="@HrefFor(page)" aria-current="@(page == _page ? "page" : null)" aria-label="@($"{Messages.Page} {page}")" class="@_slots["page"]">@(page)</a>
             }
             else
             {
-                <button type="button" disabled="@Inert" aria-current="@(page == _page ? "page" : null)" aria-label="@($"{Options.Strings.Page} {page}")"
+                <button type="button" disabled="@Inert" aria-current="@(page == _page ? "page" : null)" aria-label="@($"{Messages.Page} {page}")"
                         class="@_slots["page"]" @onclick="Click(page)">@(page)</button>
             }
         </text>;
