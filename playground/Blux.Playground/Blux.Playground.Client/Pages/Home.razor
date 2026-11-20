@@ -18,7 +18,7 @@
         </div>
         <div class="lg:pb-2">
             <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty">
-                Twenty accessible components for Server, WebAssembly, Auto and static pages.
+                @Count accessible components for Server, WebAssembly, Auto and static pages.
                 Menus, dialogs and tabs answer in the browser; .NET only hears what you bind.
             </p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
@@ -49,7 +49,7 @@
     <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
             <h2 id="components" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-                Twenty components,<br /><span class="pg-accent">one stylesheet.</span>
+                @Count components,<br /><span class="pg-accent">one stylesheet.</span>
             </h2>
             <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
                 Every card below is the real component, running in this page. Same markup on the server and in the browser,
@@ -148,7 +148,7 @@
 <section aria-labelledby="start" class="relative isolate overflow-hidden">
     <div class="pg-dots absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-4xl px-4 py-24 text-center sm:px-6 lg:py-32">
-        <p class="pg-eyebrow-mono"><span class="font-pixel text-2xl font-black text-(--blux-primary-text)">20</span> components · <span class="font-pixel text-2xl font-black text-(--blux-primary-text)">4</span> render modes</p>
+        <p class="pg-eyebrow-mono"><span class="font-pixel text-2xl font-black text-(--blux-primary-text)">@Count</span> components · <span class="font-pixel text-2xl font-black text-(--blux-primary-text)">4</span> render modes</p>
         <h2 id="start" class="mt-6 text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
             Start with one package.
         </h2>
@@ -163,6 +163,8 @@
 </section>
 
 @code {
+    private static int Count => Blux.Playground.Client.Docs.Catalog.Components.Length;
+
     private static readonly BxSelectItem[] Regions = [new("eu", "Europe (Paris)"), new("us", "US East"), new("ap", "Asia (Tokyo)")];
 
     private static readonly BxTabItem[] Environments =

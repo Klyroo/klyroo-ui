@@ -1,12 +1,28 @@
 # blux-ui
 
 Accessible, themable Blazor components styled with Tailwind CSS v4, inspired by Nuxt UI.
-Status: early development, see [PLAN.md](PLAN.md). 20 components:
+Status: early development. 133 components, in the same families as Nuxt UI:
 
-- **Elements**: Button, Badge, Avatar, Card, Alert
-- **Form**: Input, Textarea, Checkbox, Switch, RadioGroup, Select, FormField
-- **Overlay**: Modal, Popover, Tooltip, DropdownMenu, Toast
-- **Navigation & data**: Tabs, Accordion, Table
+- **Elements**: Button, Badge, Avatar, AvatarGroup, Card, Alert, Banner, Chip, Container, Empty, FieldGroup, Icon, Kbd, Link,
+  Progress, Separator, Skeleton, User
+- **Form**: Form, FormField, Input, InputNumber, InputTags, InputMenu, InputDate, InputTime, InputRating, PinInput, Textarea,
+  Checkbox, CheckboxGroup, Switch, RadioGroup, Select, SelectMenu, Listbox, Slider, Toggle, ToggleGroup, Calendar, ColorPicker,
+  FileUpload
+- **Overlay**: Modal, Slideover, Drawer, Popover, Tooltip, DropdownMenu, ContextMenu, CommandPalette, Toast, and the color mode
+  controls (ColorModeButton, ColorModeSwitch, ColorModeSelect, ColorModeAvatar, ColorModeImage)
+- **Navigation**: Tabs, Accordion, Collapsible, Breadcrumb, Pagination, Stepper, Timeline, NavigationMenu, Tree, Marquee,
+  ScrollArea, Splitter, and the content components (ContentNavigation, ContentSearch, ContentSearchButton, ContentSurround, ContentToc)
+- **Data**: Table, Chart, Carousel
+- **Layout**: App, Header, Main, Footer, FooterColumns, Sidebar, Error, LocaleSelect, Theme
+- **Page**: Page, PageHeader, PageHero, PageSection, PageFeature, PageGrid, PageColumns, PageCard, PageCta, PageLinks, PageList,
+  PageLogos, PageAnchors, PageAside, PageBody, AuthForm, PricingPlan, PricingPlans, PricingTable, BlogPost, BlogPosts,
+  ChangelogVersion, ChangelogVersions
+- **Dashboard**: DashboardGroup, DashboardSidebar, DashboardSidebarCollapse, DashboardSidebarToggle, DashboardPanel,
+  DashboardResizeHandle, DashboardNavbar, DashboardToolbar, DashboardSearch, DashboardSearchButton
+- **Chat**: ChatMessages, ChatMessage, ChatPrompt, ChatPromptSubmit, ChatPalette, ChatAttachment, ChatReasoning, ChatShimmer, ChatTool
+- **Editor**: Editor, EditorToolbar, EditorDragHandle, EditorSuggestionMenu, EditorMentionMenu, EditorEmojiMenu
+
+Each one has a documentation page with live examples in the four render modes.
 
 ## Use it
 
