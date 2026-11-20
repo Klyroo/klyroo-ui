@@ -456,6 +456,11 @@ public class HybridTests(PlaygroundServer server) : PlaygroundTest(server)
         Assert.Equal(new[] { 36d, 20d }, await Size(toggle));
 
         var box = await toggle.BoundingBoxAsync() ?? throw new InvalidOperationException("No box.");
+        // The hit area must not move the track: it stays level with the first line of its label, as with a mouse.
+        var label = page.Locator("label", new() { HasText = "Email notifications" }).Last;
+        var labelBox = await label.BoundingBoxAsync() ?? throw new InvalidOperationException("No label box.");
+        Assert.True(box.Y < labelBox.Y + labelBox.Height / 2 && box.Y + box.Height > labelBox.Y,
+            $"track at y={box.Y}..{box.Y + box.Height}, label at y={labelBox.Y}..{labelBox.Y + labelBox.Height}");
         var wasChecked = await toggle.IsCheckedAsync();
         // 10px above the track is outside it but inside the 44px hit area: the tap toggles.
         await page.Touchscreen.TapAsync(box.X + box.Width / 2, box.Y - 10);

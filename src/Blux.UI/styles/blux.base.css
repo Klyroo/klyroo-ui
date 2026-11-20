@@ -301,7 +301,9 @@
     [data-remove] { --bx-hit-x: 1.5rem; --bx-hit-y: 1.5rem; }
     [data-date] { --bx-hit-x: 0px; --bx-hit-y: 0px; }
     /* Checkboxes and radios are small boxes: the label next to them is the target, so give it room. */
-    :where(label):has(> input:is([type='checkbox'], [type='radio'])) {
+    /* Not the label that wraps a switch track: its ::after already reaches 44px, and growing it would push the track
+       below the switch's text. */
+    :where(label):has(> input:is([type='checkbox'], [type='radio']):not([role='switch'])) {
       min-block-size: 2.75rem;
     }
   }
