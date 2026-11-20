@@ -3,6 +3,12 @@ using Blux.UI.Build.Fonts;
 
 namespace Blux.UI.Build
 {
+    /// <summary>The API answered, with status 200, the number 404: its way to say that a collection does not exist.</summary>
+    internal sealed class CollectionNotFoundException : BuildToolException
+    {
+        public CollectionNotFoundException() : base("The Iconify API does not know this collection (it answered 404).") { }
+    }
+
     /// <summary>
     /// An icon set in the Iconify JSON format (https://iconify.design/docs/types/iconify-json.html), which is what
     /// <c>https://api.iconify.design/{prefix}.json?icons=a,b</c> answers: <c>icons</c> with a <c>body</c> and optional
@@ -42,6 +48,8 @@ namespace Blux.UI.Build
             {
                 throw new BuildToolException("The answer is not valid JSON: " + e.Message);
             }
+            // For a prefix it does not have, the API answers HTTP 200 with the body 404 (not a JSON object), so that is not a network failure.
+            if (root is double code && code == 404) throw new CollectionNotFoundException();
             if (!(root is Dictionary<string, object?> map)) throw new BuildToolException("The answer is not an Iconify icon set (a JSON object was expected).");
 
             var set = new IconifySet

@@ -7,7 +7,7 @@ namespace Blux.UI.Build
     {
         /// <summary>The string is the value of an icon-typed attribute or property: an icon that cannot be found is reported.</summary>
         Context,
-        /// <summary>The string is, on its own, a name with a known collection (<c>"ph:house"</c>, <c>"i-ph-house"</c>): an icon that cannot be found is ignored.</summary>
+        /// <summary>The string is, on its own, an <c>i-prefix-name</c> name with a known collection (<c>"i-ph-house"</c>): an icon that cannot be found is ignored.</summary>
         Loose,
     }
 
@@ -38,8 +38,10 @@ namespace Blux.UI.Build
     /// <item><c>Name="..."</c> on <c>&lt;BxIcon&gt;</c>.</item>
     /// <item><c>BxIcons.Named("...")</c>.</item>
     /// <item><c>Icons.Close = "..."</c> (and every other key of <c>BluxOptions.Icons</c>), as in <c>o.Icons.Close = "ph:x"</c>.</item>
-    /// <item><b>A standalone string</b> that is exactly <c>prefix:name</c> or <c>i-prefix-name</c> with the prefix of a known Iconify collection or
-    /// of a <c>BluxIconCollection</c> (loose): bundled when found, ignored when not.</item>
+    /// <item><b>A standalone string</b> that is exactly <c>i-prefix-name</c> with the prefix of a known Iconify collection or
+    /// of a <c>BluxIconCollection</c> (loose): bundled when found, ignored when not. The <c>prefix:name</c> form is never taken on its own:
+    /// many of the collection prefixes (<c>token</c>, <c>memory</c>, <c>map</c>, <c>geo</c>) are also words that appear before a colon in
+    /// ordinary strings, so a <c>"memory:cache"</c> in the code would be downloaded. In an icon context the colon form is read, as everywhere.</item>
     /// </list>
     /// A bare name (<c>"book-open"</c>) is only taken from the first four contexts, as a Lucide icon. Not detected: names built at runtime
     /// (<c>$"i-lucide-{x}"</c>), values behind an expression (<c>Icon="@(a ? "x" : "y")"</c>, <c>cond ? "ph:a" : "ph:b"</c> in strict contexts) and
@@ -57,7 +59,7 @@ namespace Blux.UI.Build
         private static readonly Regex Named = new Regex(@"\bBxIcons\s*\.\s*Named\s*\(\s*(?:name\s*:\s*)?" + Literal, RegexOptions.Compiled);
         private static readonly Regex AppIcon = new Regex(@"\bIcons\s*\.\s*[A-Z]\w*\s*=(?!=)\s*" + Literal, RegexOptions.Compiled);
         private static readonly Regex Registered = new Regex(@"\bIcons\s*\.\s*Register(?:Svg)?\s*\(\s*" + Literal, RegexOptions.Compiled);
-        private static readonly Regex Standalone = new Regex("\"(?<v>(?:i-[a-z0-9]+(?:-[a-z0-9]+)+|[a-z0-9]+(?:-[a-z0-9]+)*:[a-z0-9]+(?:-[a-z0-9]+)*))\"", RegexOptions.Compiled);
+        private static readonly Regex Standalone = new Regex("\"(?<v>i-[a-z0-9]+(?:-[a-z0-9]+)+)\"", RegexOptions.Compiled);
 
         public static List<IconMention> Scan(string file, string text, Func<string, bool>? extraPrefix = null)
         {
@@ -82,8 +84,8 @@ namespace Blux.UI.Build
             {
                 var g = m.Groups["v"];
                 if (seen.Contains(g.Index)) continue;
-                // Loose: only a name whose collection is known, written in one of the explicit forms.
-                if (IconNames.TryParse(g.Value, extraPrefix, out var icon, out var form) && form != IconNameForm.Bare
+                // Loose: only the i-prefix-name form, and only when its collection is known.
+                if (IconNames.TryParse(g.Value, extraPrefix, out var icon, out var form) && form == IconNameForm.IPrefix
                     && (IconNames.IsKnownPrefix(icon.Prefix) || (extraPrefix != null && extraPrefix(icon.Prefix))))
                 {
                     seen.Add(g.Index);

@@ -52,7 +52,7 @@
 
   <!-- The name parser and the SVG reader are shared with the build task, so the library and the task read an icon name the same way. -->
   <ItemGroup>
-    <Compile Include="..\Blux.UI.Build.Tasks\Icons\IconNames.cs;..\Blux.UI.Build.Tasks\Icons\IconCollections.g.cs;..\Blux.UI.Build.Tasks\Icons\SvgImport.cs" LinkBase="Internal\Icons" />
+    <Compile Include="..\Blux.UI.Build.Tasks\Icons\IconNames.cs;..\Blux.UI.Build.Tasks\Icons\IconCollections.g.cs;..\Blux.UI.Build.Tasks\Icons\SvgImport.cs;..\Blux.UI.Build.Tasks\Icons\SvgSanitizer.cs" LinkBase="Internal\Icons" />
   </ItemGroup>
 
   <ItemGroup>
