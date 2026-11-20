@@ -19,9 +19,18 @@
         in every render mode, including static pages.
     </p>
 
+    <h2>Runs everywhere Blazor runs</h2>
+    <p>
+        The same components also run in .NET MAUI Blazor Hybrid apps (a <code>BlazorWebView</code>), so one set of pages can ship
+        as a web app and as an app for Android, iOS, Windows and macOS. Android is built and tested on the emulator; iOS, Windows and
+        macOS build in CI and have not been run on devices yet; Android TV is experimental. See
+        <a href="/docs/maui">MAUI and Blazor Hybrid</a> for the setup and the status of each platform.
+    </p>
+
     <h2>What you get</h2>
     <ul>
         <li><strong>@Blux.Playground.Client.Docs.Catalog.Components.Length components</strong> in ten families: elements, forms with validation, overlays, navigation, data and charts, layout, marketing pages, dashboards, AI chat and a rich-text editor.</li>
+        <li><strong>Web and native</strong>: the four render modes of Blazor Web Apps and MAUI Blazor Hybrid, with touch hit areas, safe areas and an experimental TV mode for native apps.</li>
         <li><strong>Accessibility</strong> following the WAI-ARIA authoring practices, checked with axe in light and dark mode.</li>
         <li><strong>Theming</strong> with CSS variables, a global theme in C#, and per-instance slot overrides.</li>
         <li><strong>Tailwind optional</strong>: use the precompiled stylesheet, or compile everything with your own Tailwind build.</li>
