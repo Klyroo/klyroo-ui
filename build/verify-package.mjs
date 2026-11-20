@@ -239,14 +239,22 @@ try {
     check(readFileSync(manifestFile, "utf8").includes("_blux/fonts/"), "fonts back on: the fonts are in the static web assets again");
   }
 
-  // BluxIcons=false: nothing is scanned or generated (the earlier file is removed first, so it cannot be a leftover).
+  // BluxIcons=false after a build with icons: the file the earlier build left on disk is not deleted by the test. The generated file must be in
+  // the compile inputs hash (it is added before _GenerateCompileDependencyCache), so the switch recompiles the assembly: the initializer is gone from it.
   {
-    rmSync(iconsFile, { force: true });
+    const dll = join(server, "obj", "Release", "net10.0", "Site.dll");
+    const hasInitializer = () => existsSync(dll) && readFileSync(dll).includes(Buffer.from("BluxIconBundleInitializer"));
+    check(existsSync(iconsFile), "icons off: the file of the build with icons is still on disk before the switch");
+    check(hasInitializer(), "icons off: the assembly of the build with icons holds the icon initializer");
     const r = run("dotnet", ["build", "-c", "Release", "-p:BluxIcons=false", join(app, "Site", "Site.sln")], app, consumerEnv);
     check(r.code === 0, "icons off: consumer builds");
-    check(!existsSync(iconsFile), "icons off: no BluxIcons.g.cs is generated");
+    if (r.code !== 0) console.log(r.out);
+    check(!existsSync(iconsFile), "icons off: the leftover BluxIcons.g.cs is removed from disk");
+    check(!hasInitializer(), "icons off: the initializer is gone from the assembly (the leftover is not compiled)");
     build("icons back on");
     check(existsSync(iconsFile), "icons back on: BluxIcons.g.cs is generated again");
+    check(hasInitializer(), "icons back on: the assembly registers the icons again");
+    check(readFileSync(iconsFile, "utf8").includes("[assembly: global::Blux.UI.BluxIconRegistrar("), "icons back on: the generated file announces its registrar with an assembly attribute");
   }
 
   // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/blux/ on every build.
