@@ -37,7 +37,7 @@ jobs:
         run: |
           expected="${GITHUB_REF_NAME#v}"
           actual=$(dotnet msbuild src/Blux.UI -getProperty:PackageVersion)
-          if [ "$expected" != "$actual" ]; then echo "Tag $GITHUB_REF_NAME does not match PackageVersion $actual in src/Blux.UI/Blux.UI.csproj"; exit 1; fi
+          if [ "$expected" != "$actual" ]; then echo "Tag $GITHUB_REF_NAME does not match PackageVersion $actual in build/Version.props"; exit 1; fi
       - name: The changelog has a dated entry for this version
         run: |
           version="${GITHUB_REF_NAME#v}"

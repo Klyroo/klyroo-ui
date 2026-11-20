@@ -1,5 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- Same version as the library: both import build/Version.props. -->
+  <Import Project="..\..\build\Version.props" />
+
   <!-- The local MCP server of Blux UI, as a dotnet tool: dotnet tool install -g Blux.UI.Mcp, then blux-ui-mcp.
        It speaks MCP over stdio and carries the docs bundle of the Blux.UI version it was built with. -->
   <PropertyGroup>
@@ -22,14 +25,6 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <!-- A tool needs the runtime it was built for; a newer major one is fine. -->
     <RollForward>Major</RollForward>
-  </PropertyGroup>
-
-  <!-- The version is the one of Blux.UI (VersionPrefix and VersionSuffix in src/Blux.UI/Blux.UI.csproj), read from there so a
-       release changes it in one place. A test checks they agree. -->
-  <PropertyGroup>
-    <_BluxProject>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)../Blux.UI/Blux.UI.csproj'))</_BluxProject>
-    <VersionPrefix>$([System.Text.RegularExpressions.Regex]::Replace($(_BluxProject), '(?s)^.*?&lt;VersionPrefix&gt;([^&lt;]*)&lt;/VersionPrefix&gt;.*$', '$1'))</VersionPrefix>
-    <VersionSuffix>$([System.Text.RegularExpressions.Regex]::Replace($(_BluxProject), '(?s)^.*?&lt;VersionSuffix&gt;([^&lt;]*)&lt;/VersionSuffix&gt;.*$', '$1'))</VersionSuffix>
   </PropertyGroup>
 
   <ItemGroup>
