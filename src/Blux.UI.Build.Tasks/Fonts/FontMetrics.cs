@@ -175,6 +175,18 @@ namespace Blux.UI.Build.Fonts
 
         public static FontMetrics Read(byte[] file)
         {
+            try
+            {
+                return ReadCore(file);
+            }
+            catch (Exception e) when (e is IndexOutOfRangeException || e is ArgumentException || e is InvalidDataException || e is OverflowException)
+            {
+                throw new FontException("The file is not a valid font: " + e.Message, e);
+            }
+        }
+
+        private static FontMetrics ReadCore(byte[] file)
+        {
             var t = FontTables.Read(file);
             foreach (var needed in new[] { "cmap", "head", "hhea", "hmtx" })
             {

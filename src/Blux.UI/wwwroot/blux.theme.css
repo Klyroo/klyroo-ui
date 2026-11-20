@@ -54,6 +54,12 @@
   --outline-color-accented: var(--blux-border-accented);
   --outline-color-inverted: var(--blux-border-inverted);
 
+  /* font-sans and font-mono (and the page's default font) follow the font tokens, which BxFonts and the BluxFont items set. */
+  --font-sans: var(--blux-font-sans);
+  --font-mono: var(--blux-font-mono);
+  --default-font-family: var(--blux-font-sans);
+  --default-mono-font-family: var(--blux-font-mono);
+
   --radius-xs: calc(var(--blux-radius) * 0.25);
   --radius-sm: calc(var(--blux-radius) * 0.5);
   --radius-md: calc(var(--blux-radius) * 0.75);
@@ -73,6 +79,14 @@
      * at the element, so either name set on a subtree applies there (--bx-header-height wins when both are set).
      */
     --blux-header-height: 4rem;
+
+    /*
+     * Fonts. The defaults are Tailwind's stacks, so nothing changes until a font is declared: a <BluxFont Role="sans"> item of
+     * the project makes the build self-host the font and write these two variables (blux.fonts.css, loaded by BxFonts). Set them
+     * by hand to use any other stack.
+     */
+    --blux-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --blux-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
 
     /* Each color: a fill, the text color to use on light surfaces (-text), and the text color on the fill (-contrast). */
     --blux-primary: #ffd23f;
