@@ -142,7 +142,7 @@ internal static partial class Themes
         var t = new ComponentTheme("slider", "root", "track", "range", "thumb")
             .Slot("root", "relative flex touch-none select-none items-center has-disabled:opacity-60")
             .Slot("track", "absolute overflow-hidden rounded-full bg-(--blux-bg-accented)")
-            .Slot("range", "absolute bg-(--bx-color)")
+            .Slot("range", "absolute bg-(--bx-color) ring-1 ring-inset ring-(--bx-color-text)")
             .Slot("thumb", "absolute " + thumb)
             .Variant("range", "true", "thumb", "pointer-events-none")
             .Variant("orientation", "horizontal", "root", "w-full")
@@ -174,7 +174,7 @@ internal static partial class Themes
             .Slot("item", "group flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
             .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-[calc(var(--blux-radius)_-_2px)] bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color) disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " + ControlInvalid)
             .Slot("icon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-checked:opacity-100")
             .Slot("wrapper", "flex flex-col")
