@@ -60,7 +60,7 @@
         {
             case ChatStatus.Idle:
                 _type = "submit";
-                _color = Color ?? BxColor.Primary;
+                _color = Color ?? DefaultColor(BxColor.Primary);
                 _variant = ButtonVariant.Solid;
                 _icon = BxChatIcons.Draw(BxChatIcons.Send, _slots["icon"]);
                 _label = Label ?? Messages.ChatSend;

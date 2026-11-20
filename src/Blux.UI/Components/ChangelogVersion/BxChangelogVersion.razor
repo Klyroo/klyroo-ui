@@ -92,7 +92,8 @@
     /// </summary>
     [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
     [Parameter] public string? Badge { get; set; }
-    [Parameter] public BxColor BadgeColor { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor BadgeColor { get => _badgeColor ?? DefaultColor(BxColor.Primary); set => _badgeColor = value; }
+    private BxColor? _badgeColor;
     [Parameter] public string? Image { get; set; }
     [Parameter] public string? ImageAlt { get; set; }
     [Parameter] public IReadOnlyList<BxPostAuthor> Authors { get; set; } = [];
