@@ -50,11 +50,19 @@ public static class ApiReader
         };
     }
 
-    private static string? Describe(PropertyInfo property)
+    /// <summary>The XML documentation summary of a property, or null when it has none.</summary>
+    public static string? Describe(PropertyInfo property)
     {
         var declaring = property.DeclaringType!;
         var typeName = declaring.IsGenericType ? declaring.GetGenericTypeDefinition().FullName : declaring.FullName;
         return Docs.Value.TryGetValue($"P:{typeName}.{property.Name}", out var text) ? text : null;
+    }
+
+    /// <summary>The XML documentation summary of a type, or null when it has none.</summary>
+    public static string? Describe(Type type)
+    {
+        var typeName = type.IsGenericType ? type.GetGenericTypeDefinition().FullName : type.FullName;
+        return Docs.Value.TryGetValue($"T:{typeName}", out var text) ? text : null;
     }
 
     public static string TypeName(Type type)

@@ -39,8 +39,12 @@ jobs:
       - run: dotnet build Blux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
+      - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
+        run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Pack
-        run: dotnet pack src/Blux.UI -c Release --no-build -o artifacts
+        run: |
+          dotnet pack src/Blux.UI -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
       # Inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App against the package in both CSS modes.
       # It packs on its own and needs the network on a fresh runner (framework packages), hence --online.
       - name: Package check
