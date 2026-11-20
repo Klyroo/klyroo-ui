@@ -45,28 +45,3 @@ public sealed record ColorModeSelectUi : ISlotOverrides
         _ => null,
     };
 }
-
-internal static class ColorModeIcons
-{
-    public static RenderFragment Moon(string? @class) => Icon(@class, "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z");
-
-    public static RenderFragment Sun(string? @class) =>
-        Icon(@class, "M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4");
-
-    private static RenderFragment Icon(string? @class, string path) => builder =>
-    {
-        builder.OpenElement(0, "svg");
-        builder.AddAttribute(1, "viewBox", "0 0 24 24");
-        builder.AddAttribute(2, "fill", "none");
-        builder.AddAttribute(3, "stroke", "currentColor");
-        builder.AddAttribute(4, "stroke-width", "2");
-        builder.AddAttribute(5, "stroke-linecap", "round");
-        builder.AddAttribute(6, "stroke-linejoin", "round");
-        builder.AddAttribute(7, "aria-hidden", "true");
-        builder.AddAttribute(8, "class", @class);
-        builder.OpenElement(9, "path");
-        builder.AddAttribute(10, "d", path);
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-}

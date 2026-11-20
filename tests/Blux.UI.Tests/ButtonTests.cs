@@ -44,7 +44,7 @@ public class ButtonTests : BluxTestContext
         var button = cut.Find("button");
         Assert.True(button.HasAttribute("disabled"));
         Assert.Equal("true", button.GetAttribute("aria-busy"));
-        Assert.Contains("animate-spin", cut.Find("svg[data-slot=leadingIcon]").ClassName);
+        Assert.Contains("animate-spin", cut.Find("[data-slot=leadingIcon]").ClassName);
     }
 
     [Fact]

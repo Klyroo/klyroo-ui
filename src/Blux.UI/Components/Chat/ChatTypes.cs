@@ -109,38 +109,6 @@ internal static class ChatValue
 
 }
 
-/// <summary>Icons that only the chat components use, so the shared icon set stays as it is.</summary>
-internal static class BxChatIcons
-{
-    public const string Stop = "M5 5h14v14H5Z";
-    public const string Retry = "M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8M21 3v5h-5M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16M8 16H3v5";
-    public const string Send = "m5 12 7-7 7 7M12 19V5";
-    public const string Wrench = "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z";
-    public const string Alert = "M12 8v4m0 4h.01M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z";
-    public const string Spinner = "M21 12a9 9 0 1 1-6.219-8.56";
-    public const string File = "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2zM14 2v5a1 1 0 0 0 1 1h5";
-    public const string Close = "M18 6 6 18M6 6l12 12";
-    public const string ChevronDown = "m6 9 6 6 6-6";
-    public const string ArrowDown = "M12 5v14m7-7-7 7-7-7";
-
-    public static RenderFragment Draw(string path, string? @class) => builder =>
-    {
-        builder.OpenElement(0, "svg");
-        builder.AddAttribute(1, "viewBox", "0 0 24 24");
-        builder.AddAttribute(2, "fill", "none");
-        builder.AddAttribute(3, "stroke", "currentColor");
-        builder.AddAttribute(4, "stroke-width", "2");
-        builder.AddAttribute(5, "stroke-linecap", "round");
-        builder.AddAttribute(6, "stroke-linejoin", "round");
-        builder.AddAttribute(7, "aria-hidden", "true");
-        builder.AddAttribute(8, "class", @class);
-        builder.OpenElement(9, "path");
-        builder.AddAttribute(10, "d", path);
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-}
-
 /// <summary>Per-instance class overrides of <see cref="BxChatMessage"/> slots.</summary>
 public sealed record ChatMessageUi : ISlotOverrides
 {

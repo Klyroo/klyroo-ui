@@ -16,7 +16,7 @@
         {
             <button type="button" data-slot="trigger" class="@_slots["trigger"]" aria-expanded="false" aria-controls="@(_id + "-content")">
                 <span>@(Title ?? Messages.ContentToc)</span>
-                @BxIcons.ChevronDown(_slots["chevron"])
+                @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
             </button>
         }
         <p class="@_slots["title"]" data-slot="title">@(Title ?? Messages.ContentToc)</p>

@@ -138,6 +138,8 @@ else
                       weekdays-long="@string.Join('|', _culture.DateTimeFormat.DayNames)"
                       label-prev="@Messages.PreviousMonth"
                       label-next="@Messages.NextMonth"
+                      data-icon-prev="@IconRender.Svg(Options.Icons, Options.Icons.ChevronLeft, "size-4")"
+                      data-icon-next="@IconRender.Svg(Options.Icons, Options.Icons.ChevronRight, "size-4")"
                       disabled="@(Disabled ? "" : null)"
                       class="@_slots["root"]"
                       data-color="@Color.Value"

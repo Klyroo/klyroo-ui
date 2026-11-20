@@ -265,7 +265,7 @@ public class Form2Tests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(group.GetByRole(AriaRole.Radio, new() { Name = "4 out of 5" })).ToBeCheckedAsync();
         // Stars fade their fill (transition-colors): wait for exactly four fully filled stars.
         const string fourFilled =
-            "() => [...document.querySelectorAll('[role=radiogroup] label[data-slot=star] svg')].slice(0, 5)" +
+            "() => [...document.querySelectorAll('[role=radiogroup] label[data-slot=star] svg > *')].slice(0, 5)" +
             ".filter(s => getComputedStyle(s).fill.startsWith('rgb(')).length === 4";
         await Page.WaitForFunctionAsync(fourFilled, null, new() { Timeout = 5_000 });
     }

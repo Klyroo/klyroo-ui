@@ -20,7 +20,7 @@
                 }
                 @if (!last)
                 {
-                    <span aria-hidden="true" class="@_slots["separator"]">@(Separator ?? NavIcons.ChevronRight(_slots["separatorIcon"]))</span>
+                    <span aria-hidden="true" class="@_slots["separator"]">@(Separator ?? RenderIcon(Options.Icons.ChevronRight, _slots["separatorIcon"]))</span>
                 }
             </li>
         }

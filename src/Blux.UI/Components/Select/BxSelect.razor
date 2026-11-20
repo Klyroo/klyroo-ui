@@ -71,7 +71,7 @@ else
                       data-label="@(Selected?.Label ?? Placeholder ?? "")"
                       data-placeholder="@(Selected is null ? "" : null)"
                       data-placeholder-text="@(Placeholder ?? "")"></span>
-                @BxIcons.ChevronUpDown(_slots["trailingIcon"])
+                @RenderIcon(Options.Icons.ChevronUpDown, _slots["trailingIcon"])
             </button>
             <div popover="auto" class="@_slots["content"]" data-slot="content">
                 <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)">
@@ -80,7 +80,7 @@ else
                         <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
                              aria-selected="@(item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
                             <span class="@_slots["itemLabel"]">@item.Label</span>
-                            @BxIcons.Check(_slots["itemIcon"])
+                            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
                         </div>
                     }
                 </div>

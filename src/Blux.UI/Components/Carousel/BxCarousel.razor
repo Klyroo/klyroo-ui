@@ -25,18 +25,14 @@
         @if (AutoPlay > 0)
         {
             <button type="button" data-slot="toggle" class="@_slots["control"]" aria-label="@Messages.PauseSlides">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["pauseIcon"]">
-                    <path d="M8 5v14m8-14v14" />
-                </svg>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="@_slots["playIcon"]">
-                    <path d="m6 4 14 8-14 8Z" />
-                </svg>
+                @RenderIcon(Options.Icons.Pause, _slots["pauseIcon"])
+                @RenderIcon(Options.Icons.Play, _slots["playIcon"])
             </button>
         }
         @if (Arrows)
         {
             <button type="button" data-slot="prev" class="@_slots["control"]" aria-label="@Messages.PreviousSlide" aria-controls="@ViewportId">
-                @BxIcons.ChevronDown(_slots["prevIcon"])
+                @RenderIcon(Options.Icons.ChevronDown, _slots["prevIcon"])
             </button>
         }
         @if (Dots)
@@ -53,7 +49,7 @@
         @if (Arrows)
         {
             <button type="button" data-slot="next" class="@_slots["control"]" aria-label="@Messages.NextSlide" aria-controls="@ViewportId">
-                @BxIcons.ChevronDown(_slots["nextIcon"])
+                @RenderIcon(Options.Icons.ChevronDown, _slots["nextIcon"])
             </button>
         }
     </div>

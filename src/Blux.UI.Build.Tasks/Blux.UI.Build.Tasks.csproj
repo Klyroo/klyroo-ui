@@ -13,6 +13,8 @@
     <AssemblyName>Blux.UI.Build.Tasks</AssemblyName>
     <IsPackable>false</IsPackable>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <!-- IconNames.cs and SvgImport.cs are compiled by Blux.UI too; this switches their namespace. -->
+    <DefineConstants>$(DefineConstants);BLUX_TASKS</DefineConstants>
     <!-- Task assemblies are loaded from the package folder, next to nothing: keep the output to one dll. -->
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
   </PropertyGroup>

@@ -7,7 +7,7 @@
     it works in static rendering and never goes through .NET.
 *@
 <BxButton Square Variant="Variant" Color="Color" Size="Size" Class="@_slots["root"]"
-          LeadingIcon="@(BxIcons.Named("panel-left", "size-5 rtl:-scale-x-100"))"
+          LeadingIcon="@(RenderIcon(Options.Icons.PanelClose, "size-5 rtl:-scale-x-100"))"
           aria-label="@(Label ?? Messages.CollapseSidebar)"
           data-bx-sidebar-collapse="" data-bx-sidebar-for="@(For ?? Context?.Key)"
           @attributes="AdditionalAttributes" />

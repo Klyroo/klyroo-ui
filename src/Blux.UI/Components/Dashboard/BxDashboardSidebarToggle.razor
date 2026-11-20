@@ -7,7 +7,7 @@
     date, so it works in static rendering.
 *@
 <BxButton Square Variant="Variant" Color="Color" Size="Size" Class="@_slots["root"]"
-          LeadingIcon="@(BxIcons.Named("menu", "size-5"))"
+          LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"
           aria-label="@(Label ?? Messages.OpenSidebar)" aria-haspopup="dialog"
           data-bx-sidebar-open="" data-bx-sidebar-for="@(For ?? Context?.Key)"
           @attributes="AdditionalAttributes" />
