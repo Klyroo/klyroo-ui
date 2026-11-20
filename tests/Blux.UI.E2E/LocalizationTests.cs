@@ -92,6 +92,41 @@ public class LocalizationTests(PlaygroundServer server) : PlaygroundTest(server)
 
     [Theory]
     [MemberData(nameof(AllModes))]
+    public async Task Slideover_docks_to_the_end_edge_which_is_the_left_one_in_right_to_left(string mode)
+    {
+        await SetCultureCookie("ar");
+        await Open(mode, "slideover");
+
+        await Page.GetByTestId("slideover-trigger").ClickAsync();
+
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Edit profile" });
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await Assertions.Expect(dialog).ToHaveCSSAsync("translate", "0px");
+        Assert.True(await dialog.EvaluateAsync<bool>("d => Math.abs(d.getBoundingClientRect().left) < 1 && d.getBoundingClientRect().height >= innerHeight - 1"));
+        await Assertions.Expect(dialog.GetByRole(AriaRole.Button, new() { Name = "إغلاق" })).ToBeVisibleAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_switch_thumb_moves_towards_the_left_when_checked_in_right_to_left(string mode)
+    {
+        await SetCultureCookie("ar");
+        await Open(mode, "switch");
+
+        var toggle = Page.GetByRole(AriaRole.Switch, new() { Name = "Email notifications" });
+        var thumb = Page.Locator("[data-slot=thumb]").First;
+        const string centre = "e => { const r = e.getBoundingClientRect(); return r.left + r.width / 2; }";
+        var track = await toggle.EvaluateAsync<double>(centre);
+
+        // Unchecked, the thumb sits at the start edge: the right one in right to left.
+        Assert.True(await thumb.EvaluateAsync<double>(centre) > track, "the thumb starts on the right");
+
+        await toggle.ClickAsync(new() { Force = true });
+        await Page.WaitForFunctionAsync("([t, c]) => { const e = document.querySelector('[data-slot=thumb]'); const r = e.getBoundingClientRect(); return r.left + r.width / 2 < c; }", new object[] { 0, track });
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
     public async Task A_regional_culture_picks_its_own_locale_then_its_language(string mode)
     {
         await SetCultureCookie("pt-BR");
