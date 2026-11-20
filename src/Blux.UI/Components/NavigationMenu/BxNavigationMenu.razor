@@ -73,7 +73,7 @@
                         <ChildContent>
                             <button type="button" disabled="@item.Disabled" data-state="@(IsActive(item) ? "active" : null)" class="@_slots["trigger"]">
                                 @Inner(item)
-                                @BxIcons.ChevronDown(_slots["chevron"])
+                                @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
                             </button>
                         </ChildContent>
                         <Content>
@@ -91,7 +91,7 @@
                     <BxCollapsible Open="@IsActive(item)" Disabled="@item.Disabled" ShowIcon="false" Ui="_groupUi">
                         <Trigger>
                             @Inner(item)
-                            @BxIcons.ChevronDown(_slots["chevron"])
+                            @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
                         </Trigger>
                         <ChildContent>
                             <ul class="@_slots["groupList"]">

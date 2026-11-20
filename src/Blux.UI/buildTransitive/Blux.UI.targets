@@ -10,7 +10,8 @@
           SkipUnchangedFiles="true" />
   </Target>
 
-  <!-- Build-time features (fonts): the shared task assembly, then one targets file per feature. -->
+  <!-- Build-time features (fonts, icons): the shared task assembly, then one targets file per feature. -->
   <Import Project="$(MSBuildThisFileDirectory)Blux.UI.Tasks.targets" />
   <Import Project="$(MSBuildThisFileDirectory)Blux.UI.Fonts.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)Blux.UI.Icons.targets" />
 </Project>

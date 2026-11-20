@@ -65,23 +65,3 @@ public sealed record CommandPaletteUi : ISlotOverrides
         _ => null,
     };
 }
-
-internal static class BxCommandPaletteIcons
-{
-    public static RenderFragment Search(string? @class) => builder =>
-    {
-        builder.OpenElement(0, "svg");
-        builder.AddAttribute(1, "viewBox", "0 0 24 24");
-        builder.AddAttribute(2, "fill", "none");
-        builder.AddAttribute(3, "stroke", "currentColor");
-        builder.AddAttribute(4, "stroke-width", "2");
-        builder.AddAttribute(5, "stroke-linecap", "round");
-        builder.AddAttribute(6, "stroke-linejoin", "round");
-        builder.AddAttribute(7, "aria-hidden", "true");
-        builder.AddAttribute(8, "class", @class);
-        builder.OpenElement(9, "path");
-        builder.AddAttribute(10, "d", "m21 21-4.3-4.3M17 11a6 6 0 1 1-12 0 6 6 0 0 1 12 0Z");
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-}

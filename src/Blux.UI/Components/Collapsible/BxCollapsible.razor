@@ -24,7 +24,7 @@
         }
         @if (ShowIcon)
         {
-            @BxIcons.ChevronDown(_slots["icon"])
+            @RenderIcon(Options.Icons.ChevronDown, _slots["icon"])
         }
     </button>
     <div id="@($"{_id}-content")" data-bx-collapsible-content hidden="@(Open ? null : "until-found")" class="@_slots["content"]">

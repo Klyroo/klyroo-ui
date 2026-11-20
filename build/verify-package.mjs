@@ -70,8 +70,8 @@ try {
   for (const n of ["lib/net10.0/Blux.UI.dll", "lib/net10.0/Blux.UI.xml", "staticwebassets/blux.css", "staticwebassets/blux.preflight.css",
     "staticwebassets/blux-editor.js", "staticwebassets/blux.theme.css",
     "buildTransitive/Blux.UI.targets", "build/Blux.UI.targets", "README.md",
-    "buildTransitive/Blux.UI.Tasks.targets", "buildTransitive/Blux.UI.Fonts.targets", "buildTransitive/tasks/Blux.UI.Build.Tasks.dll",
-    "build/Blux.UI.Tasks.targets", "build/Blux.UI.Fonts.targets", "build/tasks/Blux.UI.Build.Tasks.dll", "CHANGELOG.md", "icon.png", "Blux.UI.nuspec"]) {
+    "buildTransitive/Blux.UI.Tasks.targets", "buildTransitive/Blux.UI.Fonts.targets", "buildTransitive/Blux.UI.Icons.targets", "buildTransitive/tasks/Blux.UI.Build.Tasks.dll",
+    "build/Blux.UI.Tasks.targets", "build/Blux.UI.Fonts.targets", "build/Blux.UI.Icons.targets", "build/tasks/Blux.UI.Build.Tasks.dll", "CHANGELOG.md", "icon.png", "Blux.UI.nuspec"]) {
     check(nupkg.has(n), `nupkg contains ${n}`);
   }
   check(names.some((n) => /^staticwebassets\/Blux\.UI(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), "nupkg contains the JS initializer (Blux.UI.lib.module.js, fingerprinted)");
@@ -147,12 +147,16 @@ try {
   copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.woff"), join(server, "Fonts", "PackageCheck-300.woff"));
   const serverProj = join(server, "Site.csproj");
   writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxFont Include="PackageCheck" Role="sans" Provider="local" Src="Fonts" /></ItemGroup>\n</Project>`));
+  // Bundled icons, offline: a folder of SVG files is a collection, so nothing is downloaded (BluxOffline would fail the build otherwise).
+  mkdirSync(join(server, "Icons"));
+  writeFileSync(join(server, "Icons", "Check Mark.svg"), `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 2h20"/></svg>`);
+  writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <PropertyGroup><BluxOffline>true</BluxOffline></PropertyGroup>\n  <ItemGroup><BluxIconCollection Include="Icons" Prefix="pkg" /></ItemGroup>\n</Project>`));
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Blux.UI\n`);
   const prog = join(server, "Program.cs");
   writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
   const home = join(server, "Components", "Pages", "Home.razor");
-  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n`);
+  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n<BxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<BxButton Label="Close" LeadingIcon='BxIcons.Named("pkg:check-mark")' />\n`);
   const appRazor = join(server, "Components", "App.razor");
   const original = readFileSync(appRazor, "utf8").replace("<ResourcePreloader />", "<BxFonts />\n    <ResourcePreloader />");
   check(original.includes("<BxFonts />"), "consumer App.razor has BxFonts");
@@ -197,6 +201,12 @@ try {
   }
   check(!endpoints.some((e) => /\.(cs|json|stamp)$/.test(e.Route) && e.Route.startsWith("_blux/fonts/")), "fonts: no generated source, manifest or stamp is published as an endpoint");
 
+  // Bundled icons: generated from the folder with no network, then compiled into the app.
+  const iconsFile = join(server, "obj", "Release", "net10.0", "blux", "icons", "BluxIcons.g.cs");
+  const iconsSource = existsSync(iconsFile) ? readFileSync(iconsFile, "utf8") : "";
+  check(/BluxIconBundle\.Add\("pkg", "check-mark", "<g fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\"><path d=\\"M2 2h20\\"\/><\/g>", "0 0 24 24"\)/.test(iconsSource), "icons: the custom collection is generated into BluxIcons.g.cs");
+  check(iconsSource.includes("ModuleInitializer"), "icons: the registration is a module initializer");
+
   // Run the app and fetch what the page links: the font is served from the app, the preload and stylesheet are in the head.
   {
     const port = 20000 + Math.floor(Math.random() * 20000);
@@ -208,6 +218,7 @@ try {
       try { const res = await fetch(url + "/"); if (res.ok) html = await res.text(); } catch { /* not up yet */ }
     }
     try {
+      check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-bx-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
       const preload = /<link rel="preload" as="font" type="font\/woff2" crossorigin href="([^"]+)"/.exec(html)?.[1];
       const sheet = /<link rel="stylesheet" href="(_blux\/fonts\/blux\.fonts[^"]*\.css)"/.exec(html)?.[1];
       check(!!preload && preload.startsWith("_blux/fonts/PackageCheck-400-normal."), `fonts: the page preloads the font (${preload})`);
@@ -226,6 +237,16 @@ try {
     check(!readFileSync(manifestFile, "utf8").includes("_blux/fonts/"), "fonts off: no font in the static web assets");
     build("fonts back on");
     check(readFileSync(manifestFile, "utf8").includes("_blux/fonts/"), "fonts back on: the fonts are in the static web assets again");
+  }
+
+  // BluxIcons=false: nothing is scanned or generated (the earlier file is removed first, so it cannot be a leftover).
+  {
+    rmSync(iconsFile, { force: true });
+    const r = run("dotnet", ["build", "-c", "Release", "-p:BluxIcons=false", join(app, "Site", "Site.sln")], app, consumerEnv);
+    check(r.code === 0, "icons off: consumer builds");
+    check(!existsSync(iconsFile), "icons off: no BluxIcons.g.cs is generated");
+    build("icons back on");
+    check(existsSync(iconsFile), "icons back on: BluxIcons.g.cs is generated again");
   }
 
   // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/blux/ on every build.

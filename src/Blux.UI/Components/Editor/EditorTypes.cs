@@ -323,52 +323,27 @@ internal static class EditorActions
         _ => throw new ArgumentOutOfRangeException(nameof(action), action, null),
     };
 
-    /// <summary>SVG path data (24x24, stroked) of the icon of an action.</summary>
-    public static string IconPath(EditorAction action, int level) => action switch
+    /// <summary>The icon of an action: a Lucide name, or the app's arrow for the actions that move a block.</summary>
+    public static string IconName(EditorAction action, int level, BluxIconOptions icons) => action switch
     {
-        EditorAction.Bold => "M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8",
-        EditorAction.Italic => "M19 4h-9M14 20H5M15 4 9 20",
-        EditorAction.Strike => "M16 4H9a3 3 0 0 0-2.83 4M14 12a4 4 0 0 1 0 8H6M4 12h16",
-        EditorAction.Underline => "M6 4v6a6 6 0 0 0 12 0V4M4 20h16",
-        EditorAction.Code => "m16 18 6-6-6-6M8 6l-6 6 6 6",
-        EditorAction.Paragraph => "M13 4v16M17 4v16M19 4H9.5a4.5 4.5 0 0 0 0 9H13",
-        EditorAction.Heading => level switch
-        {
-            1 => "M4 12h8M4 18V6M12 18V6m5 6 3-2v8",
-            2 => "M4 12h8M4 18V6M12 18V6M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1",
-            3 => "M4 12h8M4 18V6M12 18V6M17.5 10.5c1.7-1 3.5 0 3.5 1.5a2 2 0 0 1-2 2M17 17.5c2 1.5 4 .3 4-1.5a2 2 0 0 0-2-2",
-            _ => "M4 12h8M4 18V6M12 18V6M17 10v4h4M21 10v8",
-        },
-        EditorAction.BulletList => "M3 12h.01M3 18h.01M3 6h.01M8 12h13M8 18h13M8 6h13",
-        EditorAction.OrderedList => "M11 5h10M11 12h10M11 19h10M4 4h1v5M4 9h2M6.5 20H3.4c0-1 2.6-1.925 2.6-3.5a1.5 1.5 0 0 0-2.6-1.02",
-        EditorAction.Blockquote => "M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1zM15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z",
-        EditorAction.CodeBlock => "m10 9-3 3 3 3M14 15l3-3-3-3M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z",
-        EditorAction.HorizontalRule => "M5 12h14",
-        EditorAction.Link => "M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71",
-        EditorAction.ClearFormatting => "M4 7V4h16v3M5 20h6M13 4 8 20M15 15l5 5M15 20l5-5",
-        EditorAction.Undo => "M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11",
-        EditorAction.Redo => "m15 14 5-5-5-5M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13",
-        EditorAction.MoveUp => "m5 12 7-7 7 7M12 19V5",
-        EditorAction.MoveDown => "M12 5v14m7-7-7 7-7-7",
+        EditorAction.Bold => "lucide:bold",
+        EditorAction.Italic => "lucide:italic",
+        EditorAction.Strike => "lucide:strikethrough",
+        EditorAction.Underline => "lucide:underline",
+        EditorAction.Code => "lucide:code",
+        EditorAction.Paragraph => "lucide:pilcrow",
+        EditorAction.Heading => level switch { 1 => "lucide:heading-1", 2 => "lucide:heading-2", 3 => "lucide:heading-3", _ => "lucide:heading-4" },
+        EditorAction.BulletList => "lucide:list",
+        EditorAction.OrderedList => "lucide:list-ordered",
+        EditorAction.Blockquote => "lucide:quote",
+        EditorAction.CodeBlock => "lucide:square-code",
+        EditorAction.HorizontalRule => icons.Minus,
+        EditorAction.Link => "lucide:link",
+        EditorAction.ClearFormatting => "lucide:remove-formatting",
+        EditorAction.Undo => "lucide:undo-2",
+        EditorAction.Redo => "lucide:redo-2",
+        EditorAction.MoveUp => icons.ArrowUp,
+        EditorAction.MoveDown => icons.ArrowDown,
         _ => "",
     };
-
-    public static RenderFragment Icon(string path, string? @class) => builder =>
-    {
-        builder.OpenElement(0, "svg");
-        builder.AddAttribute(1, "viewBox", "0 0 24 24");
-        builder.AddAttribute(2, "fill", "none");
-        builder.AddAttribute(3, "stroke", "currentColor");
-        builder.AddAttribute(4, "stroke-width", "2");
-        builder.AddAttribute(5, "stroke-linecap", "round");
-        builder.AddAttribute(6, "stroke-linejoin", "round");
-        builder.AddAttribute(7, "aria-hidden", "true");
-        builder.AddAttribute(8, "class", @class);
-        builder.OpenElement(9, "path");
-        builder.AddAttribute(10, "d", path);
-        builder.CloseElement();
-        builder.CloseElement();
-    };
-
-    public const string GripPath = "M9 5h.01M9 12h.01M9 19h.01M15 5h.01M15 12h.01M15 19h.01";
 }

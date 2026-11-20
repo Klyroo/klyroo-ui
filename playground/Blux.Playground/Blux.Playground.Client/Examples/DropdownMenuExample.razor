@@ -1,7 +1,7 @@
 <div class="flex flex-col items-center gap-3">
     <BxDropdownMenu Items="Items" OnSelect="item => _last = item.Label">
         <BxButton Label="Options" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="menu-trigger">
-            <TrailingIcon>@BxIcons.ChevronDown()</TrailingIcon>
+            <TrailingIcon>@BxIcons.Named("chevron-down")</TrailingIcon>
         </BxButton>
     </BxDropdownMenu>
     <p class="text-sm text-(--blux-text-muted)" data-testid="menu-state">Last action: @(_last ?? "none")</p>

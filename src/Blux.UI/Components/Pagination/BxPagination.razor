@@ -10,11 +10,11 @@
     <ul class="@_slots["list"]">
         @if (ShowFirstLast)
         {
-            <li class="@_slots["item"]">@Control(1, Messages.FirstPage, NavIcons.ChevronsLeft, _page <= 1)</li>
+            <li class="@_slots["item"]">@Control(1, Messages.FirstPage, p => RenderIcon(Options.Icons.ChevronDoubleLeft, p), _page <= 1)</li>
         }
         @if (ShowControls)
         {
-            <li class="@_slots["item"]">@Control(_page - 1, Messages.PreviousPage, NavIcons.ChevronLeft, _page <= 1)</li>
+            <li class="@_slots["item"]">@Control(_page - 1, Messages.PreviousPage, p => RenderIcon(Options.Icons.ChevronLeft, p), _page <= 1)</li>
         }
         @foreach (var entry in _entries)
         {
@@ -31,11 +31,11 @@
         }
         @if (ShowControls)
         {
-            <li class="@_slots["item"]">@Control(_page + 1, Messages.NextPage, NavIcons.ChevronRight, _page >= _pageCount)</li>
+            <li class="@_slots["item"]">@Control(_page + 1, Messages.NextPage, p => RenderIcon(Options.Icons.ChevronRight, p), _page >= _pageCount)</li>
         }
         @if (ShowFirstLast)
         {
-            <li class="@_slots["item"]">@Control(_pageCount, Messages.LastPage, NavIcons.ChevronsRight, _page >= _pageCount)</li>
+            <li class="@_slots["item"]">@Control(_pageCount, Messages.LastPage, p => RenderIcon(Options.Icons.ChevronDoubleRight, p), _page >= _pageCount)</li>
         }
     </ul>
 </nav>

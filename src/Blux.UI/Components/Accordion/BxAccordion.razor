@@ -30,7 +30,7 @@
                         <span class="@_slots["leadingIcon"]" aria-hidden="true">@item.Icon</span>
                     }
                     <span class="@_slots["label"]">@item.Label</span>
-                    @BxIcons.ChevronDown(_slots["trailingIcon"])
+                    @RenderIcon(Options.Icons.ChevronDown, _slots["trailingIcon"])
                 </button>
             </Heading>
             <div role="region" data-slot="content" data-bx-accordion-content id="@($"{_id}-content-{index}")" aria-labelledby="@($"{_id}-trigger-{index}")"

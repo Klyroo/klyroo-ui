@@ -12,7 +12,7 @@
                     @onbxchange:stopPropagation="true"
                     @attributes="AdditionalAttributes">
     <div class="@_slots["inputWrapper"]" data-slot="inputWrapper">
-        @BxCommandPaletteIcons.Search(_slots["inputIcon"])
+        @RenderIcon(Options.Icons.Search, _slots["inputIcon"])
         <input type="text" role="combobox" class="@_slots["input"]" data-slot="input"
                aria-expanded="true" aria-controls="@(_id + "-listbox")" aria-autocomplete="list"
                aria-label="@(Label ?? Messages.SearchCommands)"

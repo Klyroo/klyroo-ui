@@ -36,7 +36,6 @@ function matchesAccept(file, accept) {
   });
 }
 
-const CLOSE = 'M18 6 6 18M6 6l12 12';
 
 /**
  * Drop zone, file list and limits around a native file input.
@@ -162,19 +161,8 @@ export class BxFileUploadElement extends HTMLElement {
       remove.dataset.index = String(index);
       remove.setAttribute('aria-label', format(this.getAttribute('data-text-remove'), file.name));
       remove.disabled = this.#input?.disabled ?? false;
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      svg.setAttribute('viewBox', '0 0 24 24');
-      svg.setAttribute('fill', 'none');
-      svg.setAttribute('stroke', 'currentColor');
-      svg.setAttribute('stroke-width', '2');
-      svg.setAttribute('stroke-linecap', 'round');
-      svg.setAttribute('stroke-linejoin', 'round');
-      svg.setAttribute('aria-hidden', 'true');
-      svg.setAttribute('class', 'size-4');
-      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('d', CLOSE);
-      svg.append(path);
-      remove.append(svg);
+      // The icon is the app's Close icon, drawn by .NET (BluxOptions.Icons.Close).
+      remove.innerHTML = this.dataset.iconClose ?? '';
       li.append(name, size, remove);
       return li;
     });

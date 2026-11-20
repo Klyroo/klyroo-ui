@@ -17,11 +17,11 @@
         }
         else if (Status == ChatAttachmentStatus.Uploading)
         {
-            @BxChatIcons.Draw(BxChatIcons.Spinner, _slots["leadingIcon"])
+            @RenderIcon(Options.Icons.Loading, _slots["leadingIcon"])
         }
         else if (Status == ChatAttachmentStatus.Error)
         {
-            @BxChatIcons.Draw(BxChatIcons.Alert, _slots["leadingIcon"])
+            @RenderIcon(Options.Icons.Caution, _slots["leadingIcon"])
         }
         else if (Icon is not null)
         {
@@ -29,7 +29,7 @@
         }
         else
         {
-            @BxChatIcons.Draw(BxChatIcons.File, _slots["leadingIcon"])
+            @RenderIcon(Options.Icons.File, _slots["leadingIcon"])
         }
     </span>
     <span class="@_slots["wrapper"]" data-slot="wrapper">
@@ -56,7 +56,7 @@
     {
         <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="OnRemove"
                   aria-label="@string.Format(Messages.ChatRemoveAttachment, Name)" Class="@_slots["remove"]"
-                  LeadingIcon="@BxChatIcons.Draw(BxChatIcons.Close, _slots["removeIcon"])" />
+                  LeadingIcon="@RenderIcon(Options.Icons.Close, _slots["removeIcon"])" />
     }
 </div>
 

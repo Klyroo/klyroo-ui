@@ -225,14 +225,15 @@ public class ElementsTests : BluxTestContext
     }
 
     [Fact]
-    public void Icon_builtin_set_has_about_forty_icons_and_the_helpers_still_work()
+    public void Icon_helper_draws_a_builtin_icon_with_its_class()
     {
-        Assert.True(IconRegistry.Builtin.Count >= 40);
-        var close = Render(BxIcons.Close("size-4"));
-        Assert.Equal(IconRegistry.Builtin["x"], close.Find("path").GetAttribute("d"));
-        Assert.Contains("size-4", close.Find("svg").ClassList);
-        var named = Render(BxIcons.Named("bell"));
-        Assert.Equal(IconRegistry.Builtin["bell"], named.Find("path").GetAttribute("d"));
+        var named = Render(BxIcons.Named("bell", "size-4"));
+
+        Assert.NotEmpty(named.FindAll("svg path"));
+        Assert.Equal("currentColor", named.Find("svg path").GetAttribute("stroke"));
+        Assert.Contains("size-4", named.Find("svg").ClassList);
+        Assert.Equal("0 0 24 24", named.Find("svg").GetAttribute("viewBox"));
+        Assert.Equal("true", named.Find("svg").GetAttribute("aria-hidden"));
     }
 
     [Fact]
@@ -407,12 +408,12 @@ public class ElementsTests : BluxTestContext
 
 public class ElementsCustomIconTests() : BluxTestContext(o =>
 {
-    o.Icons["brand"] = "M1 1h22";
-    o.Icons["search"] = "M2 2h20";
+    o.Icons.Register("brand", "<path d=\"M1 1h22\"/>");
+    o.Icons.Register("search", "<path d=\"M2 2h20\"/>");
 })
 {
     [Fact]
-    public void Custom_icons_replace_and_extend_the_builtin_set()
+    public void Registered_icons_replace_and_extend_the_builtin_set()
     {
         var custom = Render<BxIcon>(p => p.Add(i => i.Name, "brand"));
         var replaced = Render<BxIcon>(p => p.Add(i => i.Name, "search"));

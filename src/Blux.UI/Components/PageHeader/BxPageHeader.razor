@@ -17,7 +17,7 @@
             <p class="@_slots["description"]" data-slot="description">@Description</p>
         }
     </div>
-    @PageRender.Buttons(Links, _slots["links"], BxSize.Md)
+    @PageRender.Buttons(Links, _slots["links"], BxSize.Md, Options.Icons)
     @if (ChildContent is not null)
     {
         <div class="@_slots["body"]" data-slot="body">@ChildContent</div>

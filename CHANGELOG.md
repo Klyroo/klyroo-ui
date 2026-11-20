@@ -8,6 +8,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **Icons**, like the icon system of Nuxt UI. Any Iconify icon works by name: `i-{collection}-{name}` (`i-ph-house`), `{collection}:{name}` (`ph:house`) or a bare Lucide name. The Lucide icons that components use are embedded (generated from `@iconify-json/lucide`, ISC notice kept); the build bundles every other icon the app writes as a literal: the `BluxResolveIcons` task scans `.razor`, `.cshtml` and `.cs` files, downloads missing icons from the Iconify API into a per-icon cache (`obj/blux/icons-cache`) and generates a module initializer that registers them, so nothing is requested at run time and it works in every render mode, trimmed or not. `<BluxIcon Include="ph:cube;ph:cube-fill" />` lists names the scan cannot see, `<BluxIconCollection Include="Assets/icons" Prefix="custom" />` makes a folder of SVG files a collection, `BluxIcons=false` turns it off, `BluxOffline=true` builds from the cache. A missing icon is a warning in Debug and an error in Release. See the Icons guide.
+- `BluxOptions.Icons` has one property per icon components draw, with the 45 keys of Nuxt UI (`Close`, `Check`, `ChevronDown`, `Loading`, `Search`...) plus `ChevronUpDown`, `Calendar`, `Play` and `Pause`: `o.Icons.Close = "ph:x"`. `Register` and `RegisterSvg` add icons in code.
+- An icon that cannot be found renders an empty icon marked `data-bx-missing-icon`.
 - **AI tooling**, generated from the docs catalog and the library so it cannot go stale: the `Blux.UI.Mcp` dotnet tool (`blux-ui-mcp`, an MCP server over stdio),
   the same server over HTTP at `/mcp` on the docs site (`X-MCP-Tools` restricts the tools), `/llms.txt` and `/llms-full.txt`, and the `blux-ui` agent skill in `skills/blux-ui`.
   An "AI" section in the docs explains how to install each.
@@ -33,6 +36,9 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Changed
 
+- **Breaking:** `BluxOptions.Icons` is no longer a `Dictionary<string, string>` of path data. Replace `o.Icons["brand"] = "M3 3h18v18H3z"` with `o.Icons.Register("brand", "<path fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" d=\"M3 3h18v18H3z\" />")` (the stroke is now part of the icon, not of the component), and `o.Icons["search"] = ...` with `o.Icons.Search = "ph:magnifying-glass"` to change what components draw.
+- **Breaking:** `BxIcons.Close()`, `Check()`, `Minus()`, `ChevronDown()`, `ChevronUpDown()`, `ArrowUp()`, `ArrowDown()`, `Info()`, `CircleCheck()`, `TriangleAlert()` and `CircleX()` are removed: use `BxIcons.Named("x")` or `<BxIcon Name="x" />`. `Named` accepts every name form.
+- The loading spinner of `BxButton` is the `Loading` icon (Lucide `loader-circle`, one arc) instead of a ring with an arc; `BxContentSearch` marks headings with the `Hash` icon; the editor toolbar uses Lucide icons.
 - The light secondary, success, info and error fills and their text colors are slightly darker, so white text on them stays at 4.5:1 on the hover and pressed states (the fills at 90% and 80% over the page).
 - `BxChart` series default to `data-color="chart-1"` to `chart-6`, which resolve to the semantic colors at the element (same look, and a `--blux-primary` set on a subtree reaches the charts inside it).
 - The header height is `--blux-header-height` (4rem on `:root`), and `BxHeader`, `BxMain` and the page aside read `var(--bx-header-height, var(--blux-header-height))` at the element: either variable works on `:root` or on a subtree, and `--bx-header-height` wins when both are set. The container width reads `--blux-container`.

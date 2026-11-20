@@ -100,7 +100,7 @@
 
 ### Icon
 
-`/components/icon`. A Lucide icon by name from a built-in set, extensible through BluxOptions.Icons.
+`/components/icon`. Any Iconify icon by name (i-ph-house, mdi:home, a bare Lucide name), bundled into the app at build time, with the Lucide icons that components use built in.
 
 - `<BxIcon>`
   - Parameters: `Class`, `Label`, `Name` (required), `Size`, `Ui`

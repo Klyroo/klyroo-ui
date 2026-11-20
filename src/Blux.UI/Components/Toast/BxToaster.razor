@@ -8,6 +8,7 @@
 @* data-permanent: enhanced navigation keeps the element, so a toast shown before a redirect stays visible. *@
 <bx-toaster data-permanent
             data-close-label="@Messages.Close"
+            data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "size-4")"
             data-duration="@((int)Duration.TotalMilliseconds)"
             data-ui-root="@_slots["root"]"
             data-ui-wrapper="@_slots["wrapper"]"

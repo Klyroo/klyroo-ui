@@ -65,7 +65,7 @@ else
                       data-label="@Label"
                       data-placeholder="@(Value is { Count: > 0 } ? null : "")"
                       data-placeholder-text="@(Placeholder ?? "")"></span>
-                @BxIcons.ChevronUpDown(_slots["trailingIcon"])
+                @RenderIcon(Options.Icons.ChevronUpDown, _slots["trailingIcon"])
             </button>
             <div popover="auto" class="@_slots["content"]" data-slot="content">
                 <div class="@_slots["searchWrapper"]">
@@ -79,7 +79,7 @@ else
                         <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
                              aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
                             <span class="@_slots["itemLabel"]">@item.Label</span>
-                            @BxIcons.Check(_slots["itemIcon"])
+                            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
                         </div>
                     }
                     @if (Create)

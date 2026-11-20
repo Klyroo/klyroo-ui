@@ -53,7 +53,7 @@
     @if (AutoScroll)
     {
         <button type="button" hidden data-bx-chat-jump class="@_slots["jump"]">
-            @BxChatIcons.Draw(BxChatIcons.ArrowDown, _slots["jumpIcon"])
+            @RenderIcon(Options.Icons.ArrowDown, _slots["jumpIcon"])
             @Messages.ChatJumpToLatest
         </button>
     }

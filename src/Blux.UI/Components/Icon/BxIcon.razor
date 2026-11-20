@@ -1,31 +1,28 @@
 @namespace Blux.UI
 @inherits BxComponentBase
 
-<svg viewBox="0 0 24 24"
-     fill="none"
-     stroke="currentColor"
-     stroke-width="2"
-     stroke-linecap="round"
-     stroke-linejoin="round"
+<svg viewBox="@_viewBox"
+     fill="currentColor"
      role="@(Label is null ? null : "img")"
      aria-label="@Label"
      aria-hidden="@(Label is null ? "true" : null)"
      data-icon="@Name"
+     data-bx-missing-icon="@(_found ? null : Name)"
      class="@_slots["base"]"
-     @attributes="AdditionalAttributes">
-    @if (_path is not null)
-    {
-        <path d="@_path" />
-    }
-</svg>
+     @attributes="AdditionalAttributes">@_body</svg>
 
 @code {
     private SlotSet _slots = default!;
-    private string? _path;
+    private string _viewBox = IconRender.DefaultViewBox;
+    private MarkupString _body;
+    private bool _found;
 
     /// <summary>
-    /// Lucide icon name ("search", "chevron-down"…), from the built-in set or from <see cref="BluxOptions.Icons"/>.
-    /// An unknown name renders an empty icon.
+    /// The icon, by name, in any of the forms Nuxt UI accepts: <c>i-lucide-search</c>, <c>lucide:search</c>, <c>ph:house</c>,
+    /// <c>i-simple-icons-github</c>, or a bare Lucide name (<c>search</c>). The Lucide icons components use are built in;
+    /// every other Iconify icon written as a literal in the app's sources is bundled at build time, and icons added to
+    /// <see cref="BluxIconOptions"/> or from a <c>BluxIconCollection</c> folder work too. An icon that is not found renders an empty
+    /// icon marked <c>data-bx-missing-icon</c>.
     /// </summary>
     [Parameter, EditorRequired] public string Name { get; set; } = "";
 
@@ -36,9 +33,9 @@
 
     protected override void OnParametersSet()
     {
-        _path = Options.Icons.TryGetValue(Name, out var custom) ? custom
-            : IconRegistry.Builtin.TryGetValue(Name, out var builtin) ? builtin
-            : null;
+        _found = IconResolver.TryResolve(Name, Options.Icons, out var icon);
+        _viewBox = _found ? icon.ViewBox : IconRender.DefaultViewBox;
+        _body = new MarkupString(_found ? icon.Body : "");
         _slots = ResolveSlots(Options.Icon, new Dictionary<string, string?> { ["size"] = VariantValue.Of(Size) }, Ui, "base");
     }
 }

@@ -9,7 +9,7 @@
 <BxButton Color="Color" Variant="Variant" Size="Size" Square="Collapsed" Class="@_slots["root"]" Ui="_buttonUi"
           aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" aria-label="@(Collapsed ? ButtonLabel : null)" data-bx-content-search-open="@For"
           @attributes="AdditionalAttributes">
-    <LeadingIcon>@BxIcons.Named("search", "size-5")</LeadingIcon>
+    <LeadingIcon>@RenderIcon(Options.Icons.Search, "size-5")</LeadingIcon>
     <ChildContent>
         @if (!Collapsed)
         {

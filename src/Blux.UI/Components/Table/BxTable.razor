@@ -25,11 +25,11 @@
                                         @column.Title
                                         @if (column == _sortColumn)
                                         {
-                                            @(_ascending ? BxIcons.ArrowUp(_slots["sortIcon"]) : BxIcons.ArrowDown(_slots["sortIcon"]))
+                                            @(_ascending ? RenderIcon(Options.Icons.ArrowUp, _slots["sortIcon"]) : RenderIcon(Options.Icons.ArrowDown, _slots["sortIcon"]))
                                         }
                                         else
                                         {
-                                            @BxIcons.ChevronUpDown(_slots["sortIcon"])
+                                            @RenderIcon(Options.Icons.ChevronUpDown, _slots["sortIcon"])
                                         }
                                     </button>
                                 }

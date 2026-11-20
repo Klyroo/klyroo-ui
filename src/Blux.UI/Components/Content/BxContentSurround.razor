@@ -12,7 +12,7 @@
         {
             <a href="@Previous.Href" rel="prev" class="@_previous["link"]">
                 <span class="@_previous["caption"]">
-                    @BxIcons.Named("arrow-left", _previous["icon"])
+                    @RenderIcon(Options.Icons.ArrowLeft, _previous["icon"])
                     @Messages.ContentPrevious
                 </span>
                 <span class="@_previous["title"]">@Previous.Title</span>
@@ -26,7 +26,7 @@
         {
             <a href="@Next.Href" rel="next" class="@_next["link"]">
                 <span class="@_next["caption"]">
-                    @BxIcons.Named("arrow-right", _next["icon"])
+                    @RenderIcon(Options.Icons.ArrowRight, _next["icon"])
                     @Messages.ContentNext
                 </span>
                 <span class="@_next["title"]">@Next.Title</span>

@@ -1,0 +1,8 @@
+@* A name built at runtime cannot be found in the source. List the icons it can produce in a BluxIcon item of the project file:
+   <BluxIcon Include="ph:cube;ph:cube-fill;ph:cube-bold" /> *@
+<div class="flex flex-wrap items-center gap-4" data-testid="icon-dynamic">
+    @foreach (var weight in new[] { "", "-fill", "-bold" })
+    {
+        <BxIcon Name="@($"ph:cube{weight}")" Size="BxSize.Xl" Label="@($"Cube{weight}")" />
+    }
+</div>

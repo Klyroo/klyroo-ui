@@ -22,7 +22,7 @@
             aria-expanded="@(Open ? "true" : "false")" disabled="@Disabled" class="@_slots["trigger"]">
         @if (Chevron == ChatChevron.Leading)
         {
-            @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+            @RenderIcon(Options.Icons.ChevronDown, _slots["chevronIcon"])
         }
         @if (Icon is not null)
         {
@@ -40,7 +40,7 @@
         </span>
         @if (Chevron == ChatChevron.Trailing)
         {
-            @BxChatIcons.Draw(BxChatIcons.ChevronDown, _slots["chevronIcon"])
+            @RenderIcon(Options.Icons.ChevronDown, _slots["chevronIcon"])
         }
     </button>
     <div id="@($"{_id}-content")" data-bx-disclosure-content hidden="@(Open ? null : "until-found")" class="@_slots["content"]">

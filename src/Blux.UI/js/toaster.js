@@ -7,7 +7,6 @@
  * WebAssembly (they get different service instances in Auto mode), and plain scripts.
  */
 const MAX_TOASTS = 5;
-const CLOSE_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" class="size-4"><path d="M18 6 6 18M6 6l12 12"/></svg>';
 
 export class BxToasterElement extends HTMLElement {
   get #viewport() {
@@ -37,7 +36,8 @@ export class BxToasterElement extends HTMLElement {
     close.type = 'button';
     close.className = ui.uiClose ?? '';
     close.setAttribute('aria-label', ui.closeLabel ?? 'Close');
-    close.innerHTML = CLOSE_ICON;
+    // The icon is the app's Close icon, drawn by .NET (BluxOptions.Icons.Close).
+    close.innerHTML = ui.iconClose ?? '';
     close.addEventListener('click', () => this.#dismiss(item));
     item.append(close);
 

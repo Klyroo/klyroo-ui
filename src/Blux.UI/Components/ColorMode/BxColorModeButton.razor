@@ -10,8 +10,8 @@
           aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)"
           data-bx-color-mode="toggle">
     <LeadingIcon>
-        @ColorModeIcons.Moon(_slots["moon"])
-        @ColorModeIcons.Sun(_slots["sun"])
+        @RenderIcon(Options.Icons.Dark, _slots["moon"])
+        @RenderIcon(Options.Icons.Light, _slots["sun"])
     </LeadingIcon>
 </BxButton>
 
