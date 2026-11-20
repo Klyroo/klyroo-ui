@@ -33,6 +33,7 @@ import './chart.js';
 import './content.js';
 import './platform-keys.js';
 import './spatial-nav.js';
+import './switch-hit.js';
 import { markHost, isHybrid } from './host.js';
 import { toast } from './toaster.js';
 import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';

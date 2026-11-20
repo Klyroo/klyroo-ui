@@ -262,7 +262,18 @@ public class Overlay2Tests : BluxTestContext
 
         var input = cut.Find("input");
         Assert.False(input.HasAttribute("aria-label"));
-        Assert.Equal(input.Id, cut.Find("label").GetAttribute("for"));
+        Assert.Equal(input.Id, cut.Find("label[for]").GetAttribute("for"));
+    }
+
+    [Fact]
+    public void ColorModeSwitch_wraps_its_track_in_a_label_like_BxSwitch_so_the_hit_area_can_toggle_it()
+    {
+        var cut = Render<BxColorModeSwitch>();
+
+        var wrapper = cut.Find("label");
+        Assert.Equal("input", wrapper.Children[0].LocalName);
+        Assert.Equal("switch", wrapper.Children[0].GetAttribute("role"));
+        Assert.Equal("thumb", wrapper.Children[1].GetAttribute("data-slot"));
     }
 
     [Fact]

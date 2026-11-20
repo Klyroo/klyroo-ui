@@ -6,14 +6,15 @@
     the checkbox in sync and writes the choice. Nothing goes through .NET, so it works on static pages.
 *@
 <div class="@_slots["root"]" data-color="@Color.Value" @attributes="AdditionalAttributes">
-    <div class="@_slots["container"]">
+    @* A label, like BxSwitch: on a touch screen its ::after is the 44px hit area, and a tap there toggles the input. *@
+    <label class="@_slots["container"]">
         <input type="checkbox" role="switch" id="@_id" class="@_slots["input"]" data-bx-color-mode="switch"
                aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)" />
         <span class="@_slots["thumb"]" aria-hidden="true" data-slot="thumb">
             @RenderIcon(Options.Icons.Dark, _slots["moon"])
             @RenderIcon(Options.Icons.Light, _slots["sun"])
         </span>
-    </div>
+    </label>
     @if (Label is not null)
     {
         <div class="@_slots["wrapper"]" data-slot="wrapper">

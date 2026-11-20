@@ -41,6 +41,11 @@ export class BxTooltipElement extends HTMLElement {
     this.#sync();
   }
 
+  /** Hides the tooltip now (TV Back uses it: a tooltip is not a layer Back closes, but it may go away with it). */
+  hide() {
+    this.#hide();
+  }
+
   // The element that receives focus (an input inside a wrapper, say), else the first child.
   get #trigger() {
     const wrapper = this.querySelector(':scope > [data-slot="trigger"]');
