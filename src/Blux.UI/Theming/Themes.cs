@@ -18,10 +18,10 @@ internal static partial class Themes
             .Slot("leadingIcon", "shrink-0")
             .Slot("trailingIcon", "shrink-0")
 
-            .Variant("variant", "solid", "base", "bg-(--bx-color) text-(--bx-color-contrast) hover:bg-(--bx-color)/90 active:bg-(--bx-color)/80 disabled:bg-(--bx-color) aria-disabled:bg-(--bx-color)")
-            .Variant("variant", "outline", "base", "ring ring-inset ring-(--bx-color)/50 text-(--bx-color-text) hover:bg-(--bx-color)/10 active:bg-(--bx-color)/15 disabled:bg-transparent")
+            .Variant("variant", "solid", "base", "bg-(--bx-color) ring ring-inset ring-(--bx-color-text) text-(--bx-color-contrast) hover:bg-(--bx-color)/90 active:bg-(--bx-color)/80 disabled:bg-(--bx-color) aria-disabled:bg-(--bx-color)")
+            .Variant("variant", "outline", "base", "ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text) hover:bg-(--bx-color)/10 active:bg-(--bx-color)/15 disabled:bg-transparent")
             .Variant("variant", "soft", "base", "bg-(--bx-color)/10 text-(--bx-color-text) hover:bg-(--bx-color)/15 active:bg-(--bx-color)/20 disabled:bg-(--bx-color)/10")
-            .Variant("variant", "subtle", "base", "bg-(--bx-color)/10 ring ring-inset ring-(--bx-color)/25 text-(--bx-color-text) hover:bg-(--bx-color)/15 active:bg-(--bx-color)/20 disabled:bg-(--bx-color)/10")
+            .Variant("variant", "subtle", "base", "bg-(--bx-color)/10 ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text) hover:bg-(--bx-color)/15 active:bg-(--bx-color)/20 disabled:bg-(--bx-color)/10")
             .Variant("variant", "ghost", "base", "text-(--bx-color-text) hover:bg-(--bx-color)/10 active:bg-(--bx-color)/15 disabled:bg-transparent")
             .Variant("variant", "link", "base", "text-(--bx-color-text) underline-offset-4 hover:underline disabled:no-underline")
 
@@ -68,7 +68,7 @@ internal static partial class Themes
             .Slot("container", "relative inline-flex shrink-0 items-center")
             .Slot("input", "peer appearance-none shrink-0 cursor-pointer rounded-full bg-(--blux-control) transition-colors " +
                            "checked:bg-(--bx-color) checked:ring-1 checked:ring-inset checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
-                           "aria-invalid:ring-2 aria-invalid:ring-(--blux-error) " + FocusRing)
+                           "aria-invalid:ring-2 aria-invalid:ring-inset aria-invalid:ring-(--blux-error) checked:aria-invalid:ring-2 checked:aria-invalid:ring-(--blux-error) " + FocusRing)
             .Slot("thumb", "pointer-events-none absolute start-0.5 rounded-full bg-white shadow-sm ring-0 transition peer-checked:bg-(--bx-color-contrast) peer-disabled:opacity-60")
             .Slot("wrapper", "flex flex-col")
             .Slot("label", "font-medium text-(--blux-text) cursor-pointer group-data-disabled:cursor-not-allowed group-data-disabled:opacity-60")

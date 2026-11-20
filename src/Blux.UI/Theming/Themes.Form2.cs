@@ -107,7 +107,7 @@ internal static partial class Themes
         var t = new ComponentTheme("inputTags", "root", "tags", "tag", "remove", "input")
             .Slot("tags", "contents")
             .Slot("root", "relative flex w-full flex-wrap items-center rounded-(--blux-radius) transition-colors has-disabled:cursor-not-allowed has-disabled:opacity-60 cursor-text " + ContainerInvalid)
-            .Slot("tag", "inline-flex max-w-full items-center gap-1 rounded-[calc(var(--blux-radius)_-_2px)] bg-(--bx-color)/10 py-0.5 ps-2 pe-1 text-xs font-medium text-(--bx-color-text) ring ring-inset ring-(--bx-color)/25")
+            .Slot("tag", "inline-flex max-w-full items-center gap-1 rounded-[calc(var(--blux-radius)_-_2px)] bg-(--bx-color)/10 py-0.5 ps-2 pe-1 text-xs font-medium text-(--bx-color-text) ring ring-inset ring-(--bx-color-text)/75")
             .Slot("remove", "inline-flex shrink-0 cursor-pointer rounded-full p-0.5 hover:bg-(--bx-color)/20 focus-visible:outline-2 focus-visible:outline-(--bx-color-text) [&>svg]:size-3")
             .Slot("input", "min-w-20 flex-1 border-0 bg-transparent p-0 py-0.5 placeholder:text-(--blux-text-dimmed) focus:outline-none focus-visible:outline-none disabled:cursor-not-allowed");
         FieldLook(t, "root", ContainerFocus, "");
@@ -191,9 +191,9 @@ internal static partial class Themes
     private static ComponentTheme ToggleLook(ComponentTheme t, string slot) => t
         .Slot(slot, "inline-flex shrink-0 cursor-pointer select-none items-center justify-center rounded-(--blux-radius) font-medium transition-colors " +
                     "disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text)")
-        .Variant("variant", "outline", slot, "bg-(--blux-bg) text-(--blux-text) ring ring-inset ring-(--blux-border-accented) hover:bg-(--blux-bg-elevated) aria-pressed:bg-(--bx-color)/15 aria-pressed:text-(--bx-color-text) aria-pressed:ring-(--bx-color)/50")
-        .Variant("variant", "soft", slot, "bg-(--blux-bg-elevated) text-(--blux-text) hover:bg-(--blux-bg-accented) aria-pressed:bg-(--bx-color)/20 aria-pressed:text-(--bx-color-text)")
-        .Variant("variant", "ghost", slot, "text-(--blux-text-muted) hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-pressed:bg-(--bx-color)/15 aria-pressed:text-(--bx-color-text)")
+        .Variant("variant", "outline", slot, "bg-(--blux-bg) text-(--blux-text) ring ring-inset ring-(--blux-border-accented) hover:bg-(--blux-bg-elevated) aria-pressed:bg-(--bx-color)/15 aria-pressed:text-(--bx-color-text) aria-pressed:ring-(--bx-color-text)/75")
+        .Variant("variant", "soft", slot, "bg-(--blux-bg-elevated) text-(--blux-text) hover:bg-(--blux-bg-accented) aria-pressed:bg-(--bx-color)/20 aria-pressed:text-(--bx-color-text) aria-pressed:ring aria-pressed:ring-inset aria-pressed:ring-(--bx-color-text)/75")
+        .Variant("variant", "ghost", slot, "text-(--blux-text-muted) hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-pressed:bg-(--bx-color)/15 aria-pressed:text-(--bx-color-text) aria-pressed:ring aria-pressed:ring-inset aria-pressed:ring-(--bx-color-text)/75")
         .Variant("size", "xs", slot, "px-2 py-1 text-xs gap-1")
         .Variant("size", "sm", slot, "px-2.5 py-1.5 text-xs gap-1.5")
         .Variant("size", "md", slot, "px-2.5 py-1.5 text-sm gap-1.5")

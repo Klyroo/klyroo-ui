@@ -18,7 +18,7 @@ internal static partial class Themes
             // The mark of the current page is an inset line on the start edge: one utility instead of a pseudo-element.
             .Slot("link", ContentLink + " " +
                           "aria-[current=page]:bg-(--blux-bg-muted) aria-[current=page]:font-medium aria-[current=page]:text-(--blux-text-highlighted) " +
-                          "aria-[current=page]:shadow-[inset_2px_0_0_var(--bx-color)]")
+                          "aria-[current=page]:shadow-[inset_2px_0_0_var(--bx-color-text)]")
             .Slot("disabled", "cursor-not-allowed opacity-60")
             .Slot("trigger", ContentLink + " group/trigger text-start disabled:cursor-not-allowed disabled:opacity-60")
             .Slot("section", "group/trigger flex w-full items-center gap-2 rounded-md px-2 py-1 text-start font-mono text-[11px] uppercase tracking-[0.14em] text-(--blux-text-muted) " +
