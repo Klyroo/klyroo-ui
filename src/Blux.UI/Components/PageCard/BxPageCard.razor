@@ -86,7 +86,8 @@
     [Parameter] public PageCardVariant Variant { get; set; } = PageCardVariant.Outline;
 
     /// <summary>Tints the icon, the spotlight and the hover ring.</summary>
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Horizontal puts the text and the content side by side from the lg breakpoint.</summary>
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Vertical;

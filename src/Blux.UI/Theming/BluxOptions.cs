@@ -37,6 +37,36 @@ public sealed partial class BluxOptions
     public ComponentTheme Accordion { get; } = Themes.Accordion();
     public ComponentTheme Table { get; } = Themes.Table();
 
+    /// <summary>Palettes of the semantic colors (<c>Primary</c>, <c>Neutral</c>…) and extra semantic colors. Render <see cref="BxThemeStyle"/> in <c>&lt;head&gt;</c> to deliver them.</summary>
+    public BxColorOptions Colors { get; } = new();
+
+    /// <summary>Default <c>Color</c> and <c>Size</c> of the components, when a parameter is not set.</summary>
+    public BxDefaults Defaults { get; } = new();
+
+    private string? _themeCss;
+    private bool _themeCssResolved;
+
+    /// <summary>The stylesheet of <see cref="Colors"/>, resolved once (the colors become read-only), or null when they are the defaults.</summary>
+    internal string? ThemeCss
+    {
+        get
+        {
+            if (!_themeCssResolved)
+            {
+                lock (Colors)
+                {
+                    if (!_themeCssResolved)
+                    {
+                        Colors.Freeze();
+                        _themeCss = BxThemeTokens.Compute(Colors).ToCss(Colors);
+                        _themeCssResolved = true;
+                    }
+                }
+            }
+            return _themeCss;
+        }
+    }
+
     /// <summary>Built-in texts rendered by components, for localization.</summary>
     public BluxStrings Strings { get; } = new();
 

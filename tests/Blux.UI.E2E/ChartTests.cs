@@ -71,7 +71,7 @@ public class ChartTests(PlaygroundServer server) : PlaygroundTest(server)
         var chart = Chart("chart-bar");
 
         await Assertions.Expect(chart.Locator("g[data-series]")).ToHaveCountAsync(2);
-        Assert.Equal("primary", await chart.Locator("g[data-series='0']").GetAttributeAsync("data-color"));
+        Assert.Equal("chart-1", await chart.Locator("g[data-series='0']").GetAttributeAsync("data-color"));
         Assert.Equal("info", await chart.Locator("g[data-series='1']").GetAttributeAsync("data-color"));
         // The color is applied through the variable of data-color: the stroke of the first bar is the primary text color.
         var stroke = await chart.Locator("g[data-series='0'] rect").First.EvaluateAsync<string>("e => getComputedStyle(e).stroke");

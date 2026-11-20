@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-133 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+134 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -751,6 +751,13 @@
 - `<BxTheme>`
   - Parameters: `For`, `Overrides`, `Ui`
   - Slots: `ChildContent`
+
+### ThemeStyle
+
+`/components/theme-style`. Delivers the palettes configured in AddBluxUi to the page: the color variables and the rule of every extra semantic color.
+
+- `<BxThemeStyle>`
+  - Parameters: `Colors`, `Nonce`, `Scope`
 
 ## Page
 

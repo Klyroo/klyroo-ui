@@ -57,7 +57,8 @@
     [Parameter] public EditorToolbarLayout Layout { get; set; }
 
     /// <summary>Color of pressed buttons.</summary>
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public BxSize Size { get; set; } = BxSize.Sm;
 
     /// <summary>Accessible name of the toolbar. Defaults to <see cref="BluxStrings.EditorToolbar"/>.</summary>

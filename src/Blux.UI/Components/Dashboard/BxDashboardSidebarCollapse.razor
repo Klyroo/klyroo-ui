@@ -24,7 +24,8 @@
     [Parameter] public string? Label { get; set; }
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
     [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.DashboardSidebarCollapse, new Dictionary<string, string?>(), null, "root");

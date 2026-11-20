@@ -36,7 +36,9 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
    state indicators at least 3:1, in light and dark. Every page must pass axe.
 6. **Theme through tokens only.** Colors come from `--blux-*` tokens and the `data-color` variables
    (`--bx-color`, `--bx-color-text`, `--bx-color-contrast`); no Tailwind palette colors in themes. Focus outlines use
-   `outline-(--bx-color-text)` or `outline-(--blux-primary-text)`. Sizes are `BxSize` (xs to xl) where they apply.
+   `outline-(--bx-color-text)` or `outline-(--blux-primary-text)`. Sizes are `BxSize` (xs to xl) where they apply. A color token added to `blux.base.css` also goes into the default
+   tables of `Theming/BxThemeTokens.cs` (a test compares them), and a solid fill must keep 4.5:1 for its `-contrast` text at
+   the `/90` and `/80` hover and pressed states.
 7. **Static ids and loops.** Ids come from `NewId(...)`. In a Razor `for` loop, copy the index into a local before any
    child component content or lambda uses it.
 8. **Interop is primitive.** Calls into JS pass strings and numbers, never anonymous objects (trimming).

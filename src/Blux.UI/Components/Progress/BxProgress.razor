@@ -49,8 +49,10 @@
 
     /// <summary>Accessible name of the bar. Defaults to <see cref="BluxStrings.Progress"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Motion of the indeterminate bar. It stops, leaving a full faded bar, when the user prefers reduced motion.</summary>
     [Parameter] public BxProgressAnimation Animation { get; set; } = BxProgressAnimation.Carousel;

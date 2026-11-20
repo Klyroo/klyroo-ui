@@ -12,7 +12,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageTags>blazor;components;ui;tailwind</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- BL0007: Color and Size have a getter that falls back to BluxOptions.Defaults, which an auto property cannot do. -->
+    <NoWarn>$(NoWarn);CS1591;BL0007</NoWarn>
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 

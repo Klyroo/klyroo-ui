@@ -33,7 +33,8 @@
     /// <summary>Value of the selected item. Selection also works unbound: the browser keeps it.</summary>
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Accessible name of the tree.</summary>
     [Parameter] public string? AriaLabel { get; set; }

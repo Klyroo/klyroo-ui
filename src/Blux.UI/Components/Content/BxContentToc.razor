@@ -47,7 +47,8 @@
     [Parameter] public string? Title { get; set; }
 
     /// <summary>The color of the link of the heading being read.</summary>
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>
     /// Collapses the list behind its title below <see cref="Breakpoint"/>, as a disclosure button. Above it, and without

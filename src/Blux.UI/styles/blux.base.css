@@ -6,28 +6,96 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
+/*
+ * Tailwind utilities that follow the runtime tokens (hence `inline`: the utility reads var(--blux-*) at the element, so
+ * .dark and overrides apply). text-default, text-muted, bg-elevated, border-accented, bg-primary, text-primary… exist in
+ * both modes, and rounded-* follow --blux-radius. Custom semantic colors need their own mapping, see the Theming guide.
+ */
+@theme inline {
+  --color-primary: var(--blux-primary);
+  --color-secondary: var(--blux-secondary);
+  --color-success: var(--blux-success);
+  --color-info: var(--blux-info);
+  --color-warning: var(--blux-warning);
+  --color-error: var(--blux-error);
+  --color-neutral: var(--blux-neutral);
+
+  --text-color-dimmed: var(--blux-text-dimmed);
+  --text-color-muted: var(--blux-text-muted);
+  --text-color-toned: var(--blux-text-toned);
+  --text-color-default: var(--blux-text);
+  --text-color-highlighted: var(--blux-text-highlighted);
+  --text-color-inverted: var(--blux-text-inverted);
+
+  --background-color-default: var(--blux-bg);
+  --background-color-muted: var(--blux-bg-muted);
+  --background-color-elevated: var(--blux-bg-elevated);
+  --background-color-accented: var(--blux-bg-accented);
+  --background-color-inverted: var(--blux-bg-inverted);
+
+  --border-color-default: var(--blux-border);
+  --border-color-muted: var(--blux-border-muted);
+  --border-color-accented: var(--blux-border-accented);
+  --border-color-inverted: var(--blux-border-inverted);
+
+  --ring-color-default: var(--blux-border);
+  --ring-color-muted: var(--blux-border-muted);
+  --ring-color-accented: var(--blux-border-accented);
+  --ring-color-inverted: var(--blux-border-inverted);
+
+  --divide-color-default: var(--blux-border);
+  --divide-color-muted: var(--blux-border-muted);
+  --divide-color-accented: var(--blux-border-accented);
+  --divide-color-inverted: var(--blux-border-inverted);
+
+  --outline-color-default: var(--blux-border);
+  --outline-color-accented: var(--blux-border-accented);
+  --outline-color-inverted: var(--blux-border-inverted);
+
+  --radius-xs: var(--blux-radius-xs);
+  --radius-sm: var(--blux-radius-sm);
+  --radius-md: var(--blux-radius-md);
+  --radius-lg: var(--blux-radius-lg);
+  --radius-xl: var(--blux-radius-xl);
+  --radius-2xl: var(--blux-radius-2xl);
+  --radius-3xl: var(--blux-radius-3xl);
+}
+
 @layer base {
   :root {
     --blux-radius: 0.5rem;
+    /* The radius scale follows --blux-radius (with the default it is Tailwind's own scale, so rounded-* keep their size). */
+    --blux-radius-xs: calc(var(--blux-radius) * 0.25);
+    --blux-radius-sm: calc(var(--blux-radius) * 0.5);
+    --blux-radius-md: calc(var(--blux-radius) * 0.75);
+    --blux-radius-lg: var(--blux-radius);
+    --blux-radius-xl: calc(var(--blux-radius) * 1.5);
+    --blux-radius-2xl: calc(var(--blux-radius) * 2);
+    --blux-radius-3xl: calc(var(--blux-radius) * 3);
+
+    /* Maximum width of BxContainer, the header and the footer. */
+    --blux-container: 80rem;
+    /* Height of BxHeader, which BxMain subtracts from the viewport. --bx-header-height still works as an override. */
+    --blux-header-height: var(--bx-header-height, 4rem);
 
     /* Each color: a fill, the text color to use on light surfaces (-text), and the text color on the fill (-contrast). */
     --blux-primary: #ffd23f;
     --blux-primary-text: #7a5800;
     --blux-primary-contrast: #151100;
-    --blux-secondary: #1f6f7a;
-    --blux-secondary-text: #1b606a;
+    --blux-secondary: #1a5e68;
+    --blux-secondary-text: #1a5e68;
     --blux-secondary-contrast: #ffffff;
-    --blux-success: #187a45;
-    --blux-success-text: #14653a;
+    --blux-success: #146439;
+    --blux-success-text: #136238;
     --blux-success-contrast: #ffffff;
-    --blux-info: #2a62b8;
-    --blux-info-text: #2456a1;
+    --blux-info: #2555a0;
+    --blux-info-text: #23549e;
     --blux-info-contrast: #ffffff;
     --blux-warning: #d86010;
     --blux-warning-text: #9c3d08;
     --blux-warning-contrast: #1a0a00;
-    --blux-error: #c0392b;
-    --blux-error-text: #a02d1b;
+    --blux-error: #a53125;
+    --blux-error-text: #9d2c1a;
     --blux-error-contrast: #ffffff;
     --blux-neutral: #0b0c0d;
     --blux-neutral-text: #23272a;
@@ -35,16 +103,23 @@
 
     --blux-text: #23272a;
     --blux-text-highlighted: #0b0c0d;
+    --blux-text-toned: #43484b;
     --blux-text-muted: #5b6165;
     --blux-text-dimmed: #73797d;
+    /* Text on --blux-bg-inverted. */
+    --blux-text-inverted: #ffffff;
     --blux-bg: #f5f5f2;
     --blux-bg-muted: #eeeeea;
     --blux-bg-elevated: #e9e9e4;
     --blux-bg-accented: #dfdfda;
     --blux-bg-overlay: #ffffff;
+    /* The opposite of the page: dark in light mode, light in dark mode. */
+    --blux-bg-inverted: #0b0c0d;
     --blux-border: #dcdcd7;
+    --blux-border-muted: #dcdcd7;
     /* Boundaries of form controls: at least 3:1 against the page (WCAG 1.4.11). */
     --blux-border-accented: #85898c;
+    --blux-border-inverted: #0b0c0d;
     /* Unchecked track of switches: at least 3:1 against the page and against a white thumb. */
     --blux-control: #85898c;
   }
@@ -74,15 +149,20 @@
 
     --blux-text: #d5d9db;
     --blux-text-highlighted: #f2f4f4;
+    --blux-text-toned: #aeb4b8;
     --blux-text-muted: #8a9196;
     --blux-text-dimmed: #6f767b;
+    --blux-text-inverted: #0a0b0c;
     --blux-bg: #0a0b0c;
     --blux-bg-muted: #111315;
     --blux-bg-elevated: #1a1d20;
     --blux-bg-accented: #23272a;
     --blux-bg-overlay: #131618;
+    --blux-bg-inverted: #edefef;
     --blux-border: #202427;
+    --blux-border-muted: #2e3337;
     --blux-border-accented: #5c6369;
+    --blux-border-inverted: #edefef;
     --blux-control: #5c6369;
   }
 
@@ -94,6 +174,27 @@
   [data-color='warning'] { --bx-color: var(--blux-warning); --bx-color-text: var(--blux-warning-text); --bx-color-contrast: var(--blux-warning-contrast); }
   [data-color='error'] { --bx-color: var(--blux-error); --bx-color-text: var(--blux-error-text); --bx-color-contrast: var(--blux-error-contrast); }
   [data-color='neutral'] { --bx-color: var(--blux-neutral); --bx-color-text: var(--blux-neutral-text); --bx-color-contrast: var(--blux-neutral-contrast); }
+
+  /*
+   * Series colors of BxChart, in order: chart-1 follows the primary color. They alias the semantic colors, so a configured
+   * palette reaches the charts; override them to give the charts their own colors (the -text and -contrast variants too).
+   * Declared on .dark as well, so a nested .dark scope resolves them with its own tokens.
+   */
+  :root,
+  .dark {
+    --blux-chart-1: var(--blux-primary); --blux-chart-1-text: var(--blux-primary-text); --blux-chart-1-contrast: var(--blux-primary-contrast);
+    --blux-chart-2: var(--blux-secondary); --blux-chart-2-text: var(--blux-secondary-text); --blux-chart-2-contrast: var(--blux-secondary-contrast);
+    --blux-chart-3: var(--blux-info); --blux-chart-3-text: var(--blux-info-text); --blux-chart-3-contrast: var(--blux-info-contrast);
+    --blux-chart-4: var(--blux-error); --blux-chart-4-text: var(--blux-error-text); --blux-chart-4-contrast: var(--blux-error-contrast);
+    --blux-chart-5: var(--blux-success); --blux-chart-5-text: var(--blux-success-text); --blux-chart-5-contrast: var(--blux-success-contrast);
+    --blux-chart-6: var(--blux-warning); --blux-chart-6-text: var(--blux-warning-text); --blux-chart-6-contrast: var(--blux-warning-contrast);
+  }
+  [data-color='chart-1'] { --bx-color: var(--blux-chart-1); --bx-color-text: var(--blux-chart-1-text); --bx-color-contrast: var(--blux-chart-1-contrast); }
+  [data-color='chart-2'] { --bx-color: var(--blux-chart-2); --bx-color-text: var(--blux-chart-2-text); --bx-color-contrast: var(--blux-chart-2-contrast); }
+  [data-color='chart-3'] { --bx-color: var(--blux-chart-3); --bx-color-text: var(--blux-chart-3-text); --bx-color-contrast: var(--blux-chart-3-contrast); }
+  [data-color='chart-4'] { --bx-color: var(--blux-chart-4); --bx-color-text: var(--blux-chart-4-text); --bx-color-contrast: var(--blux-chart-4-contrast); }
+  [data-color='chart-5'] { --bx-color: var(--blux-chart-5); --bx-color-text: var(--blux-chart-5-text); --bx-color-contrast: var(--blux-chart-5-contrast); }
+  [data-color='chart-6'] { --bx-color: var(--blux-chart-6); --bx-color-text: var(--blux-chart-6-text); --bx-color-contrast: var(--blux-chart-6-contrast); }
 
   /* Structural wrappers of custom elements must not affect layout. */
   bx-popover,

@@ -50,7 +50,8 @@
     /// <summary>Renders the title as a heading of this level (1 to 6) instead of a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; }
     [Parameter] public EmptyVariant Variant { get; set; } = EmptyVariant.Outline;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public EmptyUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

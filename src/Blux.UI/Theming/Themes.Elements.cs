@@ -109,7 +109,7 @@ internal static partial class Themes
             .Slot("base", "mx-auto w-full px-4 sm:px-6 lg:px-8")
             .Variant("size", "xs", "base", "max-w-2xl")
             .Variant("size", "sm", "base", "max-w-4xl")
-            .Variant("size", "md", "base", "max-w-7xl")
+            .Variant("size", "md", "base", "max-w-(--blux-container)")
             .Variant("size", "lg", "base", "max-w-(--breakpoint-2xl)")
             .Variant("size", "xl", "base", "max-w-none")
             .Default("size", "md");

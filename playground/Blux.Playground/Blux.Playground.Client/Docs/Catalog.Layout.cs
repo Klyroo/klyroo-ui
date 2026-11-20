@@ -34,5 +34,8 @@ public static partial class Catalog
             [new("One component type", typeof(Examples.ThemeExample), "Instance Ui and Class still win over the theme. A theme does not cross a render mode boundary: repeat it inside an interactive island, or use AddBluxUi."),
              new("Several types, nested", typeof(Examples.ThemeNestedExample))],
             [typeof(BxTheme)]),
+        new("theme-style", "ThemeStyle", "Layout", "Delivers the palettes configured in AddBluxUi to the page: the color variables and the rule of every extra semantic color.",
+            [new("Palettes, live", typeof(Examples.ThemeStyleExample), "Normally BxThemeStyle goes in <head> without parameters and renders nothing while the colors are the defaults. Here Colors and Scope preview a palette inside one block, in light and dark mode.")],
+            [typeof(BxThemeStyle)]),
     ];
 }

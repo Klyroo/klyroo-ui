@@ -36,7 +36,8 @@
 
     /// <summary>The color of the send button. The stop and retry buttons keep their own.</summary>
     [Parameter] public BxColor? Color { get; set; }
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Called when the button is pressed while the answer is submitted or streaming.</summary>

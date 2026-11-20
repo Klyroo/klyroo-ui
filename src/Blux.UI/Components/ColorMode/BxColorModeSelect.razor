@@ -17,9 +17,11 @@
 @code {
     private SlotSet _slots = default!;
 
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }

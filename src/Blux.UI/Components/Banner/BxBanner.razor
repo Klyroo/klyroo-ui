@@ -64,7 +64,8 @@
     /// <summary>Turns the title into a link that covers the whole banner.</summary>
     [Parameter] public string? Href { get; set; }
     [Parameter] public string? Target { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Shows a close button. It needs the Blux browser module, which every render mode loads.</summary>
     [Parameter] public bool Close { get; set; }

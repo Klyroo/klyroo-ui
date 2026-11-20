@@ -68,8 +68,10 @@
     /// The owner of the page reads the number from the URL and passes it as <see cref="Page"/>.
     /// </summary>
     [Parameter] public string? HrefTemplate { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
 
     /// <summary>Accessible name of the landmark. Defaults to <see cref="BluxStrings.Pagination"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }

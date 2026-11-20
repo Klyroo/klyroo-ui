@@ -28,8 +28,10 @@
     /// and a text is read as it is: never rely on the color alone to convey a meaning.
     /// </summary>
     [Parameter] public string? Label { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public BxChipPosition Position { get; set; } = BxChipPosition.TopRight;
 
     /// <summary>Keeps the indicator inside the corner of the element instead of straddling it.</summary>

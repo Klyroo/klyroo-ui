@@ -25,7 +25,8 @@ public abstract class BxFieldBase<TValue> : BxComponentBase
     [Parameter] public string? Id { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public bool Required { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Defaults to the size of the enclosing <see cref="BxFormField"/>, or medium.</summary>
     [Parameter] public BxSize? Size { get; set; }
@@ -34,7 +35,7 @@ public abstract class BxFieldBase<TValue> : BxComponentBase
 
     private protected string ControlId => Id ?? Field?.InputId ?? (_generatedId ??= NewId(GetType().Name.Split('`')[0].ToLowerInvariant()));
 
-    private protected BxSize EffectiveSize => Size ?? Field?.Size ?? BxSize.Md;
+    private protected BxSize EffectiveSize => Size ?? Field?.Size ?? DefaultSize(BxSize.Md);
 
     private protected Task SetValue(TValue? value) => ValueChanged.InvokeAsync(value);
 

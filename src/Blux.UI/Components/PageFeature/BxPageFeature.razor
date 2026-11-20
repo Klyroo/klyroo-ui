@@ -58,7 +58,8 @@
 
     /// <summary>Extra content under the description. Interactive content would sit under the stretched link: give it <c>relative z-10</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Horizontal puts the icon before the text; vertical puts it above.</summary>
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;

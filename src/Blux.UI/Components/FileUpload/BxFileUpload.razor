@@ -69,7 +69,8 @@
     [Parameter] public int? MaxFiles { get; set; }
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public bool Required { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Defaults to the size of the enclosing <see cref="BxFormField"/>, or medium.</summary>
     [Parameter] public BxSize? Size { get; set; }

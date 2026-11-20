@@ -92,7 +92,8 @@
     /// <summary>Focuses the field when the page loads.</summary>
     [Parameter] public bool Autofocus { get; set; }
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
 
     /// <summary>Above the field: <see cref="BxChatAttachment"/> items. A message may be sent with no text while this is set.</summary>
     [Parameter] public RenderFragment? Attachments { get; set; }

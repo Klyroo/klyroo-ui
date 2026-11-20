@@ -1,0 +1,129 @@
+@page "/docs/design-system"
+@layout Layout.DocsLayout
+
+<PageTitle>Design system · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>Design system</h1>
+    <p class="pg-lead">Seven semantic colors that you map to palettes, a neutral palette behind the text, background and border tokens, and defaults for color and size, like Nuxt UI's design system. The default look is Blux's own, tuned by hand for contrast.</p>
+
+    <h2>Semantic colors</h2>
+    <p>Components take a <code>Color</code> by role, never by shade. Each role is a triplet of CSS variables (<a href="/docs/css-variables">the full list</a>) that components read through <code>data-color</code>.</p>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="semantic-table">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Semantic colors</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Color</th><th scope="col" class="px-3 py-2 text-start">Used for</th><th scope="col" class="px-3 py-2 text-start">Blux default</th><th scope="col" class="px-3 py-2 text-start">Nuxt UI default</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Roles)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
+                        <td class="px-3 py-2 text-muted">@row.Use</td>
+                        <td class="px-3 py-2 text-muted">@row.Blux</td>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Nuxt</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Choose the palettes</h2>
+    <p>Map a role to any of the 26 Tailwind CSS v4 palettes (<code>BxPalette.Blue</code>, <code>BxPalette.Zinc</code>…), in <code>AddBluxUi</code>, with the same call on the server and in the WebAssembly client. A role you leave alone keeps the Blux default; <code>BxPalette.Blux</code> puts it back.</p>
+    <CodeBlock Title="Program.cs" Code="@Configure" />
+    <p>Then render <code>BxThemeStyle</code> in <code>&lt;head&gt;</code>, next to the color mode script and before your stylesheet. It writes one <code>&lt;style&gt;</code> with the <code>:root</code> and <code>.dark</code> variables, and renders nothing while the colors are the defaults, which <code>blux.css</code> already contains. It is plain markup, so it is the same in static rendering, prerendering and every interactive mode.</p>
+    <CodeBlock Title="App.razor" Code="@Head" />
+
+    <h2>How the tokens are picked</h2>
+    <p>A palette has 11 shades and a component needs three tokens that stay readable, so Blux picks them from the shades and checks the result with the same rules its own palette passes: the fill reaches 3:1 on the page and the surfaces (except the light primary, whose <code>-text</code> color outlines it, as the signal yellow does), the text on the fill 4.5:1, also at the 90% and 80% of the hover and pressed states, and the <code>-text</code> color 4.5:1 on the page and over soft tints.</p>
+    <ul>
+        <li>The <strong>fill</strong> is the shade nearest to 500 in light mode and 400 in dark mode, like Nuxt UI, that satisfies the rules; a pale palette such as yellow moves a step or two.</li>
+        <li>The <strong>contrast</strong> color is white or the palette's shade 950, whichever reaches 4.5:1 (white first).</li>
+        <li>The <strong>text</strong> color is the nearest shade to 600 (light) or 400 (dark) that holds on every surface.</li>
+        <li>The <strong>neutral</strong> palette also drives the text, background and border variables from its shades, with Nuxt UI's mapping (700 for text, 500 muted, 50 for <code>bg-muted</code>, 200 for borders…), and a color left at the default is nudged where the new surfaces need it.</li>
+    </ul>
+
+    <h2>Your own palette</h2>
+    <p>Give all 11 shades, as <code>#rrggbb</code> or <code>oklch(L C H)</code>. A missing shade or an unparsable color throws when the palette is created.</p>
+    <CodeBlock Title="Program.cs" Code="@Custom" />
+
+    <h2>Extra semantic colors</h2>
+    <p>Register a name, like <code>theme.colors</code> in Nuxt UI, and use it as a <code>Color</code>. <code>BxThemeStyle</code> writes its three variables and its <code>[data-color='tertiary']</code> rule: no hand-written CSS.</p>
+    <CodeBlock Title="Program.cs" Code="@Extra" />
+    <CodeBlock Code="@ExtraUse" />
+
+    <h2>Palettes, live</h2>
+    <p>This block renders the palettes of its own options into a scope with <code>BxThemeStyle Colors Scope</code>, so you can see the tokens move, in light and in dark mode. It needs interactivity to switch.</p>
+    <div class="not-prose">
+        <Example Of="typeof(Examples.ThemeStyleExample)" Title="Primary palette" />
+    </div>
+
+    <h2>Default color and size</h2>
+    <p>Like <code>theme.defaultVariants</code>, <code>Defaults.Color</code> replaces <code>Primary</code> where a component uses it by default, and <code>Defaults.Size</code> replaces <code>Md</code>. A parameter you set always wins, and the components that are neutral by design (icon buttons, separators, key caps) stay neutral.</p>
+    <CodeBlock Title="Program.cs" Code="@Defaults" />
+
+    <h2>Without BxThemeStyle</h2>
+    <p>The tokens are plain CSS variables: the same colors can be written by hand, in <a href="/docs/css-variables">:root and .dark</a>, with or without Tailwind. The options only compute them for you and keep the contrast rules.</p>
+    <p>Everything is configured in <code>AddBluxUi</code>, which runs before the first render. The colors and defaults become read-only the first time a component or <code>BxThemeStyle</code> uses them, like a resolved theme, and a later change throws an <code>InvalidOperationException</code>.</p>
+</div>
+
+@code {
+    private sealed record Role(string Name, string Use, string Blux, string Nuxt);
+
+    private static readonly Role[] Roles =
+    [
+        new("primary", "Main actions, focus, selected state.", "Signal yellow", "green"),
+        new("secondary", "Secondary actions.", "Teal", "blue"),
+        new("success", "Success states.", "Green", "green"),
+        new("info", "Informational states.", "Blue", "blue"),
+        new("warning", "Warnings.", "Orange", "yellow"),
+        new("error", "Errors, destructive actions.", "Red", "red"),
+        new("neutral", "Text, backgrounds, borders and neutral components.", "Cool gray", "slate"),
+    ];
+
+    private const string Configure = """
+        builder.Services.AddBluxUi(o =>
+        {
+            o.Colors.Primary = BxPalette.Blue;
+            o.Colors.Neutral = BxPalette.Zinc;
+            o.Colors.Add("tertiary", BxPalette.Indigo);
+        });
+        """;
+
+    private const string Head = """
+        <head>
+            <BxColorModeScript />
+            <BxThemeStyle />
+            <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
+            <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
+        </head>
+        """;
+
+    private const string Custom = """
+        var brand = BxPalette.Custom("brand", new Dictionary<int, string>
+        {
+            [50] = "#f0fdfa", [100] = "#ccfbf1", [200] = "#99f6e4", [300] = "#5eead4", [400] = "#2dd4bf",
+            [500] = "#14b8a6", [600] = "#0d9488", [700] = "#0f766e", [800] = "#115e59", [900] = "#134e4a",
+            [950] = "#042f2e",
+        });
+        builder.Services.AddBluxUi(o => o.Colors.Primary = brand);
+        """;
+
+    private const string Extra = """
+        builder.Services.AddBluxUi(o => o.Colors.Add("tertiary", BxPalette.Violet));
+        """;
+
+    private const string ExtraUse = """
+        <BxButton Label="Share" Color="@("tertiary")" />
+        <BxBadge Label="New" Color="@("tertiary")" Variant="BxVariant.Soft" />
+        """;
+
+    private const string Defaults = """
+        builder.Services.AddBluxUi(o =>
+        {
+            o.Defaults.Color = BxColor.Secondary;
+            o.Defaults.Size = BxSize.Sm;
+        });
+        """;
+}

@@ -57,7 +57,8 @@
 
     /// <summary>Id of the control inside. Defaults to a generated one.</summary>
     [Parameter] public string? Id { get; set; }
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public FormFieldUi? Ui { get; set; }
 

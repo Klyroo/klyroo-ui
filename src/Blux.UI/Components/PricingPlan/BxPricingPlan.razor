@@ -145,7 +145,8 @@
 
     /// <summary>Horizontal lays the plan out in a row on wide screens: the price on the left, the features, then the button.</summary>
     [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Vertical;
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public PricingPlanUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

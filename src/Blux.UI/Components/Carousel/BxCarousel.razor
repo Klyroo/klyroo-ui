@@ -95,7 +95,8 @@
 
     /// <summary>Accessible name of the carousel.</summary>
     [Parameter, EditorRequired] public string? AriaLabel { get; set; }
-    [Parameter] public BxColor Color { get; set; } = BxColor.Primary;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
     [Parameter] public CarouselUi? Ui { get; set; }
 
     private string ViewportId => _id + "-viewport";

@@ -1,0 +1,193 @@
+@page "/docs/css-variables"
+@layout Layout.DocsLayout
+
+<PageTitle>CSS variables · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Getting started</p>
+    <h1>CSS variables</h1>
+    <p class="pg-lead">Every color, surface, border and size of the components reads a <code>--blux-*</code> variable. Override them in <code>:root</code> and <code>.dark</code>, or let <a href="/docs/design-system">the palettes</a> compute them.</p>
+
+    <h2>Semantic colors</h2>
+    <p>Each of the seven colors is a triplet: the <strong>fill</strong> (<code>--blux-primary</code>), the <strong>text color</strong> to use on the page and on soft backgrounds (<code>-text</code>) and the <strong>text on the fill</strong> (<code>-contrast</code>). The triplet is what keeps contrast guaranteed: the fill is checked at 3:1, the text at 4.5:1, including over 20% tints and the 80% and 90% states of solid fills.</p>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="color-table">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Semantic color variables</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Color</th><th scope="col" class="px-3 py-2 text-start">Light (fill, text, contrast)</th><th scope="col" class="px-3 py-2 text-start">Dark (fill, text, contrast)</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Colors)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">--blux-@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Light</td>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Dark</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Text, backgrounds and borders</h2>
+    <p>The neutral family. With <code>o.Colors.Neutral</code> set to a palette, these are taken from its shades (Nuxt UI's mapping, moved toward more contrast where a rule needs it).</p>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="surface-table">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Text, background and border variables</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Variable</th><th scope="col" class="px-3 py-2 text-start">Utility</th><th scope="col" class="px-3 py-2 text-start">Light</th><th scope="col" class="px-3 py-2 text-start">Dark</th><th scope="col" class="px-3 py-2 text-start">Use</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Surfaces)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">--blux-@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Utility</td>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Light</td>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Dark</td>
+                        <td class="px-3 py-2 text-muted">@row.Use</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h2>Radius, container, header and charts</h2>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="size-table">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Radius, container, header and chart variables</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Variable</th><th scope="col" class="px-3 py-2 text-start">Default</th><th scope="col" class="px-3 py-2 text-start">Use</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Sizes)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">--blux-@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Light</td>
+                        <td class="px-3 py-2 text-muted">@row.Use</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p>The radius scale reproduces Tailwind's: with the default <code>--blux-radius</code> of <code>0.5rem</code>, <code>rounded-lg</code> is <code>0.5rem</code>, <code>rounded-md</code> <code>0.375rem</code>, and so on. Change <code>--blux-radius</code> and every <code>rounded-*</code> utility, in the components and in your own markup, follows. <code>BxHeader</code> reads <code>--blux-header-height</code> and <code>BxMain</code> subtracts it from the viewport; <code>BxContainer</code>, the header and the footer cap their width at <code>--blux-container</code>.</p>
+    <p>The chart variables alias the semantic colors (<code>chart-1</code> is the primary color), so a configured palette reaches the charts. Override <code>--blux-chart-N</code> together with its <code>-text</code> and <code>-contrast</code> companions to give the charts their own palette.</p>
+
+    <h2>Override in :root and .dark</h2>
+    <p>Override in both selectors: a color overridden only in <code>:root</code> keeps its light value in dark mode, while its paired <code>-contrast</code> token still flips. Your stylesheet's unlayered rules beat the library's layered ones.</p>
+    <CodeBlock Title="app.css" Code="@Override" />
+
+    <h2>Tailwind utilities</h2>
+    <p>In the mode where your app compiles Tailwind and imports <code>blux.theme.css</code>, the variables are mapped to utilities with <code>@@theme inline</code>, so they follow the runtime values, <code>.dark</code> and your overrides. They work with every state and opacity modifier, like <code>hover:bg-elevated</code> or <code>text-primary/80</code>.</p>
+    <div class="not-prose grid gap-3 sm:grid-cols-2" data-testid="utility-demo">
+        <div class="rounded-lg border border-default bg-default p-4 text-default">
+            <p class="text-highlighted">text-highlighted</p>
+            <p class="text-default">text-default</p>
+            <p class="text-toned">text-toned</p>
+            <p class="text-muted">text-muted</p>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="rounded-md border border-muted bg-muted p-3 text-default">bg-muted<br />border-muted</div>
+            <div class="rounded-md border border-default bg-elevated p-3 text-default">bg-elevated<br />border-default</div>
+            <div class="rounded-md border border-accented bg-accented p-3 text-default">bg-accented<br />border-accented</div>
+            <div class="rounded-md border border-inverted bg-inverted p-3 text-inverted">bg-inverted<br />text-inverted</div>
+            <div class="rounded-md bg-primary p-3 text-(--blux-primary-contrast)">bg-primary</div>
+            <div class="rounded-md border border-primary p-3 text-(--blux-primary-text)">border-primary</div>
+        </div>
+    </div>
+    <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="utility-table">
+        <table class="w-full min-w-xl text-start text-sm">
+            <caption class="sr-only">Tailwind utilities</caption>
+            <thead class="bg-muted text-highlighted">
+                <tr><th scope="col" class="px-3 py-2 text-start">Utilities</th><th scope="col" class="px-3 py-2 text-start">Variables</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Utilities)
+                {
+                    <tr class="border-t border-default">
+                        <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
+                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Light</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <p>The names do not collide with Tailwind's: <code>text-xs</code> sizes come from <code>--text-*</code> and these colors from <code>--text-color-*</code>, and a bare <code>bg-neutral</code> is the semantic color while <code>bg-neutral-500</code> stays the palette shade. An extra semantic color needs its own mapping:</p>
+    <CodeBlock Title="app.css" Code="@Tertiary" />
+</div>
+
+@code {
+    private sealed record Row(string Name, string Light, string Dark = "", string Use = "", string Utility = "");
+
+    private static readonly Row[] Colors =
+    [
+        new("primary, -text, -contrast", "#ffd23f, #7a5800, #151100", "#ffd23f, #ffd23f, #151100"),
+        new("secondary, -text, -contrast", "#1a5e68, #1a5e68, #ffffff", "#64c3cf, #64c3cf, #06181b"),
+        new("success, -text, -contrast", "#146439, #136238, #ffffff", "#7bd88f, #7bd88f, #08180c"),
+        new("info, -text, -contrast", "#2555a0, #23549e, #ffffff", "#7fb2ff, #7fb2ff, #07101f"),
+        new("warning, -text, -contrast", "#d86010, #9c3d08, #1a0a00", "#ff8a4c, #ff8a4c, #1a0a00"),
+        new("error, -text, -contrast", "#a53125, #9d2c1a, #ffffff", "#ff6b4a, #ff6e4d, #1f0700"),
+        new("neutral, -text, -contrast", "#0b0c0d, #23272a, #ffffff", "#edefef, #d5d9db, #0a0b0c"),
+    ];
+
+    private static readonly Row[] Surfaces =
+    [
+        new("text-dimmed", "#73797d", "#6f767b", "Placeholders, hints.", "text-dimmed"),
+        new("text-muted", "#5b6165", "#8a9196", "Secondary text.", "text-muted"),
+        new("text-toned", "#43484b", "#aeb4b8", "Between the body text and the muted one.", "text-toned"),
+        new("text", "#23272a", "#d5d9db", "Body text.", "text-default"),
+        new("text-highlighted", "#0b0c0d", "#f2f4f4", "Titles, emphasis.", "text-highlighted"),
+        new("text-inverted", "#ffffff", "#0a0b0c", "Text on bg-inverted.", "text-inverted"),
+        new("bg", "#f5f5f2", "#0a0b0c", "The page.", "bg-default"),
+        new("bg-muted", "#eeeeea", "#111315", "Subtle panels.", "bg-muted"),
+        new("bg-elevated", "#e9e9e4", "#1a1d20", "Raised areas, hover.", "bg-elevated"),
+        new("bg-accented", "#dfdfda", "#23272a", "Stronger fills, pressed.", "bg-accented"),
+        new("bg-overlay", "#ffffff", "#131618", "Popovers, modals, menus.", "(none)"),
+        new("bg-inverted", "#0b0c0d", "#edefef", "The opposite of the page.", "bg-inverted"),
+        new("border", "#dcdcd7", "#202427", "Dividers and card borders.", "border-default"),
+        new("border-muted", "#dcdcd7", "#2e3337", "Quieter borders.", "border-muted"),
+        new("border-accented", "#85898c", "#5c6369", "Control boundaries, 3:1 on the page.", "border-accented"),
+        new("border-inverted", "#0b0c0d", "#edefef", "Borders on inverted surfaces.", "border-inverted"),
+        new("control", "#85898c", "#5c6369", "Unchecked track of switches.", "(none)"),
+    ];
+
+    private static readonly Row[] Sizes =
+    [
+        new("radius", "0.5rem", Use: "The base radius of controls and cards."),
+        new("radius-xs … radius-3xl", "0.125rem, 0.25rem, 0.375rem, 0.5rem, 0.75rem, 1rem, 1.5rem", Use: "Multiples of --blux-radius: 0.25, 0.5, 0.75, 1, 1.5, 2, 3. Mapped to rounded-xs … rounded-3xl."),
+        new("container", "80rem", Use: "Maximum width of BxContainer, the header and the footer."),
+        new("header-height", "4rem", Use: "Height of BxHeader; BxMain and the page aside subtract it."),
+        new("chart-1 … chart-6", "primary, secondary, info, error, success, warning", Use: "Series colors of BxChart, each with -text and -contrast."),
+    ];
+
+    private static readonly Row[] Utilities =
+    [
+        new("text-default, text-muted, text-dimmed, text-toned, text-highlighted, text-inverted", "--blux-text, -text-muted, -text-dimmed, -text-toned, -text-highlighted, -text-inverted"),
+        new("bg-default, bg-muted, bg-elevated, bg-accented, bg-inverted", "--blux-bg, -bg-muted, -bg-elevated, -bg-accented, -bg-inverted"),
+        new("border-default, border-muted, border-accented, border-inverted", "--blux-border, -border-muted, -border-accented, -border-inverted (also ring-*, divide-*, outline-*)"),
+        new("bg-primary, text-primary, border-primary, ring-primary … (secondary, success, info, warning, error, neutral)", "--blux-primary … --blux-neutral, the fills"),
+        new("rounded-xs, rounded-sm, rounded-md, rounded-lg, rounded-xl, rounded-2xl, rounded-3xl", "--blux-radius-xs … --blux-radius-3xl"),
+    ];
+
+    private const string Override = """
+        :root {
+          --blux-radius: 0.75rem;
+          --blux-container: 72rem;
+          --blux-header-height: 3.5rem;
+          --blux-primary: #0f766e;
+          --blux-primary-text: #115e59;
+          --blux-primary-contrast: #ffffff;
+        }
+        .dark {
+          --blux-primary: #2dd4bf;
+          --blux-primary-text: #2dd4bf;
+          --blux-primary-contrast: #042f2e;
+        }
+        """;
+
+    private const string Tertiary = """
+        @theme inline {
+          --color-tertiary: var(--blux-tertiary);
+        }
+        """;
+}
