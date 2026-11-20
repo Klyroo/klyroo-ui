@@ -41,7 +41,7 @@ namespace Blux.UI.Build
         /// <summary>C# file that receives the manifest as an assembly attribute, read by BxFonts.</summary>
         public string ManifestSourceFile { get; set; } = "";
 
-        /// <summary>Every generated file, with the file name inside the output folder in the metadata <c>RelativePath</c>.</summary>
+        /// <summary>Every generated file, with the file name inside the output folder in the metadata <c>BluxFile</c> (not RelativePath, which the static web assets would take as the route).</summary>
         [Output] public ITaskItem[] GeneratedFiles { get; set; } = Array.Empty<ITaskItem>();
 
         public override bool Execute()
@@ -115,7 +115,7 @@ namespace Blux.UI.Build
             GeneratedFiles = result.Files.Select(name =>
             {
                 var item = new TaskItem(Path.Combine(OutputDir, name));
-                item.SetMetadata("RelativePath", name);
+                item.SetMetadata("BluxFile", name);
                 return (ITaskItem)item;
             }).ToArray();
             return !Log.HasLoggedErrors;
