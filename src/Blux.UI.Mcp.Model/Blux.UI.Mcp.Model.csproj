@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The shape of the docs bundle, shared by the generator (build/Blux.UI.DocsBundle) that writes it and by
+       Blux.UI.Mcp.Core that reads it. Separate because Core is built after the generator and cannot be referenced by it. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Blux.UI.Mcp</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+</Project>

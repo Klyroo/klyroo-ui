@@ -1,0 +1,28 @@
+@page "/docs/llms-txt"
+@layout Layout.DocsLayout
+
+<PageTitle>llms.txt · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">AI</p>
+    <h1>llms.txt</h1>
+    <p class="pg-lead">The documentation of this site as plain text, for language models that read a page instead of calling a tool.</p>
+
+    <h2>Two files</h2>
+    <ul>
+        <li><a href="/llms.txt">/llms.txt</a>: an overview that follows the <a href="https://llmstxt.org">llms.txt convention</a>. A title, a one-paragraph summary, then a link and a one-line description for every guide and every component. A model reads it to decide which page it needs.</li>
+        <li><a href="/llms-full.txt">/llms-full.txt</a>: the guides, then every component with its description, example source and API, in one file. Large, meant for tools that load everything into a context at once.</li>
+    </ul>
+
+    <h2>Where they come from</h2>
+    <p>
+        Both are generated from the same bundle as the <a href="/docs/mcp">MCP server</a>, which is built from the docs catalog and the library itself, so the parameters listed
+        there exist. Nothing is written by hand and nothing needs updating when a component changes.
+    </p>
+
+    <h2>Use them</h2>
+    <p>Most agents accept a URL in the prompt or as a documentation source:</p>
+    <CodeBlock Code="Read https://your-docs-host/llms.txt, then build a settings page with Blux UI." />
+    <p>
+        Prefer the MCP server when you can: it returns only the component you ask for, and the exact parameters, instead of a whole file.
+    </p>
+</div>

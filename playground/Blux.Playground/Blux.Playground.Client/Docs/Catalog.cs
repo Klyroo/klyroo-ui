@@ -73,11 +73,15 @@ public static partial class Catalog
 
     public static ComponentDoc? Find(string slug) => Components.FirstOrDefault(c => c.Slug == slug);
 
-    public static readonly (string Href, string Title)[] Guides =
+    /// <summary>The guide pages, in sidebar order. Each is a Razor page declaring the same route (found by the docs bundle).</summary>
+    public static readonly (string Href, string Title, string Section)[] Guides =
     [
-        ("/docs", "Introduction"),
-        ("/docs/installation", "Installation"),
-        ("/docs/theming", "Theming"),
-        ("/docs/render-modes", "Render modes"),
+        ("/docs", "Introduction", "Getting started"),
+        ("/docs/installation", "Installation", "Getting started"),
+        ("/docs/theming", "Theming", "Getting started"),
+        ("/docs/render-modes", "Render modes", "Getting started"),
+        ("/docs/mcp", "MCP server", "AI"),
+        ("/docs/llms-txt", "llms.txt", "AI"),
+        ("/docs/skills", "Agent skill", "AI"),
     ];
 }
