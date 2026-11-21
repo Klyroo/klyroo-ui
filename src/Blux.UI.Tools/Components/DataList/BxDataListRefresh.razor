@@ -1,0 +1,27 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+
+@* A button that loads the rows again. Without interactivity it is a link to the current URL: the server loads the list again to answer it. *@
+@if (Context.IsInteractive)
+{
+    <BxButton Label="@ToolsMessages.Refresh" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" Class="@_slots["refresh"]"
+              LeadingIcon="Icon" OnClick="Refresh" data-slot="refresh" @attributes="AdditionalAttributes" />
+}
+else if (Context.HrefWith(s => s) is { } href)
+{
+    <BxButton Label="@ToolsMessages.Refresh" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" Class="@_slots["refresh"]"
+              LeadingIcon="Icon" Href="@href" data-slot="refresh" @attributes="AdditionalAttributes" />
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "refresh");
+
+    // The icon turns while the rows on screen are loaded again; the button stays enabled, so focus stays on it.
+    private RenderFragment Icon => RenderIcon("refresh-cw", Context.IsRefreshing ? _slots["refreshIconBusy"] : _slots["refreshIcon"]);
+
+    private Task Refresh() => Context.RefreshAsync();
+}

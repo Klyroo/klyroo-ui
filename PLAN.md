@@ -168,6 +168,22 @@ localStorage, culture via `IBxCultureStore` (localStorage par défaut, Preferenc
 script du mode de couleur est remplacé par l'initialiseur), pas de préchargement d'image, cibles 44 px en `pointer: coarse`, `env(safe-area-inset-*)`, tooltips au appui long,
 mode TV (`BxApp SpatialNavigation`) avec navigation spatiale. Exemple : `samples/Blux.Maui` (TFM `net10.0`, `-p:BluxSampleTfm=net11.0` avec la charge de travail .NET 11).
 
+**Templates (2026-11-21)** : équivalent de ui.nuxt.com/templates, 10 templates, chacun futur dépôt GitHub template `blux-template-<nom>`
+(préparés dans `templates/`, exportés par `build/export-template.mjs`, vérifiés contre le paquet NuGet par `build/verify-templates.mjs`, renommage `rename.cs`,
+CI de build seule). Apps (Starter, Dashboard, Chat, Editor, Calendar) : RCL partagée + Web (Auto) + MAUI ; sites de contenu (Landing, SaaS, Docs, Portfolio,
+Changelog) : Web, SSR statique. Contenu Markdig + YamlDotNet, copie de référence `templates/_shared/Content`. Page `/templates` du site avec démos en direct
+(processus enfants derrière YARP, chien de garde si l'hôte meurt). Prérequis livrés dans la librairie : Tailwind sans Node (`BluxTailwind`), apps sous un
+chemin de base, `BxSkipLink`, fond du `body`, index de recherche chargé à la demande.
+Faits : Starter, Landing, Docs. En cours : Changelog. Restent : Dashboard (sur `BxDataList`), SaaS, Portfolio, Chat, Editor, Calendar (sur `BxScheduler`).
+
+**Port de nuxt-ui-tools (2026-11-21)** : les 11 domaines (spécifications dans `.claude/specs/nuxt-ui-tools/`, non versionnées). Paquets compagnons
+`Blux.UI.Tools`, `Blux.UI.Tools.Query` (sans Blazor), `Blux.UI.Tools.EntityFrameworkCore`, plus tard `Blux.UI.Spreadsheet` : même version exacte que Blux.UI,
+compilation Tailwind obligatoire. API d'extension publique dans le cœur. Faits : état d'URL (`QueryState`), modèle de requête et moteur en mémoire, application
+sur `IQueryable` (tests différentiels EF Core/SQLite, NativeAOT), premier `BxDataList` (tri, pagination, URL, SSR, prérendu persisté) ; dans le cœur : case
+indéterminée, `BxInput.Debounce`/`SetValueAsync`, classes `FieldCssClassProvider` sur tous les contrôles. En cours : recherche (T8), `BxInfiniteScroll`, options
+avec compteurs/icônes/groupes. Restent : filtres, panneaux, sélection, curseur, colonnes, grille, groupes, arbre, totaux, puis Forms, Analytics,
+Display/Media/FilePreview, Spreadsheet (ordre alterné avec les templates).
+
 Reste à faire :
 
 - Faire tourner l'exemple sur un émulateur Android (phone et TV), vérifier `HeadOutlet`, les polices servies et les touches D-pad ; builds iOS, Mac Catalyst et Windows seulement en CI.

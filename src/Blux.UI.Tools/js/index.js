@@ -5,7 +5,26 @@
 // A helper of Blux.UI can be imported from source and is bundled here, for example:
 //   import { Reporter, ensureId } from '../../Blux.UI/js/shared.js';
 
-const tools = { version: 1 };
+// The IANA id of the time zone of the browser ("Europe/Paris"), sent with the requests of a data list so that a day is cut where the user lives.
+function timeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+  } catch {
+    return null;
+  }
+}
+
+// After a page change the control that was pressed can be gone or disabled (the "next" button on the last page): focus goes to the current page.
+// A disabled button keeps document.activeElement until the browser fixes focus up, so a disabled one does not count as focused.
+function focusPage(root) {
+  if (!root) return;
+  const active = document.activeElement;
+  const usable = active && root.contains(active) && !active.disabled && active.getAttribute('aria-disabled') !== 'true';
+  if (usable) return;
+  root.querySelector('[aria-current="page"]')?.focus();
+}
+
+const tools = { version: 1, timeZone, focusPage };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });
