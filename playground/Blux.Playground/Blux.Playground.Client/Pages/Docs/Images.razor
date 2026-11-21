@@ -51,7 +51,7 @@
     <h2>Resizing on your own server</h2>
     <p>The <code>Blux.UI.Images.Local</code> package is the counterpart of IPX: an endpoint that resizes and converts images with libvips (through NetVips) and a <code>local</code> provider that builds URLs to it. This site uses it, so the images of the <a href="/components/image">BxImage page</a> are real resized WebP files.</p>
     <CodeBlock Title="Program.cs" Code="@LocalSetup" />
-    <p>In a WebAssembly client register only the URL builder, <code>o.Images.AddLocal("/_blux/img", makeDefault: true)</code> from <code>Blux.UI.Images</code>, which has no server dependency.</p>
+    <p>In a WebAssembly client register only the URL builder, <code>o.Images.AddLocal(makeDefault: true)</code> from <code>Blux.UI.Images</code>, which has no server dependency. The endpoint is <code>_blux/img</code>, without a leading slash: the browser resolves it against <code>&lt;base href&gt;</code>, so an app served below a path base (<code>UsePathBase("/x")</code>, <code>&lt;base href="/x/"&gt;</code>) reaches its own optimizer at <code>/x/_blux/img</code> in every render mode. Call <code>UseRouting()</code> right after <code>UsePathBase</code>. An endpoint you give that starts with <code>/</code> is used literally, which is only right at the root.</p>
 
     <h3>Security</h3>
     <p>The endpoint is meant to face the internet, so every request is bounded in what it can reach and in what it costs.</p>
@@ -85,7 +85,7 @@
         new("AddVercel(sizes)", "Vercel Image Optimization", "/_vercel/image?url={src}&w=1080&q=75"),
         new("AddBunny(baseUrl)", "Bunny Optimizer", "{zone}.b-cdn.net/{path}?width=500&quality=75&format=webp"),
         new("AddTemplate(name, template)", "Any service", "{src} {encodedSrc} {width} {height} {quality} {format}"),
-        new("AddLocal(endpoint)", "Blux.UI.Images.Local", "/_blux/img?src=%2Fimg%2Fa.png&w=384&f=webp"),
+        new("AddLocal(endpoint)", "Blux.UI.Images.Local", "_blux/img?src=%2Fimg%2Fa.png&w=384&f=webp"),
     ];
 
     private const string BasicUsage = """

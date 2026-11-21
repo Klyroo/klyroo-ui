@@ -1,4 +1,5 @@
 import { isHybrid } from './host.js';
+import { appStorageKey } from './base-path.js';
 
 /**
  * What the server decided about the culture, for a WebAssembly client that has no request (see
@@ -29,7 +30,7 @@ export function serverCulture(cookieName = '.AspNetCore.Culture') {
 /** The culture a Blazor Hybrid app remembered (BxLocalStorageCultureStore), or null. localStorage works in every web view. */
 export function getStoredCulture(key = 'blux-culture') {
   try {
-    return localStorage.getItem(key);
+    return localStorage.getItem(appStorageKey(key));
   } catch {
     return null;
   }
@@ -37,7 +38,7 @@ export function getStoredCulture(key = 'blux-culture') {
 
 export function setStoredCulture(key, value) {
   try {
-    localStorage.setItem(key, value);
+    localStorage.setItem(appStorageKey(key), value);
   } catch {
     // Storage blocked: the choice lasts until the app restarts.
   }

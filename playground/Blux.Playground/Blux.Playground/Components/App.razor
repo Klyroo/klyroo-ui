@@ -5,7 +5,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Accessible, themable Blazor components for every render mode." />
-    <base href="/" />
+    @* The site can be served below a path base (see Program.cs): every relative URL, the stylesheets, the framework and the image endpoint included, follows this. *@
+    <base href="@_baseHref" />
     <BxColorModeScript />
     <BxCultureMeta />
     <BxThemeStyle />
@@ -30,6 +31,10 @@
 
 @code {
     [CascadingParameter] private HttpContext HttpContext { get; set; } = default!;
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    // The PathBase setting as configured, not Request.PathBase: that one keeps the casing of the request (/SUB/), and the cookie and storage scopes compare it as written.
+    private string _baseHref => Configuration["PathBase"] is { Length: > 0 } pathBase ? "/" + pathBase.Trim('/') + "/" : "/";
 
     private IComponentRenderMode? _mode;
     private BxLocale _locale = BxLocales.En;

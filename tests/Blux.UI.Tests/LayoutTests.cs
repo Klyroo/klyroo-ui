@@ -294,7 +294,7 @@ public class LayoutTests : BluxTestContext
         Assert.Equal("404", cut.Find("p").TextContent);
         Assert.Equal("Page not found", cut.Find("h1").TextContent);
         var home = cut.Find("a");
-        Assert.Equal("/", home.GetAttribute("href"));
+        Assert.Equal("./", home.GetAttribute("href"));
         Assert.Equal("Back to home", home.TextContent.Trim());
         Assert.Contains("does not exist", cut.Markup);
     }

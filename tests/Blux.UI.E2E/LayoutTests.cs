@@ -358,7 +358,7 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(error.GetByRole(AriaRole.Heading, new() { Name = "Page not found" })).ToBeVisibleAsync();
         await Assertions.Expect(error.GetByText("404", new() { Exact = true })).ToBeVisibleAsync();
-        await Assertions.Expect(error.GetByRole(AriaRole.Link, new() { Name = "Back to home" })).ToHaveAttributeAsync("href", "/");
+        await Assertions.Expect(error.GetByRole(AriaRole.Link, new() { Name = "Back to home" })).ToHaveAttributeAsync("href", "./");
         var boundary = Page.GetByTestId("error-boundary");
         await Assertions.Expect(boundary.GetByText("The report could not be generated.")).ToBeVisibleAsync();
     }
