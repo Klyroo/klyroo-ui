@@ -7,6 +7,12 @@ public sealed record DataListUi : ISlotOverrides
 {
     public string? Root { get; init; }
     public string? Toolbar { get; init; }
+    public string? Search { get; init; }
+    public string? SearchField { get; init; }
+    public string? SearchInput { get; init; }
+    public string? SearchClear { get; init; }
+    public string? SearchClearIcon { get; init; }
+    public string? SearchSubmit { get; init; }
     public string? ResultCount { get; init; }
     public string? Refresh { get; init; }
     public string? RefreshIcon { get; init; }
@@ -33,6 +39,12 @@ public sealed record DataListUi : ISlotOverrides
     {
         "root" => Root,
         "toolbar" => Toolbar,
+        "search" => Search,
+        "searchField" => SearchField,
+        "searchInput" => SearchInput,
+        "searchClear" => SearchClear,
+        "searchClearIcon" => SearchClearIcon,
+        "searchSubmit" => SearchSubmit,
         "resultCount" => ResultCount,
         "refresh" => Refresh,
         "refreshIcon" => RefreshIcon,

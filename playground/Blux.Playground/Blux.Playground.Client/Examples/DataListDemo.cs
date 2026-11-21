@@ -25,10 +25,11 @@ public static class InvoiceData
             new DateOnly(2026, 1, 1).AddDays(i * 2))),
     ];
 
-    /// <summary>Which fields sort, the key of a row, the default sort and page size.</summary>
+    /// <summary>Which fields search and sort, the key of a row, the default sort and page size.</summary>
     public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
         .RowKey(i => i.Id)
         .RowLabel(i => $"Invoice {i.Id}")
+        .Search(i => i.Customer, i => i.Status)
         .Field(i => i.Id, f => f.Sortable())
         .Field(i => i.Customer, f => f.Sortable())
         .Field(i => i.Status, f => f.Sortable())

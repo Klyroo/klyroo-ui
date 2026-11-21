@@ -19,6 +19,10 @@
         else
         {
             <div class="@_slots["toolbar"]" data-slot="toolbar">
+                @if (_schema is { HasSearch: true })
+                {
+                    <BxDataListSearch TItem="TItem" />
+                }
                 <BxDataListResultCount TItem="TItem" />
                 <BxDataListRefresh TItem="TItem" />
             </div>
@@ -142,9 +146,15 @@
 
     internal string CurrentPath => new Uri(Navigation.Uri).AbsolutePath;
 
-    internal bool IsFiltered =>
-        !string.IsNullOrWhiteSpace(_state.Search)
-        || (_schema is not null && !_state.Filters.SequenceEqual(_schema.DefaultState.Filters));
+    internal bool IsFiltered => IsFilteredFor(_state);
+
+    internal bool IsFilteredFor(DataListState state) =>
+        !string.IsNullOrWhiteSpace(state.Search)
+        || (_schema is not null && !state.Filters.SequenceEqual(_schema.DefaultState.Filters));
+
+    // No search, the filters of the schema, the first page: sort, page size and layout are how the user looks at the rows, not what they ask for.
+    internal DataListState ResetState(DataListState state) =>
+        state with { Search = "", Filters = _schema?.DefaultState.Filters ?? [], Page = 1, Cursor = null };
 
     protected override void OnInitialized()
     {
@@ -283,6 +293,11 @@
         if (_writeInitialState && Query.Interactive == true && !controller.HasError)
         {
             // The state of the parent starts a list whose URL holds nothing: the address says so, without a history entry.
+            Query.SetMany(Changes(_state), QueryHistory.Replace);
+        }
+        else if (UrlSync && Query.Interactive == true && !controller.HasError && !ReadState().Equals(_state))
+        {
+            // A typed address that normalization changed (spaces around the search, a page size past the maximum): the address shows what is there, without a history entry.
             Query.SetMany(Changes(_state), QueryHistory.Replace);
         }
         if (State is not null && !_state.Equals(State)) _ = StateChanged.InvokeAsync(_state);

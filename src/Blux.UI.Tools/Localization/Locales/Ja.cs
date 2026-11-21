@@ -22,5 +22,13 @@ public static partial class BxToolsLocales
             Retry = "再試行",
             Results = "結果",
             PaginationFor = "ページ送り、{0}",
+            SearchPlaceholder = "検索…",
+            Search = "検索",
+            SearchFor = "{0}を検索",
+            ClearSearch = "検索をクリア",
+            NoResultsFor = "「{0}」に一致する結果はありません",
+            NoResultsForDescription = "スペルを確認するか、別のキーワードをお試しください。",
+            NoResultsFiltered = "フィルターに一致する結果はありません",
+            ResetFilters = "フィルターをリセット",
         };
 }
