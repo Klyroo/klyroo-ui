@@ -34,9 +34,8 @@
     --pg-code-line: #ffd23f14;
   }
 
+  /* Background and text color of the page come from blux.theme.css. */
   body {
-    background: var(--blux-bg);
-    color: var(--blux-text);
     font-feature-settings: 'ss01', 'cv11';
     -webkit-font-smoothing: antialiased;
   }
