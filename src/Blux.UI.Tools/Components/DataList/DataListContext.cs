@@ -47,8 +47,33 @@ public sealed class DataListContext<TItem>
 
     internal Task EnsureLoadedAsync() => _owner.EnsureLoadedAsync();
 
-    internal void SetImplicitColumns(Func<IReadOnlyList<(System.Linq.Expressions.LambdaExpression Property, string? Key, bool Sortable)>> columns) =>
-        _owner.ImplicitColumns = columns;
+    private readonly List<BxDataListColumn<TItem>> _columns = [];
+    private int _columnIndex;
+
+    /// <summary>
+    /// Every column the list's table declares, visible or not (a columns panel lists them all), by <see cref="BxDataListColumn{TItem}.Order"/> and then in the order they first rendered:
+    /// the order of the markup, except for a column that an <c>@if</c> adds later, which comes after the others unless it has an <c>Order</c>. Prefer <see cref="BxDataListColumn{TItem}.Visible"/> to an <c>@if</c>.
+    /// </summary>
+    public IReadOnlyList<BxDataListColumn<TItem>> Columns => _columns;
+
+    internal string? ColumnsSignature { get; set; }
+
+    internal int NextColumnIndex() => _columnIndex++;
+
+    internal void AddColumn(BxDataListColumn<TItem> column)
+    {
+        if (!_columns.Contains(column)) _columns.Add(column);
+        // Stable: equal orders keep the order of first rendering.
+        _columns.Sort((a, b) => a.Order != b.Order ? a.Order.CompareTo(b.Order) : a.RegistrationIndex.CompareTo(b.RegistrationIndex));
+    }
+
+    internal void RemoveColumn(BxDataListColumn<TItem> column) => _columns.Remove(column);
+
+    /// <summary>The name of the list, for the accessible names of its table and its pagination (<c>Label</c> of the list).</summary>
+    public string? Label => _owner.Label;
+
+    /// <summary>Counts the results shown so far; it does not change when only a flag does, which lets rows skip a render.</summary>
+    public int ResultVersion => _owner.Controller?.ResultVersion ?? 0;
 
     /// <summary>The schema, once the list has one (an explicit one, or the one its columns describe after they registered).</summary>
     public DataListSchema<TItem>? Schema => _owner.CurrentSchema;

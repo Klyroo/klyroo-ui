@@ -52,7 +52,7 @@
         }
         @if (PageCount > 1)
         {
-            <BxPagination Total="Total" PageSize="Context.State.PageSize" Page="Context.State.Page" SiblingCount="SiblingCount" ShowFirstLast="ShowFirstLast" AriaLabel="@AriaLabel"
+            <BxPagination Total="Total" PageSize="Context.State.PageSize" Page="Context.State.Page" SiblingCount="SiblingCount" ShowFirstLast="ShowFirstLast" AriaLabel="@(AriaLabel ?? (Context.Label is { } label ? string.Format(FormatCulture, ToolsMessages.PaginationFor, label) : null))"
                            HrefTemplate="@(Context.IsInteractive ? null : Template)" PageChanged="OnPage" />
         }
     </div>
@@ -79,7 +79,7 @@
     /// <summary>Buttons that jump to the first and the last page.</summary>
     [Parameter] public bool ShowFirstLast { get; set; }
 
-    /// <summary>The accessible name of the pagination landmark. Give each list of a page its own: two landmarks with the same name cannot be told apart. Defaults to the localized "Pagination".</summary>
+    /// <summary>The accessible name of the pagination landmark. Give each list of a page its own: two landmarks with the same name cannot be told apart. Without it the landmark is "Pagination, &lt;label&gt;" for a list with a label, else the localized "Pagination".</summary>
     [Parameter] public string? AriaLabel { get; set; }
 
     protected override void OnParametersSet() =>

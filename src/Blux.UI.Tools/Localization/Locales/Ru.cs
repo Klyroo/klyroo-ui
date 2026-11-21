@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "Не удалось загрузить данные",
             ErrorDescription = "При загрузке данных произошла ошибка. Повторите попытку.",
             Retry = "Повторить",
+            Results = "Результаты",
+            PaginationFor = "Страницы, {0}",
         };
 }

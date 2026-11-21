@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "Impossibile caricare i dati",
             ErrorDescription = "Si è verificato un errore durante il caricamento dei dati. Riprova.",
             Retry = "Riprova",
+            Results = "Risultati",
+            PaginationFor = "Paginazione, {0}",
         };
 }

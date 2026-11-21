@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "De gegevens konden niet worden geladen",
             ErrorDescription = "Er is iets misgegaan bij het laden van de gegevens. Probeer het opnieuw.",
             Retry = "Opnieuw proberen",
+            Results = "Resultaten",
+            PaginationFor = "Paginering, {0}",
         };
 }

@@ -27,11 +27,19 @@ public abstract class DataListPartBase<TItem> : BxToolsComponentBase, IDisposabl
         Context.Changed += OnContextChanged;
     }
 
+    private int _renderQueued;
+
+    // Notifications that arrive before the render runs (the controller announces the start and the end of a load, the list a changed state) make one render.
     private void OnContextChanged()
     {
+        if (Interlocked.Exchange(ref _renderQueued, 1) == 1) return;
         try
         {
-            _ = InvokeAsync(StateHasChanged);
+            _ = InvokeAsync(() =>
+            {
+                Interlocked.Exchange(ref _renderQueued, 0);
+                StateHasChanged();
+            });
         }
         catch (ObjectDisposedException)
         {

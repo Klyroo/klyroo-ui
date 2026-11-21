@@ -660,10 +660,10 @@
 
 ### DataList
 
-`/components/data-list`. A table of rows loaded in memory or from a provider, with sortable columns, pagination, a result count, loading and error states, and its state in the URL. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Blux.UI.Tools.EntityFrameworkCore adapter), with sortable columns, pagination, a result count, loading and error states, and its state in the URL. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
 
 - `<BxDataList>`
-  - Parameters: `Class`, `Density`, `Items`, `PersistKey`, `Provider`, `ResultJson`, `Schema`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
+  - Parameters: `Class`, `Density`, `Items`, `Label`, `PersistKey`, `Provider`, `Queryable`, `ResultJson`, `Schema`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
   - Slots: `ChildContent`
   - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListTable>`
@@ -671,7 +671,7 @@
   - Slots: `Empty`, `ChildContent`
   - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListColumn>`
-  - Parameters: `Align`, `Class`, `Field`, `Format`, `Key`, `Property`, `Sortable`, `Title`
+  - Parameters: `Align`, `Class`, `Field`, `Format`, `Key`, `Order`, `Property`, `Sortable`, `Title`, `Visible`
   - Slots: `Template`
 - `<BxDataListPagination>`
   - Parameters: `AriaLabel`, `Class`, `PageSizes`, `ShowFirstLast`, `ShowPageSize`, `SiblingCount`, `Ui`
