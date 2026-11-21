@@ -1,5 +1,18 @@
 namespace Blux.UI.Tools.Query;
 
+/// <summary>How a number filter editor shows its value.</summary>
+public enum DataListNumberDisplay
+{
+    /// <summary>A number field (the default).</summary>
+    Input,
+
+    /// <summary>A slider between <see cref="DataListFilter.Min"/> and <see cref="DataListFilter.Max"/>.</summary>
+    Slider,
+
+    /// <summary>A number field and a slider.</summary>
+    InputAndSlider,
+}
+
 /// <summary>
 /// The definition of a filter: its kind, the operators it allows, its default operator and default value, and the limits an editor shows.
 /// Immutable; the <c>With...</c> methods return a changed copy. Create one with <see cref="Text"/>, <see cref="Option()"/>, <see cref="Boolean"/>,
@@ -25,46 +38,55 @@ public sealed class DataListFilter
     }
 
     /// <summary>The kind of filter.</summary>
-    public FilterKind Kind { get; private init; }
+    public FilterKind Kind { get; private set; }
 
     /// <summary>The operators a rule of this filter may use. The per-kind set of the spec, or the subset given to <see cref="WithOperators"/>.</summary>
-    public IReadOnlyList<FilterOperator> AllowedOperators { get; private init; }
+    public IReadOnlyList<FilterOperator> AllowedOperators { get; private set; }
 
     /// <summary>The operator a rule gets when none is given, and the one a URL key without an operator suffix means.</summary>
-    public FilterOperator DefaultOperator { get; private init; }
+    public FilterOperator DefaultOperator { get; private set; }
 
     /// <summary>The value effective when the URL has no override; omitted from the URL and not counted as active. <see langword="null"/> for none.</summary>
-    public FilterValue? DefaultValue { get; private init; }
+    public FilterValue? DefaultValue { get; private set; }
 
     /// <summary>The operator of the default rule (<see cref="DefaultOperator"/> unless <see cref="WithDefault"/> set another).</summary>
-    public FilterOperator DefaultValueOperator { get; private init; }
+    public FilterOperator DefaultValueOperator { get; private set; }
 
     /// <summary>Whether the default rule also includes empty rows.</summary>
-    public bool DefaultIncludeEmpty { get; private init; }
+    public bool DefaultIncludeEmpty { get; private set; }
 
     /// <summary>The smallest value an editor offers (number filters).</summary>
-    public decimal? Min { get; private init; }
+    public decimal? Min { get; private set; }
 
     /// <summary>The largest value an editor offers (number filters).</summary>
-    public decimal? Max { get; private init; }
+    public decimal? Max { get; private set; }
 
     /// <summary>The step of a number editor.</summary>
-    public decimal? Step { get; private init; }
+    public decimal? Step { get; private set; }
 
     /// <summary>The precision of a date editor; decides whether values are <see cref="FilterValue.Date"/> or <see cref="FilterValue.Moment"/>.</summary>
-    public DateGranularity Granularity { get; private init; }
+    public DateGranularity Granularity { get; private set; }
+
+    /// <summary>How a number editor shows its value: a field, a slider or both. Only number filters; a slider needs <see cref="Min"/> and <see cref="Max"/>, without them the editor shows the field.</summary>
+    public DataListNumberDisplay NumberDisplay { get; private set; }
+
+    /// <summary>The .NET numeric format string the filter tag writes a number with (<c>N0</c>, <c>C2</c>, <c>0.0 'kg'</c>), in the culture of the user. <see langword="null"/> writes the number with its digits and the group separator of the culture.</summary>
+    public string? Format { get; private set; }
+
+    /// <summary>The most days a range of a date editor may cover, both ends included. <see langword="null"/> for no limit. An editor limit: a range in the URL is not checked against it.</summary>
+    public int? MaxRangeDays { get; private set; }
 
     /// <summary>Whether the user's last value is remembered between visits (browser storage), restored only when the URL has no value.</summary>
-    public bool Persist { get; private init; }
+    public bool Persist { get; private set; }
 
     /// <summary>The name of the filter in the interface (the tag, the add filter menu). <see langword="null"/> falls back to the title of the column with the same key, then to the key written as words.</summary>
-    public string? Label { get; private init; }
+    public string? Label { get; private set; }
 
     /// <summary>The options an option filter offers, in order; empty for the other kinds. Without them the editor lists the values of the facet counts (<see cref="Facets"/>) and the values already selected.</summary>
-    public IReadOnlyList<DataListFilterOption> Options { get; private init; } = [];
+    public IReadOnlyList<DataListFilterOption> Options { get; private set; } = [];
 
     /// <summary>Whether the data list asks for the option counts of this filter with each load and shows them in the editor. Only for option filters.</summary>
-    public bool Facets { get; private init; }
+    public bool Facets { get; private set; }
 
     /// <summary>A text filter: <c>contains</c> (default), <c>is</c>, <c>isNot</c>.</summary>
     public static DataListFilter Text() => new(FilterKind.Text, TextOperators, FilterOperator.Contains);
@@ -138,20 +160,11 @@ public sealed class DataListFilter
         var effective = op ?? DefaultOperator;
         if (!AllowedOperators.Contains(effective)) throw new ArgumentException($"The operator {effective} is not allowed on this filter.", nameof(op));
         var copy = Copy(AllowedOperators, DefaultOperator, effective);
-        return new DataListFilter(copy.Kind, copy.AllowedOperators, copy.DefaultOperator)
-        {
-            DefaultValue = value, DefaultValueOperator = effective, DefaultIncludeEmpty = includeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = Label, Options = Options, Facets = Facets,
-        };
+        return copy.With(c => { c.DefaultValue = value; c.DefaultValueOperator = effective; c.DefaultIncludeEmpty = includeEmpty; });
     }
 
     /// <summary>Remembers the last value of this filter between visits.</summary>
-    public DataListFilter WithPersist(bool persist = true) =>
-        new(Kind, AllowedOperators, DefaultOperator)
-        {
-            DefaultValue = DefaultValue, DefaultValueOperator = DefaultValueOperator, DefaultIncludeEmpty = DefaultIncludeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = persist, Label = Label, Options = Options, Facets = Facets,
-        };
+    public DataListFilter WithPersist(bool persist = true) => With(c => c.Persist = persist);
 
     /// <summary>Names the filter in the interface.</summary>
     /// <param name="label">The label of the tag and of the add filter menu.</param>
@@ -181,11 +194,41 @@ public sealed class DataListFilter
     }
 
     private DataListFilter Clone(string? label, IReadOnlyList<DataListFilterOption> options, bool facets) =>
-        new(Kind, AllowedOperators, DefaultOperator)
+        With(c => { c.Label = label; c.Options = options; c.Facets = facets; });
+
+    /// <summary>Chooses how a number editor shows its value. A slider needs <see cref="Min"/> and <see cref="Max"/>; without them the editor shows the field.</summary>
+    /// <param name="display">The display.</param>
+    public DataListFilter WithNumberDisplay(DataListNumberDisplay display)
+    {
+        if (Kind != FilterKind.Number) throw new InvalidOperationException("Only a number filter has a number display.");
+        return With(c => c.NumberDisplay = display);
+    }
+
+    /// <summary>Sets the format the filter tag writes a number with. Only number filters.</summary>
+    /// <param name="format">A .NET numeric format string such as <c>N0</c> or <c>C2</c>.</param>
+    public DataListFilter WithFormat(string format)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(format);
+        if (Kind != FilterKind.Number) throw new InvalidOperationException("Only a number filter has a format.");
+        try
         {
-            DefaultValue = DefaultValue, DefaultValueOperator = DefaultValueOperator, DefaultIncludeEmpty = DefaultIncludeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = label, Options = options, Facets = facets,
-        };
+            _ = 0m.ToString(format, System.Globalization.CultureInfo.InvariantCulture);
+        }
+        catch (FormatException e)
+        {
+            throw new ArgumentException($"'{format}' is not a numeric format string.", nameof(format), e);
+        }
+        return With(c => c.Format = format);
+    }
+
+    /// <summary>Limits the days a range of a date editor may cover (both ends included). Only date filters; the URL is not checked against it.</summary>
+    /// <param name="days">At least 1.</param>
+    public DataListFilter WithMaxRangeDays(int days)
+    {
+        if (Kind != FilterKind.Date) throw new InvalidOperationException("Only a date filter has a range limit.");
+        ArgumentOutOfRangeException.ThrowIfLessThan(days, 1);
+        return With(c => c.MaxRangeDays = days);
+    }
 
     /// <summary>The default rule of this filter under <paramref name="key"/>, or <see langword="null"/> when there is no default value.</summary>
     public FilterRule? DefaultRule(string key) =>
@@ -243,11 +286,15 @@ public sealed class DataListFilter
     };
 
     private DataListFilter Copy(IReadOnlyList<FilterOperator> operators, FilterOperator defaultOp, FilterOperator valueOp) =>
-        new(Kind, operators, defaultOp)
-        {
-            DefaultValue = DefaultValue, DefaultValueOperator = valueOp, DefaultIncludeEmpty = DefaultIncludeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = Label, Options = Options, Facets = Facets,
-        };
+        With(c => { c.AllowedOperators = operators; c.DefaultOperator = defaultOp; c.DefaultValueOperator = valueOp; });
+
+    // A copy with one change: the definition is immutable, so every With... method goes through here and a new property needs no change in the others.
+    private DataListFilter With(Action<DataListFilter> change)
+    {
+        var copy = (DataListFilter)MemberwiseClone();
+        change(copy);
+        return copy;
+    }
 }
 
 /// <summary>One option of an option filter: the value that goes into the rule and the URL, and what the interface shows.</summary>

@@ -25,7 +25,7 @@
                         @if (editable)
                         {
                             <BxPopover Open="@IsOpen(key)" OpenChanged="@(open => OnOpen(key, open))" Placement="bottom-start" AriaLabel="@string.Format(FormatCulture, ToolsMessages.EditFilter, label)"
-                                       Ui="@_popoverUi">
+                                       Ui="@(IsDate(key) ? _popoverWideUi : _popoverUi)">
                                 <ChildContent>
                                     <button type="button" class="@_slots["filterTagButton"]" data-slot="filter-tag-button">
                                         @TagText(label, op, value)
@@ -74,6 +74,7 @@
     private readonly Dictionary<string, int> _tokens = [];
     private SlotSet _slots = default!;
     private PopoverUi _popoverUi = new();
+    private PopoverUi _popoverWideUi = new();
     private IReadOnlyList<FilterRule> _active => Context.ActiveFilters;
     private DataListContext<TItem>? _focusSource;
     private int? _focusBelow;
@@ -100,7 +101,11 @@
     {
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "filters");
         _popoverUi = new PopoverUi { Content = _slots["filterPopover"] };
+        _popoverWideUi = new PopoverUi { Content = _slots["filterPopoverWide"] };
     }
+
+    // A date editor holds a calendar: its popover is wider.
+    private bool IsDate(string key) => Context.FilterOf(key)?.Kind == FilterKind.Date;
 
     private RenderFragment TagText(string label, string op, string value) =>
         @<text>

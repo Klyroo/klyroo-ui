@@ -78,6 +78,38 @@ public static class InvoiceFilterData
         .DefaultPageSize(10));
 }
 
+/// <summary>The schema of the number filter example: the amount, with limits, a step, a slider next to the field and a number format for its tag.</summary>
+public static class InvoiceNumberFilterData
+{
+    /// <summary>The invoice schema with an amount filter (0 to 700 by 10, field and slider) and a reviewed switch left out.</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .RowLabel(i => $"Invoice {i.Id}")
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable())
+        .Field(i => i.Status, f => f.Sortable())
+        .Field(i => i.Amount, f => f.Sortable().Filter(DataListFilter.Number(0, 10, 700).WithLabel("Amount").WithNumberDisplay(DataListNumberDisplay.InputAndSlider).WithFormat("N2")))
+        .Field(i => i.Issued, f => f.Sortable())
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(10));
+}
+
+/// <summary>The schema of the date filter example: the day an invoice was issued, with a range of at most 92 days.</summary>
+public static class InvoiceDateFilterData
+{
+    /// <summary>The invoice schema with an issued-on filter whose range covers 92 days at most.</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .RowLabel(i => $"Invoice {i.Id}")
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable())
+        .Field(i => i.Status, f => f.Sortable())
+        .Field(i => i.Amount, f => f.Sortable())
+        .Field(i => i.Issued, f => f.Sortable().Filter(DataListFilter.Date().WithLabel("Issued").WithMaxRangeDays(92)))
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(10));
+}
+
 /// <summary>
 /// The metadata that serializes the result of a prerender: a data list with <c>ResultJson</c> hands its first result to the interactive render, which shows it
 /// without loading it again. The attributes mirror the ones of <c>DataListJsonContext</c>.

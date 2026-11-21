@@ -110,6 +110,69 @@ public sealed partial record BxToolsMessages
     /// <summary>The <c>isNotEmpty</c> operator.</summary>
     public string OperatorIsNotEmpty { get; init; } = "is not empty";
 
+    /// <summary>Label of the first field of a range editor (the start of a number or date range).</summary>
+    public string FilterFrom { get; init; } = "From";
+
+    /// <summary>Label of the second field of a range editor (the end of a number or date range).</summary>
+    public string FilterTo { get; init; } = "To";
+
+    /// <summary>Accessible name of the start field of a range. {0} is the name of the filter.</summary>
+    public string FilterFromFor { get; init; } = "{0}, from";
+
+    /// <summary>Accessible name of the end field of a range. {0} is the name of the filter.</summary>
+    public string FilterToFor { get; init; } = "{0}, to";
+
+    /// <summary>Accessible name of the time field of a date filter that is exact to the hour or the minute. {0} is the name of the filter.</summary>
+    public string FilterTimeFor { get; init; } = "{0}, time";
+
+    /// <summary>Accessible name of the time field of the start of a range. {0} is the name of the filter.</summary>
+    public string FilterFromTimeFor { get; init; } = "{0}, from time";
+
+    /// <summary>Accessible name of the time field of the end of a range. {0} is the name of the filter.</summary>
+    public string FilterToTimeFor { get; init; } = "{0}, to time";
+
+    /// <summary>Accessible name of the group of preset buttons of a date filter (Today, Last 7 days...). {0} is the name of the filter.</summary>
+    public string FilterPresetsFor { get; init; } = "Presets for {0}";
+
+    /// <summary>Accessible name of the calendar of a date filter editor. {0} is the name of the filter.</summary>
+    public string FilterCalendarFor { get; init; } = "Calendar for {0}";
+
+    /// <summary>Accessible name of the slider of a number filter editor, which sits next to the number field. {0} is the name of the filter.</summary>
+    public string FilterSliderFor { get; init; } = "{0}, slider";
+
+    /// <summary>Hint under the range of a date filter that limits it. {0} is the number of days.</summary>
+    public string FilterMaxRangeDays { get; init; } = "At most {0} days";
+
+    /// <summary>Date preset: the current day.</summary>
+    public string DatePresetToday { get; init; } = "Today";
+
+    /// <summary>Date preset: the day before today.</summary>
+    public string DatePresetYesterday { get; init; } = "Yesterday";
+
+    /// <summary>Date preset: the first day of the current month.</summary>
+    public string DatePresetStartOfMonth { get; init; } = "Start of month";
+
+    /// <summary>Date preset: the day seven days before today.</summary>
+    public string DatePreset7DaysAgo { get; init; } = "7 days ago";
+
+    /// <summary>Date preset: the first day of the current year.</summary>
+    public string DatePresetStartOfYear { get; init; } = "Start of year";
+
+    /// <summary>Range preset: the last seven days, today included.</summary>
+    public string DatePresetLast7Days { get; init; } = "Last 7 days";
+
+    /// <summary>Range preset: the last thirty days, today included.</summary>
+    public string DatePresetLast30Days { get; init; } = "Last 30 days";
+
+    /// <summary>Range preset: the current month, from its first day to its last.</summary>
+    public string DatePresetThisMonth { get; init; } = "This month";
+
+    /// <summary>Range preset: the whole of the previous month.</summary>
+    public string DatePresetLastMonth { get; init; } = "Last month";
+
+    /// <summary>Range preset: from the first day of the year to today.</summary>
+    public string DatePresetYearToDate { get; init; } = "Year to date";
+
     /// <summary>The text of an operator for a filter tag and an operator picker.</summary>
     /// <param name="op">The operator.</param>
     /// <param name="forTag">Whether it is for a tag, where <c>isAnyOf</c> reads "is".</param>
