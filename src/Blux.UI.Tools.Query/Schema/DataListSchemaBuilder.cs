@@ -212,7 +212,9 @@ public sealed class DataListSchemaBuilder<T>
                 CheckKind(key, filter.Kind, def.Source.Value.UnderlyingType);
                 filters[key] = filter;
             }
-            fields.Add(new DataListField<T>(key, def.Source, def.IsSortable, def.Filter));
+            if (def.StoresLocalTime && def.Source.Value.UnderlyingType != typeof(DateTime))
+                throw new InvalidOperationException($"The field '{key}' is a {def.Source.Value.UnderlyingType.Name}: StoresLocalTime is for DateTime fields.");
+            fields.Add(new DataListField<T>(key, def.Source, def.IsSortable, def.Filter, def.StoresLocalTime));
         }
 
         foreach (var (key, filter) in _queryFilters)
@@ -274,6 +276,7 @@ public sealed class DataListSchemaBuilder<T>
         public ValueSource Source { get; } = source;
         public string? ExplicitKey { get; set; }
         public bool IsSortable { get; set; }
+        public bool StoresLocalTime { get; set; }
         public DataListFilter? Filter { get; set; }
 
         public string ResolveKey() =>
@@ -306,6 +309,18 @@ public sealed class DataListFieldBuilder<T, TProp>
         return this;
     }
 
+    /// <summary>
+    /// The <see cref="DateTime"/> values of this field are wall-clock times in the time zone of the request (a column such as PostgreSQL <c>timestamp without time zone</c>,
+    /// or a SQL Server <c>datetime2</c> that holds local times), not UTC. The bounds of a date filter are then local wall-clock times with kind <see cref="DateTimeKind.Unspecified"/>
+    /// (a day is the local midnight to the next local midnight, an hour is the local hour) instead of UTC instants, so a provider that refuses a UTC <see cref="DateTime"/> for such a
+    /// column accepts them. Without this option a <see cref="DateTime"/> field is read as UTC. Only for <see cref="DateTime"/> fields.
+    /// </summary>
+    public DataListFieldBuilder<T, TProp> StoresLocalTime(bool localTime = true)
+    {
+        _definition.StoresLocalTime = localTime;
+        return this;
+    }
+
     /// <summary>Gives the field a filter. The filter kind must suit the type of the field (text on a string, number on a numeric type, and so on).</summary>
     public DataListFieldBuilder<T, TProp> Filter(DataListFilter filter)
     {
@@ -329,6 +344,13 @@ public sealed class DataListCollectionFieldBuilder<T, TProp>
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         _definition.ExplicitKey = key;
+        return this;
+    }
+
+    /// <summary>The <see cref="DateTime"/> values read from the elements are wall-clock times in the request's time zone, not UTC. See <see cref="DataListFieldBuilder{T, TProp}.StoresLocalTime"/>.</summary>
+    public DataListCollectionFieldBuilder<T, TProp> StoresLocalTime(bool localTime = true)
+    {
+        _definition.StoresLocalTime = localTime;
         return this;
     }
 

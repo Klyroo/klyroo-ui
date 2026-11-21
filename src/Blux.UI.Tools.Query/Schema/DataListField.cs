@@ -7,8 +7,9 @@ internal sealed class DataListField<T>
 {
     private Func<T, object?>? _getter;
 
-    public DataListField(string key, ValueSource source, bool sortable, DataListFilter? filter)
+    public DataListField(string key, ValueSource source, bool sortable, DataListFilter? filter, bool storesLocalTime = false)
     {
+        StoresLocalTime = storesLocalTime;
         Key = key;
         Source = source;
         Sortable = sortable;
@@ -25,6 +26,9 @@ internal sealed class DataListField<T>
     public bool IsCollection => Source.IsCollection;
 
     public bool Sortable { get; }
+
+    /// <summary>The <see cref="DateTime"/> values are wall-clock times in the request time zone, not UTC.</summary>
+    public bool StoresLocalTime { get; }
 
     public DataListFilter? Filter { get; }
 

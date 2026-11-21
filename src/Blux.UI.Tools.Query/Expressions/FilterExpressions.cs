@@ -109,7 +109,7 @@ internal static class FilterExpressions
             FilterKind.Option => OptionRule(v, accessor, rule.Value!, inMemory),
             FilterKind.Boolean => BoolRule(v, (FilterValue.Boolean)rule.Value!),
             FilterKind.Number => NumberRule(v, accessor, positive, rule.Value!),
-            _ => DateRule(v, accessor, positive, rule.Value!, filter.Granularity, zone),
+            _ => DateRule(v, accessor, positive, rule.Value!, filter.Granularity, zone, field.StoresLocalTime),
         };
 
         var body = source.Exists(p, inMemory, PerValue);
@@ -241,7 +241,7 @@ internal static class FilterExpressions
 
     // ---- date
 
-    private static Expression DateRule(Expression v, FieldAccessor accessor, FilterOperator op, FilterValue value, DateGranularity granularity, TimeZoneInfo zone)
+    private static Expression DateRule(Expression v, FieldAccessor accessor, FilterOperator op, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime)
     {
         switch (op)
         {
@@ -249,30 +249,30 @@ internal static class FilterExpressions
             {
                 var range = (FilterValue.Range)value;
                 Expression? both = null;
-                if (range.From is { } from) both = And(both, Expression.GreaterThanOrEqual(v, Start(accessor, from, granularity, zone)));
-                if (range.To is { } to && Next(accessor, to, granularity, zone) is { } next) both = And(both, Expression.LessThan(v, next));
+                if (range.From is { } from) both = And(both, Expression.GreaterThanOrEqual(v, Start(accessor, from, granularity, zone, localTime)));
+                if (range.To is { } to && Next(accessor, to, granularity, zone, localTime) is { } next) both = And(both, Expression.LessThan(v, next));
                 return both ?? Expression.Constant(true);
             }
             case FilterOperator.Before:
-                return Expression.LessThan(v, Start(accessor, value, granularity, zone));
+                return Expression.LessThan(v, Start(accessor, value, granularity, zone, localTime));
             case FilterOperator.After:
-                return Next(accessor, value, granularity, zone) is { } after ? Expression.GreaterThanOrEqual(v, after) : Expression.Constant(false);
+                return Next(accessor, value, granularity, zone, localTime) is { } after ? Expression.GreaterThanOrEqual(v, after) : Expression.Constant(false);
             default:
             {
-                var atLeast = Expression.GreaterThanOrEqual(v, Start(accessor, value, granularity, zone));
-                return Next(accessor, value, granularity, zone) is { } next ? Expression.AndAlso(atLeast, Expression.LessThan(v, next)) : atLeast;
+                var atLeast = Expression.GreaterThanOrEqual(v, Start(accessor, value, granularity, zone, localTime));
+                return Next(accessor, value, granularity, zone, localTime) is { } next ? Expression.AndAlso(atLeast, Expression.LessThan(v, next)) : atLeast;
             }
         }
     }
 
-    private static Expression Start(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone) =>
-        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: false)!;
+    private static Expression Start(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime) =>
+        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: false, localTime)!;
 
     /// <summary>The exclusive end of the unit, or <see langword="null"/> when the unit reaches the end of time (nothing is after it).</summary>
-    private static Expression? Next(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone) =>
-        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: true);
+    private static Expression? Next(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime) =>
+        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: true, localTime);
 
-    private static Expression? DateBound(FieldAccessor accessor, DateUnit unit, bool upper)
+    private static Expression? DateBound(FieldAccessor accessor, DateUnit unit, bool upper, bool localTime)
     {
         var type = accessor.UnderlyingType;
         object? bound;
@@ -283,9 +283,18 @@ internal static class FilterExpressions
         }
         else
         {
-            var instant = (upper ? unit.NextUtc : unit.StartUtc).ToUniversalTime();
-            // DateTime fields are read as UTC (the Kind is ignored by comparisons, and databases store no Kind).
-            bound = type == typeof(DateTime) ? (object)instant.UtcDateTime : instant;
+            var unitBound = upper ? unit.NextUtc : unit.StartUtc;
+            if (type == typeof(DateTime) && localTime)
+            {
+                // wall-clock storage: the bound is the local time of the unit (the date and time part of the offset-carrying bound), kind unspecified
+                bound = DateTime.SpecifyKind(unitBound.DateTime, DateTimeKind.Unspecified);
+            }
+            else
+            {
+                var instant = unitBound.ToUniversalTime();
+                // DateTime fields are read as UTC (the Kind is ignored by comparisons, and databases store no Kind).
+                bound = type == typeof(DateTime) ? (object)instant.UtcDateTime : instant;
+            }
         }
         return Param(bound, accessor.LiftedType);
     }
