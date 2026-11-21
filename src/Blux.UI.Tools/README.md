@@ -11,6 +11,7 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 
 ```razor
 <BxDataList TItem="Invoice" Schema="InvoiceSchema" Provider="LoadAsync" UrlKey="invoices" ResultJson="AppJson.Default.DataListResultInvoice">
+    <BxDataListSearch />
     <BxDataListResultCount />
     <BxDataListErrorState />
     <BxDataListTable Caption="Invoices">
@@ -21,7 +22,7 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 </BxDataList>
 ```
 
-`BxDataList` sorts and pages in memory (`Items`) or asks a provider; its state (sort, page, page size) lives in the URL, as links and GET forms in static rendering and as buttons otherwise.
+`BxDataList` sorts and pages in memory (`Items`) or asks a provider; its state (search, sort, page, page size) lives in the URL, as links and GET forms in static rendering and as buttons otherwise. `BxDataListSearch` needs a schema with `Search(...)` fields; typing replaces the history entry instead of adding one.
 
 A list takes one source: `Items` (in memory), a `Provider`, or a `Queryable` (an EF Core query, with a schema). A queryable runs through an `IDataListQueryExecutor`; the default one blocks the thread,
 so add [Blux.UI.Tools.EntityFrameworkCore](https://www.nuget.org/packages/Blux.UI.Tools.EntityFrameworkCore) and `services.AddBluxUiToolsEntityFrameworkAdapter()` for `CountAsync` and `ToListAsync`.

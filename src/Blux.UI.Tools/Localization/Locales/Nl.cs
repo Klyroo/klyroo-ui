@@ -22,5 +22,13 @@ public static partial class BxToolsLocales
             Retry = "Opnieuw proberen",
             Results = "Resultaten",
             PaginationFor = "Paginering, {0}",
+            SearchPlaceholder = "Zoeken…",
+            Search = "Zoeken",
+            SearchFor = "Zoeken in {0}",
+            ClearSearch = "Zoekopdracht wissen",
+            NoResultsFor = "Geen resultaten voor “{0}”",
+            NoResultsForDescription = "Controleer de spelling of probeer een andere zoekopdracht.",
+            NoResultsFiltered = "Geen resultaten komen overeen met de filters",
+            ResetFilters = "Filters herstellen",
         };
 }

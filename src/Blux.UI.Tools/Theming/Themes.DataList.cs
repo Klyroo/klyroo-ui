@@ -9,19 +9,26 @@ internal static partial class ToolsThemes
         new ComponentTheme("dataListEmpty", "root", "icon", "title", "description", "actions")
             .Slot("root", "flex w-full min-w-0 flex-col items-center justify-center gap-3 px-6 py-12 text-center")
             .Slot("icon", "size-10 shrink-0 text-(--blux-text-muted)")
-            .Slot("title", "text-sm font-medium text-(--blux-text-highlighted)")
+            .Slot("title", "max-w-full text-sm font-medium break-words text-(--blux-text-highlighted)")
             .Slot("description", "max-w-sm text-sm text-(--blux-text-muted)")
             .Slot("actions", "mt-2 flex flex-wrap items-center justify-center gap-2");
 
     /// <summary>The look of the table follows the one of <c>BxTable</c> in Blux.UI; the padding of the cells comes from the density variant.</summary>
     public static ComponentTheme DataList() =>
         new ComponentTheme("dataList",
-                "root", "toolbar", "resultCount", "refresh", "refreshIcon", "refreshIconBusy",
+                "root", "toolbar", "search", "searchField", "searchInput", "searchClear", "searchClearIcon", "searchSubmit", "resultCount", "refresh", "refreshIcon", "refreshIconBusy",
                 "tableRoot", "table", "caption", "thead", "tr", "th", "thStart", "thCenter", "thEnd",
                 "sortButton", "sortIcon", "sortIconActive", "tbody", "td", "tdStart", "tdCenter", "tdEnd",
                 "empty", "skeleton", "pagination", "pageSize", "pageSizeLabel", "pageSizeSelect", "pageSizeForm", "error")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
+            .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
+            .Slot("searchField", "group/search relative min-w-0 flex-1")
+            .Slot("searchInput", "pe-9 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden")
+            .Slot("searchClear", "absolute inset-y-0 end-1 my-auto inline-flex size-7 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:text-(--blux-text) " +
+                                 "focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) group-has-[input:placeholder-shown]/search:invisible")
+            .Slot("searchClearIcon", "size-4 shrink-0")
+            .Slot("searchSubmit", "shrink-0")
             .Slot("resultCount", "text-sm tabular-nums text-(--blux-text-muted)")
             .Slot("refresh", "")
             .Slot("refreshIcon", "size-4 shrink-0")

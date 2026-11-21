@@ -3,6 +3,7 @@
 @inherits DataListPartBase<TItem>
 @attribute [CascadingTypeParameter(nameof(TItem))]
 @using Blux.UI.Internal
+@using Blux.UI.Tools.Query
 
     @ChildContent
     @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
@@ -48,6 +49,13 @@
                                 @if (Empty is not null)
                                 {
                                     @Empty(Context)
+                                }
+                                else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+                                {
+                                    @* A search or filters are on: nothing matches, which is not the same as nothing existing. *@
+                                    <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
+                                        <Actions>@FilteredAction</Actions>
+                                    </BxDataListEmpty>
                                 }
                                 else
                                 {
@@ -114,6 +122,47 @@
             },
         }, Ui, "tableRoot");
     }
+
+    // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
+    private DataListState Shown => Context.LoadedState ?? Context.State;
+
+    private bool OnlySearch => Shown.Filters.SequenceEqual(Context.ResetState(Shown).Filters);
+
+    private string FilteredTitle => string.IsNullOrWhiteSpace(Shown.Search)
+        ? ToolsMessages.NoResultsFiltered
+        : string.Format(FormatCulture, ToolsMessages.NoResultsFor, Shown.Search.Trim());
+
+    private string FilteredDescription => string.IsNullOrWhiteSpace(Shown.Search) ? ToolsMessages.NoResultsDescription : ToolsMessages.NoResultsForDescription;
+
+    // A button that takes the search (and the filters) off: interactive it also puts the focus back in the search field, whose clear button is gone with the text; statically it is a link.
+    private RenderFragment FilteredAction => builder =>
+    {
+        var label = OnlySearch ? ToolsMessages.ClearSearch : ToolsMessages.ResetFilters;
+        if (Context.IsInteractive)
+        {
+            builder.OpenComponent<BxButton>(0);
+            builder.AddAttribute(1, nameof(BxButton.Label), label);
+            builder.AddAttribute(2, nameof(BxButton.Variant), ButtonVariant.Outline);
+            builder.AddAttribute(3, nameof(BxButton.Color), BxColor.Neutral);
+            builder.AddAttribute(4, nameof(BxButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () =>
+            {
+                Context.Reset(QueryHistory.Push);
+                Context.RequestSearchFocus();
+            }));
+            builder.AddAttribute(5, "data-slot", "reset");
+            builder.CloseComponent();
+        }
+        else if (Context.HrefWith(Context.ResetState) is { } href)
+        {
+            builder.OpenComponent<BxButton>(6);
+            builder.AddAttribute(7, nameof(BxButton.Label), label);
+            builder.AddAttribute(8, nameof(BxButton.Variant), ButtonVariant.Outline);
+            builder.AddAttribute(9, nameof(BxButton.Color), BxColor.Neutral);
+            builder.AddAttribute(10, nameof(BxButton.Href), href);
+            builder.AddAttribute(11, "data-slot", "reset");
+            builder.CloseComponent();
+        }
+    };
 
     private sealed record RowEntry(object Key, TItem Item);
 

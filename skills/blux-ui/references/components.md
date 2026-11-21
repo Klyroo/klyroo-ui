@@ -660,31 +660,34 @@
 
 ### DataList
 
-`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Blux.UI.Tools.EntityFrameworkCore adapter), with sortable columns, pagination, a result count, loading and error states, and its state in the URL. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Blux.UI.Tools.EntityFrameworkCore adapter), with search, sortable columns, pagination, a result count, loading, empty and error states, and its state in the URL. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
 
 - `<BxDataList>`
   - Parameters: `Class`, `Density`, `Items`, `Label`, `PersistKey`, `Provider`, `Queryable`, `ResultJson`, `Schema`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
   - Slots: `ChildContent`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListTable>`
   - Parameters: `AriaLabel`, `Caption`, `Class`, `Ui`
   - Slots: `Empty`, `ChildContent`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListColumn>`
   - Parameters: `Align`, `Class`, `Field`, `Format`, `Key`, `Order`, `Property`, `Sortable`, `Title`, `Visible`
   - Slots: `Template`
 - `<BxDataListPagination>`
   - Parameters: `AriaLabel`, `Class`, `PageSizes`, `ShowFirstLast`, `ShowPageSize`, `SiblingCount`, `Ui`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListResultCount>`
   - Parameters: `Class`, `Ui`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListRefresh>`
   - Parameters: `Class`, `Ui`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 - `<BxDataListErrorState>`
   - Parameters: `Class`, `Description`, `Title`, `Ui`
-  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListSearch>`
+  - Parameters: `AriaLabel`, `Class`, `Debounce`, `MinLength`, `Placeholder`, `Size`, `Ui`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 
 ### DataListEmpty
 

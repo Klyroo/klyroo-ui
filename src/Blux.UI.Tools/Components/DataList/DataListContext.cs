@@ -117,6 +117,9 @@ public sealed class DataListContext<TItem>
     /// <summary>The rows have a search or filters applied, so an empty result means "nothing matches" rather than "nothing exists".</summary>
     public bool IsFiltered => _owner.IsFiltered;
 
+    /// <summary>Whether <paramref name="state"/> has a search or filters applied: <see cref="IsFiltered"/> for the state the rows on screen were loaded for.</summary>
+    public bool IsFilteredFor(DataListState state) => _owner.IsFilteredFor(state);
+
     /// <summary>The density of the rows.</summary>
     public DataListDensity Density => _owner.Density;
 
@@ -129,6 +132,20 @@ public sealed class DataListContext<TItem>
     /// the list keeps the state itself and reports it through <c>StateChanged</c>. Nothing happens in a renderer that is not interactive: use <see cref="HrefWith"/>.
     /// </summary>
     public void SetState(Func<DataListState, DataListState> change, QueryHistory history = QueryHistory.Push) => _owner.SetState(change, history);
+
+    /// <summary>
+    /// Takes the search and the filters off and goes back to the first page (the sort, the page size and the layout stay), with a history entry by default.
+    /// Nothing happens in a renderer that is not interactive: link to <see cref="HrefWith"/> with <see cref="ResetState"/>.
+    /// </summary>
+    public void Reset(QueryHistory history = QueryHistory.Push) => SetState(_owner.ResetState, history);
+
+    /// <summary><paramref name="state"/> without its search and its filters (those of the schema's default state), on the first page: what <see cref="Reset"/> sets.</summary>
+    public DataListState ResetState(DataListState state) => _owner.ResetState(state);
+
+    /// <summary>Raised when something asks for the focus of the search field of the list (the empty state's "Clear search" action, whose own button is gone once it worked).</summary>
+    internal event Action? SearchFocusRequested;
+
+    internal void RequestSearchFocus() => SearchFocusRequested?.Invoke();
 
     /// <summary>The URL of the current page with the state <paramref name="change"/> returns written in it, for a link of a static render; <see langword="null"/> when the list is not synced with the URL.</summary>
     public string? HrefWith(Func<DataListState, DataListState> change) => _owner.HrefWith(change);
