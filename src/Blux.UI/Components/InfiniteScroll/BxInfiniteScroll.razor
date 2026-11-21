@@ -15,7 +15,6 @@
                     data-loads="@(Bound ? _loads.ToString() : null)"
                     data-root="@Root"
                     data-root-margin="@RootMargin"
-                    aria-busy="@(Busy ? "true" : null)"
                     @onbxchange="ChangeHandler"
                     @onbxchange:stopPropagation="true"
                     @attributes="AdditionalAttributes">
@@ -35,6 +34,11 @@
         @* The status below announces it: this copy is for the eyes only. *@
         <p class="@_slots["end"]" data-slot="end" aria-hidden="true">@Messages.NoMoreItems</p>
     }
+    @if (!HasMore)
+    {
+        @* Where the focus goes when the last button disappears while it has it. Not the live region: that one announces by itself. *@
+        <span class="@_slots["marker"]" data-slot="marker" tabindex="-1"></span>
+    }
     <div role="status" aria-live="polite" aria-atomic="true" tabindex="-1" class="@_slots["status"]" data-slot="status">@Announcement</div>
 </bx-infinite-scroll>
 
@@ -49,13 +53,16 @@
     /// <summary>
     /// A load is running. While it is true nothing is requested again; when it turns false the sentinel is checked again,
     /// so a sentinel still in view asks for the next items. A load started through <see cref="OnLoadMore"/> counts as running
-    /// until the callback returns, so an async handler does not have to set this.
+    /// until the callback returns, so an async handler does not have to set this. The component does not set <c>aria-busy</c>
+    /// (it would hide its own announcement): put <c>aria-busy</c> on your list while it loads.
     /// </summary>
     [Parameter] public bool Loading { get; set; }
 
     /// <summary>
     /// Asked for the next items: each time the sentinel comes into view and when the button is used, never twice for one
-    /// visibility until the load is over. Only runs when the page is interactive.
+    /// visibility until the load is over. Only runs when the page is interactive. After a load that added nothing (or threw),
+    /// nothing is asked again until the sentinel has left the view and come back, or the button is used: a handler that has nothing
+    /// more to give, or failed, should set <see cref="HasMore"/> to false, or show a retry.
     /// </summary>
     [Parameter] public EventCallback OnLoadMore { get; set; }
 

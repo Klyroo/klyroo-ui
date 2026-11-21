@@ -128,7 +128,7 @@ internal static partial class Themes
 
     public static ComponentTheme Select()
     {
-        var t = new ComponentTheme("select", "root", "base", "label", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel")
+        var t = new ComponentTheme("select", "root", "base", "label", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon")
             .Slot("root", "relative inline-flex w-full")
             .Slot("base", "relative inline-flex w-full items-center rounded-(--blux-radius) text-start cursor-pointer focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
@@ -143,7 +143,8 @@ internal static partial class Themes
             .Slot("itemLeadingIcon", ListItemLeadingIcon)
             .Slot("itemCount", ListItemCount)
             .Slot("group", ListGroup)
-            .Slot("groupLabel", ListGroupLabel);
+            .Slot("groupLabel", ListGroupLabel)
+            .Slot("leadingIcon", TriggerLeadingIcon);
         FieldVariants(t, "base");
         t.Variant("size", "xs", "trailingIcon", "size-4").Variant("size", "sm", "trailingIcon", "size-4").Variant("size", "md", "trailingIcon", "size-5")
          .Variant("size", "lg", "trailingIcon", "size-5").Variant("size", "xl", "trailingIcon", "size-6");

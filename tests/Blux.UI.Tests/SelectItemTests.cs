@@ -56,8 +56,12 @@ public class SelectItemTests : BluxTestContext
         Assert.Null(options[2].QuerySelector("[data-slot=count]"));
         Assert.True(options[0].HasAttribute("data-has-count"));
         Assert.False(options[2].HasAttribute("data-has-count"));
-        // Between the label and the check mark; the typeahead and the filter keep reading the label only.
-        Assert.Equal(["SPAN", "SPAN", "svg"], options[0].Children.Select(c => c.TagName).ToArray());
+        // Between the label and the check mark, after a separator that is only for assistive technology (so the name reads "Alpha, 1,204").
+        Assert.Equal(", ", options[0].Children[1].TextContent);
+        Assert.Contains("sr-only", options[0].Children[1].ClassName);
+        Assert.Equal(count, options[0].Children[2]);
+        // The typeahead and the filter keep reading the label only.
+        Assert.Equal(["SPAN", "SPAN", "SPAN", "svg"], options[0].Children.Select(c => c.TagName).ToArray());
         Assert.Equal("Alpha", options[0].GetAttribute("data-label"));
         Assert.Contains("ms-auto", count.ClassName);
         Assert.Contains("tabular-nums", count.ClassName);
@@ -102,21 +106,23 @@ public class SelectItemTests : BluxTestContext
         var cut = RenderList(kind, [
             new("fr", "France") { Group = "Europe" },
             new("jp", "Japan") { Group = "Asia" },
-            new("de", "Germany") { Group = "Europe" },
             new("xx", "Elsewhere"),
+            new("de", "Germany") { Group = "Europe" },
+            new("yy", "Nowhere"),
             new("kr", "Korea") { Group = "Asia" },
         ]);
 
         var listbox = cut.Find("[role=listbox]");
         var groups = cut.FindAll("[role=group]");
         Assert.Equal(2, groups.Count);
-        // Listed where their first item is, with all their items; an item without a group stays where it is, with no heading.
-        Assert.Equal(["group", "group", "option"], listbox.Children.Select(c => c.GetAttribute("role")).Where(r => r != null).ToArray().Take(3));
+        // Items without a group first, in their order, then the groups in the order of their first item with all their items:
+        // an ungrouped item is never between two groups, where it would look like part of one.
+        Assert.Equal(["option", "option", "group", "group"], listbox.Children.Select(c => c.GetAttribute("role")).ToArray());
+        Assert.Equal(["xx", "yy"], listbox.Children.Take(2).Select(c => c.GetAttribute("data-value")));
         Assert.Equal(["Europe", "Asia"], groups.Select(g => g.QuerySelector("[data-slot=group-label]")!.TextContent));
         Assert.Equal(["fr", "de"], groups[0].QuerySelectorAll("[role=option]").Select(o => o.GetAttribute("data-value")));
         Assert.Equal(["jp", "kr"], groups[1].QuerySelectorAll("[role=option]").Select(o => o.GetAttribute("data-value")));
-        Assert.Equal("xx", listbox.Children.Last().GetAttribute("data-value"));
-        Assert.Equal(5, cut.FindAll("[role=option]:not([data-slot=create])").Count);
+        Assert.Equal(6, cut.FindAll("[role=option]:not([data-slot=create])").Count);
 
         // Each group is named by its heading, and the heading is not an option, not focusable, not announced as one.
         foreach (var group in groups)
@@ -194,6 +200,8 @@ public class SelectItemTests : BluxTestContext
         var count = options[0].QuerySelector("[data-slot=count]")!;
         Assert.Equal("1,204", count.TextContent);
         Assert.Equal("kbd", count.NextElementSibling!.LocalName);
+        Assert.Equal(", ", count.PreviousElementSibling!.TextContent);
+        Assert.Contains("sr-only", count.PreviousElementSibling.ClassName);
         Assert.Null(options[1].QuerySelector("[data-slot=count]"));
         Assert.DoesNotContain("1204", options[0].GetAttribute("data-search"));
         Assert.Contains("tabular-nums", count.ClassName);
@@ -202,6 +210,26 @@ public class SelectItemTests : BluxTestContext
             .Add(c => c.Groups, (IReadOnlyList<BxCommandGroup>)[new(null, [new BxCommandItem { Label = "Inbox", Count = 3 }])])
             .Add(c => c.Ui, new CommandPaletteUi { ItemCount = "mine" }));
         Assert.Contains("mine", ui.Find("[data-slot=count]").ClassName);
+    }
+
+    [Fact]
+    public void Select_and_SelectMenu_get_an_empty_trigger_slot_for_the_icon_of_the_selected_item_only_when_an_item_has_an_icon()
+    {
+        BxSelectItem[] withIcon = [new("a", "Alpha") { Icon = "star" }, new("b", "Beta")];
+
+        var select = Render<BxSelect>(p => p.Add(s => s.Items, withIcon).Add(s => s.Value, "a"));
+        var slot = select.Find("[role=combobox] [data-slot=selectedIcon]");
+        // The browser fills it (Blazor renders no children there, so there is nothing to diff); the options say which have an icon.
+        Assert.Empty(slot.Children);
+        Assert.Equal("true", slot.GetAttribute("aria-hidden"));
+        Assert.Equal(["", null], select.FindAll("[role=option]").Select(o => o.GetAttribute("data-has-icon")));
+
+        var menu = Render<BxSelectMenu>(p => p.Add(s => s.Items, withIcon));
+        Assert.Empty(menu.Find("button [data-slot=selectedIcon]").Children);
+
+        Assert.Empty(Render<BxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<BxSelectMenu>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<BxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-has-icon]"));
     }
 
     [Fact]

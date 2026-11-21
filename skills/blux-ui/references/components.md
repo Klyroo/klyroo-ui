@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-138 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+139 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -87,7 +87,7 @@
 - `<BxInfiniteScroll>`
   - Parameters: `Class`, `HasMore`, `Href`, `Label`, `Loading`, `Root`, `RootMargin`, `ShowEnd`, `Ui`
   - Events: `OnLoadMore`
-  - `Ui` (`InfiniteScrollUi`): `Root`, `Sentinel`, `Trigger`, `Spinner`, `Status`, `End`
+  - `Ui` (`InfiniteScrollUi`): `Root`, `Sentinel`, `Trigger`, `Spinner`, `Status`, `End`, `Marker`
 
 ### Chip
 
@@ -232,7 +232,7 @@
 
 - `<BxSelect>`
   - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Items` (required), `Name`, `Placeholder`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
-  - `Ui` (`SelectUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`
+  - `Ui` (`SelectUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `LeadingIcon`
 
 ### FormField
 
@@ -291,7 +291,7 @@
 
 - `<BxSelectMenu>`
   - Parameters: `Class`, `Color`, `Create`, `Disabled`, `Id`, `Items` (required), `Multiple`, `Name`, `Placeholder`, `Required`, `SearchLabel`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
-  - `Ui` (`SelectMenuUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `SearchWrapper`, `Search`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `Empty`, `Create`
+  - `Ui` (`SelectMenuUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `SearchWrapper`, `Search`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `LeadingIcon`, `Empty`, `Create`
 
 ### InputMenu
 

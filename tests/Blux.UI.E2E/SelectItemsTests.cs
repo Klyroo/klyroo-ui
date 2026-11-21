@@ -192,6 +192,91 @@ public class SelectItemsTests(PlaygroundServer server) : PlaygroundTest(server)
 
     [Theory]
     [MemberData(nameof(AllModes))]
+    public async Task The_accessible_name_of_a_row_separates_the_label_from_the_count(string mode)
+    {
+        await Open(mode, "select");
+        await Mailbox.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Inbox\s*,\s*12$") })).ToHaveCountAsync(1);
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Archive\s*,\s*1,840$") })).ToHaveCountAsync(1);
+        // No count, no separator.
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Sent$") })).ToHaveCountAsync(1);
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Open(mode, "select-menu");
+        await Page.GetByRole(AriaRole.Combobox, new() { Name = "Destination" }).FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Japan\s*,\s*17$") })).ToHaveCountAsync(1);
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Open(mode, "input-menu");
+        await Page.GetByRole(AriaRole.Combobox, new() { Name = "Assign to" }).FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Grace Hopper\s*,\s*11$") })).ToHaveCountAsync(1);
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Open(mode, "listbox");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Tokyo\s*,\s*3$") })).ToHaveCountAsync(1);
+
+        await Open(mode, "command-palette");
+        await Assertions.Expect(Page.GetByTestId("count-palette").GetByRole(AriaRole.Option, new() { NameRegex = new Regex(@"^Inbox\s*,\s*12\s*G I$") })).ToHaveCountAsync(1);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_closed_trigger_shows_the_icon_of_the_selected_item_not_its_count(string mode)
+    {
+        await Open(mode, "select");
+        var icon = Mailbox.Locator("[data-slot=selectedIcon] svg");
+        await Assertions.Expect(icon).ToHaveCountAsync(0);
+
+        await Mailbox.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(Mailbox.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "Inbox");
+        await Assertions.Expect(icon).ToHaveCountAsync(1);
+        await Assertions.Expect(icon).ToBeVisibleAsync();
+        await Assertions.Expect(Mailbox.Locator("[data-slot=count]")).ToHaveCountAsync(0);
+        var iconBox = await icon.BoundingBoxAsync();
+        var labelBox = await Mailbox.Locator("[data-slot=label]").BoundingBoxAsync();
+        Assert.True(iconBox!.X + iconBox.Width <= labelBox!.X + 1, $"{iconBox.X + iconBox.Width} > {labelBox.X}");
+
+        // The first ArrowDown opens the list on the selected item (Inbox).
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(Mailbox.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "Sent");
+        await Assertions.Expect(icon).ToHaveCountAsync(1);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task SelectMenu_trigger_shows_the_icon_of_the_chosen_item_and_none_for_an_item_without_one(string mode)
+    {
+        await Open(mode, "select-menu");
+        var trigger = Page.GetByRole(AriaRole.Combobox, new() { Name = "Destination" });
+        var icon = trigger.Locator("[data-slot=selectedIcon] svg");
+        await Assertions.Expect(icon).ToHaveCountAsync(0);
+
+        await trigger.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.TypeAsync("jap");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(trigger.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "Japan");
+        await Assertions.Expect(icon).ToHaveCountAsync(1);
+
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.TypeAsync("fra");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(trigger.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "France");
+        await Assertions.Expect(icon).ToHaveCountAsync(0);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
     public async Task Open_lists_with_groups_and_counts_have_no_accessibility_violations_in_light_and_dark(string mode)
     {
         await Open(mode, "select");

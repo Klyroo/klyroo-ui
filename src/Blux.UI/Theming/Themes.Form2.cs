@@ -19,6 +19,9 @@ internal static partial class Themes
 
     private const string ListItemCount = "ms-auto shrink-0 ps-2 text-xs tabular-nums text-(--blux-text-muted)";
 
+    // The icon of the selected item, put there by the browser; no icon, no space.
+    private const string TriggerLeadingIcon = "shrink-0 text-(--blux-text-muted) empty:hidden [&>svg]:size-4";
+
     private const string ListGroup = "py-0.5";
 
     private const string ListGroupLabel = "px-2 py-1.5 text-xs font-semibold text-(--blux-text-muted)";
@@ -57,8 +60,9 @@ internal static partial class Themes
 
     public static ComponentTheme SelectMenu()
     {
-        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "empty", "create")
+        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon", "empty", "create")
             .Slot("create", "before:content-[attr(data-label)]")
+            .Slot("leadingIcon", TriggerLeadingIcon)
             .Slot("root", "relative inline-flex w-full")
             .Slot("base", "relative inline-flex w-full items-center rounded-(--blux-radius) text-start cursor-pointer focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)

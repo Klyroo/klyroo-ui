@@ -24,14 +24,14 @@ public class InfiniteScrollTests(PlaygroundServer server) : PlaygroundTest(serve
 
         await Assertions.Expect(Requests).ToHaveTextAsync("Load requests: 1");
         await Assertions.Expect(More.Locator("[data-slot=status]")).ToHaveTextAsync("Loading more...");
-        await Assertions.Expect(More).ToHaveAttributeAsync("aria-busy", "true");
+        // Not aria-busy on the element: it contains the live region, and a busy region is not announced.
+        await Assertions.Expect(More).Not.ToHaveAttributeAsync("aria-busy", new Regex(".*"));
         // Leave and come back while the load runs: the sentinel is visible again, and nothing is asked a second time.
         await Feed.EvaluateAsync("e => { e.scrollTop = 0; }");
         await Page.WaitForTimeoutAsync(100);
         await ScrollToEnd(Feed);
 
         await Assertions.Expect(Count).ToHaveTextAsync("Showing 40 of 60");
-        await Assertions.Expect(More).Not.ToHaveAttributeAsync("aria-busy", "true");
         await Assertions.Expect(Requests).ToHaveTextAsync("Load requests: 1");
         await Assertions.Expect(More.Locator("[data-slot=status]")).ToHaveTextAsync("");
 
@@ -50,9 +50,10 @@ public class InfiniteScrollTests(PlaygroundServer server) : PlaygroundTest(serve
     [MemberData(nameof(InteractiveModes))]
     public async Task A_sentinel_still_in_view_after_a_load_asks_for_the_next_page(string mode)
     {
+        // A tall window (the box is taller than its content, so it does not scroll: the window is what the sentinel is watched against)
+        // shows the sentinel without scrolling: every finished load looks at it again.
+        await Page.SetViewportSizeAsync(1280, 3000);
         await Open(mode, "infinite-scroll");
-
-        // A tall list shows the sentinel without scrolling: every finished load looks at it again.
         await Feed.EvaluateAsync("e => { e.style.height = '4000px'; }");
 
         await Assertions.Expect(Count).ToHaveTextAsync("Showing 60 of 60");
@@ -85,9 +86,80 @@ public class InfiniteScrollTests(PlaygroundServer server) : PlaygroundTest(serve
 
         await Assertions.Expect(page.GetByTestId("infinite-count")).ToHaveTextAsync("Showing 60 of 60");
         await Assertions.Expect(page.GetByTestId("infinite-requests")).ToHaveTextAsync("Load requests: 2");
-        // The button went away with the focus on it: the focus goes to the announcement, not to the top of the page.
-        await Assertions.Expect(page.GetByTestId("infinite-more").Locator("[data-slot=status]")).ToBeFocusedAsync();
+        // The button went away with the focus on it: the focus goes to a plain element (not the live region, which announces by itself), not to the top of the page.
+        await Assertions.Expect(page.GetByTestId("infinite-more").Locator("[data-slot=marker]")).ToBeFocusedAsync();
         await Assertions.Expect(page.GetByTestId("infinite-more").Locator("[data-slot=status]")).ToHaveTextAsync("No more items");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_wrapper_with_overflow_x_hidden_is_not_taken_for_the_scroll_container(string mode)
+    {
+        await Open(mode, "infinite-scroll");
+        var more = Page.GetByTestId("wrap-more");
+        var requests = Page.GetByTestId("wrap-requests");
+        var count = Page.GetByTestId("wrap-count");
+        // Its computed overflow-y is auto, though it never scrolls: the page does.
+        Assert.Equal("auto", await Page.GetByTestId("wrap-feed").EvaluateAsync<string>("e => getComputedStyle(e).overflowY"));
+        await Page.WaitForTimeoutAsync(500);
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 0");
+
+        await more.ScrollIntoViewIfNeededAsync();
+
+        await Assertions.Expect(count).ToHaveTextAsync("Showing 40 of 60");
+        // One load for that scroll, not a cascade down to the end of the list.
+        await Page.WaitForTimeoutAsync(800);
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 1");
+        await Assertions.Expect(count).ToHaveTextAsync("Showing 40 of 60");
+
+        await more.ScrollIntoViewIfNeededAsync();
+        await Assertions.Expect(count).ToHaveTextAsync("Showing 60 of 60");
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 2");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_load_that_adds_nothing_is_not_asked_again_until_the_sentinel_leaves_and_returns(string mode)
+    {
+        await Open(mode, "infinite-scroll");
+        var requests = Page.GetByTestId("empty-requests");
+        var more = Page.GetByTestId("empty-more");
+        await Page.WaitForTimeoutAsync(300);
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 0");
+
+        await more.ScrollIntoViewIfNeededAsync();
+
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 1");
+        await Page.WaitForTimeoutAsync(1000);
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 1");
+
+        await Page.EvaluateAsync("() => window.scrollTo(0, 0)");
+        await Page.WaitForTimeoutAsync(200);
+        await more.ScrollIntoViewIfNeededAsync();
+
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 2");
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 2");
+
+        // The button asks whatever the guard says.
+        await more.GetByRole(AriaRole.Button, new() { Name = "Load more" }).ClickAsync();
+        await Assertions.Expect(requests).ToHaveTextAsync("Load requests: 3");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_Root_that_matches_nothing_warns_and_watches_the_viewport(string mode)
+    {
+        await Open(mode, "infinite-scroll");
+        var warnings = new List<string>();
+        Page.Console += (_, message) => { if (message.Type == "warning") warnings.Add(message.Text); };
+
+        await Page.GetByTestId("log-more").EvaluateAsync("e => e.setAttribute('data-root', '#nothing-here')");
+
+        await Page.WaitForTimeoutAsync(300);
+        Assert.Contains(warnings, text => text.Contains("#nothing-here") && text.Contains("viewport"));
+        // Not the heuristic: the viewport, so the element still works (the sentinel is far below the fold, nothing asked yet).
+        await Assertions.Expect(Page.GetByTestId("log-count")).ToHaveTextAsync("Lines: 20");
     }
 
     [Fact]

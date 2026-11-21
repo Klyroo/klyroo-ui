@@ -11,6 +11,7 @@ public sealed record InfiniteScrollUi : ISlotOverrides
     public string? Spinner { get; init; }
     public string? Status { get; init; }
     public string? End { get; init; }
+    public string? Marker { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -20,6 +21,7 @@ public sealed record InfiniteScrollUi : ISlotOverrides
         "spinner" => Spinner,
         "status" => Status,
         "end" => End,
+        "marker" => Marker,
         _ => null,
     };
 }

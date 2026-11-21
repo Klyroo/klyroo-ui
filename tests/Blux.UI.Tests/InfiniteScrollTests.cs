@@ -80,7 +80,8 @@ public class InfiniteScrollTests : BluxTestContext
 
         var host = cut.Find("bx-infinite-scroll");
         Assert.True(host.HasAttribute("data-loading"));
-        Assert.Equal("true", host.GetAttribute("aria-busy"));
+        // aria-busy on the element would hide its own live region: the status announces, the consumer marks the list busy.
+        Assert.False(host.HasAttribute("aria-busy"));
         Assert.Equal("Loading more...", cut.Find("[data-slot=status]").TextContent);
         var button = cut.Find("[data-slot=trigger]");
         // Still focusable: a keyboard user pressing it does not lose the place.
@@ -102,6 +103,11 @@ public class InfiniteScrollTests : BluxTestContext
         Assert.False(cut.Find("bx-infinite-scroll").HasAttribute("data-has-more"));
         Assert.Equal("No more items", cut.Find("[data-slot=status]").TextContent);
         Assert.Empty(cut.FindAll("[data-slot=end]"));
+        // Where the focus goes when the button that had it disappears: a plain element, not the live region.
+        var marker = cut.Find("[data-slot=marker]");
+        Assert.Equal("-1", marker.GetAttribute("tabindex"));
+        Assert.DoesNotContain(marker.Attributes, a => a.Name is "role" or "aria-live");
+        Assert.Equal("", marker.TextContent);
 
         cut.Render(p => p.Add(s => s.ShowEnd, true));
         var end = cut.Find("[data-slot=end]");
@@ -138,6 +144,25 @@ public class InfiniteScrollTests : BluxTestContext
 
         cut.Find("bx-infinite-scroll").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "more", Sequence = 3 });
         Assert.Equal(2, calls);
+    }
+
+    [Fact]
+    public async Task A_handler_that_throws_ends_the_load_and_can_be_asked_again()
+    {
+        var calls = 0;
+        var cut = Render<BxInfiniteScroll>(p => p.Add(s => s.OnLoadMore, EventCallback.Factory.Create(this, () =>
+        {
+            calls++;
+            throw new InvalidOperationException("boom");
+        })));
+
+        await Assert.ThrowsAnyAsync<Exception>(() => cut.Find("bx-infinite-scroll").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "more", Sequence = 1 }));
+
+        // Not stuck loading; the count that tells the browser a load is over still moved, and the browser decides whether to ask again.
+        var host = cut.Find("bx-infinite-scroll");
+        Assert.False(host.HasAttribute("data-loading"));
+        Assert.Equal("1", host.GetAttribute("data-loads"));
+        Assert.Equal(1, calls);
     }
 
     [Fact]

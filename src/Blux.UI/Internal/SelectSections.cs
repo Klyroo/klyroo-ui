@@ -6,31 +6,28 @@ internal sealed record SelectSection(string? Label, IReadOnlyList<BxSelectItem> 
 internal static class SelectSections
 {
     /// <summary>
-    /// Splits items by <see cref="BxSelectItem.Group"/>. A group is listed where its first item is, with all its items;
-    /// items without a group stay where they are. Items with no group at all are one section with no heading, so a list
-    /// that does not use groups renders exactly as it always did.
+    /// Splits items by <see cref="BxSelectItem.Group"/>: the items without a group first, in their order and with no heading,
+    /// then each group in the order of its first item, with all its items. Items with no group at all are one section with no
+    /// heading, so a list that does not use groups renders exactly as it always did.
     /// </summary>
     public static IReadOnlyList<SelectSection> Of(IReadOnlyList<BxSelectItem> items)
     {
         if (!items.Any(i => !string.IsNullOrEmpty(i.Group))) return [new SelectSection(null, items)];
 
-        var sections = new List<SelectSection>();
+        var loose = new List<BxSelectItem>();
+        var groups = new List<SelectSection>();
         var lists = new Dictionary<string, List<BxSelectItem>>(StringComparer.Ordinal);
         foreach (var item in items)
         {
-            if (string.IsNullOrEmpty(item.Group))
-            {
-                if (sections.Count > 0 && sections[^1].Label is null) ((List<BxSelectItem>)sections[^1].Items).Add(item);
-                else sections.Add(new SelectSection(null, new List<BxSelectItem> { item }));
-            }
+            if (string.IsNullOrEmpty(item.Group)) loose.Add(item);
             else if (lists.TryGetValue(item.Group, out var list)) list.Add(item);
             else
             {
                 list = [item];
                 lists[item.Group] = list;
-                sections.Add(new SelectSection(item.Group, list));
+                groups.Add(new SelectSection(item.Group, list));
             }
         }
-        return sections;
+        return loose.Count == 0 ? groups : [new SelectSection(null, loose), .. groups];
     }
 }

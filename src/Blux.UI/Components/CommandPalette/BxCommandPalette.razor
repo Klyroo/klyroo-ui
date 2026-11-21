@@ -115,6 +115,7 @@
             </span>
             @if (item.Count is { } count)
             {
+                <span class="sr-only" data-slot="count-separator">, </span>
                 <span class="@_slots["itemCount"]" data-slot="count">@count.ToString("N0", FormatCulture)</span>
             }
             @if (item.Shortcut is not null)
