@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-137 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+138 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -79,6 +79,15 @@
 - `<BxSkeleton>`
   - Parameters: `Class`, `Ui`
   - `Ui` (`SkeletonUi`): `Base`
+
+### InfiniteScroll
+
+`/components/infinite-scroll`. A sentinel that asks for the next items when it comes into view, with a button and a link for keyboards, screen readers and pages without .NET.
+
+- `<BxInfiniteScroll>`
+  - Parameters: `Class`, `HasMore`, `Href`, `Label`, `Loading`, `Root`, `RootMargin`, `ShowEnd`, `Ui`
+  - Events: `OnLoadMore`
+  - `Ui` (`InfiniteScrollUi`): `Root`, `Sentinel`, `Trigger`, `Spinner`, `Status`, `End`
 
 ### Chip
 
