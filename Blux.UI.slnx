@@ -14,6 +14,7 @@
     <Project Path="tests/Blux.UI.Tests/Blux.UI.Tests.csproj" />
     <Project Path="tests/Blux.UI.Images.Tests/Blux.UI.Images.Tests.csproj" />
     <Project Path="tests/Blux.UI.Tools.Tests/Blux.UI.Tools.Tests.csproj" />
+    <Project Path="tests/Blux.UI.Tools.Query.Tests/Blux.UI.Tools.Query.Tests.csproj" />
     <Project Path="tests/Blux.UI.Images.Local.Tests/Blux.UI.Images.Local.Tests.csproj" />
     <Project Path="tests/Blux.UI.Mcp.Tests/Blux.UI.Mcp.Tests.csproj" />
     <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />

@@ -20,6 +20,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
     <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
@@ -30,6 +31,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Blux.UI.Tools" />
     <InternalsVisibleTo Include="Blux.UI.Tools.Tests" />
+    <InternalsVisibleTo Include="Blux.UI.Tools.Query.Tests" />
   </ItemGroup>
 
   <ItemGroup>
