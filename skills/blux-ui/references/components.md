@@ -198,8 +198,8 @@
 `/components/checkbox`. A native checkbox with a label and a description.
 
 - `<BxCheckbox>`
-  - Parameters: `Class`, `Color`, `Description`, `Disabled`, `Id`, `Label`, `Name`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`
-  - `Ui` (`CheckboxUi`): `Root`, `Container`, `Base`, `Icon`, `Wrapper`, `Label`, `Description`
+  - Parameters: `Class`, `Color`, `Description`, `Disabled`, `Id`, `Indeterminate`, `Label`, `Name`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`
+  - `Ui` (`CheckboxUi`): `Root`, `Container`, `Base`, `Icon`, `IndeterminateIcon`, `Wrapper`, `Label`, `Description`
 
 ### Switch
 
