@@ -2,7 +2,7 @@ namespace Blux.UI.Tools.Query;
 
 /// <summary>
 /// The definition of a filter: its kind, the operators it allows, its default operator and default value, and the limits an editor shows.
-/// Immutable; the <c>With...</c> methods return a changed copy. Create one with <see cref="Text"/>, <see cref="Option"/>, <see cref="Boolean"/>,
+/// Immutable; the <c>With...</c> methods return a changed copy. Create one with <see cref="Text"/>, <see cref="Option()"/>, <see cref="Boolean"/>,
 /// <see cref="Number"/> or <see cref="Date"/> and attach it to a field (<see cref="DataListFieldBuilder{T, TProp}.Filter"/>) or register it as a
 /// query-only filter (<see cref="DataListSchemaBuilder{T}.QueryFilter"/>).
 /// </summary>
@@ -57,11 +57,32 @@ public sealed class DataListFilter
     /// <summary>Whether the user's last value is remembered between visits (browser storage), restored only when the URL has no value.</summary>
     public bool Persist { get; private init; }
 
+    /// <summary>The name of the filter in the interface (the tag, the add filter menu). <see langword="null"/> falls back to the title of the column with the same key, then to the key written as words.</summary>
+    public string? Label { get; private init; }
+
+    /// <summary>The options an option filter offers, in order; empty for the other kinds. Without them the editor lists the values of the facet counts (<see cref="Facets"/>) and the values already selected.</summary>
+    public IReadOnlyList<DataListFilterOption> Options { get; private init; } = [];
+
+    /// <summary>Whether the data list asks for the option counts of this filter with each load and shows them in the editor. Only for option filters.</summary>
+    public bool Facets { get; private init; }
+
     /// <summary>A text filter: <c>contains</c> (default), <c>is</c>, <c>isNot</c>.</summary>
     public static DataListFilter Text() => new(FilterKind.Text, TextOperators, FilterOperator.Contains);
 
     /// <summary>An option filter: <c>isAnyOf</c> (default), <c>is</c>, <c>isNot</c>. Works on strings, enums, numbers, booleans, Guids and dates.</summary>
     public static DataListFilter Option() => new(FilterKind.Option, OptionOperators, FilterOperator.IsAnyOf);
+
+    /// <summary>An option filter with the options its editor lists (value and label).</summary>
+    /// <param name="options">The options, in the order the editor shows them.</param>
+    public static DataListFilter Option(params DataListFilterOption[] options) => Option().WithOptions(options);
+
+    /// <summary>An option filter that lists <paramref name="values"/>, each labelled by itself.</summary>
+    /// <param name="values">The values, in the order the editor shows them.</param>
+    public static DataListFilter Option(params string[] values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        return Option().WithOptions([.. values.Select(v => new DataListFilterOption(v, v))]);
+    }
 
     /// <summary>A boolean filter: <c>is</c> (default), <c>isNot</c>.</summary>
     /// <param name="defaultValue">The value effective without a URL override, or <see langword="null"/> for none.</param>
@@ -120,7 +141,7 @@ public sealed class DataListFilter
         return new DataListFilter(copy.Kind, copy.AllowedOperators, copy.DefaultOperator)
         {
             DefaultValue = value, DefaultValueOperator = effective, DefaultIncludeEmpty = includeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist,
+            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = Label, Options = Options, Facets = Facets,
         };
     }
 
@@ -129,7 +150,41 @@ public sealed class DataListFilter
         new(Kind, AllowedOperators, DefaultOperator)
         {
             DefaultValue = DefaultValue, DefaultValueOperator = DefaultValueOperator, DefaultIncludeEmpty = DefaultIncludeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = persist,
+            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = persist, Label = Label, Options = Options, Facets = Facets,
+        };
+
+    /// <summary>Names the filter in the interface.</summary>
+    /// <param name="label">The label of the tag and of the add filter menu.</param>
+    public DataListFilter WithLabel(string label)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(label);
+        return Clone(label, Options, Facets);
+    }
+
+    /// <summary>Sets the options the editor lists. Only for option filters.</summary>
+    /// <param name="options">The options, in order; their values must be distinct.</param>
+    public DataListFilter WithOptions(params DataListFilterOption[] options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has options.");
+        var distinct = options.DistinctBy(o => o.Value, StringComparer.Ordinal).ToArray();
+        if (distinct.Length != options.Length) throw new ArgumentException("The values of the options must be distinct.", nameof(options));
+        return Clone(Label, distinct, Facets);
+    }
+
+    /// <summary>Asks the data list for the option counts of this filter with each load and shows them next to the options. The counts leave out this filter's own rule, so the other options stay visible.</summary>
+    /// <param name="facets">Whether to ask for the counts.</param>
+    public DataListFilter WithFacets(bool facets = true)
+    {
+        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has facets.");
+        return Clone(Label, Options, facets);
+    }
+
+    private DataListFilter Clone(string? label, IReadOnlyList<DataListFilterOption> options, bool facets) =>
+        new(Kind, AllowedOperators, DefaultOperator)
+        {
+            DefaultValue = DefaultValue, DefaultValueOperator = DefaultValueOperator, DefaultIncludeEmpty = DefaultIncludeEmpty,
+            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = label, Options = options, Facets = facets,
         };
 
     /// <summary>The default rule of this filter under <paramref name="key"/>, or <see langword="null"/> when there is no default value.</summary>
@@ -191,6 +246,11 @@ public sealed class DataListFilter
         new(Kind, operators, defaultOp)
         {
             DefaultValue = DefaultValue, DefaultValueOperator = valueOp, DefaultIncludeEmpty = DefaultIncludeEmpty,
-            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist,
+            Min = Min, Max = Max, Step = Step, Granularity = Granularity, Persist = Persist, Label = Label, Options = Options, Facets = Facets,
         };
 }
+
+/// <summary>One option of an option filter: the value that goes into the rule and the URL, and what the interface shows.</summary>
+/// <param name="Value">The value as text, the way a <see cref="FilterValue.List"/> carries it (an enum name, a number, <c>true</c>).</param>
+/// <param name="Label">The text shown to the user.</param>
+public sealed record DataListFilterOption(string Value, string Label);
