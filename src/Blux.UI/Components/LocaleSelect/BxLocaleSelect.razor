@@ -46,10 +46,11 @@
     [Parameter] public string CookieName { get; set; } = ".AspNetCore.Culture";
 
     /// <summary>
-    /// The path of the cookie. It must cover every page that is localized. By default it is the base path of the app (the path of
-    /// <c>&lt;base href&gt;</c>, "/" at the root), so two apps on one origin under different path bases keep their own culture.
+    /// The path of the cookie. It must cover every page that is localized. The default "/" makes the culture one for the whole origin: a
+    /// language chosen in an app applies to the other apps of that origin, such as the ones served below a path base. It has to stay "/"
+    /// for that to work, because a server keeps the last of two cookies of the same name and the cookie of another path could win.
     /// </summary>
-    [Parameter] public string? CookiePath { get; set; }
+    [Parameter] public string CookiePath { get; set; } = "/";
 
     /// <summary>
     /// Reloads the page after the choice is saved. In a browser it is on by default (the server renders the page in the new culture).

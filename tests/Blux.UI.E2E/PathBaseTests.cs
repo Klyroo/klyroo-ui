@@ -135,10 +135,12 @@ public class PathBaseTests(PathBaseFixture fixture) : IClassFixture<PathBaseFixt
         await Page.GetByTestId("dashboard-collapse").ClickAsync();
 
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
-        var cookies = await CookiesNamed("blux-sidebar-");
+        var cookies = await CookiesNamed("blux-sidebar");
         Assert.NotEmpty(cookies);
-        // Nothing at "/": another app on this origin would read and overwrite it.
+        // Scoped by path and by name: a server that reads it keeps the last cookie of a name, and the one of a root app would come after.
         Assert.All(cookies, c => Assert.Equal("/sub", c.Path));
+        Assert.All(cookies, c => Assert.StartsWith("blux-sidebar.sub~~playground-dashboard", c.Name));
+        Assert.Contains(cookies, c => c.Name == "blux-sidebar.sub~~playground-dashboard");
 
         await Page.ReloadAsync();
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
@@ -146,22 +148,71 @@ public class PathBaseTests(PathBaseFixture fixture) : IClassFixture<PathBaseFixt
         AssertEverythingStaysBelowThePathBase();
     }
 
-    [Fact]
-    public async Task The_cookie_of_another_app_on_the_origin_is_not_sent_to_this_one_and_is_not_overwritten()
+    [Theory]
+    [InlineData("ssr")]
+    [InlineData("wasm")]
+    public async Task The_sidebar_cookie_of_an_app_at_the_root_is_neither_read_nor_overwritten(string mode)
     {
-        // An app at the root and one under /sub use the same sidebar id: the root's cookie lives at "/", this one's at "/sub".
-        await _context.AddCookiesAsync([new Microsoft.Playwright.Cookie { Name = "blux-sidebar-playground-dashboard", Value = "1", Domain = "127.0.0.1", Path = "/other" }]);
-        await Open("wasm", "dashboard-group");
+        // An app at the root of the origin with the same sidebar id: its cookie is at "/" under the plain name, collapsed.
+        await _context.AddCookiesAsync([new Microsoft.Playwright.Cookie { Name = "blux-sidebar-playground-dashboard", Value = "1", Domain = "127.0.0.1", Path = "/" }]);
+        await Open(mode, "dashboard-group");
         var sidebar = Page.GetByTestId("dashboard-sidebar");
+        // The browser sends that cookie to /sub too, but this app reads its own name only.
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "expanded");
 
         await Page.GetByTestId("dashboard-collapse").ClickAsync();
         await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "collapsed");
-        await CookiesNamed("blux-sidebar-playground-dashboard");
+        await ExpectCookieValue("blux-sidebar.sub~~playground-dashboard", "/sub", "1");
+        await Page.GetByTestId("dashboard-collapse").ClickAsync();
+        await Assertions.Expect(sidebar).ToHaveAttributeAsync("data-state", "expanded");
+        await ExpectCookieValue("blux-sidebar.sub~~playground-dashboard", "/sub", "0");
 
-        var all = (await _context.CookiesAsync()).Where(c => c.Name == "blux-sidebar-playground-dashboard").ToList();
-        Assert.Equal("1", all.Single(c => c.Path == "/other").Value);
-        Assert.Contains(all, c => c.Path == "/sub");
+        var root = (await _context.CookiesAsync()).Single(c => c.Name == "blux-sidebar-playground-dashboard");
+        Assert.Equal("/", root.Path);
+        Assert.Equal("1", root.Value);
+    }
+
+    private async Task ExpectCookieValue(string name, string path, string expected)
+    {
+        string? actual = null;
+        for (var deadline = DateTime.UtcNow.AddSeconds(5); DateTime.UtcNow < deadline; await Task.Delay(50))
+        {
+            actual = (await _context.CookiesAsync()).FirstOrDefault(c => c.Name == name && c.Path == path)?.Value;
+            if (actual == expected) return;
+        }
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public async Task The_collapsed_state_survives_a_reload_even_when_a_root_cookie_says_otherwise()
+    {
+        await Open("ssr", "dashboard-group");
+        await Page.GetByTestId("dashboard-collapse").ClickAsync();
+        await ExpectCookieValue("blux-sidebar.sub~~playground-dashboard", "/sub", "1");
+        await _context.AddCookiesAsync([new Microsoft.Playwright.Cookie { Name = "blux-sidebar-playground-dashboard", Value = "0", Domain = "127.0.0.1", Path = "/" }]);
+
+        await Page.ReloadAsync();
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+
+        await Assertions.Expect(Page.GetByTestId("dashboard-sidebar")).ToHaveAttributeAsync("data-state", "collapsed");
+    }
+
+    [Fact]
+    public async Task Banner_dismissals_are_prefixed_with_the_path_base_but_the_color_mode_stays_shared()
+    {
+        await Open("wasm", "banner");
+        await Page.GetByTestId("banner").GetByRole(AriaRole.Button, new() { Name = "Close" }).ClickAsync();
+        await Page.EvaluateAsync("() => Blux.setColorMode('dark')");
+
+        var keys = await Page.EvaluateAsync<string[]>("() => Object.keys(localStorage)");
+        Assert.Contains("/sub:blux:banner:playground-launch", keys);
+        Assert.DoesNotContain("blux:banner:playground-launch", keys);
+        // One color mode for every app of the origin.
+        Assert.Contains("blux-color-mode", keys);
+        Assert.DoesNotContain("/sub:blux-color-mode", keys);
+        await Page.ReloadAsync();
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-banner')");
+        await Assertions.Expect(Page.GetByTestId("banner")).ToBeHiddenAsync();
     }
 
     [Theory]
@@ -169,7 +220,7 @@ public class PathBaseTests(PathBaseFixture fixture) : IClassFixture<PathBaseFixt
     [InlineData("server")]
     [InlineData("wasm")]
     [InlineData("auto")]
-    public async Task The_culture_cookie_is_scoped_to_the_path_base_and_the_server_reads_it(string mode)
+    public async Task The_culture_cookie_stays_one_for_the_origin_at_the_root_path_and_the_server_reads_it(string mode)
     {
         await Open(mode, "locale-select");
         await Page.EvaluateAsync("() => { window.__beforeReload = true; }");
@@ -180,13 +231,25 @@ public class PathBaseTests(PathBaseFixture fixture) : IClassFixture<PathBaseFixt
         await Page.WaitForFunctionAsync("() => window.__beforeReload === undefined");
         var cookie = (await _context.CookiesAsync()).Single(c => c.Name == ".AspNetCore.Culture");
         Assert.Equal("c=fr|uic=fr", Uri.UnescapeDataString(cookie.Value));
-        Assert.Equal("/sub", cookie.Path);
+        // One culture for the whole origin: a language chosen here applies to the app at the root and the other way round.
+        Assert.Equal("/", cookie.Path);
         if (mode != "ssr")
         {
             await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         }
         await Assertions.Expect(Page.GetByTestId("locale-resolved")).ToHaveTextAsync("fr");
         AssertEverythingStaysBelowThePathBase();
+    }
+
+    [Fact]
+    public async Task A_culture_chosen_at_the_root_applies_below_the_path_base()
+    {
+        // What a language chosen in the docs at "/" does to the demos below /sub: the cookie is at "/" and the server reads it.
+        await _context.AddCookiesAsync([new Microsoft.Playwright.Cookie { Name = ".AspNetCore.Culture", Value = Uri.EscapeDataString("c=fr|uic=fr"), Domain = "127.0.0.1", Path = "/" }]);
+
+        await Open("ssr", "locale-select");
+
+        await Assertions.Expect(Page.GetByTestId("locale-resolved")).ToHaveTextAsync("fr");
     }
 
     [Theory]

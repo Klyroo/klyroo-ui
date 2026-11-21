@@ -22,7 +22,7 @@ var app = builder.Build();
 // WebApplication would otherwise add it first and the prefix would never be stripped before routing. App.razor writes the matching <base href>.
 if (builder.Configuration["PathBase"] is { Length: > 0 } pathBase)
 {
-    app.UsePathBase(pathBase);
+    app.UsePathBase("/" + pathBase.Trim('/'));
     app.UseRouting();
 }
 app.UseBluxAi();

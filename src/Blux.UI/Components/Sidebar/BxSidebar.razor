@@ -1,5 +1,6 @@
 @namespace Blux.UI
 @inherits BxComponentBase
+@inject NavigationManager Navigation
 
 @*
     An app sidebar. From the lg breakpoint up it is a column that can collapse to icons and, if asked, be resized; the
@@ -52,7 +53,7 @@
     @* Runs while the page is parsed, before the first paint: applies the remembered state so a reload does not shift.
        The element does the same later (and alone in interactive renders, where inserted scripts never run, and in a
        Blazor Hybrid web view, where the state lives in localStorage and there is no parsing to run ahead of). *@
-    @((MarkupString)$"<script{NonceAttribute}>{FirstPaintScript}</script>")
+    @((MarkupString)$"<script{NonceAttribute}>{FirstPaintScript(BxPathScope.SidebarCookiePrefix(BxPathScope.PathBaseOf(Navigation.BaseUri)))}</script>")
 }
 
 @code {
@@ -72,10 +73,13 @@
     /// <summary>
     /// Name under which the collapsed state and the width are remembered, in the cookies <c>blux-sidebar-{id}</c>
     /// ("1" when collapsed) and <c>blux-sidebar-{id}-width</c>, written by the browser. Without an id nothing is
-    /// remembered. With a bound <see cref="Collapsed"/> the collapsed state is not restored: your state wins.
+    /// remembered. An app served below a path base (<c>UsePathBase("/x")</c>) shares its origin with other apps, so its cookies are
+    /// scoped to the base path and named <c>blux-sidebar.{slug}~~{id}</c> (see <see cref="BxPathScope.SidebarCookieName"/>): a server
+    /// keeps the last of two cookies of the same name, and another app's would otherwise win. At the root nothing changes. With a bound <see cref="Collapsed"/> the collapsed state is not restored: your state wins.
     /// A small inline script placed right after the sidebar applies the remembered state while the page is parsed,
     /// before the first paint, so a reload neither shifts nor animates (give it <see cref="ScriptNonce"/> under a strict
-    /// Content-Security-Policy). Reading the cookies on the server and passing <see cref="Collapsed"/> also works.
+    /// Content-Security-Policy). Reading the cookies on the server and passing <see cref="Collapsed"/> also works: get the cookie name from
+    /// <see cref="BxPathScope.SidebarCookieName"/> with <c>Request.PathBase</c>, so the same code is right at the root and below a path base.
     /// </summary>
     [Parameter] public string? Id { get; set; }
 
@@ -85,10 +89,10 @@
 
     private string NonceAttribute => ScriptNonce is null ? "" : $" nonce=\"{System.Net.WebUtility.HtmlEncode(ScriptNonce)}\"";
 
-    // Same cookie format as js/layout.js: blux-sidebar-{encoded id} = "1" when collapsed, and {name}-width in pixels.
-    private const string FirstPaintScript =
+    // Same cookie format and names as js/layout.js: {prefix}{encoded id} = "1" when collapsed, and {name}-width in pixels. The prefix depends on the path base.
+    private static string FirstPaintScript(string prefix) =>
         "(function(){try{var h=document.currentScript.previousElementSibling;if(!h||h.localName!=='bx-sidebar')return;" +
-        "var k='blux-sidebar-'+encodeURIComponent(h.getAttribute('data-bx-sidebar-id'));" +
+        "var k='" + prefix + "'+encodeURIComponent(h.getAttribute('data-bx-sidebar-id'));" +
         "var g=function(n){var p=document.cookie.split('; ');for(var i=0;i<p.length;i++){var j=p[i].indexOf('=');" +
         "if(j>0&&p[i].slice(0,j)===n)return decodeURIComponent(p[i].slice(j+1));}return null;};" +
         "var c=g(k),a=h.querySelector(':scope>[data-slot=root]');" +

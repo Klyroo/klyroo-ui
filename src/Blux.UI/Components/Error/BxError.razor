@@ -52,8 +52,8 @@
     /// <summary>Shows the button that leads back to <see cref="Href"/>. Ignored when <see cref="Actions"/> is set.</summary>
     [Parameter] public bool Clear { get; set; } = true;
 
-    /// <summary>Where the back button goes.</summary>
-    [Parameter] public string Href { get; set; } = "/";
+    /// <summary>Where the back button goes. The default "./" is the home of the app: relative to <c>&lt;base href&gt;</c>, so it is right below a path base too.</summary>
+    [Parameter] public string Href { get; set; } = "./";
 
     /// <summary>Text of the back button. Defaults to the built-in text.</summary>
     [Parameter] public string? ClearLabel { get; set; }
