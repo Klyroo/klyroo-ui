@@ -29,7 +29,8 @@ internal static class TextFold
 /// (<c>CompareInfo.IndexOf</c> with <c>IgnoreCase | IgnoreNonSpace</c>, invariant culture).</description></item>
 /// <item><description><b>Raw</b> (<c>inMemory: false</c>), for the IQueryable applier of a later step: the expression as written, <c>string.Contains</c> without any
 /// <c>ToLower</c> (the database collation decides about case and accents), no null guards, values read through <see cref="ValueBox"/> members so that
-/// providers emit parameters, and <c>array.Contains(x)</c> for lists (an <c>IN</c> clause). Not run against EF Core in this package: no EF dependency here.</description></item>
+/// providers emit parameters, and <c>array.Contains(x)</c> for lists (an <c>IN</c> clause). Used by the IQueryable applier (<see cref="QueryableDataList"/>); proven against
+/// EF Core and SQLite in <c>Blux.UI.Tools.Query.EfTests</c>, with no EF dependency in this package.</description></item>
 /// </list>
 /// Dates are half-open ranges <c>[start, next)</c> computed in the request's time zone.
 /// </summary>
@@ -43,6 +44,13 @@ internal static class FilterExpressions
     /// The predicate for the search and the filter tree, or <see langword="null"/> when nothing restricts the rows. Query-only rules, unknown keys,
     /// invalid rules and the rules of <paramref name="excludeKey"/> are skipped.
     /// </summary>
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(DateOnly))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(TimeOnly))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(DateTime))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(DateTimeOffset))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(TimeSpan))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(decimal))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.PublicMethods, typeof(Guid))]
     public static Expression<Func<T, bool>>? Rows<T>(
         DataListSchema<T> schema, DataListFilterGroup filter, DataListSearch? search, string? excludeKey, bool inMemory, TimeZoneInfo? zone = null)
     {
@@ -87,10 +95,7 @@ internal static class FilterExpressions
         var accessor = source.Value;
         var op = rule.Operator;
 
-        // "The field is empty" is "no value is non-empty": a null or "" scalar, or a collection without any non-empty element (or a null collection).
-        Expression Empty() => source.IsCollection
-            ? Expression.Not(source.Exists(p, inMemory, v => Expression.Not(IsEmpty(v, accessor))))
-            : IsEmpty(accessor.Bind(p, inMemory), accessor);
+        Expression Empty() => EmptyOf(source, p, inMemory);
 
         if (op == FilterOperator.IsEmpty) return Empty();
         if (op == FilterOperator.IsNotEmpty) return Expression.Not(Empty());
@@ -101,10 +106,10 @@ internal static class FilterExpressions
         Expression PerValue(Expression v) => filter.Kind switch
         {
             FilterKind.Text => TextRule(v, positive, (FilterValue.Text)rule.Value!, inMemory),
-            FilterKind.Option => OptionRule(v, accessor, rule.Value!),
-            FilterKind.Boolean => BoolRule(v, (FilterValue.Bool)rule.Value!),
+            FilterKind.Option => OptionRule(v, accessor, rule.Value!, inMemory),
+            FilterKind.Boolean => BoolRule(v, (FilterValue.Boolean)rule.Value!),
             FilterKind.Number => NumberRule(v, accessor, positive, rule.Value!),
-            _ => DateRule(v, accessor, positive, rule.Value!, filter.Granularity, zone),
+            _ => DateRule(v, accessor, positive, rule.Value!, filter.Granularity, zone, field.StoresLocalTime),
         };
 
         var body = source.Exists(p, inMemory, PerValue);
@@ -112,9 +117,14 @@ internal static class FilterExpressions
         return rule.IncludeEmpty ? Expression.OrElse(body, Empty()) : body;
     }
 
+    /// <summary>"The field is empty" is "no value is non-empty": a null or "" scalar, or a collection without any non-empty element (or a null collection).</summary>
+    internal static Expression EmptyOf(ValueSource source, ParameterExpression row, bool inMemory) => source.IsCollection
+        ? Expression.Not(source.Exists(row, inMemory, v => Expression.Not(IsEmpty(v, source.Value))))
+        : IsEmpty(source.Value.Bind(row, inMemory), source.Value);
+
     // ---- values as parameters
 
-    private static Expression Param(object? value, Type type)
+    internal static Expression Param(object? value, Type type)
     {
         Expression field = Expression.Field(Expression.Constant(new ValueBox(value)), ValueBox.ValueField);
         return type == typeof(object) ? field : Expression.Convert(field, type);
@@ -140,7 +150,7 @@ internal static class FilterExpressions
 
     // ---- option
 
-    private static Expression OptionRule(Expression v, FieldAccessor accessor, FilterValue value)
+    private static Expression OptionRule(Expression v, FieldAccessor accessor, FilterValue value, bool inMemory)
     {
         var candidates = new List<object?>();
         void Add(string text)
@@ -151,7 +161,7 @@ internal static class FilterExpressions
         {
             case FilterValue.Text t: Add(t.Value); break;
             case FilterValue.List l: foreach (var text in l.Values) Add(text); break;
-            case FilterValue.Bool b: Add(b.Value ? "true" : "false"); break;
+            case FilterValue.Boolean b: Add(b.Value ? "true" : "false"); break;
             case FilterValue.Number n:
                 // exact conversion for numeric fields; a normalized text ("1.0" and "1" are the same number) for the others
                 if (TextConvert.IsNumeric(accessor.UnderlyingType))
@@ -168,6 +178,9 @@ internal static class FilterExpressions
         {
             0 => Expression.Constant(false),
             1 => Expression.Equal(v, Param(candidates[0], accessor.LiftedType)),
+            // In memory the list is a chain of equalities: no array of a type built at runtime, which NativeAOT cannot do for a type the app never names.
+            // A provider gets array.Contains(x), which it translates to IN.
+            _ when inMemory => candidates.Select(c => (Expression)Expression.Equal(v, Param(c, accessor.LiftedType))).Aggregate(Expression.OrElse),
             _ => InList(v, accessor.LiftedType, candidates),
         };
     }
@@ -187,7 +200,7 @@ internal static class FilterExpressions
 
     // ---- boolean
 
-    private static Expression BoolRule(Expression v, FilterValue.Bool value) =>
+    private static Expression BoolRule(Expression v, FilterValue.Boolean value) =>
         Expression.Equal(v, Param(value.Value, typeof(bool?)));
 
     // ---- number
@@ -228,7 +241,7 @@ internal static class FilterExpressions
 
     // ---- date
 
-    private static Expression DateRule(Expression v, FieldAccessor accessor, FilterOperator op, FilterValue value, DateGranularity granularity, TimeZoneInfo zone)
+    private static Expression DateRule(Expression v, FieldAccessor accessor, FilterOperator op, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime)
     {
         switch (op)
         {
@@ -236,30 +249,30 @@ internal static class FilterExpressions
             {
                 var range = (FilterValue.Range)value;
                 Expression? both = null;
-                if (range.From is { } from) both = And(both, Expression.GreaterThanOrEqual(v, Start(accessor, from, granularity, zone)));
-                if (range.To is { } to && Next(accessor, to, granularity, zone) is { } next) both = And(both, Expression.LessThan(v, next));
+                if (range.From is { } from) both = And(both, Expression.GreaterThanOrEqual(v, Start(accessor, from, granularity, zone, localTime)));
+                if (range.To is { } to && Next(accessor, to, granularity, zone, localTime) is { } next) both = And(both, Expression.LessThan(v, next));
                 return both ?? Expression.Constant(true);
             }
             case FilterOperator.Before:
-                return Expression.LessThan(v, Start(accessor, value, granularity, zone));
+                return Expression.LessThan(v, Start(accessor, value, granularity, zone, localTime));
             case FilterOperator.After:
-                return Next(accessor, value, granularity, zone) is { } after ? Expression.GreaterThanOrEqual(v, after) : Expression.Constant(false);
+                return Next(accessor, value, granularity, zone, localTime) is { } after ? Expression.GreaterThanOrEqual(v, after) : Expression.Constant(false);
             default:
             {
-                var atLeast = Expression.GreaterThanOrEqual(v, Start(accessor, value, granularity, zone));
-                return Next(accessor, value, granularity, zone) is { } next ? Expression.AndAlso(atLeast, Expression.LessThan(v, next)) : atLeast;
+                var atLeast = Expression.GreaterThanOrEqual(v, Start(accessor, value, granularity, zone, localTime));
+                return Next(accessor, value, granularity, zone, localTime) is { } next ? Expression.AndAlso(atLeast, Expression.LessThan(v, next)) : atLeast;
             }
         }
     }
 
-    private static Expression Start(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone) =>
-        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: false)!;
+    private static Expression Start(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime) =>
+        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: false, localTime)!;
 
     /// <summary>The exclusive end of the unit, or <see langword="null"/> when the unit reaches the end of time (nothing is after it).</summary>
-    private static Expression? Next(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone) =>
-        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: true);
+    private static Expression? Next(FieldAccessor accessor, FilterValue value, DateGranularity granularity, TimeZoneInfo zone, bool localTime) =>
+        DateBound(accessor, DateUnit.Of(value, granularity, zone), upper: true, localTime);
 
-    private static Expression? DateBound(FieldAccessor accessor, DateUnit unit, bool upper)
+    private static Expression? DateBound(FieldAccessor accessor, DateUnit unit, bool upper, bool localTime)
     {
         var type = accessor.UnderlyingType;
         object? bound;
@@ -270,25 +283,34 @@ internal static class FilterExpressions
         }
         else
         {
-            var instant = (upper ? unit.NextUtc : unit.StartUtc).ToUniversalTime();
-            // DateTime fields are read as UTC (the Kind is ignored by comparisons, and databases store no Kind).
-            bound = type == typeof(DateTime) ? (object)instant.UtcDateTime : instant;
+            var unitBound = upper ? unit.NextUtc : unit.StartUtc;
+            if (type == typeof(DateTime) && localTime)
+            {
+                // wall-clock storage: the bound is the local time of the unit (the date and time part of the offset-carrying bound), kind unspecified
+                bound = DateTime.SpecifyKind(unitBound.DateTime, DateTimeKind.Unspecified);
+            }
+            else
+            {
+                var instant = unitBound.ToUniversalTime();
+                // DateTime fields are read as UTC (the Kind is ignored by comparisons, and databases store no Kind).
+                bound = type == typeof(DateTime) ? (object)instant.UtcDateTime : instant;
+            }
         }
         return Param(bound, accessor.LiftedType);
     }
 
     // ---- shared
 
-    private static Expression IsEmpty(Expression v, FieldAccessor accessor) =>
+    internal static Expression IsEmpty(Expression v, FieldAccessor accessor) =>
         accessor.UnderlyingType == typeof(string)
             ? Expression.OrElse(
                 Expression.Equal(v, Expression.Constant(null, typeof(string))),
                 Expression.Equal(v, Expression.Constant("", typeof(string))))
             : Expression.Equal(v, Expression.Constant(null, v.Type));
 
-    private static Expression? And(Expression? a, Expression? b) =>
+    internal static Expression? And(Expression? a, Expression? b) =>
         a is null ? b : b is null ? a : Expression.AndAlso(a, b);
 
-    private static Expression? Or(Expression? a, Expression? b) =>
+    internal static Expression? Or(Expression? a, Expression? b) =>
         a is null ? b : b is null ? a : Expression.OrElse(a, b);
 }

@@ -22,6 +22,7 @@ public sealed class DataListSchemaBuilder<T>
     private readonly List<(string Key, DataListFilter Filter)> _queryFilters = [];
     private readonly List<ValueSource> _search = [];
     private Func<T, string>? _rowKey;
+    private FieldAccessor? _rowKeyAccessor;
     private Func<T, string?>? _rowLabel;
     private string? _defaultSortKey;
     private bool _defaultSortDescending;
@@ -29,6 +30,7 @@ public sealed class DataListSchemaBuilder<T>
     private int _maxPageSize = 500;
     private int _maxFilterRules = 100;
     private int _maxListValues = 500;
+    private int _maxFacetBuckets = 1000;
     private int _defaultPageSize = 50;
     private DataListLayout _layout = DataListLayout.Table;
 
@@ -40,6 +42,7 @@ public sealed class DataListSchemaBuilder<T>
         ArgumentNullException.ThrowIfNull(selector);
         var read = selector.Compile();
         _rowKey = item => TextConvert.Format(read(item)) ?? "";
+        _rowKeyAccessor = FieldAccessor.Create(selector);
         return this;
     }
 
@@ -158,6 +161,14 @@ public sealed class DataListSchemaBuilder<T>
         return this;
     }
 
+    /// <summary>The most distinct options a facet keeps (1000 by default); more are cut and the facet is marked truncated. See <see cref="DataListSchema.MaxFacetBuckets"/>.</summary>
+    public DataListSchemaBuilder<T> MaxFacetBuckets(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
+        _maxFacetBuckets = count;
+        return this;
+    }
+
     /// <summary>The page size when none is given (50 by default, never above the maximum).</summary>
     public DataListSchemaBuilder<T> DefaultPageSize(int size)
     {
@@ -201,7 +212,9 @@ public sealed class DataListSchemaBuilder<T>
                 CheckKind(key, filter.Kind, def.Source.Value.UnderlyingType);
                 filters[key] = filter;
             }
-            fields.Add(new DataListField<T>(key, def.Source, def.IsSortable, def.Filter));
+            if (def.StoresLocalTime && def.Source.Value.UnderlyingType != typeof(DateTime))
+                throw new InvalidOperationException($"The field '{key}' is a {def.Source.Value.UnderlyingType.Name}: StoresLocalTime is for DateTime fields.");
+            fields.Add(new DataListField<T>(key, def.Source, def.IsSortable, def.Filter, def.StoresLocalTime));
         }
 
         foreach (var (key, filter) in _queryFilters)
@@ -226,6 +239,7 @@ public sealed class DataListSchemaBuilder<T>
             _queryFilters.Select(q => q.Key),
             _search,
             _rowKey,
+            _rowKeyAccessor,
             _rowLabel,
             defaultSort,
             _defaultPageSize,
@@ -233,6 +247,7 @@ public sealed class DataListSchemaBuilder<T>
             _layout);
         schema.MaxFilterRules = _maxFilterRules;
         schema.MaxListValues = _maxListValues;
+        schema.MaxFacetBuckets = _maxFacetBuckets;
         return schema;
     }
 
@@ -261,6 +276,7 @@ public sealed class DataListSchemaBuilder<T>
         public ValueSource Source { get; } = source;
         public string? ExplicitKey { get; set; }
         public bool IsSortable { get; set; }
+        public bool StoresLocalTime { get; set; }
         public DataListFilter? Filter { get; set; }
 
         public string ResolveKey() =>
@@ -293,6 +309,18 @@ public sealed class DataListFieldBuilder<T, TProp>
         return this;
     }
 
+    /// <summary>
+    /// The <see cref="DateTime"/> values of this field are wall-clock times in the time zone of the request (a column such as PostgreSQL <c>timestamp without time zone</c>,
+    /// or a SQL Server <c>datetime2</c> that holds local times), not UTC. The bounds of a date filter are then local wall-clock times with kind <see cref="DateTimeKind.Unspecified"/>
+    /// (a day is the local midnight to the next local midnight, an hour is the local hour) instead of UTC instants, so a provider that refuses a UTC <see cref="DateTime"/> for such a
+    /// column accepts them. Without this option a <see cref="DateTime"/> field is read as UTC. Only for <see cref="DateTime"/> fields.
+    /// </summary>
+    public DataListFieldBuilder<T, TProp> StoresLocalTime(bool localTime = true)
+    {
+        _definition.StoresLocalTime = localTime;
+        return this;
+    }
+
     /// <summary>Gives the field a filter. The filter kind must suit the type of the field (text on a string, number on a numeric type, and so on).</summary>
     public DataListFieldBuilder<T, TProp> Filter(DataListFilter filter)
     {
@@ -316,6 +344,13 @@ public sealed class DataListCollectionFieldBuilder<T, TProp>
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
         _definition.ExplicitKey = key;
+        return this;
+    }
+
+    /// <summary>The <see cref="DateTime"/> values read from the elements are wall-clock times in the request's time zone, not UTC. See <see cref="DataListFieldBuilder{T, TProp}.StoresLocalTime"/>.</summary>
+    public DataListCollectionFieldBuilder<T, TProp> StoresLocalTime(bool localTime = true)
+    {
+        _definition.StoresLocalTime = localTime;
         return this;
     }
 
