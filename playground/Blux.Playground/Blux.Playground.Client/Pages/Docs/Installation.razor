@@ -35,6 +35,16 @@
     <CodeBlock Title="app.css (your own Tailwind)" Code="@ToolsCss" />
     <p>A sister package and Blux.UI must have the same version: <code>Blux.UI.Tools</code> depends on exactly the version of Blux.UI it was built with.</p>
 
+    <h2>Server rendering: Blux.UI.Server</h2>
+    <p>
+        A component that renders without a browser, in a static render or a prerender, can read what the browser left in a cookie: the data list uses the time zone cookie so its date filters cut the days of the user.
+        <code>Blux.UI</code> is also loaded by WebAssembly and MAUI apps, where there is no ASP.NET Core request, so it only knows <code>IBxRequestCookies</code>; the package <code>Blux.UI.Server</code> implements it.
+        Add it to the <strong>server</strong> project and call <code>AddBluxServer()</code> in its <code>Program.cs</code> (never in a WebAssembly client). Without it a static or prerendered data list cuts days in UTC until the
+        browser is interactive, and Development logs one warning that says so.
+    </p>
+    <CodeBlock Title="Program.cs (server project)" Code="@ServerCs" />
+    <p>The package has the same version as Blux.UI and depends on exactly that version.</p>
+
     <h2>MAUI Blazor Hybrid apps</h2>
     <p>
         In a MAUI app the package and the stylesheets are the same, but there are no render modes and no server. Call <code>AddBluxUi</code>
@@ -58,6 +68,13 @@
             <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
             <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
         </head>
+        """;
+
+    private const string ServerCs = """
+        // dotnet add package Blux.UI.Server --prerelease
+        builder.Services.AddBluxUi();
+        builder.Services.AddBluxUiTools();
+        builder.Services.AddBluxServer();   // calls AddHttpContextAccessor and registers IBxRequestCookies
         """;
 
     private const string ToolsCss = """

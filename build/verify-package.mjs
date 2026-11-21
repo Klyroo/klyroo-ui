@@ -1,4 +1,4 @@
-// Packaging check: packs Blux.UI (and the sister packages Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query and Blux.UI.Tools) in Release, inspects the .nupkg and
+// Packaging check: packs Blux.UI (and the sister packages Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Server, Blux.UI.Tools.Query and Blux.UI.Tools) in Release, inspects the .nupkg and
 // .snupkg files, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
 //
 //   node build/verify-package.mjs [--online] [--keep]
@@ -99,7 +99,7 @@ try {
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
   // 3b. The sister packages: same version, readme, icon, documentation, and the dependencies they promise.
-  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local", "Blux.UI.Tools.Query", "Blux.UI.Tools", "Blux.UI.Tools.EntityFrameworkCore"]) {
+  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local", "Blux.UI.Server", "Blux.UI.Tools.Query", "Blux.UI.Tools", "Blux.UI.Tools.EntityFrameworkCore"]) {
     const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
     const file = `${id}.${version}.nupkg`;
@@ -138,6 +138,13 @@ try {
       const toolsTheme = readFileSync(join(root, "src", "Blux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8");
       check(pkg.has("staticwebassets/blux-tools.theme.css") && pkg.get("staticwebassets/blux-tools.theme.css")().toString("utf8") === toolsTheme, `${id}: packed blux-tools.theme.css equals the committed one`);
     }
+    if (id === "Blux.UI.Server") {
+      // Lockstep with Blux.UI, and the ASP.NET Core shared framework: a WebAssembly client must not reference it.
+      check(new RegExp(`<dependency id="Blux\\.UI" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Blux.UI [${version}]`);
+      check(!/<dependency id="Blux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Blux.UI flow through this package`);
+      check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
+      check(!/<dependency id="Blux\.UI\.(Tools|Images)/.test(spec), `${id}: depends on no other Blux package than Blux.UI`);
+    }
     if (id.endsWith(".Local")) {
       check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
       check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
@@ -154,7 +161,7 @@ try {
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Blux.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /><package pattern="Blux.UI.Server" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
@@ -171,6 +178,8 @@ try {
   copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.ttf"), join(server, "Fonts", "PackageCheck-700.ttf"));
   copyFileSync(join(root, "tests", "Blux.UI.Tests", "Fonts", "Fixtures", "geist-latin-400.woff"), join(server, "Fonts", "PackageCheck-300.woff"));
   const serverProj = join(server, "Site.csproj");
+  // The server also reads the request cookies (the time zone of the data list in a static render).
+  writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI.Server" Version="${version}" /></ItemGroup>\n</Project>`));
   writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxFont Include="PackageCheck" Role="sans" Provider="local" Src="Fonts" /></ItemGroup>\n</Project>`));
   // Bundled icons, offline: a folder of SVG files is a collection, so nothing is downloaded (BluxOffline would fail the build otherwise).
   mkdirSync(join(server, "Icons"));
@@ -179,7 +188,7 @@ try {
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Blux.UI\n`);
   const prog = join(server, "Program.cs");
-  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxUiTools();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;\nusing Blux.UI.Tools;"));
+  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxUiTools();\nbuilder.Services.AddBluxServer();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;\nusing Blux.UI.Server;\nusing Blux.UI.Tools;"));
   const home = join(server, "Components", "Pages", "Home.razor");
   writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n<BxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<BxButton Label="Close" LeadingIcon='BxIcons.Named("pkg:check-mark")' />\n@using Blux.UI.Tools\n<BxDataListEmpty data-testid="pkg-empty" />\n`);
   const appRazor = join(server, "Components", "App.razor");
