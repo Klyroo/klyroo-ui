@@ -138,7 +138,7 @@ public static class QueryableDataList
     /// <param name="schema">The schema of the rows.</param>
     /// <param name="source">The rows: a provider query, not an in-memory sequence.</param>
     /// <param name="request">What to compute.</param>
-    /// <exception cref="InvalidOperationException"><paramref name="source"/> is an in-memory <c>AsQueryable()</c> (use <c>ExecuteInMemory</c>: it compares text ignoring case and guards nulls, which a provider expression does not); cursor paging on a schema without a row key, on a key or sort field a cursor cannot carry, or on a <see cref="Guid"/> (databases order them in their own way).</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="source"/> is an in-memory <c>AsQueryable()</c> (the check recognizes the LINQ to Objects provider only: a test double that wraps one, or any other provider that evaluates in memory, is not caught and must use <c>ExecuteInMemory</c> too; use <c>ExecuteInMemory</c>: it compares text ignoring case and guards nulls, which a provider expression does not); cursor paging on a schema without a row key, on a key or sort field a cursor cannot carry, or on a <see cref="Guid"/> (databases order them in their own way).</exception>
     public static DataListQuery<T> Apply<T>(this DataListSchema<T> schema, IQueryable<T> source, DataListRequest request)
     {
         ArgumentNullException.ThrowIfNull(schema);
@@ -223,6 +223,7 @@ public static class QueryableDataList
         {
             DataListPaging.Cursor => throw new InvalidOperationException(
                 "A cursor is made from the sort values of the last row, which the database computes: load DataListQuery.Rows and pass those rows to ToResult."),
+            DataListPaging.Offset when totalCount is null => throw MissingTotal(),
             DataListPaging.Offset => new DataListResult<T>(pageRows, totalCount, null, facets),
             _ => new DataListResult<T>(pageRows, totalCount ?? pageRows.Count, null, facets),
         };
@@ -252,6 +253,7 @@ public static class QueryableDataList
         if (clean.Paging is not DataListPaging.Cursor cursor)
         {
             var items = rows.Select(r => r.Item).ToList();
+            if (clean.Paging is DataListPaging.Offset && totalCount is null) throw MissingTotal();
             return clean.Paging is DataListPaging.Offset
                 ? new DataListResult<T>(items, totalCount, null, facets)
                 : new DataListResult<T>(items, totalCount ?? items.Count, null, facets);
@@ -270,6 +272,9 @@ public static class QueryableDataList
     }
 
     // ---- internals
+
+    private static InvalidOperationException MissingTotal() =>
+        new("An offset result carries the total count: count DataListQuery.Matching (DataListQuery.WantsTotal is true) and pass it as totalCount.");
 
     private static void RejectInMemory<T>(IQueryable<T> source)
     {

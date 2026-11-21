@@ -145,4 +145,19 @@ public class CapAndNavigationTests
         Assert.Equal(viaEntities.Ids(), viaRows.Ids());
         Assert.Equal(130, viaEntities.TotalCount);
     }
+
+    [Fact]
+    public void An_offset_result_without_the_total_throws_instead_of_reporting_null()
+    {
+        using var db = Database.Binary();
+        var request = Req(paging: new DataListPaging.Offset(0, 5));
+        var query = Schemas.Employees.Apply(db.Employees.AsNoTracking(), request);
+        Assert.True(query.WantsTotal);
+        var entities = Assert.Throws<InvalidOperationException>(() => Schemas.Employees.ToResult(request, query.Page.ToList()));
+        Assert.Contains("total", entities.Message);
+        Assert.Throws<InvalidOperationException>(() => Schemas.Employees.ToResult(request, query.Rows.ToList()));
+        // unpaged requests derive the total from the rows
+        var all = Req();
+        Assert.Equal(130, Schemas.Employees.ToResult(all, Schemas.Employees.Apply(db.Employees.AsNoTracking(), all).Page.ToList()).TotalCount);
+    }
 }

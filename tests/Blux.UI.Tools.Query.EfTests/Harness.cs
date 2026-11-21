@@ -29,6 +29,25 @@ public static class Schemas
         .QueryFilter("archived", DataListFilter.Boolean(false))
         .MaxPageSize(500));
 
+    public static DataListSchema<Reading> Readings { get; } = DataListSchema.For<Reading>(s => s
+        .RowKey(e => e.Id)
+        .Field(e => e.Time, f => f.Sortable())
+        .Field(e => e.Span, f => f.Sortable())
+        .Field(e => e.Stamp, f => f.Sortable())
+        .Field(e => e.Moment, f => f.Sortable())
+        .Field(e => e.Day, f => f.Sortable())
+        .Field(e => e.Amount, f => f.Sortable())
+        .Field(e => e.Ratio, f => f.Sortable())
+        .Field(e => e.Single, f => f.Sortable())
+        .Field(e => e.Letter, f => f.Sortable())
+        .Field(e => e.Tiny, f => f.Sortable())
+        .Field(e => e.Small, f => f.Sortable())
+        .Field(e => e.Big, f => f.Sortable())
+        .Field(e => e.Level, f => f.Sortable())
+        .Field(e => e.Flag, f => f.Sortable())
+        .Field(e => e.Text, f => f.Sortable())
+        .Field(e => e.ShiftStart, f => f.Sortable().Filter(DataListFilter.Date(DateGranularity.Hour)).StoresLocalTime()));
+
     public static DataListSchema<Activity> Activities { get; } = DataListSchema.For<Activity>(s => s
         .RowKey(e => e.Id)
         .Field(e => e.When, f => f.Sortable().Filter(DataListFilter.Date(DateGranularity.Hour)))

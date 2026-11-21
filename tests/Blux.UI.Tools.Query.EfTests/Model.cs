@@ -61,6 +61,45 @@ public class Document
     public string Title { get; set; } = "";
 }
 
+/// <summary>One column of every type a cursor can carry, each holding values that differ only in the last unit of precision (a tick, one ulp, one step).</summary>
+public class Reading
+{
+    public int Id { get; set; }
+
+    public TimeOnly Time { get; set; }
+
+    public TimeSpan Span { get; set; }
+
+    public DateTime Stamp { get; set; }
+
+    public DateTimeOffset Moment { get; set; }
+
+    public DateOnly Day { get; set; }
+
+    public decimal Amount { get; set; }
+
+    public double Ratio { get; set; }
+
+    public float Single { get; set; }
+
+    public char Letter { get; set; }
+
+    public byte Tiny { get; set; }
+
+    public short Small { get; set; }
+
+    public long Big { get; set; }
+
+    public Status Level { get; set; }
+
+    public bool Flag { get; set; }
+
+    public string Text { get; set; } = "";
+
+    /// <summary>The wall-clock time of a shift, stored as a local time.</summary>
+    public DateTime ShiftStart { get; set; }
+}
+
 public class Activity
 {
     public int Id { get; set; }
@@ -74,7 +113,7 @@ public class Activity
 
 /// <summary>
 /// The context the applier is proven against. EF Core's SQLite provider cannot compare or order a <see cref="DateTimeOffset"/> ("could not be translated"),
-/// so this is what a SQLite application declares for it: UTC ticks. <see cref="decimal"/> needs nothing (EF Core 10 compares and orders it with its own
+/// so this is what a SQLite application declares for it: UTC ticks (and ticks for a <see cref="TimeSpan"/>, which it cannot order either). <see cref="decimal"/> needs nothing (EF Core 10 compares and orders it with its own
 /// collation and functions, exactly). Other providers (SQL Server, PostgreSQL) need no converter.
 /// </summary>
 public abstract class QueryContext(DbContextOptions options) : DbContext(options)
@@ -87,6 +126,8 @@ public abstract class QueryContext(DbContextOptions options) : DbContext(options
 
     public DbSet<Document> Documents => Set<Document>();
 
+    public DbSet<Reading> Readings => Set<Reading>();
+
     /// <summary>The collation of every text column, or <see langword="null"/> for the provider default (SQLite: binary).</summary>
     protected virtual string? TextCollation => null;
 
@@ -96,6 +137,7 @@ public abstract class QueryContext(DbContextOptions options) : DbContext(options
     {
         if (!ConvertForSqlite) return;
         configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcTicksConverter>();
+        configurationBuilder.Properties<TimeSpan>().HaveConversion<long>();
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -226,11 +268,50 @@ public static class Seed
             Tags = [.. tags.Select(t => new Tag { Name = t.Name, Weight = t.Weight })],
         };
 
+    /// <summary>36 rows; every column takes 12 values (in a scrambled order, three rows each) that are one tick, one ulp or one step apart.</summary>
+    public static List<Reading> Readings()
+    {
+        var rows = new List<Reading>();
+        for (var i = 0; i < 36; i++)
+        {
+            var k = i * 7 % 12;
+            var ratio = 0.1;
+            var single = 0.1f;
+            for (var j = 0; j < k; j++)
+            {
+                ratio = Math.BitIncrement(ratio);
+                single = MathF.BitIncrement(single);
+            }
+            rows.Add(new Reading
+            {
+                Id = i + 1,
+                Time = new TimeOnly(14, 30, 45).Add(TimeSpan.FromTicks(k)),
+                Span = TimeSpan.FromDays(1).Add(TimeSpan.FromTicks(k)),
+                Stamp = new DateTime(2024, 3, 1, 10, 0, 0, DateTimeKind.Unspecified).AddTicks(k),
+                Moment = new DateTimeOffset(2024, 3, 1, 10, 0, 0, TimeSpan.Zero).AddTicks(k),
+                Day = new DateOnly(2024, 3, 1).AddDays(k),
+                Amount = 1.0000000m + k * 0.0000001m,
+                Ratio = ratio,
+                Single = single,
+                Letter = (char)('a' + k),
+                Tiny = (byte)(244 + k),
+                Small = (short)(short.MaxValue - k),
+                Big = long.MaxValue - k,
+                Level = (Status)(k % 3),
+                Flag = k % 2 == 0,
+                Text = "t" + k.ToString("00"),
+                ShiftStart = new DateTime(2024, 3, 31, 0, 0, 0, DateTimeKind.Unspecified).AddMinutes(k * 30 - 90),
+            });
+        }
+        return rows;
+    }
+
     public static void Fill(QueryContext context)
     {
         var rows = Employees();
         context.Employees.AddRange(rows);
         // Activities for the time zone tests: instants around local midnights of Paris (daylight saving change on 2024-03-31) and New York.
+        context.Readings.AddRange(Seed.Readings());
         var instants = new[]
         {
             "2024-03-30T22:59:59Z", "2024-03-30T23:00:00Z", "2024-03-31T00:30:00Z", "2024-03-31T21:59:59Z", "2024-03-31T22:00:00Z",

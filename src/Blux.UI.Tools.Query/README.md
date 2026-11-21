@@ -98,7 +98,11 @@ along a path such as `e.Department.Name` is SQL null), then the sort with nulls 
 (not the facet's own filter, unless `FacetMode.IncludeSelf`), once per distinct value even when several elements of a collection carry it (`COUNT(DISTINCT key)`), so a collection facet needs a
 `RowKey`. A facet keeps at most `MaxFacetBuckets` distinct values (1000, `.MaxFacetBuckets(n)` on the schema): the most counted ones, ties by value, as a `TAKE` on the group-by, so a column with millions of values never
 transfers them all. The result says `Truncated` when values were cut (a UI can say "more values"), and the search among the options and the window (`Skip`, `Limit`) apply among the kept ones, in memory and in a
-database alike. At the cut itself, values with the same count are kept in the order of the database (by value, in its type), which can differ from the in-memory text order for non-text values.
+database alike. At the cut itself, values with the same count are kept in the order of the database: the collation of a text column, the type's order for other values, which can differ from the ordinal text order of the in-memory executor. Facets that are cut are therefore
+equal to the in-memory ones except for ties at the boundary.
+
+Sorting by a **nullable** column puts the `CASE WHEN x IS NULL THEN 1 ELSE 0 END` flag before the value, which on SQL Server and PostgreSQL stops an index on that column from serving the
+`ORDER BY` (no index seek, a sort of the matching rows). On a large table sort by required (non-null) columns, or sort by a computed or persisted column that is never null.
 
 Results equal those of `ExecuteInMemory` over the same rows (the EF tests run both on SQLite and compare), except where the database decides:
 
@@ -111,8 +115,9 @@ Results equal those of `ExecuteInMemory` over the same rows (the EF tests run bo
 - **Ties** are broken by the row key by its type (an integer key by number, a string key by the collation). Cursor paging refuses a `Guid` key or sort field (databases order Guids their own way).
 
 Providers must be able to compare the types of your fields: with EF Core's SQLite provider a `DateTimeOffset` cannot be compared or ordered (EF throws `could not be translated`), so declare a converter
-(`configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcTicksConverter>()`, `v => v.UtcTicks`); `decimal` needs nothing on EF Core 10 (it orders and compares it with its own collation and functions). Other providers: check the types of your fields against what the provider can compare. Nothing
-is evaluated on the client: a query the provider cannot translate throws when it runs, and `Apply` and `FacetQueries` refuse an in-memory `AsQueryable()` (use `ExecuteInMemory`).
+(`configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcTicksConverter>()`, `v => v.UtcTicks`); a `TimeSpan` cannot be ordered either (`HaveConversion<long>()`); `decimal` needs nothing on EF Core 10 (it orders and compares it with its own collation and functions). Other providers: check the types of your fields against what the provider can compare. Nothing
+is evaluated on the client: a query the provider cannot translate throws when it runs, and `Apply` and `FacetQueries` refuse an in-memory `AsQueryable()` (use `ExecuteInMemory`). The check recognizes LINQ to Objects only: a test double that wraps an `AsQueryable()`, or another provider that evaluates in memory, is not caught and must use `ExecuteInMemory` too (it would throw on a null along a path and compare text case-sensitively).
+`ToResult` of an offset request needs the count of `Matching` (`WantsTotal`) and throws `InvalidOperationException` without it.
 
 Cursor paging: load `query.Rows`, not `query.Page`. Each row comes with the value of every sort field and the row key as the database computed them (`DataListRow<T>`: `Item`, `SortValues`, `Key`),
 and `ToResult` makes `NextCursor` from those, so sorting by `e.Department.Name` works without `Include` and the cursor never depends on what the entity happens to have loaded.
@@ -127,7 +132,9 @@ flat row type (`Select(e => new EmployeeRow ...)` as above) is still the leanest
   `DataListState.ToRequest(timeZone: ...)`); it is never in the URL. A day on a `DateTimeOffset` or `DateTime` field is that local day (23 or 25
   hours on a daylight saving change); `DateOnly` fields compare the day. `Hour`, `Minute` and `Second` granularity match the whole unit: `is` covers
   `[start, start + unit)`, `before` and `after` use the unit bounds, `between` includes both end units. `DateTime` fields are read as UTC whatever
-  their `Kind`. An unknown zone id is cleared by `Sanitize` and means UTC. IANA ids need ICU or tz data: they work with `TimeZoneInfo` on Linux and
+  their `Kind`, unless the field says `.StoresLocalTime()`: its values are then wall-clock times in the request's time zone and the bounds are local `DateTime`s of kind `Unspecified` (a day is local midnight to the next
+  local midnight, an hour is the local hour), which is what a PostgreSQL `timestamp without time zone` column (Npgsql refuses a UTC `DateTime` for it) or a SQL Server `datetime2` holding local times needs.
+  A PostgreSQL `timestamptz` column mapped to `DateTimeOffset` (the Npgsql default for it) or to a UTC `DateTime` is UTC-safe with the default. An unknown zone id is cleared by `Sanitize` and means UTC. IANA ids need ICU or tz data: they work with `TimeZoneInfo` on Linux and
   macOS and on Windows with ICU (.NET 6 and later); Blazor WebAssembly ships tz data unless `BlazorEnableTimeZoneSupport` is false.
 - **Cursor paging** is keyset (the last row's sort values and key). A cursor that does not decode, or that was made for another sort, returns an
   empty page and no next cursor, so an infinite scroll stops instead of looping on the first page.
