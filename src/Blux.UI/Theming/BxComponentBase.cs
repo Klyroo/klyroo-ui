@@ -60,7 +60,16 @@ public abstract class BxComponentBase : ComponentBase
     [Parameter(CaptureUnmatchedValues = true)]
     public IReadOnlyDictionary<string, object>? AdditionalAttributes { get; set; }
 
-    private protected SlotSet ResolveSlots(
+    /// <summary>
+    /// Resolves the classes of every slot of <paramref name="theme"/> for the variant values in <paramref name="selection"/>, in the documented order:
+    /// theme defaults, <c>AddBluxUi</c> overrides, enclosing <see cref="BxTheme"/> scopes, <paramref name="ui"/>, then <see cref="Class"/> on <paramref name="rootSlot"/>.
+    /// The theme becomes read-only. Components of other packages call it with a theme of their own options object (see <see cref="BluxOptions.Extension{T}"/>).
+    /// </summary>
+    /// <param name="theme">The theme of the component.</param>
+    /// <param name="selection">The value of each variant, null to keep the default of the theme.</param>
+    /// <param name="ui">The per-instance slot classes of the <c>Ui</c> parameter, if the component has one.</param>
+    /// <param name="rootSlot">The slot that receives <see cref="Class"/>.</param>
+    protected SlotSet ResolveSlots(
         ComponentTheme theme,
         IReadOnlyDictionary<string, string?> selection,
         ISlotOverrides? ui,
@@ -81,16 +90,27 @@ public abstract class BxComponentBase : ComponentBase
     }
 
     // Null-safe: Blazor and reflection-based tooling may read a parameter before the services are injected.
-    private protected BxColor DefaultColor(BxColor fallback) => Options is null ? fallback : Options.Defaults.ColorOr(fallback);
-    private protected BxSize DefaultSize(BxSize fallback) => Options is null ? fallback : Options.Defaults.SizeOr(fallback);
+
+    /// <summary>The <c>Color</c> to use when the parameter is not set: the app default of <see cref="BluxOptions.Defaults"/>, else <paramref name="fallback"/>.</summary>
+    protected BxColor DefaultColor(BxColor fallback) => Options is null ? fallback : Options.Defaults.ColorOr(fallback);
+
+    /// <summary>The <c>Size</c> to use when the parameter is not set: the app default of <see cref="BluxOptions.Defaults"/>, else <paramref name="fallback"/>.</summary>
+    protected BxSize DefaultSize(BxSize fallback) => Options is null ? fallback : Options.Defaults.SizeOr(fallback);
 
     /// <summary>An icon of the app as a render fragment: <paramref name="name"/> is a key of <c>Options.Icons</c> (<c>Options.Icons.Close</c>) or any icon name.</summary>
-    private protected RenderFragment RenderIcon(string name, string? @class = null) => IconRender.Fragment(Options?.Icons, name, @class);
+    protected RenderFragment RenderIcon(string name, string? @class = null) => IconRender.Fragment(Options?.Icons, name, @class);
 
-    private protected static string NewId(string prefix) => $"bx-{prefix}-{Guid.NewGuid():N}"[..(prefix.Length + 12)];
+    /// <summary>A short element id such as <c>bx-tabs-1a2b3c4d5e6f</c>, unique per call.</summary>
+    protected static string NewId(string prefix) => $"bx-{prefix}-{Guid.NewGuid():N}"[..(prefix.Length + 12)];
 }
 
-internal sealed class SlotSet(IReadOnlyDictionary<string, string> classes)
+/// <summary>The resolved classes of each slot of a component, returned by <c>ResolveSlots</c> of <see cref="BxComponentBase"/>.</summary>
+public sealed class SlotSet
 {
-    public string this[string slot] => classes[slot];
+    private readonly IReadOnlyDictionary<string, string> _classes;
+
+    internal SlotSet(IReadOnlyDictionary<string, string> classes) => _classes = classes;
+
+    /// <summary>The classes of a slot. Throws <see cref="KeyNotFoundException"/> when the theme has no such slot.</summary>
+    public string this[string slot] => _classes[slot];
 }
