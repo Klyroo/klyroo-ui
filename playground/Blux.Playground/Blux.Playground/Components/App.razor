@@ -44,7 +44,8 @@
     {
         // lang and dir of the page follow the culture of the request, like the components do.
         _locale = BxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
-        _mode = PlaygroundServices.ModeFromPath(HttpContext.Request.Path) switch
+        // A page that opts out of interactive routing (ExcludeFromInteractiveRouting, like /templates) renders on the server only.
+        _mode = !HttpContext.AcceptsInteractiveRouting() ? null : PlaygroundServices.ModeFromPath(HttpContext.Request.Path) switch
         {
             "ssr" => null,
             "server" => InteractiveServer,

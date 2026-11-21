@@ -18,9 +18,13 @@ public sealed class PlaygroundServer : IAsyncLifetime
     public string BaseUrl { get; private set; } = "";
     public IBrowser Browser { get; private set; } = default!;
 
+    /// <summary>True when every live demo of the templates answered before the tests started. False only when the docs run published with no templates to run.</summary>
+    public bool TemplatesReady { get; private set; }
+
     public async ValueTask InitializeAsync()
     {
         (_process, BaseUrl) = await StartPlaygroundAsync(null);
+        TemplatesReady = await WaitForTemplateDemosAsync(BaseUrl);
 
         _playwright = await Playwright.CreateAsync();
         var browserType = (Environment.GetEnvironmentVariable("BLUX_BROWSER") ?? "chromium") switch
@@ -48,7 +52,7 @@ public sealed class PlaygroundServer : IAsyncLifetime
     /// Starts one instance of the playground on a free port. <paramref name="pathBase"/> serves it below a prefix ("/sub", the
     /// <c>PathBase</c> setting of its Program.cs); the returned address is the root of the host, the prefix is not part of it.
     /// </summary>
-    internal static async Task<(Process Process, string BaseUrl)> StartPlaygroundAsync(string? pathBase)
+    internal static async Task<(Process Process, string BaseUrl)> StartPlaygroundAsync(string? pathBase, bool demos = false, bool direct = false)
     {
         var port = FreePort();
         var baseUrl = $"http://127.0.0.1:{port}";
@@ -59,7 +63,16 @@ public sealed class PlaygroundServer : IAsyncLifetime
         if (string.IsNullOrEmpty(published))
         {
             var project = Path.Combine(RepoRoot(), "playground", "Blux.Playground", "Blux.Playground");
-            start = new ProcessStartInfo("dotnet", ["run", "--no-build", "--project", project, "--urls", baseUrl]);
+            if (direct)
+            {
+                // The host itself, not "dotnet run" in front of it: a test that kills the host needs to kill that process and nothing else.
+                var dll = Directory.EnumerateFiles(Path.Combine(project, "bin"), "Blux.Playground.dll", SearchOption.AllDirectories).First();
+                start = new ProcessStartInfo("dotnet", [dll, "--urls", baseUrl]) { WorkingDirectory = project };
+            }
+            else
+            {
+                start = new ProcessStartInfo("dotnet", ["run", "--no-build", "--project", project, "--urls", baseUrl]);
+            }
             // Static web assets of referenced libraries are only served from their source folders in Development.
             start.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
         }
@@ -72,21 +85,65 @@ public sealed class PlaygroundServer : IAsyncLifetime
             };
             start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
         }
-        if (pathBase is not null) start.Environment["PathBase"] = pathBase;
+        if (pathBase is not null)
+        {
+            start.Environment["PathBase"] = pathBase;
+            // The instance below a path base is for the path base tests: it does not start its own copy of the template demos, unless asked to.
+            if (!demos) start.Environment["Blux__Templates__Enabled"] = "false";
+        }
+        // BLUX_TEMPLATES_PUBLISHED: a folder with one "dotnet publish" output per template ({name}/), run in Production instead of the build output.
+        if (Environment.GetEnvironmentVariable("BLUX_TEMPLATES_PUBLISHED") is { Length: > 0 } templates)
+        {
+            start.Environment["Blux__Templates__PublishRoot"] = Path.GetFullPath(templates);
+        }
         start.RedirectStandardOutput = true;
         start.RedirectStandardError = true;
         var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start the playground.");
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         await WaitUntilReady(process, baseUrl + (pathBase ?? ""));
+        if (direct) await WaitForTemplateDemosAsync(baseUrl);
         return (process, baseUrl);
     }
 
     /// <summary>Starts another instance of the playground below <paramref name="pathBase"/>; dispose it to stop it.</summary>
-    public async Task<PlaygroundInstance> StartAtPathBaseAsync(string pathBase)
+    public async Task<PlaygroundInstance> StartAtPathBaseAsync(string pathBase, bool demos = false)
     {
-        var (process, baseUrl) = await StartPlaygroundAsync(pathBase);
-        return new PlaygroundInstance(process, baseUrl, pathBase);
+        var (process, baseUrl) = await StartPlaygroundAsync(pathBase, demos);
+        var instance = new PlaygroundInstance(process, baseUrl, pathBase);
+        if (demos) await WaitForTemplateDemosAsync(baseUrl + pathBase.TrimEnd('/'));
+        return instance;
+    }
+
+    /// <summary>
+    /// Waits until the docs host reports every template demo as running (they are child processes it starts: the first request must not race them).
+    /// A demo that cannot be started stops the run with what the host says, except when the docs run published without a folder of published
+    /// templates outside CI, where there is nothing to start and the tests of the demos are skipped (in CI they fail instead).
+    /// </summary>
+    internal static async Task<bool> WaitForTemplateDemosAsync(string baseUrl)
+    {
+        using var http = new HttpClient();
+        var deadline = DateTime.UtcNow.AddSeconds(240);
+        var body = "";
+        while (DateTime.UtcNow < deadline)
+        {
+            var response = await http.GetAsync(baseUrl + "/_blux/templates/ready");
+            body = await response.Content.ReadAsStringAsync();
+            // Not found: the demos are switched off.
+            if (response.StatusCode == HttpStatusCode.NotFound) return false;
+            if (response.IsSuccessStatusCode)
+            {
+                // Ready means every demo that can be started answers. One that is neither built nor published (the docs run published with no folder of
+                // templates) is no reason to wait, but locally and in CI the tests of the demos must not pass by skipping.
+                if (!body.Contains("\"unavailable\"")) return true;
+                var publishedDocs = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BLUX_PLAYGROUND_PUBLISHED"));
+                if (publishedDocs && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("BLUX_TEMPLATES_PUBLISHED")) && string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI"))) return false;
+                break;
+            }
+            if (!body.Contains("\"starting\"") && !body.Contains("\"restarting\"")) break;
+            await Task.Delay(500);
+        }
+        throw new InvalidOperationException("The template demos did not start: " + body);
     }
 
     private static async Task WaitUntilReady(Process process, string url)
