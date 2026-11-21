@@ -50,6 +50,7 @@ public static partial class Catalog
             [new("Radio group", typeof(Examples.RadioGroupExample))], [typeof(BxRadioGroup<string>)]),
         new("select", "Select", "Form", "A select-only combobox with keyboard navigation and typeahead; it posts through a hidden input.",
             [new("Select", typeof(Examples.SelectExample)),
+             new("Counts, icons and groups", typeof(Examples.SelectItemsExample), "Count shows a number at the end of the row, Icon an icon before the label (a name, like every icon of Blux) and Group lists the item under a heading. The headings are not options: the arrow keys and the typeahead skip them. Items without these properties render as before."),
              new("In a form", typeof(Examples.SelectFormExample), "A form to move through with a remote control: Select edits a field, Back leaves it.")], [typeof(BxSelect)]),
         new("form-field", "FormField", "Form", "Label, description, hint and validation message wired to the control inside.",
             [new("A complete form", typeof(Examples.FormFieldExample))], [typeof(BxFormField)]),

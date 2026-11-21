@@ -1,5 +1,5 @@
 import { ensureId, float, observeChildren, Reporter } from './shared.js';
-import { navigable } from './form2-shared.js';
+import { navigable, syncGroups } from './form2-shared.js';
 
 /**
  * Text field with a list of suggestions (WAI-ARIA APG combobox with list autocomplete): focus stays in the field,
@@ -138,6 +138,7 @@ export class BxInputMenuElement extends HTMLElement {
       option.hidden = !match;
       if (match) shown++;
     }
+    syncGroups(this);
     const empty = this.querySelector('[data-slot="empty"]');
     if (empty) empty.hidden = shown > 0;
     return shown;
