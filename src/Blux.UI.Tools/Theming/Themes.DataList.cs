@@ -20,7 +20,7 @@ internal static partial class ToolsThemes
                 "tableRoot", "table", "caption", "thead", "tr", "th", "thStart", "thCenter", "thEnd",
                 "sortButton", "sortIcon", "sortIconActive", "tbody", "td", "tdStart", "tdCenter", "tdEnd",
                 "empty", "skeleton", "pagination", "pageSize", "pageSizeLabel", "pageSizeSelect", "pageSizeForm", "error",
-                "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection")
+                "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -92,6 +92,11 @@ internal static partial class ToolsThemes
             .Slot("filterMenuHeader", "flex flex-col gap-2 p-2")
             .Slot("filterBack", "-ms-1 self-start")
             .Slot("filterSection", "flex min-w-0 flex-col gap-2 border-b border-(--blux-border) pb-3 last:border-b-0 last:pb-0")
+            .Slot("filterRange", "grid grid-cols-2 gap-2")
+            .Slot("filterRangeSlider", "col-span-2 px-1 py-1")
+            .Slot("filterPresets", "flex flex-wrap items-center gap-1.5")
+            .Slot("filterHint", "text-xs text-(--blux-text-muted)")
+            .Slot("filterPopoverWide", "w-80 max-w-[calc(100vw-1rem)]")
             .Variant("density", "compact", "th", "px-3 py-2")
             .Variant("density", "default", "th", "px-4 py-3")
             .Variant("density", "comfortable", "th", "px-4 py-4")

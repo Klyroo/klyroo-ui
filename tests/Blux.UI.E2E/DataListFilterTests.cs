@@ -150,6 +150,25 @@ public class DataListFilterTests(PlaygroundServer server) : PlaygroundTest(serve
         await Assertions.Expect(Tag("Customer contains a")).ToBeVisibleAsync();
     }
 
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_rule_that_changes_while_text_waits_in_the_debounce_replaces_the_typed_text(string mode)
+    {
+        await OpenList(mode, "?flt.f.customer=a");
+        await OpenTag("Customer contains a", "Edit filter Customer");
+        var field = Editor("Edit filter Customer").GetByLabel("Value for Customer");
+
+        // The typing is still inside its 300 ms pause when the address changes under it (what Back or a link does).
+        await field.PressSequentiallyAsync("zz", new() { Delay = 10 });
+        await Page.EvaluateAsync("() => Blazor.navigateTo(location.pathname + '?flt.f.customer=globex')");
+
+        await WaitForQuery("?flt.f.customer=globex");
+        await Assertions.Expect(field).ToHaveValueAsync("globex");
+        await Task.Delay(800, TestContext.Current.CancellationToken);
+        await Assertions.Expect(field).ToHaveValueAsync("globex");
+        Assert.Equal("?flt.f.customer=globex", Uri.UnescapeDataString(new Uri(Page.Url).Query));
+    }
+
     // ---- the option editor
 
     [Theory]
