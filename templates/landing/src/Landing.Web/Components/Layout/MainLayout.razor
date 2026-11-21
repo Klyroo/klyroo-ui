@@ -1,0 +1,41 @@
+@inherits LayoutComponentBase
+
+<BxApp>
+    <BxSkipLink />
+
+    @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
+    <BxHeader Items="SiteContent.Navigation" AriaLabel="Main" MenuTitle="Menu">
+        <Left>
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
+                <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+                <span>@SiteContent.Name</span>
+            </a>
+        </Left>
+        <Right>
+            <BxLocaleSelect Size="BxSize.Sm" />
+            <BxColorModeButton Size="BxSize.Sm" />
+            <BxButton Label="Start free" Href="@SiteContent.SignUpUrl" Size="BxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
+        </Right>
+    </BxHeader>
+
+    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+        @Body
+    </BxMain>
+
+    <BxFooter>
+        <Top>
+            <BxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="Footer">
+                <Left>
+                    <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
+                        <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+                        <span>@SiteContent.Name</span>
+                    </a>
+                    <p class="mt-3 max-w-xs text-sm text-(--blux-text-muted)">@SiteContent.Tagline</p>
+                </Left>
+            </BxFooterColumns>
+        </Top>
+        <Left>
+            <p class="text-sm text-(--blux-text-muted)">&copy; @DateTime.UtcNow.Year @SiteContent.Name. Built with Blux UI.</p>
+        </Left>
+    </BxFooter>
+</BxApp>

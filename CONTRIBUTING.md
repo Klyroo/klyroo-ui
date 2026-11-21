@@ -145,9 +145,9 @@ live in each project file, like the output of `dotnet new`, and it refers to the
   works below a path base), and a second export is renamed with `rename.cs` and built. It needs the network.
 - The MAUI heads are built here from the source of the library only (the `maui` CI job). Building a head against the packed package, as a user does,
   is left to the CI of the exported repository: `verify-templates` does not build MAUI heads because it has no workloads.
-- The browser check of `verify-templates` publishes the web project and runs `tests/Blux.UI.E2E/TemplateTests.cs` against the published folder in
+- The browser check of `verify-templates` publishes the web project and runs the browser class of the template (`browserClass` in the script: `TemplateTests` for the Starter, `LandingTemplateTests` for the Landing) against the published folder in
   Production (it needs Chromium for Playwright; `--no-browser` skips it).
-- A template sets `PathBase` support in `Program.cs` and `App.razor` (see the Starter) so its live demo can run below `/templates/<name>/demo/`.
+- A template sets `PathBase` support in `Program.cs` and `App.razor` (see the Starter or the Landing) so its live demo can run below `/templates/<name>/demo/`.
 
 ### Live demos in the docs deployment
 
