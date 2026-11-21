@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blux.UI\Blux.UI.csproj" />
     <ProjectReference Include="..\..\src\Blux.UI.Build.Tasks\Blux.UI.Build.Tasks.csproj" />
+    <ProjectReference Include="..\..\build\Blux.UI.ClassExtractor\Blux.UI.ClassExtractor.csproj" />
   </ItemGroup>
 
   <ItemGroup>

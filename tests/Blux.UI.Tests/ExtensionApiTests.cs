@@ -116,6 +116,30 @@ public class ExtensionApiTests : BluxTestContext
         }
         Assert.True(typeof(SlotSet).IsPublic);
     }
+
+    [Fact]
+    public void The_parameter_and_return_types_of_the_protected_members_are_public()
+    {
+        // The test assembly sees internals, so a type that is internal would compile here and not in a sister package.
+        const BindingFlags all = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly;
+        foreach (var name in new[] { "ResolveSlots", "RenderIcon", "NewId", "DefaultColor", "DefaultSize" })
+        {
+            var method = Assert.Single(typeof(BxComponentBase).GetMethods(all), m => m.Name == name);
+            foreach (var type in method.GetParameters().Select(p => p.ParameterType).Append(method.ReturnType))
+            {
+                AssertPublic(type, name);
+            }
+        }
+    }
+
+    private static void AssertPublic(Type type, string member)
+    {
+        if (type.IsGenericType)
+        {
+            foreach (var argument in type.GetGenericArguments()) AssertPublic(argument, member);
+        }
+        Assert.True(type.IsVisible, $"{type} used by {member} is not public");
+    }
 }
 
 public class ExtensionOptionsTests
@@ -183,6 +207,16 @@ public class ExtensionOptionsTests
         Assert.Throws<ArgumentException>(() => options.Extension(typeof(IDisposable)));
         Assert.Throws<ArgumentException>(() => options.Extension(typeof(Stream)));
         Assert.Throws<ArgumentException>(() => options.Extension(typeof(string)));
+    }
+
+    [Fact]
+    public void BluxOptions_and_open_generic_types_are_not_extensions()
+    {
+        var options = new BluxOptions();
+
+        Assert.Throws<ArgumentException>(() => options.Extension(typeof(BluxOptions)));
+        Assert.Throws<ArgumentException>(() => options.Extension<BluxOptions>());
+        Assert.Throws<ArgumentException>(() => options.Extension(typeof(BxRadioGroup<>)));
     }
 
     [Fact]

@@ -58,6 +58,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Blux.UI.Tests" />
     <InternalsVisibleTo Include="Blux.UI.ClassExtractor" />
+    <InternalsVisibleTo Include="Blux.UI.DocsBundle" />
   </ItemGroup>
 
   <ItemGroup>

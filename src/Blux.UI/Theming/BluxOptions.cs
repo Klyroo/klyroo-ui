@@ -166,7 +166,11 @@ public sealed partial class BluxOptions
     public object Extension([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] Type type)
     {
         ArgumentNullException.ThrowIfNull(type);
-        if (!type.IsClass || type.IsAbstract || type.GetConstructor(Type.EmptyTypes) is null)
+        if (type == typeof(BluxOptions))
+        {
+            throw new ArgumentException($"{nameof(BluxOptions)} cannot be an extension of itself.", nameof(type));
+        }
+        if (!type.IsClass || type.IsAbstract || type.ContainsGenericParameters || type.GetConstructor(Type.EmptyTypes) is null)
         {
             throw new ArgumentException($"{type} cannot be an extension of {nameof(BluxOptions)}: it must be a non-abstract class with a public parameterless constructor.", nameof(type));
         }
@@ -200,10 +204,10 @@ public sealed partial class BluxOptions
     public IEnumerable<ComponentTheme> AllThemes =>
         ThemesOf(this).Concat(Extensions.SelectMany(ThemesOf));
 
-    /// <summary>The public instance <see cref="ComponentTheme"/> properties of an options object, with their names.</summary>
+    /// <summary>The public instance <see cref="ComponentTheme"/> properties of an options object, with their names. Build-time tooling only.</summary>
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075",
-        Justification = "The options object is BluxOptions or an instance created by Extension, which keeps the public properties of its type.")]
-    public static IEnumerable<KeyValuePair<string, ComponentTheme>> NamedThemesOf(object options)
+        Justification = "Only used by build tooling and AllThemes, on BluxOptions or an instance created by Extension, which keeps the public properties of its type.")]
+    internal static IEnumerable<KeyValuePair<string, ComponentTheme>> NamedThemesOf(object options)
     {
         ArgumentNullException.ThrowIfNull(options);
         return options.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)

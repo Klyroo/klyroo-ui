@@ -62,6 +62,12 @@ public static partial class BxLocales
     /// The exact code ("pt-BR"), then its parent cultures ("pt-PT" gets "pt", "zh-CN" and "zh-Hans-CN" get "zh-Hans" then "zh"), then
     /// "en", then the first available code. Codes compare case-insensitively and the result is the spelling found in <paramref name="available"/>.
     /// </summary>
+    /// <remarks>
+    /// <see cref="Resolve"/> walks <see cref="CultureInfo.Parent"/>, which needs culture data. When the runtime does not know the code
+    /// (invariant globalization, or a name it has no data for), <see cref="ResolveCode"/> trims the last "-" segment instead, which cannot
+    /// know that "zh-CN" belongs to "zh-Hans": it then falls back to "en". Passing <see cref="BxLocale.Code"/> of a locale of
+    /// <see cref="All"/> is unaffected, since such a code is matched exactly.
+    /// </remarks>
     /// <param name="code">A culture name, usually <see cref="BxLocale.Code"/>. A name the runtime does not know is walked by trimming its last "-" segment.</param>
     /// <param name="available">The codes the package has a table for. It cannot be empty.</param>
     /// <example><c>var table = tables[BxLocales.ResolveCode(CurrentLocale.Code, tables.Keys)];</c></example>
