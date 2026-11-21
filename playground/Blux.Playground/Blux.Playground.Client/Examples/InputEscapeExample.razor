@@ -1,0 +1,24 @@
+<div @onkeydown="OnKeyDown" class="flex w-full max-w-sm flex-col gap-3">
+    <BxModal @bind-Open="_open" Title="Search" Description="Escape clears the text first, then closes the dialog.">
+        <ChildContent><BxButton Label="Open search" Variant="ButtonVariant.Outline" data-testid="escape-trigger" /></ChildContent>
+        <Body>
+            <div class="flex flex-col gap-3">
+                <BxInput @bind-Value="_text" Debounce="200" ClearOnEscape Type="search" aria-label="Search in dialog" data-testid="escape-input" />
+                <BxInput Value="locked" ClearOnEscape readonly aria-label="Read-only" data-testid="escape-readonly" />
+            </div>
+        </Body>
+    </BxModal>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="escape-state">Dialog: @(_open ? "open" : "closed"), text: @_text</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="escape-keys">Escape keydowns seen by the page: @_escapes</p>
+</div>
+
+@code {
+    private bool _open;
+    private string? _text;
+    private int _escapes;
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") _escapes++;
+    }
+}

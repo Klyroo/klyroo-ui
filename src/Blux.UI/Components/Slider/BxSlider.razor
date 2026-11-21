@@ -76,6 +76,7 @@ else
         if (AriaLabel is not null) attributes["aria-label"] = AriaLabel;
         if (FormFieldContext.Join(Field?.DescribedBy) is { } describedBy) attributes["aria-describedby"] = describedBy;
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         if (AdditionalAttributes is not null)
         {
             foreach (var (key, value) in AdditionalAttributes) attributes[key] = value;

@@ -74,7 +74,7 @@ else
 
     private RenderFragment Markup(EditBinding binding) =>
         ReadOnly ? ReadOnlyMarkup(binding) :
-        @<div id="@ControlId" role="radiogroup" class="@_slots["root"]" data-color="@Color.Value"
+        @<div id="@ControlId" role="radiogroup" class="@binding.WithFieldClass(_slots["root"])" data-color="@Color.Value"
               aria-label="@AriaLabel" aria-labelledby="@(AriaLabel is null ? Field?.LabelId : null)" aria-describedby="@Field?.DescribedBy"
               aria-invalid="@(binding.Invalid ? "true" : null)" aria-required="@(Required || Field?.Required == true ? "true" : null)"
               @attributes="AdditionalAttributes">

@@ -52,7 +52,7 @@ else
             <div class="@_slots["container"]">
                 <input type="checkbox" id="@id" name="@binding.Name" value="@Format(item.Value)" checked="@IsChecked(item.Value)"
                        disabled="@(item.Disabled || Disabled)" aria-describedby="@FormFieldContext.Join(descriptionId)"
-                       aria-invalid="@(binding.Invalid ? "true" : null)" class="@_slots["base"]" @onchange="onChange" />
+                       aria-invalid="@(binding.Invalid ? "true" : null)" class="@binding.WithFieldClass(_slots["base"])" @onchange="onChange" />
                 @RenderIcon(Options.Icons.Check, _slots["icon"])
             </div>
             <div class="@_slots["wrapper"]">

@@ -1,4 +1,5 @@
 @namespace Blux.UI
+@using Blux.UI.Internal
 @inherits BxFieldBase<string>
 
 <div class="@_slots["root"]" data-color="@Color.Value">
@@ -6,7 +7,18 @@
     {
         <span class="@_slots["leading"]"><span class="@_slots["leadingIcon"]" aria-hidden="true">@LeadingIcon</span></span>
     }
-    @if (UseEditContext)
+    @if (BrowserCommit)
+    {
+        @if (UseEditContext)
+        {
+            <ValueBridge TValue="string" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+        }
+        else
+        {
+            @Markup(new EditBinding(Name, Field?.Invalid == true))
+        }
+    }
+    else if (UseEditContext)
     {
         <InputText Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
     }
@@ -37,10 +49,49 @@
 
     /// <summary>Update the bound value on every keystroke instead of on change. Costs a round trip per key in Server mode.</summary>
     [Parameter] public bool Immediate { get; set; }
+
+    /// <summary>
+    /// Milliseconds of quiet after the last keystroke before the value is reported, in the browser: typing a word raises one
+    /// <c>ValueChanged</c> per pause instead of one per key (a round trip each in Server mode). Enter and leaving the field
+    /// report at once, and nothing is reported in the middle of an IME composition. A render that arrives with an older
+    /// value does not overwrite what was typed after it. <c>null</c> (the default) keeps the plain behavior.
+    /// <para>
+    /// <b>Debounce wins over <see cref="Immediate"/></b> when both are set. Inside an <c>EditForm</c> the field is validated
+    /// each time a value is reported, so after each pause (or Enter, or leaving the field), not on every key.
+    /// Static rendering has no .NET to report to, so there the attribute only does what the browser can do alone.
+    /// </para>
+    /// <para>
+    /// While text is waiting to be reported, a value written into the field by the page's own script, or by a render that
+    /// started before the last report, is ignored: typed text wins. To replace the text on purpose (a "reset" button), call
+    /// <see cref="SetValueAsync"/>.
+    /// </para>
+    /// </summary>
+    [Parameter] public int? Debounce { get; set; }
+
+    /// <summary>
+    /// Escape empties the field and reports the empty value (immediately, whatever <see cref="Debounce"/> says). On an already
+    /// empty field Escape is left alone, so it still closes a modal or popover around the field. The browser does the work,
+    /// in every render mode. The Escape that clears text is consumed: no other handler of the page, Blazor's <c>@onkeydown</c>
+    /// included, sees it. A read-only field is not cleared.
+    /// </summary>
+    [Parameter] public bool ClearOnEscape { get; set; }
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public RenderFragment? LeadingIcon { get; set; }
     [Parameter] public RenderFragment? TrailingIcon { get; set; }
     [Parameter] public InputUi? Ui { get; set; }
+
+    private int _sequence;
+    private int _force;
+    private int _floor;
+
+    // Debounce and ClearOnEscape are done by a script of Blux on the native input, which reports through bx-change.
+    private bool BrowserCommit => Debounce is not null || ClearOnEscape;
+
+    // Immediate without Debounce is a delay of 0: report on every input.
+    private int? DelayAttribute => Debounce is { } ms ? Math.Max(ms, 0) : Immediate ? 0 : null;
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Input, new Dictionary<string, string?>
@@ -51,11 +102,81 @@
             ["trailing"] = VariantValue.Of(TrailingIcon is not null),
         }, Ui, "root");
 
-    private Dictionary<string, object> Attributes()
+    /// <summary>
+    /// Replaces the text of the field on purpose, in the browser, even text still waiting for its pause: the pending text
+    /// and the debounce timer are dropped, and reports sent before the call but not yet received are ignored. Call it
+    /// through <c>@ref</c>, for example from a "reset" button (<c>@onmousedown:preventDefault</c> keeps the focus in the field).
+    /// <para>
+    /// The change is reported once, as a user change would be: <c>ValueChanged</c> is raised (when <paramref name="value"/>
+    /// differs from <c>Value</c>) and the edit context is notified, so a bound model stays consistent.
+    /// </para>
+    /// <para>
+    /// It needs a live component, so it works in Server, WebAssembly and Auto once the page is interactive. In static server
+    /// rendering there is no component to call and it does nothing. Without <see cref="Debounce"/> or <see cref="ClearOnEscape"/>
+    /// the input is bound the plain way and the call only sets the value.
+    /// </para>
+    /// </summary>
+    public async ValueTask SetValueAsync(string? value)
+    {
+        await InvokeAsync(async () =>
+        {
+            // Sequences restart above everything the browser sent before: older reports arrive below the floor and are dropped.
+            _force = _force % 16000 + 1;
+            _floor = _force << 16;
+            _sequence = _floor;
+            var changed = (value ?? "") != (Value ?? "");
+            Value = value;
+            StateHasChanged();
+            if (changed && ValueChanged.HasDelegate)
+            {
+                await ValueChanged.InvokeAsync(value);
+                NotifyFieldChanged();
+            }
+        });
+    }
+
+    private Dictionary<string, object> Attributes(EditBinding binding = default)
     {
         var attributes = ControlAttributes(_slots["base"]);
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         attributes["type"] = Type;
         if (Placeholder is not null) attributes["placeholder"] = Placeholder;
         return attributes;
     }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        // Sent before SetValueAsync, received after it.
+        if (e.Sequence < _floor)
+        {
+            return;
+        }
+        _sequence = e.Sequence;
+        var value = e.Value ?? "";
+        if (value == (Value ?? ""))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    // data-bx-seq and data-bx-force come before value: Blazor applies attributes in order, and the script ignores a write of value that a
+    // render older than its last report made, which it can only tell once it has seen the sequence of that render.
+    private RenderFragment Markup(EditBinding binding) =>
+        @<input data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                data-bx-debounce="@DelayAttribute"
+                data-bx-clear-on-escape="@(ClearOnEscape ? "" : null)"
+                data-bx-force="@(_force > 0 ? _force : null)"
+                data-bx-set="@(_force > 0 ? Value ?? "" : null)"
+                name="@binding.Name"
+                value="@Value"
+                @onbxchange="ChangeHandler"
+                @onbxchange:stopPropagation="true"
+                @attributes="Attributes(binding)" />;
 }
