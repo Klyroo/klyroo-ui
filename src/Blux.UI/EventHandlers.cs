@@ -23,7 +23,18 @@ public sealed class BxChangeEventArgs : EventArgs
     public int Sequence { get; set; }
 }
 
+/// <summary>Payload of the <c>bx-search</c> browser event raised by menus whose options come from .NET, when the text typed in their filter field settles.</summary>
+public sealed class BxSearchEventArgs : EventArgs
+{
+    /// <summary>The text of the filter field, as typed (not trimmed).</summary>
+    public string? Value { get; set; }
+
+    /// <summary>Increments with every report of one element. .NET orders answers by what it asked last, so it does not read it.</summary>
+    public int Sequence { get; set; }
+}
+
 /// <summary>Custom events, registered on the browser side by <c>Blux.UI.lib.module.js</c>.</summary>
 [EventHandler("onbxtoggle", typeof(BxToggleEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onbxchange", typeof(BxChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onbxsearch", typeof(BxSearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 public static class EventHandlers;

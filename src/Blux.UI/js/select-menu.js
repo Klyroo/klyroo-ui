@@ -1,5 +1,6 @@
 import { ensureId, float, isTvMode, observeChildren } from './shared.js';
-import { ValueModel, navigable, syncGroups, syncSelectedIcon } from './form2-shared.js';
+import { ValueModel, SEP, navigable, syncGroups, syncSelectedIcon } from './form2-shared.js';
+import { createDebouncer } from './debounce.js';
 
 /**
  * Select with a filter field inside the list. The trigger is a select-only combobox button; the popover holds a
@@ -14,14 +15,27 @@ import { ValueModel, navigable, syncGroups, syncSelectedIcon } from './form2-sha
  *     <p data-slot="empty" hidden>No results</p>
  *   </div>
  * </bx-select-menu>
+ *
+ * With data-remote (an interactive .NET component that loads the options from a source) the browser stops filtering: the list is
+ * whatever .NET renders. The search text is reported as bx-search (value = the text) when the list opens (the empty text, at once)
+ * and after data-debounce milliseconds of quiet while typing. .NET renders data-generation on the listbox, which changes each time
+ * the options are replaced (not when a page is added): the list goes back to the top and the first option is highlighted. The labels
+ * of the selected values are kept here (a search can drop their options from the list), seeded by data-known (value, label, value, label...).
  */
 export class BxSelectMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
+  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled', 'data-known', 'data-epoch'];
 
   #observer = null;
   #stopFloating = null;
   #active = null;
   #model = new ValueModel(this, (values) => this.#paint(values));
+  #labels = new Map();
+  #generation = null;
+  #awaiting = false;
+  #reported = null;
+  #searchSequence = 0;
+  #generations = null;
+  #debouncer = createDebouncer(() => this.#reportSearch(this.#search?.value ?? ''));
 
   connectedCallback() {
     this.addEventListener('keydown', this.#onKeyDown);
@@ -31,20 +45,38 @@ export class BxSelectMenuElement extends HTMLElement {
     this.addEventListener('mousedown', this.#onMouseDown);
     this.addEventListener('toggle', this.#onToggle, true);
     this.#observer = observeChildren(this, () => this.#wire());
+    // A new generation with the same options changes no child: the highlight still has to follow.
+    this.#generations = new MutationObserver(() => this.#wire());
+    this.#generations.observe(this, { subtree: true, attributes: true, attributeFilter: ['data-generation'] });
   }
 
   disconnectedCallback() {
     this.#observer?.disconnect();
+    this.#generations?.disconnect();
     this.#stopFloating?.();
+    this.#debouncer.cancel();
   }
 
-  attributeChangedCallback(name) {
+  attributeChangedCallback(name, oldValue) {
     if (!this.isConnected) return;
+    if (name === 'data-epoch' && oldValue !== null) {
+      // The source changed (a new OptionsKey): what was kept about the old one is wrong.
+      this.#labels.clear();
+      this.#generation = null;
+      this.#awaiting = false;
+      this.#reported = null;
+      this.#debouncer.cancel();
+    }
+    if (name === 'data-known' || name === 'data-epoch') this.#seedLabels();
     this.#model.attributeChanged(name);
   }
 
   refresh() {
     this.#model.refresh();
+  }
+
+  get #remote() {
+    return this.hasAttribute('data-remote');
   }
 
   get #multiple() {
@@ -87,7 +119,64 @@ export class BxSelectMenuElement extends HTMLElement {
     trigger.setAttribute('aria-expanded', String(this.#isOpen()));
     this.#search?.setAttribute('aria-controls', listboxId);
     for (const option of this.querySelectorAll('[role="option"]')) ensureId(option, 'option');
+    this.#seedLabels();
+    if (this.#remote) this.#syncRemote(listbox);
     this.#model.ensure();
+  }
+
+  /** The labels .NET knows (data-known: value, label, value, label...), in every render mode: a static render must not lose a label to the raw value. */
+  #seedLabels() {
+    const known = (this.getAttribute('data-known') ?? '').split(SEP);
+    for (let i = 0; i + 1 < known.length; i += 2) {
+      if (!this.#labels.has(known[i])) this.#labels.set(known[i], { label: known[i + 1], icon: '' });
+    }
+  }
+
+  /** What a render of the options changes in remote mode: the labels to remember, and the highlight when the options were replaced. */
+  #syncRemote(listbox) {
+    for (const option of this.#options()) this.#remember(option);
+    const generation = listbox.dataset.generation ?? null;
+    if (generation !== this.#generation) {
+      this.#generation = generation;
+      this.#awaiting = false;
+      const scroller = this.querySelector('[data-slot="scroller"]');
+      if (scroller) scroller.scrollTop = 0;
+      if (this.#isOpen()) this.#highlightDefault();
+    } else if (this.#active && !this.#active.isConnected) {
+      this.#active = null;
+      this.#search?.removeAttribute('aria-activedescendant');
+    }
+    // The option that creates the typed text depends on the options that are there now, not on those of the keystroke.
+    this.#syncCreate(this.#search?.value ?? '');
+  }
+
+  #syncCreate(text) {
+    const create = this.#create;
+    if (!create) return;
+    const query = text.trim();
+    const lower = query.toLowerCase();
+    const exact = this.#options().some((o) => (o.dataset.label ?? '').toLowerCase() === lower) || this.#model.values.includes(query);
+    create.hidden = !query || exact;
+    if (!create.hidden) create.dataset.label = (this.dataset.createLabel ?? '{0}').replace('{0}', query);
+  }
+
+  #remember(option) {
+    const value = option.dataset.value;
+    if (value === undefined) return;
+    const icon = option.hasAttribute('data-has-icon') ? (option.querySelector(':scope > svg')?.outerHTML ?? '') : '';
+    this.#labels.set(value, { label: option.dataset.label ?? value, icon });
+  }
+
+  /** The selected option when the list holds it, else the first one a user can land on. */
+  #highlightDefault() {
+    const choices = this.#choices();
+    this.#highlight(choices.find((o) => o.getAttribute('aria-selected') === 'true') ?? choices[0] ?? null);
+  }
+
+  #reportSearch(term) {
+    this.#reported = term.trim();
+    this.#awaiting = true;
+    this.dispatchEvent(new CustomEvent('bx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
   }
 
   #isOpen() {
@@ -98,11 +187,12 @@ export class BxSelectMenuElement extends HTMLElement {
     const options = this.#options();
     for (const option of options) option.setAttribute('aria-selected', String(values.includes(option.dataset.value)));
     // One selected value shows its icon; several have no single icon to show.
-    syncSelectedIcon(this, values.length === 1 ? (options.find((o) => o.dataset.value === values[0]) ?? null) : null);
+    const only = values.length === 1 ? values[0] : null;
+    syncSelectedIcon(this, only === null ? null : (options.find((o) => o.dataset.value === only) ?? this.#cachedOption(only)));
     const label = this.querySelector('[data-slot="label"]');
     if (!label) return;
     if (values.length > 0) {
-      label.dataset.label = values.map((v) => options.find((o) => o.dataset.value === v)?.dataset.label ?? v).join(', ');
+      label.dataset.label = values.map((v) => options.find((o) => o.dataset.value === v)?.dataset.label ?? this.#labels.get(v)?.label ?? v).join(', ');
       label.removeAttribute('data-placeholder');
     } else {
       label.dataset.label = label.dataset.placeholderText ?? '';
@@ -110,7 +200,21 @@ export class BxSelectMenuElement extends HTMLElement {
     }
   }
 
-  #filter(text) {
+  /** A stand-in for an option the list no longer holds, with the icon it had: what syncSelectedIcon reads. */
+  #cachedOption(value) {
+    const icon = this.#remote ? this.#labels.get(value)?.icon : '';
+    if (!icon) return null;
+    const stub = document.createElement('div');
+    stub.setAttribute('data-has-icon', '');
+    stub.innerHTML = icon;
+    return stub;
+  }
+
+  #filter(text, { immediate = false } = {}) {
+    if (this.#remote) {
+      this.#filterRemote(text, immediate);
+      return;
+    }
     const query = text.trim().toLowerCase();
     let shown = 0;
     const options = this.#options();
@@ -134,6 +238,32 @@ export class BxSelectMenuElement extends HTMLElement {
     this.#highlight(navigable(options)[0] ?? (create && !create.hidden ? create : null));
   }
 
+  /**
+   * Remote: the options are not filtered here, .NET renders the answer. The text is reported (at once when the list opens, after the
+   * quiet time while typing); until the answer replaces the options nothing is highlighted, so Enter cannot choose an option of the
+   * previous text. Only the option that creates the typed text is decided here.
+   */
+  #filterRemote(text, immediate) {
+    this.#syncCreate(text);
+    // The text .NET already answered (a trailing space, a letter typed and deleted within the pause): nothing is asked, so no answer will come to
+    // highlight an option again. An error is not an answer: asking again is how it is retried.
+    const settled = text.trim() === this.#reported && !this.#awaiting && !this.querySelector('[data-slot="error"]');
+    if (settled) {
+      this.#debouncer.cancel();
+      if (!this.#active?.isConnected) this.#highlightDefault();
+      return;
+    }
+    // The list shown is the one of another text, until the answer replaces it: nothing is highlighted, so Enter cannot choose from it.
+    this.#highlight(null);
+    if (immediate) {
+      this.#debouncer.cancel();
+      this.#reportSearch(text);
+      return;
+    }
+    const delay = Number(this.getAttribute('data-debounce'));
+    this.#debouncer.schedule(Number.isFinite(delay) && delay >= 0 ? delay : 250);
+  }
+
   #highlight(option) {
     this.#active?.removeAttribute('data-highlighted');
     this.#active = option;
@@ -151,12 +281,13 @@ export class BxSelectMenuElement extends HTMLElement {
     if (!option || option.getAttribute('aria-disabled') === 'true') return;
     const search = this.#search;
     const value = option.dataset.slot === 'create' ? search.value.trim() : option.dataset.value;
+    if (this.#remote && option.dataset.slot !== 'create') this.#remember(option);
     const values = this.#model.values;
     if (this.#multiple) {
       this.#model.set(values.includes(value) ? values.filter((v) => v !== value) : [...values, value]);
       if (option.dataset.slot === 'create') {
         search.value = '';
-        this.#filter('');
+        this.#filter('', { immediate: true });
       }
     } else {
       this.#model.set([value]);
@@ -174,9 +305,11 @@ export class BxSelectMenuElement extends HTMLElement {
     if (!this.#stopFloating) {
       this.#stopFloating = float(this.#trigger, content, { placement: 'bottom-start', distance: 4, matchWidth: true });
       if (search) search.value = '';
-      this.#filter('');
-      const selected = this.#choices().find((o) => o.getAttribute('aria-selected') === 'true');
-      if (selected) this.#highlight(selected);
+      this.#filter('', { immediate: true });
+      if (!this.#remote) {
+        const selected = this.#choices().find((o) => o.getAttribute('aria-selected') === 'true');
+        if (selected) this.#highlight(selected);
+      }
     }
     search?.focus({ preventScroll: true });
   }
@@ -192,6 +325,7 @@ export class BxSelectMenuElement extends HTMLElement {
     this.dataset.state = content.dataset.state = 'closed';
     this.#stopFloating?.();
     this.#stopFloating = null;
+    this.#debouncer.cancel();
     this.#highlight(null);
   };
 
@@ -217,10 +351,14 @@ export class BxSelectMenuElement extends HTMLElement {
         event.preventDefault();
         this.#highlight(choices[Math.max(index - 1, 0)] ?? null);
         break;
-      case 'Enter':
+      case 'Enter': {
         event.preventDefault();
-        this.#choose(this.#active);
+        // Nothing to choose while the list failed to load: Enter asks again.
+        const retry = this.#active ? null : this.querySelector('[data-slot="retry"]');
+        if (retry) retry.click();
+        else this.#choose(this.#active);
         break;
+      }
       case 'Tab':
         this.#content.hidePopover();
         trigger.focus({ preventScroll: true });

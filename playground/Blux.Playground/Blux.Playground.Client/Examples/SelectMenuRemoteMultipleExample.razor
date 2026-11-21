@@ -1,0 +1,18 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Offices">
+        <BxSelectMenu OptionsProvider="_source.ByCursor" ResolveSelected="_source.Resolve" Multiple PageSize="20" Debounce="150" MinLength="2"
+                      Placeholder="Type two letters to search" Value="_values" ValueChanged="@(v => _values = v ?? [])" data-testid="remote-multiple" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-multiple-state">Selected: @string.Join(", ", _values)</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-multiple-requests">Source calls: @_source.Requests</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-multiple-last">Last call: @_source.Last</p>
+</div>
+
+@code {
+    private RemoteDirectory _source = default!;
+
+    // Restored values (from the address, a saved form): their pages were never loaded, so ResolveSelected names them.
+    private IReadOnlyList<string> _values = ["jp", "br"];
+
+    protected override void OnInitialized() => _source = new RemoteDirectory { Changed = () => _ = InvokeAsync(StateHasChanged) };
+}

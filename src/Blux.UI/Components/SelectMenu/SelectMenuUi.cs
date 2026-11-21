@@ -23,6 +23,12 @@ public sealed record SelectMenuUi : ISlotOverrides
     public string? Empty { get; init; }
     public string? Create { get; init; }
 
+    public string? Scroller { get; init; }
+    public string? Loading { get; init; }
+    public string? Spinner { get; init; }
+    public string? Error { get; init; }
+    public string? Announcer { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -43,6 +49,11 @@ public sealed record SelectMenuUi : ISlotOverrides
         "leadingIcon" => LeadingIcon,
         "empty" => Empty,
         "create" => Create,
+        "scroller" => Scroller,
+        "loading" => Loading,
+        "spinner" => Spinner,
+        "error" => Error,
+        "announcer" => Announcer,
         _ => null,
     };
 }

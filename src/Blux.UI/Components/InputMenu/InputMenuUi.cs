@@ -19,6 +19,12 @@ public sealed record InputMenuUi : ISlotOverrides
     public string? GroupLabel { get; init; }
     public string? Empty { get; init; }
 
+    public string? Scroller { get; init; }
+    public string? Loading { get; init; }
+    public string? Spinner { get; init; }
+    public string? Error { get; init; }
+    public string? Announcer { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -35,6 +41,11 @@ public sealed record InputMenuUi : ISlotOverrides
         "group" => Group,
         "groupLabel" => GroupLabel,
         "empty" => Empty,
+        "scroller" => Scroller,
+        "loading" => Loading,
+        "spinner" => Spinner,
+        "error" => Error,
+        "announcer" => Announcer,
         _ => null,
     };
 }
