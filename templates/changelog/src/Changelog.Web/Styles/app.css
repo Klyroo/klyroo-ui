@@ -1,0 +1,215 @@
+@import "tailwindcss";
+@import "../obj/blux/blux.theme.css";
+
+/* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result as app.css. */
+
+@layer base {
+  /* The page background and text color come from the Blux theme, which follows the "dark" class that the color mode script sets. */
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* The header is sticky: an anchor link (a heading of a page) lands below it, not under it. */
+  html {
+    scroll-padding-top: calc(var(--blux-header-height) + 1rem);
+  }
+}
+
+/*
+  What Markdown adds to a page, beyond the prose styles of BxPageBody: code blocks, callouts, tables, task lists, footnotes.
+  These rules are outside any layer on purpose: they have to win over the utilities that BxPageBody puts on pre, code and links, and a layered
+  utility loses to an unlayered rule. The class names are the ones Content/MarkdownRenderer.cs writes.
+*/
+
+/* Token colors of the code blocks, each at least 4.5:1 on the block background (--blux-bg-elevated) in light and in dark mode. */
+:root {
+  --tok-comment: #565c60;
+  --tok-string: #136238;
+  --tok-keyword: #23549e;
+  --tok-command: #6a2f9e;
+  --tok-property: #9c3d08;
+  --tok-number: #7a5800;
+  --tok-variable: #9d2c1a;
+  --tok-tag: #23549e;
+  --tok-type: #0b6b73;
+}
+
+.dark {
+  --tok-comment: #8a9196;
+  --tok-string: #7bd88f;
+  --tok-keyword: #7fb2ff;
+  --tok-command: #c5a3ff;
+  --tok-property: #ff8a4c;
+  --tok-number: #ffd23f;
+  --tok-variable: #ff6e4d;
+  --tok-tag: #7fb2ff;
+  --tok-type: #5fd7e0;
+}
+
+.tok-comment { color: var(--tok-comment); font-style: italic; }
+.tok-string { color: var(--tok-string); }
+.tok-keyword { color: var(--tok-keyword); }
+.tok-command { color: var(--tok-command); }
+.tok-flag, .tok-property { color: var(--tok-property); }
+.tok-number { color: var(--tok-number); }
+.tok-variable { color: var(--tok-variable); }
+.tok-tag { color: var(--tok-tag); }
+.tok-type { color: var(--tok-type); }
+
+.code-block {
+  position: relative;
+  margin: 1.25rem 0;
+  border-radius: var(--blux-radius);
+  background: var(--blux-bg-elevated);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+/* The language, top left, and the copy button, top right, share a bar above the code. */
+.code-block::before {
+  content: attr(data-language);
+  position: absolute;
+  inset-block-start: 0.5rem;
+  inset-inline-start: 1rem;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--blux-text-toned);
+}
+
+.code-block[data-language="text"]::before {
+  content: "";
+}
+
+.code-block pre {
+  margin: 0;
+  padding: 2.75rem 1rem 1rem;
+  overflow-x: auto;
+  border-radius: var(--blux-radius);
+  background: transparent;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  tab-size: 2;
+}
+
+.code-block pre:focus-visible {
+  outline: 2px solid var(--blux-text-highlighted);
+  outline-offset: -2px;
+}
+
+.code-block pre code {
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+  white-space: pre;
+}
+
+.code-copy {
+  position: absolute;
+  inset-block-start: 0.375rem;
+  inset-inline-end: 0.5rem;
+  z-index: 1;
+  min-width: 4rem;
+  min-height: 1.75rem;
+  padding: 0 0.625rem;
+  border: 1px solid var(--blux-border-accented);
+  border-radius: calc(var(--blux-radius) * 0.75);
+  background: var(--blux-bg);
+  color: var(--blux-text-highlighted);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.code-copy:hover {
+  background: var(--blux-bg-accented);
+}
+
+.code-copy:focus-visible {
+  outline: 2px solid var(--blux-text-highlighted);
+  outline-offset: 2px;
+}
+
+/* Read by screen readers when the copy worked, not shown. */
+.code-copy-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Callouts look like BxAlert with the soft variant: the color of data-color at 10% for the fill, its text color for the words. */
+.callout {
+  margin: 1.5rem 0;
+  padding: 1rem;
+  border-radius: var(--blux-radius);
+  background: color-mix(in oklab, var(--bx-color) 10%, transparent);
+  color: var(--bx-color-text);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.callout > * { margin-block: 0.5rem 0; }
+.callout > .callout-title { margin: 0; font-weight: 600; }
+.callout a, .callout code { color: inherit; }
+
+/* A wide table scrolls inside its own box instead of widening the page. */
+.table-scroll {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+}
+
+.table-scroll:focus-visible {
+  outline: 2px solid var(--blux-text-highlighted);
+  outline-offset: 2px;
+}
+
+.table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.table-scroll th, .table-scroll td {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--blux-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-scroll th {
+  background: var(--blux-bg-elevated);
+  color: var(--blux-text-highlighted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Task lists: no bullet, the box in its place. */
+.contains-task-list { list-style: none; padding-inline-start: 0.25rem; }
+.task-list-item input { margin-inline-end: 0.5rem; accent-color: var(--blux-primary-text); }
+
+/* Footnotes, below the text. */
+.footnotes {
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--blux-border);
+  color: var(--blux-text-muted);
+  font-size: 0.875rem;
+}
+
+.footnotes ol { margin: 0; }
+.footnote-ref { font-size: 0.75em; vertical-align: super; }
+
+/* Definition lists. */
+/* The body of a page has the class markdown-body (Components/Pages/Article.razor). */
+.markdown-body dt { margin-top: 1rem; font-weight: 600; color: var(--blux-text-highlighted); }
+.markdown-body dd { margin-inline-start: 1.5rem; }
+
+/* Release notes come from outside: an image never widens the page, and a long address or word breaks instead of scrolling the page sideways. */
+.markdown-body { overflow-wrap: anywhere; }
+.markdown-body img { max-width: 100%; height: auto; }
+/* Notes that could not be read as Markdown are shown as the text they are. */
+.release-plain { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.875rem; }

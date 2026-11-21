@@ -1,0 +1,126 @@
+@page "/releases/{Slug}"
+@inject ReleaseService Releases
+@inject ReleaseBody Body
+@inject NavigationManager Navigation
+
+@* One page per release. The address holds a slug made from the tag (Releases/ReleaseSlug.cs) and the page finds the release in the list it already has:
+   whatever the tag or the address contains, nothing is ever looked up on disk or sent to GitHub with it. *@
+@if (_list is not null && !_list.Available)
+{
+    <PageTitle>@SiteInfo.Title - @SiteInfo.Name</PageTitle>
+    <BxContainer Class="py-8 lg:py-12">
+        <ReleaseProblem List="_list" />
+    </BxContainer>
+}
+else if (_release is not null && _list is not null)
+{
+    <PageTitle>@_release.Title - @SiteInfo.Name</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@Description" />
+        <link rel="alternate" type="application/atom+xml" title="@SiteInfo.FeedTitle" href="feed.xml" />
+    </HeadContent>
+
+    <BxContainer Class="py-8 lg:py-12">
+        <ReleaseProblem List="_list" />
+
+        <p class="@(_list.Status == ReleaseStatus.Stale ? "mt-8" : "")">
+            <a href="./" class="inline-flex items-center gap-1 rounded-sm text-sm text-(--blux-primary-text) underline underline-offset-4" data-testid="back">
+                <BxIcon Name="ph:arrow-left" Class="size-4" />
+                All releases
+            </a>
+        </p>
+
+        <div class="mt-8 max-w-[46rem]">
+            <BxChangelogVersion Title="@_release.Title"
+                                HeadingLevel="1"
+                                Indicator="false"
+                                Date="_release.PublishedAt"
+                                Badge="@(_release.Prerelease ? $"{_release.Tag} pre-release" : _release.Title == _release.Tag ? null : _release.Tag)"
+                                BadgeColor="@(_release.Prerelease ? BxColor.Warning : BxColor.Primary)"
+                                Authors="_authors"
+                                data-testid="release">
+                <ChildContent>
+                    @if (Body.Render(_release, $"releases/{_release.Slug}", 2) is { Length: > 0 } html)
+                    {
+                        <BxPageBody Class="markdown-body">@((MarkupString)html)</BxPageBody>
+                    }
+                    else
+                    {
+                        <p class="text-(--blux-text-muted)">This release has no notes.</p>
+                    }
+                </ChildContent>
+                <Footer>
+                    @if (_release.Url is { } url)
+                    {
+                        <BxButton Label="View on GitHub" Href="@url" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" />
+                    }
+                </Footer>
+            </BxChangelogVersion>
+        </div>
+
+        <nav aria-label="Other releases" class="mt-10 flex items-center justify-between gap-4 border-t border-(--blux-border) pt-6 max-w-[46rem]" data-testid="neighbours">
+            @if (_newer is not null)
+            {
+                <BxButton Label="@_newer.Title" Href="@($"releases/{_newer.Slug}")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" rel="prev" Class="max-w-[45%]">
+                    <LeadingIcon><BxIcon Name="ph:arrow-left" Class="size-4" /></LeadingIcon>
+                </BxButton>
+            }
+            else
+            {
+                <span></span>
+            }
+            @if (_older is not null)
+            {
+                <BxButton Label="@_older.Title" Href="@($"releases/{_older.Slug}")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" rel="next" Class="max-w-[45%]">
+                    <TrailingIcon><BxIcon Name="ph:arrow-right" Class="size-4" /></TrailingIcon>
+                </BxButton>
+            }
+            else
+            {
+                <span></span>
+            }
+        </nav>
+    </BxContainer>
+}
+
+@code {
+    private ReleaseList? _list;
+    private ReleaseEntry? _release;
+    private ReleaseEntry? _newer;
+    private ReleaseEntry? _older;
+    private IReadOnlyList<BxPostAuthor> _authors = [];
+
+    [CascadingParameter] private HttpContext? HttpContext { get; set; }
+
+    [Parameter] public string? Slug { get; set; }
+
+    private string Description => _release?.PublishedAt is { } date
+        ? $"{_release.Title}, released on {date.UtcDateTime.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)}."
+        : $"{_release?.Title}.";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _list = await Releases.GetAsync(HttpContext?.RequestAborted ?? CancellationToken.None);
+        if (!_list.Available)
+        {
+            if (HttpContext is { } context)
+            {
+                context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+                context.Response.Headers.RetryAfter = "300";
+            }
+            return;
+        }
+
+        _release = _list.Find(Slug);
+        if (_release is null)
+        {
+            // Answers 404 with the page of Pages/NotFound.razor.
+            Navigation.NotFound();
+            return;
+        }
+        var index = _list.Releases.ToList().FindIndex(r => ReferenceEquals(r, _release));
+        _newer = index > 0 ? _list.Releases[index - 1] : null;
+        _older = index < _list.Releases.Count - 1 ? _list.Releases[index + 1] : null;
+        _authors = _release.Author is { } author ? [new BxPostAuthor(author.Login) { AvatarSrc = author.AvatarUrl, Href = author.ProfileUrl }] : [];
+    }
+}

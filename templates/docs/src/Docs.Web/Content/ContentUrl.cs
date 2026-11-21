@@ -41,6 +41,17 @@ public static partial class ContentUrl
         return !scheme.Success || AllowedSchemes.Contains(scheme.Value[..^1], StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>True when the address starts with one of <paramref name="schemes"/> (case does not matter). Tabs and new lines inside it are ignored, as a browser does.</summary>
+    public static bool HasScheme(string? url, params string[] schemes)
+    {
+        if (string.IsNullOrEmpty(url))
+        {
+            return false;
+        }
+        var scheme = SchemePattern().Match(Clean(url));
+        return scheme.Success && schemes.Contains(scheme.Value[..^1], StringComparer.OrdinalIgnoreCase);
+    }
+
     /// <summary>True when the address leaves the site: it has a scheme, or starts with <c>//</c>.</summary>
     public static bool IsExternal(string url)
     {

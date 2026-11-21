@@ -1,0 +1,51 @@
+@inject IHostEnvironment Environment
+
+@* What a visitor sees when there are no releases to show because something is wrong. The page answers 503 (set by the page); the cause is in the log. *@
+@if (List.Available)
+{
+    @if (List.Status == ReleaseStatus.Stale)
+    {
+        <BxAlert Color="BxColor.Warning" Variant="BxVariant.Soft" Class="mt-8" data-testid="releases-stale"
+                 Title="These release notes may be out of date"
+                 Description="@StaleText" />
+    }
+}
+else
+{
+    <BxEmpty Title="@Title" Description="@Text" HeadingLevel="2" Class="mt-10" data-testid="releases-unavailable">
+        <Actions>
+            @if (List.RepositoryUrl is { } repository)
+            {
+                <BxButton Label="Open the releases on GitHub" Href="@($"{repository}/releases")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+            }
+        </Actions>
+    </BxEmpty>
+}
+
+@code {
+    [Parameter, EditorRequired] public ReleaseList List { get; set; } = default!;
+
+    private string Title => List.Status switch
+    {
+        ReleaseStatus.NotConfigured when Environment.IsDevelopment() => "No repository is set",
+        ReleaseStatus.NotFound when Environment.IsDevelopment() => "The repository was not found",
+        ReleaseStatus.RateLimited => "GitHub is asking us to wait",
+        _ => "The release notes are not available right now",
+    };
+
+    // Setup details (the names of settings) are for the person who runs the site, not for its visitors: they are shown in Development only.
+    private string Text => List.Status switch
+    {
+        ReleaseStatus.NotConfigured when Environment.IsDevelopment() =>
+            "Set Changelog:Repository to owner/repo in appsettings.json (or Changelog__Repository in the environment), or set Changelog:Source to File to read data/releases.json.",
+        ReleaseStatus.NotFound when Environment.IsDevelopment() =>
+            "GitHub has no repository with that name, or it is private. Check Changelog:Repository, and Changelog:GitHubToken for a private one.",
+        ReleaseStatus.RateLimited when List.RetryAt is { } at =>
+            $"GitHub limits how often releases can be read. They will be shown again after {at.UtcDateTime.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)} UTC; reload the page then.",
+        _ => "They could not be read from GitHub. Reload the page in a few minutes.",
+    };
+
+    private string StaleText => List.FetchedAt is { } at
+        ? $"GitHub could not be reached, so this is the copy saved on {at.UtcDateTime.ToString("d MMMM yyyy 'at' HH:mm", System.Globalization.CultureInfo.InvariantCulture)} UTC."
+        : "GitHub could not be reached, so this is the last copy that was saved.";
+}

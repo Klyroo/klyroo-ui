@@ -91,6 +91,10 @@ public sealed class PlaygroundServer : IAsyncLifetime
             // The instance below a path base is for the path base tests: it does not start its own copy of the template demos, unless asked to.
             if (!demos) start.Environment["Blux__Templates__Enabled"] = "false";
         }
+        // The Changelog demo reads the sample releases of the template, never GitHub: the E2E run needs no network (the production setting is in
+        // the appsettings.json of the docs host: Blux:Templates:Demos:changelog).
+        start.Environment["Blux__Templates__Demos__changelog__Changelog__Source"] = "File";
+        start.Environment["Blux__Templates__Demos__changelog__Changelog__Repository"] = "tern-cli/tern";
         // BLUX_TEMPLATES_PUBLISHED: a folder with one "dotnet publish" output per template ({name}/), run in Production instead of the build output.
         if (Environment.GetEnvironmentVariable("BLUX_TEMPLATES_PUBLISHED") is { Length: > 0 } templates)
         {
