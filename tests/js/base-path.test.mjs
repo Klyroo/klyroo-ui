@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey } from '../../src/Blux.UI/js/base-path.js';
+import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey, scopedCookieName } from '../../src/Blux.UI/js/base-path.js';
 
 test('an app at the root keeps the cookie at /', () => {
   assert.equal(cookiePathFor('https://example.com/'), '/');
@@ -69,4 +69,10 @@ test('storage keys are prefixed below a base path and untouched at the root', ()
   assert.equal(scopedKey('', 'blux:dashboard:app:panels'), 'blux:dashboard:app:panels');
   assert.equal(scopedKey('/sub', 'blux:dashboard:app:panels'), '/sub:blux:dashboard:app:panels');
   assert.notEqual(scopedKey('/a', 'k'), scopedKey('/b', 'k'));
+});
+
+test('a named cookie keeps its name at the root and carries the slug below a path base', () => {
+  assert.equal(scopedCookieName('', 'blux-timezone'), 'blux-timezone');
+  assert.equal(scopedCookieName('/sub', 'blux-timezone'), 'blux-timezone.sub~~');
+  assert.equal(scopedCookieName('/a/b c', 'blux-timezone'), 'blux-timezone.a.b~20c~~');
 });

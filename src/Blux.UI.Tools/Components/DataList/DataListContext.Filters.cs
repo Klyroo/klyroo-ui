@@ -155,7 +155,7 @@ public sealed partial class DataListContext<TItem>
 
         var granularity = filter?.Granularity ?? DateGranularity.Day;
         var zone = Zone;
-        string Number(decimal value) => value.ToString(filter?.Format ?? DefaultNumberFormat, culture);
+        string Number(decimal value) => value.ToString(filter?.NumberFormat ?? DefaultNumberFormat, culture);
         string Bound(FilterValue? value) => value switch
         {
             FilterValue.Number n => Number(n.Value),

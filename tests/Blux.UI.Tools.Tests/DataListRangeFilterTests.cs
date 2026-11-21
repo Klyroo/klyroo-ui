@@ -91,7 +91,7 @@ public partial class DataListRangeFilterTests : BluxToolsTestContext
         var schema = DataListSchema.For<Order>(s => s
             .RowKey(o => o.Id)
             .Field(o => o.Id, f => f.Sortable())
-            .Field(o => o.Amount, f => f.Filter(DataListFilter.Number().WithLabel("Montant").WithFormat("C2")))
+            .Field(o => o.Amount, f => f.Filter(DataListFilter.Number().WithLabel("Montant").WithNumberFormat("C2")))
             .Field(o => o.Weight, f => f.Filter(DataListFilter.Number().WithLabel("Poids"))));
         var cut = RenderList("/t?f.amount.gte=1250.5&f.weight=1250.5", p => p.Add(c => c.Schema, schema));
 
@@ -238,6 +238,32 @@ public partial class DataListRangeFilterTests : BluxToolsTestContext
         await WaitForQuery(Navigation, "?f.amount.between=50..300");
     }
 
+    [Fact]
+    public async Task Moving_one_thumb_of_the_range_slider_keeps_an_open_end_open()
+    {
+        var cut = RenderList("/t?f.amount.between=100..");
+        var slider = Item(cut, "amount").QuerySelector("bx-slider[role=group]")!;
+        // The open end is drawn at the limit.
+        Assert.Equal("100\u001f500", slider.GetAttribute("data-values"));
+
+        await Report(slider, "150\u001f500");
+
+        await WaitForQuery(Navigation, "?f.amount.between=150..");
+
+        await Report(Item(cut, "amount").QuerySelector("bx-slider[role=group]")!, "150\u001f400");
+        await WaitForQuery(Navigation, "?f.amount.between=150..400");
+    }
+
+    [Fact]
+    public async Task Moving_the_upper_thumb_of_the_range_slider_keeps_an_open_start_open()
+    {
+        var cut = RenderList("/t?f.amount.between=..200");
+
+        await Report(Item(cut, "amount").QuerySelector("bx-slider[role=group]")!, "0\u001f250");
+
+        await WaitForQuery(Navigation, "?f.amount.between=..250");
+    }
+
     // ---- the date editor
 
     [Fact]
@@ -350,8 +376,8 @@ public partial class DataListRangeFilterTests : BluxToolsTestContext
 
         await Item(cut, "created").QuerySelectorAll("button[data-slot=filter-preset]").First(b => Text(b) == "Last month").ClickAsync();
 
-        // Whole October, from the start of its first day to the last minute of its last one (in UTC: no zone yet).
-        await WaitForQuery(Navigation, "?f.created.between=2026-10-01T00:00:00.0000000+00:00..2026-10-31T23:59:00.0000000+00:00");
+        // Whole October: days without a time, which cover every minute of them in the zone of the user.
+        await WaitForQuery(Navigation, "?f.created.between=2026-10-01..2026-10-31");
     }
 
     [Fact]
@@ -371,19 +397,56 @@ public partial class DataListRangeFilterTests : BluxToolsTestContext
     }
 
     [Fact]
-    public async Task A_date_picked_without_a_time_means_the_start_of_the_day_and_a_day_that_keeps_the_time_it_had_keeps_it()
+    public async Task A_day_picked_without_a_time_is_the_whole_day_and_a_time_makes_it_an_instant_that_stays_when_the_day_changes()
     {
         var cut = RenderList(null, p => p.Add(c => c.ShowAdd, true));
         cut.Find("[data-slot=filter-menu-item][data-filter=created]").Click();
         var panel = cut.Find("[data-slot=add-filter-popover] [popover]");
 
         await panel.QuerySelector("input[aria-label='Value for Created']")!.ChangeAsync(new ChangeEventArgs { Value = "2026-11-06" });
-        await WaitForQuery(Navigation, "?f.created=2026-11-06T00:00:00.0000000+00:00");
+        await WaitForQuery(Navigation, "?f.created=2026-11-06");
+        cut.WaitForAssertion(() => Assert.Equal("1–1 of 1", Count(cut)));
 
         await Report(Item(cut, "created").QuerySelector("bx-input-time")!, "10:30");
         await WaitForQuery(Navigation, "?f.created=2026-11-06T10:30:00.0000000+00:00");
         await Item(cut, "created").QuerySelector("input[aria-label='Value for Created']")!.ChangeAsync(new ChangeEventArgs { Value = "2026-11-07" });
         await WaitForQuery(Navigation, "?f.created=2026-11-07T10:30:00.0000000+00:00");
+    }
+
+    [Fact]
+    public async Task A_single_date_preset_on_a_timed_filter_is_the_whole_local_day_for_every_operator()
+    {
+        var cut = RenderList("/t?f.created.is=2026-11-05T10:30:00Z", zone: "Europe/Paris");
+
+        await Item(cut, "created").QuerySelectorAll("button[data-slot=filter-preset]").First(b => Text(b) == "Today").ClickAsync();
+        await WaitForQuery(Navigation, "?f.created=2026-11-21");
+        cut.WaitForAssertion(() => Assert.Equal(["Created is 11/21/2026"], Tags(cut)));
+
+        await Item(cut, "created").QuerySelector("select")!.ChangeAsync(new ChangeEventArgs { Value = "after" });
+        await WaitForQuery(Navigation, "?f.created.after=2026-11-21");
+        await Item(cut, "created").QuerySelector("select")!.ChangeAsync(new ChangeEventArgs { Value = "before" });
+        await WaitForQuery(Navigation, "?f.created.before=2026-11-21");
+        await Item(cut, "created").QuerySelector("select")!.ChangeAsync(new ChangeEventArgs { Value = "isNot" });
+        await WaitForQuery(Navigation, "?f.created.isNot=2026-11-21");
+        // Order 21 was created on the 21st (11:30 in Paris): the other 29 are not on it.
+        cut.WaitForAssertion(() => Assert.Equal("1–10 of 29", Count(cut)));
+    }
+
+    [Fact]
+    public void A_day_on_a_timed_filter_is_the_local_day_of_the_user_not_the_utc_one()
+    {
+        // Order 5 is created at 10:30 UTC on 5 November. In Kiritimati (UTC+14) the 6th runs from 10:00 UTC on the 5th to 10:00 UTC on the 6th: it holds order 5, not order 6.
+        var cut = RenderList("/t?f.created=2026-11-06", zone: "Pacific/Kiritimati");
+
+        cut.WaitForAssertion(() => Assert.Equal(["Order 05"], cut.FindAll("tbody tr[data-slot=row] td:nth-child(2)").Select(Text)));
+    }
+
+    [Fact]
+    public void A_day_on_a_timed_filter_is_the_utc_day_without_a_zone()
+    {
+        var cut = RenderList("/t?f.created=2026-11-06");
+
+        cut.WaitForAssertion(() => Assert.Equal(["Order 06"], cut.FindAll("tbody tr[data-slot=row] td:nth-child(2)").Select(Text)));
     }
 
     [Fact]
@@ -583,6 +646,19 @@ public partial class DataListRangeFilterTests : BluxToolsTestContext
         Assert.All(presets, a => Assert.Null(QueryOf(a.GetAttribute("href")!)["p"]));
         var input = cut.Find("li[data-filter=day] form input[type=date]");
         Assert.Equal(("f.day", "2026-11-05"), (input.GetAttribute("name"), input.GetAttribute("value")));
+    }
+
+    [Fact]
+    public void Static_rendering_gives_a_timed_filter_the_same_whole_day_preset_rules_as_the_editor()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.created.after=2026-11-05T10:30:00Z");
+
+        var cut = context.Render<DataListRangeHarness>();
+
+        var presets = cut.FindAll("li[data-filter=created] [data-slot=filter-presets] a");
+        Assert.Equal(["Today", "7 days ago", "Start of year"], presets.Select(Text));
+        Assert.Equal(["2026-11-21", "2026-11-14", "2026-01-01"], presets.Select(a => QueryOf(a.GetAttribute("href")!)["f.created.after"]));
     }
 
     [Fact]

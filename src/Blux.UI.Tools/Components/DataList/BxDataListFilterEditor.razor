@@ -168,6 +168,14 @@
         }
     }
 
+    // The text of the field follows a rule that changed without it; what the user typed stays when it is the editor that wrote the rule.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_syncInput || !Context.IsInteractive) return;
+        _syncInput = false;
+        if (_input is not null) await _input.SetValueAsync(_text);
+    }
+
     // The rule the draft stands for, or null when the draft filters nothing.
     private FilterRule? BuildRule() => _filter!.Kind switch
     {
@@ -190,21 +198,20 @@
 
     private bool Timed => _filter!.Granularity != DateGranularity.Day;
 
-    // A bound of a date rule: a day, or the instant of the day and time in the zone of the user. A missing time is the start of the day, or for the end of a range the last hour or minute of it.
-    private FilterValue? DateBound(DateOnly? day, TimeOnly? time, bool end)
+    // A bound of a date rule: a day without a time (a whole local day, for the presets and a day picked alone, on a day filter and on a timed one: the end of a range covers all of its day), or the instant of the
+    // day and time in the zone of the user.
+    private FilterValue? DateBound(DateOnly? day, TimeOnly? time)
     {
         if (day is not { } d) return null;
-        if (!Timed) return new FilterValue.Date(d);
-        var granularity = _filter!.Granularity;
-        var fallback = !end ? TimeOnly.MinValue : granularity == DateGranularity.Hour ? new TimeOnly(23, 0) : new TimeOnly(23, 59);
-        return new FilterValue.Moment(DataListDates.Moment(d, time ?? fallback, Context.Zone, granularity));
+        if (!Timed || time is not { } t) return new FilterValue.Date(d);
+        return new FilterValue.Moment(DataListDates.Moment(d, t, Context.Zone, _filter!.Granularity));
     }
 
     private FilterRule? DateRule()
     {
-        if (!IsRange) return DateBound(_day, _time, end: false) is { } one ? new FilterRule(Key, _op, one) : null;
-        var from = DateBound(_day, _time, end: false);
-        var to = DateBound(_dayTo, _timeTo, end: true);
+        if (!IsRange) return DateBound(_day, _time) is { } one ? new FilterRule(Key, _op, one) : null;
+        var from = DateBound(_day, _time);
+        var to = DateBound(_dayTo, _timeTo);
         return from is null && to is null ? null : new FilterRule(Key, _op, new FilterValue.Range(from, to));
     }
 
@@ -295,11 +302,15 @@
 
     private void OnSlider(double value) => OnFrom(Snap(value));
 
+    // A thumb that did not move leaves its end as it was: an open end (drawn at the limit) stays open.
     private void OnRangeSlider(IReadOnlyList<double> values)
     {
         if (values.Count != 2) return;
-        (_from, _to) = (Snap(values[0]), Snap(values[1]));
-        if (Live) Commit(text: false);
+        var low = (double)(_from ?? _filter!.Min ?? 0);
+        var high = (double)(_to ?? _filter!.Max ?? 100);
+        if (values[0] != low) _from = Snap(values[0]);
+        if (values[1] != high) _to = Snap(values[1]);
+        if (values[0] != low || values[1] != high) { if (Live) Commit(text: false); }
     }
 
     private static decimal Snap(double value) => (decimal)value;
@@ -766,7 +777,8 @@
     {
         if (DataListDates.Bound(value, Context.Zone) is not { } local) return null;
         var day = local.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        return Timed && local.Time is { } time ? day + "T" + time.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) : day;
+        // A whole day has no time: its field shows the start of it (a date-time field cannot say "all day").
+        return Timed ? day + "T" + (local.Time ?? TimeOnly.MinValue).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) : day;
     }
 
     // The rule with another operator: an option rule keeps its values (one only with <c>is</c>), a text rule its text.

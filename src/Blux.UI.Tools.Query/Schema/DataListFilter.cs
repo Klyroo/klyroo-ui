@@ -70,10 +70,10 @@ public sealed class DataListFilter
     /// <summary>How a number editor shows its value: a field, a slider or both. Only number filters; a slider needs <see cref="Min"/> and <see cref="Max"/>, without them the editor shows the field.</summary>
     public DataListNumberDisplay NumberDisplay { get; private set; }
 
-    /// <summary>The .NET numeric format string the filter tag writes a number with (<c>N0</c>, <c>C2</c>, <c>0.0 'kg'</c>), in the culture of the user. <see langword="null"/> writes the number with its digits and the group separator of the culture.</summary>
-    public string? Format { get; private set; }
+    /// <summary>The .NET numeric format string the filter tag writes a number with (<c>N0</c>, <c>C2</c>, <c>0.0 'kg'</c>), in the culture of the user. It formats the tag only, not the field of the editor. <see langword="null"/> writes the number with its digits and the group separator of the culture.</summary>
+    public string? NumberFormat { get; private set; }
 
-    /// <summary>The most days a range of a date editor may cover, both ends included. <see langword="null"/> for no limit. An editor limit: a range in the URL is not checked against it.</summary>
+    /// <summary>The most days a range of a date editor may cover, both ends included. <see langword="null"/> for no limit. This limits the editor only (the calendar, the presets and the typed ends): a range in the URL, a bound state or a request is not checked against it, and neither is it on the server.</summary>
     public int? MaxRangeDays { get; private set; }
 
     /// <summary>Whether the user's last value is remembered between visits (browser storage), restored only when the URL has no value.</summary>
@@ -204,9 +204,9 @@ public sealed class DataListFilter
         return With(c => c.NumberDisplay = display);
     }
 
-    /// <summary>Sets the format the filter tag writes a number with. Only number filters.</summary>
+    /// <summary>Sets the format the filter tag writes a number with (the tag only, not the editor). Only number filters.</summary>
     /// <param name="format">A .NET numeric format string such as <c>N0</c> or <c>C2</c>.</param>
-    public DataListFilter WithFormat(string format)
+    public DataListFilter WithNumberFormat(string format)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(format);
         if (Kind != FilterKind.Number) throw new InvalidOperationException("Only a number filter has a format.");
@@ -218,10 +218,10 @@ public sealed class DataListFilter
         {
             throw new ArgumentException($"'{format}' is not a numeric format string.", nameof(format), e);
         }
-        return With(c => c.Format = format);
+        return With(c => c.NumberFormat = format);
     }
 
-    /// <summary>Limits the days a range of a date editor may cover (both ends included). Only date filters; the URL is not checked against it.</summary>
+    /// <summary>Limits the days a range of a date editor may cover (both ends included). Only date filters. An editor limit only: the URL and the server do not enforce it.</summary>
     /// <param name="days">At least 1.</param>
     public DataListFilter WithMaxRangeDays(int days)
     {

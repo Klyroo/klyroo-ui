@@ -21,6 +21,18 @@ public static class BxPathScope
     /// <param name="pathBase">The path base of the app, <c>Request.PathBase</c>; null or empty at the root.</param>
     public static string SidebarCookieName(string id, string? pathBase = null) => SidebarCookiePrefix(pathBase) + Uri.EscapeDataString(id);
 
+    /// <summary>
+    /// The name of a cookie that an app keeps under <paramref name="name"/> (<c>blux-timezone</c>): the name itself at the root and <c>{name}.{slug}~~</c> below a path base,
+    /// the same rule as <see cref="SidebarCookieName"/> without an id. The cookie path is the path base, "/" at the root.
+    /// </summary>
+    /// <param name="name">The name at the root.</param>
+    /// <param name="pathBase">The path base of the app, <c>Request.PathBase</c>; null or empty at the root.</param>
+    public static string CookieName(string name, string? pathBase = null)
+    {
+        var slug = Slug(pathBase);
+        return slug.Length == 0 ? name : $"{name}.{slug}~~";
+    }
+
     internal static string SidebarCookiePrefix(string? pathBase)
     {
         var slug = Slug(pathBase);

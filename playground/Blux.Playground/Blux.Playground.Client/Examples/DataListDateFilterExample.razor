@@ -1,6 +1,6 @@
 @* A date filter: the day an invoice was issued. Add the Issued filter and pick a day, or choose before, after or between; presets (Today, Yesterday, Start of month, Last 7 days...) are computed in the time zone of
    the user, and a range is picked on a range calendar whose second click applies it. This filter allows ranges of 92 days at most. The tag writes the days in the culture of the user ("Issued is between 1/3/2026 – 1/9/2026").
-   Statically rendered the presets are links and the day is a GET form with a native date field; the range is two date fields, and as there is no browser yet its days are the ones of UTC. *@
+   Statically rendered the presets are links and the day is a GET form with a native date field; the range is two date fields, and the days are those of the time zone the browser left in the blux-timezone cookie (UTC on the very first visit). *@
 <div class="w-full" data-testid="list-date">
     <BxDataList TItem="Invoice" Label="Invoices with a date filter" Schema="InvoiceDateFilterData.Schema" Items="InvoiceData.All" UrlKey="dat" />
 </div>
