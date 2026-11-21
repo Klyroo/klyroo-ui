@@ -1,0 +1,88 @@
+@using System.ComponentModel.DataAnnotations
+@inject CustomerStore Store
+@inject IToastService Toasts
+
+@* The form of a new customer, in a slideover. The country is searched in a remote source (BxSelectMenu with an options provider): a list of any size works, because
+   only the page that matches the search is loaded. *@
+<BxSlideover Open="Open" OpenChanged="OpenChanged" Title="New customer" Description="The customer is added to the table for this session." Side="SlideoverSide.Right" data-testid="new-customer">
+    <Body>
+        <BxForm Model="Model" FormName="new-customer" OnValidSubmit="CreateAsync" id="new-customer-form" class="flex flex-col gap-4">
+            <BxFormField Label="Name" Required For="() => Model!.Name">
+                <BxInput @bind-Value="Model!.Name" autocomplete="off" data-testid="new-name" />
+            </BxFormField>
+            <BxFormField Label="Email" Required For="() => Model!.Email">
+                <BxInput @bind-Value="Model!.Email" Type="email" autocomplete="off" data-testid="new-email" />
+            </BxFormField>
+            <BxFormField Label="Company" For="() => Model!.Company">
+                <BxInput @bind-Value="Model!.Company" autocomplete="off" />
+            </BxFormField>
+            <BxFormField Label="Country" Required Error="@_countryError">
+                <BxSelectMenu OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
+                              Value="_country" ValueChanged="OnCountry" data-testid="new-country" />
+            </BxFormField>
+            <BxFormField Label="Plan">
+                <BxSelect Items="_plans" @bind-Value="Model!.Plan" />
+            </BxFormField>
+        </BxForm>
+    </Body>
+    <Footer>
+        <BxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
+        <BxButton Label="Create customer" Type="submit" form="new-customer-form" data-testid="new-create" />
+    </Footer>
+</BxSlideover>
+
+@code {
+    private static readonly BxSelectItem[] _plans = [.. CustomerData.Plans.Select(p => new BxSelectItem(p, p))];
+
+    // Bound to the posted form: a static post (before the page is interactive) is validated by the server like an interactive one.
+    [SupplyParameterFromForm(FormName = "new-customer")]
+    private NewCustomer? Model { get; set; }
+
+    private IReadOnlyList<string> _country = [];
+    private string? _countryError;
+
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    /// <summary>Raised with the customer that was added, for the page to say so where it is always visible.</summary>
+    [Parameter] public EventCallback<Customer> OnCreated { get; set; }
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private void OnCountry(IReadOnlyList<string>? value)
+    {
+        _country = value ?? [];
+        _countryError = null;
+    }
+
+    private async Task CreateAsync()
+    {
+        if (_country.Count == 0)
+        {
+            _countryError = "Pick a country.";
+            return;
+        }
+        var customer = Store.Add(Model!.Name!.Trim(), Model!.Email!.Trim(), string.IsNullOrWhiteSpace(Model!.Company) ? "Independent" : Model!.Company.Trim(), CountryDirectory.NameOf(_country[0]), Model!.Plan);
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Customer added", Description = $"{customer.Name} is in the table.", Color = BxColor.Success });
+        Model!.Name = Model!.Email = Model!.Company = null;
+        Model!.Plan = "Free";
+        _country = [];
+        await OnCreated.InvokeAsync(customer);
+        await OpenChanged.InvokeAsync(false);
+    }
+
+    public sealed class NewCustomer
+    {
+        [Required(ErrorMessage = "The name is required.")]
+        public string? Name { get; set; }
+
+        [Required(ErrorMessage = "The email is required.")]
+        [EmailAddress(ErrorMessage = "This is not an email address.")]
+        public string? Email { get; set; }
+
+        public string? Company { get; set; }
+
+        public string Plan { get; set; } = "Free";
+    }
+}

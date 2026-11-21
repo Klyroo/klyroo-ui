@@ -1,0 +1,31 @@
+@* A page with one panel: the navbar (with an optional toolbar under it) and a scrolling body. *@
+<BxDashboardPanel>
+    <Header>
+        <AppNavbar Title="@Title" Actions="Actions" />
+        @Toolbar
+    </Header>
+    <Body>
+        <div class="mx-auto flex w-full max-w-[72rem] flex-col gap-6 @Class" data-testid="@TestId">
+            @ChildContent
+        </div>
+    </Body>
+</BxDashboardPanel>
+
+@code {
+    /// <summary>The title of the page, in the navbar.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Actions of the page, in the navbar.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    /// <summary>A <c>BxDashboardToolbar</c> under the navbar.</summary>
+    [Parameter] public RenderFragment? Toolbar { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Classes added to the content of the page.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>A test id for the content of the page.</summary>
+    [Parameter] public string? TestId { get; set; }
+}

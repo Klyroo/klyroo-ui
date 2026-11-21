@@ -37,6 +37,9 @@
     <Project Path="templates/starter/src/Starter.Shared/Starter.Shared.csproj" />
     <Project Path="templates/starter/src/Starter.Web/Starter.Web.csproj" />
     <Project Path="templates/starter/src/Starter.Web.Client/Starter.Web.Client.csproj" />
+    <Project Path="templates/dashboard/src/Dashboard.Shared/Dashboard.Shared.csproj" />
+    <Project Path="templates/dashboard/src/Dashboard.Web/Dashboard.Web.csproj" />
+    <Project Path="templates/dashboard/src/Dashboard.Web.Client/Dashboard.Web.Client.csproj" />
     <Project Path="templates/landing/src/Landing.Web/Landing.Web.csproj" />
     <Project Path="templates/docs/src/Docs.Web/Docs.Web.csproj" />
     <Project Path="templates/changelog/src/Changelog.Web/Changelog.Web.csproj" />

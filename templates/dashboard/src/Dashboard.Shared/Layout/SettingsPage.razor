@@ -1,0 +1,37 @@
+@* The frame of the four settings pages: the app page, a toolbar with the sections, and a column for the forms. *@
+<AppPage Title="Settings" TestId="@TestId">
+    <Toolbar>
+        <BxDashboardToolbar>
+            <Left>
+                <BxNavigationMenu Items="_sections" Orientation="BxOrientation.Horizontal" AriaLabel="Settings sections" />
+            </Left>
+        </BxDashboardToolbar>
+    </Toolbar>
+    <ChildContent>
+        <div class="mx-auto flex w-full max-w-2xl flex-col gap-6">
+            <header class="flex flex-col gap-1">
+                <h2 class="text-xl font-semibold text-(--blux-text-highlighted)">@Heading</h2>
+                <p class="text-sm text-(--blux-text-muted)">@Description</p>
+            </header>
+            @ChildContent
+        </div>
+    </ChildContent>
+</AppPage>
+
+@code {
+    private static readonly BxNavigationItem[] _sections =
+    [
+        new("General") { Href = "settings", Exact = true },
+        new("Members") { Href = "settings/members" },
+        new("Notifications") { Href = "settings/notifications" },
+        new("Security") { Href = "settings/security" },
+    ];
+
+    [Parameter, EditorRequired] public string Heading { get; set; } = "";
+
+    [Parameter] public string? Description { get; set; }
+
+    [Parameter] public string? TestId { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

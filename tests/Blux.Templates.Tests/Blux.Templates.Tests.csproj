@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blux.UI\Blux.UI.csproj" />
+    <ProjectReference Include="..\..\src\Blux.UI.Tools.Query\Blux.UI.Tools.Query.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -31,6 +32,10 @@
     <Compile Include="..\..\templates\changelog\src\Changelog.Web\ReleaseNotes\*.cs" LinkBase="Changelog" />
     <!-- The sample releases the Changelog template ships. -->
     <None Include="..\..\templates\changelog\src\Changelog.Web\data\releases.json" Link="changelog-releases.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The data and the services of the Dashboard template: plain C#, no Razor, so the sample data, the schema of the customer table and the stores are tested as they are. -->
+    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Data\*.cs" LinkBase="Dashboard\Data" />
+    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Services\AppStores.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppState.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppearanceStore.cs" LinkBase="Dashboard\Services" />
+    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Components\RowSelection.cs" LinkBase="Dashboard\Components" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
     <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
   </ItemGroup>

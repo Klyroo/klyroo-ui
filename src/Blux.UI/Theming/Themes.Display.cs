@@ -34,7 +34,7 @@ internal static partial class Themes
         new ComponentTheme("avatar", "root", "image", "fallback")
             .Slot("root", "relative inline-flex items-center justify-center shrink-0 select-none overflow-hidden rounded-full align-middle bg-(--blux-bg-accented)")
             .Slot("image", "absolute inset-0 size-full object-cover")
-            .Slot("fallback", "font-medium leading-none text-(--blux-text-muted) truncate")
+            .Slot("fallback", "font-medium leading-none text-(--blux-text) truncate")
             .Variant("size", "xs", "root", "size-6 text-[10px]")
             .Variant("size", "sm", "root", "size-7 text-xs")
             .Variant("size", "md", "root", "size-8 text-sm")

@@ -1,0 +1,22 @@
+# Build results
+bin/
+obj/
+publish/
+artifacts/
+TestResults/
+*.log
+
+# User-specific files
+.vs/
+.idea/
+*.user
+*.suo
+*.userprefs
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Secrets
+.env
+*.pfx
