@@ -139,6 +139,21 @@ public class BundleTests
     }
 
     [Fact]
+    public void Extension_options_can_be_given_to_the_builder_without_changing_the_bundle_of_core()
+    {
+        var withExtension = BundleBuilder.Build(TestSupport.RepoRoot, [typeof(SisterOptions)]);
+
+        Assert.Equal(
+            JsonSerializer.Serialize(TestSupport.Bundle, DocsBundle.JsonOptions),
+            JsonSerializer.Serialize(withExtension, DocsBundle.JsonOptions));
+    }
+
+    public sealed class SisterOptions
+    {
+        public Blux.UI.Theming.ComponentTheme Sister { get; } = new Blux.UI.Theming.ComponentTheme("sister", "root").Slot("root", "flex");
+    }
+
+    [Fact]
     public void The_tool_has_the_version_of_the_library()
     {
         string Read(string tag) =>

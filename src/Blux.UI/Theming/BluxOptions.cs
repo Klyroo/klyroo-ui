@@ -126,11 +126,92 @@ public sealed partial class BluxOptions
             : _resolved.GetOrAdd(culture.Name, _ => BxLocales.Resolve(culture, _locales));
     }
 
-    /// <summary>Every theme, whichever file declares it. Feeds the Tailwind build and the generated-assets tests.</summary>
-    internal IEnumerable<ComponentTheme> AllThemes =>
-        typeof(BluxOptions).GetProperties()
-            .Where(p => p.PropertyType == typeof(ComponentTheme))
-            .Select(p => (ComponentTheme)p.GetValue(this)!);
+    private const System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes ExtensionMembers =
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicParameterlessConstructor |
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties;
+
+    private readonly object _extensionsGate = new();
+    private readonly Dictionary<Type, object> _extensions = [];
+
+    /// <summary>
+    /// The options of a sister package, created on the first call and shared afterwards: one instance per <typeparamref name="T"/>
+    /// and per <see cref="BluxOptions"/>, whichever thread asks first. Its public <see cref="ComponentTheme"/> properties are themes
+    /// like those of this class: <see cref="AllThemes"/> lists them, the Tailwind class extractor and the docs bundle read them, and a theme
+    /// becomes read-only when a component resolves it, with the same <see cref="InvalidOperationException"/> as the themes of this class.
+    /// </summary>
+    /// <typeparam name="T">A class of the package with a public parameterless constructor.</typeparam>
+    /// <example>
+    /// The options of a package, and the <c>AddAcme</c> that configures them next to <c>AddBluxUi</c>:
+    /// <code>
+    /// public sealed class AcmeOptions
+    /// {
+    ///     public ComponentTheme Gauge { get; } = new ComponentTheme("gauge", "root").Slot("root", "relative inline-flex");
+    /// }
+    ///
+    /// public static class AcmeServiceCollectionExtensions
+    /// {
+    ///     public static IServiceCollection AddAcme(this IServiceCollection services, Action&lt;AcmeOptions&gt;? configure = null)
+    ///     {
+    ///         services.AddBluxUi(options => configure?.Invoke(options.Extension&lt;AcmeOptions&gt;()));
+    ///         return services;
+    ///     }
+    /// }
+    /// </code>
+    /// A component of the package reads <c>Options.Extension&lt;AcmeOptions&gt;().Gauge</c> and resolves it with the protected <c>ResolveSlots</c> of
+    /// <see cref="BxComponentBase"/>; an app overrides it with <c>services.AddAcme(a =&gt; a.Gauge.Slot("root", "..."))</c>.
+    /// </example>
+    public T Extension<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] T>() where T : class, new() => (T)Extension(typeof(T));
+
+    /// <summary>The non-generic form of <see cref="Extension{T}"/>, for tooling. <paramref name="type"/> must be a non-abstract class with a public parameterless constructor.</summary>
+    public object Extension([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] Type type)
+    {
+        ArgumentNullException.ThrowIfNull(type);
+        if (!type.IsClass || type.IsAbstract || type.GetConstructor(Type.EmptyTypes) is null)
+        {
+            throw new ArgumentException($"{type} cannot be an extension of {nameof(BluxOptions)}: it must be a non-abstract class with a public parameterless constructor.", nameof(type));
+        }
+        lock (_extensionsGate)
+        {
+            if (!_extensions.TryGetValue(type, out var instance))
+            {
+                instance = Activator.CreateInstance(type)!;
+                _extensions[type] = instance;
+            }
+            return instance;
+        }
+    }
+
+    /// <summary>The options objects registered so far with <see cref="Extension{T}"/>, ordered by type name.</summary>
+    public IReadOnlyList<object> Extensions
+    {
+        get
+        {
+            lock (_extensionsGate)
+            {
+                return [.. _extensions.Values.OrderBy(e => e.GetType().FullName, StringComparer.Ordinal)];
+            }
+        }
+    }
+
+    /// <summary>
+    /// Every theme: the <see cref="ComponentTheme"/> properties of this class, whichever file declares them, then those of each registered
+    /// <see cref="Extension{T}"/>. Feeds the Tailwind build and the generated-assets tests.
+    /// </summary>
+    public IEnumerable<ComponentTheme> AllThemes =>
+        ThemesOf(this).Concat(Extensions.SelectMany(ThemesOf));
+
+    /// <summary>The public instance <see cref="ComponentTheme"/> properties of an options object, with their names.</summary>
+    [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2075",
+        Justification = "The options object is BluxOptions or an instance created by Extension, which keeps the public properties of its type.")]
+    public static IEnumerable<KeyValuePair<string, ComponentTheme>> NamedThemesOf(object options)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        return options.GetType().GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+            .Where(p => p.PropertyType == typeof(ComponentTheme) && p.CanRead && p.GetIndexParameters().Length == 0)
+            .Select(p => new KeyValuePair<string, ComponentTheme>(p.Name, (ComponentTheme)p.GetValue(options)!));
+    }
+
+    private static IEnumerable<ComponentTheme> ThemesOf(object options) => NamedThemesOf(options).Select(p => p.Value);
 }
 
 public static class BluxServiceCollectionExtensions
