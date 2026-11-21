@@ -60,6 +60,10 @@
         navigation manager is never called (with <code>BlazorDisableThrowNavigationException</code> it would turn the call into a real redirect of the request). The raw
         <code>Set</code> needs <code>Query.UseRenderer(RendererInfo)</code> first and throws on the server without it.
     </p>
+    <p>
+        A static render or a prerender of a data list with date filters also needs the time zone of the user: the script of <code>Blux.UI.Tools</code> stores it in a cookie, and
+        <code>AddBluxServer()</code> of the package <code>Blux.UI.Server</code> lets the server read it (see <a href="/docs/installation">Installation</a>). Without that call the days are cut in UTC until the page is interactive.
+    </p>
     <CodeBlock Title="StaticLinks.razor" Code="@Links" />
 
     <h2>Codecs</h2>

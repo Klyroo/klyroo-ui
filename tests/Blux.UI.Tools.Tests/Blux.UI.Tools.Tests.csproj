@@ -17,6 +17,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Blux.UI.Tools\Blux.UI.Tools.csproj" />
     <ProjectReference Include="..\..\src\Blux.UI.Tools.Query\Blux.UI.Tools.Query.csproj" />
+    <!-- AddBluxServer: the request cookies of a static render. -->
+    <ProjectReference Include="..\..\src\Blux.UI.Server\Blux.UI.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>
