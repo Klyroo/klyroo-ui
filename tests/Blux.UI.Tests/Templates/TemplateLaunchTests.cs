@@ -29,10 +29,18 @@ public class TemplateLaunchTests
     public void A_demo_path_is_below_templates_name_demo(string path, bool expected) =>
         Assert.Equal(expected, TemplateLaunch.IsDemoPath(path, ["starter"]));
 
+    private static readonly TemplateLaunch.ChildSettings NoWatchdog = new(null, 1, 0);
+
+    [Theory]
+    [InlineData("/Templates/Starter/Demo/about", true)]
+    [InlineData("/TEMPLATES/STARTER/DEMO", true)]
+    public void Demo_paths_are_matched_without_regard_to_case(string path, bool expected) =>
+        Assert.Equal(expected, TemplateLaunch.IsDemoPath(path, ["starter"]));
+
     [Fact]
     public void A_published_demo_is_started_with_dotnet_on_its_dll_on_a_loopback_port_below_its_path_base()
     {
-        var command = TemplateLaunch.Build(TemplateRunMode.Published, "Starter.Web", "/srv/demos/starter", "/srv/demos/starter", 41234, "/templates/starter/demo");
+        var command = TemplateLaunch.Build(TemplateRunMode.Published, "Starter.Web", "/srv/demos/starter", "/srv/demos/starter", 41234, "/templates/starter/demo", [], NoWatchdog);
 
         Assert.Equal("dotnet", command.FileName);
         Assert.Equal(
@@ -46,13 +54,80 @@ public class TemplateLaunchTests
     [Fact]
     public void A_development_demo_runs_the_build_output_from_the_project_folder_in_Development()
     {
-        var command = TemplateLaunch.Build(TemplateRunMode.Development, "Starter.Web", "/repo/templates/starter/src/Starter.Web/bin/Debug/net10.0", "/repo/templates/starter/src/Starter.Web", 5000, "/sub/templates/starter/demo");
+        var command = TemplateLaunch.Build(TemplateRunMode.Development, "Starter.Web", "/repo/templates/starter/src/Starter.Web/bin/Debug/net10.0", "/repo/templates/starter/src/Starter.Web", 5000, "/sub/templates/starter/demo", [], NoWatchdog);
 
         Assert.Equal(Path.Combine("/repo/templates/starter/src/Starter.Web/bin/Debug/net10.0", "Starter.Web.dll"), command.Arguments[0]);
         Assert.Equal("/repo/templates/starter/src/Starter.Web", command.WorkingDirectory);
         Assert.Equal("Development", command.Environment["ASPNETCORE_ENVIRONMENT"]);
         Assert.Contains("--PathBase=/sub/templates/starter/demo", command.Arguments);
     }
+
+    private static Dictionary<string, string> Env(Dictionary<string, string?> host, TemplateLaunch.ChildSettings? settings = null, TemplateRunMode mode = TemplateRunMode.Published) =>
+        new(TemplateLaunch.ChildEnvironment(host, mode, settings ?? NoWatchdog));
+
+    [Fact]
+    public void A_demo_gets_what_a_dotnet_app_needs_from_the_host_and_nothing_else()
+    {
+        var host = new Dictionary<string, string?>
+        {
+            ["PATH"] = "/usr/bin", ["HOME"] = "/home/x", ["LANG"] = "fr_FR.UTF-8", ["LC_ALL"] = "C", ["TZ"] = "UTC", ["TMPDIR"] = "/tmp",
+            ["DOTNET_ROOT"] = "/usr/share/dotnet", ["DOTNET_gcServer"] = "0",
+            ["Kestrel__Endpoints__Https__Url"] = "https://*:443", ["ASPNETCORE_Kestrel__Certificates__Default__Password"] = "hunter2",
+            ["ASPNETCORE_URLS"] = "http://*:80", ["Blux__Templates__PublishRoot"] = "/srv", ["Blux__Ai__Key"] = "secret",
+            ["ConnectionStrings__Main"] = "Server=db", ["GITHUB_TOKEN"] = "ghp_x", ["PathBase"] = "/sub",
+            ["DOTNET_URLS"] = "http://*:81", ["DOTNET_ENVIRONMENT"] = "Staging", ["DOTNET_STARTUP_HOOKS"] = "/evil.dll",
+        };
+
+        var env = Env(host);
+
+        Assert.Equal("/usr/bin", env["PATH"]);
+        Assert.Equal("/home/x", env["HOME"]);
+        Assert.Equal("fr_FR.UTF-8", env["LANG"]);
+        Assert.Equal("C", env["LC_ALL"]);
+        Assert.Equal("UTC", env["TZ"]);
+        Assert.Equal("/usr/share/dotnet", env["DOTNET_ROOT"]);
+        Assert.Equal("0", env["DOTNET_gcServer"]);
+        string[] leaked = ["Kestrel__Endpoints__Https__Url", "ASPNETCORE_Kestrel__Certificates__Default__Password", "ASPNETCORE_URLS", "Blux__Templates__PublishRoot",
+            "Blux__Ai__Key", "ConnectionStrings__Main", "GITHUB_TOKEN", "PathBase", "DOTNET_URLS", "DOTNET_ENVIRONMENT", "DOTNET_STARTUP_HOOKS"];
+        Assert.All(leaked, name => Assert.DoesNotContain(name, env.Keys));
+    }
+
+    [Fact]
+    public void The_supervisor_decides_the_environment_the_memory_the_hook_and_the_parent()
+    {
+        var host = new Dictionary<string, string?> { ["ASPNETCORE_ENVIRONMENT"] = "Staging", ["DOTNET_GCHeapHardLimit"] = "1", ["DOTNET_GCConserveMemory"] = "0" };
+
+        var env = Env(host, new TemplateLaunch.ChildSettings("/app/Blux.Playground.DemoWatchdog.dll", 4242, 512));
+
+        Assert.Equal("Production", env["ASPNETCORE_ENVIRONMENT"]);
+        Assert.Equal("5", env["DOTNET_GCConserveMemory"]);
+        Assert.Equal("20000000", env["DOTNET_GCHeapHardLimit"]);
+        Assert.Equal("/app/Blux.Playground.DemoWatchdog.dll", env["DOTNET_STARTUP_HOOKS"]);
+        Assert.Equal("1", env["BLUX_WATCHDOG_STDIN"]);
+        Assert.Equal("4242", env["BLUX_WATCHDOG_PARENT_PID"]);
+        Assert.Equal("Development", Env(host, mode: TemplateRunMode.Development)["ASPNETCORE_ENVIRONMENT"]);
+    }
+
+    [Fact]
+    public void Without_a_limit_or_a_hook_neither_is_set_even_if_the_host_had_one()
+    {
+        var env = Env(new Dictionary<string, string?> { ["DOTNET_GCHeapHardLimit"] = "1", ["DOTNET_STARTUP_HOOKS"] = "/x.dll" });
+
+        Assert.DoesNotContain("DOTNET_GCHeapHardLimit", env.Keys);
+        Assert.DoesNotContain("DOTNET_STARTUP_HOOKS", env.Keys);
+        Assert.DoesNotContain("BLUX_WATCHDOG_STDIN", env.Keys);
+        Assert.DoesNotContain("BLUX_WATCHDOG_PARENT_PID", env.Keys);
+    }
+
+    [Theory]
+    [InlineData(200, "<head><base href=\"/templates/starter/demo/\" /></head>", "/templates/starter/demo", true)]
+    [InlineData(302, "<BASE HREF=\"/templates/starter/demo/\">", "/templates/starter/demo/", true)]
+    [InlineData(404, "<base href=\"/templates/starter/demo/\" />", "/templates/starter/demo", false)]
+    [InlineData(200, "<html>some other program</html>", "/templates/starter/demo", false)]
+    [InlineData(200, "<base href=\"/\" />", "/templates/starter/demo", false)]
+    [InlineData(502, "", "/templates/starter/demo", false)]
+    public void An_answer_is_the_demos_when_it_succeeds_and_is_its_own_page(int status, string body, string pathBase, bool expected) =>
+        Assert.Equal(expected, TemplateLaunch.IsDemoResponse(status, body, pathBase));
 
     [Fact]
     public void The_probe_asks_for_the_home_page_below_the_path_base_and_the_proxy_for_the_root()

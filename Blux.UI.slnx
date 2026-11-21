@@ -14,10 +14,13 @@
     <Project Path="tests/Blux.UI.Images.Local.Tests/Blux.UI.Images.Local.Tests.csproj" />
     <Project Path="tests/Blux.UI.Mcp.Tests/Blux.UI.Mcp.Tests.csproj" />
     <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />
+    <Project Path="tests/Blux.Playground.Tests/Blux.Playground.Tests.csproj" />
+    <Project Path="tests/Blux.UI.FakeDemo/Blux.UI.FakeDemo.csproj" />
   </Folder>
   <Folder Name="/playground/">
     <Project Path="playground/Blux.Playground/Blux.Playground/Blux.Playground.csproj" />
     <Project Path="playground/Blux.Playground/Blux.Playground.Client/Blux.Playground.Client.csproj" />
+    <Project Path="playground/Blux.Playground/Blux.Playground.DemoWatchdog/Blux.Playground.DemoWatchdog.csproj" />
   </Folder>
   <Folder Name="/templates/">
     <Project Path="templates/starter/src/Starter.Shared/Starter.Shared.csproj" />

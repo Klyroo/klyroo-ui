@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Integration tests of the supervisor of the template demos in the docs host: a real host, real child processes (a fake demo), real HTTP. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\playground\Blux.Playground\Blux.Playground\Blux.Playground.csproj" />
+    <!-- Built first; the tests copy its output next to a temporary "publish root" and run it as a demo. -->
+    <ProjectReference Include="..\Blux.UI.FakeDemo\Blux.UI.FakeDemo.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
