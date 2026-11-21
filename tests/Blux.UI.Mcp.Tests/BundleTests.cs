@@ -139,6 +139,76 @@ public class BundleTests
     }
 
     [Fact]
+    public void Extension_options_can_be_given_to_the_builder_without_changing_the_bundle_of_core()
+    {
+        var withExtension = BundleBuilder.Build(TestSupport.RepoRoot, [typeof(SisterOptions)]);
+
+        Assert.Equal(
+            JsonSerializer.Serialize(TestSupport.Bundle, DocsBundle.JsonOptions),
+            JsonSerializer.Serialize(withExtension, DocsBundle.JsonOptions));
+    }
+
+    public sealed class SisterOptions
+    {
+        public Blux.UI.Theming.ComponentTheme Sister { get; } = new Blux.UI.Theming.ComponentTheme("sister", "root").Slot("root", "flex");
+
+        // Same property name as the Button theme of core.
+        public Blux.UI.Theming.ComponentTheme Button { get; } = new Blux.UI.Theming.ComponentTheme("sister-button", "root").Slot("root", "grid");
+    }
+
+    public sealed class FakeGauge : Blux.UI.Theming.BxComponentBase;
+
+    public sealed class FakeButton : Blux.UI.Theming.BxComponentBase;
+
+    public sealed class FakeNamedSister : Blux.UI.Theming.BxComponentBase;
+
+    [Fact]
+    public void A_component_of_an_extension_assembly_maps_to_its_own_theme_even_when_core_has_one_of_the_same_name()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "blux-bundle-" + Guid.NewGuid().ToString("N"));
+        var components = Path.Combine(root, "src", typeof(FakeGauge).Assembly.GetName().Name!, "Components");
+        Directory.CreateDirectory(components);
+        try
+        {
+            File.WriteAllText(Path.Combine(components, "FakeGauge.razor.cs"),
+                "var theme = Options.Extension<Blux.UI.Mcp.Tests.BundleTests.SisterOptions>().Sister; var core = Options.Card;");
+            File.WriteAllText(Path.Combine(components, "FakeButton.razor.cs"),
+                "var theme = Options.Extension<SisterOptions>().Button;");
+            File.WriteAllText(Path.Combine(components, "FakeNamedSister.razor.cs"), "// no theme access");
+
+            Type[] extensions = [typeof(SisterOptions)];
+
+            var gauge = BundleBuilder.ThemeFor(typeof(FakeGauge), root, extensions);
+            Assert.NotNull(gauge);
+            Assert.Equal("sister", gauge.Name);
+            Assert.Equal("Sister", gauge.Property);
+            Assert.Equal("flex", gauge.Slots["root"]);
+
+            var button = BundleBuilder.ThemeFor(typeof(FakeButton), root, extensions);
+            Assert.Equal("sister-button", button!.Name);
+            Assert.Equal("grid", button.Slots["root"]);
+
+            // No access in the source and no theme of that name: nothing to describe.
+            Assert.Null(BundleBuilder.ThemeFor(typeof(FakeNamedSister), root, extensions));
+            // Without the extension registered, only the plain core access of the source (Options.Card) is left.
+            Assert.Equal("Card", BundleBuilder.ThemeFor(typeof(FakeGauge), root)!.Property);
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void A_core_component_still_maps_to_its_core_theme_when_an_extension_has_the_same_name()
+    {
+        var button = BundleBuilder.ThemeFor(typeof(Blux.UI.BxButton), TestSupport.RepoRoot, [typeof(SisterOptions)]);
+
+        Assert.Equal("Button", button!.Property);
+        Assert.NotEqual("sister-button", button.Name);
+    }
+
+    [Fact]
     public void The_tool_has_the_version_of_the_library()
     {
         string Read(string tag) =>
