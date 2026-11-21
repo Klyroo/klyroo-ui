@@ -145,8 +145,14 @@ live in each project file, like the output of `dotnet new`, and it refers to the
   works below a path base), and a second export is renamed with `rename.cs` and built. It needs the network.
 - The MAUI heads are built here from the source of the library only (the `maui` CI job). Building a head against the packed package, as a user does,
   is left to the CI of the exported repository: `verify-templates` does not build MAUI heads because it has no workloads.
-- The browser check of `verify-templates` publishes the web project and runs the browser class of the template (`browserClass` in the script: `TemplateTests` for the Starter, `LandingTemplateTests` for the Landing) against the published folder in
+- The browser check of `verify-templates` publishes the web project and runs the browser class of the template (`browserClass` in the script: `TemplateTests` for the Starter, `LandingTemplateTests` for the Landing, `DocsTemplateTests` for the Docs) against the published folder in
   Production (it needs Chromium for Playwright; `--no-browser` skips it).
+- `templates/_shared/Content` is not a template: it is the reference copy of the Markdown content code (Markdig and YamlDotNet: front matter, navigation, search index,
+  highlighting, sanitizing) that every content template (Docs, then SaaS, Portfolio and Changelog) carries in its own `src/<Project>/Content` folder, so each stays a
+  complete repository. Folders that start with an underscore are skipped as templates (`export-template.mjs` refuses them, `verify-templates.mjs` only requires
+  the other folders to be in its list). Change shared code in the reference, copy the folder over each template's `Content` (`cp templates/_shared/Content/*.cs
+  templates/<name>/src/<Project>/Content/`), and run `dotnet test --project tests/Blux.Templates.Tests`: its unit tests compile the reference, and
+  `TemplateCopyTests` fails when a copy has a file that differs, is missing or is extra. The reference must not contain a template name (`rename.cs` would rewrite it in the copy).
 - A template sets `PathBase` support in `Program.cs` and `App.razor` (see the Starter or the Landing) so its live demo can run below `/templates/<name>/demo/`.
 
 ### Live demos in the docs deployment
@@ -179,6 +185,8 @@ What the host guarantees, whatever supervises it:
   the E2E fixture: they answer loopback clients only (404 behind a proxy), and `ready` is 200 once every demo that can be started answers; a demo that is
   not built or published is `unavailable` and does not hold it back. Do not use them as the health check: a restarting demo must not take the site out.
 - While a demo restarts, its address answers 503 with a small page that reloads itself; a demo's own 404 is never replaced by the docs' page.
+
+Tests of the shared content code and of the copies: `tests/Blux.Templates.Tests`.
 
 Tests: `tests/Blux.Playground.Tests` (supervisor, proxy, environment and watchdog with a fake demo, `tests/Blux.UI.FakeDemo`), `TemplatesTests`,
 `TemplatesPathBaseTests` and `TemplateWatchdogTests` in the E2E project. Set `BLUX_TEMPLATES_PUBLISHED` to a publish root to run the demos published.

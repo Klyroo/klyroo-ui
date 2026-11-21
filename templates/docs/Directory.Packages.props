@@ -1,0 +1,12 @@
+<Project>
+  <!-- Central package management: the versions of every package of the solution, in one place. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Blux.UI" Version="0.1.0-alpha" />
+    <!-- Markdown to HTML (BSD-2-Clause) and the YAML of the front matter (MIT). -->
+    <PackageVersion Include="Markdig" Version="1.6.0" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
+  </ItemGroup>
+</Project>

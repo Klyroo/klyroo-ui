@@ -189,3 +189,144 @@ document.addEventListener('keydown', (event) => {
     return;
   }
 });
+
+// A BxContentSearch with an IndexUrl does not carry its pages: the first time its dialog opens, the JSON file is fetched and the options are built
+// from the markup of the hidden element that the component rendered (so they have the classes of the palette). A page keeps the result: opening the
+// search again, or a second search that names the same file, does not fetch again. A failed fetch says so in a live region and offers a retry.
+const indexRequests = new Map();
+let groupCounter = 0;
+
+function indexAddress(dialog) {
+  const url = new URL(dialog.getAttribute('data-bx-content-search-index'), document.baseURI);
+  // Same origin only: the file is the page's own data, and the options it makes are links the visitor will follow.
+  if (url.origin !== location.origin) throw new Error('The search index must be on the same origin as the page.');
+  return url.href;
+}
+
+function fetchIndex(address) {
+  let request = indexRequests.get(address);
+  if (!request) {
+    request = fetch(address, { headers: { Accept: 'application/json' }, credentials: 'same-origin' })
+      .then((response) => {
+        if (!response.ok) throw new Error(`The search index answered ${response.status}.`);
+        return response.json();
+      })
+      .then((pages) => {
+        if (!Array.isArray(pages)) throw new Error('The search index is not an array of pages.');
+        return pages;
+      });
+    // A failure is not kept: the retry fetches again.
+    request.catch(() => indexRequests.delete(address));
+    indexRequests.set(address, request);
+  }
+  return request;
+}
+
+const text = (value) => (typeof value === 'string' ? value : '');
+
+// A link of the index is relative to the page or http(s): a script or data address is never made into an option.
+function isSafeHref(href) {
+  const cleaned = href.replace(/[\u0000- ]/g, '');
+  const scheme = /^([A-Za-z][A-Za-z0-9+.-]*):/.exec(cleaned);
+  return !scheme || /^https?$/i.test(scheme[1]);
+}
+
+function buildIndex(dialog, pages) {
+  const listbox = dialog.querySelector('bx-command-palette [role="listbox"]');
+  const template = dialog.querySelector('[data-bx-content-search-template]');
+  if (!listbox || !template) return;
+  const pageOption = template.querySelector('[data-template="page"]');
+  const headingOption = template.querySelector('[data-template="heading"]');
+  const groupTemplate = template.querySelector('[role="group"]');
+
+  // Pages without a group come first, then the groups in the order of their first page, as BxContentSearch does for Pages.
+  const ungrouped = [];
+  const groups = new Map();
+  for (const page of pages) {
+    const group = text(page?.group);
+    if (!group) ungrouped.push(page);
+    else if (groups.has(group)) groups.get(group).push(page);
+    else groups.set(group, [page]);
+  }
+
+  const option = (source, label, description, href, search) => {
+    const element = source.cloneNode(true);
+    element.removeAttribute('data-template');
+    element.setAttribute('href', href);
+    element.setAttribute('data-value', href);
+    element.setAttribute('data-search', search);
+    element.querySelector('[data-slot="label"]').textContent = label;
+    const descriptionElement = element.querySelector('[data-slot="description"]');
+    if (description) descriptionElement.textContent = description;
+    else descriptionElement.remove();
+    return element;
+  };
+
+  const addPages = (container, list, groupLabel) => {
+    for (const page of list) {
+      const title = text(page?.title);
+      const href = text(page?.href);
+      if (!title || !href || !isSafeHref(href)) continue;
+      const description = text(page.description);
+      container.append(option(pageOption, title, description, href, [title, description, text(page.keywords), groupLabel].filter(Boolean).join(' ')));
+      for (const heading of Array.isArray(page.headings) ? page.headings : []) {
+        const label = text(heading?.text);
+        const id = text(heading?.id);
+        if (!label || !id) continue;
+        // A heading is found by its own words and the title of its page: the text of the page is not repeated for each of them.
+        container.append(option(headingOption, label, title, `${href}#${id}`, [label, title, groupLabel].filter(Boolean).join(' ')));
+      }
+    }
+  };
+
+  const fragment = document.createDocumentFragment();
+  addPages(fragment, ungrouped, '');
+  for (const [label, list] of groups) {
+    const group = groupTemplate.cloneNode(true);
+    const labelElement = group.firstElementChild;
+    labelElement.textContent = label;
+    labelElement.id = `bx-content-search-group-${++groupCounter}`;
+    group.setAttribute('aria-labelledby', labelElement.id);
+    addPages(group, list, label);
+    fragment.append(group);
+  }
+  listbox.append(fragment);
+}
+
+async function loadIndex(dialog) {
+  const state = dialog.dataset.bxIndexState;
+  if (state === 'loading' || state === 'loaded') return;
+  dialog.dataset.bxIndexState = 'loading';
+  const box = dialog.querySelector('[data-bx-content-search-state]');
+  const message = box?.querySelector('[data-slot="message"]');
+  const retry = box?.querySelector('[data-slot="retry"]');
+  const texts = box?.querySelector('[data-loading-text]');
+  const show = (value, alert) => {
+    if (!box || !message) return;
+    box.hidden = !value;
+    message.setAttribute('role', alert ? 'alert' : 'status');
+    message.textContent = value;
+  };
+  if (retry) retry.hidden = true;
+  show(texts?.getAttribute('data-loading-text') ?? '', false);
+  try {
+    buildIndex(dialog, await fetchIndex(indexAddress(dialog)));
+    dialog.dataset.bxIndexState = 'loaded';
+    show('', false);
+  } catch {
+    dialog.dataset.bxIndexState = 'error';
+    show(texts?.getAttribute('data-error-text') ?? '', true);
+    if (retry) {
+      retry.hidden = false;
+      retry.onclick = () => loadIndex(dialog);
+    }
+  }
+}
+
+// The dialog is a native <dialog>: it opens when it gets the open attribute, whoever opens it (the button, the shortcut, a script).
+new MutationObserver((records) => {
+  for (const record of records) {
+    const dialog = record.target;
+    if (dialog instanceof HTMLDialogElement && dialog.open && dialog.hasAttribute('data-bx-content-search-index')) loadIndex(dialog);
+  }
+}).observe(document, { subtree: true, attributes: true, attributeFilter: ['open'] });

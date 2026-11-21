@@ -616,7 +616,7 @@
 `/components/content-search`. A documentation search: a command palette in a modal over a list of pages and their headings, opened by a shortcut.
 
 - `<BxContentSearch>`
-  - Parameters: `Class`, `Label`, `Name`, `Open` (@bind), `Pages` (required), `Placeholder`, `Shortcut`, `Ui`
+  - Parameters: `Class`, `IndexUrl`, `Label`, `Name`, `Open` (@bind), `Pages`, `Placeholder`, `Shortcut`, `Ui`
   - Events: `OnSelect`
   - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `Empty`, `Status`
 
