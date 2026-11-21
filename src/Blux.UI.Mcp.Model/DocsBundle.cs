@@ -21,14 +21,29 @@ public sealed record DocsBundle(
     };
 }
 
-/// <summary>A documented component: one page of the docs site, at <c>/components/{Slug}</c>.</summary>
+/// <summary>
+/// A documented component: one page of the docs site, at <c>/components/{Slug}</c>. <see cref="Package"/> is the NuGet package to add when
+/// it is not Blux.UI itself (<c>Blux.UI.Tools</c>); null for the components of Blux.UI.
+/// </summary>
 public sealed record BundleComponent(
     string Slug,
     string Name,
     string Group,
     string Description,
     IReadOnlyList<BundleExample> Examples,
-    IReadOnlyList<BundleApiType> Api);
+    IReadOnlyList<BundleApiType> Api,
+    string? Package = null)
+{
+    /// <summary>The command that adds the package of a component that is not in Blux.UI (<c>dotnet add package Blux.UI.Tools --prerelease</c>), null otherwise.</summary>
+    public string? InstallCommand() => Package is null ? null : $"dotnet add package {Package} --prerelease";
+
+    /// <summary>
+    /// The registration method of the package of a component that is not in Blux.UI: <c>AddBluxUiTools</c> for <c>Blux.UI.Tools</c>.
+    /// Its options object is the one that configures the theme of the component, null for a component of Blux.UI.
+    /// </summary>
+    public string? RegistrationMethod() =>
+        Package is not null && Package.StartsWith("Blux.UI.", StringComparison.Ordinal) ? "AddBluxUi" + Package["Blux.UI.".Length..].Replace(".", "") : null;
+}
 
 /// <summary>A live example of the docs site. <see cref="Id"/> is the name of its Razor component.</summary>
 public sealed record BundleExample(string Id, string Title, string? Description, string Source);

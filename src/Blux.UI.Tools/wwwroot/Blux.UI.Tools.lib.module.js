@@ -1,0 +1,1 @@
+var n={version:1};globalThis.Blux=Object.assign(globalThis.Blux??{},{tools:n});var t=[];function o(){if(t.length!==0)for(let e of document.querySelectorAll(t.join(",")))typeof e.refresh=="function"&&e.refresh()}function r(e){e.addEventListener("enhancedload",o)}function f(){}function l(){}export{l as afterStarted,r as afterWebStarted,f as beforeStart};

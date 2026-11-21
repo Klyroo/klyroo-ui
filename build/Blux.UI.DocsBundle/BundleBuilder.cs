@@ -25,7 +25,8 @@ public static class BundleBuilder
             .Select(c => new BundleComponent(
                 c.Slug, c.Name, c.Group, c.Description,
                 [.. c.Examples.Select(Example)],
-                [.. c.Api.Select(t => ApiType(t, themes, repoRoot))]))
+                [.. c.Api.Select(t => ApiType(t, themes, repoRoot))],
+                PackageOf(c)))
             .ToList();
 
         return new Blux.UI.Mcp.Model.DocsBundle(
@@ -34,8 +35,12 @@ public static class BundleBuilder
             [.. Catalog.Groups.Where(g => components.Any(c => c.Group == g))],
             components,
             Guides(repoRoot),
-            Icons());
+            Icons(repoRoot));
     }
+
+    /// <summary>The NuGet package of a component when it is not Blux.UI: the assembly of its first type from a sister package (<c>Blux.UI.Tools</c>).</summary>
+    private static string? PackageOf(ComponentDoc component) =>
+        component.Api.Select(t => t.Assembly.GetName().Name).FirstOrDefault(name => name != typeof(BxButton).Assembly.GetName().Name);
 
     private static string Version()
     {
@@ -138,12 +143,15 @@ public static class BundleBuilder
         var fromExtension = component.Assembly != typeof(BxButton).Assembly;
         var candidates = (fromExtension ? themes.OrderBy(t => t.Owner is null) : themes.Where(t => t.Owner is null)).ToList();
 
-        // The component says which theme it resolves: the first "Options.X" or "Options.Extension<T>().X" of its source that names a theme.
+        // The component says which theme it resolves: the first "Options.X", "Options.Extension<T>().X" or "<Prefix>Options.X" (a property of the options of a sister package, like
+        // ToolsOptions.X) of its source that names a theme. A prefix means the theme is one of an extension.
         var match = SourceFiles(repoRoot, component)
-            .SelectMany(file => OptionsAccess.Matches(File.ReadAllText(file)).Select(m => (Property: m.Groups["p"].Value, Owner: m.Groups["t"].Success ? m.Groups["t"].Value : null)))
-            .Select(a => a.Owner is null
-                ? candidates.FirstOrDefault(t => t.Owner is null && t.Property == a.Property)
-                : candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property && OwnerMatches(t.Owner, a.Owner)))
+            .SelectMany(file => OptionsAccess.Matches(File.ReadAllText(file)).Select(m => (Property: m.Groups["p"].Value, Owner: m.Groups["t"].Success ? m.Groups["t"].Value : null, Prefixed: m.Groups["o"].Length > 0)))
+            .Select(a => a.Owner is not null
+                ? candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property && OwnerMatches(t.Owner, a.Owner))
+                : a.Prefixed
+                    ? candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property)
+                    : candidates.FirstOrDefault(t => t.Owner is null && t.Property == a.Property))
             .FirstOrDefault(t => t is not null);
         match ??= candidates.FirstOrDefault(t => string.Equals(t.Property, name, StringComparison.OrdinalIgnoreCase));
         if (match is null) return null;
@@ -172,8 +180,8 @@ public static class BundleBuilder
         return Directory.Exists(directory) ? Directory.EnumerateFiles(directory, name + ".razor*", SearchOption.AllDirectories) : [];
     }
 
-    /// <summary><c>Options.Button</c> (core) or <c>Options.Extension&lt;ToolsOptions&gt;().DataList</c> (a sister package).</summary>
-    private static readonly Regex OptionsAccess = new(@"\bOptions\.(?:Extension<(?<t>[\w.]+)>\(\)\.)?(?<p>\w+)", RegexOptions.Compiled);
+    /// <summary><c>Options.Button</c> (core), <c>Options.Extension&lt;ToolsOptions&gt;().DataList</c> or <c>ToolsOptions.DataList</c> (a sister package).</summary>
+    private static readonly Regex OptionsAccess = new(@"\b(?<o>\w*)Options\.(?:Extension<(?<t>[\w.]+)>\(\)\.)?(?<p>\w+)", RegexOptions.Compiled);
 
     private static bool OwnerMatches(Type owner, string written) =>
         written == owner.Name || written == owner.FullName || written.EndsWith("." + owner.Name, StringComparison.Ordinal);
@@ -195,12 +203,17 @@ public static class BundleBuilder
     public static BundleTheme? ThemeFor(Type component, string repoRoot, IEnumerable<Type>? extensions = null) =>
         ThemeOf(component, ThemesOf(new BluxOptions(), extensions), repoRoot);
 
-    private static IReadOnlyList<string> Icons()
+    private static IReadOnlyList<string> Icons(string repoRoot)
     {
         // The Lucide icons embedded in the library; the class is internal, so it is read by reflection.
         var registry = typeof(BxButton).Assembly.GetType("Blux.UI.BuiltinIcons");
         var builtin = registry?.GetField("Lucide", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as IReadOnlyDictionary<string, string>;
-        return builtin is null ? [] : [.. builtin.Keys.Order(StringComparer.Ordinal)];
+        // Plus the ones of the sister packages: their registrars add them at startup, so the list they are generated from is read (build/tools-icons.json).
+        var tools = Path.Combine(repoRoot, "build", "tools-icons.json");
+        var fromTools = File.Exists(tools)
+            ? System.Text.Json.JsonDocument.Parse(File.ReadAllText(tools)).RootElement.GetProperty("icons").EnumerateArray().Select(e => e.GetString()!)
+            : [];
+        return [.. (builtin?.Keys ?? []).Union(fromTools, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 
     private static IReadOnlyList<BundleGuide> Guides(string repoRoot)
