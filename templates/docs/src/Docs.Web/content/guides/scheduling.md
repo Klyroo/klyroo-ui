@@ -15,7 +15,7 @@ Run the command by hand first, from the same account that the scheduler will use
 Edit the table with `crontab -e` and add a line. This one runs every night at 02:30 and appends the output to a log file.
 
 ```bash
-30 2 * * * cd /home/ana/photos && /usr/local/bin/tern sync --quiet >> /home/ana/tern.log 2>&1
+30 2 * * * cd ~/photos && /usr/local/bin/tern sync --quiet >> ~/tern.log 2>&1
 ```
 
 ## systemd timer
