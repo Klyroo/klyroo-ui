@@ -19,6 +19,11 @@
     <Project Path="playground/Blux.Playground/Blux.Playground/Blux.Playground.csproj" />
     <Project Path="playground/Blux.Playground/Blux.Playground.Client/Blux.Playground.Client.csproj" />
   </Folder>
+  <Folder Name="/templates/">
+    <Project Path="templates/starter/src/Starter.Shared/Starter.Shared.csproj" />
+    <Project Path="templates/starter/src/Starter.Web/Starter.Web.csproj" />
+    <Project Path="templates/starter/src/Starter.Web.Client/Starter.Web.Client.csproj" />
+  </Folder>
   <Folder Name="/build/">
     <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />
     <Project Path="build/Blux.UI.DocsBundle/Blux.UI.DocsBundle.csproj" />

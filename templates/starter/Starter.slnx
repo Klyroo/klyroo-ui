@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Starter.Shared/Starter.Shared.csproj" />
+    <Project Path="src/Starter.Web/Starter.Web.csproj" />
+    <Project Path="src/Starter.Web.Client/Starter.Web.Client.csproj" />
+    <Project Path="src/Starter.Maui/Starter.Maui.csproj" />
+  </Folder>
+</Solution>

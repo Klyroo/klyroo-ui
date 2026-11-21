@@ -510,6 +510,41 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.Locator("main#main")).ToBeFocusedAsync();
     }
 
+    [Fact]
+    public async Task Skip_link_is_hidden_until_it_has_the_focus_and_then_shows_above_the_page()
+    {
+        await Open("ssr", "button");
+
+        var skip = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+        // Hidden visually (a 1px box), but present in the tab order.
+        var hidden = await skip.BoundingBoxAsync();
+        Assert.NotNull(hidden);
+        Assert.True(hidden.Width <= 1 && hidden.Height <= 1, $"{hidden.Width}x{hidden.Height}");
+
+        await skip.FocusAsync();
+        var shown = await skip.BoundingBoxAsync();
+        Assert.NotNull(shown);
+        Assert.True(shown.Width > 40 && shown.Height > 16, $"{shown.Width}x{shown.Height}");
+        Assert.True(shown.Y >= 0 && shown.X >= 0);
+    }
+
+    [Fact]
+    public async Task Skip_link_gives_a_target_without_tabindex_one_and_leaves_the_address_alone()
+    {
+        await Open("ssr", "skip-link");
+
+        var link = Page.GetByTestId("skip-link-example");
+        var target = Page.GetByTestId("skip-link-example-target");
+        Assert.Null(await target.GetAttributeAsync("tabindex"));
+        var before = Page.Url;
+        await link.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        Assert.Equal(before, Page.Url);
+        await Assertions.Expect(target).ToBeFocusedAsync();
+        await Assertions.Expect(target).ToHaveAttributeAsync("tabindex", "-1");
+    }
+
     private static Task<string> ModLabel(ILocator kbd) =>
         kbd.EvaluateAsync<string>("e => getComputedStyle(e, '::before').content");
 
