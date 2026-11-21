@@ -11,7 +11,7 @@
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
 //      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
-//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or every page of the shell, the home figures, the customers table (search, sort, filter, selection, new customer), the inbox, the settings and the command palette work (Dashboard), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or every page of the shell, the home figures, the customers table (search, sort, filter, selection, new customer), the inbox, the settings and the command palette work (Dashboard), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the landing page, the pricing switch and table, the blog with its tags, the docs, the changelog, the search of all three and the UI-only sign-in and sign-up forms work with no circuit (SaaS), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
 //      is finished by running it again.
@@ -71,6 +71,15 @@ const templates = [
     probe: { utility: "max-w-[29rem]", css: "max-width:29rem" },
     pages: ["/", "/getting-started/installation", "/guides/configuration"],
     browserClass: "Blux.UI.E2E.DocsTemplateTests",
+  },
+  {
+    name: "saas",
+    web: "src/SaaS.Web",
+    name_in_files: "SaaS",
+    renames: ["Acme", "saasApp"],
+    probe: { utility: "max-w-[28rem]", css: "max-width:28rem" },
+    pages: ["/", "/pricing", "/blog", "/blog/grace-periods-without-the-guesswork", "/docs", "/docs/getting-started/quick-start", "/changelog", "/changelog/2-0", "/login", "/signup"],
+    browserClass: "Blux.UI.E2E.SaasTemplateTests",
   },
   {
     name: "changelog",

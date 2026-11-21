@@ -134,6 +134,7 @@ jobs:
       - run: dotnet publish templates/dashboard/src/Dashboard.Web -c Release -o published-templates/dashboard
       - run: dotnet publish templates/landing/src/Landing.Web -c Release -o published-templates/landing
       - run: dotnet publish templates/docs/src/Docs.Web -c Release -o published-templates/docs
+      - run: dotnet publish templates/saas/src/SaaS.Web -c Release -o published-templates/saas
       - run: dotnet publish templates/changelog/src/Changelog.Web -c Release -o published-templates/changelog
       - run: dotnet build tests/Blux.UI.E2E
       - name: Install browser
