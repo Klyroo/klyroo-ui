@@ -1,0 +1,21 @@
+[
+  {
+    "title": "Deployment",
+    "href": "?section=deployment",
+    "description": "Put it on a server",
+    "group": "Guides",
+    "keywords": "docker container hosting reverse proxy",
+    "headings": [{ "text": "Build the image", "id": "image" }, { "text": "Run it behind a proxy", "id": "proxy" }]
+  },
+  {
+    "title": "Monitoring",
+    "href": "?section=monitoring",
+    "group": "Guides",
+    "keywords": "logs metrics alerts"
+  },
+  {
+    "title": "Changelog",
+    "href": "?section=changelog",
+    "description": "What changed in each version"
+  }
+]

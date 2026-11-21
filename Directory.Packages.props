@@ -20,5 +20,8 @@
     <PackageVersion Include="Microsoft.Playwright" Version="1.65.1" />
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.14.0" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+    <!-- The Markdown content code shared by the content templates (templates/_shared/Content), compiled by tests/Blux.Templates.Tests. Each template pins its own copy. -->
+    <PackageVersion Include="Markdig" Version="1.6.0" />
+    <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 </Project>
