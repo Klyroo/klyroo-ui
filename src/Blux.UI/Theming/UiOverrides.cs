@@ -177,6 +177,7 @@ public sealed record SelectUi : ISlotOverrides
     public string? ItemCount { get; init; }
     public string? Group { get; init; }
     public string? GroupLabel { get; init; }
+    public string? LeadingIcon { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -193,6 +194,7 @@ public sealed record SelectUi : ISlotOverrides
         "itemCount" => ItemCount,
         "group" => Group,
         "groupLabel" => GroupLabel,
+        "leadingIcon" => LeadingIcon,
         _ => null,
     };
 }

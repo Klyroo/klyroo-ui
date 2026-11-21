@@ -12,8 +12,9 @@ public sealed record BxSelectItem(string Value, string Label)
     public string? Icon { get; init; }
 
     /// <summary>
-    /// Lists the item under a heading. Items with the same group are listed together, where the first of them is; items
-    /// without a group stay where they are, with no heading. The heading is not an option: the arrow keys and the typeahead skip it,
+    /// Lists the item under a heading. The items without a group are listed first, in their order and with no heading, then
+    /// each group in the order of its first item, with all its items, wherever they are in the list (so an item without a group
+    /// never sits between two groups, where it would look like part of one). The heading is not an option: the arrow keys and the typeahead skip it,
     /// and a filter hides it when none of its items matches. The list has role group, named by the heading.
     /// </summary>
     public string? Group { get; init; }

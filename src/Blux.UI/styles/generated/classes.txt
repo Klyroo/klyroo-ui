@@ -85,6 +85,7 @@
 [&>:not(:last-child)_:is(input,select,textarea,button)]:rounded-e-none
 [&>kbd[data-bx-mod]]:before:content-[attr(data-label)]
 [&>svg]:size-3
+[&>svg]:size-4
 [&[disabled]]:cursor-not-allowed
 [&[disabled]]:opacity-60
 [&[hidden]]:hidden

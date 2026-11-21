@@ -15,6 +15,7 @@ else
     private SlotSet _slots = default!;
     private string _id = default!;
     private IReadOnlyList<SelectSection> _sections = [];
+    private bool _hasIcons;
 
     [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
 
@@ -38,6 +39,7 @@ else
     {
         _id ??= NewId("selectmenu");
         _sections = SelectSections.Of(Items);
+        _hasIcons = Items.Any(i => i.Icon is not null);
         _slots = ResolveSlots(Options.SelectMenu, new Dictionary<string, string?>
         {
             ["variant"] = VariantValue.Of(Variant),
@@ -55,7 +57,7 @@ else
     private RenderFragment Option(BxSelectItem item) =>
         @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
               aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
-              data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
+              data-has-count="@(item.Count is null ? null : "")" data-has-icon="@(item.Icon is null ? null : "")">@ItemContent(item)</div>;
 
     private RenderFragment ItemContent(BxSelectItem item) =>
         @<text>
@@ -66,6 +68,7 @@ else
             <span class="@_slots["itemLabel"]">@item.Label</span>
             @if (item.Count is { } count)
             {
+                <span class="sr-only" data-slot="count-separator">, </span>
                 <span class="@_slots["itemCount"]" data-slot="count">@count.ToString("N0", FormatCulture)</span>
             }
             @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
@@ -86,6 +89,11 @@ else
                          @onbxchange:stopPropagation="true">
             <span data-slot="values" hidden></span>
             <button type="button" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
+                @if (_hasIcons)
+                {
+                    @* Filled by the browser with the icon of the selected item: no Blazor children, so nothing to diff. *@
+                    <span class="@_slots["leadingIcon"]" data-slot="selectedIcon" aria-hidden="true"></span>
+                }
                 <span class="@_slots["label"]" data-slot="label"
                       data-label="@Label"
                       data-placeholder="@(Value is { Count: > 0 } ? null : "")"

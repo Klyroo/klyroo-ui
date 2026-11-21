@@ -1,6 +1,6 @@
 <div class="flex w-full max-w-xs flex-col gap-3">
     <BxFormField Label="Destination">
-        <BxSelectMenu Items="Countries" Value="@_values" ValueChanged="@(v => _values = v ?? [])" Multiple Placeholder="Pick countries" data-testid="destination" />
+        <BxSelectMenu Items="Countries" Value="@_values" ValueChanged="@(v => _values = v ?? [])" Placeholder="Pick a country" data-testid="destination" />
     </BxFormField>
     <p class="text-sm text-(--blux-text-muted)" data-testid="destination-state">Selected: @(_values.Count > 0 ? string.Join(", ", _values) : "none")</p>
 </div>

@@ -51,13 +51,14 @@ internal static partial class Themes
 
     /// <summary>The sentinel is a 1px strip the browser watches; the button (a <c>BxButton</c>, styled by its own theme) is the manual way to load more.</summary>
     public static ComponentTheme InfiniteScroll() =>
-        new ComponentTheme("infiniteScroll", "root", "sentinel", "trigger", "spinner", "status", "end")
+        new ComponentTheme("infiniteScroll", "root", "sentinel", "trigger", "spinner", "status", "end", "marker")
             .Slot("root", "flex w-full flex-col items-center gap-2 py-2")
             .Slot("sentinel", "pointer-events-none h-px w-full shrink-0")
             .Slot("trigger", "shrink-0")
             .Slot("spinner", "size-full motion-safe:animate-spin")
             .Slot("status", "sr-only")
-            .Slot("end", "text-sm text-(--blux-text-muted)");
+            .Slot("end", "text-sm text-(--blux-text-muted)")
+            .Slot("marker", "sr-only");
 
     public static ComponentTheme Chip() =>
         new ComponentTheme("chip", "root", "base")

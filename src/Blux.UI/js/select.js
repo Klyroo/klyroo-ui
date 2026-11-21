@@ -1,4 +1,5 @@
 import { Reporter, ensureId, float, isTvMode, observeChildren } from './shared.js';
+import { syncSelectedIcon } from './form2-shared.js';
 
 /**
  * Select-only combobox (WAI-ARIA APG): focus stays on the button, the active option is announced through
@@ -77,6 +78,7 @@ export class BxSelectElement extends HTMLElement {
     trigger.setAttribute('aria-controls', ensureId(listbox, 'listbox'));
     trigger.setAttribute('aria-expanded', String(content.matches(':popover-open')));
     for (const option of this.#options()) ensureId(option, 'option');
+    syncSelectedIcon(this, this.#options().find((o) => o.getAttribute('aria-selected') === 'true') ?? null);
   }
 
   #isOpen() {
@@ -115,6 +117,7 @@ export class BxSelectElement extends HTMLElement {
       }
     }
     for (const o of this.#options()) o.setAttribute('aria-selected', String(o === option));
+    syncSelectedIcon(this, option);
     if (changed && report) {
       input?.dispatchEvent(new Event('change', { bubbles: true }));
       this.#reporter.report('bx-change', { value });

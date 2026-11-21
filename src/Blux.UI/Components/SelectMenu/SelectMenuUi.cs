@@ -19,6 +19,7 @@ public sealed record SelectMenuUi : ISlotOverrides
     public string? ItemCount { get; init; }
     public string? Group { get; init; }
     public string? GroupLabel { get; init; }
+    public string? LeadingIcon { get; init; }
     public string? Empty { get; init; }
     public string? Create { get; init; }
 
@@ -39,6 +40,7 @@ public sealed record SelectMenuUi : ISlotOverrides
         "itemCount" => ItemCount,
         "group" => Group,
         "groupLabel" => GroupLabel,
+        "leadingIcon" => LeadingIcon,
         "empty" => Empty,
         "create" => Create,
         _ => null,
