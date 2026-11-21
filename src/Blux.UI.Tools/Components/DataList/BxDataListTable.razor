@@ -251,6 +251,11 @@
 
     private RenderFragment Header(View column) => builder =>
     {
+        if (column.Source?.HeaderTemplate is { } headerTemplate)
+        {
+            builder.AddContent(15, headerTemplate);
+            return;
+        }
         if (!column.Sortable)
         {
             builder.AddContent(0, column.Title);

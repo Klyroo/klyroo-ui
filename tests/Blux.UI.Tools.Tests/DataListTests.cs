@@ -31,6 +31,25 @@ public class DataListTests : BluxToolsTestContext
     }
 
     [Fact]
+    public void A_column_with_a_header_template_renders_it_instead_of_the_title_and_the_sort_control()
+    {
+        var cut = Render<DataListHeaderHarness>(p => p.Add(c => c.Items, People));
+
+        var headers = cut.FindAll("thead th");
+        // The select column: the part inside the template reads the list it sits in (the rows of the page).
+        Assert.Equal("10 rows", headers[0].TextContent);
+        Assert.Equal("10 rows", cut.Find("[data-testid=header-count]").TextContent);
+        // "name" sorts by the schema, but its template replaces the whole header, the sort button included.
+        Assert.Equal("Full name", headers[1].TextContent);
+        Assert.Contains("sr-only", headers[1].QuerySelector("span")!.ClassName);
+        Assert.Empty(headers[1].QuerySelectorAll("button, a"));
+        // The other columns are unchanged: the title and the sort button.
+        Assert.Equal("Age", headers[2].TextContent.Trim());
+        Assert.NotNull(headers[2].QuerySelector("button"));
+        Assert.Equal(10, cut.FindAll("tbody tr[data-slot=row] input[type=checkbox]").Count);
+    }
+
+    [Fact]
     public void Renders_a_table_with_the_first_page_sorted_by_the_default_sort()
     {
         var cut = RenderList();

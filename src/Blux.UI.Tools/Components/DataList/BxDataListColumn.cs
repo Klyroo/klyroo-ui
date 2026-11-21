@@ -36,6 +36,12 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// <summary>The header. Without it, the key written as words (<c>firstName</c> becomes "First name").</summary>
     [Parameter] public string? Title { get; set; }
 
+    /// <summary>
+    /// The content of the header cell, instead of <see cref="Title"/> and the sort control: a select-all checkbox, or an accessible name that is not shown (an actions column).
+    /// It renders inside the list, so a part that derives from <see cref="DataListPartBase{TItem}"/> works in it. A column that sorts but has this template has no sort control.
+    /// </summary>
+    [Parameter] public RenderFragment? HeaderTemplate { get; set; }
+
     /// <summary>Where the text of the column sits. Numbers read best at the end.</summary>
     [Parameter] public DataListAlign Align { get; set; }
 
