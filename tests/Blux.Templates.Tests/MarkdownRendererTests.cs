@@ -118,6 +118,13 @@ public class MarkdownRendererTests
     public void Relative_links_are_made_relative_to_the_base_href(string markdown, string directory, string expected) =>
         Assert.Contains(expected, Html(markdown, directory));
 
+    [Theory]
+    [InlineData("[x](/Set%20Up.md)", "href=\"set-up\"")]
+    [InlineData("[x](/Guides/Caf%C3%A9.md#top)", "href=\"guides/cafe#top\"")]
+    [InlineData("[x](setup%2Dguide)", "href=\"guides/setup-guide\"")]
+    [InlineData("[x](/bad%zz)", "href=\"bad-zz\"")]
+    public void Percent_encoded_names_are_decoded_before_they_become_an_address(string markdown, string expected) => Assert.Contains(expected, Html(markdown));
+
     [Fact]
     public void An_index_file_is_the_address_of_its_folder()
     {
@@ -169,6 +176,20 @@ public class MarkdownRendererTests
     }
 
     [Fact]
+    public void A_renamed_reserved_id_never_takes_the_id_of_another_heading()
+    {
+        var rendered = Renderer.Render("## Main\n\n## Main section\n\n## Main\n\n## Search\n\n## Search section", "", "p");
+
+        var ids = rendered.Headings.Select(h => h.Id).ToList();
+        Assert.Equal(ids.Count, ids.Distinct().Count());
+        Assert.DoesNotContain("main", ids);
+        Assert.DoesNotContain("search", ids);
+        Assert.Equal("main-section-1", ids[0]);
+        Assert.Equal("main-section", ids[1]);
+        Assert.All(ids, id => Assert.Contains($"id=\"{id}\"", rendered.Html));
+    }
+
+    [Fact]
     public void Every_toc_id_is_the_id_of_a_heading_in_the_html()
     {
         var rendered = Renderer.Render("## One\n\n### Two\n\n#### Three\n\n## Four", "", "p");
@@ -201,6 +222,26 @@ public class MarkdownRendererTests
 
         Assert.Contains("<input aria-label=\"Install Tern\" disabled=\"disabled\" type=\"checkbox\" checked=\"checked\" />", html);
         Assert.Contains("<input aria-label=\"Set the key\" disabled=\"disabled\" type=\"checkbox\" />", html);
+    }
+
+    [Fact]
+    public void Nested_task_items_are_each_named_by_their_own_text()
+    {
+        var html = Html("- [x] Parent item\n  - [ ] Child one\n  - [x] Child **two**\n    - [ ] Grandchild\n- [ ] Second parent");
+
+        foreach (var label in new[] { "Parent item", "Child one", "Child two", "Grandchild", "Second parent" })
+        {
+            Assert.Contains($"<input aria-label=\"{label}\" disabled=\"disabled\" type=\"checkbox\"", html);
+        }
+        Assert.DoesNotContain("Parent item Child", html);
+    }
+
+    [Fact]
+    public void Local_images_are_listed_and_external_ones_are_not()
+    {
+        var rendered = Renderer.Render("![a](chart.png) ![b](/img/b.png?v=2) ![c](https://example.com/c.png) ![d](#x) ![e](../up/e.svg)", "guides", "guides/p");
+
+        Assert.Equal(["guides/chart.png", "img/b.png", "up/e.svg"], rendered.Images);
     }
 
     [Fact]

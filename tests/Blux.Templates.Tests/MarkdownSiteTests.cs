@@ -304,8 +304,64 @@ public class MarkdownSiteTests
     }
 }
 
+public class MissingImageTests
+{
+    [Fact]
+    public void An_image_with_no_file_in_the_web_root_is_reported_and_one_with_a_file_is_not()
+    {
+        using var folder = new ContentFolder()
+            .Page("guides/a.md", "A", body: "![ok](/img/ok.png) ![next to the page](chart.png) ![gone](/img/gone.png) ![outside](/../secret.png) ![web](https://example.com/x.png)");
+        using var web = new ContentFolder().Add("img/ok.png", "x").Add("guides/chart.png.txt", "x");
+        File.WriteAllText(Path.Combine(Path.GetDirectoryName(web.Root)!, "secret.png"), "x");
+        try
+        {
+            var site = MarkdownSite.Load(new ContentOptions { Root = folder.Root, WebRoot = web.Root });
+
+            // An image next to its page is not served, so it is reported; a path that climbs out of the web root never counts.
+            Assert.Equal(["guides/chart.png", "img/gone.png", "secret.png"], site.MissingImages.Select(i => i.Path).Order());
+            Assert.All(site.MissingImages, i => Assert.Equal("guides/a", i.FromSlug));
+        }
+        finally
+        {
+            File.Delete(Path.Combine(Path.GetDirectoryName(web.Root)!, "secret.png"));
+        }
+    }
+
+    [Fact]
+    public void Without_a_web_root_images_are_not_checked()
+    {
+        using var folder = new ContentFolder().Page("a.md", "A", body: "![x](/img/gone.png)");
+
+        Assert.Empty(folder.Load().MissingImages);
+    }
+}
+
 public class MarkdownStoreTests
 {
+    [Fact]
+    public void A_handler_of_Reloaded_that_throws_does_not_undo_the_reload()
+    {
+        using var folder = new ContentFolder().Page("a.md", "First");
+        using var store = new MarkdownStore(new ContentOptions { Root = folder.Root });
+        store.Reloaded += () => throw new InvalidOperationException("boom");
+        folder.Page("a.md", "Second");
+
+        Assert.True(store.Reload());
+        Assert.Equal("Second", store.Site.Pages[0].Title);
+    }
+
+    [Fact]
+    public void Any_failure_while_reading_keeps_the_last_good_content()
+    {
+        using var folder = new ContentFolder().Page("a.md", "First");
+        using var store = new MarkdownStore(new ContentOptions { Root = folder.Root });
+        // The folder goes away: not a ContentException but a missing folder, and the timer thread must not die of it.
+        Directory.Delete(folder.Root, recursive: true);
+
+        Assert.False(store.Reload());
+        Assert.Equal("First", store.Site.Pages[0].Title);
+    }
+
     [Fact]
     public async Task A_changed_file_is_read_again_and_a_broken_one_keeps_the_previous_content()
     {

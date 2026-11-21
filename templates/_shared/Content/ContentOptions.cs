@@ -19,6 +19,12 @@ public sealed class ContentOptions
     /// <summary>Reloads the content when a file changes. For development: a published site reads its files once.</summary>
     public bool Watch { get; init; }
 
-    /// <summary>How many characters of a page's text go into the search index, after its title and headings.</summary>
+    /// <summary>
+    /// The folder the site serves files from (<c>wwwroot</c>). Images are served from there, not from the content folder, so an image written in
+    /// Markdown with a path that has no file in it is reported (<see cref="MarkdownSite.MissingImages"/>). Left out, images are not checked.
+    /// </summary>
+    public string? WebRoot { get; init; }
+
+    /// <summary>How many characters of a page's text go into the search index, after its title and headings. The index is a JSON file the browser fetches when the search opens.</summary>
     public int SearchTextLimit { get; init; } = 2000;
 }

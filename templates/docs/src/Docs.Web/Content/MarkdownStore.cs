@@ -50,12 +50,21 @@ public sealed class MarkdownStore : IDisposable
         {
             _site = Load();
         }
-        catch (Exception error) when (error is ContentException or IOException or UnauthorizedAccessException)
+        catch (Exception error)
         {
+            // Whatever went wrong while reading (a file being written, a bad file, a folder that went away), the content that was good stays. A reload
+            // runs on a timer thread, where an exception nobody catches would end the process.
             _logger?.LogError(error, "The content was not reloaded, the previous version stays in use: {Message}", error.Message);
             return false;
         }
-        Reloaded?.Invoke();
+        try
+        {
+            Reloaded?.Invoke();
+        }
+        catch (Exception error)
+        {
+            _logger?.LogError(error, "A handler of Reloaded failed: {Message}", error.Message);
+        }
         return true;
     }
 
@@ -65,6 +74,10 @@ public sealed class MarkdownStore : IDisposable
         foreach (var link in site.BrokenLinks)
         {
             _logger?.LogWarning("The page '{Page}' links to '{Target}', which is not a page.", link.FromSlug, link.Target);
+        }
+        foreach (var image in site.MissingImages)
+        {
+            _logger?.LogWarning("The page '{Page}' shows the image '{Image}', which is not in the web root. Images are served from the web root, not from the content folder: put the file there and write its path from the root, for example /img/chart.png.", image.FromSlug, image.Path);
         }
         return site;
     }

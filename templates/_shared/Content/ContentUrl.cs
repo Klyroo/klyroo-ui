@@ -120,11 +120,24 @@ public static partial class ContentUrl
             {
                 segments.RemoveAt(segments.Count - 1);
             }
-            var slug = string.Join('/', segments.Select(Segment));
+            // "Set%20Up.md" is the file "Set Up.md": the name is decoded before it becomes a segment of an address.
+            var slug = string.Join('/', segments.Select(segment => Segment(Decode(segment))));
             page = slug;
             return (slug.Length == 0 ? "./" : slug) + rest;
         }
         return string.Join('/', segments) + rest;
+    }
+
+    private static string Decode(string segment)
+    {
+        try
+        {
+            return Uri.UnescapeDataString(segment);
+        }
+        catch (UriFormatException)
+        {
+            return segment;
+        }
     }
 
     /// <summary>A file or folder name as a segment of an address: lowercase, with letters, digits, dots, hyphens and underscores only.</summary>

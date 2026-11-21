@@ -25,4 +25,13 @@ public sealed partial record BxMessages
 
     /// <summary>Text of the button that opens the documentation search.</summary>
     public string ContentSearchButton { get; init; } = "Search";
+
+    /// <summary>Shown while the search index of a <c>BxContentSearch</c> with an <c>IndexUrl</c> is being fetched.</summary>
+    public string ContentSearchLoading { get; init; } = "Loading the search index...";
+
+    /// <summary>Shown when the search index could not be fetched.</summary>
+    public string ContentSearchError { get; init; } = "The search could not be loaded.";
+
+    /// <summary>Text of the button that fetches the search index again after an error.</summary>
+    public string ContentSearchRetry { get; init; } = "Try again";
 }

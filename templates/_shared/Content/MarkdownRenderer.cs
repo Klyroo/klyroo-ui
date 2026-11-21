@@ -5,6 +5,7 @@ using Markdig;
 using Markdig.Extensions.AutoIdentifiers;
 using Markdig.Extensions.Alerts;
 using Markdig.Extensions.CustomContainers;
+using Markdig.Extensions.TaskLists;
 using Markdig.Renderers;
 using Markdig.Renderers.Html;
 using Markdig.Syntax;
@@ -20,7 +21,8 @@ public sealed record MarkdownHeading(string Id, string Text, int Level);
 /// <param name="Headings">Every heading of the body, in document order.</param>
 /// <param name="Text">The text of the page without markup, code included, on one line: what the search index is made of.</param>
 /// <param name="Links">The pages the body links to (slugs, no fragment), for the check for broken links.</param>
-public sealed record RenderedMarkdown(string Html, IReadOnlyList<MarkdownHeading> Headings, string Text, IReadOnlyList<string> Links);
+/// <param name="Images">The local images the body shows, as paths below the web root without a query (the addresses of external images are not listed).</param>
+public sealed record RenderedMarkdown(string Html, IReadOnlyList<MarkdownHeading> Headings, string Text, IReadOnlyList<string> Links, IReadOnlyList<string> Images);
 
 /// <summary>
 /// Renders Markdown to HTML with Markdig, for content that is shown to visitors.
@@ -73,14 +75,25 @@ public sealed partial class MarkdownRenderer
     {
         var document = Markdown.Parse(markdown, _pipeline);
         var links = new List<string>();
+        var images = new List<string>();
 
+        // A heading that took an id the layout uses ("main") gets another one, and that one must not be the id of another heading ("main-section" is a
+        // heading too): every id of the page is known before one is changed.
+        var headingBlocks = document.Descendants<HeadingBlock>().ToList();
+        var used = new HashSet<string>(headingBlocks.Select(h => h.GetAttributes().Id).OfType<string>(), StringComparer.Ordinal);
         var headings = new List<MarkdownHeading>();
-        foreach (var heading in document.Descendants<HeadingBlock>())
+        foreach (var heading in headingBlocks)
         {
             var attributes = heading.GetAttributes();
             if (attributes.Id is { } id && ReservedIds.Contains(id))
             {
-                attributes.Id = id + "-section";
+                var renamed = id + "-section";
+                for (var n = 1; used.Contains(renamed); n++)
+                {
+                    renamed = $"{id}-section-{n}";
+                }
+                used.Add(renamed);
+                attributes.Id = renamed;
             }
             if (attributes.Id is not null)
             {
@@ -102,6 +115,11 @@ public sealed partial class MarkdownRenderer
                 if (page is not null && !link.IsImage)
                 {
                     links.Add(page);
+                }
+                if (link.IsImage && !ContentUrl.IsExternal(url) && link.Url is { Length: > 0 } image && image[0] != '#')
+                {
+                    // Local images are served from the web root, not from the content folder: the site checks that the file is there.
+                    images.Add(image.Split('?', '#')[0]);
                 }
                 if (ContentUrl.IsExternal(url) && !link.IsImage)
                 {
@@ -127,21 +145,12 @@ public sealed partial class MarkdownRenderer
         html = Regex.Replace(html, "<table", _ => $"<div class=\"table-scroll\" tabindex=\"0\" role=\"region\" aria-label=\"Table {++tables}\"><table")
             .Replace("</table>", "</table></div>", StringComparison.Ordinal);
 
-        // A task list box is a disabled checkbox with no label: the text of its item names it.
-        html = TaskItem().Replace(html, m => $"<li class=\"task-list-item\"><input aria-label=\"{Tags().Replace(m.Groups[2].Value, "").Trim()}\" {m.Groups[1].Value} />{m.Groups[2].Value}</li>");
-
         var text = Whitespace().Replace(PlainText(document), " ").Trim();
-        return new RenderedMarkdown(html, headings, text, links);
+        return new RenderedMarkdown(html, headings, text, links, images);
     }
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
-
-    [GeneratedRegex("""<li class="task-list-item"><input (disabled="disabled" type="checkbox"(?: checked="checked")?) />(.*?)</li>""", RegexOptions.Singleline)]
-    private static partial Regex TaskItem();
-
-    [GeneratedRegex("<[^>]+>")]
-    private static partial Regex Tags();
 
     private static string InlineText(ContainerInline container)
     {
@@ -196,6 +205,7 @@ public sealed partial class MarkdownRenderer
             if (renderer is HtmlRenderer html)
             {
                 html.ObjectRenderers.Replace<CodeBlockRenderer>(new HighlightedCodeRenderer());
+                html.ObjectRenderers.Replace<HtmlTaskListRenderer>(new TaskBoxRenderer());
                 html.ObjectRenderers.Replace<AlertBlockRenderer>(new AlertRenderer());
                 html.ObjectRenderers.Replace<HtmlCustomContainerRenderer>(new ContainerRenderer());
             }
@@ -255,6 +265,17 @@ public sealed partial class MarkdownRenderer
             WriteCalloutStart(renderer, kind, title);
             renderer.WriteChildren(block);
             renderer.Write("</div>");
+        }
+    }
+
+    // The box of a task list item is a disabled checkbox. Markdig gives it no label, so the text of its item (not the items nested in it, which are other
+    // blocks) names it.
+    private sealed class TaskBoxRenderer : HtmlObjectRenderer<TaskList>
+    {
+        protected override void Write(HtmlRenderer renderer, TaskList box)
+        {
+            var label = box.Parent?.ParentBlock?.Inline is { } inline ? InlineText(inline) : "";
+            renderer.Write($"<input aria-label=\"{WebUtility.HtmlEncode(label)}\" disabled=\"disabled\" type=\"checkbox\"{(box.Checked ? " checked=\"checked\"" : "")} />");
         }
     }
 
