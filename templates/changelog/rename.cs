@@ -31,7 +31,7 @@ var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     "Application", "Window", "Color", "Colors", "Page", "ContentPage", "Preferences", "Platform", "Router", "Component", "ComponentBase", "Services", "Logging", "Configuration",
     // Folders, namespaces and files of the template.
     "App", "Program", "Web", "Layout", "Pages", "Components", "Content", "Site", "SiteInfo", "Routes", "Styles", "Properties", "Home", "NotFound", "Error", "Data",
-    "Releases", "Release", "ReleasePage", "ReleaseProblem", "Feed", "GitHub", "Options", "MainLayout", "Markdown", "MarkdownPage", "MarkdownSite", "MarkdownStore", "MarkdownRenderer", "Src", "Test", "Tests",
+    "Releases", "ReleaseNotes", "Release", "ReleasePage", "ReleaseProblem", "Feed", "GitHub", "Options", "MainLayout", "Markdown", "MarkdownPage", "MarkdownSite", "MarkdownStore", "MarkdownRenderer", "Src", "Test", "Tests",
 };
 var csharpKeywords = new HashSet<string>(StringComparer.Ordinal)
 {

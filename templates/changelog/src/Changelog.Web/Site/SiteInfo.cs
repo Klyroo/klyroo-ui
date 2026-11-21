@@ -1,6 +1,6 @@
 namespace Changelog.Web.Site;
 
-// What the site says about itself, as typed C#. The releases are not here: they come from GitHub (or from data/releases.json), see Releases/.
+// What the site says about itself, as typed C#. The releases are not here: they come from GitHub (or from data/releases.json), see ReleaseNotes/.
 
 public static class SiteInfo
 {
