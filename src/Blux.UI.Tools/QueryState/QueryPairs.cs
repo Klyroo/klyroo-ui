@@ -89,7 +89,7 @@ internal static class QueryPairs
 
     /// <summary>A text equal for two lists that hold the same decoded pairs, whatever their order and encoding.</summary>
     public static string Canonical(List<QueryPair> pairs) =>
-        string.Join('&', pairs.Select(p => p.Key + "=" + p.Value).Order(StringComparer.Ordinal));
+        string.Join('&', pairs.Select(p => Uri.EscapeDataString(p.Key) + "=" + Uri.EscapeDataString(p.Value)).Order(StringComparer.Ordinal));
 
     /// <summary>The keys whose first value differs between two lists (a key in only one of them differs).</summary>
     public static List<string> ChangedKeys(List<QueryPair> before, List<QueryPair> after)

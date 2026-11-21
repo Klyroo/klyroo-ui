@@ -6,6 +6,9 @@ public class QueryCodecTests
 {
     private enum Level { Low, Medium, High }
 
+    [Flags]
+    private enum Access { None = 0, Read = 1, Write = 2, Admin = 4, All = Read | Write | Admin }
+
     private static void RoundTrips<T>(IQueryCodec<T> codec, T value, Func<T, T, bool>? same = null)
     {
         var text = codec.Format(value);
@@ -279,6 +282,56 @@ public class QueryCodecTests
         RoundTrips(codec, (int?)7);
         Assert.Null(codec.Format(null));
         Assert.False(codec.TryParse("x", out var value));
+        Assert.Null(value);
+    }
+
+    [Fact]
+    public void Flags_enum_formats_combined_values_as_names_and_parses_them_back()
+    {
+        var codec = QueryCodecs.Enum<Access>();
+        foreach (var value in new[] { Access.None, Access.Read, Access.Read | Access.Write, Access.Write | Access.Admin, Access.All })
+        {
+            RoundTrips(codec, value);
+        }
+        Assert.Equal("Read,Write", codec.Format(Access.Read | Access.Write));
+        Assert.Equal("read,write", QueryCodecs.Enum<Access>(lowercase: true).Format(Access.Read | Access.Write));
+        Assert.True(codec.TryParse("write,READ", out var parsed));
+        Assert.Equal(Access.Read | Access.Write, parsed);
+        Assert.Null(codec.Format((Access)64));
+        Assert.Null(codec.Format(Access.Read | (Access)64));
+        Rejects(codec, "Read,", ",Read", "Read,Nope", "3", "Read,2", "Read, Write");
+    }
+
+    [Fact]
+    public void A_flags_value_round_trips_inside_a_list_whose_separator_is_a_comma()
+    {
+        var codec = QueryCodecs.Array(QueryCodecs.Enum<Access>());
+
+        RoundTrips(codec, [Access.Read | Access.Write, Access.None, Access.Admin], (a, b) => a.SequenceEqual(b));
+    }
+
+    [Fact]
+    public void A_plain_enum_still_rejects_a_list_of_names()
+    {
+        Assert.False(QueryCodecs.Enum<Level>().TryParse("Low,High", out _));
+    }
+
+    [Fact]
+    public void Array_of_optional_numbers_round_trips_null_items()
+    {
+        var codec = QueryCodecs.Array(QueryCodecs.Optional(QueryCodecs.Int32));
+
+        RoundTrips(codec, [1, null, 3], (a, b) => a.SequenceEqual(b));
+        RoundTrips(codec, [null], (a, b) => a.SequenceEqual(b));
+        RoundTrips(codec, [null, null], (a, b) => a.SequenceEqual(b));
+        Assert.Equal("1,~,3", codec.Format([1, null, 3]));
+        Rejects(codec, "1,x", "1,,2");
+    }
+
+    [Fact]
+    public void Optional_reads_an_empty_text_as_no_value()
+    {
+        Assert.True(QueryCodecs.Optional(QueryCodecs.Int32).TryParse("", out var value));
         Assert.Null(value);
     }
 

@@ -15,7 +15,7 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
     private readonly TRecord _default;
     private readonly string _prefix;
     private readonly List<Property> _properties = [];
-    private readonly IDisposable _claim;
+    private readonly QueryClaim _claim;
     private readonly IDisposable _subscription;
     private TRecord _known;
 
@@ -28,9 +28,13 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
         _known = defaultValue;
         _prefix = prefix ?? "";
         History = history;
-        _claim = state.Claim(_prefix, owner);
+        _claim = state.ClaimKeys(_prefix, owner);
         _subscription = state.Subscribe(_prefix, OnKeysChanged);
     }
+
+    /// <summary>Throws when a key of this group is also used by a claim that outlived the page change this group was created in (see <see cref="QueryState.Claim"/>). Every use of the group calls it.</summary>
+    /// <exception cref="InvalidOperationException">The conflict, naming both owners.</exception>
+    public void ThrowIfConflicted() => _claim.ThrowIfConflicted();
 
     /// <summary>The history of changes made through <see cref="Set(TRecord)"/> and <see cref="Update"/> without a history of their own.</summary>
     public QueryHistory History { get; }
@@ -54,7 +58,9 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
         ArgumentNullException.ThrowIfNull(codec);
         var fullKey = _prefix.Length == 0 ? key : _prefix + "." + key;
         if (_properties.Any(p => p.Key == fullKey)) throw new ArgumentException($"The key '{fullKey}' is already in the group.", nameof(key));
-        _properties.Add(new Property(fullKey, record => codec.Format(get(record)), codec.Format(get(_default)),
+        _claim.AddKey(fullKey);
+        var defaultValue = get(_default);
+        _properties.Add(new Property(fullKey, record => codec.Format(get(record)), codec.Format(defaultValue), record => QueryEquality.Equal(get(record), defaultValue),
             (record, text) => text is not null && codec.TryParse(text, out var parsed) ? with(record, parsed) : with(record, get(_default))));
         _known = Value;
         return this;
@@ -65,6 +71,7 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
     {
         get
         {
+            _claim.ThrowIfConflicted();
             var record = _default;
             foreach (var property in _properties) record = property.Read(record, _state.Get(property.Key));
             return record;
@@ -83,6 +90,7 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
     public bool Set(TRecord value, QueryHistory history)
     {
         ArgumentNullException.ThrowIfNull(value);
+        _claim.ThrowIfConflicted();
         return _state.SetMany(Changes(value), history);
     }
 
@@ -97,20 +105,24 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
 
     /// <summary>The URL of the current page with the properties of <paramref name="value"/> written, for a link in static server rendering.</summary>
     /// <param name="value">The record the link carries.</param>
-    public string HrefWith(TRecord value) => _state.HrefWith(Changes(value));
+    public string HrefWith(TRecord value)
+    {
+        _claim.ThrowIfConflicted();
+        return _state.HrefWith(Changes(value));
+    }
 
     private List<KeyValuePair<string, string?>> Changes(TRecord value) =>
         [.. _properties.Select(p =>
         {
             var text = p.Format(value);
-            return new KeyValuePair<string, string?>(p.Key, text == p.DefaultText ? null : text);
+            return new KeyValuePair<string, string?>(p.Key, text == p.DefaultText || p.IsDefault(value) ? null : text);
         })];
 
     private void OnKeysChanged(IReadOnlyList<string> keys)
     {
         if (!keys.Any(key => _properties.Any(p => p.Key == key))) return;
         var value = Value;
-        if (Equals(value, _known)) return;
+        if (value.Equals(_known)) return;
         _known = value;
         Changed?.Invoke();
     }
@@ -122,5 +134,5 @@ public sealed class QueryGroup<TRecord> : IDisposable where TRecord : class
         _claim.Dispose();
     }
 
-    private sealed record Property(string Key, Func<TRecord, string?> Format, string? DefaultText, Func<TRecord, string?, TRecord> Read);
+    private sealed record Property(string Key, Func<TRecord, string?> Format, string? DefaultText, Func<TRecord, bool> IsDefault, Func<TRecord, string?, TRecord> Read);
 }

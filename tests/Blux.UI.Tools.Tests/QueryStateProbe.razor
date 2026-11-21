@@ -23,9 +23,8 @@
 
     protected override void OnInitialized()
     {
-        Query.UseRenderer(RendererInfo);
-        _q = Query.Bind("q", QueryCodecs.String, "");
-        _page = Query.Bind("p", QueryCodecs.Int32, 1);
+        _q = Query.Bind("q", QueryCodecs.String, "", RendererInfo);
+        _page = Query.Bind("p", QueryCodecs.Int32, 1, RendererInfo);
         _q.Changed += OnChanged;
         _page.Changed += OnChanged;
     }

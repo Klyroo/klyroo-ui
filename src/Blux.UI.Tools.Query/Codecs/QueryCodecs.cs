@@ -44,7 +44,8 @@ public static class QueryCodecs
     public static IQueryCodec<DateTimeOffset> DateTimeOffset { get; } = new DateTimeOffsetCodec();
 
     /// <summary>
-    /// An enum by member name, case-insensitive on input. Numbers, lists of names ("A,B") and names that are not members are not values.
+    /// An enum by member name, case-insensitive on input. Numbers and names that are not members are not values. A <c>[Flags]</c> enum is written as its names
+    /// separated by commas (<c>Read,Write</c>) and read back the same way; a combination with a bit that has no name is left out of the URL.
     /// </summary>
     /// <param name="lowercase">Writes the names in lower case ("desc"); input is case-insensitive either way.</param>
     public static IQueryCodec<TEnum> Enum<TEnum>(bool lowercase = false) where TEnum : struct, Enum => new EnumCodec<TEnum>(lowercase);
@@ -181,23 +182,30 @@ public static class QueryCodecs
 
     private sealed class EnumCodec<TEnum>(bool lowercase) : IQueryCodec<TEnum> where TEnum : struct, Enum
     {
+        private static readonly bool Flags = typeof(TEnum).IsDefined(typeof(FlagsAttribute), inherit: false);
+        private static readonly HashSet<string> Names = new(System.Enum.GetNames<TEnum>(), StringComparer.OrdinalIgnoreCase);
+
         public bool TryParse(string raw, out TEnum value)
         {
-            // Enum.TryParse also takes numbers ("1") and lists ("A,B"): neither is a name.
-            if (Trimmed(raw) && (char.IsLetter(raw[0]) || raw[0] == '_') && !raw.Contains(',')
-                && System.Enum.TryParse(raw, ignoreCase: true, out value) && System.Enum.IsDefined(value))
-            {
-                return true;
-            }
+            // Enum.TryParse also takes numbers ("1") and, for any enum, lists ("A,B"): only names are values, and lists only of a [Flags] enum.
             value = default;
-            return false;
+            if (!Trimmed(raw)) return false;
+            var tokens = raw.Split(',');
+            if (tokens.Length > 1 && !Flags) return false;
+            foreach (var token in tokens)
+            {
+                if (token.Length == 0 || !(char.IsLetter(token[0]) || token[0] == '_') || !Names.Contains(token)) return false;
+            }
+            return System.Enum.TryParse(string.Join(',', tokens), ignoreCase: true, out value);
         }
 
         public string? Format(TEnum value)
         {
-            if (!System.Enum.IsDefined(value)) return null;
-            var name = value.ToString();
-            return lowercase ? name.ToLowerInvariant() : name;
+            // ToString gives "A, B" for a combination of flags and a number when some bit has no name.
+            var names = value.ToString().Split(", ");
+            if (!names.All(Names.Contains)) return null;
+            var text = string.Join(',', names);
+            return lowercase ? text.ToLowerInvariant() : text;
         }
     }
 
@@ -205,6 +213,12 @@ public static class QueryCodecs
     {
         public bool TryParse(string raw, out T? value)
         {
+            // An empty text is no value: it is how a null item of a list is written ("~").
+            if (raw is { Length: 0 })
+            {
+                value = null;
+                return true;
+            }
             if (item.TryParse(raw, out var parsed))
             {
                 value = parsed;

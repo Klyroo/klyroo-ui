@@ -18,7 +18,13 @@ public class QueryStateTests : BluxToolsTestContext
 
     private int Navigations => _navigations;
 
-    public QueryStateTests() => Nav.LocationChanged += (_, _) => Interlocked.Increment(ref _navigations);
+    private static readonly RendererInfo ServerRenderer = new("Server", true);
+
+    public QueryStateTests()
+    {
+        Nav.LocationChanged += (_, _) => Interlocked.Increment(ref _navigations);
+        State.UseRenderer(ServerRenderer);
+    }
 
     private NavigationHistory Last => Nav.History.First();
 
@@ -31,6 +37,9 @@ public class QueryStateTests : BluxToolsTestContext
         Assert.Fail("Timed out waiting for " + because);
     }
 
+    // What an event handler is: the writes and what follows run in one dispatcher work item, so the flush (after Task.Yield) comes after all of them.
+    private Task Handler(Action action) => Renderer.Dispatcher.InvokeAsync(action);
+
     private static async Task Settle() => await Task.Delay(150, Xunit.TestContext.Current.CancellationToken);
 
     [Fact]
@@ -39,9 +48,12 @@ public class QueryStateTests : BluxToolsTestContext
         Nav.NavigateTo("/list");
         var before = Navigations;
 
-        State.Set("q", "ab");
-        State.Set("p", "2");
-        State.Set("q", "abc");
+        await Handler(() =>
+        {
+            State.Set("q", "ab");
+            State.Set("p", "2");
+            State.Set("q", "abc");
+        });
 
         // Nothing has reached the URL yet, but a read already sees the writes.
         Assert.Equal(before, Navigations);
@@ -71,9 +83,12 @@ public class QueryStateTests : BluxToolsTestContext
         Nav.NavigateTo("/list");
         var before = Navigations;
 
-        State.Set("q", "typed", QueryHistory.Replace);
-        State.Set("p", "4", QueryHistory.Push);
-        State.Set("s", "name", QueryHistory.Replace);
+        await Handler(() =>
+        {
+            State.Set("q", "typed", QueryHistory.Replace);
+            State.Set("p", "4", QueryHistory.Push);
+            State.Set("s", "name", QueryHistory.Replace);
+        });
 
         await Until(() => Navigations > before, "the flush");
         await Settle();
@@ -102,11 +117,14 @@ public class QueryStateTests : BluxToolsTestContext
         Nav.NavigateTo("/list?q=a&p=2");
         var before = Navigations;
 
-        State.Set("q", "a");
-        State.Set("p", "2");
-        State.Set("absent", null);
-        State.Set("q", "b");
-        State.Set("q", "a");
+        await Handler(() =>
+        {
+            State.Set("q", "a");
+            State.Set("p", "2");
+            State.Set("absent", null);
+            State.Set("q", "b");
+            State.Set("q", "a");
+        });
         await Settle();
 
         Assert.Equal(before, Navigations);
@@ -152,7 +170,7 @@ public class QueryStateTests : BluxToolsTestContext
     public async Task A_value_equal_to_its_default_is_left_out_of_the_url()
     {
         Nav.NavigateTo("/list");
-        using var page = State.Bind("p", QueryCodecs.Int32, 1);
+        using var page = State.Bind("p", QueryCodecs.Int32, 1, ServerRenderer);
 
         page.Value = 3;
         await Until(() => Nav.Uri.Contains("p=3"), "the write");
@@ -167,8 +185,8 @@ public class QueryStateTests : BluxToolsTestContext
     public void A_value_that_does_not_parse_falls_back_to_the_default()
     {
         Nav.NavigateTo("/list?p=abc&when=2026-13-45&level=x");
-        using var page = State.Bind("p", QueryCodecs.Int32, 7);
-        using var when = State.Bind("when", QueryCodecs.DateOnly, new DateOnly(2000, 1, 1));
+        using var page = State.Bind("p", QueryCodecs.Int32, 7, ServerRenderer);
+        using var when = State.Bind("when", QueryCodecs.DateOnly, new DateOnly(2000, 1, 1), ServerRenderer);
 
         Assert.Equal(7, page.Value);
         Assert.Equal(new DateOnly(2000, 1, 1), when.Value);
@@ -178,7 +196,7 @@ public class QueryStateTests : BluxToolsTestContext
     public async Task A_bound_value_reads_the_url_and_follows_back_forward_and_typed_urls()
     {
         Nav.NavigateTo("/list?q=first");
-        using var q = State.Bind("q", QueryCodecs.String, "");
+        using var q = State.Bind("q", QueryCodecs.String, "", ServerRenderer);
         var changes = 0;
         q.Changed += () => changes++;
 
@@ -272,7 +290,7 @@ public class QueryStateTests : BluxToolsTestContext
     public async Task Back_restores_the_previous_value_after_a_push()
     {
         Nav.NavigateTo("/list?q=old");
-        using var q = State.Bind("q", QueryCodecs.String, "");
+        using var q = State.Bind("q", QueryCodecs.String, "", ServerRenderer);
 
         q.Set("new", QueryHistory.Push);
         await Until(() => Nav.Uri.EndsWith("q=new"), "the push");
@@ -285,16 +303,24 @@ public class QueryStateTests : BluxToolsTestContext
     }
 
     [Fact]
-    public void The_url_wins_over_a_write_that_has_not_flushed_when_it_changes_the_same_key()
+    public async Task The_url_wins_over_a_write_that_has_not_flushed_when_it_changes_the_same_key()
     {
-        Nav.NavigateTo("/list?q=a");
-        using var q = State.Bind("q", QueryCodecs.String, "");
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list?q=a");
+        using var state = new QueryState(navigation);
+        using var q = state.Bind("q", QueryCodecs.String, "", ServerRenderer);
 
-        q.Set("typed", QueryHistory.Replace);
-        Assert.Equal("typed", q.Value);
-        Nav.NavigateTo("/list?q=external");
+        await Handler(() =>
+        {
+            q.Set("typed", QueryHistory.Replace);
+            Assert.Equal("typed", q.Value);
+            // The browser reports another URL before the flush.
+            navigation.Receive("http://localhost/list?q=external");
+        });
 
         Assert.Equal("external", q.Value);
+        await Settle();
+        Assert.Empty(navigation.Sent);
     }
 
     [Fact]
@@ -324,7 +350,7 @@ public class QueryStateTests : BluxToolsTestContext
     public void HrefWith_leaves_a_default_out_through_a_bound_value()
     {
         Nav.NavigateTo("/list?p=2");
-        using var page = State.Bind("p", QueryCodecs.Int32, 1);
+        using var page = State.Bind("p", QueryCodecs.Int32, 1, ServerRenderer);
 
         Assert.Equal("/list?p=5", page.HrefWith(5));
         Assert.Equal("/list", page.HrefWith(1));
@@ -368,26 +394,394 @@ public class QueryStateTests : BluxToolsTestContext
         using var again = State.Claim("users", "D");
     }
 
+    private static Filters Dummy => new();
+
+    private QueryGroup<Filters> FilterGroup(string owner, string? prefix = null, params string[] keys)
+    {
+        var group = State.Group(new Filters(), owner, ServerRenderer, prefix);
+        foreach (var key in keys)
+        {
+            group.Add(key, f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String);
+        }
+        return group;
+    }
+
     [Fact]
-    public void A_claim_made_on_another_page_replaces_the_one_of_the_page_being_left()
+    public void Two_groups_that_share_a_key_throw_naming_both_owners_and_a_group_cannot_repeat_its_own_key()
+    {
+        Nav.NavigateTo("/list");
+        using var first = FilterGroup("UsersList", null, "q");
+
+        var error = Assert.Throws<InvalidOperationException>(() => FilterGroup("AuditLog", null, "q"));
+
+        Assert.Contains("UsersList", error.Message);
+        Assert.Contains("AuditLog", error.Message);
+        Assert.Contains("'q'", error.Message);
+        Assert.Throws<ArgumentException>(() => first.Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String));
+    }
+
+    [Fact]
+    public void Two_groups_without_a_prefix_are_allowed_when_their_keys_are_disjoint()
+    {
+        Nav.NavigateTo("/list");
+        using var first = FilterGroup("A", null, "q");
+        using var second = FilterGroup("B", null, "other");
+        using var prefixed = FilterGroup("C", "g", "q");
+
+        Assert.NotNull(second.Value);
+    }
+
+    [Fact]
+    public void A_prefixed_group_and_an_unprefixed_one_that_binds_the_same_keys_conflict()
+    {
+        Nav.NavigateTo("/list");
+        using var users = FilterGroup("Users", "users", "q");
+
+        var error = Assert.Throws<InvalidOperationException>(() => FilterGroup("Everything", null, "users.q"));
+
+        Assert.Contains("Users", error.Message);
+        Assert.Contains("Everything", error.Message);
+    }
+
+    [Fact]
+    public void A_whole_prefix_claim_conflicts_with_the_keys_it_matches()
+    {
+        Nav.NavigateTo("/list");
+        using var users = FilterGroup("Users", "users", "q");
+
+        Assert.Throws<InvalidOperationException>(() => State.Claim("users", "Raw"));
+        using var other = State.Claim("orders", "Raw");
+    }
+
+    [Fact]
+    public void A_released_group_frees_its_keys()
+    {
+        Nav.NavigateTo("/list");
+        FilterGroup("A", null, "q").Dispose();
+
+        using var again = FilterGroup("B", null, "q");
+    }
+
+    [Fact]
+    public async Task A_page_that_replaces_the_previous_one_is_not_a_conflict_once_the_old_page_is_disposed()
     {
         Nav.NavigateTo("/users");
-        var users = State.Claim("", "UsersPage");
+        var users = FilterGroup("UsersPage", null, "q");
 
-        // The router creates the next page before it disposes the previous one.
+        // The router creates the next page before it disposes the previous one: the keys are used twice for a moment.
         Nav.NavigateTo("/orders");
-        using var orders = State.Claim("", "OrdersPage");
+        var orders = FilterGroup("OrdersPage", null, "q");
         users.Dispose();
+        await Settle();
 
-        // The disposal of the old page must not release the claim of the new one.
-        Assert.Throws<InvalidOperationException>(() => State.Claim("", "Third"));
+        orders.ThrowIfConflicted();
+        Assert.NotNull(orders.Value);
+    }
+
+    [Fact]
+    public async Task A_layout_level_claim_is_checked_against_a_page_that_comes_later()
+    {
+        Nav.NavigateTo("/users");
+        using var layout = FilterGroup("Layout", null, "q");
+        Nav.NavigateTo("/orders");
+
+        // The layout lives on: the page cannot use its key, and it finds out when the render is over.
+        using var page = FilterGroup("OrdersPage", null, "q");
+        await Settle();
+
+        var error = Assert.Throws<InvalidOperationException>(() => page.Value);
+        Assert.Contains("Layout", error.Message);
+        Assert.Contains("OrdersPage", error.Message);
+        Assert.NotNull(layout.Value);
+    }
+
+    [Fact]
+    public async Task A_page_reused_for_another_route_parameter_is_checked_against_a_new_claimant()
+    {
+        Nav.NavigateTo("/items/1");
+        using var reused = FilterGroup("ItemPage", null, "q");
+        Nav.NavigateTo("/items/2");
+
+        using var intruder = FilterGroup("Sidebar", null, "q");
+        await Settle();
+
+        Assert.Throws<InvalidOperationException>(() => intruder.Value);
+        Assert.NotNull(reused.Value);
+    }
+
+    [Fact]
+    public async Task Nothing_is_written_and_the_navigation_manager_is_not_called_when_the_renderer_is_not_interactive()
+    {
+        Nav.NavigateTo("/list?q=a");
+        State.UseRenderer(new RendererInfo("Static", false));
+        var before = Navigations;
+
+        var written = State.Set("q", "b");
+        await Settle();
+
+        Assert.False(written);
+        Assert.Equal(before, Navigations);
+        Assert.Equal("a", State.Get("q"));
+        Assert.Equal("/list?q=c", State.HrefWith(("q", "c")));
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_prerender_never_reaches_the_navigation_manager_whether_it_throws_or_records_a_redirect(bool throws)
+    {
+        // Both kinds of host: BlazorDisableThrowNavigationException off (a NavigationException) and on (a redirect in the response).
+        var navigation = new RecordingNavigationManager(throws);
+        navigation.Start("http://localhost/", "http://localhost/list?page=99");
+        using var state = new QueryState(navigation);
+        var prerender = new RendererInfo("Static", false);
+
+        // What a component does in OnInitialized to normalize a page.
+        using var group = state.Group(new Filters(), "List", prerender, history: QueryHistory.Replace)
+            .Add("page", f => f.Page, (f, v) => f with { Page = v }, QueryCodecs.Int32);
+        var written = group.Update(f => f with { Page = 3 });
+        using var value = state.Bind("q", QueryCodecs.String, "", prerender);
+        value.Value = "x";
+        await Task.Delay(150, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.False(written);
+        Assert.Equal(0, navigation.Attempts);
+        Assert.Equal(0, navigation.Redirects);
+    }
+
+    [Fact]
+    public async Task The_raw_Set_without_a_known_renderer_throws_on_the_server_and_never_navigates()
+    {
+        var navigation = new RecordingNavigationManager(throws: false);
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation);
+
+        var error = Assert.Throws<InvalidOperationException>(() => state.Set("q", "a"));
+        await Task.Delay(100, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Contains("UseRenderer", error.Message);
+        Assert.Equal(0, navigation.Attempts);
+    }
+
+    [Fact]
+    public async Task A_write_followed_by_a_navigation_to_another_page_in_the_same_handler_does_not_send_the_user_back()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation);
+        state.UseRenderer(ServerRenderer);
+
+        await Handler(() =>
+        {
+            state.Set("q", "a");
+            // The handler navigates away: on the server the URI of the manager still says /list for a while.
+            navigation.NavigateTo("/details/5");
+        });
+        await Task.Delay(200, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal(["/details/5"], navigation.Sent);
+        Assert.Null(state.Get("q"));
+    }
+
+    [Fact]
+    public async Task A_write_followed_by_a_navigation_on_the_same_page_still_flushes()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation);
+        state.UseRenderer(ServerRenderer);
+
+        await Handler(() =>
+        {
+            state.Set("q", "a");
+            navigation.NavigateTo("/list?sort=name");
+        });
+        await Until(() => navigation.Sent.Count == 2, "the flush");
+
+        Assert.Equal("http://localhost/list?q=a", navigation.Sent[1]);
+    }
+
+    [Fact]
+    public async Task The_location_changing_handler_lives_only_while_a_batch_is_pending()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation);
+        state.UseRenderer(ServerRenderer);
+        Assert.Equal(0, navigation.LockStates.Count(on => on));
+
+        state.Set("q", "a");
+        Assert.Equal(1, navigation.LockStates.Count(on => on));
+        await Until(() => navigation.Sent.Count == 1, "the flush");
+
+        Assert.Equal(1, navigation.LockStates.Count(on => !on));
+    }
+
+    [Fact]
+    public async Task A_navigation_that_is_cancelled_is_rolled_back_to_what_the_url_holds()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list?q=old");
+        using var state = new QueryState(navigation) { RollbackDelay = TimeSpan.FromMilliseconds(100) };
+        state.UseRenderer(ServerRenderer);
+        var seen = new List<string>();
+        using var subscription = state.Subscribe("", keys => seen.AddRange(keys));
+
+        state.Set("q", "new");
+        Assert.Equal("new", state.Get("q"));
+        // A NavigationLock cancels it: the manager never reports it, and its URI stays the old one.
+        await Until(() => state.Get("q") == "old", "the rollback");
+
+        Assert.Equal(["q", "q"], seen);
+    }
+
+    [Fact]
+    public async Task A_navigation_that_arrives_in_time_is_not_rolled_back()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation) { RollbackDelay = TimeSpan.FromMilliseconds(150) };
+        state.UseRenderer(ServerRenderer);
+
+        state.Set("q", "a");
+        await Until(() => navigation.Sent.Count == 1, "the flush");
+        navigation.Receive(navigation.Sent[0]);
+        await Task.Delay(400, Xunit.TestContext.Current.CancellationToken);
+
+        Assert.Equal("a", state.Get("q"));
+    }
+
+    [Fact]
+    public async Task A_rolled_back_navigation_whose_echo_arrives_late_is_applied()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation) { RollbackDelay = TimeSpan.FromMilliseconds(80) };
+        state.UseRenderer(ServerRenderer);
+
+        state.Set("q", "a");
+        await Until(() => state.Get("q") is null, "the rollback");
+        navigation.Receive(navigation.Sent[0]);
+
+        Assert.Equal("a", state.Get("q"));
+    }
+
+    [Fact]
+    public async Task An_echo_that_arrives_after_its_lifetime_is_an_external_navigation_even_with_a_newer_write_flushed()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation) { EchoLifetime = TimeSpan.FromMilliseconds(120), RollbackDelay = TimeSpan.FromMinutes(1) };
+        state.UseRenderer(ServerRenderer);
+
+        state.Set("q", "a");
+        await Until(() => navigation.Sent.Count == 1, "the first flush");
+        await Task.Delay(250, Xunit.TestContext.Current.CancellationToken);
+        state.Set("q", "ab");
+        await Until(() => navigation.Sent.Count == 2, "the second flush");
+
+        // The first echo is too old to be ours: the URL says "a", and the URL is the truth.
+        navigation.Receive(navigation.Sent[0]);
+        Assert.Equal("a", state.Get("q"));
+        // The second one arrives and wins again.
+        navigation.Receive(navigation.Sent[1]);
+        Assert.Equal("ab", state.Get("q"));
+    }
+
+    [Fact]
+    public async Task A_stale_echo_inside_its_lifetime_never_flips_the_state_back()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list");
+        using var state = new QueryState(navigation) { RollbackDelay = TimeSpan.FromMinutes(1) };
+        state.UseRenderer(ServerRenderer);
+        var seen = new List<string>();
+        using var subscription = state.Subscribe("", keys => seen.AddRange(keys));
+
+        state.Set("q", "a");
+        await Until(() => navigation.Sent.Count == 1, "the first flush");
+        state.Set("q", "ab");
+        await Until(() => navigation.Sent.Count == 2, "the second flush");
+        seen.Clear();
+        navigation.Receive(navigation.Sent[0]);
+
+        Assert.Equal("ab", state.Get("q"));
+        Assert.Empty(seen);
+    }
+
+    [Fact]
+    public async Task A_value_with_an_ampersand_is_not_confused_with_two_parameters()
+    {
+        var navigation = new DelayedNavigationManager();
+        navigation.Start("http://localhost/", "http://localhost/list?a=1&b=2");
+        using var state = new QueryState(navigation) { RollbackDelay = TimeSpan.FromMinutes(1) };
+        state.UseRenderer(ServerRenderer);
+        var seen = new List<string>();
+        using var subscription = state.Subscribe("", keys => seen.AddRange(keys));
+
+        await Handler(() =>
+        {
+            state.Set("a", "1&b=2");
+            state.Set("b", null);
+        });
+        await Until(() => navigation.Sent.Count == 1, "the flush");
+        // The URL a={1&b=2} must not look like the one we started from (a=1, b=2), nor like the echo of ours.
+        navigation.Receive("http://localhost/list?a=1&b=2");
+
+        Assert.Equal("1", state.Get("a"));
+        Assert.Equal("2", state.Get("b"));
+        Assert.Contains("a", seen);
+    }
+
+    [Fact]
+    public async Task A_decimal_equal_to_the_default_by_value_is_left_out_and_does_not_raise_Changed()
+    {
+        Nav.NavigateTo("/list");
+        using var price = State.Bind("price", QueryCodecs.Decimal, 1m, ServerRenderer);
+        var changes = 0;
+        price.Changed += () => changes++;
+
+        price.Value = 1.0m;
+        await Settle();
+
+        Assert.Equal(0, changes);
+        Assert.Equal("http://localhost/list", Nav.Uri);
+        Assert.Equal("/list", price.HrefWith(1.00m));
+    }
+
+    [Fact]
+    public void A_moment_that_changes_only_its_offset_raises_Changed()
+    {
+        Nav.NavigateTo("/list?at=2026-01-02T03:04:05.0000000%2B01:00");
+        using var at = State.Bind("at", QueryCodecs.DateTimeOffset, default(DateTimeOffset), ServerRenderer);
+        var changes = 0;
+        at.Changed += () => changes++;
+
+        Nav.NavigateTo("/list?at=2026-01-02T02:04:05.0000000Z");
+
+        Assert.Equal(1, changes);
+        Assert.Equal(TimeSpan.Zero, at.Value.Offset);
+    }
+
+    [Fact]
+    public void A_list_value_raises_Changed_only_when_its_items_change()
+    {
+        Nav.NavigateTo("/list?tags=a,b");
+        using var tags = State.Bind("tags", QueryCodecs.Array(QueryCodecs.String), [], ServerRenderer);
+        var changes = 0;
+        tags.Changed += () => changes++;
+
+        Nav.NavigateTo("/list?tags=a,b&x=1");
+        Assert.Equal(0, changes);
+        Nav.NavigateTo("/list?tags=a,c");
+        Assert.Equal(1, changes);
     }
 
     [Fact]
     public async Task A_group_writes_all_its_properties_in_one_navigation_and_omits_defaults()
     {
         Nav.NavigateTo("/list?utm=1");
-        using var group = State.Group(new Filters(), "FilterList", prefix: "f", QueryHistory.Push)
+        using var group = State.Group(new Filters(), "FilterList", ServerRenderer, prefix: "f", history: QueryHistory.Push)
             .Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String)
             .Add("p", f => f.Page, (f, v) => f with { Page = v }, QueryCodecs.Int32)
             .Add("on", f => f.Archived, (f, v) => f with { Archived = v }, QueryCodecs.Boolean);
@@ -410,7 +804,7 @@ public class QueryStateTests : BluxToolsTestContext
     public void A_group_reads_the_url_and_falls_back_to_the_default_of_a_bad_property()
     {
         Nav.NavigateTo("/list?f.q=x&f.p=zzz&f.on=TRUE&unrelated=1");
-        using var group = State.Group(new Filters("d", 9, false), "FilterList", prefix: "f")
+        using var group = State.Group(new Filters("d", 9, false), "FilterList", ServerRenderer, prefix: "f")
             .Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String)
             .Add("p", f => f.Page, (f, v) => f with { Page = v }, QueryCodecs.Int32)
             .Add("on", f => f.Archived, (f, v) => f with { Archived = v }, QueryCodecs.Boolean);
@@ -422,7 +816,7 @@ public class QueryStateTests : BluxToolsTestContext
     public void A_group_raises_Changed_for_its_keys_only()
     {
         Nav.NavigateTo("/list?f.q=a&other=1");
-        using var group = State.Group(new Filters(), "FilterList", prefix: "f")
+        using var group = State.Group(new Filters(), "FilterList", ServerRenderer, prefix: "f")
             .Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String);
         var changes = 0;
         group.Changed += () => changes++;
@@ -434,66 +828,15 @@ public class QueryStateTests : BluxToolsTestContext
     }
 
     [Fact]
-    public void Two_groups_with_the_same_prefix_throw_and_a_second_key_of_one_group_must_differ()
-    {
-        Nav.NavigateTo("/list");
-        using var first = State.Group(new Filters(), "A", prefix: "f");
-
-        Assert.Throws<InvalidOperationException>(() => State.Group(new Filters(), "B", prefix: "f"));
-        Assert.Throws<ArgumentException>(() => first.Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String)
-            .Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String));
-    }
-
-    [Fact]
-    public void A_group_without_a_prefix_claims_the_empty_one()
-    {
-        Nav.NavigateTo("/list");
-        using var first = State.Group(new Filters(), "A");
-
-        Assert.Throws<InvalidOperationException>(() => State.Group(new Filters(), "B"));
-        using var prefixed = State.Group(new Filters(), "C", prefix: "g");
-    }
-
-    [Fact]
     public void A_group_gives_a_link_that_carries_a_record()
     {
         Nav.NavigateTo("/list?f.q=a");
-        using var group = State.Group(new Filters(), "FilterList", prefix: "f")
+        using var group = State.Group(new Filters(), "FilterList", ServerRenderer, prefix: "f")
             .Add("q", f => f.Search, (f, v) => f with { Search = v }, QueryCodecs.String)
             .Add("p", f => f.Page, (f, v) => f with { Page = v }, QueryCodecs.Int32);
 
         Assert.Equal("/list?f.q=b&f.p=2", group.HrefWith(new Filters("b", 2, false)));
         Assert.Equal("/list", group.HrefWith(new Filters()));
-    }
-
-    [Fact]
-    public async Task Nothing_is_written_when_the_renderer_is_not_interactive()
-    {
-        Nav.NavigateTo("/list?q=a");
-        State.UseRenderer(new RendererInfo("Static", false));
-        var before = Navigations;
-
-        var written = State.Set("q", "b");
-        await Settle();
-
-        Assert.False(written);
-        Assert.Equal(before, Navigations);
-        Assert.Equal("a", State.Get("q"));
-        // Reading and building links still work without interactivity.
-        Assert.Equal("/list?q=c", State.HrefWith(("q", "c")));
-    }
-
-    [Fact]
-    public async Task Without_a_word_about_the_renderer_a_write_that_cannot_navigate_is_dropped_quietly()
-    {
-        var navigation = new RefusingNavigationManager();
-        navigation.Start("http://localhost/", "http://localhost/list");
-        using var state = new QueryState(navigation);
-
-        state.Set("q", "a");
-        await Task.Delay(150, Xunit.TestContext.Current.CancellationToken);
-
-        Assert.Equal(1, navigation.Attempts);
     }
 
     [Fact]
@@ -611,6 +954,7 @@ public class QueryStateTests : BluxToolsTestContext
     {
         Nav.NavigateTo("/list?q=a");
         var state = new QueryState(Nav);
+        state.UseRenderer(ServerRenderer);
         _ = state.Get("q");
         var calls = 0;
         using var subscription = state.Subscribe("", _ => calls++);
@@ -630,7 +974,11 @@ public class QueryStateTests : BluxToolsTestContext
     {
         public List<string> Sent { get; } = [];
 
+        public List<bool> LockStates { get; } = [];
+
         public void Start(string baseUri, string uri) => Initialize(baseUri, uri);
+
+        protected override void SetNavigationLockState(bool value) => LockStates.Add(value);
 
         public void Receive(string uri)
         {
@@ -638,20 +986,32 @@ public class QueryStateTests : BluxToolsTestContext
             NotifyLocationChanged(false);
         }
 
-        protected override void NavigateToCore(string uri, NavigationOptions options) => Sent.Add(uri);
+        // Like the Server and WebAssembly managers: the location changing handlers run first, synchronously when they complete at once.
+        protected override void NavigateToCore(string uri, NavigationOptions options)
+        {
+            var proceed = NotifyLocationChangingAsync(uri, options.HistoryEntryState, false);
+            if (proceed.IsCompletedSuccessfully && !proceed.Result) return;
+            Sent.Add(uri);
+        }
     }
 
-    /// <summary>The navigation manager of a prerender: navigating is a redirect, which surfaces as an exception.</summary>
-    private sealed class RefusingNavigationManager : NavigationManager
+    /// <summary>
+    /// The navigation manager of a prerender, in both configurations of the host: navigating throws a NavigationException, or (BlazorDisableThrowNavigationException)
+    /// it quietly sets a redirect on the response. Either way, a call is what the service must never make.
+    /// </summary>
+    private sealed class RecordingNavigationManager(bool throws) : NavigationManager
     {
         public int Attempts { get; private set; }
+
+        public int Redirects { get; private set; }
 
         public void Start(string baseUri, string uri) => Initialize(baseUri, uri);
 
         protected override void NavigateToCore(string uri, NavigationOptions options)
         {
             Attempts++;
-            throw new NavigationException(uri);
+            if (throws) throw new NavigationException(uri);
+            Redirects++;
         }
     }
 }
