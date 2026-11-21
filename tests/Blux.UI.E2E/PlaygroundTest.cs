@@ -12,6 +12,7 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
     [
         "button", "badge", "avatar", "card", "alert", "input", "textarea", "checkbox", "switch", "radio-group", "select", "form-field",
         "modal", "popover", "tooltip", "dropdown-menu", "toast", "tabs", "accordion", "table", "data-list", "data-list-empty",
+        "infinite-scroll", "select-menu", "input-menu", "listbox", "command-palette",
     ];
 
     public static TheoryData<string, string> EveryPageInEveryMode()

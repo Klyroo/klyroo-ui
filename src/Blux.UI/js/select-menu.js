@@ -1,5 +1,5 @@
 import { ensureId, float, isTvMode, observeChildren } from './shared.js';
-import { ValueModel, navigable } from './form2-shared.js';
+import { ValueModel, navigable, syncGroups, syncSelectedIcon } from './form2-shared.js';
 
 /**
  * Select with a filter field inside the list. The trigger is a select-only combobox button; the popover holds a
@@ -97,6 +97,8 @@ export class BxSelectMenuElement extends HTMLElement {
   #paint(values) {
     const options = this.#options();
     for (const option of options) option.setAttribute('aria-selected', String(values.includes(option.dataset.value)));
+    // One selected value shows its icon; several have no single icon to show.
+    syncSelectedIcon(this, values.length === 1 ? (options.find((o) => o.dataset.value === values[0]) ?? null) : null);
     const label = this.querySelector('[data-slot="label"]');
     if (!label) return;
     if (values.length > 0) {
@@ -117,6 +119,7 @@ export class BxSelectMenuElement extends HTMLElement {
       option.hidden = !match;
       if (match) shown++;
     }
+    syncGroups(this);
     const create = this.#create;
     if (create) {
       const exact = options.some((o) => (o.dataset.label ?? '').toLowerCase() === query) || this.#model.values.includes(text.trim());

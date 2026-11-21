@@ -12,7 +12,19 @@ internal static partial class Themes
         "group relative flex cursor-pointer select-none items-center gap-1.5 rounded-[calc(var(--blux-radius)_-_2px)] px-2 py-1.5 text-sm " +
         "data-highlighted:bg-(--blux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 " + HiddenAttribute;
 
-    private const string ListItemIcon = "invisible ms-auto size-4 shrink-0 text-(--bx-color-text) group-aria-selected:visible";
+    // With a count the count takes the free space (ms-auto), so the check mark must not take half of it.
+    private const string ListItemIcon = "invisible ms-auto size-4 shrink-0 text-(--bx-color-text) group-aria-selected:visible group-data-has-count:ms-0";
+
+    private const string ListItemLeadingIcon = "size-4 shrink-0 text-(--blux-text-muted)";
+
+    private const string ListItemCount = "ms-auto shrink-0 ps-2 text-xs tabular-nums text-(--blux-text-muted)";
+
+    // The icon of the selected item, put there by the browser; no icon, no space.
+    private const string TriggerLeadingIcon = "shrink-0 text-(--blux-text-muted) empty:hidden [&>svg]:size-4";
+
+    private const string ListGroup = "py-0.5";
+
+    private const string ListGroupLabel = "px-2 py-1.5 text-xs font-semibold text-(--blux-text-muted)";
 
     private const string Popup =
         "m-0 p-0 inset-auto overflow-hidden rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-overlay) text-(--blux-text) shadow-lg";
@@ -40,12 +52,17 @@ internal static partial class Themes
         .Slot("item", ListItem)
         .Slot("itemLabel", "truncate")
         .Slot("itemIcon", ListItemIcon)
+        .Slot("itemLeadingIcon", ListItemLeadingIcon)
+        .Slot("itemCount", ListItemCount)
+        .Slot("group", ListGroup)
+        .Slot("groupLabel", ListGroupLabel)
         .Slot("empty", "px-3 py-2 text-sm text-(--blux-text-muted) " + HiddenAttribute);
 
     public static ComponentTheme SelectMenu()
     {
-        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "empty", "create")
+        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon", "empty", "create")
             .Slot("create", "before:content-[attr(data-label)]")
+            .Slot("leadingIcon", TriggerLeadingIcon)
             .Slot("root", "relative inline-flex w-full")
             .Slot("base", "relative inline-flex w-full items-center rounded-(--blux-radius) text-start cursor-pointer focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
@@ -63,7 +80,7 @@ internal static partial class Themes
 
     public static ComponentTheme InputMenu()
     {
-        var t = new ComponentTheme("inputMenu", "root", "base", "trailing", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "empty")
+        var t = new ComponentTheme("inputMenu", "root", "base", "trailing", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "empty")
             .Slot("root", "relative inline-flex w-full items-center")
             .Slot("base", "w-full rounded-(--blux-radius) border-0 appearance-none placeholder:text-(--blux-text-dimmed) focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
@@ -214,13 +231,17 @@ internal static partial class Themes
             .Default("orientation", "horizontal");
 
     public static ComponentTheme Listbox() =>
-        new ComponentTheme("listbox", "root", "base", "item", "itemLabel", "itemIcon")
+        new ComponentTheme("listbox", "root", "base", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel")
             .Slot("root", "block w-full")
             .Slot("base", "max-h-60 w-full overflow-y-auto rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg) p-1 text-(--blux-text) " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) aria-invalid:border-(--blux-error) aria-invalid:ring-1 aria-invalid:ring-(--blux-error)")
             .Slot("item", ListItem)
             .Slot("itemLabel", "min-w-0 flex-1 truncate")
             .Slot("itemIcon", ListItemIcon)
+            .Slot("itemLeadingIcon", ListItemLeadingIcon)
+            .Slot("itemCount", ListItemCount)
+            .Slot("group", ListGroup)
+            .Slot("groupLabel", ListGroupLabel)
             .Variant("size", "xs", "item", "text-xs").Variant("size", "sm", "item", "text-xs").Variant("size", "md", "item", "text-sm")
             .Variant("size", "lg", "item", "text-sm").Variant("size", "xl", "item", "text-base")
             .Default("size", "md");

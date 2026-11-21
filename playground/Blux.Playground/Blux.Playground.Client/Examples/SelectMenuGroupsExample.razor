@@ -1,0 +1,22 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Destination">
+        <BxSelectMenu Items="Countries" Value="@_values" ValueChanged="@(v => _values = v ?? [])" Placeholder="Pick a country" data-testid="destination" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="destination-state">Selected: @(_values.Count > 0 ? string.Join(", ", _values) : "none")</p>
+</div>
+
+@code {
+    private IReadOnlyList<string> _values = [];
+
+    // The filter hides a heading with the last of its items.
+    private static readonly BxSelectItem[] Countries =
+    [
+        new("fr", "France") { Group = "Europe", Count = 48 },
+        new("de", "Germany") { Group = "Europe", Count = 36 },
+        new("it", "Italy") { Group = "Europe", Count = 21 },
+        new("jp", "Japan") { Group = "Asia", Count = 17, Icon = "globe" },
+        new("kr", "South Korea") { Group = "Asia", Count = 9, Icon = "globe" },
+        new("br", "Brazil") { Group = "Americas", Count = 12 },
+        new("ca", "Canada") { Group = "Americas", Count = 8 },
+    ];
+}

@@ -20,6 +20,9 @@ public sealed record BxCommandItem
     public string? Shortcut { get; init; }
     public bool Disabled { get; init; }
 
+    /// <summary>A number shown at the end of the row, before the shortcut (matches, unread, items): formatted for the locale and not searched.</summary>
+    public int? Count { get; init; }
+
     internal string Key => Value ?? Label;
 }
 
@@ -42,6 +45,7 @@ public sealed record CommandPaletteUi : ISlotOverrides
     public string? ItemLabel { get; init; }
     public string? ItemDescription { get; init; }
     public string? ItemShortcut { get; init; }
+    public string? ItemCount { get; init; }
     public string? Empty { get; init; }
     public string? Status { get; init; }
 
@@ -60,6 +64,7 @@ public sealed record CommandPaletteUi : ISlotOverrides
         "itemLabel" => ItemLabel,
         "itemDescription" => ItemDescription,
         "itemShortcut" => ItemShortcut,
+        "itemCount" => ItemCount,
         "empty" => Empty,
         "status" => Status,
         _ => null,

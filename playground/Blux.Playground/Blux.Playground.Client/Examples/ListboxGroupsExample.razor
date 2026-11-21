@@ -1,0 +1,18 @@
+<div class="w-full max-w-xs">
+    <BxFormField Label="Time zone">
+        <BxListbox Items="Zones" @bind-Value="_zone" />
+    </BxFormField>
+    <p class="mt-2 text-sm text-(--blux-text-muted)" data-testid="zone-state">Zone: @(_zone.Count > 0 ? _zone[0] : "none")</p>
+</div>
+
+@code {
+    private IReadOnlyList<string> _zone = [];
+
+    private static readonly BxSelectItem[] Zones =
+    [
+        new("paris", "Paris") { Group = "Europe", Icon = "clock", Count = 2 },
+        new("london", "London") { Group = "Europe", Icon = "clock", Count = 1 },
+        new("tokyo", "Tokyo") { Group = "Asia", Icon = "clock", Count = 3 },
+        new("sydney", "Sydney") { Group = "Pacific", Icon = "clock", Count = 1 },
+    ];
+}

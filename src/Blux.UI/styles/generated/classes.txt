@@ -85,6 +85,7 @@
 [&>:not(:last-child)_:is(input,select,textarea,button)]:rounded-e-none
 [&>kbd[data-bx-mod]]:before:content-[attr(data-label)]
 [&>svg]:size-3
+[&>svg]:size-4
 [&[disabled]]:cursor-not-allowed
 [&[disabled]]:opacity-60
 [&[hidden]]:hidden
@@ -572,6 +573,7 @@ group-data-active/col:fill-(--blux-text)/5
 group-data-active/col:opacity-100
 group-data-disabled:cursor-not-allowed
 group-data-disabled:opacity-60
+group-data-has-count:ms-0
 group-data-paused/carousel:block
 group-data-paused/carousel:hidden
 group-has-disabled:cursor-not-allowed
