@@ -1,0 +1,198 @@
+using System.Globalization;
+
+namespace Blux.UI.Tools.Query;
+
+/// <summary>
+/// Converts a <see cref="DataListState"/> to and from URL query keys, as plain functions (no Blazor, no <c>NavigationManager</c>). Keys, under an
+/// optional prefix joined with a dot (<c>users.q</c>):
+/// <list type="table">
+/// <item><term><c>q</c></term><description>the search text</description></item>
+/// <item><term><c>p</c></term><description>the 1-based page, at least 1 and at most <see cref="DataListState.MaxPage"/></description></item>
+/// <item><term><c>ps</c></term><description>the page size, from 1 to the schema's maximum</description></item>
+/// <item><term><c>s</c></term><description>the sort, <c>name|-age</c> (a leading <c>-</c> is descending); present and empty means "no sort"</description></item>
+/// <item><term><c>f.&lt;key&gt;</c></term><description>a filter rule with the default operator of its kind</description></item>
+/// <item><term><c>f.&lt;key&gt;.&lt;op&gt;</c></term><description>a filter rule with another operator (<c>contains is isAnyOf isNot gt gte lt lte between before after isEmpty isNotEmpty</c>)</description></item>
+/// <item><term><c>c</c></term><description>the cursor</description></item>
+/// <item><term><c>l</c></term><description><c>table</c> or <c>grid</c></description></item>
+/// </list>
+/// A filter value is a comma-separated list; <c>,</c> <c>~</c> and <c>%</c> in a value are escaped as <c>%2C</c> <c>%7E</c> <c>%25</c>; a bare
+/// <c>~</c> token means "include empty rows"; a range is <c>from..to</c>. Values equal to the schema's <see cref="DataListSchema.DefaultState"/> are
+/// omitted. A default filter rule that the user removed is written as its key with an empty value. The state keeps one rule per key; with two, the
+/// default rule of that key is not restored. Operators are matched ignoring case. A filter key may contain dots: the whole text after <c>f.</c> is tried
+/// as a key first, then the part before the last dot as a key and the part after as an operator.
+/// </summary>
+public static class DataListStateQuery
+{
+    /// <summary>Writes the keys of a state that differ from the defaults. Rules the schema does not accept are left out, so the result always reads back.</summary>
+    /// <param name="state">The state.</param>
+    /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
+    /// <param name="prefix">An optional key prefix for pages with several data lists.</param>
+    /// <returns>Raw (not URL-encoded) keys and values, in a stable order.</returns>
+    public static IReadOnlyDictionary<string, string> ToQuery(DataListState state, DataListSchema schema, string? prefix = null)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(schema);
+        var defaults = schema.DefaultState;
+        var query = new Dictionary<string, string>(StringComparer.Ordinal);
+
+        if (state.Search != defaults.Search) query[Key(prefix, "q")] = state.Search;
+
+        if (string.IsNullOrEmpty(state.Cursor))
+        {
+            var page = Math.Clamp(state.Page, 1, DataListState.MaxPage);
+            if (page != defaults.Page) query[Key(prefix, "p")] = page.ToString(CultureInfo.InvariantCulture);
+        }
+
+        var size = Math.Clamp(state.PageSize, 1, schema.MaxPageSize);
+        if (size != defaults.PageSize) query[Key(prefix, "ps")] = size.ToString(CultureInfo.InvariantCulture);
+
+        var sort = CleanSort(state.Sort, schema);
+        if (!SequenceEquality.Equal(sort, defaults.Sort))
+            query[Key(prefix, "s")] = string.Join('|', sort.Select(s => s.Descending ? "-" + s.Key : s.Key));
+
+        WriteFilters(state, schema, prefix, query);
+
+        if (!string.IsNullOrEmpty(state.Cursor)) query[Key(prefix, "c")] = state.Cursor;
+        if (state.Layout != defaults.Layout) query[Key(prefix, "l")] = state.Layout == DataListLayout.Grid ? "grid" : "table";
+        return query;
+    }
+
+    /// <summary>
+    /// Reads a state from query keys. Starts from the schema defaults, so an empty query gives <see cref="DataListSchema.DefaultState"/>. Never throws on
+    /// bad input: unknown filter keys, operators the filter does not allow, values that do not parse, unknown or repeated sort keys and an unknown layout
+    /// are dropped (the default applies); the page is clamped to 1..<see cref="DataListState.MaxPage"/> and the page size to 1..<see cref="DataListSchema.MaxPageSize"/>.
+    /// </summary>
+    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts. Null values are ignored.</param>
+    /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
+    /// <param name="prefix">The key prefix given to <see cref="ToQuery"/>.</param>
+    public static DataListState FromQuery(IEnumerable<KeyValuePair<string, string?>> query, DataListSchema schema, string? prefix = null)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(schema);
+        var defaults = schema.DefaultState;
+        var pairs = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (key, value) in query)
+            if (key is not null && value is not null) pairs.TryAdd(key, value);
+
+        var search = pairs.GetValueOrDefault(Key(prefix, "q")) ?? defaults.Search;
+
+        var page = defaults.Page;
+        if (pairs.TryGetValue(Key(prefix, "p"), out var p) && int.TryParse(p, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var pn))
+            page = Math.Clamp(pn, 1, DataListState.MaxPage);
+
+        var size = defaults.PageSize;
+        if (pairs.TryGetValue(Key(prefix, "ps"), out var ps) && int.TryParse(ps, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var sn))
+            size = Math.Clamp(sn, 1, schema.MaxPageSize);
+
+        var sort = defaults.Sort;
+        if (pairs.TryGetValue(Key(prefix, "s"), out var s))
+        {
+            var parsed = ParseSort(s, schema);
+            sort = s.Length == 0 ? [] : parsed.Count > 0 ? parsed : defaults.Sort;
+        }
+
+        var filters = ReadFilters(pairs, schema, prefix, defaults.Filters);
+
+        var layout = defaults.Layout;
+        if (pairs.TryGetValue(Key(prefix, "l"), out var l) && Enum.TryParse<DataListLayout>(l, ignoreCase: true, out var parsedLayout)
+            && Enum.IsDefined(parsedLayout) && !int.TryParse(l, out _))
+            layout = parsedLayout;
+
+        var cursor = pairs.GetValueOrDefault(Key(prefix, "c"));
+        return new DataListState(search, filters, sort, page, size, layout, string.IsNullOrEmpty(cursor) ? null : cursor);
+    }
+
+    private static string Key(string? prefix, string name) => string.IsNullOrEmpty(prefix) ? name : prefix + "." + name;
+
+    private static List<DataListSort> CleanSort(IReadOnlyList<DataListSort> sort, DataListSchema schema)
+    {
+        var clean = new List<DataListSort>();
+        foreach (var rule in sort)
+            if (rule is not null && schema.SortKeys.Contains(rule.Key) && clean.All(c => c.Key != rule.Key)) clean.Add(rule);
+        return clean;
+    }
+
+    private static List<DataListSort> ParseSort(string text, DataListSchema schema)
+    {
+        var sort = new List<DataListSort>();
+        foreach (var token in text.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var descending = token.StartsWith('-');
+            var key = descending ? token[1..] : token;
+            if (schema.SortKeys.Contains(key) && sort.All(r => r.Key != key)) sort.Add(new DataListSort(key, descending));
+        }
+        return sort;
+    }
+
+    private static string FilterKey(string? prefix, DataListFilter filter, string key, FilterOperator op) =>
+        Key(prefix, op == filter.DefaultOperator ? "f." + key : "f." + key + "." + FilterRuleText.OperatorName(op));
+
+    private static void WriteFilters(DataListState state, DataListSchema schema, string? prefix, Dictionary<string, string> query)
+    {
+        var rules = new List<FilterRule>();
+        foreach (var rule in state.Filters)
+        {
+            if (rule is null || !schema.TryGetFilter(rule.Key, out var filter) || !filter.IsValid(rule)) continue;
+            var normalized = rule.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty && rule.IncludeEmpty ? rule with { IncludeEmpty = false } : rule;
+            if (rules.Any(r => r.Key == normalized.Key && r.Operator == normalized.Operator)) continue;
+            rules.Add(normalized);
+        }
+
+        var defaults = schema.DefaultState.Filters;
+        var overridden = rules.Where(r => !defaults.Contains(r)).Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
+        foreach (var rule in rules)
+        {
+            if (defaults.Contains(rule) && !overridden.Contains(rule.Key)) continue;
+            schema.TryGetFilter(rule.Key, out var filter);
+            query[FilterKey(prefix, filter!, rule.Key, rule.Operator)] = FilterRuleText.Format(rule);
+        }
+        foreach (var def in defaults)
+        {
+            if (rules.Any(r => r.Key == def.Key)) continue;
+            schema.TryGetFilter(def.Key, out var filter);
+            query[FilterKey(prefix, filter!, def.Key, def.Operator)] = "";
+        }
+    }
+
+    private static List<FilterRule> ReadFilters(Dictionary<string, string> pairs, DataListSchema schema, string? prefix, IReadOnlyList<FilterRule> defaults)
+    {
+        var fromUrl = new List<FilterRule>();
+        var cleared = new HashSet<string>(StringComparer.Ordinal);
+        var filterPrefix = Key(prefix, "f.");
+        foreach (var (name, raw) in pairs)
+        {
+            if (!name.StartsWith(filterPrefix, StringComparison.Ordinal)) continue;
+            if (!TryResolve(name[filterPrefix.Length..], schema, out var key, out var op, out var filter)) continue;
+            if (raw.Length == 0) { cleared.Add(key); continue; }
+            var rule = FilterRuleText.Parse(filter, key, op ?? filter.DefaultOperator, raw);
+            if (rule is null || fromUrl.Any(r => r.Key == rule.Key && r.Operator == rule.Operator)) continue;
+            fromUrl.Add(rule);
+        }
+
+        var overridden = fromUrl.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
+        var result = defaults.Where(d => !overridden.Contains(d.Key) && !cleared.Contains(d.Key)).ToList();
+        result.AddRange(fromUrl);
+        return result;
+    }
+
+    private static bool TryResolve(string rest, DataListSchema schema, out string key, out FilterOperator? op, out DataListFilter filter)
+    {
+        if (schema.TryGetFilter(rest, out filter!))
+        {
+            key = rest;
+            op = null;
+            return true;
+        }
+        var dot = rest.LastIndexOf('.');
+        if (dot > 0 && FilterRuleText.TryParseOperator(rest[(dot + 1)..], out var parsed) && schema.TryGetFilter(rest[..dot], out filter!))
+        {
+            key = rest[..dot];
+            op = parsed;
+            return true;
+        }
+        key = "";
+        op = null;
+        filter = null!;
+        return false;
+    }
+}
