@@ -9,6 +9,20 @@ Interactive Server, WebAssembly and Auto, in 12 languages, and is themed through
 builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 ```
 
+```razor
+<BxDataList TItem="Invoice" Schema="InvoiceSchema" Provider="LoadAsync" UrlKey="invoices" ResultJson="AppJson.Default.DataListResultInvoice">
+    <BxDataListResultCount />
+    <BxDataListErrorState />
+    <BxDataListTable Caption="Invoices">
+        <BxDataListColumn Field="customer" />
+        <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+    </BxDataListTable>
+    <BxDataListPagination AriaLabel="Invoices pagination" />
+</BxDataList>
+```
+
+`BxDataList` sorts and pages in memory (`Items`) or asks a provider; its state (sort, page, page size) lives in the URL, as links and GET forms in static rendering and as buttons otherwise.
+
 Styles: this package has **no precompiled stylesheet** (a second sheet loaded after `blux.css` would repeat base utilities in its own layer and override the
 responsive and dark variants of Blux.UI), so the app must compile Tailwind.
 

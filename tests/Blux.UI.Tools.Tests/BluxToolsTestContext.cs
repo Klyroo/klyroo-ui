@@ -9,6 +9,8 @@ public abstract class BluxToolsTestContext : BunitContext
     {
         if (configureCore is not null) Services.AddBluxUi(configureCore);
         Services.AddBluxUiTools(configure);
+        // The browser side (time zone, focus) answers nothing here: the components fall back, and the tests that care set up the calls.
+        JSInterop.Mode = JSRuntimeMode.Loose;
         SetRendererInfo(new Microsoft.AspNetCore.Components.RendererInfo(interactive ? "Server" : "Static", interactive));
     }
 }
