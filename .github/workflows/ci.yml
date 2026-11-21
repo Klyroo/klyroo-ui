@@ -43,6 +43,8 @@ jobs:
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
       - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
         run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
+      - name: Template demo supervisor tests (docs host, fake demo, watchdog)
+        run: dotnet test --project tests/Blux.Playground.Tests -c Release --no-build
       - name: Image provider and local optimizer tests
         run: |
           dotnet test --project tests/Blux.UI.Images.Tests -c Release --no-build
@@ -104,6 +106,8 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - run: dotnet publish playground/Blux.Playground/Blux.Playground -c Release -o published
+      # The live demos of the templates run published too: one publish output per template, in the folder the docs host reads.
+      - run: dotnet publish templates/starter/src/Starter.Web -c Release -o published-templates/starter
       - run: dotnet build tests/Blux.UI.E2E
       - name: Install browser
         run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
@@ -111,6 +115,7 @@ jobs:
         run: dotnet test --project tests/Blux.UI.E2E --no-build
         env:
           BLUX_PLAYGROUND_PUBLISHED: published
+          BLUX_TEMPLATES_PUBLISHED: published-templates
 
   # The Blazor Hybrid sample (samples/Blux.Maui) and the MAUI heads of the app templates (templates/*/src/*.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
   # iOS and Mac Catalyst need macOS, Windows needs Windows. Not run locally except for Android.

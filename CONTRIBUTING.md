@@ -124,6 +124,41 @@ live in each project file, like the output of `dotnet new`, and it refers to the
   Production (it needs Chromium for Playwright; `--no-browser` skips it).
 - A template sets `PathBase` support in `Program.cs` and `App.razor` (see the Starter) so its live demo can run below `/templates/<name>/demo/`.
 
+### Live demos in the docs deployment
+
+The docs host runs every available template as a child process and proxies `/templates/<name>/demo/` to it (`playground/Blux.Playground/Blux.Playground/Templates/`).
+A template is expected to honour the `PathBase` setting and to write `<base href="{PathBase}/">` in its pages: the host uses that line to tell its demo from
+another program on the port.
+
+Settings, under `Blux:Templates` (environment variables `Blux__Templates__...`):
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `Enabled` | `true` | `false` runs no demo; the gallery then shows "Demo offline". |
+| `PublishRoot` | none | A folder with one `dotnet publish -c Release -o <root>/<name>` output per template, run in Production. Unset, the host runs the `Debug` build output of the repository checkout it finds, in Development. |
+| `Configuration` | `Debug` | The build configuration looked for when `PublishRoot` is unset. |
+| `StartupTimeoutSeconds` | `120` | A demo that has not answered by then is killed and restarted. |
+| `LivenessIntervalSeconds` | `30` | A running demo is asked for its home page this often; two answers in a row that are not the demo's restart it. |
+| `MemoryLimitMegabytes` | `512` | Managed heap limit of each demo (`DOTNET_GCHeapHardLimit`; `0` for none). `DOTNET_GCConserveMemory=5` is always set. |
+| `RepositoryBase` | none | Where the "Source" buttons point (`https://github.com/<org>`); unset, the gallery says the repositories are not published. |
+
+What the host guarantees, whatever supervises it:
+
+- A demo gets a minimal environment (`PATH`, `HOME`, locale, time zone, `DOTNET_*`), not the host's: `Kestrel__*`, `Blux__*` and secrets never reach it.
+- When the host stops normally, crashes or gets SIGTERM, it kills the demos' process trees. When it is killed outright (SIGKILL, the out of memory killer), each
+  demo ends by itself within seconds: the host injects a startup hook (`Blux.Playground.DemoWatchdog`, via `DOTNET_STARTUP_HOOKS`) that exits the demo when
+  the pipe on its standard input closes, with a check of the host's process id as a fallback. The demos need no code for this.
+- In a container, run the host under an init process (`docker run --init`, or `tini` as the entry point): .NET as PID 1 only reaps its own children, and an
+  init also forwards SIGTERM. Under systemd keep `KillMode=control-group` (the default) so a stop reaches the demos too.
+- `GET /_blux/health` is the health check of the site (the host is up). `GET /_blux/templates/status` and `/_blux/templates/ready` are for the operator and
+  the E2E fixture: they answer loopback clients only (404 behind a proxy), and `ready` is 200 once every demo that can be started answers; a demo that is
+  not built or published is `unavailable` and does not hold it back. Do not use them as the health check: a restarting demo must not take the site out.
+- While a demo restarts, its address answers 503 with a small page that reloads itself; a demo's own 404 is never replaced by the docs' page.
+
+Tests: `tests/Blux.Playground.Tests` (supervisor, proxy, environment and watchdog with a fake demo, `tests/Blux.UI.FakeDemo`), `TemplatesTests`,
+`TemplatesPathBaseTests` and `TemplateWatchdogTests` in the E2E project. Set `BLUX_TEMPLATES_PUBLISHED` to a publish root to run the demos published.
+In CI (`CI` set) a run whose demos cannot start fails instead of skipping.
+
 ## Commands
 
 ```bash
