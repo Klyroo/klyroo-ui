@@ -18,6 +18,8 @@
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
     <!-- The live demos of the templates (/templates/{name}/demo/) are child processes behind this reverse proxy. -->
     <PackageReference Include="Yarp.ReverseProxy" />
+    <!-- The startup hook injected into the demos: it ends them when this host dies. Copied next to this host's assembly. -->
+    <ProjectReference Include="..\Blux.Playground.DemoWatchdog\Blux.Playground.DemoWatchdog.csproj" />
   </ItemGroup>
 
   <!--

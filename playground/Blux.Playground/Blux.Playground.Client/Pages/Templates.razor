@@ -2,6 +2,7 @@
 @attribute [ExcludeFromInteractiveRouting]
 @using Blux.Playground.Client.Templates
 @inject TemplateSettings Settings
+@inject ITemplateDemoState Demos
 
 <PageTitle>Templates · blux/ui</PageTitle>
 
@@ -20,8 +21,8 @@
             </h1>
         </div>
         <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty lg:pb-2" data-testid="templates-summary">
-            @_available.Count template@(_available.Count == 1 ? "" : "s") to try now, @_planned.Count more planned. Each demo runs from the template's own
-            published build, inside this site: the code you preview is the code you start from.
+            @_available.Count template@(_available.Count == 1 ? "" : "s") to try now, @_planned.Count more planned. Each demo is the template's own app,
+            running behind this site: the code you preview is the code you start from.
         </p>
     </div>
 </section>
@@ -34,7 +35,7 @@
                 Pick one,<br /><span class="pg-accent">run it live.</span>
             </h2>
             <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
-                A live demo is a separate app behind this site. The language you chose on the docs applies to the demo too; the demo keeps its own sidebar and storage.
+                A live demo is a separate app behind this site, under its own path, on the same origin as the docs. The language you chose on the docs applies to the demo too, through the one culture cookie of the site.
             </p>
         </div>
 
@@ -42,6 +43,9 @@
             @foreach (var template in TemplateRegistry.All)
             {
                 var source = Settings.SourceUrl(template);
+                // The demo is shown as live only while this host can reach it: switched off, not built or not published, or stopped, it is offline.
+                var state = template.HasDemo ? Demos.StateOf(template.Name) : null;
+                var offline = template.HasDemo && state is null or "unavailable" or "stopped";
                 <li class="flex" data-testid="template-card" data-template="@template.Name">
                     <article class="flex w-full flex-col overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg)" aria-labelledby="@($"template-{template.Name}")">
                         <div class="aspect-[16/10] overflow-hidden border-b border-(--blux-border) bg-(--blux-bg-muted)">
@@ -60,9 +64,17 @@
                         <div class="flex flex-1 flex-col p-5 sm:p-6">
                             <div class="flex items-start justify-between gap-3">
                                 <h3 id="@($"template-{template.Name}")" class="text-xl font-semibold tracking-tight text-(--blux-text-highlighted)">@template.Title</h3>
-                                @if (template.HasDemo)
+                                @if (template.HasDemo && offline)
                                 {
-                                    <BxBadge Label="Live demo" Color="BxColor.Success" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                                    <BxBadge Label="Demo offline" Color="BxColor.Warning" Variant="BxVariant.Subtle" Size="BxSize.Sm" data-testid="template-state" />
+                                }
+                                else if (template.HasDemo && state == "ready")
+                                {
+                                    <BxBadge Label="Live demo" Color="BxColor.Success" Variant="BxVariant.Subtle" Size="BxSize.Sm" data-testid="template-state" />
+                                }
+                                else if (template.HasDemo)
+                                {
+                                    <BxBadge Label="Demo starting" Color="BxColor.Warning" Variant="BxVariant.Subtle" Size="BxSize.Sm" data-testid="template-state" />
                                 }
                                 else
                                 {
@@ -80,7 +92,7 @@
                                 }
                             </ul>
                             <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-3 pt-6">
-                                @if (template.HasDemo)
+                                @if (template.HasDemo && !offline)
                                 {
                                     @* A plain navigation: the demo is another app, so neither the enhanced navigation nor the router of this site may handle the click. *@
                                     <BxButton Label="@($"Preview {template.Title}")" Href="@template.DemoPath" data-enhance-nav="false" data-testid="template-preview" Class="rounded-lg">
@@ -94,6 +106,10 @@
                                     {
                                         <span class="text-sm text-(--blux-text-muted)" data-testid="template-source-missing">Repository not published yet</span>
                                     }
+                                }
+                                else if (template.HasDemo)
+                                {
+                                    <span class="text-sm text-(--blux-text-muted)" data-testid="template-offline">This demo is not running on this server</span>
                                 }
                                 else
                                 {

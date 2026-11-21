@@ -13,8 +13,13 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
 
     private static bool IsHotReloadTooling(string url) => url.Contains("/_framework/dotnet-browser-tools/", StringComparison.Ordinal);
 
-    private void RequireDemos() =>
-        Assert.SkipUnless(TemplatesReady, "The docs run published with no BLUX_TEMPLATES_PUBLISHED folder: there is no template demo to open.");
+    /// <summary>Skips when the docs run published with no templates to run (a local run); in CI that is a failure, a test that cannot run proves nothing.</summary>
+    private void RequireDemos()
+    {
+        if (TemplatesReady) return;
+        Assert.False(Environment.GetEnvironmentVariable("CI") is { Length: > 0 }, "The template demos are not running (BLUX_PLAYGROUND_PUBLISHED is set without BLUX_TEMPLATES_PUBLISHED).");
+        Assert.SkipWhen(true, "The docs run published with no BLUX_TEMPLATES_PUBLISHED folder: there is no template demo to open.");
+    }
 
     private async Task OpenGallery(ColorScheme scheme = ColorScheme.Light)
     {
