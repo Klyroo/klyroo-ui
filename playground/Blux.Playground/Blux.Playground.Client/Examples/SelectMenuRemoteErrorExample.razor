@@ -1,0 +1,21 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxSwitch @bind-Value="_failing" Label="The source is down" data-testid="remote-fail" />
+    <BxFormField Label="Country">
+        <BxSelectMenu OptionsProvider="_source.ByPage" PageSize="20" Placeholder="Search a country" @bind-Value="_values" data-testid="remote-error-select" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-error-requests">Source calls: @_source.Requests</p>
+</div>
+
+@code {
+    private RemoteDirectory _source = default!;
+    private IReadOnlyList<string> _values = [];
+
+    // The switch flips what the simulated source does: with it on, every call throws and the list shows its error and Retry button.
+    private bool _failing
+    {
+        get => _source.Fail;
+        set => _source.Fail = value;
+    }
+
+    protected override void OnInitialized() => _source = new RemoteDirectory { Changed = () => _ = InvokeAsync(StateHasChanged), LatencyMs = 200 };
+}
