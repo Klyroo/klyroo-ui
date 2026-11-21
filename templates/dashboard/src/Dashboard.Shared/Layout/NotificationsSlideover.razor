@@ -1,0 +1,65 @@
+@implements IDisposable
+@inject AppState App
+@inject NotificationStore Notifications
+
+@* The notifications, in a slideover from the right edge. Opened from the bell of the navbar, the user menu and the command palette. *@
+<BxSlideover @bind-Open="_open" Title="Notifications" Description="@Summary" Side="SlideoverSide.Right" data-testid="notifications">
+    <Body>
+        @if (Notifications.Items.Count == 0)
+        {
+            <BxEmpty Title="Nothing new" Description="You are all caught up." />
+        }
+        else
+        {
+            <ul class="flex flex-col divide-y divide-(--blux-border)" aria-label="Notifications">
+                @foreach (var notification in Notifications.Items)
+                {
+                    <li class="flex gap-3 py-3 first:pt-0" data-unread="@(notification.Unread ? "true" : null)">
+                        <span class="@($"mt-2 size-2 shrink-0 rounded-full {(notification.Unread ? "bg-(--blux-primary)" : "bg-transparent")}")" aria-hidden="true"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-medium text-(--blux-text-highlighted)">
+                                @if (notification.Unread)
+                                {
+                                    <span class="sr-only">Unread: </span>
+                                }
+                                @notification.Title
+                            </p>
+                            <p class="mt-0.5 text-sm text-(--blux-text-muted)">@notification.Body</p>
+                            <p class="mt-1 text-xs text-(--blux-text-muted)">@notification.At.ToString("MMM d, HH:mm")</p>
+                        </div>
+                    </li>
+                }
+            </ul>
+        }
+    </Body>
+    <Footer>
+        <BxButton Label="Mark all as read" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Disabled="@(Notifications.UnreadCount == 0)" OnClick="Notifications.MarkAllRead" data-testid="mark-read" />
+        <BxButton Label="Close" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
+    </Footer>
+</BxSlideover>
+
+@code {
+    private bool _open;
+
+    private string Summary => Notifications.UnreadCount == 0 ? "No unread notifications." : $"{Notifications.UnreadCount} unread.";
+
+    protected override void OnInitialized()
+    {
+        App.NotificationsRequested += OnRequested;
+        Notifications.Changed += OnChanged;
+    }
+
+    private void OnRequested() => _ = InvokeAsync(() =>
+    {
+        _open = true;
+        StateHasChanged();
+    });
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        App.NotificationsRequested -= OnRequested;
+        Notifications.Changed -= OnChanged;
+    }
+}

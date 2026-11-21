@@ -202,6 +202,23 @@ public partial class PaletteContrastTests
         }
     }
 
+    [Theory]
+    [InlineData("slate")]
+    [InlineData("gray")]
+    [InlineData("zinc")]
+    [InlineData("neutral")]
+    [InlineData("stone")]
+    public void The_initials_of_an_avatar_are_readable_on_its_fill_under_every_gray_scale(string name)
+    {
+        // The avatar fallback is text on bg-accented, a fill the surface rules do not list: muted text was 3.98:1 on it in dark mode with the zinc neutrals.
+        var tokens = BxThemeTokens.Compute(new BxColorOptions { Neutral = ByName(name) });
+        foreach (var (theme, t) in new[] { ("light", tokens.Light), ("dark", tokens.Dark) })
+        {
+            var ratio = Contrast(t["text"], t["bg-accented"]);
+            Assert.True(ratio >= 4.5, $"neutral = {name}, {theme}: text on bg-accented is {ratio:0.00}:1, needs 4.5:1");
+        }
+    }
+
     [Fact]
     public void An_extra_semantic_color_gets_tokens_that_pass_the_color_rules()
     {

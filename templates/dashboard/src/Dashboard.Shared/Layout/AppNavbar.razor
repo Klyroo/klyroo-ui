@@ -1,0 +1,45 @@
+@implements IDisposable
+@inject AppState App
+@inject NotificationStore Notifications
+
+@* The top bar of every page: the sidebar toggle (below lg), the title, the actions of the page, the color mode and the notifications. *@
+<BxDashboardNavbar Title="@Title">
+    <Leading>
+        <BxDashboardSidebarCollapse />
+    </Leading>
+    <Right>
+        @Actions
+        <BxColorModeButton />
+        <BxChip Show="@(Notifications.UnreadCount > 0)" Label="@($"{Notifications.UnreadCount} unread notifications")" Size="BxSize.Sm" Inset>
+            <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Notifications" OnClick="App.OpenNotifications" data-testid="notifications-button">
+                <LeadingIcon>@BxIcons.Named("bell")</LeadingIcon>
+            </BxButton>
+        </BxChip>
+        <BxDropdownMenu Items="_create" Placement="bottom-end">
+            <BxButton Square Variant="ButtonVariant.Solid" aria-label="Create" data-testid="create-button">
+                <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
+            </BxButton>
+        </BxDropdownMenu>
+    </Right>
+</BxDashboardNavbar>
+
+@code {
+    /// <summary>The title of the page.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Extra actions of the page, before the color mode button.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    private static readonly BxMenuItem[] _create =
+    [
+        new() { Label = "New message", Href = "inbox", Icon = BxIcons.Named("mail", "size-4") },
+        new() { Label = "New customer", Href = "customers?new=true", Icon = BxIcons.Named("user", "size-4") },
+        new() { Label = "Invite people", Href = "settings/members", Icon = BxIcons.Named("lucide:user-plus", "size-4") },
+    ];
+
+    protected override void OnInitialized() => Notifications.Changed += OnChanged;
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Notifications.Changed -= OnChanged;
+}

@@ -1,0 +1,127 @@
+@page "/settings/security"
+@using System.ComponentModel.DataAnnotations
+@inject IToastService Toasts
+
+<PageTitle>Security · Settings</PageTitle>
+
+<SettingsPage Heading="Security" Description="Your password, a second step at sign-in, and the devices that are signed in." TestId="settings-security">
+    <BxCard>
+        <Header>
+            <h2 class="font-semibold text-(--blux-text-highlighted)">Password</h2>
+            <p class="text-sm text-(--blux-text-muted)">Use at least 8 characters that you do not use anywhere else.</p>
+        </Header>
+        <ChildContent>
+            <BxForm Model="Model" FormName="password" OnValidSubmit="ChangePasswordAsync" class="flex flex-col gap-4" data-testid="password-form">
+                <BxFormField Label="Current password" Required For="() => Model!.Current">
+                    <BxInput @bind-Value="Model!.Current" Type="password" autocomplete="current-password" data-testid="password-current" />
+                </BxFormField>
+                <BxFormField Label="New password" Required For="() => Model!.New">
+                    <BxInput @bind-Value="Model!.New" Type="password" autocomplete="new-password" data-testid="password-new" />
+                </BxFormField>
+                <BxFormField Label="Confirm the new password" Required For="() => Model!.Confirm">
+                    <BxInput @bind-Value="Model!.Confirm" Type="password" autocomplete="new-password" data-testid="password-confirm" />
+                </BxFormField>
+                <div class="flex items-center justify-end gap-3">
+                    <p role="status" class="text-sm text-(--blux-success-text)" data-testid="password-status">@_status</p>
+                    <BxButton Label="Update password" Type="submit" data-testid="password-save" />
+                </div>
+            </BxForm>
+        </ChildContent>
+    </BxCard>
+
+    <BxCard>
+        <Header>
+            <h2 class="font-semibold text-(--blux-text-highlighted)">Two-step sign-in</h2>
+            <p class="text-sm text-(--blux-text-muted)">Ask for a code from an authenticator app after the password.</p>
+        </Header>
+        <ChildContent>
+            <BxSwitch Value="_twoStep" ValueChanged="TwoStepChanged" Label="Require a code at sign-in" data-testid="two-step" />
+        </ChildContent>
+    </BxCard>
+
+    <BxCard>
+        <Header>
+            <h2 class="font-semibold text-(--blux-text-highlighted)">Signed-in devices</h2>
+            <p class="text-sm text-(--blux-text-muted)" data-testid="session-count">@_sessions.Count devices.</p>
+        </Header>
+        <ChildContent>
+            <ul class="flex flex-col divide-y divide-(--blux-border)" aria-label="Signed-in devices">
+                @foreach (var session in _sessions)
+                {
+                    <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0" data-testid="session">
+                        <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-elevated) text-(--blux-text-muted)" aria-hidden="true">
+                            <BxIcon Name="@session.Icon" Class="size-5" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-medium text-(--blux-text-highlighted)">
+                                @session.Device
+                                @if (session.Current)
+                                {
+                                    <BxBadge Label="This device" Variant="BxVariant.Subtle" Color="BxColor.Success" Size="BxSize.Sm" class="ms-1" />
+                                }
+                            </p>
+                            <p class="truncate text-xs text-(--blux-text-muted)">@session.Place, @session.Seen</p>
+                        </div>
+                        @if (!session.Current)
+                        {
+                            <BxButton Label="Sign out" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="@(() => SignOut(session))" aria-label="@($"Sign out {session.Device}")" />
+                        }
+                    </li>
+                }
+            </ul>
+        </ChildContent>
+    </BxCard>
+</SettingsPage>
+
+@code {
+    private sealed record Session(int Id, string Device, string Place, string Seen, string Icon, bool Current = false);
+
+    // Bound to the posted form: a static post (before the page is interactive) is validated by the server like an interactive one.
+    [SupplyParameterFromForm(FormName = "password")]
+    private PasswordChange? Model { get; set; }
+
+    private string? _status;
+    private bool _twoStep;
+
+    private List<Session> _sessions =
+    [
+        new(1, "Firefox on Linux", "Lyon, France", "active now", "lucide:monitor", Current: true),
+        new(2, "Safari on iPhone", "Lyon, France", "2 hours ago", "lucide:smartphone"),
+        new(3, "Chrome on Windows", "Berlin, Germany", "5 days ago", "lucide:laptop"),
+    ];
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private async Task ChangePasswordAsync()
+    {
+        Model!.Current = Model!.New = Model!.Confirm = null;
+        _status = "Password updated.";
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Password updated", Description = "Your devices stay signed in until they are signed out below.", Color = BxColor.Success });
+    }
+
+    private async Task TwoStepChanged(bool on)
+    {
+        _twoStep = on;
+        await Toasts.Add(new BxToast { Title = on ? "Two-step sign-in is on" : "Two-step sign-in is off", Color = on ? BxColor.Success : BxColor.Warning });
+    }
+
+    private async Task SignOut(Session session)
+    {
+        _sessions = [.. _sessions.Where(s => s.Id != session.Id)];
+        await Toasts.Add(new BxToast { Title = "Device signed out", Description = session.Device, Color = BxColor.Success });
+    }
+
+    private sealed class PasswordChange
+    {
+        [Required(ErrorMessage = "Enter your current password.")]
+        public string? Current { get; set; }
+
+        [Required(ErrorMessage = "Enter a new password.")]
+        [MinLength(8, ErrorMessage = "Use at least 8 characters.")]
+        public string? New { get; set; }
+
+        [Required(ErrorMessage = "Repeat the new password.")]
+        [Compare(nameof(New), ErrorMessage = "The two passwords differ.")]
+        public string? Confirm { get; set; }
+    }
+}

@@ -1,0 +1,25 @@
+@inherits DataListPartBase<Customer>
+
+@* The select-all box in the header of the table. It is a part of the list, so it knows which rows the page shows: it ticks them, and is mixed
+   (indeterminate) while only some of them are ticked. *@
+<BxCheckbox Value="@(_ids.Length > 0 && _ticked == _ids.Length)" ValueChanged="Toggle" Indeterminate="@(_ticked > 0 && _ticked < _ids.Length)"
+            aria-label="Select all customers on this page" data-testid="select-page" />
+
+@code {
+    [Parameter, EditorRequired] public RowSelection Selection { get; set; } = default!;
+
+    private int[] _ids = [];
+    private int _ticked;
+
+    protected override void OnParametersSet() => Read();
+
+    protected override void OnContextUpdated() => Read();
+
+    private void Read()
+    {
+        _ids = [.. Context.Rows.Select(c => c.Id)];
+        _ticked = _ids.Count(Selection.Contains);
+    }
+
+    private void Toggle(bool selected) => Selection.Set(_ids, selected);
+}

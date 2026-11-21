@@ -1,0 +1,16 @@
+<Project>
+  <!-- Central package management: the versions of every package of the solution, in one place. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Blux.UI" Version="0.1.0-alpha" />
+    <!-- Blux.UI.Tools depends on exactly this version of Blux.UI (and of Blux.UI.Tools.Query): keep the two lines in step. -->
+    <PackageVersion Include="Blux.UI.Tools" Version="0.1.0-alpha" />
+    <!-- Blux.UI.Server too: same version as Blux.UI, only the web host references it. -->
+    <PackageVersion Include="Blux.UI.Server" Version="0.1.0-alpha" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.15" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />
+  </ItemGroup>
+</Project>

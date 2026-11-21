@@ -11,7 +11,7 @@
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
 //      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
-//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or every page of the shell, the home figures, the customers table (search, sort, filter, selection, new customer), the inbox, the settings and the command palette work (Dashboard), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
 //      is finished by running it again.
@@ -39,6 +39,20 @@ const templates = [
     // The setup method of the shared project, named after the template.
     services: true,
     browserClass: "Blux.UI.E2E.TemplateTests",
+  },
+  {
+    name: "dashboard",
+    web: "src/Dashboard.Web",
+    name_in_files: "Dashboard",
+    renames: ["Acme", "dashboardApp"],
+    probe: { utility: "max-w-[72rem]", css: "max-width:72rem" },
+    // Blux.UI.Tools has no stylesheet of its own: its classes must be in the one the template compiles (a rule only the data list writes).
+    toolsProbe: "webkit-search-cancel-button",
+    pages: ["/", "/customers", "/inbox", "/inbox/3", "/settings", "/settings/members", "/settings/notifications", "/settings/security"],
+    services: true,
+    // Blux's own components (BxDashboardGroup, BxDashboardSidebar...) are not the template name: rename.cs leaves them alone.
+    keep: /BxDashboard[A-Za-z]*/g,
+    browserClass: "Blux.UI.E2E.DashboardTemplateTests",
   },
   {
     name: "landing",
@@ -221,6 +235,11 @@ try {
   mkdirSync(feed);
   const pack = run("dotnet", ["pack", "src/Blux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack src/Blux.UI -c Release succeeds without warnings")) console.log(pack.out);
+  // The data list packages too, for the templates that use it (Dashboard): Blux.UI.Tools.Query first, Blux.UI.Tools depends on it and on Blux.UI at exactly this version.
+  for (const project of ["src/Blux.UI.Tools.Query", "src/Blux.UI.Tools", "src/Blux.UI.Server"]) {
+    const packed = run("dotnet", ["pack", project, "-c", "Release", "-o", feed, "-warnaserror"], root);
+    if (!check(packed.code === 0, `dotnet pack ${project} -c Release succeeds without warnings`)) console.log(packed.out);
+  }
   const nupkg = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.nupkg$/.test(f));
   if (!check(!!nupkg, ".nupkg produced")) throw new Error("pack produced no package");
   const version = nupkg.replace(/^Blux\.UI\./, "").replace(/\.nupkg$/, "");
@@ -228,7 +247,7 @@ try {
 
   // The sources: the feed for Blux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
   const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /><package pattern="Blux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -258,6 +277,10 @@ try {
     const packages = readFileSync(join(repo, "Directory.Packages.props"), "utf8");
     const pinned = /<PackageVersion Include="Blux\.UI" Version="([^"]+)"/.exec(packages)?.[1];
     check(pinned === expectedVersion, `${template.name}: Blux.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
+    const serverPinned = /<PackageVersion Include="Blux\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
+    if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Blux.UI.Server is pinned to the version of build/Version.props, the one of Blux.UI (${serverPinned} / ${expectedVersion})`);
+    const toolsPinned = /<PackageVersion Include="Blux\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
+    if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Blux.UI.Tools is pinned to the version of build/Version.props, the one of Blux.UI (${toolsPinned} / ${expectedVersion})`);
 
     // 3. Restore, build (Release, warnings as errors), run.
     const web = join(repo, template.web);
@@ -291,6 +314,7 @@ try {
             check(cssRes.ok, `${template.name}: the stylesheet is served ${label} (${cssRes.status})`);
             check(body.includes(css), `${template.name}: the stylesheet contains ${utility}, a utility only the template uses ${label}`);
             check(body.includes("--blux-primary"), `${template.name}: the stylesheet has the Blux theme ${label}`);
+            if (template.toolsProbe) check(body.includes(template.toolsProbe), `${template.name}: the stylesheet has the classes of Blux.UI.Tools (${template.toolsProbe}) ${label}`);
           }
         } finally {
           app.child.kill();
