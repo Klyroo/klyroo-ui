@@ -50,6 +50,7 @@ public static class DocsNavigation
                 SearchPagesByPrefix[prefix] = pages =
                 [
                     .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = g.Section, Icon = "" }),
+                    new BxContentSearchPage("Templates", "templates") { Group = "Gallery", Icon = "", Keywords = "starter dashboard landing live demo" },
                     .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
                     {
                         Group = c.Group,

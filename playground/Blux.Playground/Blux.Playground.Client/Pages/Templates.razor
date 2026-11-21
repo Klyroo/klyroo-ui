@@ -1,0 +1,174 @@
+@page "/templates"
+@attribute [ExcludeFromInteractiveRouting]
+@using Blux.Playground.Client.Templates
+@inject TemplateSettings Settings
+
+<PageTitle>Templates · blux/ui</PageTitle>
+
+@* Static page: the server reads the repository address (Blux:Templates:RepositoryBase) and nothing here needs a circuit. *@
+
+@* Hero *@
+<section class="relative isolate overflow-hidden border-b border-(--blux-border)">
+    <div class="pg-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" aria-hidden="true"></div>
+    <div class="pg-glow absolute inset-0 -z-10" aria-hidden="true"></div>
+    <div class="mx-auto grid max-w-(--breakpoint-2xl) gap-10 px-4 pt-20 pb-16 sm:px-6 sm:pt-28 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-end lg:px-8 lg:pb-20">
+        <div>
+            <p class="pg-eyebrow-mono">blux/ui <span aria-hidden="true">·</span> <span class="text-(--blux-primary-text)">templates</span></p>
+            <h1 class="mt-5 text-5xl font-semibold leading-[0.95] tracking-[-0.055em] text-(--blux-text-highlighted) sm:text-7xl xl:text-[4.75rem]">
+                Start from<br />
+                <span class="pg-accent">a working app.</span>
+            </h1>
+        </div>
+        <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty lg:pb-2" data-testid="templates-summary">
+            @_available.Count template@(_available.Count == 1 ? "" : "s") to try now, @_planned.Count more planned. Each demo runs from the template's own
+            published build, inside this site: the code you preview is the code you start from.
+        </p>
+    </div>
+</section>
+
+@* Gallery *@
+<section aria-labelledby="gallery" class="border-b border-(--blux-border)">
+    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+        <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
+            <h2 id="gallery" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
+                Pick one,<br /><span class="pg-accent">run it live.</span>
+            </h2>
+            <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
+                A live demo is a separate app behind this site. The language you chose on the docs applies to the demo too; the demo keeps its own sidebar and storage.
+            </p>
+        </div>
+
+        <ul class="mt-14 grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Templates">
+            @foreach (var template in TemplateRegistry.All)
+            {
+                var source = Settings.SourceUrl(template);
+                <li class="flex" data-testid="template-card" data-template="@template.Name">
+                    <article class="flex w-full flex-col overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg)" aria-labelledby="@($"template-{template.Name}")">
+                        <div class="aspect-[16/10] overflow-hidden border-b border-(--blux-border) bg-(--blux-bg-muted)">
+                            @if (template.HasDemo)
+                            {
+                                <BxImage Src="@template.Screenshot("light")" Provider="none" Alt="@($"The {template.Title} template, light mode")" Width="1280" Height="800" Loading="BxImageLoading.Lazy" Class="block h-full w-full object-cover object-top dark:hidden" data-testid="template-screenshot-light" />
+                                <BxImage Src="@template.Screenshot("dark")" Provider="none" Alt="@($"The {template.Title} template, dark mode")" Width="1280" Height="800" Loading="BxImageLoading.Lazy" Class="hidden h-full w-full object-cover object-top dark:block" data-testid="template-screenshot-dark" />
+                            }
+                            else
+                            {
+                                <div class="pg-dots grid h-full place-items-center" aria-hidden="true">
+                                    <span class="pg-eyebrow-mono">No screenshot yet</span>
+                                </div>
+                            }
+                        </div>
+                        <div class="flex flex-1 flex-col p-5 sm:p-6">
+                            <div class="flex items-start justify-between gap-3">
+                                <h3 id="@($"template-{template.Name}")" class="text-xl font-semibold tracking-tight text-(--blux-text-highlighted)">@template.Title</h3>
+                                @if (template.HasDemo)
+                                {
+                                    <BxBadge Label="Live demo" Color="BxColor.Success" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                                }
+                                else
+                                {
+                                    <BxBadge Label="Coming soon" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                                }
+                            </div>
+                            <p class="mt-2 text-sm text-(--blux-text-muted) text-pretty">@template.Description</p>
+                            <ul class="mt-4 flex flex-col gap-2 text-sm text-(--blux-text)" aria-label="@($"{template.Title} features")">
+                                @foreach (var feature in template.Features)
+                                {
+                                    <li class="flex gap-2">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 size-4 shrink-0 text-(--blux-primary-text)" aria-hidden="true"><path d="m5 12 5 5L20 7" /></svg>
+                                        <span>@feature</span>
+                                    </li>
+                                }
+                            </ul>
+                            <div class="mt-auto flex flex-wrap items-center gap-x-4 gap-y-3 pt-6">
+                                @if (template.HasDemo)
+                                {
+                                    @* A plain navigation: the demo is another app, so neither the enhanced navigation nor the router of this site may handle the click. *@
+                                    <BxButton Label="@($"Preview {template.Title}")" Href="@template.DemoPath" data-enhance-nav="false" data-testid="template-preview" Class="rounded-lg">
+                                        <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
+                                    </BxButton>
+                                    @if (source is not null)
+                                    {
+                                        <BxButton Label="@($"Source of {template.Title}")" Href="@source" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="template-source" Class="rounded-lg" />
+                                    }
+                                    else
+                                    {
+                                        <span class="text-sm text-(--blux-text-muted)" data-testid="template-source-missing">Repository not published yet</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-sm text-(--blux-text-muted)" data-testid="template-planned">No demo or source yet</span>
+                                }
+                            </div>
+                        </div>
+                    </article>
+                </li>
+            }
+        </ul>
+    </div>
+</section>
+
+@* How to start *@
+<section aria-labelledby="start" class="border-b border-(--blux-border)">
+    <div class="mx-auto grid max-w-(--breakpoint-2xl) gap-10 px-4 py-20 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-28">
+        <div>
+            <h2 id="start" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
+                Make it<br /><span class="pg-accent">your own.</span>
+            </h2>
+            <p class="mt-6 text-lg text-(--blux-text-muted) text-pretty">
+                Each template is meant to be a GitHub template repository: create your repository from it, then run <code class="font-mono text-base">rename.cs</code> once
+                to replace the template name with yours. It renames the solution, the projects, the namespaces and the native app id, then deletes itself.
+            </p>
+            <p class="mt-4 text-sm text-(--blux-text-muted)" data-testid="templates-repository-status">
+                @if (Settings.IsPublished)
+                {
+                    <text>The repositories are published: use the Source button of a template, or the commands on the right.</text>
+                }
+                else
+                {
+                    <text>The repositories are not published yet, so the commands on the right name a placeholder owner.</text>
+                }
+            </p>
+        </div>
+        <div class="flex flex-col gap-4">
+            <CodeBlock Title="Terminal" Code="@_startCommands" Class="rounded-2xl" />
+            <p class="text-sm text-(--blux-text-muted)">
+                Without the GitHub CLI, open the repository and press <strong class="font-semibold text-(--blux-text)">Use this template</strong>, clone the new repository, then run the last command.
+            </p>
+        </div>
+    </div>
+</section>
+
+@* Contribute *@
+<section aria-labelledby="contribute">
+    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-16 sm:px-6 lg:px-8">
+        <details class="rounded-2xl border border-(--blux-border) p-5 sm:p-6" data-testid="templates-contribute">
+            <summary class="cursor-pointer text-lg font-semibold text-(--blux-text-highlighted)"><span id="contribute">Contribute: run a template from this repository</span></summary>
+            <div class="mt-4 flex flex-col gap-4 text-(--blux-text-muted)">
+                <p>
+                    The templates live in <code class="font-mono text-sm">templates/</code> of the blux-ui repository. Run one in place, or export it as a repository of its own,
+                    with a fresh git history, the way it will be published:
+                </p>
+                <CodeBlock Title="Terminal" Code="@_contributeCommands" Class="rounded-xl" />
+            </div>
+        </details>
+    </div>
+</section>
+
+@code {
+    private IReadOnlyList<TemplateInfo> _available = [];
+    private IReadOnlyList<TemplateInfo> _planned = [];
+    private string _startCommands = "";
+
+    private const string _contributeCommands =
+        "dotnet run --project templates/starter/src/Starter.Web\nnode build/export-template.mjs starter ../my-app";
+
+    protected override void OnInitialized()
+    {
+        _available = [.. TemplateRegistry.All.Where(t => t.HasDemo)];
+        _planned = [.. TemplateRegistry.All.Where(t => !t.HasDemo)];
+        var first = _available.FirstOrDefault();
+        var repository = first is null ? "<owner>/<repository>" : Settings.GitHubTemplate(first) ?? $"<owner>/{first.RepositoryName}";
+        _startCommands = $"gh repo create my-app --template {repository} --clone\ncd my-app\ndotnet run rename.cs MyApp";
+    }
+}
