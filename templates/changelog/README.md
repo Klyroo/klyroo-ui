@@ -55,7 +55,7 @@ A setting that cannot work is logged once when the site starts. It does not stop
 
 ```text
 src/Changelog.Web/
-  Releases/                  the GitHub client, the file source, the cache, the notes renderer, the feed
+  ReleaseNotes/              the GitHub client, the file source, the cache, the notes renderer, the feed
   Components/Pages/          Home (the timeline and its pages), ReleasePage (/releases/{slug}), NotFound, Error
   Components/Layout/         the header with the feed button, the main area and the footer
   Components/App.razor       the document: theme, fonts, the base address, the stylesheet, the copy script
@@ -88,7 +88,7 @@ The title of a release is an `h2` on the list and an `h1` on its page, and the h
 
 ## Release notes are untrusted
 
-A release body can be written by anyone who can publish a release, and generated notes repeat pull request titles written by contributors. `Releases/ReleaseBody.cs` renders it with the shared Markdown code (`Content/MarkdownRenderer.cs`) in its mode for content from outside:
+A release body can be written by anyone who can publish a release, and generated notes repeat pull request titles written by contributors. `ReleaseNotes/ReleaseBody.cs` renders it with the shared Markdown code (`Content/MarkdownRenderer.cs`) in its mode for content from outside:
 
 - Raw HTML is shown as text, never run. Attributes written in Markdown (`{onclick=...}`), math and media embeds are not supported.
 - A link keeps its address only for `http`, `https` and `mailto`. `javascript:`, `data:`, `vbscript:` and the like lose the link and keep their text, whether written in capitals, with tabs or with entities. A relative link would point into your site, so it is dropped too.

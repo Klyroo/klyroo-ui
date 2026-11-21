@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
 using Blux.UI;
 using Changelog.Web.Components;
-using Changelog.Web.Releases;
+using Changelog.Web.ReleaseNotes;
 using Changelog.Web.Site;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,7 +30,7 @@ builder.Services.AddBluxUi();
 // the component) the day a page needs a component that runs .NET in the browser.
 builder.Services.AddRazorComponents();
 
-// The releases: the GitHub API or a file (Changelog:Source), kept in memory for Changelog:CacheDuration. See Releases/ReleaseService.cs.
+// The releases: the GitHub API or a file (Changelog:Source), kept in memory for Changelog:CacheDuration. See ReleaseNotes/ReleaseService.cs.
 builder.Services.AddChangelog(builder.Configuration);
 
 var app = builder.Build();
