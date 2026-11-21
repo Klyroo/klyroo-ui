@@ -1,0 +1,36 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+
+@* Shown when the newest load failed. The rows of the previous result, if any, stay in the table under it. *@
+@if (Context.HasError)
+{
+    <BxAlert Color="BxColor.Error" Variant="BxVariant.Soft" Title="@(Title ?? ToolsMessages.ErrorTitle)" Description="@(Description ?? ToolsMessages.ErrorDescription)"
+             Icon="@(RenderIcon("triangle-alert", "size-5"))" Class="@_slots["error"]" role="alert" data-slot="error" @attributes="AdditionalAttributes">
+        <Actions>
+            @if (Context.IsInteractive)
+            {
+                <BxButton Label="@ToolsMessages.Retry" Variant="ButtonVariant.Outline" Color="BxColor.Error" Size="BxSize.Sm" OnClick="Retry" data-slot="retry" />
+            }
+            else if (Context.HrefWith(s => s) is { } href)
+            {
+                <BxButton Label="@ToolsMessages.Retry" Variant="ButtonVariant.Outline" Color="BxColor.Error" Size="BxSize.Sm" Href="@href" data-slot="retry" />
+            }
+        </Actions>
+    </BxAlert>
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The title. Without it, the localized "Could not load the data".</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>The text under the title. Without it, the localized hint to try again.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "error");
+
+    private Task Retry() => Context.RefreshAsync();
+}
