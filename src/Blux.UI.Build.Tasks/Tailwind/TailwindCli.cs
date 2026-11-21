@@ -135,14 +135,34 @@ namespace Blux.UI.Build
                 throw new BuildToolException($"BluxTailwindVersion={version} is not one this Blux.UI knows the checksums of (known: {TailwindAssets.DefaultVersion}). Use BluxTailwindVersion={TailwindAssets.DefaultVersion}, or install Tailwind yourself and set BluxTailwindExecutable to its path.");
             }
 
-            // A file is only ever moved here after its hash matched, so its presence is the proof.
+            // A cached binary is trusted when its stamp (size and modification time, written after its SHA-256 matched) still describes it.
+            // Anything else is hashed again before it can be returned, and a file that fails is deleted: an unverified binary is never run.
             var exe = Path.Combine(cacheDir, version, asset);
-            if (File.Exists(exe)) return exe;
+            var expected = (expectedHash ?? TailwindAssets.ExpectedSha256)(version, asset)!;
+            if (File.Exists(exe))
+            {
+                if (StampMatches(exe)) return exe;
+                if (string.Equals(Sha256File(exe), expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteStamp(exe);
+                    return exe;
+                }
+                log($"The cached Tailwind CLI {exe} does not match its SHA-256 (it changed since it was verified); discarding it.");
+                try
+                {
+                    File.Delete(exe + StampSuffix);
+                    File.Delete(exe);
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    throw new BuildToolException($"The cached Tailwind CLI {exe} does not match its SHA-256 and cannot be deleted ({e.Message}). Delete it by hand, or set BluxTailwindExecutable to a binary you trust.", e);
+                }
+            }
 
             var url = TailwindAssets.DownloadUrl(version, asset);
             if (offline)
             {
-                throw new BuildToolException($"Offline build (BluxOffline=true) and the Tailwind CLI {version} is not in the cache ({exe}). Run one online build to fill it, or set BluxTailwindExecutable to a Tailwind binary.");
+                throw new BuildToolException($"Offline build (BluxOffline=true) and the Tailwind CLI {version} is not in the cache ({exe}) or did not pass its checksum. Run one online build to fill it, or set BluxTailwindExecutable to a Tailwind binary.");
             }
 
             log($"Downloading the Tailwind CLI {version} ({asset}) to {exe}");
@@ -169,14 +189,82 @@ namespace Blux.UI.Build
                 }
                 catch (IOException) when (File.Exists(exe))
                 {
-                    // Another build of the solution put the same verified file there first.
+                    // Another build of the solution put a file there first: it is checked below like any cached file.
                 }
             }
             finally
             {
                 try { if (File.Exists(temp)) File.Delete(temp); } catch (Exception e) when (e is IOException || e is UnauthorizedAccessException) { }
             }
+            if (!StampMatches(exe))
+            {
+                if (!string.Equals(Sha256File(exe), expected, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new BuildToolException($"The Tailwind CLI in the cache ({exe}) does not match its SHA-256. Delete it, or set BluxTailwindExecutable to a binary you trust.");
+                }
+                WriteStamp(exe);
+            }
             return exe;
+        }
+
+        private const string StampSuffix = ".verified";
+
+        // The stamp says "this size and modification time were hashed and matched": a file touched since fails it and is hashed again.
+        private static string Describe(string exe)
+        {
+            var info = new FileInfo(exe);
+            return info.Length.ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + info.LastWriteTimeUtc.Ticks.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        internal static bool StampMatches(string exe)
+        {
+            try
+            {
+                return File.Exists(exe + StampSuffix) && File.ReadAllText(exe + StampSuffix).Trim() == Describe(exe);
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+        }
+
+        private static void WriteStamp(string exe)
+        {
+            try
+            {
+                File.WriteAllText(exe + StampSuffix, Describe(exe));
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                // No stamp only means the next build hashes it again.
+            }
+        }
+
+        private static string Sha256File(string path)
+        {
+            using var sha = SHA256.Create();
+            using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            var hash = sha.ComputeHash(stream);
+            var text = new StringBuilder(hash.Length * 2);
+            foreach (var b in hash) text.Append(b.ToString("x2"));
+            return text.ToString();
+        }
+
+        /// <summary>
+        /// The cache shared by every project and solution of the user: <c>%LOCALAPPDATA%\Blux\tailwind</c> on Windows (local, not roaming:
+        /// the binary is for this machine), <c>~/.blux/tailwind</c> elsewhere (LocalApplicationData would be ~/.local/share there, and the
+        /// folder of a tool is easier to find and delete under one dot folder). Null when the profile folder is unknown.
+        /// </summary>
+        public static string? DefaultCacheDir(bool windows, string? localAppData, string? home)
+        {
+            if (windows) return string.IsNullOrEmpty(localAppData) ? null : Path.Combine(localAppData, "Blux", "tailwind");
+            return string.IsNullOrEmpty(home) ? null : Path.Combine(home, ".blux", "tailwind");
+        }
+
+        public static string? DefaultCacheDir()
+        {
+            var windows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            return DefaultCacheDir(windows, Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Environment.GetFolderPath(Environment.SpecialFolder.UserProfile));
         }
 
         private static void MakeExecutable(string path)

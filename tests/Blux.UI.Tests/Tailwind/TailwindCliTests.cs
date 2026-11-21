@@ -151,6 +151,90 @@ public class TailwindCliResolveTests : IDisposable
         Assert.Empty(net.Requests);
     }
 
+    private string Fill(Net net)
+    {
+        var path = TailwindCli.Resolve(net, "1.0.0", _cache, false, Windows, _ => { }, Hash);
+        return path;
+    }
+
+    [Fact]
+    public void A_cache_hit_with_a_matching_stamp_is_not_hashed_again()
+    {
+        var net = new Net(Binary);
+        var path = Fill(net);
+        Assert.True(File.Exists(path + ".verified"));
+        // Same size and modification time, other content: the stamp still describes the file, so it is trusted without a rehash.
+        var time = File.GetLastWriteTimeUtc(path);
+        File.WriteAllBytes(path, new byte[Binary.Length]);
+        File.SetLastWriteTimeUtc(path, time);
+        Assert.Equal(path, TailwindCli.Resolve(net, "1.0.0", _cache, false, Windows, _ => { }, Hash));
+        Assert.Single(net.Requests);
+    }
+
+    [Fact]
+    public void A_changed_modification_time_rehashes_and_a_mismatch_is_downloaded_again()
+    {
+        var net = new Net(Binary);
+        var path = Fill(net);
+        File.WriteAllBytes(path, "tampered binary"u8.ToArray());
+        var logs = new List<string>();
+        Assert.Equal(path, TailwindCli.Resolve(net, "1.0.0", _cache, false, Windows, logs.Add, Hash));
+        Assert.Equal(2, net.Requests.Count);
+        Assert.Equal(Binary, File.ReadAllBytes(path));
+        Assert.Contains(logs, l => l.Contains("does not match"));
+        Assert.True(TailwindCli.StampMatches(path));
+    }
+
+    [Fact]
+    public void A_changed_file_that_is_still_the_binary_is_accepted_and_restamped()
+    {
+        var net = new Net(Binary);
+        var path = Fill(net);
+        File.SetLastWriteTimeUtc(path, File.GetLastWriteTimeUtc(path).AddMinutes(5));
+        Assert.False(TailwindCli.StampMatches(path));
+        Assert.Equal(path, TailwindCli.Resolve(net, "1.0.0", _cache, false, Windows, _ => { }, Hash));
+        Assert.Single(net.Requests);
+        Assert.True(TailwindCli.StampMatches(path));
+    }
+
+    [Fact]
+    public void A_cached_file_without_a_stamp_is_hashed_before_it_is_used()
+    {
+        var net = new Net(Binary);
+        var path = Fill(net);
+        File.Delete(path + ".verified");
+        File.WriteAllBytes(path, "tampered binary"u8.ToArray());
+        TailwindCli.Resolve(net, "1.0.0", _cache, false, Windows, _ => { }, Hash);
+        Assert.Equal(Binary, File.ReadAllBytes(path));
+    }
+
+    [Fact]
+    public void Offline_a_tampered_cached_file_is_rejected_and_deleted_never_returned()
+    {
+        var net = new Net(Binary);
+        var path = Fill(net);
+        File.WriteAllBytes(path, "tampered binary"u8.ToArray());
+        var e = Assert.Throws<BuildToolException>(() => TailwindCli.Resolve(net, "1.0.0", _cache, true, Windows, _ => { }, Hash));
+        Assert.Contains("BluxTailwindExecutable", e.Message);
+        Assert.False(File.Exists(path));
+        Assert.Single(net.Requests);
+    }
+
+    [Theory]
+    [InlineData(false, "C:\\Users\\a\\AppData\\Local", "/home/a", "/home/a/.blux/tailwind")]
+    [InlineData(true, "C:\\Users\\a\\AppData\\Local", "C:\\Users\\a", "C:\\Users\\a\\AppData\\Local/Blux/tailwind")]
+    public void The_default_cache_is_per_user_and_shared(bool windows, string local, string home, string expected)
+    {
+        var actual = TailwindCli.DefaultCacheDir(windows, local, home)!;
+        Assert.Equal(expected.Replace('/', Path.DirectorySeparatorChar), actual.Replace('/', Path.DirectorySeparatorChar));
+    }
+
+    [Theory]
+    [InlineData(false, "", "")]
+    [InlineData(true, "", "/home/a")]
+    public void No_profile_folder_means_no_default(bool windows, string local, string home)
+        => Assert.Null(TailwindCli.DefaultCacheDir(windows, local, home));
+
     [Fact]
     public void A_unix_download_gets_the_executable_bit()
     {

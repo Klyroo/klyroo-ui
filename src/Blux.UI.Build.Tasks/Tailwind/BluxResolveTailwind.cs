@@ -14,8 +14,8 @@ namespace Blux.UI.Build
         /// <summary>Release of the CLI to download (BluxTailwindVersion).</summary>
         [Required] public string Version { get; set; } = "";
 
-        /// <summary>Folder of the cache of downloaded binaries.</summary>
-        [Required] public string CacheDir { get; set; } = "";
+        /// <summary>Folder of the cache of downloaded binaries (BluxTailwindCacheDir); empty means the user-level default.</summary>
+        public string CacheDir { get; set; } = "";
 
         /// <summary>Never touch the network (BluxOffline).</summary>
         public bool Offline { get; set; }
@@ -36,8 +36,13 @@ namespace Blux.UI.Build
                     ExecutablePath = Executable;
                     return true;
                 }
+                var cacheDir = string.IsNullOrWhiteSpace(CacheDir) ? TailwindCli.DefaultCacheDir() : CacheDir;
+                if (cacheDir == null)
+                {
+                    throw new BuildToolException("The user profile folder is unknown, so there is no default cache for the Tailwind CLI. Set BluxTailwindCacheDir to a folder, or BluxTailwindExecutable to a Tailwind binary.");
+                }
                 // The binary is a hundred megabytes: a slow link needs more than the usual minute.
-                ExecutablePath = TailwindCli.Resolve(new HttpNetwork(TimeSpan.FromMinutes(10)), Version, CacheDir, Offline, TailwindPlatform.Current(), message => Log.LogMessage(MessageImportance.High, message));
+                ExecutablePath = TailwindCli.Resolve(new HttpNetwork(TimeSpan.FromMinutes(10)), Version, cacheDir, Offline, TailwindPlatform.Current(), message => Log.LogMessage(MessageImportance.High, message));
                 return true;
             }
             catch (BuildToolException e)
