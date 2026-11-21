@@ -205,6 +205,7 @@ dotnet test --project tests/Blux.UI.Mcp.Tests   # bundle, MCP tools, llms.txt, s
 dotnet test --project tests/Blux.UI.Tools.Tests  # Blux.UI.Tools: components, messages, generated assets
 dotnet test --project tests/Blux.UI.Images.Tests         # provider URLs
 dotnet test --project tests/Blux.UI.Images.Local.Tests   # optimizer parameters, security, resizing
+dotnet test --project tests/Blux.UI.Server.Tests         # Blux.UI.Server: request cookies over IHttpContextAccessor
 dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-build -- --filter-class Blux.UI.E2E.<Family>Tests
 ```
 
@@ -234,7 +235,7 @@ changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.
 6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tagged commit is
    on `main`, that the tag equals the package version and that the changelog section is dated, rebuilds, tests and runs
    the packaging check. A separate `publish` job then pushes the `.nupkg` and `.snupkg` of Blux.UI and of the
-   `blux-ui-mcp` tool (Blux.UI.Mcp) and of the image packages (Blux.UI.Images, Blux.UI.Images.Local), all with the same version, to nuget.org with the
+   `blux-ui-mcp` tool (Blux.UI.Mcp) and of the image packages (Blux.UI.Images, Blux.UI.Images.Local) and of Blux.UI.Server, all with the same version, to nuget.org with the
    `NUGET_API_KEY` secret of the `nuget` environment. Create that environment in the repository settings, with required
    reviewers if every release should be approved by hand.
 

@@ -7,6 +7,7 @@
     <Project Path="src/Blux.UI.Tools/Blux.UI.Tools.csproj" />
     <Project Path="src/Blux.UI.Tools.EntityFrameworkCore/Blux.UI.Tools.EntityFrameworkCore.csproj" />
     <Project Path="src/Blux.UI.Images.Local/Blux.UI.Images.Local.csproj" />
+    <Project Path="src/Blux.UI.Server/Blux.UI.Server.csproj" />
     <Project Path="src/Blux.UI.Mcp.Model/Blux.UI.Mcp.Model.csproj" />
     <Project Path="src/Blux.UI.Mcp.Core/Blux.UI.Mcp.Core.csproj" />
     <Project Path="src/Blux.UI.Mcp/Blux.UI.Mcp.csproj" />
@@ -20,6 +21,7 @@
     <Project Path="tests/Blux.UI.Tools.EntityFrameworkCore.Tests/Blux.UI.Tools.EntityFrameworkCore.Tests.csproj" />
     <Project Path="tests/Blux.UI.Tools.Query.AotSmoke/Blux.UI.Tools.Query.AotSmoke.csproj" />
     <Project Path="tests/Blux.UI.Images.Local.Tests/Blux.UI.Images.Local.Tests.csproj" />
+    <Project Path="tests/Blux.UI.Server.Tests/Blux.UI.Server.Tests.csproj" />
     <Project Path="tests/Blux.UI.Mcp.Tests/Blux.UI.Mcp.Tests.csproj" />
     <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />
     <Project Path="tests/Blux.Playground.Tests/Blux.Playground.Tests.csproj" />

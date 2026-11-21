@@ -741,19 +741,19 @@
                             <div class="@_slots["filterRange"]">
                                 <div class="@_slots["filterField"]">
                                     <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
-                                    <input type="@DateInputType" name="@Context.FieldName("f." + Key + ".from")" value="@DateText(range?.From)" step="@DateStep" class="@_slots["filterInput"]"
+                                    <input type="@DateInputType(range?.From)" name="@Context.FieldName("f." + Key + ".from")" value="@DateText(range?.From)" step="@DateStep(range?.From)" class="@_slots["filterInput"]"
                                            aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-slot="filter-input" />
                                 </div>
                                 <div class="@_slots["filterField"]">
                                     <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
-                                    <input type="@DateInputType" name="@Context.FieldName("f." + Key + ".to")" value="@DateText(range?.To)" step="@DateStep" class="@_slots["filterInput"]"
+                                    <input type="@DateInputType(range?.To)" name="@Context.FieldName("f." + Key + ".to")" value="@DateText(range?.To)" step="@DateStep(range?.To)" class="@_slots["filterInput"]"
                                            aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-slot="filter-input" />
                                 </div>
                             </div>
                         }
                         else
                         {
-                            <input type="@DateInputType" name="@Context.FilterFieldName(Key, op)" value="@DateText(rule?.Value)" step="@DateStep" class="@_slots["filterInput"]"
+                            <input type="@DateInputType(rule?.Value)" name="@Context.FilterFieldName(Key, op)" value="@DateText(rule?.Value)" step="@DateStep(rule?.Value)" class="@_slots["filterInput"]"
                                    aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-input" />
                         }
                         <div class="@_slots["filterActions"]">
@@ -768,17 +768,19 @@
 
     private static string? NumberText(decimal? value) => value?.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-    // A date input posts yyyy-MM-dd and a date-time one yyyy-MM-ddTHH:mm, whatever the language of the browser.
-    private string DateInputType => Timed ? "datetime-local" : "date";
+    // A date input posts yyyy-MM-dd and a date-time one yyyy-MM-ddTHH:mm, whatever the language of the browser. A date-time field cannot say "all day", so the bound that is a whole day (a preset, a day picked alone) gets a
+    // date field and reads back as the same whole day; a bound with a time gets a date-time field, in the zone of the user: the server reads a date-time without an offset in that zone, like the editor of an interactive render.
+    private bool UsesTime(FilterValue? bound) => Timed && bound is not FilterValue.Date;
 
-    private string? DateStep => !Timed ? null : _filter!.Granularity == DateGranularity.Hour ? "3600" : "60";
+    private string DateInputType(FilterValue? bound) => UsesTime(bound) ? "datetime-local" : "date";
+
+    private string? DateStep(FilterValue? bound) => !UsesTime(bound) ? null : _filter!.Granularity == DateGranularity.Hour ? "3600" : "60";
 
     private string? DateText(FilterValue? value)
     {
         if (DataListDates.Bound(value, Context.Zone) is not { } local) return null;
         var day = local.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
-        // A whole day has no time: its field shows the start of it (a date-time field cannot say "all day").
-        return Timed ? day + "T" + (local.Time ?? TimeOnly.MinValue).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) : day;
+        return UsesTime(value) ? day + "T" + (local.Time ?? TimeOnly.MinValue).ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) : day;
     }
 
     // The rule with another operator: an option rule keeps its values (one only with <c>is</c>), a text rule its text.

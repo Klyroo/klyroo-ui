@@ -66,12 +66,15 @@ jobs:
         run: |
           dotnet test --project tests/Blux.UI.Images.Tests -c Release --no-build
           dotnet test --project tests/Blux.UI.Images.Local.Tests -c Release --no-build
+      - name: Blux.UI.Server tests (request cookies)
+        run: dotnet test --project tests/Blux.UI.Server.Tests -c Release --no-build
       - name: Pack
         run: |
           dotnet pack src/Blux.UI -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Server -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
