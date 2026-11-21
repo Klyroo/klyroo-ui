@@ -7,6 +7,7 @@ public sealed partial class BluxOptions
     public ComponentTheme Kbd { get; } = Themes.Kbd();
     public ComponentTheme Separator { get; } = Themes.Separator();
     public ComponentTheme Skeleton { get; } = Themes.Skeleton();
+    public ComponentTheme InfiniteScroll { get; } = Themes.InfiniteScroll();
     public ComponentTheme Chip { get; } = Themes.Chip();
     public ComponentTheme Link { get; } = Themes.Link();
     public ComponentTheme Icon { get; } = Themes.Icon();

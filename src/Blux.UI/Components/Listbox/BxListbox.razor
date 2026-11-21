@@ -13,6 +13,8 @@ else
 
 @code {
     private SlotSet _slots = default!;
+    private string _id = default!;
+    private IReadOnlyList<SelectSection> _sections = [];
 
     [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
 
@@ -23,8 +25,32 @@ else
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public ListboxUi? Ui { get; set; }
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("listbox");
+        _sections = SelectSections.Of(Items);
         _slots = ResolveSlots(Options.Listbox, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
+    }
+
+    private RenderFragment Option(BxSelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+              aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+              data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
+
+    private RenderFragment ItemContent(BxSelectItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                @RenderIcon(item.Icon, _slots["itemLeadingIcon"])
+            }
+            <span class="@_slots["itemLabel"]">@item.Label</span>
+            @if (item.Count is { } count)
+            {
+                <span class="sr-only" data-slot="count-separator">, </span>
+                <span class="@_slots["itemCount"]" data-slot="count">@count.ToString("N0", FormatCulture)</span>
+            }
+            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
+        </text>;
 
     private Dictionary<string, object> ListboxAttributes(EditBinding binding)
     {
@@ -52,13 +78,27 @@ else
                      @onbxchange:stopPropagation="true">
             <span data-slot="values" hidden></span>
             <div @attributes="ListboxAttributes(binding)">
-                @foreach (var item in Items)
+                @for (var s = 0; s < _sections.Count; s++)
                 {
-                    <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
-                         aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
-                        <span class="@_slots["itemLabel"]">@item.Label</span>
-                        @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
-                    </div>
+                    var section = _sections[s];
+                    if (section.Label is null)
+                    {
+                        foreach (var item in section.Items)
+                        {
+                            @Option(item)
+                        }
+                    }
+                    else
+                    {
+                        var groupId = _id + "-group-" + s;
+                        <div role="group" aria-labelledby="@groupId" class="@_slots["group"]" data-slot="group">
+                            <div id="@groupId" role="presentation" class="@_slots["groupLabel"]" data-slot="group-label">@section.Label</div>
+                            @foreach (var item in section.Items)
+                            {
+                                @Option(item)
+                            }
+                        </div>
+                    }
                 }
             </div>
         </bx-listbox>;

@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-138 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+139 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -79,6 +79,15 @@
 - `<BxSkeleton>`
   - Parameters: `Class`, `Ui`
   - `Ui` (`SkeletonUi`): `Base`
+
+### InfiniteScroll
+
+`/components/infinite-scroll`. A sentinel that asks for the next items when it comes into view, with a button and a link for keyboards, screen readers and pages without .NET.
+
+- `<BxInfiniteScroll>`
+  - Parameters: `Class`, `HasMore`, `Href`, `Label`, `Loading`, `Root`, `RootMargin`, `ShowEnd`, `Ui`
+  - Events: `OnLoadMore`
+  - `Ui` (`InfiniteScrollUi`): `Root`, `Sentinel`, `Trigger`, `Spinner`, `Status`, `End`, `Marker`
 
 ### Chip
 
@@ -223,7 +232,7 @@
 
 - `<BxSelect>`
   - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Items` (required), `Name`, `Placeholder`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
-  - `Ui` (`SelectUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`
+  - `Ui` (`SelectUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `LeadingIcon`
 
 ### FormField
 
@@ -282,7 +291,7 @@
 
 - `<BxSelectMenu>`
   - Parameters: `Class`, `Color`, `Create`, `Disabled`, `Id`, `Items` (required), `Multiple`, `Name`, `Placeholder`, `Required`, `SearchLabel`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
-  - `Ui` (`SelectMenuUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `SearchWrapper`, `Search`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `Empty`, `Create`
+  - `Ui` (`SelectMenuUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `SearchWrapper`, `Search`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `LeadingIcon`, `Empty`, `Create`
 
 ### InputMenu
 
@@ -290,7 +299,7 @@
 
 - `<BxInputMenu>`
   - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Items` (required), `Name`, `Placeholder`, `Required`, `Size`, `Strict`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
-  - `Ui` (`InputMenuUi`): `Root`, `Base`, `Trailing`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `Empty`
+  - `Ui` (`InputMenuUi`): `Root`, `Base`, `Trailing`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `Empty`
 
 ### InputNumber
 
@@ -358,7 +367,7 @@
 
 - `<BxListbox>`
   - Parameters: `AriaLabel`, `Class`, `Color`, `Disabled`, `Id`, `Items` (required), `Multiple`, `Name`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`
-  - `Ui` (`ListboxUi`): `Root`, `Base`, `Item`, `ItemLabel`, `ItemIcon`
+  - `Ui` (`ListboxUi`): `Root`, `Base`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`
 
 ### InputRating
 
@@ -460,7 +469,7 @@
 - `<BxCommandPalette>`
   - Parameters: `Class`, `CloseOnSelect`, `Groups` (required), `Label`, `Placeholder`, `Ui`
   - Events: `OnSelect`
-  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `Empty`, `Status`
+  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `ItemCount`, `Empty`, `Status`
 
 ### ColorModeButton
 
@@ -618,7 +627,7 @@
 - `<BxContentSearch>`
   - Parameters: `Class`, `IndexUrl`, `Label`, `Name`, `Open` (@bind), `Pages`, `Placeholder`, `Shortcut`, `Ui`
   - Events: `OnSelect`
-  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `Empty`, `Status`
+  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `ItemCount`, `Empty`, `Status`
 
 ### ContentSearchButton
 
@@ -1102,7 +1111,7 @@
 - `<BxDashboardSearch>`
   - Parameters: `Class`, `Groups` (required), `Label`, `Open` (@bind), `Placeholder`, `Shortcut`, `Ui`
   - Events: `OnSelect`
-  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `Empty`, `Status`
+  - `Ui` (`CommandPaletteUi`): `Root`, `InputWrapper`, `InputIcon`, `Input`, `Listbox`, `Group`, `GroupLabel`, `Item`, `ItemIcon`, `ItemWrapper`, `ItemLabel`, `ItemDescription`, `ItemShortcut`, `ItemCount`, `Empty`, `Status`
 
 ### DashboardSearchButton
 

@@ -128,7 +128,7 @@ internal static partial class Themes
 
     public static ComponentTheme Select()
     {
-        var t = new ComponentTheme("select", "root", "base", "label", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon")
+        var t = new ComponentTheme("select", "root", "base", "label", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon")
             .Slot("root", "relative inline-flex w-full")
             .Slot("base", "relative inline-flex w-full items-center rounded-(--blux-radius) text-start cursor-pointer focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
@@ -139,7 +139,12 @@ internal static partial class Themes
             .Slot("item", "group relative flex cursor-pointer select-none items-center gap-1.5 rounded-[calc(var(--blux-radius)_-_2px)] px-2 py-1.5 text-sm " +
                           "data-highlighted:bg-(--blux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60")
             .Slot("itemLabel", "truncate")
-            .Slot("itemIcon", "invisible ms-auto size-4 shrink-0 text-(--bx-color-text) group-aria-selected:visible");
+            .Slot("itemIcon", "invisible ms-auto size-4 shrink-0 text-(--bx-color-text) group-aria-selected:visible group-data-has-count:ms-0")
+            .Slot("itemLeadingIcon", ListItemLeadingIcon)
+            .Slot("itemCount", ListItemCount)
+            .Slot("group", ListGroup)
+            .Slot("groupLabel", ListGroupLabel)
+            .Slot("leadingIcon", TriggerLeadingIcon);
         FieldVariants(t, "base");
         t.Variant("size", "xs", "trailingIcon", "size-4").Variant("size", "sm", "trailingIcon", "size-4").Variant("size", "md", "trailingIcon", "size-5")
          .Variant("size", "lg", "trailingIcon", "size-5").Variant("size", "xl", "trailingIcon", "size-6");

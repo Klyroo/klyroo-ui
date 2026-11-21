@@ -107,6 +107,26 @@ export class ValueModel {
 /** Options a user can land on: not hidden by a filter, not disabled. */
 export const navigable = (options) => options.filter((o) => !o.hidden && o.getAttribute('aria-disabled') !== 'true');
 
+/**
+ * Shows the icon of the selected option in the trigger: a copy of its leading svg in the empty span Blazor renders for it
+ * (no Blazor children, so nothing for Blazor to diff). Writes only when the markup differs, because a write wakes
+ * the observers of the children that call this.
+ */
+export function syncSelectedIcon(root, option) {
+  const slot = root.querySelector('[data-slot="selectedIcon"]');
+  if (!slot) return;
+  const icon = option?.hasAttribute('data-has-icon') ? option.querySelector(':scope > svg') : null;
+  if ((slot.firstElementChild?.outerHTML ?? '') === (icon?.outerHTML ?? '')) return;
+  slot.replaceChildren(...(icon ? [icon.cloneNode(true)] : []));
+}
+
+/** A group whose options are all hidden by a filter hides with them, so no heading is left alone. A group is not an option: navigation never lands on it. */
+export function syncGroups(root) {
+  for (const group of root.querySelectorAll('[role="group"]')) {
+    group.hidden = group.querySelector('[role="option"]:not([hidden])') === null;
+  }
+}
+
 /** First-letter typeahead over option labels, with a short-lived buffer for multi-letter searches. */
 export class Typeahead {
   #buffer = '';

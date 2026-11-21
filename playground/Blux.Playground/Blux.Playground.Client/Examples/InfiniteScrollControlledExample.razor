@@ -1,0 +1,33 @@
+<div class="flex w-full max-w-md flex-col gap-3">
+    <div id="log-scroll" role="region" aria-label="Log" tabindex="0" data-testid="log-feed"
+         class="h-64 overflow-y-auto rounded-lg border border-(--blux-border) bg-(--blux-bg)">
+        <ul>
+            @for (var i = 1; i <= _count; i++)
+            {
+                <li class="border-b border-(--blux-border) px-3 py-2 font-mono text-xs">line @i</li>
+            }
+        </ul>
+        <BxInfiniteScroll Root="#log-scroll" RootMargin="0px" Loading="_loading" HasMore="_count < 45" OnLoadMore="Load" ShowEnd data-testid="log-more" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="log-count">Lines: @_count</p>
+</div>
+
+@code {
+    private int _count = 20;
+    private bool _loading;
+
+    // The handler returns at once and the parent owns Loading: the sentinel is checked again when it turns false.
+    private void Load()
+    {
+        _loading = true;
+        _ = Finish();
+    }
+
+    private async Task Finish()
+    {
+        await Task.Delay(500);
+        _count += 15;
+        _loading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+}

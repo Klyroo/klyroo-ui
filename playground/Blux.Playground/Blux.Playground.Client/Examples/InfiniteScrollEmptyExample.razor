@@ -1,0 +1,22 @@
+<div class="flex w-full max-w-md flex-col gap-3">
+    <div class="rounded-lg border border-(--blux-border) bg-(--blux-bg)" data-testid="empty-feed">
+        <ul>
+            <li class="border-b border-(--blux-border) px-3 py-2 text-sm">Event 1</li>
+            <li class="border-b border-(--blux-border) px-3 py-2 text-sm">Event 2</li>
+        </ul>
+        <BxInfiniteScroll OnLoadMore="LoadAsync" data-testid="empty-more" />
+    </div>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="empty-requests">Load requests: @_requests</p>
+</div>
+
+@code {
+    private int _requests;
+
+    // A load that adds nothing (it failed, or there was nothing): the sentinel is still in view, and asking again at once would loop.
+    // It is asked again when the sentinel has left the view and come back, or by the button. A real handler would set HasMore to false, or show a retry.
+    private Task LoadAsync()
+    {
+        _requests++;
+        return Task.CompletedTask;
+    }
+}

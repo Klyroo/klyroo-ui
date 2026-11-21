@@ -14,6 +14,9 @@ else
 @code {
     private SlotSet _slots = default!;
     private int _sequence;
+    private string _id = default!;
+    private IReadOnlyList<SelectSection> _sections = [];
+    private bool _hasIcons;
 
     [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
     [Parameter] public string? Placeholder { get; set; }
@@ -25,12 +28,17 @@ else
     private EventCallback<BxChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("select");
+        _sections = SelectSections.Of(Items);
+        _hasIcons = Items.Any(i => i.Icon is not null);
         _slots = ResolveSlots(Options.Select, new Dictionary<string, string?>
         {
             ["variant"] = VariantValue.Of(Variant),
             ["size"] = VariantValue.Of(EffectiveSize),
         }, Ui, "root");
+    }
 
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
         System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
@@ -59,6 +67,26 @@ else
         return attributes;
     }
 
+    private RenderFragment Option(BxSelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+              aria-selected="@(item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+              data-has-count="@(item.Count is null ? null : "")" data-has-icon="@(item.Icon is null ? null : "")">@ItemContent(item)</div>;
+
+    private RenderFragment ItemContent(BxSelectItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                @RenderIcon(item.Icon, _slots["itemLeadingIcon"])
+            }
+            <span class="@_slots["itemLabel"]">@item.Label</span>
+            @if (item.Count is { } count)
+            {
+                <span class="sr-only" data-slot="count-separator">, </span>
+                <span class="@_slots["itemCount"]" data-slot="count">@count.ToString("N0", FormatCulture)</span>
+            }
+            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
+        </text>;
+
     private RenderFragment Markup(EditBinding binding) =>
         @<bx-select data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
                     value="@(Value ?? "")"
@@ -68,6 +96,11 @@ else
                     @onbxchange:stopPropagation="true">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
             <button type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
+                @if (_hasIcons)
+                {
+                    @* Filled by the browser with the icon of the selected item: no Blazor children, so nothing to diff. *@
+                    <span class="@_slots["leadingIcon"]" data-slot="selectedIcon" aria-hidden="true"></span>
+                }
                 <span class="@_slots["label"]" data-slot="label"
                       data-label="@(Selected?.Label ?? Placeholder ?? "")"
                       data-placeholder="@(Selected is null ? "" : null)"
@@ -76,13 +109,27 @@ else
             </button>
             <div popover="auto" class="@_slots["content"]" data-slot="content">
                 <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)">
-                    @foreach (var item in Items)
+                    @for (var s = 0; s < _sections.Count; s++)
                     {
-                        <div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
-                             aria-selected="@(item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)">
-                            <span class="@_slots["itemLabel"]">@item.Label</span>
-                            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
-                        </div>
+                        var section = _sections[s];
+                        if (section.Label is null)
+                        {
+                            foreach (var item in section.Items)
+                            {
+                                @Option(item)
+                            }
+                        }
+                        else
+                        {
+                            var groupId = _id + "-group-" + s;
+                            <div role="group" aria-labelledby="@groupId" class="@_slots["group"]" data-slot="group">
+                                <div id="@groupId" role="presentation" class="@_slots["groupLabel"]" data-slot="group-label">@section.Label</div>
+                                @foreach (var item in section.Items)
+                                {
+                                    @Option(item)
+                                }
+                            </div>
+                        }
                     }
                 </div>
             </div>
