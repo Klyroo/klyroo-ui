@@ -77,17 +77,25 @@ public static class ApiReader
         return $"{name}<{string.Join(", ", type.GetGenericArguments().Select(TypeName))}>";
     }
 
+    /// <summary>The XML documentation files embedded by the client project, one per package of the catalog: member names never collide across packages.</summary>
+    private static readonly string[] DocumentationFiles = ["Blux.UI.xml", "Blux.UI.Tools.xml"];
+
     private static Dictionary<string, string> LoadDocs()
     {
-        using var stream = typeof(ApiReader).Assembly.GetManifestResourceStream("Blux.UI.xml");
-        if (stream is null) return [];
-        return XDocument.Load(stream).Descendants("member")
-            .Where(m => m.Element("summary") is not null)
-            .ToDictionary(
-                m => (string)m.Attribute("name")!,
-                m => string.Join(' ', m.Element("summary")!.Nodes().Select(n => n is XElement e
+        var docs = new Dictionary<string, string>();
+        foreach (var file in DocumentationFiles)
+        {
+            using var stream = typeof(ApiReader).Assembly.GetManifestResourceStream(file);
+            if (stream is null) continue;
+            foreach (var member in XDocument.Load(stream).Descendants("member").Where(m => m.Element("summary") is not null))
+            {
+                var words = string.Join(' ', member.Element("summary")!.Nodes().Select(n => n is XElement e
                         ? (string?)e.Attribute("cref")?.Value.Split('.').Last() ?? (string?)e.Attribute("langword") ?? e.Value
                         : n.ToString()))
-                    .Replace("\n", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries) is var words ? string.Join(' ', words) : "");
+                    .Replace("\n", " ").Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                docs[(string)member.Attribute("name")!] = string.Join(' ', words);
+            }
+        }
+        return docs;
     }
 }

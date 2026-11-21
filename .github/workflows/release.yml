@@ -48,12 +48,14 @@ jobs:
       - name: Generated assets are up to date
         run: |
           npm run build
-          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
+          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot src/Blux.UI.Tools/styles/generated src/Blux.UI.Tools/wwwroot src/Blux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
           if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
 
       - run: dotnet build Blux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
+      - name: Blux.UI.Tools tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
       - name: MCP tests
         run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Image provider and local optimizer tests
@@ -62,12 +64,14 @@ jobs:
           dotnet test --project tests/Blux.UI.Images.Local.Tests -c Release --no-build
       - name: Package check
         run: node build/verify-package.mjs --online
-      - name: Pack the library, the MCP tool and the image packages (same version)
+      - name: Pack the library, the MCP tool, the image packages and the Tools packages (same version)
         run: |
           dotnet pack src/Blux.UI -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v7
         with:
           name: nuget
@@ -90,7 +94,7 @@ jobs:
         with:
           name: nuget
           path: artifacts
-      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images and Blux.UI.Images.Local packages.
+      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query and Blux.UI.Tools packages.
       - name: Push
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

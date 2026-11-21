@@ -131,7 +131,7 @@ public class BundleTests
     [Fact]
     public void Building_the_bundle_again_gives_the_embedded_one()
     {
-        var rebuilt = BundleBuilder.Build(TestSupport.RepoRoot);
+        var rebuilt = BundleBuilder.Build(TestSupport.RepoRoot, [typeof(Blux.UI.Tools.BluxToolsOptions)]);
 
         Assert.Equal(
             JsonSerializer.Serialize(TestSupport.Bundle, DocsBundle.JsonOptions),
@@ -139,9 +139,9 @@ public class BundleTests
     }
 
     [Fact]
-    public void Extension_options_can_be_given_to_the_builder_without_changing_the_bundle_of_core()
+    public void An_unrelated_extension_given_to_the_builder_does_not_change_the_bundle()
     {
-        var withExtension = BundleBuilder.Build(TestSupport.RepoRoot, [typeof(SisterOptions)]);
+        var withExtension = BundleBuilder.Build(TestSupport.RepoRoot, [typeof(Blux.UI.Tools.BluxToolsOptions), typeof(SisterOptions)]);
 
         Assert.Equal(
             JsonSerializer.Serialize(TestSupport.Bundle, DocsBundle.JsonOptions),

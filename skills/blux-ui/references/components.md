@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-135 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+136 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -657,6 +657,15 @@
 - `<BxColumn>`
   - Parameters: `Class`, `Field`, `Sortable`, `Title` (required)
   - Slots: `Template`
+
+### DataListEmpty
+
+`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+
+- `<BxDataListEmpty>`
+  - Parameters: `Class`, `Description`, `Icon`, `Title`, `Ui`
+  - Slots: `Actions`, `ChildContent`
+  - `Ui` (`DataListEmptyUi`): `Root`, `Icon`, `Title`, `Description`, `Actions`
 
 ### Carousel
 

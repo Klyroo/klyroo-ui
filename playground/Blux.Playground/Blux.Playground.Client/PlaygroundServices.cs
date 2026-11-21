@@ -1,5 +1,6 @@
 using Blux.UI;
 using Blux.UI.Images;
+using Blux.UI.Tools;
 
 namespace Blux.Playground.Client;
 
@@ -9,13 +10,18 @@ namespace Blux.Playground.Client;
 /// </summary>
 public static class PlaygroundServices
 {
-    public static IServiceCollection AddPlaygroundBlux(this IServiceCollection services) =>
+    public static IServiceCollection AddPlaygroundBlux(this IServiceCollection services)
+    {
         services.AddBluxUi(o =>
         {
             // The URLs of the image optimizer the server maps at _blux/img, below the path base (Blux.UI.Images.Local): the same on both runtimes.
             // Remote images (the avatars of the examples) are not in Images.Domains, so they are left untouched.
             o.Images.AddLocal(ImageEndpoint, makeDefault: true);
         });
+        // The data components: configures the same options as AddBluxUi above.
+        services.AddBluxUiTools();
+        return services;
+    }
 
     /// <summary>Where the server maps the image optimizer.</summary>
     public const string ImageEndpoint = BxLocalImageProvider.DefaultEndpoint;

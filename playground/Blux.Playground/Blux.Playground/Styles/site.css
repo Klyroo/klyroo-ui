@@ -5,6 +5,7 @@
  */
 @import 'tailwindcss' source(none);
 @import '../../../../src/Blux.UI/wwwroot/blux.theme.css';
+@import '../../../../src/Blux.UI.Tools/wwwroot/blux-tools.theme.css';
 @source '../../Blux.Playground.Client';
 @source '../Components';
 @source '../wwwroot/site.js';

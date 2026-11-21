@@ -37,6 +37,11 @@ public static class ComponentMarkdown
         sb.Append($"{component.Description}\n\n");
         sb.Append($"- Family: {component.Group}\n");
         sb.Append($"- Component: {string.Join(", ", component.Api.Select(a => $"`{a.Name}`"))}\n");
+        if (component.InstallCommand() is { } install)
+        {
+            sb.Append($"- Package: `{component.Package}` (not part of Blux.UI): `{install}`");
+            sb.Append(component.RegistrationMethod() is { } register ? $", then `builder.Services.{register}()` in the server and the client `Program.cs` (it registers Blux.UI too).\n" : "\n");
+        }
         sb.Append($"- Docs: {Link(component, siteUrl)}\n");
         var bindable = component.Api.SelectMany(a => a.Parameters).Where(p => p.Bindable).Select(p => $"`@bind-{p.Name}`").Distinct().ToList();
         if (bindable.Count > 0) sb.Append($"- Binding: {string.Join(", ", bindable)}\n");
@@ -114,7 +119,9 @@ public static class ComponentMarkdown
             sb.Append($"{component.Name} has no theme of its own; style it with `Class`.\n");
             return sb.ToString();
         }
-        sb.Append("Configure globally with `AddBluxUi(o => o.<Property>.Slot(\"<slot>\", \"<classes>\"))`, `Variant(variant, value, slot, classes)` and `Default(variant, value)`. ");
+        var register = component.RegistrationMethod();
+        var configure = register is null ? "AddBluxUi(o => o.<Property>" : $"{register}(o => o.<Property>";
+        sb.Append($"Configure globally with `{configure}.Slot(\"<slot>\", \"<classes>\"))`, `Variant(variant, value, slot, classes)` and `Default(variant, value)`. ");
         sb.Append("Classes you add are merged after the defaults, so the last conflicting utility wins. Per instance, use `Class` (root) and `Ui` (any slot).\n");
         foreach (var api in themes)
         {
@@ -176,7 +183,7 @@ public static class ComponentMarkdown
                 : null,
         });
         return JsonSerializer.Serialize(
-            new { slug = component.Slug, name = component.Name, group = component.Group, docs = $"/components/{component.Slug}", components = types },
+            new { slug = component.Slug, name = component.Name, group = component.Group, package = component.Package, docs = $"/components/{component.Slug}", components = types },
             new JsonSerializerOptions(JsonSerializerDefaults.Web) { DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull });
     }
 

@@ -33,7 +33,7 @@ jobs:
       - name: Generated assets are up to date
         run: |
           npm run build
-          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
+          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot src/Blux.UI.Tools/styles/generated src/Blux.UI.Tools/wwwroot src/Blux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
           if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
 
       - name: Browser code unit tests (spatial navigation geometry)
@@ -41,6 +41,8 @@ jobs:
       - run: dotnet build Blux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
+      - name: Blux.UI.Tools tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
       - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
         run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Image provider and local optimizer tests
@@ -53,6 +55,8 @@ jobs:
           dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
       # Inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App against the package in both CSS modes.
       # It packs on its own and needs the network on a fresh runner (framework packages), hence --online.
       - name: Package check

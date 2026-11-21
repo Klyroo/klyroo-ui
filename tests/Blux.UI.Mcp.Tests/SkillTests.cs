@@ -12,8 +12,10 @@ public partial class SkillTests
 {
     private static readonly string SkillDirectory = Path.Combine(TestSupport.RepoRoot, "skills", "blux-ui");
 
-    private static readonly Dictionary<string, Type> LibraryTypes = typeof(BxButton).Assembly.GetTypes()
-        .Where(t => t.IsPublic && t.Namespace is "Blux.UI" or "Blux.UI.Theming")
+    // Blux.UI and the sister package whose components the generated reference lists.
+    private static readonly Dictionary<string, Type> LibraryTypes = new[] { typeof(BxButton).Assembly, typeof(Blux.UI.Tools.BxDataListEmpty).Assembly }
+        .SelectMany(a => a.GetTypes())
+        .Where(t => t.IsPublic && t.Namespace is "Blux.UI" or "Blux.UI.Theming" or "Blux.UI.Tools")
         .GroupBy(t => t.Name.Split('`')[0])
         .ToDictionary(g => g.Key, g => g.First());
 
