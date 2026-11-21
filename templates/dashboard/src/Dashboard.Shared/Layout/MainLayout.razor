@@ -3,6 +3,7 @@
 @inject AppearanceState Appearance
 @inject IToastService Toasts
 @inject NavigationManager Navigation
+@inject PersistentComponentState ApplicationState
 
 @* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
@@ -99,7 +100,25 @@
         ]),
     ];
 
-    protected override void OnInitialized() => Appearance.Changed += OnAppearanceChanged;
+    private const string PersistKey = "appearance";
+
+    private PersistingComponentStateSubscription _persisting;
+
+    protected override void OnInitialized()
+    {
+        // A prerender read the cookie and has the colors; the interactive render that follows it has no request, so the prerender hands them over (as the names of the
+        // two palettes) and the first interactive render keeps them instead of starting from the defaults.
+        if (ApplicationState.TryTakeFromJson<string>(PersistKey, out var saved) && saved?.Split('|') is [var primary, var neutral])
+        {
+            Appearance.Restore(primary, neutral);
+        }
+        _persisting = ApplicationState.RegisterOnPersisting(() =>
+        {
+            ApplicationState.PersistAsJson(PersistKey, $"{Appearance.Primary.Name}|{Appearance.Neutral.Name}");
+            return Task.CompletedTask;
+        });
+        Appearance.Changed += OnAppearanceChanged;
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -124,5 +143,9 @@
         }
     }
 
-    public void Dispose() => Appearance.Changed -= OnAppearanceChanged;
+    public void Dispose()
+    {
+        Appearance.Changed -= OnAppearanceChanged;
+        _persisting.Dispose();
+    }
 }

@@ -3,7 +3,7 @@
     Monorepo only (see Directory.Build.props). A template refers to the Blux.UI package, as the repository a user gets does. Built from here, the
     package is swapped for the source of the library, so a change to a component shows in the templates without a pack:
 
-      - the PackageReference to Blux.UI (and Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools, Blux.UI.Tools.Query) becomes a ProjectReference;
+      - the PackageReference to Blux.UI (and Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools, Blux.UI.Tools.Query, Blux.UI.Server) becomes a ProjectReference;
       - the Blux build features (self-hosted fonts, bundled icons, Tailwind) come from buildTransitive/*.targets of the library, imported by hand
         into every project that uses the Razor SDK, which is what the package does through NuGet (buildTransitive reaches the projects that only
         reference the one that has the package);
@@ -18,15 +18,17 @@
     <_BluxUi Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI'))" />
     <_BluxImages Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI.Images'))" />
     <_BluxImagesLocal Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI.Images.Local'))" />
+    <_BluxServer Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI.Server'))" />
     <_BluxTools Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI.Tools'))" />
     <_BluxToolsQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Blux.UI.Tools.Query'))" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Remove="Blux.UI;Blux.UI.Images;Blux.UI.Images.Local;Blux.UI.Tools;Blux.UI.Tools.Query" />
+    <PackageReference Remove="Blux.UI;Blux.UI.Images;Blux.UI.Images.Local;Blux.UI.Tools;Blux.UI.Tools.Query;Blux.UI.Server" />
     <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI/Blux.UI.csproj" Condition="'@(_BluxUi)' != ''" />
     <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI.Images/Blux.UI.Images.csproj" Condition="'@(_BluxImages)' != ''" />
     <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI.Images.Local/Blux.UI.Images.Local.csproj" Condition="'@(_BluxImagesLocal)' != ''" />
+    <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI.Server/Blux.UI.Server.csproj" Condition="'@(_BluxServer)' != ''" />
     <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI.Tools/Blux.UI.Tools.csproj" Condition="'@(_BluxTools)' != ''" />
     <ProjectReference Include="$(BluxRepoRoot)src/Blux.UI.Tools.Query/Blux.UI.Tools.Query.csproj" Condition="'@(_BluxToolsQuery)' != ''" />
   </ItemGroup>

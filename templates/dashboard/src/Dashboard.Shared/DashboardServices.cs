@@ -20,6 +20,8 @@ public static class DashboardServices
         services.TryAddSingleton<ISystemBars, NoSystemBars>();
 
         // The sample data lives in services of the user session. Replace them with the calls to your API: the pages only use their members.
+        // Where the color choice is kept: a cookie, which the server reads while it renders. A host with no request (the MAUI app) registers its own before calling this.
+        services.TryAddScoped<IAppearanceStore, CookieAppearanceStore>();
         services.AddScoped<AppState>();
         services.AddScoped<AppearanceState>();
         services.AddScoped<CustomerStore>();
