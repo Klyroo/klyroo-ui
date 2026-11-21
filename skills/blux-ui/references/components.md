@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-136 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+137 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
