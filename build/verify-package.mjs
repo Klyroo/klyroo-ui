@@ -99,7 +99,7 @@ try {
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
   // 3b. The sister packages: same version, readme, icon, documentation, and the dependencies they promise.
-  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local", "Blux.UI.Tools.Query", "Blux.UI.Tools"]) {
+  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local", "Blux.UI.Tools.Query", "Blux.UI.Tools", "Blux.UI.Tools.EntityFrameworkCore"]) {
     const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
     const file = `${id}.${version}.nupkg`;
@@ -111,11 +111,17 @@ try {
     const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
     check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
     // The local optimizer reaches Blux.UI through Blux.UI.Images. The query package depends on no Blux package and no ASP.NET Core.
-    const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : "Blux\\.UI";
+    const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : id === "Blux.UI.Tools.EntityFrameworkCore" ? "Blux\\.UI\\.Tools" : "Blux\\.UI";
     if (id === "Blux.UI.Tools.Query") {
       check(!/<dependency id="Blux\.UI/.test(spec) && !/Microsoft\.AspNetCore/.test(spec), `${id}: depends on no Blux package and no ASP.NET Core`);
     } else {
       check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    }
+    if (id === "Blux.UI.Tools.EntityFrameworkCore") {
+      // Lockstep with Blux.UI.Tools, and the one outside dependency: EF Core 10. Blux.UI and the query package come through Blux.UI.Tools.
+      check(new RegExp(`<dependency id="Blux\\.UI\\.Tools" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Blux.UI.Tools [${version}]`);
+      check(/<dependency id="Microsoft\.EntityFrameworkCore" version="10\./.test(spec), `${id}: depends on Microsoft.EntityFrameworkCore 10`);
+      check(!/<dependency id="Microsoft\.EntityFrameworkCore\.(Sqlite|SqlServer|Relational)/.test(spec), `${id}: depends on no EF Core provider`);
     }
     if (id === "Blux.UI.Tools") {
       // Lockstep: exactly the version of Blux.UI and of the query package, and the build assets of Blux.UI still flow to an app that only references Tools.
