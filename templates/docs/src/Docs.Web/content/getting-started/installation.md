@@ -51,7 +51,7 @@ tern --version
 
 ```text
 tern 1.4.0
-config: /home/ana/.config/tern
+config: ~/.config/tern
 ```
 
 If the shell answers `command not found`, the folder that holds the executable is not on your path. Add it, open a new terminal and try again.
