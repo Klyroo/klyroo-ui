@@ -11,17 +11,18 @@
             <p class="text-sm text-(--blux-text-muted)">Use at least 8 characters that you do not use anywhere else.</p>
         </Header>
         <ChildContent>
-            <BxForm Model="_password" FormName="password" OnValidSubmit="ChangePasswordAsync" class="flex flex-col gap-4" data-testid="password-form">
-                <BxFormField Label="Current password" Required For="() => _password.Current">
-                    <BxInput @bind-Value="_password.Current" Type="password" autocomplete="current-password" data-testid="password-current" />
+            <BxForm Model="Model" FormName="password" OnValidSubmit="ChangePasswordAsync" class="flex flex-col gap-4" data-testid="password-form">
+                <BxFormField Label="Current password" Required For="() => Model!.Current">
+                    <BxInput @bind-Value="Model!.Current" Type="password" autocomplete="current-password" data-testid="password-current" />
                 </BxFormField>
-                <BxFormField Label="New password" Required For="() => _password.New">
-                    <BxInput @bind-Value="_password.New" Type="password" autocomplete="new-password" data-testid="password-new" />
+                <BxFormField Label="New password" Required For="() => Model!.New">
+                    <BxInput @bind-Value="Model!.New" Type="password" autocomplete="new-password" data-testid="password-new" />
                 </BxFormField>
-                <BxFormField Label="Confirm the new password" Required For="() => _password.Confirm">
-                    <BxInput @bind-Value="_password.Confirm" Type="password" autocomplete="new-password" data-testid="password-confirm" />
+                <BxFormField Label="Confirm the new password" Required For="() => Model!.Confirm">
+                    <BxInput @bind-Value="Model!.Confirm" Type="password" autocomplete="new-password" data-testid="password-confirm" />
                 </BxFormField>
-                <div class="flex justify-end">
+                <div class="flex items-center justify-end gap-3">
+                    <p role="status" class="text-sm text-(--blux-success-text)" data-testid="password-status">@_status</p>
                     <BxButton Label="Update password" Type="submit" data-testid="password-save" />
                 </div>
             </BxForm>
@@ -75,7 +76,11 @@
 @code {
     private sealed record Session(int Id, string Device, string Place, string Seen, string Icon, bool Current = false);
 
-    private readonly PasswordChange _password = new();
+    // Bound to the posted form: a static post (before the page is interactive) is validated by the server like an interactive one.
+    [SupplyParameterFromForm(FormName = "password")]
+    private PasswordChange? Model { get; set; }
+
+    private string? _status;
     private bool _twoStep;
 
     private List<Session> _sessions =
@@ -85,10 +90,13 @@
         new(3, "Chrome on Windows", "Berlin, Germany", "5 days ago", "lucide:laptop"),
     ];
 
+    protected override void OnInitialized() => Model ??= new();
+
     private async Task ChangePasswordAsync()
     {
-        _password.Current = _password.New = _password.Confirm = null;
-        await Toasts.Add(new BxToast { Title = "Password updated", Description = "Your devices stay signed in until they are signed out below.", Color = BxColor.Success });
+        Model!.Current = Model!.New = Model!.Confirm = null;
+        _status = "Password updated.";
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Password updated", Description = "Your devices stay signed in until they are signed out below.", Color = BxColor.Success });
     }
 
     private async Task TwoStepChanged(bool on)

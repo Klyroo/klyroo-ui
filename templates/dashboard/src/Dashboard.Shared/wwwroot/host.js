@@ -10,3 +10,12 @@ export function watchDark(dotnet) {
   send();
   return { dispose: () => document.removeEventListener('bx-color-mode', send) };
 }
+
+/** The IANA time zone of the browser ("Europe/Paris"), or null when it cannot be read. */
+export function timeZone() {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? null;
+  } catch {
+    return null;
+  }
+}

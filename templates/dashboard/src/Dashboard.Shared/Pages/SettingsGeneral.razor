@@ -11,24 +11,25 @@
             <p class="text-sm text-(--blux-text-muted)">This is what your teammates see.</p>
         </Header>
         <ChildContent>
-            <BxForm Model="_profile" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
+            <BxForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
                 <div class="flex items-center gap-4">
-                    <BxAvatar Alt="@_profile.Name" Size="BxSize.Xl" />
+                    <BxAvatar Alt="@Model!.Name" Size="BxSize.Xl" />
                     <p class="text-sm text-(--blux-text-muted)">The avatar shows your initials until you upload a picture.</p>
                 </div>
-                <BxFormField Label="Name" Required For="() => _profile.Name">
-                    <BxInput @bind-Value="_profile.Name" autocomplete="name" data-testid="profile-name" />
+                <BxFormField Label="Name" Required For="() => Model!.Name">
+                    <BxInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
                 </BxFormField>
-                <BxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => _profile.Email">
-                    <BxInput @bind-Value="_profile.Email" Type="email" autocomplete="email" data-testid="profile-email" />
+                <BxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => Model!.Email">
+                    <BxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
                 </BxFormField>
-                <BxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => _profile.Username">
-                    <BxInput @bind-Value="_profile.Username" autocomplete="username" data-testid="profile-username" />
+                <BxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => Model!.Username">
+                    <BxInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
                 </BxFormField>
-                <BxFormField Label="Bio" For="() => _profile.Bio">
-                    <BxTextarea @bind-Value="_profile.Bio" Rows="4" />
+                <BxFormField Label="Bio" For="() => Model!.Bio">
+                    <BxTextarea @bind-Value="Model!.Bio" Rows="4" />
                 </BxFormField>
-                <div class="flex justify-end">
+                <div class="flex items-center justify-end gap-3">
+                    <p role="status" class="text-sm text-(--blux-success-text)" data-testid="profile-status">@_status</p>
                     <BxButton Label="Save changes" Type="submit" data-testid="profile-save" />
                 </div>
             </BxForm>
@@ -64,11 +65,20 @@
 </BxModal>
 
 @code {
-    private readonly Profile _profile = new();
-    private bool _confirm;
+    // Bound to the posted form, so that a form submitted before the page is interactive (a static post) is validated and handled like an interactive one.
+    [SupplyParameterFromForm(FormName = "profile")]
+    private Profile? Model { get; set; }
 
-    private async Task SaveAsync() =>
-        await Toasts.Add(new BxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = BxColor.Success });
+    private bool _confirm;
+    private string? _status;
+
+    protected override void OnInitialized() => Model ??= new();
+
+    private async Task SaveAsync()
+    {
+        _status = "Profile saved.";
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = BxColor.Success });
+    }
 
     private async Task Deleted() =>
         await Toasts.Add(new BxToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = BxColor.Info });

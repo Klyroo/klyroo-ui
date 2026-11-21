@@ -30,6 +30,12 @@ public sealed class RowSelection
         if (changed) Changed?.Invoke();
     }
 
+    /// <summary>Unticks every row that is not in <paramref name="ids"/> (the rows a new search or filter still matches), with one notification.</summary>
+    public void Retain(IReadOnlySet<int> ids)
+    {
+        if (_ids.RemoveWhere(id => !ids.Contains(id)) > 0) Changed?.Invoke();
+    }
+
     public void Clear()
     {
         if (_ids.Count == 0) return;

@@ -75,6 +75,15 @@ internal static class DashboardChecks
         await Assertions.Expect(page.GetByTestId("palette-emerald")).ToHaveAttributeAsync("aria-pressed", "true");
         Assert.NotEqual(before, await primary());
         Assert.Equal("emerald", await page.EvaluateAsync<string>("() => localStorage.getItem('dashboard-primary')"));
+        // The neutral color drives the gray of the text, the backgrounds and the borders.
+        var grays = () => page.EvaluateAsync<string>("() => ['--blux-text', '--blux-bg-muted', '--blux-border'].map(n => getComputedStyle(document.documentElement).getPropertyValue(n).trim()).join('|')");
+        var grayBefore = await grays();
+        await page.GetByTestId("neutral-zinc").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("neutral-zinc")).ToHaveAttributeAsync("aria-pressed", "true");
+        Assert.NotEqual(grayBefore, await grays());
+        Assert.Equal("zinc", await page.EvaluateAsync<string>("() => localStorage.getItem('dashboard-neutral')"));
+        // The primary color is still the one that was chosen.
+        await Assertions.Expect(page.GetByTestId("palette-emerald")).ToHaveAttributeAsync("aria-pressed", "true");
         await page.Keyboard.PressAsync("Escape");
 
         // Color mode.
@@ -160,6 +169,157 @@ internal static class DashboardChecks
         await Assertions.Expect(rows.First).ToContainTextAsync("Finland");
     }
 
+    /// <summary>
+    /// The "New customer" entry of the create menu opens the form from any page, also from the customers page itself, and leaves no <c>new</c> parameter behind:
+    /// a reload or Back does not open the form again.
+    /// </summary>
+    public static async Task AssertCreateMenu(IPage page)
+    {
+        var form = page.GetByTestId("new-customer");
+        async Task ChooseNewCustomer()
+        {
+            await page.GetByTestId("create-button").ClickAsync();
+            await page.GetByRole(AriaRole.Menuitem, new() { Name = "New customer" }).ClickAsync();
+        }
+
+        // From another page: the customers page opens with the form, and its address is clean.
+        await page.GotoAsync("");
+        await WaitInteractive(page);
+        await ChooseNewCustomer();
+        await page.WaitForURLAsync(new Regex("customers$"));
+        await Assertions.Expect(form).ToBeVisibleAsync();
+        Assert.DoesNotContain("new=", page.Url);
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(form).Not.ToBeVisibleAsync();
+        // A reload does not open it again.
+        await page.ReloadAsync();
+        await WaitInteractive(page);
+        await Assertions.Expect(form).Not.ToBeVisibleAsync();
+
+        // From the customers page itself, more than once.
+        for (var i = 0; i < 2; i++)
+        {
+            await ChooseNewCustomer();
+            await Assertions.Expect(form).ToBeVisibleAsync();
+            Assert.DoesNotContain("new=", page.Url);
+            await page.Keyboard.PressAsync("Escape");
+            await Assertions.Expect(form).Not.ToBeVisibleAsync();
+        }
+
+        // Back does not open it either: the address was replaced, not added.
+        await page.GoBackAsync();
+        await WaitInteractive(page);
+        await page.GoForwardAsync();
+        await WaitInteractive(page);
+        await Assertions.Expect(form).Not.ToBeVisibleAsync();
+    }
+
+    /// <summary>
+    /// The selection follows the query: it survives a page change but only the selected rows that the search or the filters still match stay selected, and the count
+    /// and the confirmation say so. The announcement of the count is a live region that is always in the page.
+    /// </summary>
+    public static async Task AssertSelectionFollowsTheQuery(IPage page)
+    {
+        await page.GotoAsync("customers");
+        await WaitInteractive(page);
+        var rows = page.Locator("table tbody tr[data-slot=row]");
+        await Assertions.Expect(rows).ToHaveCountAsync(10);
+
+        // Nothing selected: the live region is there, with no text.
+        var live = page.GetByTestId("selection-count");
+        await Assertions.Expect(live).ToHaveAttributeAsync("role", "status");
+        await Assertions.Expect(live).ToHaveTextAsync("");
+        await Assertions.Expect(page.GetByTestId("selection-bar")).ToHaveCountAsync(0);
+
+        await page.GetByTestId("select-page").ClickAsync();
+        await Assertions.Expect(live).ToHaveTextAsync("10 selected");
+        var companies = (await rows.Locator("td:nth-child(3)").AllTextContentsAsync()).Select(t => t.Trim()).ToArray();
+        var company = companies[0];
+        var expected = companies.Count(c => c == company);
+        Assert.InRange(expected, 1, 9);
+
+        // A search that leaves only some of them: the others are no longer selected.
+        await page.GetByRole(AriaRole.Searchbox).FillAsync(company);
+        await Assertions.Expect(live).ToHaveTextAsync($"{expected} selected", new() { Timeout = 15_000 });
+        Assert.All(await rows.AllTextContentsAsync(), text => Assert.Contains(company, text));
+
+        // The confirmation counts the pruned selection, and the deletion reaches only those rows.
+        await page.GetByTestId("delete-selected").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("confirm-delete")).ToContainTextAsync($"{expected} selected customers");
+        await page.GetByTestId("confirm-delete-button").ClickAsync();
+        await Assertions.Expect(live).ToHaveTextAsync("");
+        await page.GetByRole(AriaRole.Searchbox).FillAsync("");
+        await Assertions.Expect(page.GetByText($"of {240 - expected}")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+
+        // A filter prunes too, and a page change does not.
+        await page.GetByTestId("select-page").ClickAsync();
+        await Assertions.Expect(live).ToHaveTextAsync("10 selected");
+        await page.GetByLabel("Page 2", new() { Exact = true }).ClickAsync();
+        await Assertions.Expect(live).ToHaveTextAsync("10 selected");
+        await page.GetByRole(AriaRole.Searchbox).FillAsync("zzzzqq");
+        await Assertions.Expect(live).ToHaveTextAsync("", new() { Timeout = 15_000 });
+        await Assertions.Expect(page.GetByTestId("selection-bar")).ToHaveCountAsync(0);
+    }
+
+    /// <summary>
+    /// Forms posted before the page is interactive (a native submit, here with JavaScript off): the server validates the posted model and answers with the page and
+    /// its message, not with an error. Needs the antiforgery cookie that the first request sets.
+    /// </summary>
+    public static async Task AssertStaticPosts(IBrowser browser, string baseUrl)
+    {
+        await using var context = await browser.NewContextAsync(new() { BaseURL = baseUrl, JavaScriptEnabled = false });
+        var failures = new List<string>();
+        context.Response += (_, response) => { if (response.Status >= 400) lock (failures) failures.Add($"{response.Status} {response.Url}"); };
+        var page = await context.NewPageAsync();
+
+        // Profile: invalid, then valid.
+        await page.GotoAsync("settings");
+        await page.GetByTestId("profile-name").FillAsync("");
+        await page.GetByTestId("profile-save").ClickAsync();
+        await Assertions.Expect(page.GetByText("The name is required.")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByTestId("profile-status")).ToHaveTextAsync("");
+        await page.GetByTestId("profile-name").FillAsync("Maren A.");
+        await page.GetByTestId("profile-save").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("profile-status")).ToHaveTextAsync("Profile saved.");
+        await Assertions.Expect(page.GetByTestId("profile-name")).ToHaveValueAsync("Maren A.");
+
+        // Password: the rules of the model apply.
+        await page.GotoAsync("settings/security");
+        await page.GetByTestId("password-current").FillAsync("old-secret");
+        await page.GetByTestId("password-new").FillAsync("short");
+        await page.GetByTestId("password-confirm").FillAsync("different");
+        await page.GetByTestId("password-save").ClickAsync();
+        await Assertions.Expect(page.GetByText("Use at least 8 characters.")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("The two passwords differ.")).ToBeVisibleAsync();
+        await page.GetByTestId("password-current").FillAsync("old-secret");
+        await page.GetByTestId("password-new").FillAsync("a-longer-secret");
+        await page.GetByTestId("password-confirm").FillAsync("a-longer-secret");
+        await page.GetByTestId("password-save").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("password-status")).ToHaveTextAsync("Password updated.");
+
+        // A synthetic click on the submit button (the slideover is closed without a script, so the button cannot be pressed), then the page the post answers with.
+        async Task Submit()
+        {
+            var answer = page.WaitForResponseAsync(r => r.Request.Method == "POST");
+            await page.GetByTestId("new-create").DispatchEventAsync("click");
+            await answer;
+            await page.WaitForLoadStateAsync(LoadState.Load);
+        }
+
+        // New customer: the form is in a slideover that only a script opens, so the controls are filled where they are. The server validates what was posted.
+        await page.GotoAsync("customers");
+        await Submit();
+        await Assertions.Expect(page.GetByText("The name is required.")).ToHaveCountAsync(1);
+        // The controls are not visible, so they cannot be typed in: their values are set directly.
+        await page.GetByTestId("new-name").EvaluateAsync("e => { e.value = 'Zora Quentin'; }");
+        await page.GetByTestId("new-email").EvaluateAsync("e => { e.value = 'zora@quentin.example'; }");
+        await Submit();
+        await Assertions.Expect(page.GetByText("The name is required.")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.GetByText("Pick a country.")).ToHaveCountAsync(1);
+
+        lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
+    }
+
     /// <summary>The inbox: a message opens in the pane (and is read), the filter, the archive, and one panel at a time on a phone.</summary>
     public static async Task AssertInbox(IPage page)
     {
@@ -213,7 +373,7 @@ internal static class DashboardChecks
         await page.GetByTestId("profile-name").PressAsync("Tab");
         await Assertions.Expect(page.GetByText("The name is required.")).ToHaveCountAsync(0);
         await page.GetByTestId("profile-save").ClickAsync();
-        await Assertions.Expect(page.GetByText("Profile saved")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Profile saved", new() { Exact = true })).ToBeVisibleAsync();
 
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Settings sections" }).GetByRole(AriaRole.Link, new() { Name = "Members" }).ClickAsync();
         await Assertions.Expect(page.GetByTestId("settings-members")).ToBeVisibleAsync();
@@ -251,7 +411,7 @@ internal static class DashboardChecks
         await Assertions.Expect(page.GetByText("The two passwords differ.")).ToHaveCountAsync(0);
         await Assertions.Expect(page.GetByText("Use at least 8 characters.")).ToHaveCountAsync(0);
         await page.GetByTestId("password-save").ClickAsync();
-        await Assertions.Expect(page.GetByText("Password updated")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Password updated", new() { Exact = true })).ToBeVisibleAsync();
         await Assertions.Expect(page.GetByTestId("session")).ToHaveCountAsync(3);
         await page.GetByRole(AriaRole.Button, new() { Name = "Sign out Safari on iPhone" }).ClickAsync();
         await Assertions.Expect(page.GetByTestId("session")).ToHaveCountAsync(2);
@@ -341,6 +501,10 @@ public class DashboardTemplateTests(PlaygroundServer server)
             await page.GotoAsync("customers");
             await DashboardChecks.WaitInteractive(page);
             await DashboardChecks.AssertCustomers(page);
+
+            await DashboardChecks.AssertCreateMenu(page);
+            await DashboardChecks.AssertSelectionFollowsTheQuery(page);
+            await DashboardChecks.AssertStaticPosts(server.Browser, baseUrl);
 
             await page.GotoAsync("inbox");
             await DashboardChecks.WaitInteractive(page);
