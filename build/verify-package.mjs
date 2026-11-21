@@ -403,6 +403,30 @@ try {
       child.kill();
       check(served.includes("letter-spacing:.123em"), "tailwind: the app serves /site.tailwind.css with the generated utility");
     }
+    // The foreground watch target (a second terminal next to dotnet watch): an edit of a .razor shows up in the output, Ctrl+C stops it and the CLI.
+    {
+      withClasses("tracking-[0.123em] leading-[1.567]");
+      const watcher = spawn("dotnet", ["build", join(server, "Site.csproj"), "-c", "Release", ...flags, "-t:BluxTailwindWatch"], { cwd: app, env: { ...process.env, ...consumerEnv, DOTNET_NOLOGO: "1" }, stdio: "ignore" });
+      let exited = false;
+      watcher.on("exit", () => { exited = true; });
+      const cliRuns = () => (process.platform === "win32" ? "" : spawnSync("ps", ["-eo", "args"], { encoding: "utf8" }).stdout).split("\n").filter((l) => l.includes(tailwindCache) && l.includes("--watch")).length;
+      // Wait until the CLI runs (the first line of a watch is its banner), then edit.
+      for (let i = 0; i < 120 && !exited && cliRuns() === 0; i++) await new Promise((r) => setTimeout(r, 500));
+      check(!exited && (process.platform === "win32" || cliRuns() === 1), "tailwind watch: the foreground target starts the CLI in watch mode");
+      withClasses("tracking-[0.123em] leading-[1.567] tracking-[0.789em]");
+      let seen = false;
+      for (let i = 0; i < 120 && !seen && !exited; i++) {
+        await new Promise((r) => setTimeout(r, 500));
+        seen = css().includes("letter-spacing:.789em");
+      }
+      check(seen, "tailwind watch: a .razor edit puts its class in the output while the target runs");
+      watcher.kill("SIGINT");
+      for (let i = 0; i < 40 && !exited; i++) await new Promise((r) => setTimeout(r, 500));
+      if (!exited) watcher.kill("SIGKILL");
+      check(exited, "tailwind watch: Ctrl+C (SIGINT) ends the target");
+      await new Promise((r) => setTimeout(r, 1500));
+      check(process.platform === "win32" || cliRuns() === 0, "tailwind watch: no Tailwind process is left behind");
+    }
     // BluxTailwind=false: the feature adds nothing to the assets.
     const disabled = run("dotnet", ["build", "-c", "Release", "-p:BluxTailwind=false", "-p:BluxOffline=false", join(app, "Site", "Site.sln")], app, consumerEnv);
     check(disabled.code === 0 && !readFileSync(manifestFile, "utf8").includes("blux/tailwind/site.tailwind.css"), "tailwind off: no generated stylesheet in the static web assets");
