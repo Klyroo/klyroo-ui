@@ -376,7 +376,8 @@ public class ContentTests : BluxTestContext
 
         // The address is written as given: the browser resolves it against <base href>.
         Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
-        Assert.Empty(cut.FindAll("[role=option]"));
+        // Nothing is listed: the options of the palette come from the file (the hidden template is outside the palette).
+        Assert.Empty(cut.FindAll("bx-command-palette [role=option]"));
         var state = cut.Find("[data-bx-content-search-state]");
         Assert.True(state.HasAttribute("hidden"));
         Assert.Equal("Loading the search index...", state.QuerySelector("[data-loading-text]")!.GetAttribute("data-loading-text"));
@@ -404,7 +405,7 @@ public class ContentTests : BluxTestContext
     {
         var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.IndexUrl, "search-index.json"));
 
-        Assert.Equal(6, cut.FindAll("[role=option]").Count);
+        Assert.Equal(6, cut.FindAll("bx-command-palette [role=option]").Count);
         Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
     }
 
