@@ -54,6 +54,7 @@ else
         attributes.Remove("required");
         if (Required) attributes["aria-required"] = "true";
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         attributes["data-slot"] = "trigger";
         return attributes;
     }

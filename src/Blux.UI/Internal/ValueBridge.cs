@@ -15,7 +15,7 @@ public sealed class ValueBridge<TValue> : InputBase<TValue>
     [Parameter, EditorRequired] public RenderFragment<EditBinding> ChildContent { get; set; } = default!;
 
     protected override void BuildRenderTree(RenderTreeBuilder builder) =>
-        builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any())));
+        builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any(), EditBinding.Of(EditContext, FieldIdentifier))));
 
     protected override bool TryParseValueFromString(string? value, out TValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {

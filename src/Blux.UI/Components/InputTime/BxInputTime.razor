@@ -87,6 +87,7 @@ else
         }
         if (Required || Field?.Required == true) attributes["aria-required"] = "true";
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         return attributes;
     }
 
@@ -102,7 +103,7 @@ else
                         aria-label="@(Field?.LabelId is null ? AriaLabel : null)"
                         aria-labelledby="@Field?.LabelId"
                         aria-describedby="@FormFieldContext.Join(Field?.DescribedBy)"
-                        class="@_slots["root"]"
+                        class="@binding.WithFieldClass(_slots["root"])"
                         data-color="@Color.Value"
                         data-disabled="@(Disabled ? "" : null)"
                         data-invalid="@(binding.Invalid ? "" : null)"

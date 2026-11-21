@@ -45,6 +45,7 @@ public abstract class BxListFieldBase : BxFieldBase<IReadOnlyList<string>>
         if (Disabled) attributes["disabled"] = true;
         if (Required || Field?.Required == true) attributes["aria-required"] = "true";
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         if (role is not null) attributes["role"] = role;
         return attributes;
     }

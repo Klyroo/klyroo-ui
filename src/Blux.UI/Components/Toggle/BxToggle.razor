@@ -69,6 +69,7 @@ else
         @<bx-toggle data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
                     pressed="@(Value ? "" : null)"
                     disabled="@Disabled"
+                    class="@binding.CssClass"
                     data-color="@Color.Value"
                     @onbxchange="ChangeHandler"
                     @onbxchange:stopPropagation="true">
