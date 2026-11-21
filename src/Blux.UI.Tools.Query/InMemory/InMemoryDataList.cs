@@ -40,14 +40,14 @@ public static class InMemoryDataList
         {
             case DataListPaging.Offset offset:
             {
-                var ordered = Order(schema, matching, sortFields, rowKeyTieBreak: false);
+                var ordered = Order(schema, matching, sortFields, rowKeyTieBreak: schema.HasRowKey);
                 var page = ordered.Skip(offset.Skip).Take(offset.Take).ToList();
                 return new DataListResult<T>(page, matching.Count, null, facets);
             }
             case DataListPaging.Cursor cursor:
                 return ExecuteCursor(schema, matching, sortFields, cursor, facets);
             default:
-                return new DataListResult<T>(Order(schema, matching, sortFields, rowKeyTieBreak: false).ToList(), matching.Count, null, facets);
+                return new DataListResult<T>(Order(schema, matching, sortFields, rowKeyTieBreak: schema.HasRowKey).ToList(), matching.Count, null, facets);
         }
     }
 
@@ -77,7 +77,7 @@ public static class InMemoryDataList
             ordered = ordered is null ? rows.OrderBy(field.Getter, comparer) : ordered.ThenBy(field.Getter, comparer);
         }
         if (rowKeyTieBreak)
-            ordered = ordered is null ? rows.OrderBy(schema.GetRowKey, StringComparer.Ordinal) : ordered.ThenBy(schema.GetRowKey, StringComparer.Ordinal);
+            ordered = ordered is null ? rows.OrderBy(schema.RowKeyValue, RowKeyComparer.Instance) : ordered.ThenBy(schema.RowKeyValue, RowKeyComparer.Instance);
         return ordered is null ? rows : ordered;
     }
 
@@ -95,6 +95,10 @@ public static class InMemoryDataList
                 throw new InvalidOperationException($"The sort field '{field.Key}' ({field.Accessor.UnderlyingType.Name}) cannot be carried by a cursor.");
         }
 
+        var keyType = schema.RowKeyAccessor!.UnderlyingType;
+        if (!TextConvert.IsSupported(keyType))
+            throw new InvalidOperationException($"The row key ({keyType.Name}) cannot be carried by a cursor.");
+
         var signature = string.Join('|', sort.Select(s => s.Rule.Descending ? "-" + s.Rule.Key : s.Rule.Key));
         var ordered = Order(schema, matching, sort, rowKeyTieBreak: true).ToList();
 
@@ -103,8 +107,9 @@ public static class InMemoryDataList
         {
             // A cursor that does not decode, or was made for another sort, ends the walk: an empty page and no next cursor. Restarting at the first
             // page would make an infinite scroll loop on the same rows forever.
-            if (!DataListCursor.TryDecode(cursor.After, signature, sort.Count, out var afterKey, out var afterValues)
-                || !TryParseValues(sort, afterValues, out var parsed))
+            if (!DataListCursor.TryDecode(cursor.After, signature, sort.Count, out var afterKeyText, out var afterValues)
+                || !TryParseValues(sort, afterValues, out var parsed)
+                || !TextConvert.TryParse(afterKeyText, keyType, out var afterKey))
                 return new DataListResult<T>([], cursor.Count ? matching.Count : null, null, facets);
 
             var comparers = sort.Select(s => new SortValueComparer(s.Rule.Descending)).ToArray();
@@ -115,7 +120,7 @@ public static class InMemoryDataList
                     var c = comparers[i].Compare(sort[i].Field.Getter(row), parsed[i]);
                     if (c != 0) return c > 0;
                 }
-                return string.CompareOrdinal(schema.GetRowKey(row), afterKey) > 0;
+                return RowKeyComparer.Instance.Compare(schema.RowKeyValue(row), afterKey) > 0;
             });
             if (start < 0) start = ordered.Count;
         }
@@ -167,19 +172,34 @@ public static class InMemoryDataList
             foreach (var text in seen) counts[text] = counts.GetValueOrDefault(text) + 1;
         }
 
-        IEnumerable<KeyValuePair<string, int>> options = counts;
+        return FacetResults.Create(facet, counts, missing, schema.MaxFacetBuckets);
+    }
+}
+
+/// <summary>The part of a facet shared by the in-memory executor and the IQueryable applier: search among the options, order, window, totals.</summary>
+internal static class FacetResults
+{
+    public static DataListFacetResult Create(DataListFacetRequest facet, IEnumerable<KeyValuePair<string, int>> counts, int missing, int maxBuckets)
+    {
+        // the cap comes first: the options kept are the most counted ones, and the search and the window apply among them
+        var ranked = counts.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
+        var truncated = ranked.Count > maxBuckets;
+        IEnumerable<KeyValuePair<string, int>> options = truncated ? ranked.Take(maxBuckets) : ranked;
         if (!string.IsNullOrWhiteSpace(facet.Search))
         {
             var needle = facet.Search.Trim();
             options = options.Where(o => TextFold.Contains(o.Key, needle));
         }
-        var all = options.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
+        var all = options.ToList();
         IEnumerable<KeyValuePair<string, int>> window = all.Skip(facet.Skip);
         if (facet.Limit is { } limit) window = window.Take(limit);
         return new DataListFacetResult(
             facet.Key,
             [.. window.Select(o => new DataListFacetOption(o.Key, o.Value))],
             facet.IncludeMissing ? missing : null,
-            all.Count);
+            all.Count)
+        {
+            Truncated = truncated,
+        };
     }
 }

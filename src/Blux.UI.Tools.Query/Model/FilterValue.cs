@@ -3,14 +3,14 @@ using System.Text.Json.Serialization;
 namespace Blux.UI.Tools.Query;
 
 /// <summary>
-/// The value of a <see cref="FilterRule"/>. A closed hierarchy: <see cref="Text"/>, <see cref="Number"/>, <see cref="Bool"/>,
+/// The value of a <see cref="FilterRule"/>. A closed hierarchy: <see cref="Text"/>, <see cref="Number"/>, <see cref="Boolean"/>,
 /// <see cref="Date"/> (a calendar day), <see cref="Moment"/> (an instant, for hour, minute and second granularity),
 /// <see cref="List"/> and <see cref="Range"/>.
 /// </summary>
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(Text), "text")]
 [JsonDerivedType(typeof(Number), "number")]
-[JsonDerivedType(typeof(Bool), "bool")]
+[JsonDerivedType(typeof(Boolean), "boolean")]
 [JsonDerivedType(typeof(Date), "date")]
 [JsonDerivedType(typeof(Moment), "moment")]
 [JsonDerivedType(typeof(List), "list")]
@@ -26,7 +26,7 @@ public abstract record FilterValue
     public sealed record Number(decimal Value) : FilterValue;
 
     /// <summary>A boolean.</summary>
-    public sealed record Bool(bool Value) : FilterValue;
+    public sealed record Boolean(bool Value) : FilterValue;
 
     /// <summary>A calendar day. On <see cref="DateTimeOffset"/> and <see cref="DateTime"/> fields it is that day in the time zone of the request (<see cref="DataListRequest.TimeZone"/>, UTC when absent), as the half-open range from its first instant to the next day's. <see cref="DateOnly"/> fields compare the day itself.</summary>
     public sealed record Date(DateOnly Value) : FilterValue;

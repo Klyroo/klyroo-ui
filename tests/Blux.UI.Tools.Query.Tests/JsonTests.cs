@@ -20,7 +20,7 @@ public class JsonTests
         DataListFilterGroup.And(
             Rule("name", Op.Contains, Text("a\"b\\cé😀")),
             Rule("age", Op.Between, Range(Num(1.25m), null)),
-            Rule("active", Op.IsNot, new FilterValue.Bool(false)),
+            Rule("active", Op.IsNot, new FilterValue.Boolean(false)),
             Rule("hired", Op.After, Day("2024-02-29")),
             Rule("lastLogin", Op.Between, Range(At("2024-03-01T10:00:00+02:00"), At("2024-03-02T00:00:00Z"))),
             Rule("status", Op.IsAnyOf, List("Active", "x,y"), includeEmpty: true),
@@ -62,7 +62,7 @@ public class JsonTests
     {
         FilterValue[] values =
         [
-            new FilterValue.Text("t"), new FilterValue.Number(-3.50m), new FilterValue.Bool(true), new FilterValue.Date(new DateOnly(2024, 2, 29)),
+            new FilterValue.Text("t"), new FilterValue.Number(-3.50m), new FilterValue.Boolean(true), new FilterValue.Date(new DateOnly(2024, 2, 29)),
             new FilterValue.Moment(DateTimeOffset.Parse("2024-03-01T10:00:00.1234567+05:30")), new FilterValue.List(["a", "b"]), new FilterValue.List([]),
             new FilterValue.Range(new FilterValue.Number(1), new FilterValue.Number(2)), new FilterValue.Range(null, new FilterValue.Date(new DateOnly(2024, 1, 1))),
         ];

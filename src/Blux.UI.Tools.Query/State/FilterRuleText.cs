@@ -35,7 +35,7 @@ internal static class FilterRuleText
         null => "",
         FilterValue.Text t => Escape(t.Value),
         FilterValue.Number n => n.Value.ToString(CultureInfo.InvariantCulture),
-        FilterValue.Bool b => b.Value ? "true" : "false",
+        FilterValue.Boolean b => b.Value ? "true" : "false",
         FilterValue.Date d => d.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
         FilterValue.Moment m => m.Value.ToString("O", CultureInfo.InvariantCulture),
         FilterValue.Range r => FormatScalar(r.From) + ".." + FormatScalar(r.To),
@@ -63,7 +63,7 @@ internal static class FilterRuleText
         {
             FilterKind.Text => ParseText(payload),
             FilterKind.Option => ParseOption(op, payload),
-            FilterKind.Boolean => payload is [var b] && bool.TryParse(b, out var flag) ? new FilterValue.Bool(flag) : null,
+            FilterKind.Boolean => payload is [var b] && bool.TryParse(b, out var flag) ? new FilterValue.Boolean(flag) : null,
             FilterKind.Number => op == FilterOperator.Between ? ParseRange(payload, ParseNumber) : payload is [var n] ? ParseNumber(n) : null,
             _ => op == FilterOperator.Between ? ParseRange(payload, ParseDate) : payload is [var d] ? ParseDate(d) : null,
         };
