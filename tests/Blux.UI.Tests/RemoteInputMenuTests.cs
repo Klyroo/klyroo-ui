@@ -220,4 +220,45 @@ public class RemoteInputMenuTests : BluxTestContext
         Assert.Contains("overflow-y-auto", cut.Find("[data-slot=scroller]").ClassName);
         Assert.DoesNotContain("overflow-y-auto", cut.Find("[role=listbox]").ClassName);
     }
+
+    [Fact]
+    public void Without_Items_or_OptionsProvider_the_first_render_throws_and_names_both_parameters()
+    {
+        var error = Assert.ThrowsAny<Exception>(() => Render<BxInputMenu>());
+
+        var message = (error.InnerException ?? error).Message;
+        Assert.Contains("BxInputMenu", message);
+        Assert.Contains("Items", message);
+        Assert.Contains("OptionsProvider", message);
+    }
+
+    [Fact]
+    public void Statically_rendered_a_strict_value_named_by_Items_travels_to_the_browser_with_its_label()
+    {
+        SetRendererInfo(new RendererInfo("Static", false));
+        var cut = Render<BxInputMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new BxSelectItem("fr", "France")]).Add(s => s.Strict, true).Add(s => s.Value, "fr"));
+
+        Assert.Equal("France", cut.Find("[data-slot=input]").GetAttribute("value"));
+        Assert.Equal("fr" + Sep + "France", cut.Find("bx-input-menu").GetAttribute("data-known"));
+    }
+
+    [Fact]
+    public async Task OptionsKey_changing_resets_the_suggestions_and_a_new_delegate_does_not()
+    {
+        var fake = new Fake();
+        var cut = Open(fake, p => p.Add(s => s.OptionsKey, "a"));
+        await Search(cut, "");
+        Assert.Equal(25, Labels(cut).Length);
+
+        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "a"));
+        Assert.Equal(25, Labels(cut).Length);
+
+        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "b"));
+        Assert.Empty(Labels(cut));
+        var requests = fake.Requests.Count;
+
+        await Search(cut, "");
+        Assert.Equal(requests + 1, fake.Requests.Count);
+        Assert.Equal(25, Labels(cut).Length);
+    }
 }

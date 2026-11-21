@@ -299,4 +299,117 @@ public class RemoteSelectMenuTests(PlaygroundServer server) : PlaygroundTest(ser
         await Assertions.Expect(label).ToHaveAttributeAsync("data-label", "jp, br");
         await Assertions.Expect(Page.GetByTestId("remote-multiple-requests")).ToHaveTextAsync("Source calls: 0");
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_value_named_by_Items_keeps_its_label_in_every_mode_after_the_browser_took_over(string mode)
+    {
+        await Open(mode, "select-menu");
+        var label = Trigger("remote-named").Locator("[data-slot=label]");
+
+        await Assertions.Expect(label).ToHaveAttributeAsync("data-label", "France");
+        // The browser side paints on its own schedule: it must not write the raw value over the label the server rendered.
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(label).ToHaveAttributeAsync("data-label", "France");
+        await Assertions.Expect(Menu("remote-named")).ToHaveAttributeAsync("data-known", new Regex("France"));
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Create_follows_the_options_that_came_back_not_the_ones_shown_when_the_key_was_pressed(string mode)
+    {
+        await Open(mode, "select-menu");
+        var menu = Menu("remote-create");
+        await OpenList(menu, "remote-create");
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(20);
+
+        // Peru is not in the first page: while the answer is on its way, the text matches no option shown, so Create is offered...
+        await Search(menu).PressSequentiallyAsync("peru");
+
+        // ...and goes away when the answer brings Peru itself.
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(1);
+        await Assertions.Expect(Options(menu).First).ToHaveTextAsync("Peru");
+        await Assertions.Expect(menu.Locator("[data-slot=create]")).ToBeHiddenAsync();
+
+        await Search(menu).FillAsync("zork");
+        await Assertions.Expect(menu.Locator("[data-slot=create]")).ToHaveAttributeAsync("data-label", "Create \"zork\"");
+        await Assertions.Expect(menu.Locator("[data-slot=create]")).ToBeVisibleAsync();
+        await menu.Locator("[data-slot=create]").ClickAsync();
+        await Assertions.Expect(Page.GetByTestId("remote-create-state")).ToHaveTextAsync("Selected: zork");
+
+        // Already a value: nothing is offered to create, and the list says there are no results instead of staying empty.
+        await Search(menu).FillAsync("zork");
+        await Assertions.Expect(menu.Locator("[data-slot=empty]")).ToHaveTextAsync("No results");
+        await Assertions.Expect(menu.Locator("[data-slot=create]")).ToBeHiddenAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task The_highlight_comes_back_when_the_text_is_the_one_already_answered(string mode)
+    {
+        await Open(mode, "select-menu");
+        var menu = Menu("remote-select");
+        await OpenList(menu, "remote-select");
+        await Search(menu).PressSequentiallyAsync("ja");
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(1);
+        await Assertions.Expect(Search(menu)).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        // A trailing space trims to the same text: nothing is asked, and the highlight must not be lost.
+        await Page.Keyboard.PressAsync("Space");
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(Search(menu)).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        // A letter typed and deleted within the pause: the same.
+        await Search(menu).FillAsync("ja");
+        await Page.WaitForTimeoutAsync(600);
+        await Page.Keyboard.PressAsync("p");
+        await Page.Keyboard.PressAsync("Backspace");
+        await Page.WaitForTimeoutAsync(700);
+        await Assertions.Expect(Search(menu)).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(Page.GetByTestId("remote-state")).ToHaveTextAsync("Selected: jp");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Reopening_keeps_the_previous_options_but_highlights_none_until_the_fresh_answer(string mode)
+    {
+        await Open(mode, "select-menu");
+        var menu = Menu("remote-select");
+        await OpenList(menu, "remote-select");
+        await Search(menu).PressSequentiallyAsync("ja");
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(1);
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Trigger("remote-select").ClickAsync();
+
+        // The list of "ja" is still shown while the empty text is asked again: Enter cannot pick from it.
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(1);
+        await Assertions.Expect(Search(menu)).Not.ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(20);
+        await Assertions.Expect(Search(menu)).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task OptionsKey_changing_lists_the_options_of_the_new_source_when_the_list_opens_again(string mode)
+    {
+        await Open(mode, "select-menu");
+        var menu = Menu("key-city");
+        await OpenList(menu, "key-city");
+        await Assertions.Expect(Options(menu).First).ToHaveTextAsync("Paris");
+        await Assertions.Expect(Page.GetByTestId("key-last")).ToContainTextAsync("cities of fr");
+        await Options(menu).First.ClickAsync();
+        await Assertions.Expect(Page.GetByTestId("key-state")).ToHaveTextAsync("City: paris");
+
+        await Trigger("key-country").ClickAsync();
+        await Page.GetByRole(AriaRole.Option, new() { Name = "Germany" }).ClickAsync();
+        await Assertions.Expect(Page.GetByTestId("key-state")).ToHaveTextAsync("City: none");
+        await OpenList(menu, "key-city");
+
+        await Assertions.Expect(Options(menu).First).ToHaveTextAsync("Berlin");
+        await Assertions.Expect(Options(menu).Filter(new() { HasText = "Paris" })).ToHaveCountAsync(0);
+        await Assertions.Expect(Page.GetByTestId("key-last")).ToContainTextAsync("cities of de");
+    }
 }

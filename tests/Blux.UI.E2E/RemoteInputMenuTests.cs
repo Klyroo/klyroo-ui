@@ -211,4 +211,41 @@ public class RemoteInputMenuTests(PlaygroundServer server) : PlaygroundTest(serv
         await Assertions.Expect(Input("remote-free")).Not.ToHaveAttributeAsync("readonly", new Regex(".*"));
         await Assertions.Expect(Page.GetByTestId("remote-free-requests")).ToHaveTextAsync("Free field calls: 0");
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_strict_value_named_by_Items_keeps_its_label_in_every_mode_after_the_browser_took_over(string mode)
+    {
+        await Open(mode, "input-menu");
+
+        await Assertions.Expect(Input("remote-named-strict")).ToHaveValueAsync("France");
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(Input("remote-named-strict")).ToHaveValueAsync("France");
+        await Assertions.Expect(Menu("remote-named-strict")).ToHaveAttributeAsync("data-known", new Regex("France"));
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task The_highlight_of_a_strict_field_comes_back_when_the_text_is_the_one_already_answered(string mode)
+    {
+        await Open(mode, "input-menu");
+        var menu = Menu("remote-strict");
+        await Input("remote-strict").ClickAsync();
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(20);
+        await Input("remote-strict").FillAsync("ital");
+        await Assertions.Expect(Options(menu)).ToHaveCountAsync(1);
+        await Assertions.Expect(Input("remote-strict")).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        await Page.Keyboard.PressAsync("Space");
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(Input("remote-strict")).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        await Page.Keyboard.PressAsync("Backspace");
+        await Page.Keyboard.PressAsync("Space");
+        await Page.WaitForTimeoutAsync(700);
+        await Assertions.Expect(Input("remote-strict")).ToHaveAttributeAsync("aria-activedescendant", new Regex(".+"));
+
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(Page.GetByTestId("remote-input-state")).ToContainTextAsync("strict: it");
+    }
 }

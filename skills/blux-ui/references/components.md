@@ -290,7 +290,7 @@
 `/components/select-menu`. A select with a filter field inside its list, for one or several values. Each value posts through a hidden input.
 
 - `<BxSelectMenu>`
-  - Parameters: `Class`, `Color`, `Create`, `Debounce`, `Disabled`, `Id`, `Items`, `MinLength`, `Multiple`, `Name`, `OptionsProvider`, `PageSize`, `Placeholder`, `Required`, `ResolveSelected`, `SearchLabel`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `Color`, `Create`, `Debounce`, `Disabled`, `Id`, `Items`, `MinLength`, `Multiple`, `Name`, `OptionsKey`, `OptionsProvider`, `PageSize`, `Placeholder`, `Required`, `ResolveSelected`, `SearchLabel`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
   - `Ui` (`SelectMenuUi`): `Root`, `Base`, `Label`, `TrailingIcon`, `Content`, `SearchWrapper`, `Search`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `LeadingIcon`, `Empty`, `Create`, `Scroller`, `Loading`, `Spinner`, `Error`, `Announcer`
 
 ### InputMenu
@@ -298,7 +298,7 @@
 `/components/input-menu`. A text field with a list of suggestions: free text, or restricted to the suggestions.
 
 - `<BxInputMenu>`
-  - Parameters: `Class`, `Color`, `Debounce`, `Disabled`, `Id`, `Items`, `MinLength`, `Name`, `OptionsProvider`, `PageSize`, `Placeholder`, `Required`, `ResolveSelected`, `Size`, `Strict`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `Color`, `Debounce`, `Disabled`, `Id`, `Items`, `MinLength`, `Name`, `OptionsKey`, `OptionsProvider`, `PageSize`, `Placeholder`, `Required`, `ResolveSelected`, `Size`, `Strict`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
   - `Ui` (`InputMenuUi`): `Root`, `Base`, `Trailing`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `Empty`, `Scroller`, `Loading`, `Spinner`, `Error`, `Announcer`
 
 ### InputNumber

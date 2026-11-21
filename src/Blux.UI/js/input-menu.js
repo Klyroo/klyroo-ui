@@ -21,7 +21,7 @@ import { createDebouncer } from './debounce.js';
  * interactive yet) never opens the list: there is nothing to list.
  */
 export class BxInputMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+  static observedAttributes = ['data-bx-seq', 'value', 'data-known', 'data-epoch'];
 
   #observer = null;
   #stopFloating = null;
@@ -31,6 +31,9 @@ export class BxInputMenuElement extends HTMLElement {
   #loaded = false;
   #labels = new Map();
   #generation = null;
+  #awaiting = false;
+  #reported = null;
+  #generations = null;
   #searchSequence = 0;
   #debouncer = createDebouncer(() => this.#reportSearch(this.#input?.value ?? ''));
 
@@ -43,16 +46,32 @@ export class BxInputMenuElement extends HTMLElement {
     this.addEventListener('pointermove', this.#onPointerMove);
     this.addEventListener('focusout', this.#onFocusOut);
     this.#observer = observeChildren(this, () => this.#wire());
+    // A new generation with the same suggestions changes no child: the highlight still has to follow.
+    this.#generations = new MutationObserver(() => this.#wire());
+    this.#generations.observe(this, { subtree: true, attributes: true, attributeFilter: ['data-generation'] });
   }
 
   disconnectedCallback() {
     this.#observer?.disconnect();
+    this.#generations?.disconnect();
     this.#stopFloating?.();
     this.#debouncer.cancel();
   }
 
-  attributeChangedCallback(name) {
+  attributeChangedCallback(name, oldValue) {
     if (!this.isConnected) return;
+    if (name === 'data-epoch' && oldValue !== null) {
+      // The source changed (a new OptionsKey): what was kept about the old one is wrong.
+      this.#labels.clear();
+      this.#generation = null;
+      this.#awaiting = false;
+      this.#reported = null;
+      this.#debouncer.cancel();
+    }
+    if (name === 'data-known' || name === 'data-epoch') {
+      this.#seedLabels();
+      return;
+    }
     if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered();
   }
@@ -85,8 +104,17 @@ export class BxInputMenuElement extends HTMLElement {
   }
 
   #labelOf(value) {
-    // Remote: a search may have dropped the option, so the label kept here, and else the raw value (what an unresolved value shows, also before the page is interactive).
-    return this.#options().find((o) => o.dataset.value === value)?.dataset.label ?? (this.#remote || this.hasAttribute('data-inert-list') ? (this.#labels.get(value) ?? value) : null);
+    // The label kept here (a search may have dropped the option; .NET names values in data-known in every render mode), and else, for a
+    // remote field, the raw value (what an unresolved value shows, also before the page is interactive).
+    return this.#options().find((o) => o.dataset.value === value)?.dataset.label ?? this.#labels.get(value) ?? (this.#remote || this.hasAttribute('data-inert-list') ? value : null);
+  }
+
+  /** The labels .NET knows (data-known: value, label, ...), in every render mode: a static render must not lose a label to the raw value. */
+  #seedLabels() {
+    const known = (this.getAttribute('data-known') ?? '').split(SEP);
+    for (let i = 0; i + 1 < known.length; i += 2) {
+      if (!this.#labels.has(known[i])) this.#labels.set(known[i], known[i + 1]);
+    }
   }
 
   #remember(option) {
@@ -95,14 +123,11 @@ export class BxInputMenuElement extends HTMLElement {
 
   /** What a render of the suggestions changes in remote mode: the labels to remember, and the highlight when they were replaced. */
   #syncRemote(listbox) {
-    const known = (this.getAttribute('data-known') ?? '').split(SEP);
-    for (let i = 0; i + 1 < known.length; i += 2) {
-      if (!this.#labels.has(known[i])) this.#labels.set(known[i], known[i + 1]);
-    }
     for (const option of this.#options()) this.#remember(option);
     const generation = listbox.dataset.generation ?? null;
     if (generation !== this.#generation) {
       this.#generation = generation;
+      this.#awaiting = false;
       const scroller = this.querySelector('[data-slot="scroller"]');
       if (scroller) scroller.scrollTop = 0;
       if (this.#isOpen()) this.#highlight(this.#strict ? (navigable(this.#options())[0] ?? null) : null);
@@ -114,6 +139,8 @@ export class BxInputMenuElement extends HTMLElement {
   }
 
   #reportSearch(term) {
+    this.#reported = term.trim();
+    this.#awaiting = true;
     this.dispatchEvent(new CustomEvent('bx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
   }
 
@@ -122,6 +149,7 @@ export class BxInputMenuElement extends HTMLElement {
     if (!listbox) return;
     this.#input?.setAttribute('aria-controls', ensureId(listbox, 'listbox'));
     for (const option of this.#options()) ensureId(option, 'option');
+    this.#seedLabels();
     if (this.#remote) this.#syncRemote(listbox);
     if (!this.#loaded) {
       this.#loaded = true;
@@ -183,12 +211,21 @@ export class BxInputMenuElement extends HTMLElement {
    * quiet time while typing); until the answer replaces the suggestions nothing is highlighted, so Enter cannot choose one of the previous text.
    */
   #filterRemote(text, immediate) {
+    // The text .NET already answered (a trailing space, a letter typed and deleted within the pause): nothing is asked, so no answer will come to
+    // highlight a suggestion again. An error is not an answer: asking again is how it is retried.
+    const settled = text.trim() === this.#reported && !this.#awaiting && !this.querySelector('[data-slot="error"]');
+    if (settled) {
+      this.#debouncer.cancel();
+      if (!this.#active?.isConnected) this.#highlight(this.#strict ? (navigable(this.#options())[0] ?? null) : null);
+      return 0;
+    }
+    // The list shown is the one of another text, until the answer replaces it: nothing is highlighted, so Enter cannot choose from it.
+    this.#highlight(null);
     if (immediate) {
       this.#debouncer.cancel();
       this.#reportSearch(text);
       return 0;
     }
-    this.#highlight(null);
     const delay = Number(this.getAttribute('data-debounce'));
     this.#debouncer.schedule(Number.isFinite(delay) && delay >= 0 ? delay : 250);
     return 0;
@@ -280,6 +317,8 @@ export class BxInputMenuElement extends HTMLElement {
         if (!this.#isOpen()) {
           this.#filter(this.#strict ? '' : input.value, { immediate: true });
           this.#open();
+          // Remote: the list shown is that of another text until the answer comes; it highlights then.
+          if (this.#remote && this.#awaiting) break;
           const current = navigable(this.#options());
           this.#highlight(current.find((o) => o.dataset.value === this.#value) ?? (event.key === 'ArrowDown' ? current[0] : current.at(-1)) ?? null);
           break;

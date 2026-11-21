@@ -17,12 +17,19 @@ else
     private int _sequence;
     private string _id = default!;
     private RemoteOptions? _remote;
+    private IReadOnlyList<BxSelectItem>? _items;
+    private object? _optionsKey;
 
     /// <summary>
     /// The suggestions, filtered by what is typed. Not needed when <see cref="OptionsProvider"/> loads them; given together with it,
     /// these items are not listed but their labels are known (the label of a <see cref="Strict"/> value the provider has not returned yet).
     /// </summary>
-    [Parameter] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+    [Parameter]
+    public IReadOnlyList<BxSelectItem> Items
+    {
+        get => _items ?? [];
+        set => _items = value;
+    }
 
     /// <summary>
     /// Loads the suggestions from a remote source, one page at a time, instead of listing <see cref="Items"/>. The browser stops filtering and
@@ -39,6 +46,13 @@ else
     /// </para>
     /// </summary>
     [Parameter] public BxOptionsProvider? OptionsProvider { get; set; }
+
+    /// <summary>
+    /// With <see cref="OptionsProvider"/>: what the suggestions depend on besides the typed text (the country whose cities are suggested). When it changes
+    /// (<c>object.Equals</c>), the loaded pages, the search text, the cursor and the resolved label are forgotten, a <see cref="Strict"/> value is resolved again,
+    /// and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded. Without a key the source is assumed not to change.
+    /// </summary>
+    [Parameter] public object? OptionsKey { get; set; }
 
     /// <summary>
     /// With <see cref="OptionsProvider"/> and <see cref="Strict"/>: returns the option of the value when the loaded pages do not contain it (a value restored
@@ -82,6 +96,10 @@ else
 
     protected override void OnParametersSet()
     {
+        if (_items is null && OptionsProvider is null)
+        {
+            throw new InvalidOperationException($"{nameof(BxInputMenu)} needs its suggestions: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (suggestions loaded from a source).");
+        }
         _id ??= NewId("inputmenu");
         if (OptionsProvider is null)
         {
@@ -90,7 +108,16 @@ else
         }
         else
         {
-            _remote ??= new RemoteOptions(OptionsProvider, OnRemoteChanged);
+            if (_remote is null)
+            {
+                _remote = new RemoteOptions(OptionsProvider, OnRemoteChanged);
+                _optionsKey = OptionsKey;
+            }
+            else if (!Equals(_optionsKey, OptionsKey))
+            {
+                _optionsKey = OptionsKey;
+                _remote.Reset();
+            }
             _remote.Provider = OptionsProvider;
             _remote.PageSize = PageSize;
             _remote.MinLength = Math.Max(0, MinLength);
@@ -124,10 +151,16 @@ else
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
         System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
         typeof(BxSearchEventArgs))]
-    private Task OnSearch(BxSearchEventArgs e) => _remote!.SearchAsync(e.Value);
+    private Task OnSearch(BxSearchEventArgs e)
+    {
+        // A strict field reports the empty text when it opens: its value gets another try if its resolution failed.
+        if (Strict && string.IsNullOrWhiteSpace(e.Value) && ResolveSelected is not null && !string.IsNullOrEmpty(Value)) _ = _remote!.ResolveAsync([Value], ResolveSelected, retryFailed: true);
+        return _remote!.SearchAsync(e.Value);
+    }
 
     // The label of a strict value the browser cannot read from the list (it may no longer hold it): value, label.
-    private string? KnownLabels => RemoteActive && Strict && !string.IsNullOrEmpty(Value) && ListValue.Join(_remote!.KnownLabels([Value])) is { Length: > 0 } known ? known : null;
+    // In every render mode: the browser must not replace the label a static render gave with the raw value.
+    private string? KnownLabels => Remote && Strict && !string.IsNullOrEmpty(Value) && ListValue.Join(_remote!.KnownLabels([Value])) is { Length: > 0 } known ? known : null;
 
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
         System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
@@ -228,6 +261,7 @@ else
                         data-inert-list="@(Remote && !RemoteActive ? "" : null)"
                         data-debounce="@(RemoteActive ? Math.Max(0, Debounce).ToString() : null)"
                         data-known="@KnownLabels"
+                        data-epoch="@(Remote ? _remote!.Epoch.ToString() : null)"
                         class="@_slots["root"]"
                         data-color="@Color.Value"
                         @onbxchange="ChangeHandler"

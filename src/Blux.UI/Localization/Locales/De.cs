@@ -101,6 +101,7 @@ public static partial class BxLocales
             SelectMenuCreate = "„{0}“ erstellen",
             InputMenuNoResults = "Keine Ergebnisse",
             InputMenuSuggestions = "Vorschläge",
+            // Draft translations of the four RemoteOptions messages, marked for review by a native speaker before a stable release.
             RemoteOptionsLoading = "Wird geladen...",
             RemoteOptionsError = "Die Optionen konnten nicht geladen werden.",
             RemoteOptionsRetry = "Erneut versuchen",

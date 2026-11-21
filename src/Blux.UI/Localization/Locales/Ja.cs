@@ -101,6 +101,7 @@ public static partial class BxLocales
             SelectMenuCreate = "「{0}」を作成",
             InputMenuNoResults = "結果がありません",
             InputMenuSuggestions = "候補",
+            // Draft translations of the four RemoteOptions messages, marked for review by a native speaker before a stable release.
             RemoteOptionsLoading = "読み込み中...",
             RemoteOptionsError = "選択肢を読み込めませんでした。",
             RemoteOptionsRetry = "再試行",

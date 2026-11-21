@@ -23,7 +23,7 @@ import { createDebouncer } from './debounce.js';
  * of the selected values are kept here (a search can drop their options from the list), seeded by data-known (value, label, value, label...).
  */
 export class BxSelectMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
+  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled', 'data-known', 'data-epoch'];
 
   #observer = null;
   #stopFloating = null;
@@ -32,7 +32,9 @@ export class BxSelectMenuElement extends HTMLElement {
   #labels = new Map();
   #generation = null;
   #awaiting = false;
+  #reported = null;
   #searchSequence = 0;
+  #generations = null;
   #debouncer = createDebouncer(() => this.#reportSearch(this.#search?.value ?? ''));
 
   connectedCallback() {
@@ -43,16 +45,29 @@ export class BxSelectMenuElement extends HTMLElement {
     this.addEventListener('mousedown', this.#onMouseDown);
     this.addEventListener('toggle', this.#onToggle, true);
     this.#observer = observeChildren(this, () => this.#wire());
+    // A new generation with the same options changes no child: the highlight still has to follow.
+    this.#generations = new MutationObserver(() => this.#wire());
+    this.#generations.observe(this, { subtree: true, attributes: true, attributeFilter: ['data-generation'] });
   }
 
   disconnectedCallback() {
     this.#observer?.disconnect();
+    this.#generations?.disconnect();
     this.#stopFloating?.();
     this.#debouncer.cancel();
   }
 
-  attributeChangedCallback(name) {
+  attributeChangedCallback(name, oldValue) {
     if (!this.isConnected) return;
+    if (name === 'data-epoch' && oldValue !== null) {
+      // The source changed (a new OptionsKey): what was kept about the old one is wrong.
+      this.#labels.clear();
+      this.#generation = null;
+      this.#awaiting = false;
+      this.#reported = null;
+      this.#debouncer.cancel();
+    }
+    if (name === 'data-known' || name === 'data-epoch') this.#seedLabels();
     this.#model.attributeChanged(name);
   }
 
@@ -104,16 +119,21 @@ export class BxSelectMenuElement extends HTMLElement {
     trigger.setAttribute('aria-expanded', String(this.#isOpen()));
     this.#search?.setAttribute('aria-controls', listboxId);
     for (const option of this.querySelectorAll('[role="option"]')) ensureId(option, 'option');
+    this.#seedLabels();
     if (this.#remote) this.#syncRemote(listbox);
     this.#model.ensure();
   }
 
-  /** What a render of the options changes in remote mode: the labels to remember, and the highlight when the options were replaced. */
-  #syncRemote(listbox) {
+  /** The labels .NET knows (data-known: value, label, value, label...), in every render mode: a static render must not lose a label to the raw value. */
+  #seedLabels() {
     const known = (this.getAttribute('data-known') ?? '').split(SEP);
     for (let i = 0; i + 1 < known.length; i += 2) {
       if (!this.#labels.has(known[i])) this.#labels.set(known[i], { label: known[i + 1], icon: '' });
     }
+  }
+
+  /** What a render of the options changes in remote mode: the labels to remember, and the highlight when the options were replaced. */
+  #syncRemote(listbox) {
     for (const option of this.#options()) this.#remember(option);
     const generation = listbox.dataset.generation ?? null;
     if (generation !== this.#generation) {
@@ -126,6 +146,18 @@ export class BxSelectMenuElement extends HTMLElement {
       this.#active = null;
       this.#search?.removeAttribute('aria-activedescendant');
     }
+    // The option that creates the typed text depends on the options that are there now, not on those of the keystroke.
+    this.#syncCreate(this.#search?.value ?? '');
+  }
+
+  #syncCreate(text) {
+    const create = this.#create;
+    if (!create) return;
+    const query = text.trim();
+    const lower = query.toLowerCase();
+    const exact = this.#options().some((o) => (o.dataset.label ?? '').toLowerCase() === lower) || this.#model.values.includes(query);
+    create.hidden = !query || exact;
+    if (!create.hidden) create.dataset.label = (this.dataset.createLabel ?? '{0}').replace('{0}', query);
   }
 
   #remember(option) {
@@ -142,6 +174,8 @@ export class BxSelectMenuElement extends HTMLElement {
   }
 
   #reportSearch(term) {
+    this.#reported = term.trim();
+    this.#awaiting = true;
     this.dispatchEvent(new CustomEvent('bx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
   }
 
@@ -210,21 +244,22 @@ export class BxSelectMenuElement extends HTMLElement {
    * previous text. Only the option that creates the typed text is decided here.
    */
   #filterRemote(text, immediate) {
-    const query = text.trim();
-    const create = this.#create;
-    if (create) {
-      const lower = query.toLowerCase();
-      const exact = this.#options().some((o) => (o.dataset.label ?? '').toLowerCase() === lower) || this.#model.values.includes(query);
-      create.hidden = !query || exact;
-      if (!create.hidden) create.dataset.label = (this.dataset.createLabel ?? '{0}').replace('{0}', query);
+    this.#syncCreate(text);
+    // The text .NET already answered (a trailing space, a letter typed and deleted within the pause): nothing is asked, so no answer will come to
+    // highlight an option again. An error is not an answer: asking again is how it is retried.
+    const settled = text.trim() === this.#reported && !this.#awaiting && !this.querySelector('[data-slot="error"]');
+    if (settled) {
+      this.#debouncer.cancel();
+      if (!this.#active?.isConnected) this.#highlightDefault();
+      return;
     }
+    // The list shown is the one of another text, until the answer replaces it: nothing is highlighted, so Enter cannot choose from it.
+    this.#highlight(null);
     if (immediate) {
       this.#debouncer.cancel();
       this.#reportSearch(text);
       return;
     }
-    this.#awaiting = true;
-    this.#highlight(null);
     const delay = Number(this.getAttribute('data-debounce'));
     this.#debouncer.schedule(Number.isFinite(delay) && delay >= 0 ? delay : 250);
   }
@@ -271,10 +306,7 @@ export class BxSelectMenuElement extends HTMLElement {
       this.#stopFloating = float(this.#trigger, content, { placement: 'bottom-start', distance: 4, matchWidth: true });
       if (search) search.value = '';
       this.#filter('', { immediate: true });
-      if (this.#remote) {
-        // The list kept from the last opening is shown while the empty text is searched again.
-        this.#highlightDefault();
-      } else {
+      if (!this.#remote) {
         const selected = this.#choices().find((o) => o.getAttribute('aria-selected') === 'true');
         if (selected) this.#highlight(selected);
       }

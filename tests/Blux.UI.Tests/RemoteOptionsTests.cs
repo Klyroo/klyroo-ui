@@ -381,4 +381,86 @@ public class RemoteOptionsTests
         options.PageSize = 0;
         Assert.Equal(1, options.PageSize);
     }
+
+    [Fact]
+    public async Task Reset_forgets_pages_term_labels_and_resolutions_and_loads_again_on_the_next_search()
+    {
+        var source = new Source();
+        var (options, _) = Create(source);
+        await options.SearchAsync("Item 4");
+        options.RememberSelected([options.Items[0].Value]);
+        var epoch = options.Epoch;
+        var generation = options.Generation;
+        var label = options.Items[0].Label;
+        Assert.Equal(label, options.LabelOf(options.Items[0].Value));
+
+        options.Reset();
+
+        Assert.Equal(RemoteStatus.Idle, options.Status);
+        Assert.Empty(options.Items);
+        Assert.Equal("", options.Term);
+        Assert.False(options.HasMore);
+        Assert.NotEqual(epoch, options.Epoch);
+        Assert.NotEqual(generation, options.Generation);
+        Assert.Equal("i4", options.LabelOf("i4"));
+
+        await options.SearchAsync("Item 4");
+        Assert.Equal(2, source.Requests.Count);
+        Assert.Equal(new BxOptionsRequest("Item 4", 0, 25, null), source.Requests[1]);
+    }
+
+    [Fact]
+    public async Task Reset_drops_the_request_in_flight()
+    {
+        var source = new Source { Hold = true };
+        var (options, _) = Create(source);
+        var pending = options.SearchAsync("a");
+
+        options.Reset();
+        source.Gates[0].TrySetResult();
+        await pending;
+
+        Assert.Empty(options.Items);
+        Assert.Equal(RemoteStatus.Idle, options.Status);
+    }
+
+    [Fact]
+    public async Task A_resolution_that_threw_is_asked_again_only_when_retry_is_requested()
+    {
+        var (options, _) = Create(new Source());
+        var calls = 0;
+        BxSelectedOptionsResolver resolver = (values, _) =>
+        {
+            calls++;
+            return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("x", "Ex")]);
+        };
+
+        await options.ResolveAsync(["x"], resolver);
+        await options.ResolveAsync(["x"], resolver);
+        Assert.Equal(1, calls);
+        Assert.Equal("x", options.LabelOf("x"));
+
+        await options.ResolveAsync(["x"], resolver, retryFailed: true);
+
+        Assert.Equal(2, calls);
+        Assert.Equal("Ex", options.LabelOf("x"));
+    }
+
+    [Fact]
+    public void The_remote_options_messages_are_drafts_in_every_locale_but_en_and_fr()
+    {
+        Assert.Equal(["en", "fr"], BxLocales.ReviewedCodes);
+        var root = AppContext.BaseDirectory;
+        while (root is not null && !File.Exists(Path.Combine(root, "Blux.UI.slnx"))) root = Path.GetDirectoryName(root);
+        Assert.NotNull(root);
+        foreach (var locale in BxLocales.All.Where(l => !BxLocales.ReviewedCodes.Contains(l.Code)))
+        {
+            var file = Directory.GetFiles(Path.Combine(root, "src", "Blux.UI", "Localization", "Locales"), "*.cs")
+                .Single(f => File.ReadAllText(f).Contains($"new(\"{locale.Code}\"", StringComparison.Ordinal));
+            var text = File.ReadAllText(file);
+            var draft = text.IndexOf("Draft translations of the four RemoteOptions messages", StringComparison.Ordinal);
+            Assert.True(draft >= 0 && draft < text.IndexOf("RemoteOptionsLoading =", StringComparison.Ordinal), $"{locale.Code} is not marked as a draft");
+        }
+    }
 }
+

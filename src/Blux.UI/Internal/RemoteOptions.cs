@@ -28,6 +28,7 @@ internal sealed class RemoteOptions : IDisposable
     private readonly HashSet<string> _listed = new(StringComparer.Ordinal);
     private readonly Dictionary<string, BxSelectItem> _known = new(StringComparer.Ordinal);
     private readonly HashSet<string> _attempted = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _failedResolve = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _lifetime = new();
     private CancellationTokenSource? _request;
     private int _version;
@@ -70,6 +71,9 @@ internal sealed class RemoteOptions : IDisposable
     /// <summary>Changes each time the listed options are replaced (not when a page is added): the browser goes back to the top and re-highlights.</summary>
     public int Generation { get; private set; }
 
+    /// <summary>Changes each time <see cref="Reset"/> starts the source over: the browser forgets what it kept (labels, the term it reported).</summary>
+    public int Epoch { get; private set; }
+
     public bool Busy => Status is RemoteStatus.Loading or RemoteStatus.LoadingMore;
 
     /// <summary>Searches for a term (what the field reports). The same term again changes nothing, except after an error, where it asks again.</summary>
@@ -88,6 +92,25 @@ internal sealed class RemoteOptions : IDisposable
             return Task.CompletedTask;
         }
         return LoadAsync(more: false);
+    }
+
+    /// <summary>
+    /// Starts over, as when the source changed (a new <c>OptionsKey</c>): the request in flight is dropped, the pages, the term, the cursor and the resolved
+    /// labels are forgotten, and the next search (the next opening of the list) loads the first page again.
+    /// </summary>
+    public void Reset()
+    {
+        if (_disposed) return;
+        StopRequest();
+        Replace();
+        _known.Clear();
+        _attempted.Clear();
+        _failedResolve.Clear();
+        Term = "";
+        _failedMore = false;
+        Status = RemoteStatus.Idle;
+        Epoch++;
+        _changed();
     }
 
     /// <summary>Loads the next page. Nothing happens while a request runs, after an error (use <see cref="RetryAsync"/>) or at the end.</summary>
@@ -201,10 +224,16 @@ internal sealed class RemoteOptions : IDisposable
         }
     }
 
-    /// <summary>Asks the resolver once for each selected value nobody knows. A failure leaves the raw values, and is not asked again.</summary>
-    public async Task ResolveAsync(IReadOnlyList<string>? values, BxSelectedOptionsResolver resolver)
+    /// <summary>Asks the resolver once for each selected value nobody knows. A failure leaves the raw values; they are asked again when <paramref name="retryFailed"/> is set (the list opened).</summary>
+    public async Task ResolveAsync(IReadOnlyList<string>? values, BxSelectedOptionsResolver resolver, bool retryFailed = false)
     {
         if (_disposed || values is not { Count: > 0 }) return;
+        if (retryFailed)
+        {
+            // The list opened again: the values whose resolution threw get one more try.
+            foreach (var value in _failedResolve) _attempted.Remove(value);
+            _failedResolve.Clear();
+        }
         var missing = values.Where(v => !Knows(v) && _attempted.Add(v)).ToList();
         if (missing.Count == 0) return;
         IReadOnlyList<BxSelectItem>? found;
@@ -214,6 +243,7 @@ internal sealed class RemoteOptions : IDisposable
         }
         catch (Exception)
         {
+            foreach (var value in missing) _failedResolve.Add(value);
             return;
         }
         if (_disposed || found is null) return;

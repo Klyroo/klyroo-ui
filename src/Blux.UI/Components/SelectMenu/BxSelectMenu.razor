@@ -17,12 +17,19 @@ else
     private string _id = default!;
     private RemoteOptions? _remote;
     private bool _iconsSeen;
+    private IReadOnlyList<BxSelectItem>? _items;
+    private object? _optionsKey;
 
     /// <summary>
     /// The options. Not needed when <see cref="OptionsProvider"/> loads them; given together with it, these items are not listed but
     /// their labels are known (the label of a value the provider has not returned yet).
     /// </summary>
-    [Parameter] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+    [Parameter]
+    public IReadOnlyList<BxSelectItem> Items
+    {
+        get => _items ?? [];
+        set => _items = value;
+    }
 
     /// <summary>
     /// Loads the options from a remote source, one page at a time, instead of listing <see cref="Items"/>. The filter field
@@ -39,6 +46,14 @@ else
     /// </para>
     /// </summary>
     [Parameter] public BxOptionsProvider? OptionsProvider { get; set; }
+
+    /// <summary>
+    /// With <see cref="OptionsProvider"/>: what the options depend on besides the search text (the country whose cities are listed). When it changes
+    /// (<c>object.Equals</c>), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again,
+    /// and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded: the provider is only
+    /// asked for what was not loaded yet. Without a key the source is assumed not to change.
+    /// </summary>
+    [Parameter] public object? OptionsKey { get; set; }
 
     /// <summary>
     /// With <see cref="OptionsProvider"/>: returns the options of selected values the loaded pages do not contain (values restored from
@@ -86,6 +101,10 @@ else
 
     protected override void OnParametersSet()
     {
+        if (_items is null && OptionsProvider is null)
+        {
+            throw new InvalidOperationException($"{nameof(BxSelectMenu)} needs its options: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (options loaded from a source).");
+        }
         _id ??= NewId("selectmenu");
         if (OptionsProvider is null)
         {
@@ -94,7 +113,16 @@ else
         }
         else
         {
-            _remote ??= new RemoteOptions(OptionsProvider, OnRemoteChanged);
+            if (_remote is null)
+            {
+                _remote = new RemoteOptions(OptionsProvider, OnRemoteChanged);
+                _optionsKey = OptionsKey;
+            }
+            else if (!Equals(_optionsKey, OptionsKey))
+            {
+                _optionsKey = OptionsKey;
+                _remote.Reset();
+            }
             _remote.Provider = OptionsProvider;
             _remote.PageSize = PageSize;
             _remote.MinLength = Math.Max(0, MinLength);
@@ -130,10 +158,16 @@ else
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
         System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
         typeof(BxSearchEventArgs))]
-    private Task OnSearch(BxSearchEventArgs e) => _remote!.SearchAsync(e.Value);
+    private Task OnSearch(BxSearchEventArgs e)
+    {
+        // Opening the list reports the empty text: the values whose resolution failed get another try.
+        if (string.IsNullOrWhiteSpace(e.Value) && ResolveSelected is not null) _ = _remote!.ResolveAsync(Value, ResolveSelected, retryFailed: true);
+        return _remote!.SearchAsync(e.Value);
+    }
 
     // The labels of the selected values the browser cannot read from the list (it may no longer hold them): value, label, value, label...
-    private string? KnownLabels => RemoteActive && ListValue.Join(_remote!.KnownLabels(Value)) is { Length: > 0 } known ? known : null;
+    // In every render mode: the browser must not replace the label a static render gave with the raw value.
+    private string? KnownLabels => Remote && ListValue.Join(_remote!.KnownLabels(Value)) is { Length: > 0 } known ? known : null;
 
     private Dictionary<string, object> TriggerAttributes(EditBinding binding)
     {
@@ -202,7 +236,9 @@ else
     private RenderFragment Results =>
         RemoteActive
             ? RemoteOptionsView.Scroller(_remote!, _slots, _id + "-scroller", Messages, FormatCulture,
-                RenderIcon(Options.Icons.Loading, _slots["spinner"]), Messages.SelectMenuNoResults, Create && _remote!.Term.Length > 0, this, Listbox)
+                RenderIcon(Options.Icons.Loading, _slots["spinner"]), Messages.SelectMenuNoResults,
+                // The option that creates the typed text is offered instead of "no results", unless the text is already a value (then the browser offers nothing).
+                Create && _remote!.Term.Length > 0 && Value?.Contains(_remote.Term) != true, this, Listbox)
             : Listbox;
 
     private RenderFragment Markup(EditBinding binding) =>
@@ -216,6 +252,7 @@ else
                          data-remote="@(RemoteActive ? "" : null)"
                          data-debounce="@(RemoteActive ? Math.Max(0, Debounce).ToString() : null)"
                          data-known="@KnownLabels"
+                         data-epoch="@(Remote ? _remote!.Epoch.ToString() : null)"
                          disabled="@Disabled"
                          class="@_slots["root"]"
                          data-color="@Color.Value"
