@@ -11,6 +11,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
 {
     private const string DemoPath = "/templates/starter/demo/";
     private const string LandingPath = "/templates/landing/demo/";
+    private const string DocsPath = "/templates/docs/demo/";
 
     private ILocator Card(string title) =>
         Page.GetByTestId("template-card").Filter(new() { Has = Page.GetByRole(AriaRole.Heading, new() { Name = title }) });
@@ -45,7 +46,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
-    public async Task The_gallery_lists_the_ten_templates_and_only_the_starter_and_the_landing_are_live()
+    public async Task The_gallery_lists_the_ten_templates_and_only_the_starter_the_landing_and_the_docs_are_live()
     {
         await OpenGallery();
 
@@ -61,7 +62,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(starter.GetByTestId("template-source-missing")).ToHaveTextAsync("Repository not published yet");
 
         // The light and the dark screenshot are both images of the site that load.
-        foreach (var name in new[] { "starter", "landing" })
+        foreach (var name in new[] { "starter", "landing", "docs" })
         {
             var live = cards.Filter(new() { Has = Page.Locator($"img[src$='img/template-{name}-light.png']") });
             await Assertions.Expect(live).ToHaveCountAsync(1);
@@ -79,13 +80,13 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         var landing = Card("Landing");
         await Assertions.Expect(landing.GetByRole(AriaRole.List, new() { Name = "Landing features" }).GetByRole(AriaRole.Listitem)).ToHaveCountAsync(3);
 
-        // The eight others are planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
+        // The seven others are planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
         var planned = cards.Filter(new() { HasNot = Page.GetByTestId("template-preview") });
-        await Assertions.Expect(planned).ToHaveCountAsync(8);
-        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(8);
+        await Assertions.Expect(planned).ToHaveCountAsync(7);
+        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(7);
         await Assertions.Expect(planned.Locator("a")).ToHaveCountAsync(0);
         await Assertions.Expect(planned.Locator("img")).ToHaveCountAsync(0);
-        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(8);
+        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(7);
     }
 
     [Fact]
@@ -305,6 +306,98 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await dialog.GetByRole(AriaRole.Link, new() { Name = "Pricing" }).ClickAsync();
         await Page.WaitForURLAsync(url => url.EndsWith(LandingPath + "#pricing"));
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+    [Fact]
+    public async Task Docs_preview_opens_the_static_site_through_the_proxy_and_stays_below_its_path()
+    {
+        RequireDemos();
+        var requests = new List<string>();
+        var failures = new List<string>();
+        var runtime = new List<string>();
+        var recording = false;
+        Page.Request += (_, request) =>
+        {
+            if (!recording) return;
+            lock (requests) requests.Add(request.Url);
+            if (Regex.IsMatch(request.Url, @"\.wasm(\?|$)|/_blazor(/|\?|$)")) lock (runtime) runtime.Add(request.Url);
+        };
+        Page.Response += (_, response) => { if (recording && response.Status >= 400 && !IsHotReloadTooling(response.Url)) lock (failures) failures.Add($"{response.Status} {response.Url}"); };
+        Page.WebSocket += (_, socket) => { lock (runtime) runtime.Add(socket.Url); };
+        await OpenGallery();
+        await Page.EvaluateAsync("() => document.fonts.ready");
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        recording = true;
+        await Card("Docs").GetByTestId("template-preview").ClickAsync();
+        await Page.WaitForURLAsync(url => url.EndsWith(DocsPath));
+        await Assertions.Expect(Page).ToHaveTitleAsync(new Regex("^Tern"));
+        await Assertions.Expect(Page.Locator("base")).ToHaveAttributeAsync("href", DocsPath);
+        await DocsChecks.AssertBehaviour(Page, checkClipboard: false);
+
+        var origin = new Uri(BaseUrl).GetLeftPart(UriPartial.Authority);
+        lock (requests)
+        {
+            var sameOrigin = requests.Where(url => url.StartsWith(origin + "/", StringComparison.Ordinal) && !IsHotReloadTooling(url)).ToList();
+            Assert.NotEmpty(sameOrigin);
+            var outside = sameOrigin.Where(url => !url.StartsWith(origin + DocsPath, StringComparison.Ordinal)).ToList();
+            Assert.True(outside.Count == 0, "Requests outside " + DocsPath + ":\n" + string.Join("\n", outside));
+        }
+        lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
+        lock (runtime) Assert.True(runtime.Count == 0, "A static demo started a circuit or loaded WebAssembly:\n" + string.Join("\n", runtime));
+    }
+
+    [Theory]
+    [InlineData(ColorScheme.Light)]
+    [InlineData(ColorScheme.Dark)]
+    public async Task Docs_demo_pages_have_no_accessibility_violations(ColorScheme scheme)
+    {
+        RequireDemos();
+        await Page.EmulateMediaAsync(new() { ColorScheme = scheme });
+        // The home page, a page with a table and code, and one with callouts, a task list and footnotes.
+        foreach (var path in new[] { "", "reference/commands", "getting-started/quick-start", "getting-started/installation", "guides/troubleshooting" })
+        {
+            await Page.GotoAsync(DocsPath.TrimStart('/') + path);
+            await Page.WaitForFunctionAsync("() => !!customElements.get('bx-content-toc')");
+            await Assertions.Expect(Page.Locator("html")).ToHaveClassAsync(scheme == ColorScheme.Dark ? new Regex("dark") : new Regex("^((?!dark).)*$"));
+
+            await AssertNoAccessibilityViolations();
+        }
+    }
+
+    [Fact]
+    public async Task Docs_search_dialog_has_no_accessibility_violations()
+    {
+        RequireDemos();
+        await Page.GotoAsync(DocsPath.TrimStart('/') + "getting-started/installation");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Search" }).Locator("visible=true").First.ClickAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog)).ToBeVisibleAsync();
+
+        await AssertNoAccessibilityViolations();
+    }
+
+    [Fact]
+    public async Task Docs_demo_has_no_horizontal_scroll_at_375px()
+    {
+        RequireDemos();
+        await DocsChecks.AssertNoHorizontalScroll(Page, DocsPath.TrimStart('/'), DocsPath.TrimStart('/') + "reference/commands", DocsPath.TrimStart('/') + "reference/exit-codes");
+    }
+
+    [Fact]
+    public async Task Docs_mobile_menu_holds_the_navigation_and_a_link_goes_to_its_page()
+    {
+        RequireDemos();
+        await Page.SetViewportSizeAsync(375, 800);
+        await Page.GotoAsync(DocsPath.TrimStart('/') + "getting-started/installation");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog);
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await dialog.GetByRole(AriaRole.Button, new() { Name = "Reference" }).ClickAsync();
+        await dialog.GetByRole(AriaRole.Link, new() { Name = "Exit codes" }).ClickAsync();
+        await Page.WaitForURLAsync(url => url.EndsWith(DocsPath + "reference/exit-codes"));
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 }

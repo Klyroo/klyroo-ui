@@ -11,7 +11,7 @@
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
 //      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
-//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing) (--no-browser skips that part);
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
 //      is finished by running it again.
@@ -49,7 +49,26 @@ const templates = [
     pages: ["/"],
     browserClass: "Blux.UI.E2E.LandingTemplateTests",
   },
+  {
+    name: "docs",
+    web: "src/Docs.Web",
+    name_in_files: "Docs",
+    renames: ["Acme", "docsApp"],
+    probe: { utility: "max-w-[29rem]", css: "max-width:29rem" },
+    pages: ["/", "/getting-started/installation", "/guides/configuration"],
+    browserClass: "Blux.UI.E2E.DocsTemplateTests",
+  },
 ];
+
+// templates/_shared holds what the templates copy (the Markdown content code); it is not a template. Every other folder is, and must be listed above.
+const templateFolders = readdirSync(join(dirname(fileURLToPath(import.meta.url)), "..", "templates"), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory() && !entry.name.startsWith("_"))
+  .map((entry) => entry.name);
+const unlisted = templateFolders.filter((folder) => !templates.some((t) => t.name === folder));
+if (unlisted.length) {
+  console.error(`templates/${unlisted.join(", templates/")} is not in the list of build/verify-templates.mjs`);
+  process.exit(1);
+}
 
 const keep = process.argv.includes("--keep");
 const browser = !process.argv.includes("--no-browser");

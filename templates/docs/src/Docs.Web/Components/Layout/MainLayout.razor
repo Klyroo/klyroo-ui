@@ -1,0 +1,58 @@
+@inherits LayoutComponentBase
+@inject MarkdownStore Store
+
+<BxApp>
+    <BxSkipLink />
+
+    @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. The sections of the header
+       are the top level folders of the content, each linking to its first page. *@
+    <BxHeader Items="_sections" AriaLabel="Sections">
+        <Left>
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
+                <BxIcon Name="ph:terminal-window" Class="size-6" />
+                <span>@SiteInfo.Name</span>
+            </a>
+        </Left>
+        <Right>
+            @* Two buttons for one search, so that only one shows: the label and the shortcut where there is room, the icon alone on a phone. *@
+            <BxContentSearchButton Collapsed="false" Size="BxSize.Sm" Class="hidden sm:inline-flex sm:w-56" />
+            <BxContentSearchButton Size="BxSize.Sm" Class="sm:hidden" />
+            <BxColorModeButton Size="BxSize.Sm" />
+        </Right>
+        <Body>
+            <BxContentNavigation Items="_site.Navigation" AriaLabel="Menu" />
+        </Body>
+    </BxHeader>
+
+    @* The search of the whole site: Ctrl+K (Cmd+K on a Mac) or one of the buttons above. It is a list of the titles, headings and texts of the pages,
+       filtered in the browser. *@
+    <BxContentSearch Pages="_site.Search" />
+
+    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+        @Body
+    </BxMain>
+
+    <BxFooter>
+        <Left>
+            <p class="text-sm text-(--blux-text-muted)">@SiteInfo.Copyright</p>
+        </Left>
+        <Right>
+            <BxButton Label="Source" Href="@SiteInfo.SourceUrl" Variant="ButtonVariant.Link" Color="BxColor.Neutral" Size="BxSize.Sm" />
+        </Right>
+    </BxFooter>
+</BxApp>
+
+@code {
+    private MarkdownSite _site = default!;
+    private IReadOnlyList<BxNavigationItem> _sections = [];
+
+    // The content as it is for this request: a reload in development swaps the whole site, never part of it.
+    protected override void OnInitialized()
+    {
+        _site = Store.Site;
+        _sections = [.. _site.Navigation.Select(item => new BxNavigationItem(item.Title) { Href = FirstHref(item), Active = false })];
+    }
+
+    private static string? FirstHref(BxContentNavigationItem item) =>
+        item.Href ?? item.Children?.Select(FirstHref).FirstOrDefault(href => href is not null);
+}

@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests of what the project templates share. templates/_shared/Content is the reference copy of the Markdown content code that every content template
+    (Docs, and the ones to come) carries in its own Content folder: it is compiled here as it is, so the unit tests run against the reference, and
+    TemplateCopyTests fails when the copy of a template differs from it. Testing the reference rather than one template's copy keeps a single set of tests
+    for all of them; the copy test is what makes that valid.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Markdig" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Blux.UI\Blux.UI.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\templates\_shared\Content\**\*.cs" LinkBase="Shared" />
+    <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
+    <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>
