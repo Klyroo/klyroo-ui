@@ -83,6 +83,47 @@ if (unlisted.length) {
   process.exit(1);
 }
 
+// A source file that a .gitignore swallows never reaches the repository, and the template then builds on the machine of its author only (this happened with a
+// folder named Releases, which the Visual Studio pattern [Rr]eleases/ ignores). So no file of a template may be ignored by git, and no folder of a template
+// may be named after a pattern that would ignore it. Build output and tool folders are ignored on purpose.
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const generatedFolders = new Set(["bin", "obj", "node_modules", "TestResults", ".vs"]);
+const underGenerated = (path) => path.split(/[\\/]/).some((segment) => generatedFolders.has(segment));
+const git = (args, input) => {
+  const r = spawnSync("git", args, { cwd: repoRoot, encoding: "utf8", input, maxBuffer: 1 << 28 });
+  return { code: r.status ?? 1, out: r.stdout ?? "", err: r.stderr ?? "" };
+};
+const ignoredSources = [];
+for (const folder of templateFolders) {
+  const listed = git(["ls-files", "--others", "--ignored", "--exclude-standard", "--", `templates/${folder}`]);
+  if (listed.code !== 0) {
+    console.error(`git ls-files failed for templates/${folder}: ${listed.err.trim()}`);
+    process.exit(1);
+  }
+  ignoredSources.push(...listed.out.split("\n").filter((file) => file && !underGenerated(file)));
+  // The folders by name, whether or not a file sits in them yet: --no-index matches the patterns without looking at what is tracked.
+  const directories = [];
+  const walk = (dir) => {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === ".git" || generatedFolders.has(entry.name)) continue;
+      const path = join(dir, entry.name);
+      directories.push(`${path.slice(repoRoot.length + 1).split(sep).join("/")}/`);
+      walk(path);
+    }
+  };
+  walk(join(repoRoot, "templates", folder));
+  if (directories.length) {
+    const ignored = git(["check-ignore", "--no-index", "--stdin"], directories.join("\n"));
+    ignoredSources.push(...ignored.out.split("\n").filter(Boolean).map((path) => `${path} (folder)`));
+  }
+}
+if (ignoredSources.length) {
+  console.error("These files or folders of a template are ignored by git, so they would never be committed:");
+  for (const file of [...new Set(ignoredSources)]) console.error(`  ${file}`);
+  console.error("Rename the folder (for instance Releases becomes ReleaseNotes) or fix the .gitignore.");
+  process.exit(1);
+}
+
 const keep = process.argv.includes("--keep");
 const browser = !process.argv.includes("--no-browser");
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith("--"));
