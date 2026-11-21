@@ -1,0 +1,24 @@
+@* An ordered list: the steps are a sequence, and a screen reader says "list, 3 items". *@
+<BxPageSection id="how-it-works"
+               Headline="@SiteContent.HowHeadline"
+               Title="@SiteContent.HowTitle"
+               Description="@SiteContent.HowDescription"
+               Orientation="BxOrientation.Vertical">
+    <ol class="m-0 mt-10 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
+        @for (var i = 0; i < SiteContent.Steps.Count; i++)
+        {
+            var number = i + 1;
+            var step = SiteContent.Steps[i];
+            <li class="flex flex-col gap-4 rounded-[calc(var(--blux-radius)*2)] bg-(--blux-bg-elevated)/50 p-6 ring ring-(--blux-border)">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-inverted) font-mono text-sm font-semibold text-(--blux-text-inverted)" aria-hidden="true">@number</span>
+                    <BxIcon Name="@step.Icon" Class="size-5 text-(--blux-text-muted)" />
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-(--blux-text-highlighted)"><span class="sr-only">Step @number: </span>@step.Title</h3>
+                    <p class="mt-1 text-sm text-pretty text-(--blux-text-muted)">@step.Text</p>
+                </div>
+            </li>
+        }
+    </ol>
+</BxPageSection>

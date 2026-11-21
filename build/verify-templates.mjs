@@ -11,7 +11,7 @@
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
 //      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
-//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (--no-browser skips that part);
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
 //      is finished by running it again.
@@ -36,6 +36,18 @@ const templates = [
     renames: ["Acme", "starterApp"],
     probe: { utility: "max-w-[37rem]", css: "max-width:37rem" },
     pages: ["/", "/about"],
+    // The setup method of the shared project, named after the template.
+    services: true,
+    browserClass: "Blux.UI.E2E.TemplateTests",
+  },
+  {
+    name: "landing",
+    web: "src/Landing.Web",
+    name_in_files: "Landing",
+    renames: ["Acme", "landingApp"],
+    probe: { utility: "max-w-[27rem]", css: "max-width:27rem" },
+    pages: ["/"],
+    browserClass: "Blux.UI.E2E.LandingTemplateTests",
   },
 ];
 
@@ -182,7 +194,7 @@ try {
     if (built.code === 0) {
       const { utility, css } = template.probe;
       check(!readFileSync(join(root, "src", "Blux.UI", "wwwroot", "blux.css"), "utf8").includes(css), `${template.name}: ${utility} is not in the precompiled blux.css, so finding it proves the template's CSS was compiled`);
-      for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: "/demo/starter" }, "/demo/starter"]]) {
+      for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: `/demo/${template.name}` }, `/demo/${template.name}`]]) {
         let app;
         try {
           app = await start(assembly, web, extraEnv);
@@ -220,7 +232,7 @@ try {
     if (publish.code === 0) {
       const publishedDll = join(published, `${basename(template.web)}.dll`);
       const { utility, css } = template.probe;
-      for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: "/demo/starter" }, "/demo/starter"]]) {
+      for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: `/demo/${template.name}` }, `/demo/${template.name}`]]) {
         let app;
         try {
           app = await start(publishedDll, published, { ...extraEnv, ASPNETCORE_ENVIRONMENT: "Production" });
@@ -252,8 +264,10 @@ try {
         const e2eBuild = runPlain("dotnet", ["build", "tests/Blux.UI.E2E"], root);
         if (!check(e2eBuild.code === 0, `${template.name}: tests/Blux.UI.E2E builds`)) console.log(e2eBuild.out);
         if (e2eBuild.code === 0) {
-          const browserRun = runPlain("dotnet", ["test", "--project", "tests/Blux.UI.E2E", "--no-build", "--", "--filter-class", "Blux.UI.E2E.TemplateTests"], root, e2e);
-          if (!check(browserRun.code === 0 && /succeeded: 2/.test(browserRun.out), `${template.name}: in a browser, the published app is interactive, the counter works and Auto hands off to WebAssembly (root and path base)`)) console.log(browserRun.out);
+          const browserRun = runPlain("dotnet", ["test", "--project", "tests/Blux.UI.E2E", "--no-build", "--", "--filter-class", template.browserClass], root, e2e);
+          const count = (label) => Number(new RegExp(`${label}: (\\d+)`).exec(browserRun.out)?.[1] ?? NaN);
+          const [total, passed, failed, skipped] = [count("total"), count("succeeded"), count("failed"), count("skipped")];
+          if (!check(browserRun.code === 0 && total > 0 && failed === 0 && skipped === 0 && passed === total, `${template.name}: in a browser, the published app passes ${template.browserClass} (root and path base): ${passed} of ${total} tests passed, ${failed} failed, ${skipped} skipped`)) console.log(browserRun.out);
         }
       }
     }
@@ -276,13 +290,15 @@ try {
       check(renamed.out.includes(`dotnet run --project src/${newName}.Web`) && existsSync(join(copy, "src", `${newName}.Web`)), `${template.name}: ${newName}: the hint points to a folder that exists`);
       // What is left of the template name once the new name (which may contain it) is taken out.
       const strip = (text) => text.replace(new RegExp(newName, "gi"), "");
-      const left = textFiles(copy).filter(({ text }) => /starter/i.test(strip(text))).map(({ path }) => path.slice(copy.length + 1));
+      const left = textFiles(copy).filter(({ text }) => new RegExp(template.name, "i").test(strip(text))).map(({ path }) => path.slice(copy.length + 1));
       check(left.length === 0, `${template.name}: ${newName}: no occurrence of the template name is left in a file${left.length ? ` (${left.join(", ")})` : ""}`);
-      const leftNames = allPaths(copy).filter((p) => /starter/i.test(strip(p.slice(copy.length)))).map((p) => p.slice(copy.length + 1));
+      const leftNames = allPaths(copy).filter((p) => new RegExp(template.name, "i").test(strip(p.slice(copy.length)))).map((p) => p.slice(copy.length + 1));
       check(leftNames.length === 0, `${template.name}: ${newName}: no file or folder name keeps the template name${leftNames.length ? ` (${leftNames.join(", ")})` : ""}`);
       // The names the template builds from its own name, never one the other spellings rewrote twice.
-      const services = textFiles(copy).find(({ path }) => path.endsWith(`${sep}${newName}Services.cs`));
-      check(!!services && services.text.includes(`Add${newName}Ui`) && services.text.includes(`namespace ${newName}.Shared;`), `${template.name}: ${newName}: the setup method is Add${newName}Ui in the namespace ${newName}.Shared`);
+      if (template.services) {
+        const services = textFiles(copy).find(({ path }) => path.endsWith(`${sep}${newName}Services.cs`));
+        check(!!services && services.text.includes(`Add${newName}Ui`) && services.text.includes(`namespace ${newName}.Shared;`), `${template.name}: ${newName}: the setup method is Add${newName}Ui in the namespace ${newName}.Shared`);
+      }
       const maui = readdirSync(join(copy, "src")).filter((d) => d.endsWith(".Maui"));
       if (maui.length) {
         const csproj = readFileSync(join(copy, "src", maui[0], `${maui[0]}.csproj`), "utf8");

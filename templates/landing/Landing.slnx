@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Landing.Web/Landing.Web.csproj" />
+  </Folder>
+</Solution>

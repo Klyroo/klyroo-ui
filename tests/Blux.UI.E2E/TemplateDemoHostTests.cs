@@ -46,7 +46,7 @@ public class TemplatesPathBaseTests(DemosPathBaseFixture demos, PathBaseFixture 
         _page.Response += (_, response) => { if (response.Status >= 400 && !response.Url.Contains("/_framework/dotnet-browser-tools/")) lock (failures) failures.Add($"{response.Status} {response.Url}"); };
 
         await _page.GotoAsync("templates");
-        var preview = _page.GetByTestId("template-preview");
+        var preview = _page.GetByTestId("template-card").Filter(new() { Has = _page.GetByRole(AriaRole.Heading, new() { Name = "Starter" }) }).GetByTestId("template-preview");
         // The link is relative to the base href, so it lands below the path base.
         Assert.Equal(demos.Instance.Host + "/sub/templates/starter/demo/", await preview.EvaluateAsync<string>("a => a.href"));
         lock (requests) requests.Clear();

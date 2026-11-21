@@ -71,6 +71,8 @@
 
 @layer base {
   :root {
+    /* Native controls, scrollbars and the canvas follow the mode too (light here, dark below). */
+    color-scheme: light;
     --blux-radius: 0.5rem;
     /* Maximum width of BxContainer, the header and the footer. */
     --blux-container: 80rem;
@@ -146,6 +148,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --blux-primary: #ffd23f;
     --blux-primary-text: #ffd23f;
     --blux-primary-contrast: #151100;
@@ -185,6 +188,15 @@
     --blux-border-accented: #5c6369;
     --blux-border-inverted: #edefef;
     --blux-control: #5c6369;
+  }
+
+  /*
+   * The page itself: background and text color from the tokens, so a page with no styles of its own is readable in both modes, and so an
+   * accessibility scan sees the real background. :where() gives it no specificity at all: any rule of the app, a utility on <body> included, wins.
+   */
+  :where(body) {
+    background-color: var(--blux-bg);
+    color: var(--blux-text);
   }
 
   /* data-color sets the three variables every themed component reads. */
