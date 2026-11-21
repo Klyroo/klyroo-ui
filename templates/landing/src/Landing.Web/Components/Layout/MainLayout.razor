@@ -4,7 +4,7 @@
     <BxSkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <BxHeader Items="SiteContent.Navigation" AriaLabel="Main" MenuTitle="Menu">
+    <BxHeader Items="SiteContent.Navigation" AriaLabel="@SiteContent.HeaderLabel" MenuTitle="@SiteContent.HeaderMenuTitle">
         <Left>
             <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
                 <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
@@ -14,7 +14,7 @@
         <Right>
             <BxLocaleSelect Size="BxSize.Sm" />
             <BxColorModeButton Size="BxSize.Sm" />
-            <BxButton Label="Start free" Href="@SiteContent.SignUpUrl" Size="BxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
+            <BxButton Label="@SiteContent.HeaderButtonLabel" Href="@SiteContent.SignUpUrl" Size="BxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
         </Right>
     </BxHeader>
 
@@ -24,7 +24,7 @@
 
     <BxFooter>
         <Top>
-            <BxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="Footer">
+            <BxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="@SiteContent.FooterLabel">
                 <Left>
                     <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
                         <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
@@ -35,7 +35,7 @@
             </BxFooterColumns>
         </Top>
         <Left>
-            <p class="text-sm text-(--blux-text-muted)">&copy; @DateTime.UtcNow.Year @SiteContent.Name. Built with Blux UI.</p>
+            <p class="text-sm text-(--blux-text-muted)">@SiteContent.Copyright</p>
         </Left>
     </BxFooter>
 </BxApp>

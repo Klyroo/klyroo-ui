@@ -4,11 +4,8 @@
 /* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result as app.css. */
 
 @layer base {
-  /* The page colors come from the Blux tokens, so light and dark follow the "dark" class that the color mode script sets. */
+  /* The page background and text color come from the Blux theme, which follows the "dark" class that the color mode script sets. */
   body {
-    background: var(--blux-bg);
-    color: var(--blux-text);
-    font-family: var(--blux-font-sans, ui-sans-serif, system-ui, sans-serif);
     -webkit-font-smoothing: antialiased;
   }
 

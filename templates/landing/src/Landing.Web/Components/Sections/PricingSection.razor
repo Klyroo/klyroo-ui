@@ -1,7 +1,8 @@
 @* The monthly and yearly switch needs no script and no circuit. Two radio buttons (a real, keyboard operable control that the browser
    remembers) pick which of two copies of the plans is shown, with the :has() selector on the wrapper below. A .NET toggle would make the whole page
    interactive for the sake of one label, and would not work until the circuit or WebAssembly had started. The cost is that the plans are rendered
-   twice: the copy that is not shown is display:none, so it is out of the accessibility tree and out of the layout. *@
+   twice: the copy that is not shown is display:none, so it is out of the accessibility tree and out of the layout.
+   In Windows High Contrast the fill of the checked label is dropped, so forced-colors paints it with the system Highlight colors. *@
 <BxPageSection id="pricing"
                Headline="@SiteContent.PricingHeadline"
                Title="@SiteContent.PricingTitle"
@@ -9,11 +10,11 @@
                Orientation="BxOrientation.Vertical">
     <div class="group/pricing mt-10 flex flex-col items-start gap-8" data-testid="pricing">
         <fieldset class="m-0 inline-flex rounded-full bg-(--blux-bg-elevated)/50 p-1 ring ring-(--blux-border)">
-            <legend class="sr-only">Billing period</legend>
+            <legend class="sr-only">@SiteContent.BillingLabel</legend>
             <input type="radio" id="billing-monthly" name="billing" value="monthly" class="peer/monthly sr-only" checked />
-            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--blux-bg-inverted) peer-checked/monthly:text-(--blux-text-inverted) peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--blux-text)">Monthly</label>
+            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--blux-bg-inverted) peer-checked/monthly:text-(--blux-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--blux-text)">@SiteContent.MonthlyLabel</label>
             <input type="radio" id="billing-yearly" name="billing" value="yearly" class="peer/yearly sr-only" />
-            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--blux-bg-inverted) peer-checked/yearly:text-(--blux-text-inverted) peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--blux-text)">Yearly, 2 months free</label>
+            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--blux-bg-inverted) peer-checked/yearly:text-(--blux-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--blux-text)">@SiteContent.YearlyLabel</label>
         </fieldset>
 
         <div class="w-full group-has-[#billing-yearly:checked]/pricing:hidden" data-billing="monthly">
@@ -36,9 +37,9 @@
                                Description="@plan.Description"
                                Badge="@plan.Badge"
                                Highlight="@plan.Highlight"
-                               Price="@Price(plan, yearly)"
-                               BillingCycle="/month"
-                               Terms="@Terms(plan, yearly)"
+                               Price="@plan.Price(yearly)"
+                               BillingCycle="@SiteContent.PerMonth"
+                               Terms="@plan.Terms(yearly)"
                                Features="@(plan.Features.Select(f => new BxPricingFeature(f)).ToArray())"
                                ButtonLabel="@plan.ButtonLabel"
                                ButtonHref="@plan.ButtonHref"
@@ -46,11 +47,4 @@
                                ButtonColor="@(plan.Highlight ? BxColor.Primary : BxColor.Neutral)" />
             }
         </BxPricingPlans>;
-
-    private static string Price(Plan plan, bool yearly) => $"${(yearly ? plan.YearlyMonthlyPrice : plan.MonthlyPrice)}";
-
-    private static string Terms(Plan plan, bool yearly) =>
-        plan.MonthlyPrice == 0 ? "No payment details needed."
-        : yearly ? $"${plan.YearlyTotal} billed once a year."
-        : "Billed monthly, cancel at any time.";
 }

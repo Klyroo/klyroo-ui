@@ -265,7 +265,9 @@ try {
         if (!check(e2eBuild.code === 0, `${template.name}: tests/Blux.UI.E2E builds`)) console.log(e2eBuild.out);
         if (e2eBuild.code === 0) {
           const browserRun = runPlain("dotnet", ["test", "--project", "tests/Blux.UI.E2E", "--no-build", "--", "--filter-class", template.browserClass], root, e2e);
-          if (!check(browserRun.code === 0 && /succeeded: 2/.test(browserRun.out), `${template.name}: in a browser, the published app passes ${template.browserClass} (root and path base)`)) console.log(browserRun.out);
+          const count = (label) => Number(new RegExp(`${label}: (\\d+)`).exec(browserRun.out)?.[1] ?? NaN);
+          const [total, passed, failed, skipped] = [count("total"), count("succeeded"), count("failed"), count("skipped")];
+          if (!check(browserRun.code === 0 && total > 0 && failed === 0 && skipped === 0 && passed === total, `${template.name}: in a browser, the published app passes ${template.browserClass} (root and path base): ${passed} of ${total} tests passed, ${failed} failed, ${skipped} skipped`)) console.log(browserRun.out);
         }
       }
     }

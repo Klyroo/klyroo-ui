@@ -36,15 +36,9 @@ public class TemplateScreenshots(PlaygroundServer server)
                 });
                 var page = await context.NewPageAsync();
                 await page.GotoAsync($"templates/{name}/demo/");
-                // The Starter is interactive and says so; a static template (the Landing) is ready once Blux's script has run.
-                if (name == "starter")
-                {
-                    await Assertions.Expect(page.GetByTestId("renderer")).ToHaveTextAsync(new System.Text.RegularExpressions.Regex("Running on (Server|WebAssembly)"), new() { Timeout = 30_000 });
-                }
-                else
-                {
-                    await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
-                }
+                // Blux's script has run, and a template that renders interactively (data-testid="renderer") has left the prerendered state.
+                await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+                await page.WaitForFunctionAsync("() => { const r = document.querySelector('[data-testid=renderer]'); return !r || /Server|WebAssembly/.test(r.textContent ?? ''); }", null, new() { Timeout = 30_000 });
                 await Assertions.Expect(page.Locator("html")).ToHaveClassAsync(new System.Text.RegularExpressions.Regex(mode == "dark" ? "dark" : "^((?!dark).)*$"));
                 // Fonts and the icon bundle settled, and nothing animating when the shot is taken.
                 await page.EvaluateAsync("() => document.fonts.ready");

@@ -50,6 +50,46 @@ internal static class LandingChecks
         await Assertions.Expect(page.Locator("html")).ToHaveClassAsync(dark ? new Regex("^((?!dark).)*$") : new Regex("dark"));
     }
 
+    /// <summary>
+    /// In Windows High Contrast the page drops its background fills: the checked billing option must still look different from the other one
+    /// (the template paints it with the system Highlight colors).
+    /// </summary>
+    public static async Task AssertForcedColors(IPage page)
+    {
+        await page.EmulateMediaAsync(new() { ForcedColors = ForcedColors.Active });
+        try
+        {
+            var monthly = page.Locator("label[for=billing-monthly]");
+            var yearly = page.Locator("label[for=billing-yearly]");
+            await page.GetByRole(AriaRole.Radio, new() { Name = "Monthly" }).CheckAsync(new() { Force = true });
+            var checkedFill = await monthly.EvaluateAsync<string>("e => getComputedStyle(e).backgroundColor");
+            var otherFill = await yearly.EvaluateAsync<string>("e => getComputedStyle(e).backgroundColor");
+            Assert.NotEqual(otherFill, checkedFill);
+            // And the text of the checked option is not the color of its fill.
+            var checkedText = await monthly.EvaluateAsync<string>("e => getComputedStyle(e).color");
+            Assert.NotEqual(checkedFill, checkedText);
+        }
+        finally
+        {
+            await page.EmulateMediaAsync(new() { ForcedColors = ForcedColors.None });
+        }
+    }
+
+    /// <summary>
+    /// The locale select of a static page: choosing a language writes the culture cookie and reloads the page in that language, with no
+    /// .NET in the browser to do it. Changes the state of the page, so it goes last.
+    /// </summary>
+    public static async Task AssertLocaleSelect(IPage page)
+    {
+        await page.EvaluateAsync("() => { window.__beforeReload = true; }");
+        await page.GetByRole(AriaRole.Combobox, new() { Name = "Language" }).ClickAsync();
+        await page.GetByRole(AriaRole.Option, new() { Name = "Français" }).ClickAsync();
+        await page.WaitForFunctionAsync("() => window.__beforeReload === undefined");
+        await Assertions.Expect(page.Locator("html")).ToHaveAttributeAsync("lang", "fr");
+        var cookie = (await page.Context.CookiesAsync()).Single(c => c.Name == ".AspNetCore.Culture");
+        Assert.Contains("fr", cookie.Value);
+    }
+
     /// <summary>The page has no horizontal scroll at the width of a small phone.</summary>
     public static async Task AssertNoHorizontalScroll(IPage page)
     {
@@ -109,23 +149,33 @@ public class LandingTemplateTests(PlaygroundServer server)
             };
             context.Response += (_, response) => { if (response.Status >= 400) lock (failures) failures.Add($"{response.Status} {response.Url}"); };
             var page = await context.NewPageAsync();
-            page.Console += (_, message) => { if (message.Type == "error") lock (consoleErrors) consoleErrors.Add(message.Text); };
+            page.Console += (_, message) => { if (message.Type == "error") lock (consoleErrors) consoleErrors.Add($"{message.Text} @ {message.Location}"); };
             page.PageError += (_, error) => { lock (consoleErrors) consoleErrors.Add(error); };
             page.WebSocket += (_, socket) => { lock (runtime) runtime.Add(socket.Url); };
 
             await page.GotoAsync("");
             await Assertions.Expect(page.Locator("base")).ToHaveAttributeAsync("href", (pathBase ?? "").TrimEnd('/') + "/");
             await LandingChecks.AssertBehaviour(page);
+            await LandingChecks.AssertForcedColors(page);
             await LandingChecks.AssertNoHorizontalScroll(page);
 
-            // A page that does not exist is the template's own, below the path base too.
+            // Nothing failed and nothing was logged so far: every asset of the page, the stylesheet, the fonts and the script included, was found
+            // below the path base.
+            lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
+            lock (consoleErrors) Assert.True(consoleErrors.Count == 0, "Console errors:\n" + string.Join("\n", consoleErrors));
+
+            // A page that does not exist is the template's own, below the path base too. Its 404 is the one failed request there may be.
+            var missingUrl = new Uri(new Uri(baseUrl), "no-such-page").ToString();
             var missing = await page.GotoAsync("no-such-page");
             Assert.Equal(404, missing!.Status);
             await Assertions.Expect(page.GetByText("There is nothing at this address.")).ToBeVisibleAsync();
+            lock (failures) Assert.Equal([$"404 {missingUrl}"], failures);
+            lock (consoleErrors) Assert.All(consoleErrors, e => Assert.Contains(missingUrl, e));
+            await page.GotoAsync("");
+            await LandingChecks.AssertLocaleSelect(page);
 
             lock (runtime) Assert.True(runtime.Count == 0, "A static site started a circuit or loaded WebAssembly:\n" + string.Join("\n", runtime));
-            lock (failures) Assert.True(failures.Count(f => !f.StartsWith("404 ", StringComparison.Ordinal)) == 0, "Failed requests:\n" + string.Join("\n", failures));
-            lock (consoleErrors) Assert.True(consoleErrors.All(e => e.Contains("404")), "Console errors:\n" + string.Join("\n", consoleErrors));
+            lock (failures) Assert.Equal([$"404 {missingUrl}"], failures);
 
             if (!string.IsNullOrEmpty(Probe))
             {
