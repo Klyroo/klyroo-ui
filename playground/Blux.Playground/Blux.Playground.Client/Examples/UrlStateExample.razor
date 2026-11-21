@@ -1,0 +1,150 @@
+@using Blux.UI.Tools
+@using Blux.UI.Tools.Query
+@using Microsoft.AspNetCore.Components.Routing
+@implements IDisposable
+@inject QueryState Query
+@inject NavigationManager Navigation
+
+<div class="flex w-full max-w-xl flex-col gap-4" data-testid="url-state">
+    @* Search: typing replaces the history entry (one write per pause), so Back does not step through every letter.
+       Without interactivity the same field is a GET form that carries the other keys as hidden fields. *@
+    @if (RendererInfo.IsInteractive)
+    {
+        <BxInput Value="@State.Q" ValueChanged="OnSearch" Debounce="300" ClearOnEscape Type="search" Placeholder="Search tasks" aria-label="Search" data-testid="url-q" />
+    }
+    else
+    {
+        <form method="get" action="@Path" class="flex gap-2" data-testid="url-form">
+            @foreach (var (key, value) in Hidden)
+            {
+                <input type="hidden" name="@key" value="@value" />
+            }
+            <BxInput Value="@State.Q" Name="q" Type="search" Placeholder="Search tasks" aria-label="Search" data-testid="url-q" />
+            <BxButton Type="submit" Label="Search" />
+        </form>
+    }
+
+    @* A filter is a link: it works as is in static rendering, and the router turns a click into a pushed history entry. *@
+    <nav aria-label="Status" class="flex flex-wrap gap-2" data-testid="url-status">
+        @foreach (var status in Enum.GetValues<DemoStatus>())
+        {
+            var active = State.Status == status;
+            <BxButton Href="@Group.HrefWith(State with { Status = status, Page = 1 })" Label="@status.ToString()"
+                      Variant="@(active ? ButtonVariant.Solid : ButtonVariant.Outline)" Color="BxColor.Neutral"
+                      aria-current="@(active ? "true" : null)" data-testid="@($"url-status-{status.ToString().ToLowerInvariant()}")" />
+        }
+        <BxButton Href="@Group.HrefWith(new DemoState())" Label="Clear" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-testid="url-clear" />
+        @* Writes the state, then leaves for another page in the same handler: the write must not bring the user back. *@
+        <BxButton Label="Write and leave" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="WriteAndLeave" data-testid="url-leave" />
+    </nav>
+
+    @* A button writes the state itself: one write, one history entry. *@
+    <div class="flex items-center gap-3">
+        <BxButton Label="@(State.Desc ? "Z to A" : "A to Z")" Variant="ButtonVariant.Soft" Color="BxColor.Neutral" OnClick="ToggleSort" data-testid="url-sort" />
+        <span class="text-sm text-(--blux-text-muted)">Page <span data-testid="url-page">@State.Page</span> of @Pages</span>
+        <BxButton Href="@Group.HrefWith(State with { Page = Math.Max(1, State.Page - 1) })" Label="Previous" Variant="ButtonVariant.Outline" Color="BxColor.Neutral"
+                  Disabled="@(State.Page <= 1)" data-testid="url-previous" />
+        <BxButton Href="@Group.HrefWith(State with { Page = Math.Min(Pages, State.Page + 1) })" Label="Next" Variant="ButtonVariant.Outline" Color="BxColor.Neutral"
+                  Disabled="@(State.Page >= Pages)" data-testid="url-next" />
+    </div>
+
+    <ul class="divide-y divide-(--blux-border) rounded-lg border border-(--blux-border) text-sm" data-testid="url-list">
+        @foreach (var task in Visible)
+        {
+            <li class="flex items-center justify-between px-3 py-2"><span>@task.Title</span><span class="text-(--blux-text-muted)">@task.Status</span></li>
+        }
+        @if (Visible.Count == 0)
+        {
+            <li class="px-3 py-2 text-(--blux-text-muted)">No task matches.</li>
+        }
+    </ul>
+
+    <p class="font-mono text-xs text-(--blux-text-muted)">Query: <span data-testid="url-query">@(new Uri(Navigation.Uri).Query)</span></p>
+    <p class="font-mono text-xs text-(--blux-text-muted)">SupplyParameterFromQuery q: <span data-testid="url-supplied">@SuppliedQ</span></p>
+</div>
+
+@code {
+    private const int PageSize = 4;
+
+    private static readonly DemoTask[] All =
+    [
+        new("Write the release notes", DemoStatus.Open), new("Review the pull request", DemoStatus.Open), new("Fix the date picker", DemoStatus.Done),
+        new("Update the screenshots", DemoStatus.Done), new("Translate the guide", DemoStatus.Open), new("Plan the next sprint", DemoStatus.Open),
+        new("Close old issues", DemoStatus.Done), new("Publish the packages", DemoStatus.Open), new("Check accessibility", DemoStatus.Done),
+        new("Rotate the keys", DemoStatus.Done), new("Answer the survey", DemoStatus.Open), new("Archive the board", DemoStatus.Done),
+    ];
+
+    private QueryGroup<DemoState> Group { get; set; } = default!;
+
+    // The same key read the Blazor way: it follows the URL too, since both read it.
+    [SupplyParameterFromQuery(Name = "q")] public string? SuppliedQ { get; set; }
+
+    private DemoState State => Group.Value;
+
+    private string Path => new Uri(Navigation.Uri).AbsolutePath;
+
+    private List<DemoTask> Matching
+    {
+        get
+        {
+            var found = All
+                .Where(t => State.Status == DemoStatus.All || t.Status == State.Status)
+                .Where(t => State.Q.Length == 0 || t.Title.Contains(State.Q, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(t => t.Title, StringComparer.OrdinalIgnoreCase);
+            return [.. State.Desc ? found.Reverse() : found];
+        }
+    }
+
+    private int Pages => Math.Max(1, (Matching.Count + PageSize - 1) / PageSize);
+
+    private List<DemoTask> Visible => [.. Matching.Skip((Math.Min(State.Page, Pages) - 1) * PageSize).Take(PageSize)];
+
+    // What a GET form must carry besides the search field, or submitting it would drop the rest of the state.
+    private IEnumerable<KeyValuePair<string, string>> Hidden
+    {
+        get
+        {
+            if (State.Status != DemoStatus.All) yield return new("status", State.Status.ToString().ToLowerInvariant());
+            if (State.Desc) yield return new("desc", "true");
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        // The RendererInfo tells the service whether it can navigate: a static or prerendered render writes nothing, and the links above carry the changes.
+        Group = Query.Group(new DemoState(), nameof(UrlStateExample), RendererInfo, history: QueryHistory.Push)
+            .Add("q", s => s.Q, (s, v) => s with { Q = v }, QueryCodecs.String)
+            .Add("status", s => s.Status, (s, v) => s with { Status = v }, QueryCodecs.Enum<DemoStatus>(lowercase: true))
+            .Add("desc", s => s.Desc, (s, v) => s with { Desc = v }, QueryCodecs.Boolean)
+            .Add("page", s => s.Page, (s, v) => s with { Page = Math.Max(1, v) }, QueryCodecs.Int32);
+        Group.Changed += OnChanged;
+        // A page past the end is normalized by replacing the entry. Prerendering writes nothing: it must not turn into a redirect.
+        if (State.Page > Pages) Group.Update(s => s with { Page = Pages }, QueryHistory.Replace);
+    }
+
+    // The URL changed (Back, Forward, a typed address, a link): show it.
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    // Typing replaces the entry and goes back to the first page.
+    private void OnSearch(string? value) => Group.Update(s => s with { Q = value ?? "", Page = 1 }, QueryHistory.Replace);
+
+    private void WriteAndLeave()
+    {
+        Group.Update(s => s with { Q = "left" }, QueryHistory.Replace);
+        Navigation.NavigateTo("docs");
+    }
+
+    private void ToggleSort() => Group.Update(s => s with { Desc = !s.Desc, Page = 1 }, QueryHistory.Push);
+
+    public void Dispose()
+    {
+        Group.Changed -= OnChanged;
+        Group.Dispose();
+    }
+
+    public sealed record DemoState(string Q = "", DemoStatus Status = DemoStatus.All, bool Desc = false, int Page = 1);
+
+    public enum DemoStatus { All, Open, Done }
+
+    private sealed record DemoTask(string Title, DemoStatus Status);
+}
