@@ -1,8 +1,28 @@
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 using Blux.Templates.Content;
 using Blux.UI;
 using Docs.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Behind a reverse proxy the request the app sees is the proxy's: its own address, plain HTTP. With ForwardedHeaders:Enabled the app reads X-Forwarded-For,
+// -Proto and -Host from the proxies it trusts, so the scheme and host of generated addresses are the visitor's. Loopback is trusted; list other proxies in
+// ForwardedHeaders:KnownProxies (addresses). Off by default: a header from a client that is not a trusted proxy must not be believed.
+var forwardedHeaders = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
+if (forwardedHeaders)
+{
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost;
+        foreach (var proxy in builder.Configuration.GetSection("ForwardedHeaders:KnownProxies").Get<string[]>() ?? [])
+        {
+            options.KnownProxies.Add(IPAddress.TryParse(proxy, out var address)
+                ? address
+                : throw new InvalidOperationException($"ForwardedHeaders:KnownProxies: '{proxy}' is not an IP address."));
+        }
+    });
+}
 
 builder.Services.AddBluxUi();
 // Static server rendering only: no AddInteractiveServerComponents, no AddInteractiveWebAssemblyComponents. Add one of them (and a render mode on
@@ -21,12 +41,20 @@ if (!Directory.Exists(contentRoot) && !Path.IsPathRooted(contentFolder))
 builder.Services.AddMarkdownContent(new ContentOptions
 {
     Root = contentRoot,
+    // Images are served from wwwroot: one that is not there is reported in the log.
+    WebRoot = builder.Environment.WebRootPath,
     Watch = builder.Environment.IsDevelopment(),
     IncludeDrafts = builder.Configuration.GetValue<bool>("Content:IncludeDrafts"),
     AllowRawHtml = builder.Configuration.GetValue<bool>("Content:AllowRawHtml"),
 });
 
 var app = builder.Build();
+
+// First, so that everything after it (the path base, redirects, links) sees the address the visitor used.
+if (forwardedHeaders)
+{
+    app.UseForwardedHeaders();
+}
 
 // Read the content now: a page that cannot be used stops the start with the name of its file, not the first visitor.
 _ = app.Services.GetRequiredService<MarkdownStore>();
@@ -48,6 +76,8 @@ app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages:
 app.UseAntiforgery();
 
 app.MapStaticAssets();
+// The search index, fetched by the browser the first time the search opens (IndexUrl in MainLayout.razor).
+app.MapSearchIndex();
 app.MapRazorComponents<App>();
 
 app.Run();

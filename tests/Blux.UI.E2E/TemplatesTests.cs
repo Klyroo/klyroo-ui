@@ -334,6 +334,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page).ToHaveTitleAsync(new Regex("^Tern"));
         await Assertions.Expect(Page.Locator("base")).ToHaveAttributeAsync("href", DocsPath);
         await DocsChecks.AssertBehaviour(Page, checkClipboard: false);
+        await DocsChecks.AssertIndexIsNotInThePages(Page, new Uri(new Uri(BaseUrl + "/"), DocsPath.TrimStart('/')).ToString());
 
         var origin = new Uri(BaseUrl).GetLeftPart(UriPartial.Authority);
         lock (requests)

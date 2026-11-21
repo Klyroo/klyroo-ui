@@ -25,8 +25,9 @@
     </BxHeader>
 
     @* The search of the whole site: Ctrl+K (Cmd+K on a Mac) or one of the buttons above. It is a list of the titles, headings and texts of the pages,
-       filtered in the browser. *@
-    <BxContentSearch Pages="_site.Search" />
+       filtered in the browser. The list is not in the page: the browser fetches search-index.json (Program.cs) the first time the search opens, so
+       the pages stay small however many there are. *@
+    <BxContentSearch IndexUrl="search-index.json" />
 
     <BxMain id="main" tabindex="-1" class="focus:outline-none">
         @Body

@@ -34,6 +34,9 @@ public sealed record MarkdownPage(
 /// <summary>A link of a page to a page that does not exist.</summary>
 public sealed record BrokenLink(string FromSlug, string Target);
 
+/// <summary>An image of a page with no file at its path below the web root.</summary>
+public sealed record MissingImage(string FromSlug, string Path);
+
 /// <summary>
 /// The whole content folder, read once: the pages, the navigation, the search index and the previous and next page of each page. It does not change after
 /// it is built; <see cref="MarkdownStore"/> builds a new one when a file changes.
@@ -43,12 +46,13 @@ public sealed class MarkdownSite
     private readonly Dictionary<string, MarkdownPage> _bySlug;
     private readonly Dictionary<string, int> _position;
 
-    private MarkdownSite(IReadOnlyList<MarkdownPage> pages, IReadOnlyList<BxContentNavigationItem> navigation, IReadOnlyList<BxContentSearchPage> search, IReadOnlyList<BrokenLink> brokenLinks)
+    private MarkdownSite(IReadOnlyList<MarkdownPage> pages, IReadOnlyList<BxContentNavigationItem> navigation, IReadOnlyList<BxContentSearchPage> search, IReadOnlyList<BrokenLink> brokenLinks, IReadOnlyList<MissingImage> missingImages)
     {
         Pages = pages;
         Navigation = navigation;
         Search = search;
         BrokenLinks = brokenLinks;
+        MissingImages = missingImages;
         _bySlug = pages.ToDictionary(p => p.Slug, StringComparer.OrdinalIgnoreCase);
         _position = pages.Select((p, i) => (p.Slug, i)).ToDictionary(x => x.Slug, x => x.i, StringComparer.OrdinalIgnoreCase);
     }
@@ -64,6 +68,13 @@ public sealed class MarkdownSite
 
     /// <summary>Links between pages that lead nowhere. Not an error: the store logs them.</summary>
     public IReadOnlyList<BrokenLink> BrokenLinks { get; }
+
+    /// <summary>
+    /// Images that have no file below <see cref="ContentOptions.WebRoot"/>. A relative image path is relative to the folder of the Markdown file, but
+    /// images are served from the web root only, so an image placed next to its page is not found: put it in the web root and write its path from there
+    /// (<c>/img/chart.png</c>). Empty when no web root is given.
+    /// </summary>
+    public IReadOnlyList<MissingImage> MissingImages { get; }
 
     /// <summary>Finds a page by its address, ignoring case and a leading or trailing slash. Null when there is none.</summary>
     public MarkdownPage? Find(string? slug) => _bySlug.GetValueOrDefault((slug ?? "").Trim('/'));
@@ -102,6 +113,7 @@ public sealed class MarkdownSite
         var pages = new List<MarkdownPage>();
         var firstFile = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var internalLinks = new List<(string From, string Target)>();
+        var images = new List<(string From, string Path)>();
         foreach (var file in Walk(root, "*.md").Order(StringComparer.Ordinal))
         {
             var relative = Relative(root, file);
@@ -139,6 +151,7 @@ public sealed class MarkdownSite
                 rendered.Html, rendered.Headings, rendered.Text, relative);
             pages.Add(page);
             internalLinks.AddRange(rendered.Links.Select(target => (slug, target)));
+            images.AddRange(rendered.Images.Select(path => (slug, path)));
         }
 
         var tree = BuildTree(pages, folders);
@@ -146,7 +159,27 @@ public sealed class MarkdownSite
         var navigation = ToItems(tree, ordered);
         var known = ordered.Select(p => p.Slug).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var broken = internalLinks.Where(l => l.Target.Length > 0 && !known.Contains(l.Target)).Distinct().Select(l => new BrokenLink(l.From, l.Target)).ToList();
-        return new MarkdownSite(ordered, navigation, ToSearch(ordered, folders, options.SearchTextLimit), broken);
+        var missing = options.WebRoot is { Length: > 0 } webRoot
+            ? images.Where(i => !ImageExists(webRoot, i.Path)).Distinct().Select(i => new MissingImage(i.From, i.Path)).ToList()
+            : [];
+        return new MarkdownSite(ordered, navigation, ToSearch(ordered, folders, options.SearchTextLimit), broken, missing);
+    }
+
+    // The file must be inside the web root: a path that climbs out of it never counts, whatever is there.
+    private static bool ImageExists(string webRoot, string path)
+    {
+        string decoded;
+        try
+        {
+            decoded = Uri.UnescapeDataString(path);
+        }
+        catch (UriFormatException)
+        {
+            decoded = path;
+        }
+        var root = Path.GetFullPath(webRoot);
+        var full = Path.GetFullPath(Path.Combine(root, decoded.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+        return full.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.Ordinal) && File.Exists(full);
     }
 
     private static string? Clean(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

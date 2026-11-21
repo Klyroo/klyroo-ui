@@ -37,7 +37,8 @@
     private SlotSet _slots = default!;
     private string _id = default!;
 
-    // A bare "#id" resolves against the <base href> of a Blazor app, which is the root: the link would leave the page.
+    // A bare "#id" resolves against the <base href> of a Blazor app, which is the root: the link would leave the page. The address of the page is
+    // relative to that base, never absolute: behind a reverse proxy the absolute address of the request is the internal one (host, port).
     private string _page = "";
 
     /// <summary>The headings of the page, in document order. Each <c>Id</c> must be the id of an element on the page.</summary>
@@ -73,10 +74,20 @@
         }
     }
 
-    private static string PageOf(string uri)
+    private string PageOf(string uri)
     {
-        var hash = uri.IndexOf('#');
-        return hash < 0 ? uri : uri[..hash];
+        string relative;
+        try
+        {
+            relative = Navigation.ToBaseRelativePath(uri);
+        }
+        catch (ArgumentException)
+        {
+            // An address outside the base of the app: keep it as it is.
+            relative = uri;
+        }
+        var hash = relative.IndexOf('#');
+        return hash < 0 ? relative : relative[..hash];
     }
 
     protected override void OnParametersSet()

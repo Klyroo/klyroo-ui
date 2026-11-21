@@ -388,6 +388,80 @@ public class ContentTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(SiteSearch).ToBeHiddenAsync();
     }
 
+    private ILocator LazySearch => Page.GetByRole(AriaRole.Dialog, new() { Name = "Search the lazy docs" });
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Lazy_search_fetches_its_index_once_when_it_first_opens_and_finds_a_page_by_its_text(string mode)
+    {
+        var requests = new List<string>();
+        Page.Request += (_, request) =>
+        {
+            if (request.Url.EndsWith("/lazy-search-index.json", StringComparison.Ordinal)) lock (requests) requests.Add(request.Url);
+        };
+        await Open(mode, "content-search");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        // Nothing is fetched while the search is closed.
+        lock (requests) Assert.Empty(requests);
+
+        await Page.GetByTestId("content-search-lazy-button").ClickAsync();
+
+        await Assertions.Expect(LazySearch).ToBeVisibleAsync();
+        var input = LazySearch.GetByRole(AriaRole.Combobox);
+        // A word that is only in the keywords of the index, not in a title: the page is found through the lazy index.
+        await input.PressSequentiallyAsync("docker");
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option, new() { Name = "Deployment" }).First).ToBeVisibleAsync();
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option, new() { Name = "Monitoring" })).ToBeHiddenAsync();
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Group, new() { Name = "Guides" })).ToBeVisibleAsync();
+        await AssertNoAccessibilityViolations();
+        // A heading is its own result, with its page as context, and the text of its page is not what it is found by.
+        await input.FillAsync("");
+        await input.PressSequentiallyAsync("proxy");
+        var heading = LazySearch.GetByRole(AriaRole.Option, new() { Name = "Run it behind a proxy" });
+        await Assertions.Expect(heading).ToBeVisibleAsync();
+        await Assertions.Expect(heading).ToContainTextAsync("Deployment");
+        await Assertions.Expect(heading).ToHaveAttributeAsync("href", "?section=deployment#proxy");
+        await input.FillAsync("");
+        await input.PressSequentiallyAsync("hosting");
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option)).ToHaveCountAsync(1);
+
+        // Closed and opened again (with the shortcut): the options are there, and the file is not fetched again.
+        await input.FillAsync("");
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(LazySearch).ToBeHiddenAsync();
+        await Page.Keyboard.PressAsync("Alt+L");
+        await Assertions.Expect(LazySearch).ToBeVisibleAsync();
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option, new() { Name = "Changelog" })).ToBeVisibleAsync();
+        lock (requests) Assert.Single(requests);
+        // The address is the one in the page, resolved against the base.
+        Assert.EndsWith("/examples/lazy-search-index.json", requests[0]);
+    }
+
+    [Fact]
+    public async Task Lazy_search_says_when_its_index_cannot_be_fetched_and_tries_again()
+    {
+        await Open("ssr", "content-search");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await Page.RouteAsync("**/lazy-search-index.json", route => route.AbortAsync());
+
+        await Page.GetByTestId("content-search-lazy-button").ClickAsync();
+
+        // A live region of its own says it, the button offers a way out, and nothing is listed.
+        var alert = LazySearch.GetByRole(AriaRole.Alert);
+        await Assertions.Expect(alert).ToContainTextAsync("The search could not be loaded.");
+        var retry = LazySearch.GetByRole(AriaRole.Button, new() { Name = "Try again" });
+        await Assertions.Expect(retry).ToBeVisibleAsync();
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option)).ToHaveCountAsync(0);
+        await AssertNoAccessibilityViolations();
+
+        await Page.UnrouteAsync("**/lazy-search-index.json");
+        await retry.ClickAsync();
+
+        await Assertions.Expect(LazySearch.GetByRole(AriaRole.Option, new() { Name = "Deployment" }).First).ToBeVisibleAsync();
+        await Assertions.Expect(alert).ToBeHiddenAsync();
+        await Assertions.Expect(retry).ToBeHiddenAsync();
+    }
+
     [Theory]
     [MemberData(nameof(AllModes))]
     public async Task Search_example_opens_with_its_button_and_its_own_shortcut_and_finds_headings(string mode)

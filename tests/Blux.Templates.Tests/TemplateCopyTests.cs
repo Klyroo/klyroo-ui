@@ -7,8 +7,8 @@ namespace Blux.Templates.Tests;
 /// </summary>
 public class TemplateCopyTests
 {
-    /// <summary>The file that tells a Content folder is a copy of the reference.</summary>
-    private const string Marker = "MarkdownStore.cs";
+    /// <summary>The templates that use the shared Markdown code, and so must carry the whole reference. Add SaaS, Portfolio and Changelog when they exist.</summary>
+    private static readonly string[] ContentTemplates = ["docs"];
 
     private static readonly string Root = RepositoryRoot();
     private static readonly string Templates = Path.Combine(Root, "templates");
@@ -35,29 +35,45 @@ public class TemplateCopyTests
     // Line endings are the business of git, not of the content of a file.
     private static string Text(string path) => File.ReadAllText(path).Replace("\r\n", "\n");
 
-    /// <summary>The Content folders that are copies of the reference: any template with a <c>Content</c> folder that holds the marker file.</summary>
-    private static IEnumerable<(string Template, string Folder)> Copies() =>
-        from template in Directory.EnumerateDirectories(Templates)
-        where !Path.GetFileName(template).StartsWith('_')
-        let src = Path.Combine(template, "src")
-        where Directory.Exists(src)
-        from project in Directory.EnumerateDirectories(src)
-        let content = Path.Combine(project, "Content")
-        where File.Exists(Path.Combine(content, Marker))
-        select (Path.GetFileName(template), content);
+    /// <summary>
+    /// The Content folders that must equal the reference: every <c>src/&lt;Project&gt;/Content</c> folder of a template in <see cref="ContentTemplates"/>
+    /// (found or not, so a template that lost its copy fails), and of any other template when it holds a file with the name of a reference file (a copy
+    /// that was started, or a file that was added next to the shared ones). A Content folder with its own files, like the one of the Landing, is left alone.
+    /// </summary>
+    private static IEnumerable<(string Template, string Folder)> Copies()
+    {
+        var referenceNames = Files(Reference).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var template in Directory.EnumerateDirectories(Templates).Where(t => !Path.GetFileName(t).StartsWith('_')))
+        {
+            var name = Path.GetFileName(template);
+            var src = Path.Combine(template, "src");
+            var contents = Directory.Exists(src)
+                ? Directory.EnumerateDirectories(src).Select(project => Path.Combine(project, "Content")).Where(Directory.Exists).ToList()
+                : [];
+            foreach (var content in contents.Where(c => ContentTemplates.Contains(name) || Files(c).Any(referenceNames.Contains)))
+            {
+                yield return (name, content);
+            }
+        }
+    }
 
     [Fact]
     public void The_reference_is_there_and_has_code()
     {
         Assert.True(Directory.Exists(Reference), $"{Reference} is missing");
-        Assert.Contains(Marker, Files(Reference));
+        Assert.Contains("MarkdownStore.cs", Files(Reference));
         Assert.All(Files(Reference), file => Assert.EndsWith(".cs", file));
     }
 
     [Fact]
-    public void The_docs_template_carries_a_copy()
+    public void Every_template_that_uses_the_shared_code_has_exactly_one_content_folder_for_it()
     {
-        Assert.Contains("docs", Copies().Select(c => c.Template));
+        var copies = Copies().ToList();
+        foreach (var template in ContentTemplates)
+        {
+            Assert.True(Directory.Exists(Path.Combine(Templates, template)), $"templates/{template} is listed in ContentTemplates but does not exist");
+            Assert.True(copies.Count(c => c.Template == template) == 1, $"templates/{template} must have one src/<Project>/Content folder with the shared code");
+        }
     }
 
     [Fact]

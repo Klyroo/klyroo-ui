@@ -180,13 +180,28 @@ public class ContentTests : BluxTestContext
         var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
 
         var links = cut.FindAll("a");
-        // Absolute to the current page: a bare "#id" would resolve against the base href of the app, the root.
+        // Relative to the base address of the app, never absolute: a bare "#id" would resolve against the base href, the root, and an absolute address
+        // would carry the host the request reached the app on, which behind a proxy is an internal one.
         Assert.Equal(["#intro", "#usage", "#props"], links.Select(a => a.GetAttribute("href")![a.GetAttribute("href")!.IndexOf('#')..]));
-        Assert.All(links, a => Assert.StartsWith(Navigation.Uri, a.GetAttribute("href")));
+        Assert.All(links, a => Assert.DoesNotContain("://", a.GetAttribute("href")));
+        Assert.All(links, a => Assert.StartsWith(Navigation.ToBaseRelativePath(Navigation.Uri), a.GetAttribute("href")));
         Assert.Equal(["Introduction", "Usage", "Props"], links.Select(a => a.TextContent.Trim()));
         Assert.Equal(["2", "2", "3"], links.Select(a => a.GetAttribute("data-level")));
         Assert.Equal("On this page", cut.Find("nav").GetAttribute("aria-label"));
         Assert.Equal("primary", cut.Find("bx-content-toc").GetAttribute("data-color"));
+    }
+
+    [Theory]
+    [InlineData("", "#intro")]
+    [InlineData("guides/setup", "guides/setup#intro")]
+    [InlineData("guides/setup?tab=a#old", "guides/setup?tab=a#intro")]
+    public void Toc_links_are_relative_to_the_base_address_whatever_the_host(string path, string expected)
+    {
+        // The address of the request is absolute (here http://localhost/): the links must not carry it, a proxy would turn it into an internal host.
+        Navigation.NavigateTo(Navigation.BaseUri + path);
+        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, new BxContentTocLink[] { new("intro", "Introduction") }));
+
+        Assert.Equal(expected, cut.Find("a").GetAttribute("href"));
     }
 
     [Fact]
@@ -331,6 +346,66 @@ public class ContentTests : BluxTestContext
         Assert.Equal("Search the documentation...", cut.Find("bx-command-palette input").GetAttribute("placeholder"));
         Assert.True(dialog.HasAttribute("data-bx-content-search"));
         Assert.Equal("", dialog.GetAttribute("data-bx-content-search"));
+    }
+
+    [Fact]
+    public void A_heading_of_the_search_carries_its_own_words_and_the_title_of_its_page_but_not_the_text_of_the_page()
+    {
+        var pages = new[] { new BxContentSearchPage("Install", "/install") { Group = "Start", Keywords = "unique-page-text more words here", Headings = [new("Linux", "linux")] } };
+        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, pages));
+
+        var page = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/install");
+        var heading = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/install#linux");
+        Assert.Contains("unique-page-text", page.GetAttribute("data-search"));
+        Assert.Equal("Linux Install Start", heading.GetAttribute("data-search"));
+    }
+
+    [Fact]
+    public void Search_without_an_index_url_has_no_index_machinery()
+    {
+        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+
+        Assert.Null(cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
+        Assert.Empty(cut.FindAll("[data-bx-content-search-template], [data-bx-content-search-state]"));
+    }
+
+    [Fact]
+    public void Search_with_an_index_url_names_it_and_carries_what_the_browser_needs_to_build_and_explain_the_list()
+    {
+        var cut = Render<BxContentSearch>(p => p.Add(s => s.IndexUrl, "search-index.json"));
+
+        // The address is written as given: the browser resolves it against <base href>.
+        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
+        Assert.Empty(cut.FindAll("[role=option]"));
+        var state = cut.Find("[data-bx-content-search-state]");
+        Assert.True(state.HasAttribute("hidden"));
+        Assert.Equal("Loading the search index...", state.QuerySelector("[data-loading-text]")!.GetAttribute("data-loading-text"));
+        Assert.Equal("The search could not be loaded.", state.QuerySelector("[data-error-text]")!.GetAttribute("data-error-text"));
+        Assert.Equal("Try again", state.QuerySelector("[data-slot=retry]")!.TextContent);
+        Assert.True(state.QuerySelector("[data-slot=retry]")!.HasAttribute("hidden"));
+        Assert.Equal("button", state.QuerySelector("[data-slot=retry]")!.GetAttribute("type"));
+        // One page option, one heading option and one group, as the template for the options the browser makes.
+        var template = cut.Find("[data-bx-content-search-template]");
+        Assert.True(template.HasAttribute("hidden"));
+        var options = template.QuerySelectorAll("[data-template]").ToList();
+        Assert.Equal(["page", "heading"], options.Select(e => e.GetAttribute("data-template")));
+        Assert.All(options, e =>
+        {
+            Assert.Equal("option", e.GetAttribute("role"));
+            Assert.NotNull(e.QuerySelector("[data-slot=label]"));
+            Assert.NotNull(e.QuerySelector("[data-slot=description]"));
+            Assert.NotNull(e.QuerySelector("svg"));
+        });
+        Assert.Single(template.QuerySelectorAll("[role=group]"));
+    }
+
+    [Fact]
+    public void An_index_url_and_inline_pages_work_together()
+    {
+        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.IndexUrl, "search-index.json"));
+
+        Assert.Equal(6, cut.FindAll("[role=option]").Count);
+        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
     }
 
     [Fact]

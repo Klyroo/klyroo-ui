@@ -75,9 +75,18 @@ internal static class DocsChecks
         await Assertions.Expect(page.Locator(".table-scroll table").First).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator(".table-scroll").First).ToHaveAttributeAsync("tabindex", "0");
 
-        // Search: a word that is only in the text of a page (not in its title) finds it, and the result navigates.
+        // Search: the index is not in the pages. It is a file the browser fetches the first time the search opens, once.
+        var indexRequests = new List<string>();
+        void OnRequest(object? sender, IRequest request)
+        {
+            if (request.Url.EndsWith("/search-index.json", StringComparison.Ordinal)) lock (indexRequests) indexRequests.Add(request.Url);
+        }
+        page.Request += OnRequest;
         await Go(page, "");
         await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        // The page has loaded and its script has run (the proxy of the docs host keeps a connection open, so the network never goes idle): give a fetch time to show.
+        await Task.Delay(1000);
+        lock (indexRequests) Assert.Empty(indexRequests);
         await page.GetByRole(AriaRole.Button, new() { Name = "Search" }).Locator("visible=true").First.ClickAsync();
         var search = page.GetByRole(AriaRole.Dialog);
         await Assertions.Expect(search).ToBeVisibleAsync();
@@ -87,6 +96,28 @@ internal static class DocsChecks
         await result.First.ClickAsync();
         await page.WaitForURLAsync(new Regex("/guides/scheduling$"));
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Scheduling");
+        page.Request -= OnRequest;
+        lock (indexRequests) Assert.Single(indexRequests);
+    }
+
+    /// <summary>
+    /// The search index is a file of its own, not part of the pages: a page holds no result of the search, is a third of what it was with the index inside
+    /// (211 KB), and the file is sent with an ETag that answers 304.
+    /// </summary>
+    public static async Task AssertIndexIsNotInThePages(IPage page, string baseUrl)
+    {
+        var response = await page.APIRequest.GetAsync(new Uri(new Uri(baseUrl), "getting-started/quick-start").ToString());
+        var html = await response.TextAsync();
+        Assert.DoesNotContain("data-search=", html);
+        Assert.Contains("data-bx-content-search-index=\"search-index.json\"", html);
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(html) < 100_000, $"the page is {System.Text.Encoding.UTF8.GetByteCount(html)} bytes: the search index is in it");
+
+        var index = await page.APIRequest.GetAsync(new Uri(new Uri(baseUrl), "search-index.json").ToString());
+        Assert.Equal(200, index.Status);
+        Assert.StartsWith("application/json", index.Headers["content-type"]);
+        var etag = index.Headers["etag"];
+        var again = await page.APIRequest.GetAsync(new Uri(new Uri(baseUrl), "search-index.json").ToString(), new() { Headers = new Dictionary<string, string> { ["If-None-Match"] = etag } });
+        Assert.Equal(304, again.Status);
     }
 
     /// <summary>Goes to a page of the template, from the base address of the page being shown (the root of the app, or its path base).</summary>
@@ -196,6 +227,7 @@ public class DocsTemplateTests(PlaygroundServer server)
             await page.GotoAsync("");
             await Assertions.Expect(page.Locator("base")).ToHaveAttributeAsync("href", (pathBase ?? "").TrimEnd('/') + "/");
             await DocsChecks.AssertBehaviour(page, checkClipboard: server.Browser.BrowserType.Name == "chromium");
+            await DocsChecks.AssertIndexIsNotInThePages(page, baseUrl);
             await DocsChecks.AssertColorMode(page);
             await DocsChecks.AssertNoHorizontalScroll(page, "", "reference/commands", "getting-started/quick-start", "guides/configuration");
 

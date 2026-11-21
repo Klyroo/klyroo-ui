@@ -70,14 +70,14 @@ A folder becomes a group in the navigation. Put a `_dir.yml` in it to set `title
 ### Links, images and code
 
 - Links start from the root of the site (`/guides/setup`) or from the folder of the file (`setup`, `./setup.md`, `../guides/setup.md#usage`). Both work below a path base, and `.md` and a final `index` are removed for you. A link to a page that does not exist is logged as a warning when the content is read.
-- A link or an image may use `http`, `https` or `mailto`, or be relative. Any other scheme (`javascript:`, `data:`, `file:`) is dropped and the text stays. Put images in `wwwroot` and write `![A chart](/img/chart.png)`.
+- A link or an image may use `http`, `https` or `mailto`, or be relative. Any other scheme (`javascript:`, `data:`, `file:`) is dropped and the text stays. Images are served from `wwwroot`, not from the content folder: put the file there and write `![A chart](/img/chart.png)`. An image whose path has no file in `wwwroot` (one placed next to its page, for example) is reported as a warning in the log when the content is read.
 - A fenced block with a language gets colors and a copy button: `bash`, `json`, `yaml`, `toml`, `csharp` and `html` are known, and any other language is shown without color. The colors are CSS classes (`tok-keyword`, `tok-string`...) in `Styles/app.css`, so they follow light and dark mode.
 - Callouts: `::: tip` ... `:::` (also `note`, `important`, `warning`, `caution`; text after the word becomes the title) or a GitHub alert (`> [!NOTE]`).
 - Tables, task lists, footnotes, definition lists and heading ids (`## Install the CLI` is `#install-the-cli`) work as in GitHub Markdown.
 
 ## Search, navigation and table of contents
 
-The search is a Blux `BxContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. It filters in the browser, so it needs no server and no index file. Raise or lower the limit with `SearchTextLimit` in `Content/ContentOptions.cs` (through the options in `Program.cs`).
+The search is a Blux `BxContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. The list is not written into every page: the site serves it as `/search-index.json` (`MapSearchIndex` in `Program.cs`, with an `ETag`), and `BxContentSearch IndexUrl="search-index.json"` makes the browser fetch it the first time the search opens, with a loading message and a "Try again" button if the fetch fails. It filters in the browser, and the pages stay small however many there are. Raise or lower the amount of text with `SearchTextLimit` in the content options (`Program.cs`).
 
 The navigation tree, the table of contents (`h2` and `h3` of the page) and the previous and next links are Blux components fed by the same data, in the order of the navigation.
 
@@ -111,6 +111,10 @@ In Development the site reads the content again a moment after a `.md` or `.yml`
 ## Serve below a path
 
 Set the `PathBase` setting (an environment variable `PathBase=/site`, or `appsettings.json`) to serve the whole site below a prefix, behind a reverse proxy for example. Links in the pages and in your Markdown are relative, so they follow. The host does not redirect to HTTPS, so that a proxy that terminates TLS works as is; if the site is exposed directly, add `app.UseHttpsRedirection()` and `app.UseHsts()` to `Program.cs`.
+
+### Behind a reverse proxy
+
+A proxy that terminates TLS hands the app plain HTTP on its own address, and tells it the real ones in `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host`. The app ignores those headers unless you turn them on, because a visitor could send them too. Set `ForwardedHeaders:Enabled` to `true` (the environment variable `ForwardedHeaders__Enabled=true`) and list the addresses of your proxies in `ForwardedHeaders:KnownProxies` (`ForwardedHeaders__KnownProxies__0=10.0.0.5`); a proxy on the same machine (loopback) is trusted without being listed. Headers from any other sender are not believed. If the proxy passes the original `Host` header, also set `AllowedHosts` in `appsettings.json` to your domain.
 
 ## License
 
