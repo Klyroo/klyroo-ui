@@ -298,7 +298,7 @@
 `/components/input-menu`. A text field with a list of suggestions: free text, or restricted to the suggestions.
 
 - `<BxInputMenu>`
-  - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Items` (required), `Name`, `Placeholder`, `Required`, `Size`, `Strict`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `Color`, `Debounce`, `Disabled`, `Id`, `Items`, `MinLength`, `Name`, `OptionsProvider`, `PageSize`, `Placeholder`, `Required`, `ResolveSelected`, `Size`, `Strict`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
   - `Ui` (`InputMenuUi`): `Root`, `Base`, `Trailing`, `TrailingIcon`, `Content`, `Listbox`, `Item`, `ItemLabel`, `ItemIcon`, `ItemLeadingIcon`, `ItemCount`, `Group`, `GroupLabel`, `Empty`, `Scroller`, `Loading`, `Spinner`, `Error`, `Announcer`
 
 ### InputNumber
