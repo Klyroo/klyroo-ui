@@ -19,13 +19,7 @@ public static class BundleBuilder
     public static Blux.UI.Mcp.Model.DocsBundle Build(string repoRoot, IEnumerable<Type>? extensions = null)
     {
         var options = new BluxOptions();
-        var themes = BluxOptions.NamedThemesOf(options)
-            .Select(p => (Property: p.Key, Theme: p.Value))
-            .ToList();
-        foreach (var extension in extensions ?? [])
-        {
-            themes.AddRange(BluxOptions.NamedThemesOf(options.Extension(extension)).Select(p => (Property: p.Key, Theme: p.Value)));
-        }
+        var themes = ThemesOf(options, extensions);
 
         var components = Catalog.Components
             .Select(c => new BundleComponent(
@@ -59,7 +53,7 @@ public static class BundleBuilder
         return new BundleExample(entry.Type.Name, entry.Title, entry.Description, source);
     }
 
-    private static BundleApiType ApiType(Type type, List<(string Property, ComponentTheme Theme)> themes, string repoRoot)
+    private static BundleApiType ApiType(Type type, IReadOnlyList<ThemeEntry> themes, string repoRoot)
     {
         var definition = type.IsGenericType ? type.GetGenericTypeDefinition() : type;
         var all = ApiReader.Parameters(type);
@@ -135,18 +129,24 @@ public static class BundleBuilder
         return new BundleUi(ApiReader.TypeName(uiType), slots);
     }
 
-    private static BundleTheme? ThemeOf(Type component, List<(string Property, ComponentTheme Theme)> themes, string repoRoot)
+    private static BundleTheme? ThemeOf(Type component, IReadOnlyList<ThemeEntry> themes, string repoRoot)
     {
         var name = component.Name.StartsWith("Bx", StringComparison.Ordinal) ? component.Name[2..] : component.Name;
         if (name.Contains('`')) name = name[..name.IndexOf('`')];
 
-        // The component says which theme it resolves: the first "Options.X" of its source that names a theme.
-        var used = SourceFiles(repoRoot, component.Name.Contains('`') ? component.Name[..component.Name.IndexOf('`')] : component.Name)
-            .SelectMany(file => Regex.Matches(File.ReadAllText(file), @"\bOptions\.(\w+)").Select(m => m.Groups[1].Value))
-            .FirstOrDefault(property => themes.Any(t => t.Property == property));
-        var match = used is null ? default : themes.First(t => t.Property == used);
-        if (match.Theme is null) match = themes.FirstOrDefault(t => string.Equals(t.Property, name, StringComparison.OrdinalIgnoreCase));
-        if (match.Theme is null) return null;
+        // A component of a sister package sees its own extension themes first, and a core theme of the same name never wins over them.
+        var fromExtension = component.Assembly != typeof(BxButton).Assembly;
+        var candidates = (fromExtension ? themes.OrderBy(t => t.Owner is null) : themes.Where(t => t.Owner is null)).ToList();
+
+        // The component says which theme it resolves: the first "Options.X" or "Options.Extension<T>().X" of its source that names a theme.
+        var match = SourceFiles(repoRoot, component)
+            .SelectMany(file => OptionsAccess.Matches(File.ReadAllText(file)).Select(m => (Property: m.Groups["p"].Value, Owner: m.Groups["t"].Success ? m.Groups["t"].Value : null)))
+            .Select(a => a.Owner is null
+                ? candidates.FirstOrDefault(t => t.Owner is null && t.Property == a.Property)
+                : candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property && OwnerMatches(t.Owner, a.Owner)))
+            .FirstOrDefault(t => t is not null);
+        match ??= candidates.FirstOrDefault(t => string.Equals(t.Property, name, StringComparison.OrdinalIgnoreCase));
+        if (match is null) return null;
 
         var theme = match.Theme;
         return new BundleTheme(
@@ -164,8 +164,36 @@ public static class BundleBuilder
                 c.Classes.ToDictionary(s => s.Key, s => s.Value)))]);
     }
 
-    private static IEnumerable<string> SourceFiles(string repoRoot, string componentName) =>
-        Directory.EnumerateFiles(Path.Combine(repoRoot, "src", "Blux.UI", "Components"), componentName + ".razor*", SearchOption.AllDirectories);
+    /// <summary>The sources of a component: <c>src/&lt;its assembly&gt;/Components/&lt;Name&gt;.razor*</c>.</summary>
+    private static IEnumerable<string> SourceFiles(string repoRoot, Type component)
+    {
+        var name = component.Name.Contains('`') ? component.Name[..component.Name.IndexOf('`')] : component.Name;
+        var directory = Path.Combine(repoRoot, "src", component.Assembly.GetName().Name!, "Components");
+        return Directory.Exists(directory) ? Directory.EnumerateFiles(directory, name + ".razor*", SearchOption.AllDirectories) : [];
+    }
+
+    /// <summary><c>Options.Button</c> (core) or <c>Options.Extension&lt;ToolsOptions&gt;().DataList</c> (a sister package).</summary>
+    private static readonly Regex OptionsAccess = new(@"\bOptions\.(?:Extension<(?<t>[\w.]+)>\(\)\.)?(?<p>\w+)", RegexOptions.Compiled);
+
+    private static bool OwnerMatches(Type owner, string written) =>
+        written == owner.Name || written == owner.FullName || written.EndsWith("." + owner.Name, StringComparison.Ordinal);
+
+    /// <summary>A theme of an options object: <see cref="Owner"/> is the extension options class, null for core.</summary>
+    private sealed record ThemeEntry(string Property, ComponentTheme Theme, Type? Owner);
+
+    private static List<ThemeEntry> ThemesOf(BluxOptions options, IEnumerable<Type>? extensions)
+    {
+        var themes = BluxOptions.NamedThemesOf(options).Select(p => new ThemeEntry(p.Key, p.Value, null)).ToList();
+        foreach (var extension in extensions ?? [])
+        {
+            themes.AddRange(BluxOptions.NamedThemesOf(options.Extension(extension)).Select(p => new ThemeEntry(p.Key, p.Value, extension)));
+        }
+        return themes;
+    }
+
+    /// <summary>The theme the bundle describes for a component: used by <see cref="Build"/>, exposed so a sister package can check its own components.</summary>
+    public static BundleTheme? ThemeFor(Type component, string repoRoot, IEnumerable<Type>? extensions = null) =>
+        ThemeOf(component, ThemesOf(new BluxOptions(), extensions), repoRoot);
 
     private static IReadOnlyList<string> Icons()
     {
