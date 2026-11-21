@@ -22,6 +22,7 @@
   <!-- The live demos of the templates are run by the docs host from their build output: built first, never referenced by it or by the tests. -->
   <ItemGroup>
     <ProjectReference Include="..\..\templates\starter\src\Starter.Web\Starter.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\dashboard\src\Dashboard.Web\Dashboard.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\landing\src\Landing.Web\Landing.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\docs\src\Docs.Web\Docs.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\changelog\src\Changelog.Web\Changelog.Web.csproj" ReferenceOutputAssembly="false" />

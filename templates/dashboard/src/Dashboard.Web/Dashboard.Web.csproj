@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!-- Blux.UI.Tools reaches every project of the app and warns (BLUXTOOLS001) where nothing compiles Tailwind. Dashboard.Shared compiles it, for this host too (it links
+         _content/Dashboard.Shared/app.css), so the check has nothing to say here. -->
+    <BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dashboard.Web.Client\Dashboard.Web.Client.csproj" />
+    <ProjectReference Include="..\Dashboard.Shared\Dashboard.Shared.csproj" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+  </ItemGroup>
+
+  <!-- Fonts are downloaded at build time and served from the app's own origin (BxFonts in App.razor links them). They belong to the host project. -->
+  <ItemGroup>
+    <BluxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <BluxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+  </ItemGroup>
+
+</Project>

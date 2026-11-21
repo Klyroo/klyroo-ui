@@ -1,0 +1,176 @@
+@page "/inbox"
+@page "/inbox/{Id:int}"
+@implements IDisposable
+@inject MailStore Mails
+@inject NavigationManager Navigation
+@inject IToastService Toasts
+
+<PageTitle>@(_selected is null ? "Inbox" : $"{_selected.Subject} · Inbox")</PageTitle>
+
+@* Two panels: the list and the message. From the lg breakpoint they sit side by side and the divider between them resizes. Below it only one shows, the list or
+   the message that is open (the address says which: /inbox or /inbox/3), and the message has a back link. *@
+<BxDashboardPanel Resizable Size="36" MinSize="24" MaxSize="55" ResizeLabel="Resize the message list" Class="@ListClass" data-testid="mail-list-panel">
+    <Header>
+        <AppNavbar Title="Inbox" />
+        <BxDashboardToolbar>
+            <Left>
+                <nav aria-label="Filter" class="flex items-center gap-1">
+                    <BxButton Label="All" Size="BxSize.Sm" Color="BxColor.Neutral" Href="inbox" Variant="@(_unreadOnly ? ButtonVariant.Ghost : ButtonVariant.Soft)" aria-current="@(_unreadOnly ? null : "true")" data-testid="filter-all" />
+                    <BxButton Label="Unread" Size="BxSize.Sm" Color="BxColor.Neutral" Href="inbox?filter=unread" Variant="@(_unreadOnly ? ButtonVariant.Soft : ButtonVariant.Ghost)" aria-current="@(_unreadOnly ? "true" : null)" data-testid="filter-unread" />
+                </nav>
+            </Left>
+            <Right>
+                <span class="text-sm text-(--blux-text-muted)" data-testid="unread-count">@Mails.UnreadCount unread</span>
+            </Right>
+        </BxDashboardToolbar>
+    </Header>
+    <Body>
+        <div class="flex min-h-0 flex-1 flex-col">
+            @if (_items.Count == 0)
+            {
+                <BxEmpty Title="@(_unreadOnly ? "No unread messages" : "The inbox is empty")" Description="@(_unreadOnly ? "Everything has been read." : "Archived messages are gone for this session.")" Class="m-auto" />
+            }
+            else
+            {
+                <ul class="flex flex-col" aria-label="Messages" data-testid="mail-list">
+                    @foreach (var mail in _items)
+                    {
+                        <li>
+                            <a href="@($"inbox/{mail.Id}")" aria-current="@(mail.Id == Id ? "page" : null)" data-testid="@($"mail-{mail.Id}")" data-unread="@(mail.Unread ? "true" : null)"
+                               class="@($"flex flex-col gap-1 border-b border-(--blux-border) px-4 py-3 text-sm transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--blux-primary-text) sm:px-6 {(mail.Id == Id ? "bg-(--blux-bg-elevated)" : "")}")">
+                                <span class="flex items-center justify-between gap-3">
+                                    <span class="flex min-w-0 items-center gap-2">
+                                        @if (mail.Unread)
+                                        {
+                                            <span class="size-2 shrink-0 rounded-full bg-(--blux-primary)" aria-hidden="true"></span>
+                                            <span class="sr-only">Unread:</span>
+                                        }
+                                        <span class="@($"truncate {(mail.Unread ? "font-semibold" : "font-medium")} text-(--blux-text-highlighted)")">@mail.From</span>
+                                    </span>
+                                    <span class="shrink-0 text-xs text-(--blux-text-muted)">@When(mail.Date)</span>
+                                </span>
+                                <span class="@($"truncate {(mail.Unread ? "font-medium text-(--blux-text-highlighted)" : "text-(--blux-text)")}")">@mail.Subject</span>
+                                <span class="line-clamp-2 text-xs text-(--blux-text-muted)">@mail.Body[0]</span>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </Body>
+</BxDashboardPanel>
+
+<BxDashboardPanel Class="@(_selected is null ? "max-lg:hidden" : "")" data-testid="mail-detail">
+    <Header>
+        <BxDashboardNavbar>
+            <Leading>
+                <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Href="inbox" aria-label="Back to the inbox" Class="lg:hidden" data-testid="mail-back">
+                    <LeadingIcon>@BxIcons.Named("arrow-left")</LeadingIcon>
+                </BxButton>
+            </Leading>
+            <Left>
+                <span class="truncate text-base font-semibold text-(--blux-text-highlighted)" data-testid="mail-label">@(_selected is null ? "Message" : _selected.Label)</span>
+            </Left>
+            <Right>
+                @if (_selected is not null)
+                {
+                    <BxButton Label="Archive" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="Archive" data-testid="mail-archive" />
+                }
+            </Right>
+        </BxDashboardNavbar>
+    </Header>
+    <Body>
+        @if (_selected is null)
+        {
+            <BxEmpty Title="Select a message" Description="Pick one in the list to read it here." Class="m-auto" data-testid="mail-empty">
+                <Icon>@BxIcons.Named("inbox", "size-10")</Icon>
+            </BxEmpty>
+        }
+        else
+        {
+            <article class="mx-auto flex w-full max-w-3xl flex-col gap-6" aria-labelledby="mail-subject" data-testid="mail-article">
+                <header class="flex items-start gap-3">
+                    <BxAvatar Alt="@_selected.From" />
+                    <div class="min-w-0 flex-1">
+                        <h2 id="mail-subject" class="text-lg font-semibold text-(--blux-text-highlighted)">@_selected.Subject</h2>
+                        <p class="text-sm text-(--blux-text-muted)">@_selected.From &lt;@_selected.Email&gt;</p>
+                    </div>
+                    <time datetime="@_selected.Date.ToString("O")" class="shrink-0 text-xs text-(--blux-text-muted)">@_selected.Date.ToString("MMM d, HH:mm")</time>
+                </header>
+                <div class="flex flex-col gap-3 text-sm leading-relaxed text-(--blux-text)">
+                    @foreach (var paragraph in _selected.Body)
+                    {
+                        <p>@paragraph</p>
+                    }
+                </div>
+                <BxSeparator />
+                <form class="flex flex-col gap-3" @onsubmit="Reply" @onsubmit:preventDefault>
+                    <BxFormField Label="@($"Reply to {_selected.From}")">
+                        <BxTextarea @bind-Value="_reply" Rows="4" Immediate Placeholder="Write your reply" data-testid="mail-reply" />
+                    </BxFormField>
+                    <div class="flex justify-end">
+                        <BxButton Label="Send reply" Type="submit" Disabled="@string.IsNullOrWhiteSpace(_reply)" data-testid="mail-send" />
+                    </div>
+                </form>
+            </article>
+        }
+    </Body>
+</BxDashboardPanel>
+
+@code {
+    // The list has no padding around its rows: they are full-width links with their own. The body of a panel is a slot with its own padding, so the panel reaches it.
+    private string ListClass => (_selected is null ? "" : "max-lg:hidden ") + "[&_[data-slot=body]]:gap-0 [&_[data-slot=body]]:p-0";
+
+    private IReadOnlyList<Mail> _items = [];
+    private Mail? _selected;
+    private bool _unreadOnly;
+    private string? _reply;
+
+    [Parameter] public int? Id { get; set; }
+
+    [SupplyParameterFromQuery(Name = "filter")] private string? Filter { get; set; }
+
+    protected override void OnInitialized() => Mails.Changed += OnChanged;
+
+    protected override void OnParametersSet()
+    {
+        _unreadOnly = string.Equals(Filter, "unread", StringComparison.OrdinalIgnoreCase);
+        var previous = _selected?.Id;
+        _selected = Id is { } id ? Mails.Find(id) : null;
+        if (_selected is { Unread: true })
+        {
+            // Opening a message reads it.
+            Mails.MarkRead(_selected.Id);
+            _selected = Mails.Find(_selected.Id);
+        }
+        if (previous != _selected?.Id) _reply = null;
+        Read();
+    }
+
+    // The list keeps a message that was unread when the filter was applied until the next navigation, so it does not vanish under the pointer.
+    private void Read() => _items = _unreadOnly ? [.. Mails.Items.Where(m => m.Unread || m.Id == Id)] : Mails.Items;
+
+    private void OnChanged() => _ = InvokeAsync(() =>
+    {
+        Read();
+        StateHasChanged();
+    });
+
+    private static string When(DateTimeOffset date) => date.Date == DemoClock.Today.ToDateTime(TimeOnly.MinValue) ? date.ToString("HH:mm") : date.ToString("MMM d");
+
+    private void Archive()
+    {
+        if (_selected is null) return;
+        Mails.Archive(_selected.Id);
+        Navigation.NavigateTo(_unreadOnly ? "inbox?filter=unread" : "inbox");
+    }
+
+    private async Task Reply()
+    {
+        if (_selected is null || string.IsNullOrWhiteSpace(_reply)) return;
+        await Toasts.Add(new BxToast { Title = "Reply sent", Description = $"To {_selected.From}", Color = BxColor.Success });
+        _reply = null;
+    }
+
+    public void Dispose() => Mails.Changed -= OnChanged;
+}

@@ -1,0 +1,90 @@
+@page "/settings"
+@using System.ComponentModel.DataAnnotations
+@inject IToastService Toasts
+
+<PageTitle>General settings</PageTitle>
+
+<SettingsPage Heading="General" Description="Your profile and the language of the app." TestId="settings-general">
+    <BxCard>
+        <Header>
+            <h2 class="font-semibold text-(--blux-text-highlighted)">Profile</h2>
+            <p class="text-sm text-(--blux-text-muted)">This is what your teammates see.</p>
+        </Header>
+        <ChildContent>
+            <BxForm Model="_profile" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
+                <div class="flex items-center gap-4">
+                    <BxAvatar Alt="@_profile.Name" Size="BxSize.Xl" />
+                    <p class="text-sm text-(--blux-text-muted)">The avatar shows your initials until you upload a picture.</p>
+                </div>
+                <BxFormField Label="Name" Required For="() => _profile.Name">
+                    <BxInput @bind-Value="_profile.Name" autocomplete="name" data-testid="profile-name" />
+                </BxFormField>
+                <BxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => _profile.Email">
+                    <BxInput @bind-Value="_profile.Email" Type="email" autocomplete="email" data-testid="profile-email" />
+                </BxFormField>
+                <BxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => _profile.Username">
+                    <BxInput @bind-Value="_profile.Username" autocomplete="username" data-testid="profile-username" />
+                </BxFormField>
+                <BxFormField Label="Bio" For="() => _profile.Bio">
+                    <BxTextarea @bind-Value="_profile.Bio" Rows="4" />
+                </BxFormField>
+                <div class="flex justify-end">
+                    <BxButton Label="Save changes" Type="submit" data-testid="profile-save" />
+                </div>
+            </BxForm>
+        </ChildContent>
+    </BxCard>
+
+    <BxCard>
+        <Header>
+            <h2 class="font-semibold text-(--blux-text-highlighted)">Language</h2>
+            <p class="text-sm text-(--blux-text-muted)">The built-in texts of the components follow it, and the choice is remembered in this browser.</p>
+        </Header>
+        <ChildContent>
+            <BxLocaleSelect />
+        </ChildContent>
+    </BxCard>
+
+    <BxCard Class="border-(--blux-error-text)/40">
+        <Header>
+            <h2 class="font-semibold text-(--blux-error-text)">Delete account</h2>
+            <p class="text-sm text-(--blux-text-muted)">All your data would be removed. This sample app has no backend, so nothing is deleted.</p>
+        </Header>
+        <ChildContent>
+            <BxButton Label="Delete account" Color="BxColor.Error" Variant="ButtonVariant.Soft" OnClick="@(() => _confirm = true)" data-testid="delete-account" />
+        </ChildContent>
+    </BxCard>
+</SettingsPage>
+
+<BxModal @bind-Open="_confirm" Title="Delete your account?" Description="This cannot be undone." data-testid="delete-account-dialog">
+    <Footer>
+        <BxButton Label="Keep my account" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
+        <BxButton Label="Delete" Color="BxColor.Error" OnClick="Deleted" data-bx-close />
+    </Footer>
+</BxModal>
+
+@code {
+    private readonly Profile _profile = new();
+    private bool _confirm;
+
+    private async Task SaveAsync() =>
+        await Toasts.Add(new BxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = BxColor.Success });
+
+    private async Task Deleted() =>
+        await Toasts.Add(new BxToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = BxColor.Info });
+
+    private sealed class Profile
+    {
+        [Required(ErrorMessage = "The name is required.")]
+        public string? Name { get; set; } = "Maren Albrecht";
+
+        [Required(ErrorMessage = "The email is required.")]
+        [EmailAddress(ErrorMessage = "This is not an email address.")]
+        public string? Email { get; set; } = "maren@example.com";
+
+        [RegularExpression("^[a-zA-Z0-9-]{3,20}$", ErrorMessage = "Use 3 to 20 letters, digits or dashes.")]
+        public string? Username { get; set; } = "maren-a";
+
+        public string? Bio { get; set; } = "I run the customer team and read every message that lands in the inbox.";
+    }
+}
