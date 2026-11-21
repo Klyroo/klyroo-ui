@@ -18,7 +18,7 @@ namespace Blux.UI.Tools.Query;
 /// A filter value is a comma-separated list; <c>,</c> <c>~</c> and <c>%</c> in a value are escaped as <c>%2C</c> <c>%7E</c> <c>%25</c>; a bare
 /// <c>~</c> token means "include empty rows"; a range is <c>from..to</c>. Values equal to the schema's <see cref="DataListSchema.DefaultState"/> are
 /// omitted. A default filter rule that the user removed is written as its key with an empty value. The state keeps one rule per key; with two, the
-/// default rule of that key is not restored. Operators are matched ignoring case. A filter key may contain dots: the whole text after <c>f.</c> is tried
+/// default rule of that key is not restored. A range may also be written as two keys, <c>f.&lt;key&gt;.from</c> and <c>f.&lt;key&gt;.to</c> (what a GET form can send): they read as <c>f.&lt;key&gt;.between</c>, and a state is always written back with the latter. Operators are matched ignoring case. A filter key may contain dots: the whole text after <c>f.</c> is tried
 /// as a key first, then the part before the last dot as a key and the part after as an operator.
 /// </summary>
 public static class DataListStateQuery
@@ -169,10 +169,42 @@ public static class DataListStateQuery
             fromUrl.Add(rule);
         }
 
+        ReadRangeFields(pairs, schema, filterPrefix, fromUrl, cleared);
+
         var overridden = fromUrl.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
         var result = defaults.Where(d => !overridden.Contains(d.Key) && !cleared.Contains(d.Key)).ToList();
         result.AddRange(fromUrl);
         return result;
+    }
+
+    // A GET form cannot write the "from..to" of a range in one field, so it sends two: f.<key>.from and f.<key>.to, which mean f.<key>.between. Both empty clears the filter, one empty is an open end.
+    // The keys the app writes (f.<key>.between) win, and a filter whose key really ends in ".from" or ".to" keeps that meaning.
+    private static void ReadRangeFields(Dictionary<string, string> pairs, DataListSchema schema, string filterPrefix, List<FilterRule> fromUrl, HashSet<string> cleared)
+    {
+        Dictionary<string, (string From, string To, DataListFilter Filter)>? ranges = null;
+        foreach (var (name, raw) in pairs)
+        {
+            if (!name.StartsWith(filterPrefix, StringComparison.Ordinal)) continue;
+            var rest = name[filterPrefix.Length..];
+            var dot = rest.LastIndexOf('.');
+            if (dot <= 0 || schema.TryGetFilter(rest, out _)) continue;
+            var part = rest[(dot + 1)..];
+            var isFrom = part.Equals("from", StringComparison.OrdinalIgnoreCase);
+            if (!isFrom && !part.Equals("to", StringComparison.OrdinalIgnoreCase)) continue;
+            var key = rest[..dot];
+            if (!schema.TryGetFilter(key, out var filter) || !filter.AllowedOperators.Contains(FilterOperator.Between)) continue;
+            ranges ??= new(StringComparer.Ordinal);
+            var current = ranges.GetValueOrDefault(key, ("", "", filter));
+            ranges[key] = isFrom ? (raw, current.Item2, filter) : (current.Item1, raw, filter);
+        }
+        if (ranges is null) return;
+        foreach (var (key, (from, to, filter)) in ranges)
+        {
+            if (fromUrl.Any(r => r.Key == key && r.Operator == FilterOperator.Between)) continue;
+            if (from.Length == 0 && to.Length == 0) { cleared.Add(key); continue; }
+            var rule = FilterRuleText.Parse(filter, key, FilterOperator.Between, from + ".." + to);
+            if (rule is not null) fromUrl.Add(rule);
+        }
     }
 
     private static bool TryResolve(string rest, DataListSchema schema, out string key, out FilterOperator? op, out DataListFilter filter)

@@ -147,6 +147,12 @@
 
     internal bool CanLink => UrlSync && !RendererInfo.IsInteractive;
 
+    // The time zone of the user once known (the browser's, after the first interactive render): the days of a date filter and its presets are in it. UTC until then and in static rendering.
+    internal string? TimeZoneId => _timeZone;
+
+    // The instant the presets of a date editor count from: the TimeProvider of the app (a test sets its own), else the clock.
+    internal DateTimeOffset Now => (Services.GetService(typeof(TimeProvider)) as TimeProvider ?? TimeProvider.System).GetUtcNow();
+
     internal string? NormalizedUrlKey => string.IsNullOrWhiteSpace(UrlKey) ? null : UrlKey;
 
     internal string CurrentPath => new Uri(Navigation.Uri).AbsolutePath;

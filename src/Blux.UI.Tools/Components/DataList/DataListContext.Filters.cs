@@ -21,8 +21,18 @@ internal readonly record struct FilterChoice(string Value, string Label, int? Co
 
 public sealed partial class DataListContext<TItem>
 {
-    // The kinds that have an editor: text, option and boolean. A number or date filter of the schema still applies (and shows as a tag, which cannot be edited).
-    internal static bool HasEditor(DataListFilter filter) => filter.Kind is FilterKind.Text or FilterKind.Option or FilterKind.Boolean;
+    // Every kind has an editor: text, option, boolean, number and date, except a date filter exact to the second (its tag shows, and the filter applies, but a minute-precise picker cannot write it).
+    internal static bool HasEditor(DataListFilter filter) =>
+        filter.Kind is FilterKind.Text or FilterKind.Option or FilterKind.Boolean or FilterKind.Number || filter is { Kind: FilterKind.Date, Granularity: not DateGranularity.Second };
+
+    /// <summary>The time zone of the user: the one of the browser once the list is interactive, UTC before that and in static rendering. The days of the date filters are in it.</summary>
+    internal TimeZoneInfo Zone => DataListDates.Zone(_owner.TimeZoneId);
+
+    /// <summary>The calendar day it is for the user, which the presets of a date editor count from.</summary>
+    internal DateOnly Today => DataListDates.Today(_owner.Now, Zone);
+
+    /// <summary>The numbers of a filter tag with the group separator of the culture and no trailing zeros, unless the filter has a format of its own.</summary>
+    internal const string DefaultNumberFormat = "#,0.############################";
 
     /// <summary>The key of every filter of the schema that has an editor, in the order the schema declares them.</summary>
     internal IReadOnlyList<string> EditableFilterKeys =>
@@ -143,15 +153,23 @@ public sealed partial class DataListContext<TItem>
 
         string ValueLabel(string value) => filter is { Options.Count: > 0 } && filter.Options.FirstOrDefault(o => o.Value == value) is { } option ? option.Label : value;
 
+        var granularity = filter?.Granularity ?? DateGranularity.Day;
+        var zone = Zone;
+        string Number(decimal value) => value.ToString(filter?.Format ?? DefaultNumberFormat, culture);
+        string Bound(FilterValue? value) => value switch
+        {
+            FilterValue.Number n => Number(n.Value),
+            FilterValue.Date or FilterValue.Moment => DataListDates.Format(value, granularity, culture, zone),
+            _ => "",
+        };
+
         var text = rule.Value switch
         {
             FilterValue.Text t => filter?.Kind == FilterKind.Option ? ValueLabel(t.Value) : t.Value,
             FilterValue.List list => ListText(list.Values.Select(ValueLabel).ToList(), messages, culture),
             FilterValue.Boolean b => b.Value ? messages.FilterYes : messages.FilterNo,
-            FilterValue.Number n => n.Value.ToString("0.############################", culture),
-            FilterValue.Date d => d.Value.ToString("d", culture),
-            FilterValue.Moment m => m.Value.ToString("g", culture),
-            FilterValue.Range r => RangeText(r, culture),
+            FilterValue.Range r => (Bound(r.From) + " – " + Bound(r.To)).Trim(),
+            FilterValue.Number or FilterValue.Date or FilterValue.Moment => Bound(rule.Value),
             _ => "",
         };
         if (rule.IncludeEmpty) text = text.Length == 0 ? messages.FilterEmpty : text + " " + messages.FilterOrEmpty;
@@ -163,17 +181,5 @@ public sealed partial class DataListContext<TItem>
         const int shown = 2;
         var text = string.Join(", ", labels.Take(shown));
         return labels.Count > shown ? text + " " + string.Format(culture, messages.FilterMore, labels.Count - shown) : text;
-    }
-
-    private static string RangeText(FilterValue.Range range, CultureInfo culture)
-    {
-        static string Bound(FilterValue? value, CultureInfo culture) => value switch
-        {
-            FilterValue.Number n => n.Value.ToString("0.############################", culture),
-            FilterValue.Date d => d.Value.ToString("d", culture),
-            FilterValue.Moment m => m.Value.ToString("g", culture),
-            _ => "",
-        };
-        return Bound(range.From, culture) + " – " + Bound(range.To, culture);
     }
 }

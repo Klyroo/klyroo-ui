@@ -5,9 +5,10 @@
 @using Microsoft.AspNetCore.Components.Web
 
 @*
-    The editor of one filter: the operator, then the value (a text field, a list of options or yes / no / any). It is the content of the popover of a filter tag and of the add filter menu,
-    and it can be placed anywhere inside a data list. Interactive, each change applies at once (Live: a text after a pause in the typing) or waits for Apply (Submit). Statically rendered
-    there is no .NET to run handlers: the operators, the options and the yes / no / any choices are links that rewrite the address, and a text filter is a GET form.
+    The editor of one filter: the operator, then the value (a text field, a list of options, yes / no / any, a number or a range of numbers, a date or a range of dates). It is the content of the popover
+    of a filter tag and of the add filter menu, and it can be placed anywhere inside a data list. Interactive, each change applies at once (Live: a text after a pause in the typing, a range once both of
+    its days are picked) or waits for Apply (Submit). Statically rendered there is no .NET to run handlers: the operators, the options, the yes / no / any choices and the date presets are links that
+    rewrite the address, and a text, number or date filter is a GET form (a range sends its two ends as f.key.from and f.key.to).
 *@
 @if (_filter is not null && DataListContext<TItem>.HasEditor(_filter))
 {
@@ -41,6 +42,12 @@
     private List<string> _selected = [];
     private bool _includeEmpty;
     private bool? _bool;
+    private decimal? _from;
+    private decimal? _to;
+    private DateOnly? _day;
+    private DateOnly? _dayTo;
+    private TimeOnly? _time;
+    private TimeOnly? _timeTo;
     private int _token;
     private bool _loaded;
     private bool _syncInput;
@@ -48,7 +55,7 @@
 
     [Inject] private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
 
-    /// <summary>The key of the filter to edit: one of the filters of the schema of the list with a text, option or boolean kind.</summary>
+    /// <summary>The key of the filter to edit: one of the filters of the schema of the list (any kind; a date filter exact to the second has no editor).</summary>
     [Parameter, EditorRequired] public string Key { get; set; } = "";
 
     /// <summary>Whether a change applies at once (<see cref="DataListApplyMode.Live"/>, the default) or waits for the Apply button (<see cref="DataListApplyMode.Submit"/>). Statically rendered, a filter always applies on a link or a submit.</summary>
@@ -125,14 +132,40 @@
         _includeEmpty = rule?.IncludeEmpty ?? false;
         _bool = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : null;
         _search = "";
+        LoadNumber(rule);
+        LoadDate(rule);
     }
 
-    // The text of the field follows a rule that changed without it; what the user typed stays when it is the editor that wrote the rule.
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    private void LoadNumber(FilterRule? rule)
     {
-        if (!_syncInput || !Context.IsInteractive) return;
-        _syncInput = false;
-        if (_input is not null) await _input.SetValueAsync(_text);
+        (_from, _to) = (null, null);
+        if (_filter!.Kind != FilterKind.Number) return;
+        switch (rule?.Value)
+        {
+            case FilterValue.Number n:
+                _from = n.Value;
+                break;
+            case FilterValue.Range range:
+                _from = (range.From as FilterValue.Number)?.Value;
+                _to = (range.To as FilterValue.Number)?.Value;
+                break;
+        }
+    }
+
+    private void LoadDate(FilterRule? rule)
+    {
+        (_day, _dayTo, _time, _timeTo) = (null, null, null, null);
+        if (_filter!.Kind != FilterKind.Date) return;
+        var zone = Context.Zone;
+        if (rule?.Value is FilterValue.Range range)
+        {
+            if (DataListDates.Bound(range.From, zone) is { } from) (_day, _time) = (from.Day, from.Time);
+            if (DataListDates.Bound(range.To, zone) is { } to) (_dayTo, _timeTo) = (to.Day, to.Time);
+        }
+        else if (DataListDates.Bound(rule?.Value, zone) is { } one)
+        {
+            (_day, _time) = (one.Day, one.Time);
+        }
     }
 
     // The rule the draft stands for, or null when the draft filters nothing.
@@ -141,8 +174,39 @@
         FilterKind.Text => _text.Trim() is { Length: > 0 } text ? new FilterRule(Key, _op, new FilterValue.Text(text)) : null,
         FilterKind.Option => OptionRule(Key, _op, _selected, _includeEmpty),
         FilterKind.Boolean => _bool is { } value ? new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(value)) : null,
+        FilterKind.Number => NumberRule(),
+        FilterKind.Date => DateRule(),
         _ => null,
     };
+
+    private bool IsRange => _op == FilterOperator.Between;
+
+    private FilterRule? NumberRule()
+    {
+        if (!IsRange) return _from is { } one ? new FilterRule(Key, _op, new FilterValue.Number(one)) : null;
+        return _from is null && _to is null ? null
+            : new FilterRule(Key, _op, new FilterValue.Range(_from is { } from ? new FilterValue.Number(from) : null, _to is { } to ? new FilterValue.Number(to) : null));
+    }
+
+    private bool Timed => _filter!.Granularity != DateGranularity.Day;
+
+    // A bound of a date rule: a day, or the instant of the day and time in the zone of the user. A missing time is the start of the day, or for the end of a range the last hour or minute of it.
+    private FilterValue? DateBound(DateOnly? day, TimeOnly? time, bool end)
+    {
+        if (day is not { } d) return null;
+        if (!Timed) return new FilterValue.Date(d);
+        var granularity = _filter!.Granularity;
+        var fallback = !end ? TimeOnly.MinValue : granularity == DateGranularity.Hour ? new TimeOnly(23, 0) : new TimeOnly(23, 59);
+        return new FilterValue.Moment(DataListDates.Moment(d, time ?? fallback, Context.Zone, granularity));
+    }
+
+    private FilterRule? DateRule()
+    {
+        if (!IsRange) return DateBound(_day, _time, end: false) is { } one ? new FilterRule(Key, _op, one) : null;
+        var from = DateBound(_day, _time, end: false);
+        var to = DateBound(_dayTo, _timeTo, end: true);
+        return from is null && to is null ? null : new FilterRule(Key, _op, new FilterValue.Range(from, to));
+    }
 
     // The shapes the URL gives back: one value with <c>is</c> is a text, anything else a list.
     private static FilterRule? OptionRule(string key, FilterOperator op, IReadOnlyList<string> values, bool includeEmpty)
@@ -166,13 +230,28 @@
         foreach (var op in Operators)
         {
             if (FilterRuleText.OperatorName(op) != e.Value as string) continue;
+            var wasRange = IsRange;
             _op = op;
+            KeepValueAcross(wasRange);
             // One value only with <c>is</c>.
             if (_filter!.Kind == FilterKind.Option && op == FilterOperator.Is && _selected.Count > 1) _selected = [_selected[0]];
             if (Live) Commit(text: false);
             break;
         }
         return Task.CompletedTask;
+    }
+
+    // The value of the draft when the operator changes between one value and a range: the single value becomes the start of the range, and the start (else the end) of a range becomes the single value.
+    private void KeepValueAcross(bool wasRange)
+    {
+        if (wasRange == IsRange) return;
+        if (wasRange)
+        {
+            _from ??= _to;
+            _day ??= _dayTo;
+            _time ??= _timeTo;
+        }
+        (_to, _dayTo, _timeTo) = (null, null, null);
     }
 
     private Task OnText(string? value)
@@ -200,6 +279,90 @@
     {
         _bool = values.Count == 0 || values[0] == "any" ? null : values[0] == "true";
         if (Live) Commit(text: false);
+    }
+
+    private void OnFrom(decimal? value)
+    {
+        _from = value;
+        if (Live) Commit(text: false);
+    }
+
+    private void OnTo(decimal? value)
+    {
+        _to = value;
+        if (Live) Commit(text: false);
+    }
+
+    private void OnSlider(double value) => OnFrom(Snap(value));
+
+    private void OnRangeSlider(IReadOnlyList<double> values)
+    {
+        if (values.Count != 2) return;
+        (_from, _to) = (Snap(values[0]), Snap(values[1]));
+        if (Live) Commit(text: false);
+    }
+
+    private static decimal Snap(double value) => (decimal)value;
+
+    private void OnDay(DateOnly? value)
+    {
+        _day = value;
+        if (Live) Commit(text: false);
+    }
+
+    private void OnTime(TimeOnly? value)
+    {
+        _time = value;
+        if (Live) Commit(text: false);
+    }
+
+    private void OnTimeTo(TimeOnly? value)
+    {
+        _timeTo = value;
+        if (Live) Commit(text: false);
+    }
+
+    // The range calendar: the first click sets the start alone (nothing applies yet), the second one the end. A range over the limit of the filter keeps its start and ends on the last allowed day.
+    private void OnRange(BxDateRange range)
+    {
+        _day = range.Start;
+        _dayTo = range.End;
+        if (range.End is null) return;
+        if (_filter!.MaxRangeDays is { } max && _day is { } start && _dayTo is { } end && end.DayNumber - start.DayNumber + 1 > max) _dayTo = start.AddDays(max - 1);
+        if (Live) Commit(text: false);
+    }
+
+    private void ApplyPreset(DatePreset preset)
+    {
+        SetPreset(preset);
+        if (Live) Commit(text: false);
+    }
+
+    private void SetPreset(DatePreset preset)
+    {
+        var today = Context.Today;
+        if (IsRange)
+        {
+            (_day, _dayTo) = DataListDates.Range(preset, today);
+            (_time, _timeTo) = (null, null);
+            if (_filter!.MaxRangeDays is { } max && _dayTo is { } end && _day is { } start && end.DayNumber - start.DayNumber + 1 > max) _day = end.AddDays(1 - max);
+        }
+        else
+        {
+            _day = DataListDates.Day(preset, today);
+            _time = null;
+        }
+    }
+
+    // The rule a preset stands for, for the link of a static render.
+    private FilterRule? PresetRule(FilterOperator op, DatePreset preset)
+    {
+        var (savedOp, day, dayTo, time, timeTo) = (_op, _day, _dayTo, _time, _timeTo);
+        _op = op;
+        SetPreset(preset);
+        var rule = DateRule();
+        (_op, _day, _dayTo, _time, _timeTo) = (savedOp, day, dayTo, time, timeTo);
+        return rule;
     }
 
     private Task OnSearch(string? value)
@@ -269,6 +432,12 @@
                         <BxToggleGroup Items="@BoolItems" Value="@BoolValue" ValueChanged="@OnBool" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean" />
                     </div>
                     break;
+                case FilterKind.Number:
+                    @NumberFields
+                    break;
+                case FilterKind.Date:
+                    @DateFields
+                    break;
             }
             @if (!Live)
             {
@@ -287,6 +456,111 @@
     ];
 
     private IReadOnlyList<string> BoolValue => [_bool is { } value ? (value ? "true" : "false") : "any"];
+
+    private bool UsesSlider => _filter!.Min is not null && _filter.Max is not null && _filter.Max > _filter.Min && _filter.NumberDisplay != DataListNumberDisplay.Input;
+
+    private bool UsesInput => !UsesSlider || _filter!.NumberDisplay != DataListNumberDisplay.Slider;
+
+    private RenderFragment NumberFields =>
+        @<text>
+            @{
+                var step = _filter!.Step ?? 1;
+                var min = (double)(_filter.Min ?? 0);
+                var max = (double)(_filter.Max ?? 100);
+                var sliderStep = (double)step;
+            }
+            @if (!IsRange)
+            {
+                <div class="@_slots["filterField"]" data-slot="filter-number">
+                    @if (UsesInput)
+                    {
+                        <BxInputNumber Value="@_from" ValueChanged="@OnFrom" Min="_filter.Min" Max="_filter.Max" Step="step" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" />
+                    }
+                    @if (UsesSlider)
+                    {
+                        <BxSlider Value="@((double)(_from ?? _filter.Min ?? 0))" ValueChanged="@OnSlider" Min="min" Max="max" Step="sliderStep" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterSliderFor, _label)" />
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="@_slots["filterRange"]" data-slot="filter-range">
+                    @if (UsesInput)
+                    {
+                        <div class="@_slots["filterField"]">
+                            <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                            <BxInputNumber Value="@_from" ValueChanged="@OnFrom" Min="_filter.Min" Max="_filter.Max" Step="step" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" />
+                        </div>
+                        <div class="@_slots["filterField"]">
+                            <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                            <BxInputNumber Value="@_to" ValueChanged="@OnTo" Min="_filter.Min" Max="_filter.Max" Step="step" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" />
+                        </div>
+                    }
+                    @if (UsesSlider)
+                    {
+                        <div class="@_slots["filterRangeSlider"]">
+                            <BxRangeSlider Value="@(new[] { (double)(_from ?? _filter.Min ?? 0), (double)(_to ?? _filter.Max ?? 100) })" ValueChanged="@OnRangeSlider" Min="min" Max="max" Step="sliderStep"
+                                           AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterSliderFor, _label)" />
+                        </div>
+                    }
+                </div>
+            }
+        </text>;
+
+    private RenderFragment DateFields =>
+        @<text>
+            <div class="@_slots["filterPresets"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterPresetsFor, _label)" data-slot="filter-presets">
+                @foreach (var preset in DataListDates.PresetsFor(_op))
+                {
+                    var current = preset;
+                    <BxButton Label="@DataListDates.Label(preset, ToolsMessages)" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Xs" OnClick="@(() => ApplyPreset(current))" data-slot="filter-preset" />
+                }
+            </div>
+            @if (!IsRange)
+            {
+                <div class="@_slots["filterRange"]" data-slot="filter-date">
+                    <div class="@_slots["filterField"]">
+                        <BxInputDate Value="@_day" ValueChanged="@OnDay" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" />
+                    </div>
+                    @if (Timed)
+                    {
+                        <div class="@_slots["filterField"]">
+                            <BxInputTime Value="@_time" ValueChanged="@OnTime" Step="@(_filter!.Granularity == DateGranularity.Hour ? 60 : 1)" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterTimeFor, _label)" />
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                var limit = _filter!.MaxRangeDays;
+                var picking = _day is not null && _dayTo is null;
+                <BxCalendar Mode="BxCalendarMode.Range" Range="@(new BxDateRange(_day, _dayTo))" RangeChanged="@OnRange" Culture="FormatCulture"
+                            Min="@(limit is { } n && picking ? _day!.Value.AddDays(1 - n) : null)" Max="@(limit is { } m && picking ? _day!.Value.AddDays(m - 1) : null)"
+                            AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterCalendarFor, _label)" data-slot="filter-calendar" />
+                @if (Timed)
+                {
+                    <div class="@_slots["filterRange"]" data-slot="filter-times">
+                        <div class="@_slots["filterField"]">
+                            <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                            <BxInputTime Value="@_time" ValueChanged="@OnTime" Step="@(_filter.Granularity == DateGranularity.Hour ? 60 : 1)" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterFromTimeFor, _label)" />
+                        </div>
+                        <div class="@_slots["filterField"]">
+                            <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                            <BxInputTime Value="@_timeTo" ValueChanged="@OnTimeTo" Step="@(_filter.Granularity == DateGranularity.Hour ? 60 : 1)" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterToTimeFor, _label)" />
+                        </div>
+                    </div>
+                }
+                <p class="@_slots["filterHint"]" data-slot="filter-range-text" aria-live="polite">@RangeText()</p>
+                @if (limit is { } days)
+                {
+                    <p class="@_slots["filterHint"]" data-slot="filter-range-limit">@string.Format(FormatCulture, ToolsMessages.FilterMaxRangeDays, days.ToString(FormatCulture))</p>
+                }
+            }
+        </text>;
+
+    // What the draft range says in words: "11/3/2026 – 11/9/2026", with an open end while only the start is picked.
+    private string RangeText() =>
+        (_day is { } from ? from.ToString("d", FormatCulture) : "") + " – " + (_dayTo is { } to ? to.ToString("d", FormatCulture) : "");
 
     private RenderFragment OptionList =>
         @<text>
@@ -405,12 +679,106 @@
                         @Link(Href(null), ToolsMessages.FilterAny, current is null)
                     </div>
                     break;
+                case FilterKind.Number:
+                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
+                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
+                        {
+                            <input type="hidden" name="@name" value="@value" />
+                        }
+                        @if (op == FilterOperator.Between)
+                        {
+                            var range = rule?.Value as FilterValue.Range;
+                            <div class="@_slots["filterRange"]">
+                                <div class="@_slots["filterField"]">
+                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                                    <input type="number" name="@Context.FieldName("f." + Key + ".from")" value="@NumberText(range?.From)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-slot="filter-input" />
+                                </div>
+                                <div class="@_slots["filterField"]">
+                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                                    <input type="number" name="@Context.FieldName("f." + Key + ".to")" value="@NumberText(range?.To)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-slot="filter-input" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="number" name="@Context.FilterFieldName(Key, op)" value="@NumberText(rule?.Value)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                                   aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-input" />
+                        }
+                        <div class="@_slots["filterActions"]">
+                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
+                        </div>
+                    </form>
+                    break;
+                case FilterKind.Date:
+                    <div class="@_slots["filterChoices"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterPresetsFor, _label)" data-slot="filter-presets">
+                        @foreach (var preset in DataListDates.PresetsFor(op))
+                        {
+                            var presetRule = PresetRule(op, preset);
+                            @Link(Href(presetRule), DataListDates.Label(preset, ToolsMessages), presetRule is not null && Equals(presetRule, rule))
+                        }
+                    </div>
+                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
+                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
+                        {
+                            <input type="hidden" name="@name" value="@value" />
+                        }
+                        @if (op == FilterOperator.Between)
+                        {
+                            var range = rule?.Value as FilterValue.Range;
+                            <div class="@_slots["filterRange"]">
+                                <div class="@_slots["filterField"]">
+                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                                    <input type="@DateInputType" name="@Context.FieldName("f." + Key + ".from")" value="@DateText(range?.From)" step="@DateStep" class="@_slots["filterInput"]"
+                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-slot="filter-input" />
+                                </div>
+                                <div class="@_slots["filterField"]">
+                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                                    <input type="@DateInputType" name="@Context.FieldName("f." + Key + ".to")" value="@DateText(range?.To)" step="@DateStep" class="@_slots["filterInput"]"
+                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-slot="filter-input" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <input type="@DateInputType" name="@Context.FilterFieldName(Key, op)" value="@DateText(rule?.Value)" step="@DateStep" class="@_slots["filterInput"]"
+                                   aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-input" />
+                        }
+                        <div class="@_slots["filterActions"]">
+                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
+                        </div>
+                    </form>
+                    break;
             }
         </text>;
+
+    private static string? NumberText(FilterValue? value) => value is FilterValue.Number n ? NumberText(n.Value) : null;
+
+    private static string? NumberText(decimal? value) => value?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    // A date input posts yyyy-MM-dd and a date-time one yyyy-MM-ddTHH:mm, whatever the language of the browser.
+    private string DateInputType => Timed ? "datetime-local" : "date";
+
+    private string? DateStep => !Timed ? null : _filter!.Granularity == DateGranularity.Hour ? "3600" : "60";
+
+    private string? DateText(FilterValue? value)
+    {
+        if (DataListDates.Bound(value, Context.Zone) is not { } local) return null;
+        var day = local.Day.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        return Timed && local.Time is { } time ? day + "T" + time.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture) : day;
+    }
 
     // The rule with another operator: an option rule keeps its values (one only with <c>is</c>), a text rule its text.
     private FilterRule WithOperator(FilterRule rule, FilterOperator op)
     {
+        if (_filter!.Kind is FilterKind.Number or FilterKind.Date)
+        {
+            // One value and a range differ in shape: the value becomes the start of the range, the start (else the end) of the range the value.
+            if ((rule.Operator == FilterOperator.Between) == (op == FilterOperator.Between)) return rule with { Operator = op };
+            FilterValue? value = op == FilterOperator.Between ? new FilterValue.Range(rule.Value, null) : rule.Value is FilterValue.Range r ? r.From ?? r.To : rule.Value;
+            return rule with { Operator = op, Value = value };
+        }
         if (_filter!.Kind != FilterKind.Option) return rule with { Operator = op };
         var values = ValuesOf(rule);
         if (op == FilterOperator.Is && values.Count > 1) values = [values[0]];
