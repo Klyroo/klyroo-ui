@@ -14,13 +14,18 @@ namespace Blux.UI.BundleGenerator;
 /// </summary>
 public static class BundleBuilder
 {
-    public static Blux.UI.Mcp.Model.DocsBundle Build(string repoRoot)
+    /// <param name="repoRoot">The repository folder.</param>
+    /// <param name="extensions">The options classes of sister packages (see <c>BluxOptions.Extension</c>) whose themes the bundle also lists. Core only when null.</param>
+    public static Blux.UI.Mcp.Model.DocsBundle Build(string repoRoot, IEnumerable<Type>? extensions = null)
     {
         var options = new BluxOptions();
-        var themes = options.GetType().GetProperties()
-            .Where(p => p.PropertyType == typeof(ComponentTheme))
-            .Select(p => (Property: p.Name, Theme: (ComponentTheme)p.GetValue(options)!))
+        var themes = BluxOptions.NamedThemesOf(options)
+            .Select(p => (Property: p.Key, Theme: p.Value))
             .ToList();
+        foreach (var extension in extensions ?? [])
+        {
+            themes.AddRange(BluxOptions.NamedThemesOf(options.Extension(extension)).Select(p => (Property: p.Key, Theme: p.Value)));
+        }
 
         var components = Catalog.Components
             .Select(c => new BundleComponent(

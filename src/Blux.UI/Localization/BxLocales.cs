@@ -52,19 +52,71 @@ public static partial class BxLocales
         locales ??= All;
         culture ??= CultureInfo.CurrentUICulture;
 
-        // The culture and its parents, most specific first. The invariant culture has an empty name and stops the walk.
-        for (var c = culture; c.Name.Length > 0; c = c.Parent)
+        var index = IndexOfCode(culture, locales.Select(l => l.Code));
+        return index >= 0 ? locales[index] : En;
+    }
+
+    /// <summary>
+    /// Picks one of <paramref name="available"/> for a locale code with the same rules as <see cref="Resolve"/>, so a package
+    /// with its own message tables (keyed by locale code) follows the locale of the app: pass <see cref="BxLocale.Code"/>.
+    /// The exact code ("pt-BR"), then its parent cultures ("pt-PT" gets "pt", "zh-CN" and "zh-Hans-CN" get "zh-Hans" then "zh"), then
+    /// "en", then the first available code. Codes compare case-insensitively and the result is the spelling found in <paramref name="available"/>.
+    /// </summary>
+    /// <param name="code">A culture name, usually <see cref="BxLocale.Code"/>. A name the runtime does not know is walked by trimming its last "-" segment.</param>
+    /// <param name="available">The codes the package has a table for. It cannot be empty.</param>
+    /// <example><c>var table = tables[BxLocales.ResolveCode(CurrentLocale.Code, tables.Keys)];</c></example>
+    public static string ResolveCode(string code, IEnumerable<string> available)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(available);
+        var codes = available as IReadOnlyList<string> ?? [.. available];
+        if (codes.Count == 0) throw new ArgumentException("At least one available code is required.", nameof(available));
+
+        CultureInfo culture;
+        try
         {
-            foreach (var locale in locales)
+            culture = CultureInfo.GetCultureInfo(code);
+        }
+        catch (CultureNotFoundException)
+        {
+            return codes[IndexOfCode(UnknownChain(code), codes)];
+        }
+        return codes[IndexOfCode(culture, codes)];
+    }
+
+    // The culture and its parents, most specific first. The invariant culture has an empty name and stops the walk.
+    private static IEnumerable<string> Chain(CultureInfo culture)
+    {
+        for (var c = culture; c.Name.Length > 0; c = c.Parent) yield return c.Name;
+    }
+
+    private static IEnumerable<string> UnknownChain(string code)
+    {
+        for (var name = code; name.Length > 0; )
+        {
+            yield return name;
+            var dash = name.LastIndexOf('-');
+            name = dash < 0 ? "" : name[..dash];
+        }
+    }
+
+    private static int IndexOfCode(CultureInfo culture, IEnumerable<string> codes) => IndexOfCode(Chain(culture), codes);
+
+    /// <summary>The index in <paramref name="codes"/> of the first match of the chain, else of "en", else 0, else -1 when there is no code.</summary>
+    private static int IndexOfCode(IEnumerable<string> chain, IEnumerable<string> codes)
+    {
+        var list = codes as IReadOnlyList<string> ?? [.. codes];
+        foreach (var name in chain)
+        {
+            for (var i = 0; i < list.Count; i++)
             {
-                if (string.Equals(locale.Code, c.Name, StringComparison.OrdinalIgnoreCase)) return locale;
+                if (string.Equals(list[i], name, StringComparison.OrdinalIgnoreCase)) return i;
             }
         }
-
-        foreach (var locale in locales)
+        for (var i = 0; i < list.Count; i++)
         {
-            if (string.Equals(locale.Code, "en", StringComparison.OrdinalIgnoreCase)) return locale;
+            if (string.Equals(list[i], "en", StringComparison.OrdinalIgnoreCase)) return i;
         }
-        return locales.Count > 0 ? locales[0] : En;
+        return list.Count > 0 ? 0 : -1;
     }
 }
