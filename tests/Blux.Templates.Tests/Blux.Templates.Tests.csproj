@@ -28,7 +28,7 @@
   <ItemGroup>
     <Compile Include="..\..\templates\_shared\Content\**\*.cs" LinkBase="Shared" />
     <!-- The release code of the Changelog template (the GitHub client, the cache, the renderer of release notes, the feed): plain C#, no Razor, so it is tested as it is. -->
-    <Compile Include="..\..\templates\changelog\src\Changelog.Web\Releases\*.cs" LinkBase="Changelog" />
+    <Compile Include="..\..\templates\changelog\src\Changelog.Web\ReleaseNotes\*.cs" LinkBase="Changelog" />
     <!-- The sample releases the Changelog template ships. -->
     <None Include="..\..\templates\changelog\src\Changelog.Web\data\releases.json" Link="changelog-releases.json" CopyToOutputDirectory="PreserveNewest" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->

@@ -1,4 +1,4 @@
-using Changelog.Web.Releases;
+using Changelog.Web.ReleaseNotes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
