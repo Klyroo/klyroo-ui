@@ -25,12 +25,13 @@ public static class InMemoryDataList
         var clean = schema.Sanitize(request);
         var rows = items as IReadOnlyList<T> ?? [.. items];
 
-        var predicate = schema.GetPredicate(clean.Filter, clean.Search, excludeKey: null);
+        var zone = TimeZones.Resolve(clean.TimeZone) ?? TimeZoneInfo.Utc;
+        var predicate = schema.GetPredicate(clean.Filter, clean.Search, excludeKey: null, zone);
         var matching = predicate is null ? rows : rows.Where(predicate).ToList();
 
         IReadOnlyList<DataListFacetResult>? facets = clean.Facets.Count == 0
             ? null
-            : [.. clean.Facets.Select(f => CountFacet(schema, rows, clean, f))];
+            : [.. clean.Facets.Select(f => CountFacet(schema, rows, clean, f, zone))];
 
         var sort = clean.Sort.Count > 0 ? clean.Sort : schema.DefaultSort;
         var sortFields = sort.Select(s => schema.TryGetField(s.Key, out var f) ? (Field: f, Rule: s) : throw new InvalidOperationException()).ToList();
@@ -98,10 +99,14 @@ public static class InMemoryDataList
         var ordered = Order(schema, matching, sort, rowKeyTieBreak: true).ToList();
 
         var start = 0;
-        if (!string.IsNullOrEmpty(cursor.After)
-            && DataListCursor.TryDecode(cursor.After, signature, sort.Count, out var afterKey, out var afterValues)
-            && TryParseValues(sort, afterValues, out var parsed))
+        if (!string.IsNullOrEmpty(cursor.After))
         {
+            // A cursor that does not decode, or was made for another sort, ends the walk: an empty page and no next cursor. Restarting at the first
+            // page would make an infinite scroll loop on the same rows forever.
+            if (!DataListCursor.TryDecode(cursor.After, signature, sort.Count, out var afterKey, out var afterValues)
+                || !TryParseValues(sort, afterValues, out var parsed))
+                return new DataListResult<T>([], cursor.Count ? matching.Count : null, null, facets);
+
             var comparers = sort.Select(s => new SortValueComparer(s.Rule.Descending)).ToArray();
             start = ordered.FindIndex(row =>
             {
@@ -123,7 +128,7 @@ public static class InMemoryDataList
             next = DataListCursor.Encode(
                 signature,
                 schema.GetRowKey(last),
-                [.. sort.Select(s => TextConvert.Format(s.Field.Getter(last)))]);
+                [.. sort.Select(s => CursorValue.Format(s.Field.Getter(last)))]);
         }
         return new DataListResult<T>(page, cursor.Count ? matching.Count : null, next, facets);
     }
@@ -137,16 +142,16 @@ public static class InMemoryDataList
         for (var i = 0; i < texts.Length; i++)
         {
             if (texts[i] is null) continue;
-            if (!TextConvert.TryParse(texts[i]!, sort[i].Field.Accessor.UnderlyingType, out values[i])) return false;
+            if (!CursorValue.TryParse(texts[i]!, sort[i].Field.Accessor.UnderlyingType, out values[i])) return false;
         }
         return true;
     }
 
-    private static DataListFacetResult CountFacet<T>(DataListSchema<T> schema, IReadOnlyList<T> rows, DataListRequest request, DataListFacetRequest facet)
+    private static DataListFacetResult CountFacet<T>(DataListSchema<T> schema, IReadOnlyList<T> rows, DataListRequest request, DataListFacetRequest facet, TimeZoneInfo zone)
     {
         schema.TryGetField(facet.Key, out var field);
         var exclude = facet.Mode == FacetMode.ExcludeSelf ? facet.Key : null;
-        var predicate = schema.GetPredicate(request.Filter, request.Search, exclude);
+        var predicate = schema.GetPredicate(request.Filter, request.Search, exclude, zone);
 
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         var missing = 0;
@@ -165,8 +170,8 @@ public static class InMemoryDataList
         IEnumerable<KeyValuePair<string, int>> options = counts;
         if (!string.IsNullOrWhiteSpace(facet.Search))
         {
-            var needle = facet.Search.Trim().ToLowerInvariant();
-            options = options.Where(o => o.Key.ToLowerInvariant().Contains(needle, StringComparison.Ordinal));
+            var needle = facet.Search.Trim();
+            options = options.Where(o => TextFold.Contains(o.Key, needle));
         }
         var all = options.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
         IEnumerable<KeyValuePair<string, int>> window = all.Skip(facet.Skip);

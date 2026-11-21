@@ -13,6 +13,8 @@ public class InMemoryFilterTests
         { "text contains ci", Rule("name", Op.Contains, Text("ALICE")), [1] },
         { "text contains several", Rule("name", Op.Contains, Text("o")), [1, 2, 3, 4, 6] },
         { "text contains accent folded by lower only", Rule("name", Op.Contains, Text("éric")), [5] },
+        { "text contains ignores accents", Rule("name", Op.Contains, Text("ERIC")), [5] },
+        { "text contains ignores accents the other way", Rule("name", Op.Contains, Text("DURÁND")), [5] },
         { "text contains no match", Rule("name", Op.Contains, Text("zzz")), [] },
         { "text is exact", Rule("name", Op.Is, Text("bob smith")), [2] },
         { "text is is case sensitive", Rule("name", Op.Is, Text("Bob Smith")), [] },
@@ -193,6 +195,8 @@ public class InMemoryFilterTests
     [InlineData("  alice  ", new[] { 1 })]
     [InlineData("durand", new[] { 5 })]
     [InlineData("DURAND", new[] { 5 })]
+    [InlineData("eric", new[] { 5 })]
+    [InlineData("ÉRIC", new[] { 5 })]
     [InlineData("nothing", new int[0])]
     [InlineData("", new[] { 1, 2, 3, 4, 5, 6 })]
     [InlineData("   ", new[] { 1, 2, 3, 4, 5, 6 })]

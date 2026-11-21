@@ -48,7 +48,17 @@ public sealed record DataListResult<T>(
     IReadOnlyList<T> Items,
     int? TotalCount = null,
     string? NextCursor = null,
-    IReadOnlyList<DataListFacetResult>? Facets = null);
+    IReadOnlyList<DataListFacetResult>? Facets = null)
+{
+    /// <summary>Value equality: the items are compared one by one with their own equality, like the other lists of the model.</summary>
+    public bool Equals(DataListResult<T>? other) =>
+        other is not null && TotalCount == other.TotalCount && NextCursor == other.NextCursor
+        && SequenceEquality.Equal(Items, other.Items)
+        && (Facets is null ? other.Facets is null : other.Facets is not null && SequenceEquality.Equal(Facets, other.Facets));
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(TotalCount, NextCursor, SequenceEquality.Hash(Items), Facets is null ? 0 : SequenceEquality.Hash(Facets));
+}
 
 /// <summary>Loads a page of rows for a request. The same shape for an in-memory list, an EF query or an HTTP call.</summary>
 /// <typeparam name="T">The row type.</typeparam>

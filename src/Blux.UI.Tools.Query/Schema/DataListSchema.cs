@@ -77,6 +77,15 @@ public abstract class DataListSchema
     /// <summary>The state with every default applied: the default filter values, sort, page 1, <see cref="DefaultPageSize"/> and <see cref="DefaultLayout"/>. The URL representation omits whatever equals it.</summary>
     public DataListState DefaultState { get; }
 
+    /// <summary>The most filter rules <see cref="Sanitize(DataListRequest)"/> keeps (100 unless set); later ones are dropped. Bounds the work a hostile request can ask for.</summary>
+    public int MaxFilterRules { get; internal set; } = 100;
+
+    /// <summary>The most values <see cref="Sanitize(DataListRequest)"/> keeps in the list of one rule (500 unless set); later ones are dropped.</summary>
+    public int MaxListValues { get; internal set; } = 500;
+
+    /// <summary>The deepest nesting of filter groups kept by <see cref="Sanitize(DataListRequest)"/>; deeper groups are dropped.</summary>
+    public const int MaxFilterDepth = 16;
+
     /// <summary>Whether the schema has search fields.</summary>
     public bool HasSearch => _hasSearch;
 
@@ -108,7 +117,9 @@ public abstract class DataListSchema
     /// Returns a request a provider can trust: filter rules with an unknown key, a disallowed operator or a value of the wrong shape are dropped (empty
     /// nested groups with them), sort keys that are unknown, not sortable or repeated are dropped, facets that are not option or boolean field
     /// filters are dropped, the search is dropped when the schema has no search field, a page size is clamped to 1..<see cref="MaxPageSize"/> (zero or
-    /// less means <see cref="DefaultPageSize"/>), a negative skip becomes 0 and a facet limit is clamped to 1..1000.
+    /// less means <see cref="DefaultPageSize"/>), a negative skip becomes 0 and a facet limit is clamped to 1..1000. Hostile input is bounded: rules without
+    /// a key and null nodes are dropped, a list keeps at most <see cref="MaxListValues"/> distinct non-null values, a request keeps at most
+    /// <see cref="MaxFilterRules"/> rules and groups nest at most <see cref="MaxFilterDepth"/> deep. A time zone id the server does not know is cleared (UTC).
     /// </summary>
     public DataListRequest Sanitize(DataListRequest request)
     {
@@ -139,7 +150,9 @@ public abstract class DataListSchema
         }
 
         var search = _hasSearch && request.Search is { Term: { } term } && !string.IsNullOrWhiteSpace(term) ? request.Search : null;
-        return new DataListRequest(paging, sort, SanitizeGroup(request.Filter), search, facets);
+        var budget = MaxFilterRules;
+        var zone = TimeZones.Resolve(request.TimeZone) is null ? null : request.TimeZone;
+        return new DataListRequest(paging, sort, SanitizeGroup(request.Filter, ref budget, 0), search, facets, zone);
     }
 
     internal const int MaxFacetLimit = 1000;
@@ -150,23 +163,41 @@ public abstract class DataListSchema
 
     private int ClampTake(int take) => take <= 0 ? DefaultPageSize : Math.Min(take, MaxPageSize);
 
-    private DataListFilterGroup SanitizeGroup(DataListFilterGroup group)
+    private DataListFilterGroup SanitizeGroup(DataListFilterGroup? group, ref int budget, int depth)
     {
         var children = new List<DataListFilterNode>();
-        foreach (var child in group.Children)
+        if (group is null) return new DataListFilterGroup(FilterCombinator.And, children);
+        foreach (var child in group.Children ?? [])
         {
             switch (child)
             {
-                case FilterRule rule when _filters.TryGetValue(rule.Key, out var filter) && filter.IsValid(rule):
-                    children.Add(rule.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty && rule.IncludeEmpty ? rule with { IncludeEmpty = false } : rule);
+                case FilterRule { Key: { Length: > 0 } key } rule when budget > 0 && _filters.TryGetValue(key, out var filter):
+                {
+                    var clean = Normalize(rule);
+                    if (!filter.IsValid(clean)) break;
+                    budget--;
+                    children.Add(clean);
                     break;
-                case DataListFilterGroup nested:
-                    var clean = SanitizeGroup(nested);
-                    if (clean.Children.Count > 0) children.Add(clean);
+                }
+                case DataListFilterGroup nested when depth < MaxFilterDepth:
+                    var cleanGroup = SanitizeGroup(nested, ref budget, depth + 1);
+                    if (cleanGroup.Children.Count > 0) children.Add(cleanGroup);
                     break;
             }
         }
         return new DataListFilterGroup(group.Combinator, children);
+    }
+
+    private FilterRule Normalize(FilterRule rule)
+    {
+        if (rule.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
+            return rule.IncludeEmpty ? rule with { IncludeEmpty = false } : rule;
+        if (rule.Value is FilterValue.List { Values: { } values })
+        {
+            var clean = values.Where(v => v is not null).Distinct().Take(MaxListValues).ToList();
+            if (clean.Count != values.Count) return rule with { Value = new FilterValue.List(clean) };
+        }
+        return rule;
     }
 }
 
@@ -211,18 +242,19 @@ public sealed class DataListSchema<T> : DataListSchema
 
     internal IReadOnlyList<ValueSource> SearchSources { get; }
 
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<(DataListFilterGroup Filter, string? Term, string? Exclude), Func<T, bool>?> _predicates = new();
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(DataListFilterGroup Filter, string? Term, string? Exclude, string Zone), Func<T, bool>?> _predicates = new();
 
     /// <summary>
     /// The compiled row predicate for a sanitized filter, search term and excluded key (<see langword="null"/> when nothing restricts the rows). Compiling an
-    /// expression costs about a millisecond, and a list asks for the same predicate again for every page and facet, so the last 64 are kept.
+    /// expression costs about a millisecond, and a list asks for the same predicate again for every page and facet. At most 64 are kept: when the cache is full it is emptied (no LRU), which is enough because a list reuses its few current predicates. Filter values compare by value, so two requests share an entry only when they would build the same expression.
     /// </summary>
-    internal Func<T, bool>? GetPredicate(DataListFilterGroup filter, DataListSearch? search, string? excludeKey)
+    internal Func<T, bool>? GetPredicate(DataListFilterGroup filter, DataListSearch? search, string? excludeKey, TimeZoneInfo? zone = null)
     {
         var term = string.IsNullOrWhiteSpace(search?.Term) ? null : search!.Term.Trim();
-        var key = (filter, term, excludeKey);
+        zone ??= TimeZoneInfo.Utc;
+        var key = (filter, term, excludeKey, zone.Id);
         if (_predicates.TryGetValue(key, out var cached)) return cached;
-        var predicate = FilterExpressions.Rows(this, filter, term is null ? null : new DataListSearch(term), excludeKey, nullSafe: true)?.Compile();
+        var predicate = FilterExpressions.Rows(this, filter, term is null ? null : new DataListSearch(term), excludeKey, inMemory: true, zone)?.Compile();
         if (_predicates.Count >= 64) _predicates.Clear();
         _predicates[key] = predicate;
         return predicate;

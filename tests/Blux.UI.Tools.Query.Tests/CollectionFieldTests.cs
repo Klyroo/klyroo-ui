@@ -69,7 +69,7 @@ public class CollectionFieldTests
     [Fact]
     public void Facets_count_rows_per_option_once_and_count_rows_without_values_as_missing()
     {
-        var request = new DataListRequest(DataListPaging.Unpaged, [], DataListFilterGroup.Empty, null, [new DataListFacetRequest("tags.name", IncludeMissing: true)]);
+        var request = new DataListRequest(DataListPaging.None.Instance, [], DataListFilterGroup.Empty, null, [new DataListFacetRequest("tags.name", IncludeMissing: true)]);
         var facet = TagSchema.ExecuteInMemory(Rows, request).Facets!.Single();
         Assert.Equal(
             [new DataListFacetOption("dotnet", 2), new DataListFacetOption("Blazor", 1), new DataListFacetOption("blazor", 1), new DataListFacetOption("sales", 1)],
@@ -86,7 +86,7 @@ public class CollectionFieldTests
     public void A_facet_leaves_out_its_own_collection_filter()
     {
         var filter = DataListFilterGroup.And(Rule("tags.name", Op.IsAnyOf, List("sales")));
-        var request = new DataListRequest(DataListPaging.Unpaged, [], filter, null, [new DataListFacetRequest("tags.name")]);
+        var request = new DataListRequest(DataListPaging.None.Instance, [], filter, null, [new DataListFacetRequest("tags.name")]);
         var result = TagSchema.ExecuteInMemory(Rows, request);
         Assert.Equal([2], result.Ids());
         Assert.Equal(4, result.Facets!.Single().Total);
@@ -121,7 +121,7 @@ public class CollectionFieldTests
     public void The_predicate_is_an_Any_expression_that_also_runs_without_null_guards()
     {
         var filter = DataListFilterGroup.And(Rule("tags.name", Op.IsAnyOf, List("dotnet")));
-        var raw = FilterExpressions.Rows(TagSchema, filter, null, null, nullSafe: false)!;
+        var raw = FilterExpressions.Rows(TagSchema, filter, null, null, inMemory: false)!;
         Assert.Contains("Any(", raw.ToString());
         Assert.DoesNotContain("== null", raw.ToString());
         var compiled = raw.Compile();

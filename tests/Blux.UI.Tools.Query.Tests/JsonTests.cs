@@ -27,7 +27,8 @@ public class JsonTests
             Rule("email", Op.IsEmpty),
             DataListFilterGroup.Or(Rule("id", Op.Is, Num(79228162514264337593543950335m)), Rule("name", Op.Is, Text("")))),
         new DataListSearch("find me"),
-        [new DataListFacetRequest("status", FacetMode.IncludeSelf, 10, 5, "act", true), new DataListFacetRequest("active")]);
+        [new DataListFacetRequest("status", FacetMode.IncludeSelf, 10, 5, "act", true), new DataListFacetRequest("active")],
+        "Europe/Paris");
 
     [Fact]
     public void A_request_round_trips()
@@ -80,7 +81,7 @@ public class JsonTests
             DataListFilterGroup.And(Rule("status", Op.IsAnyOf, List("a"), true)), new DataListSearch("q"));
         var json = JsonSerializer.Serialize(request, DataListJsonContext.Default.DataListRequest);
         Assert.Equal(
-            """{"paging":{"type":"offset","skip":0,"take":10},"sort":[{"key":"name","descending":true}],"filter":{"combinator":"And","children":[{"type":"rule","key":"status","operator":"IsAnyOf","value":{"type":"list","values":["a"]},"includeEmpty":true}]},"search":{"term":"q"},"facets":[]}""",
+            """{"paging":{"type":"offset","skip":0,"take":10},"sort":[{"key":"name","descending":true}],"filter":{"combinator":"and","children":[{"type":"rule","key":"status","operator":"isAnyOf","value":{"type":"list","values":["a"]},"includeEmpty":true}]},"search":{"term":"q"},"facets":[]}""",
             json);
     }
 

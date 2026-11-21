@@ -295,7 +295,7 @@ public class SanitizeTests
             new DataListFacetRequest("age"), new DataListFacetRequest("archived"), new DataListFacetRequest("nope"),
             new DataListFacetRequest("active"), new DataListFacetRequest("status"),
         };
-        var clean = Sanitized(new DataListRequest(DataListPaging.Unpaged, [], DataListFilterGroup.Empty, null, facets)).Facets;
+        var clean = Sanitized(new DataListRequest(DataListPaging.None.Instance, [], DataListFilterGroup.Empty, null, facets)).Facets;
         Assert.Equal(["status", "active"], clean.Select(f => f.Key));
         Assert.Equal(1000, clean[0].Limit);
         Assert.Equal(0, clean[0].Skip);
@@ -309,7 +309,7 @@ public class SanitizeTests
         Assert.Equal(new DataListPaging.Offset(0, 100), Of(new DataListPaging.Offset(-10, 5000)));
         Assert.Equal(new DataListPaging.Offset(40, 20), Of(new DataListPaging.Offset(40, 0)));
         Assert.Equal(new DataListPaging.Cursor("c", 100, true), Of(new DataListPaging.Cursor("c", 999, true)));
-        Assert.Equal(DataListPaging.Unpaged, Of(DataListPaging.Unpaged));
+        Assert.Equal(DataListPaging.None.Instance, Of(DataListPaging.None.Instance));
     }
 
     [Fact]

@@ -27,6 +27,8 @@ public sealed class DataListSchemaBuilder<T>
     private bool _defaultSortDescending;
     private FieldAccessor? _defaultSortAccessor;
     private int _maxPageSize = 500;
+    private int _maxFilterRules = 100;
+    private int _maxListValues = 500;
     private int _defaultPageSize = 50;
     private DataListLayout _layout = DataListLayout.Table;
 
@@ -140,6 +142,22 @@ public sealed class DataListSchemaBuilder<T>
         return this;
     }
 
+    /// <summary>The most filter rules a sanitized request keeps (100 by default).</summary>
+    public DataListSchemaBuilder<T> MaxFilterRules(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
+        _maxFilterRules = count;
+        return this;
+    }
+
+    /// <summary>The most values a sanitized request keeps in the list of one rule (500 by default).</summary>
+    public DataListSchemaBuilder<T> MaxListValues(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
+        _maxListValues = count;
+        return this;
+    }
+
     /// <summary>The page size when none is given (50 by default, never above the maximum).</summary>
     public DataListSchemaBuilder<T> DefaultPageSize(int size)
     {
@@ -202,7 +220,7 @@ public sealed class DataListSchemaBuilder<T>
             defaultSort.Add(new DataListSort(sortKey, _defaultSortDescending));
         }
 
-        return new DataListSchema<T>(
+        var schema = new DataListSchema<T>(
             fields,
             filters,
             _queryFilters.Select(q => q.Key),
@@ -213,6 +231,9 @@ public sealed class DataListSchemaBuilder<T>
             _defaultPageSize,
             _maxPageSize,
             _layout);
+        schema.MaxFilterRules = _maxFilterRules;
+        schema.MaxListValues = _maxListValues;
+        return schema;
     }
 
     private static void ValidateKey(string key)

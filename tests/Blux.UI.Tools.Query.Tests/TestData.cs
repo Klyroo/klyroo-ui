@@ -58,7 +58,7 @@ internal static class TestData
         new(key, op, value, includeEmpty);
 
     public static DataListRequest Request(DataListFilterGroup? filter = null, DataListSearch? search = null, params DataListSort[] sort) =>
-        new(DataListPaging.Unpaged, sort, filter ?? DataListFilterGroup.Empty, search);
+        new(DataListPaging.None.Instance, sort, filter ?? DataListFilterGroup.Empty, search);
 
     public static int[] Ids(this DataListResult<Employee> result) => [.. result.Items.Select(e => e.Id)];
 

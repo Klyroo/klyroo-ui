@@ -1,12 +1,13 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Blux.UI.Tools.Query;
 
 /// <summary>The 13 comparison operators of a filter rule. Each filter kind allows a subset (see <see cref="DataListFilter"/>).</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<FilterOperator>))]
+[JsonConverter(typeof(WireEnumConverter<FilterOperator>))]
 public enum FilterOperator
 {
-    /// <summary>Text contains the value, ignoring case.</summary>
+    /// <summary>Text contains the value. In memory it ignores case and accents (invariant culture); on a database it follows the collation of the column.</summary>
     Contains,
     /// <summary>The field equals the value.</summary>
     Is,
@@ -24,9 +25,9 @@ public enum FilterOperator
     Lte,
     /// <summary>Between two bounds, both inclusive; either bound may be missing.</summary>
     Between,
-    /// <summary>Strictly before a date (a day value means before the start of that day).</summary>
+    /// <summary>Strictly before a date: before the start of the day, hour, minute or second of the value.</summary>
     Before,
-    /// <summary>Strictly after a date (a day value means after the end of that day).</summary>
+    /// <summary>Strictly after a date: at or after the end of the day, hour, minute or second of the value.</summary>
     After,
     /// <summary>The field is null or an empty string.</summary>
     IsEmpty,
@@ -35,7 +36,7 @@ public enum FilterOperator
 }
 
 /// <summary>The five kinds of filter a field can have.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<FilterKind>))]
+[JsonConverter(typeof(WireEnumConverter<FilterKind>))]
 public enum FilterKind
 {
     /// <summary>Free text on a string field.</summary>
@@ -51,7 +52,7 @@ public enum FilterKind
 }
 
 /// <summary>How the children of a filter group combine.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<FilterCombinator>))]
+[JsonConverter(typeof(WireEnumConverter<FilterCombinator>))]
 public enum FilterCombinator
 {
     /// <summary>Every child must match.</summary>
@@ -61,7 +62,7 @@ public enum FilterCombinator
 }
 
 /// <summary>The precision a date filter edits; a day is carried as a <see cref="FilterValue.Date"/>, anything finer as a <see cref="FilterValue.Moment"/>.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<DateGranularity>))]
+[JsonConverter(typeof(WireEnumConverter<DateGranularity>))]
 public enum DateGranularity
 {
     /// <summary>A calendar day.</summary>
@@ -75,7 +76,7 @@ public enum DateGranularity
 }
 
 /// <summary>How a data list shows its rows.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<DataListLayout>))]
+[JsonConverter(typeof(WireEnumConverter<DataListLayout>))]
 public enum DataListLayout
 {
     /// <summary>One row per record (URL value <c>table</c>).</summary>
@@ -85,7 +86,7 @@ public enum DataListLayout
 }
 
 /// <summary>Whether a facet counts with its own filter applied.</summary>
-[JsonConverter(typeof(JsonStringEnumConverter<FacetMode>))]
+[JsonConverter(typeof(WireEnumConverter<FacetMode>))]
 public enum FacetMode
 {
     /// <summary>The facet's own filter is removed before counting, so the other options stay visible (default).</summary>
@@ -93,3 +94,7 @@ public enum FacetMode
     /// <summary>The facet's own filter stays applied.</summary>
     IncludeSelf,
 }
+
+/// <summary>Enums on the wire: camelCase strings matching the URL names (<c>isAnyOf</c>, <c>grid</c>); an integer is rejected.</summary>
+internal sealed class WireEnumConverter<TEnum>() : JsonStringEnumConverter<TEnum>(JsonNamingPolicy.CamelCase, allowIntegerValues: false)
+    where TEnum : struct, Enum;

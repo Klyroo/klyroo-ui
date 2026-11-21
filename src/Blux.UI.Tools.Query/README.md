@@ -59,3 +59,22 @@ DataListProvider<Employee> provider = schema.InMemoryProvider(employees);
 Search, the filter tree, a stable multi-key sort (nulls last, natural order for text), offset or keyset cursor paging,
 the total and facet counts. Text comparisons ignore case and use the invariant culture. Filters are built as
 `Expression<Func<T, bool>>` so a later `IQueryable` applier shares their definition.
+
+## Semantics worth knowing
+
+- **Text.** `contains` and search ignore case and accents in memory (invariant culture, `CompareInfo` with `IgnoreCase | IgnoreNonSpace`). On a
+  database the future `IQueryable` applier emits plain `Contains` and the collation of the column decides, by design. `is` and `isNot` are exact.
+- **Dates are half-open ranges** in the user's time zone. The client sends its IANA id with the request (`DataListRequest.TimeZone`,
+  `DataListState.ToRequest(timeZone: ...)`); it is never in the URL. A day on a `DateTimeOffset` or `DateTime` field is that local day (23 or 25
+  hours on a daylight saving change); `DateOnly` fields compare the day. `Hour`, `Minute` and `Second` granularity match the whole unit: `is` covers
+  `[start, start + unit)`, `before` and `after` use the unit bounds, `between` includes both end units. `DateTime` fields are read as UTC whatever
+  their `Kind`. An unknown zone id is cleared by `Sanitize` and means UTC. IANA ids need ICU or tz data: they work with `TimeZoneInfo` on Linux and
+  macOS and on Windows with ICU (.NET 6 and later); Blazor WebAssembly ships tz data unless `BlazorEnableTimeZoneSupport` is false.
+- **Cursor paging** is keyset (the last row's sort values and key). A cursor that does not decode, or that was made for another sort, returns an
+  empty page and no next cursor, so an infinite scroll stops instead of looping on the first page.
+- **Hostile input.** `Sanitize` drops rules without a key and null nodes, keeps at most `MaxFilterRules` rules (100), `MaxListValues` values
+  per list (500) and 16 levels of groups; set the first two with `.MaxFilterRules(n)` and `.MaxListValues(n)`.
+- **JSON.** Enums are camelCase strings like the URL names; integers are rejected.
+- **Raw expressions** (for a database) are parameterized through closure-like holders, use `array.Contains(x)` for lists, and contain no `ToLower`.
+  They are not run against EF Core in this package. Building them needs a runtime that can create generic instantiations (CoreCLR, Mono); the
+  library is marked AOT compatible and the few unavoidable reflection points carry justified suppressions.
