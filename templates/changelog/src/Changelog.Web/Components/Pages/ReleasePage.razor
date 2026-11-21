@@ -3,7 +3,7 @@
 @inject ReleaseBody Body
 @inject NavigationManager Navigation
 
-@* One page per release. The address holds a slug made from the tag (Releases/ReleaseSlug.cs) and the page finds the release in the list it already has:
+@* One page per release. The address holds a slug made from the tag (ReleaseNotes/ReleaseSlug.cs) and the page finds the release in the list it already has:
    whatever the tag or the address contains, nothing is ever looked up on disk or sent to GitHub with it. *@
 @if (_list is not null && !_list.Available)
 {
