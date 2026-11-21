@@ -114,6 +114,7 @@ public sealed record CheckboxUi : ISlotOverrides
     public string? Container { get; init; }
     public string? Base { get; init; }
     public string? Icon { get; init; }
+    public string? IndeterminateIcon { get; init; }
     public string? Wrapper { get; init; }
     public string? Label { get; init; }
     public string? Description { get; init; }
@@ -124,6 +125,7 @@ public sealed record CheckboxUi : ISlotOverrides
         "container" => Container,
         "base" => Base,
         "icon" => Icon,
+        "indeterminateIcon" => IndeterminateIcon,
         "wrapper" => Wrapper,
         "label" => Label,
         "description" => Description,

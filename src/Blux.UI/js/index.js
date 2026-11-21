@@ -34,6 +34,7 @@ import './content.js';
 import './platform-keys.js';
 import './spatial-nav.js';
 import './switch-hit.js';
+import { syncIndeterminate } from './indeterminate.js';
 import { markHost, isHybrid } from './host.js';
 import { toast } from './toaster.js';
 import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';
@@ -118,6 +119,7 @@ export function afterWebStarted(blazor) {
   blazor.addEventListener('enhancedload', () => {
     applyColorMode();
     hideBrokenAvatars();
+    syncIndeterminate();
     // Enhanced navigation merges server HTML over attributes the elements set: let them re-apply.
     refreshElements();
   });
@@ -142,6 +144,7 @@ export function afterStarted(blazor) {
     // have connected elements before the host was known: let them re-apply, and settle the color mode.
     applyColorMode();
     hideBrokenAvatars();
+    syncIndeterminate();
     refreshElements();
   }
 }
