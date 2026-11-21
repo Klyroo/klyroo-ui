@@ -1,0 +1,201 @@
+<Project>
+  <!--
+    Tailwind compiled at build time, without Node. Opt in with
+
+      <BluxTailwind>true</BluxTailwind>
+
+    The BluxResolveTailwind task finds the official standalone Tailwind CLI for the machine that builds (downloaded once from the GitHub
+    release into the cache, checked against a SHA-256 embedded in the package, executable bit set on Unix), then the CLI compiles the
+    project's stylesheet. The stylesheet is the usual Tailwind v4 entry, which imports Tailwind and the Blux theme that
+    Blux.UI.targets copies to obj/blux/blux.theme.css (the theme also lists the classes the Blux components use, so they are
+    generated too):
+
+      @import "tailwindcss";
+      @import "../obj/blux/blux.theme.css";
+
+    The CLI finds the project's .razor, .cs and .html files itself (from the project folder, skipping what .gitignore ignores); use
+    @source in the stylesheet for anything else. The result is not written into the source tree: it is generated into
+    obj/<config>/<tfm>/blux/tailwind/ and added to the static web assets, so it is served at app.css from a Web project and at
+    _content/<Rcl>/app.css from a Razor class library (StaticWebAssetBasePath), for any host that references it (Web, MAUI Blazor Hybrid).
+
+      BluxTailwind=true            turns the feature on (default false).
+      BluxTailwindInput            the stylesheet to compile (default Styles/app.css, relative to the project).
+      BluxTailwindAssetPath        where the result is served, below the project's base path (default app.css).
+      BluxTailwindMinify           minifies the CSS (default: true in Release).
+      BluxTailwindExecutable       a Tailwind binary to use instead of the download (no download, no checksum).
+      BluxTailwindVersion          the release to download (default 4.3.5, the only one with embedded checksums).
+      BluxTailwindCacheDir         the cache of binaries (default: one per user, shared by every project: ~/.blux/tailwind on Linux and
+                                   macOS, %LOCALAPPDATA%\Blux\tailwind on Windows). A binary is hashed once; a stamp (size and modification time)
+                                   lets later builds skip the hash, and a file that changed since is hashed again and deleted if it differs.
+      BluxOffline=true             never download: the binary must already be in the cache or BluxTailwindExecutable.
+
+    BluxTailwindAdditionalInput    files outside the project that the stylesheet reads (items, globs allowed), for a shared project that an
+                                   @source in the stylesheet points at:
+                                     <BluxTailwindAdditionalInput Include="../Shared/**/*.razor;../Shared/**/*.cs" />
+
+    The compile runs again only when a .razor, .cs, .cshtml, .html or .css file of the project, the stylesheet (even outside the project), an
+    additional input, the theme, the binary or the minify setting changed. The result lives under obj, which is not an input, so a watch loop
+    does not feed itself. Design-time builds do not run it, and neither does a build with NoBuild (dotnet publish with the no-build option): the stylesheet is
+    then already in the build's static web assets.
+  -->
+  <PropertyGroup>
+    <BluxTailwind Condition="'$(BluxTailwind)' == ''">false</BluxTailwind>
+    <BluxTailwindVersion Condition="'$(BluxTailwindVersion)' == ''">4.3.5</BluxTailwindVersion>
+    <BluxTailwindInput Condition="'$(BluxTailwindInput)' == ''">Styles/app.css</BluxTailwindInput>
+    <BluxTailwindAssetPath Condition="'$(BluxTailwindAssetPath)' == ''">app.css</BluxTailwindAssetPath>
+    <BluxTailwindMinify Condition="'$(BluxTailwindMinify)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</BluxTailwindMinify>
+  </PropertyGroup>
+
+  <!-- `dotnet watch` rebuilds when the stylesheet changes (it is not a Compile or Content item, so it is not watched otherwise). -->
+  <ItemGroup Condition="'$(BluxTailwind)' == 'true'">
+    <Watch Include="$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(BluxTailwindInput)))" />
+    <Watch Include="@(BluxTailwindAdditionalInput)" />
+  </ItemGroup>
+
+  <!-- Visual Studio's fast up-to-date check only knows Compile, Content and the like: without these it would call a build with an edited stylesheet up to date. -->
+  <ItemGroup Condition="'$(BluxTailwind)' == 'true'">
+    <UpToDateCheckInput Include="$(BluxTailwindInput)" />
+    <UpToDateCheckInput Include="@(BluxTailwindAdditionalInput)" />
+  </ItemGroup>
+
+  <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the paths are computed here. -->
+  <Target Name="_BluxTailwindPaths" Condition="'$(BluxTailwind)' == 'true'">
+    <PropertyGroup>
+      <_BluxTailwindInputFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(BluxTailwindInput)))</_BluxTailwindInputFile>
+      <BluxTailwindOutputDir Condition="'$(BluxTailwindOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, tailwind))</BluxTailwindOutputDir>
+      <_BluxTailwindOutputFile>$(BluxTailwindOutputDir)$([System.IO.Path]::GetFileName($(BluxTailwindAssetPath)))</_BluxTailwindOutputFile>
+      <_BluxTailwindThemeFile>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))blux.theme.css</_BluxTailwindThemeFile>
+      <_BluxTailwindMinifyArg Condition="'$(BluxTailwindMinify)' == 'true'"> --minify</_BluxTailwindMinifyArg>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="BluxTailwindResolve" DependsOnTargets="_BluxTailwindPaths" Condition="'$(BluxTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
+    <!-- The Blazor project template ships wwwroot/app.css: two assets at one route is a build error of the SDK that does not say why. -->
+    <Error Code="BLUXTW004" Condition="Exists('$(MSBuildProjectDirectory)/wwwroot/$(BluxTailwindAssetPath)')"
+           Text="BluxTailwind would serve the generated stylesheet at '$(BluxTailwindAssetPath)', but the project already has wwwroot/$(BluxTailwindAssetPath). Delete that file (and move its CSS into $(BluxTailwindInput)), or set BluxTailwindAssetPath to another name." />
+    <BluxResolveTailwind Executable="$(BluxTailwindExecutable)"
+                         Version="$(BluxTailwindVersion)"
+                         CacheDir="$(BluxTailwindCacheDir)"
+                         Offline="$(BluxOffline)">
+      <Output TaskParameter="ExecutablePath" PropertyName="_BluxTailwindExe" />
+    </BluxResolveTailwind>
+  </Target>
+
+  <!--
+    Inputs and Outputs make MSBuild skip the compile when the output is newer than every input. The binary is an input so a version change
+    recompiles; the output is under obj, which the glob leaves out.
+  -->
+  <Target Name="BluxTailwindBuild"
+          BeforeTargets="ResolveProjectStaticWebAssets"
+          DependsOnTargets="BluxTailwindResolve"
+          Condition="'$(BluxTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'"
+          Inputs="@(_BluxTailwindInput)"
+          Outputs="$(_BluxTailwindOutputFile)">
+    <Error Code="BLUXTW003" Condition="!Exists('$(_BluxTailwindInputFile)')"
+           Text="BluxTailwind is on but the stylesheet '$(_BluxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/blux/blux.theme.css&quot;;  or set BluxTailwindInput to your stylesheet." />
+    <MakeDir Directories="$(BluxTailwindOutputDir)" />
+    <Exec Command="&quot;$(_BluxTailwindExe)&quot; --input &quot;$(_BluxTailwindWrapper)&quot; --output &quot;$(_BluxTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_BluxTailwindMinifyArg)"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          StandardOutputImportance="low"
+          StandardErrorImportance="high"
+          IgnoreStandardErrorWarningFormat="true" />
+    <!-- The CLI does not rewrite an output whose content is unchanged, so after an edit that changes no CSS (a comment in a .cs file) the output would stay older than the inputs and this target would run on every build. -->
+    <Touch Files="$(_BluxTailwindOutputFile)" />
+  </Target>
+
+  <!--
+    The inputs are listed after the resolve target (Inputs are read when BluxTailwindBuild is about to run, after its dependencies).
+    obj and bin are left out: the output is there.
+  -->
+  <Target Name="_BluxTailwindCollectInputs" BeforeTargets="BluxTailwindBuild" DependsOnTargets="BluxTailwindResolve" Condition="'$(BluxTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
+    <PropertyGroup>
+      <_BluxTailwindObj>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath)))</_BluxTailwindObj>
+      <_BluxTailwindBin>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseOutputPath)))</_BluxTailwindBin>
+    </PropertyGroup>
+    <MakeDir Directories="$(BluxTailwindOutputDir)" />
+    <!--
+      The CLI scans the project folder for class names, and without a .gitignore that includes obj and bin (generated sources, the
+      output itself). A small entry in obj imports the app's stylesheet and takes both out of the scan. Paths are relative to it, with
+      forward slashes, which is what CSS wants on every OS.
+    -->
+    <PropertyGroup>
+      <_BluxTailwindState>minify=$(BluxTailwindMinify) binary=$(_BluxTailwindExe)</_BluxTailwindState>
+      <_BluxTailwindWrapper>$(BluxTailwindOutputDir)blux.tailwind.input.css</_BluxTailwindWrapper>
+      <_BluxTailwindRelImport>$([MSBuild]::MakeRelative($(BluxTailwindOutputDir), $(_BluxTailwindInputFile)).Replace('\', '/'))</_BluxTailwindRelImport>
+      <_BluxTailwindRelObj>$([MSBuild]::MakeRelative($(BluxTailwindOutputDir), $(_BluxTailwindObj)).Replace('\', '/'))</_BluxTailwindRelObj>
+      <_BluxTailwindRelBin>$([MSBuild]::MakeRelative($(BluxTailwindOutputDir), $(_BluxTailwindBin)).Replace('\', '/'))</_BluxTailwindRelBin>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_BluxTailwindWrapper)"
+                      Lines="/* Generated by Blux.UI: the app's stylesheet, with obj and bin left out of the class scan. $(_BluxTailwindState) */;@import &quot;$(_BluxTailwindRelImport)&quot;%3B;@source not &quot;$(_BluxTailwindRelObj)&quot;%3B;@source not &quot;$(_BluxTailwindRelBin)&quot;%3B"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_BluxTailwindInput Include="$(MSBuildProjectDirectory)/**/*.razor;$(MSBuildProjectDirectory)/**/*.cs;$(MSBuildProjectDirectory)/**/*.cshtml;$(MSBuildProjectDirectory)/**/*.html;$(MSBuildProjectDirectory)/**/*.css"
+                          Exclude="$(_BluxTailwindObj)**;$(_BluxTailwindBin)**;$(MSBuildProjectDirectory)/node_modules/**" />
+      <_BluxTailwindInput Include="$(_BluxTailwindThemeFile)" Condition="Exists('$(_BluxTailwindThemeFile)')" />
+      <!-- The wrapper holds the minify setting and the binary: changing either rewrites it, which makes it newer than the output. -->
+      <_BluxTailwindInput Include="$(_BluxTailwindExe);$(_BluxTailwindWrapper);$(MSBuildProjectFullPath);$(MSBuildThisFileFullPath)" />
+      <!-- The stylesheet may live outside the project folder, and so may what it reads (BluxTailwindAdditionalInput). -->
+      <_BluxTailwindInput Include="$(_BluxTailwindInputFile)" />
+      <_BluxTailwindInput Include="@(BluxTailwindAdditionalInput)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    For `dotnet watch`: run it in a second terminal, next to the watch,
+
+      dotnet build -t:BluxTailwindWatch        (dotnet msbuild -t:BluxTailwindWatch does the same)
+
+    It resolves and verifies the binary exactly like the build does, then runs the CLI in the foreground with its own file watcher, on the
+    same entry file and the same output in obj, so the next page reload serves the new CSS. Ctrl+C ends it: MSBuild cancels the Exec task,
+    which stops the CLI with it. The project must have been built once (the theme is copied and the stylesheet defined by a build), and
+    nothing else runs: no static web assets, no compile.
+  -->
+  <Target Name="BluxTailwindWatch" DependsOnTargets="BluxTailwindResolve;_BluxTailwindCollectInputs" Condition="'$(BluxTailwind)' == 'true'">
+    <Error Code="BLUXTW003" Condition="!Exists('$(_BluxTailwindInputFile)')"
+           Text="BluxTailwind is on but the stylesheet '$(_BluxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/blux/blux.theme.css&quot;;  or set BluxTailwindInput to your stylesheet." />
+    <Message Importance="high" Text="Tailwind is watching $(MSBuildProjectName); the CSS is regenerated into $(_BluxTailwindOutputFile). Reload the page after an edit. Ctrl+C stops it." />
+    <Exec Command="&quot;$(_BluxTailwindExe)&quot; --input &quot;$(_BluxTailwindWrapper)&quot; --output &quot;$(_BluxTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_BluxTailwindMinifyArg) --watch=always"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          StandardOutputImportance="high"
+          StandardErrorImportance="high"
+          IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+  <!--
+    The result lives in obj, not in wwwroot, so it is defined here with its own content root instead of being discovered (the same way as
+    the fonts). BasePath is the project's: the root for a Web project, _content/<Rcl> for a Razor class library.
+  -->
+  <Target Name="BluxTailwindDefineAssets" AfterTargets="ResolveProjectStaticWebAssets" DependsOnTargets="_BluxTailwindPaths" Condition="'$(BluxTailwind)' == 'true' And '$(NoBuild)' != 'true' And Exists('$(_BluxTailwindOutputFile)')">
+    <ItemGroup>
+      <_BluxTailwindCandidate Include="$(_BluxTailwindOutputFile)" RelativePath="$(BluxTailwindAssetPath)" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets CandidateAssets="@(_BluxTailwindCandidate)"
+                           SourceType="Computed"
+                           SourceId="$(PackageId)"
+                           ContentRoot="$(BluxTailwindOutputDir)"
+                           BasePath="$(StaticWebAssetBasePath)"
+                           AssetKind="All"
+                           AssetMode="All"
+                           AssetRole="Primary"
+                           AssetMergeSource="$(StaticWebAssetMergeTarget)"
+                           FingerprintCandidates="$(StaticWebAssetsFingerprintContent)"
+                           FingerprintPatterns="@(StaticWebAssetFingerprintPattern)"
+                           CopyToOutputDirectory="Never"
+                           CopyToPublishDirectory="PreserveNewest">
+      <Output TaskParameter="Assets" ItemName="_BluxTailwindAsset" />
+    </DefineStaticWebAssets>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_BluxTailwindAsset)"
+                                   ContentTypeMappings="@(StaticWebAssetContentTypeMapping)">
+      <Output TaskParameter="Endpoints" ItemName="_BluxTailwindEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <ItemGroup>
+      <StaticWebAsset Include="@(_BluxTailwindAsset)" />
+      <StaticWebAssetEndpoint Include="@(_BluxTailwindEndpoint)" />
+      <FileWrites Include="$(_BluxTailwindOutputFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

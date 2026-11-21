@@ -34,12 +34,22 @@ namespace Blux.UI.Build
         // Providers pick the format from the user agent: a current Chrome gets woff2 and the unicode-range subsets.
         public const string BrowserUserAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 
-        private static readonly HttpClient Client = Create();
+        private static readonly HttpClient SharedClient = Create(TimeSpan.FromSeconds(60));
 
-        private static HttpClient Create()
+        private readonly HttpClient Client;
+
+        public HttpNetwork() : this(null) { }
+
+        /// <summary>A longer timeout than the default 60 seconds, for downloads of a hundred megabytes (a tool binary).</summary>
+        public HttpNetwork(TimeSpan? timeout)
+        {
+            Client = timeout == null ? SharedClient : Create(timeout.Value);
+        }
+
+        private static HttpClient Create(TimeSpan timeout)
         {
             var handler = new HttpClientHandler { AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate };
-            return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(60) };
+            return new HttpClient(handler) { Timeout = timeout };
         }
 
         public string GetText(string url, string? userAgent)
