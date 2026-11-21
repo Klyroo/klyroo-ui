@@ -14,7 +14,6 @@ public sealed class QueryValue<T> : IDisposable
     private readonly IQueryCodec<T> _codec;
     private readonly string? _defaultText;
     private readonly IDisposable _subscription;
-    private readonly EqualityComparer<T> _comparer = EqualityComparer<T>.Default;
     private T _known;
 
     internal QueryValue(QueryState state, string key, IQueryCodec<T> codec, T defaultValue, QueryHistory history)
@@ -64,10 +63,11 @@ public sealed class QueryValue<T> : IDisposable
     /// <param name="value">The value the link carries.</param>
     public string HrefWith(T value) => _state.HrefWith((Key, TextOf(value)));
 
+    // A value equal to the default by value (1.0 is 1 for a decimal) or by text is left out.
     private string? TextOf(T value)
     {
         var text = _codec.Format(value);
-        return text == _defaultText ? null : text;
+        return text == _defaultText || QueryEquality.Equal(value, Default) ? null : text;
     }
 
     private T Read()
@@ -79,7 +79,7 @@ public sealed class QueryValue<T> : IDisposable
     private void Refresh()
     {
         var value = Read();
-        if (_comparer.Equals(value, _known)) return;
+        if (QueryEquality.Equal(value, _known)) return;
         _known = value;
         Changed?.Invoke();
     }

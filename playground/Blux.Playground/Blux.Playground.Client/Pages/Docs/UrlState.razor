@@ -35,8 +35,8 @@
     <h2>A group of values</h2>
     <p>
         <code>Group</code> binds a record. Each property has a key and a codec, and one write is one navigation and one history entry. An optional prefix
-        (<code>users</code> gives <code>users.q</code>, <code>users.page</code>) lets two lists share a page, and it is claimed: a second component that claims the same
-        prefix on the same page throws, naming both owners, instead of silently writing over the first.
+        (<code>users</code> gives <code>users.q</code>, <code>users.page</code>) lets two lists share a page. The keys of a group are claimed: a second group of the page that uses the same key throws when it adds it,
+        naming both owners, instead of silently writing over the first. Two groups with different keys can both have no prefix.
     </p>
     <CodeBlock Title="Users.razor" Code="@Group" />
 
@@ -55,8 +55,10 @@
         current page with a change applied. In the live example above, the filters, the pages and the clear button are links, and the search is a GET form that
         carries the other keys as hidden fields. Switch the render mode of the
         <a href="ssr/docs/url-state">static version</a>, the <a href="server/docs/url-state">server</a>, the <a href="wasm/docs/url-state">WebAssembly</a> or the
-        <a href="auto/docs/url-state">auto</a> one: the URLs are the same in all of them. Tell the service which renderer a component runs on with
-        <code>Query.UseRenderer(RendererInfo)</code> in <code>OnInitialized</code>, so that a write made before the page is interactive is dropped instead of attempting a redirect.
+        <a href="auto/docs/url-state">auto</a> one: the URLs are the same in all of them. Give the service the renderer of a component with
+        the <code>RendererInfo</code> of the component to <code>Bind</code> and <code>Group</code>: a write from a renderer that is not interactive changes nothing, and the
+        navigation manager is never called (with <code>BlazorDisableThrowNavigationException</code> it would turn the call into a real redirect of the request). The raw
+        <code>Set</code> needs <code>Query.UseRenderer(RendererInfo)</code> first and throws on the server without it.
     </p>
     <CodeBlock Title="StaticLinks.razor" Code="@Links" />
 
@@ -85,7 +87,9 @@
     <p>
         <code>Subscribe(prefix, handler)</code> calls the handler with the changed keys that match the prefix, whether the change came from a write or from the URL; a key
         matches when it equals the prefix or starts with the prefix and a dot, and the empty prefix matches all. <code>Claim(prefix, owner)</code> reserves a prefix, the
-        empty one included. A claim made on another page than the current one replaces it, because the router creates the next page before it disposes the previous one.
+        empty one included, and throws when the page already holds the same one. A claim that meets one made before the last change of page (a layout, or a page reused for
+        another route parameter) is judged once the render under way is over, because the router creates the next page before it disposes the previous one: if the old claim is
+        still alive then, <code>QueryClaim.ThrowIfConflicted()</code> throws, and a group calls it every time it is used.
     </p>
 
     <h2>What the framework does</h2>
@@ -114,9 +118,8 @@
 
             protected override void OnInitialized()
             {
-                Query.UseRenderer(RendererInfo);
-                _search = Query.Bind("q", QueryCodecs.String, "");   // typing replaces the entry
-                _page = Query.Bind("page", QueryCodecs.Int32, 1);    // page 1 is not written
+                _search = Query.Bind("q", QueryCodecs.String, "", RendererInfo);   // typing replaces the entry
+                _page = Query.Bind("page", QueryCodecs.Int32, 1, RendererInfo);    // page 1 is not written
                 _search.Changed += () => _ = InvokeAsync(StateHasChanged);
                 _page.Changed += () => _ = InvokeAsync(StateHasChanged);
             }
@@ -130,8 +133,7 @@
 
         protected override void OnInitialized()
         {
-            Query.UseRenderer(RendererInfo);
-            _filters = Query.Group(new Filters(), owner: nameof(Users), prefix: "users", history: QueryHistory.Push)
+            _filters = Query.Group(new Filters(), nameof(Users), RendererInfo, prefix: "users", history: QueryHistory.Push)
                 .Add("q", f => f.Q, (f, v) => f with { Q = v }, QueryCodecs.String)
                 .Add("status", f => f.Status, (f, v) => f with { Status = v }, QueryCodecs.Enum<Status>(lowercase: true))
                 .Add("page", f => f.Page, (f, v) => f with { Page = v }, QueryCodecs.Int32);

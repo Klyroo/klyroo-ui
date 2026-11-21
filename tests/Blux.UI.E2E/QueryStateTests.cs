@@ -257,6 +257,46 @@ public class QueryStateTests(PlaygroundServer server) : PlaygroundTest(server)
 
     [Theory]
     [MemberData(nameof(AllModes))]
+    public async Task A_prerender_that_normalizes_the_state_does_not_redirect_the_request(string mode)
+    {
+        // The page asks for a page past the end and the component normalizes it in OnInitialized, during the prerender and the static render.
+        // The playground runs with BlazorDisableThrowNavigationException, where a NavigateTo of the prerender is a real redirect.
+        var response = await Page.GotoAsync($"/{mode}/docs/url-state?page=99&utm_source=mail");
+
+        Assert.NotNull(response);
+        Assert.Equal(200, response.Status);
+        Assert.Null(response.Request.RedirectedFrom);
+        if (mode == "ssr")
+        {
+            // Static rendering cannot write: the URL stays as it was typed and the page shows the last page.
+            await Page.WaitForTimeoutAsync(500);
+            Assert.Equal("?page=99&utm_source=mail", Query);
+            return;
+        }
+        await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        var length = await HistoryLength();
+        // Interactive, the same component replaces the entry.
+        await WaitForQuery("?page=3&utm_source=mail");
+        Assert.Equal(length, await HistoryLength());
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_write_followed_by_a_navigation_to_another_page_in_one_handler_does_not_send_the_user_back(string mode)
+    {
+        await OpenState(mode);
+
+        await Page.GetByTestId("url-leave").ClickAsync();
+
+        await Page.WaitForURLAsync(url => new Uri(url).AbsolutePath.EndsWith("/docs"), new() { Timeout = 15_000 });
+        // The write was meant for the page being left: after a while the address is still the other page's, with no state of ours.
+        await Page.WaitForTimeoutAsync(1500);
+        Assert.EndsWith("/docs", new Uri(Page.Url).AbsolutePath);
+        Assert.DoesNotContain("q=left", Query);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
     public async Task The_guide_has_no_accessibility_violations_in_light_and_dark(string mode)
     {
         await OpenState(mode, "?status=open");

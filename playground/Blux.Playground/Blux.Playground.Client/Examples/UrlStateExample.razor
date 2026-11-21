@@ -34,6 +34,8 @@
                       aria-current="@(active ? "true" : null)" data-testid="@($"url-status-{status.ToString().ToLowerInvariant()}")" />
         }
         <BxButton Href="@Group.HrefWith(new DemoState())" Label="Clear" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-testid="url-clear" />
+        @* Writes the state, then leaves for another page in the same handler: the write must not bring the user back. *@
+        <BxButton Label="Write and leave" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="WriteAndLeave" data-testid="url-leave" />
     </nav>
 
     @* A button writes the state itself: one write, one history entry. *@
@@ -109,14 +111,15 @@
 
     protected override void OnInitialized()
     {
-        // Static and prerendered renders cannot navigate: the service then writes nothing, and the links above carry the changes.
-        Query.UseRenderer(RendererInfo);
-        Group = Query.Group(new DemoState(), owner: nameof(UrlStateExample), history: QueryHistory.Push)
+        // The RendererInfo tells the service whether it can navigate: a static or prerendered render writes nothing, and the links above carry the changes.
+        Group = Query.Group(new DemoState(), nameof(UrlStateExample), RendererInfo, history: QueryHistory.Push)
             .Add("q", s => s.Q, (s, v) => s with { Q = v }, QueryCodecs.String)
             .Add("status", s => s.Status, (s, v) => s with { Status = v }, QueryCodecs.Enum<DemoStatus>(lowercase: true))
             .Add("desc", s => s.Desc, (s, v) => s with { Desc = v }, QueryCodecs.Boolean)
             .Add("page", s => s.Page, (s, v) => s with { Page = Math.Max(1, v) }, QueryCodecs.Int32);
         Group.Changed += OnChanged;
+        // A page past the end is normalized by replacing the entry. Prerendering writes nothing: it must not turn into a redirect.
+        if (State.Page > Pages) Group.Update(s => s with { Page = Pages }, QueryHistory.Replace);
     }
 
     // The URL changed (Back, Forward, a typed address, a link): show it.
@@ -124,6 +127,12 @@
 
     // Typing replaces the entry and goes back to the first page.
     private void OnSearch(string? value) => Group.Update(s => s with { Q = value ?? "", Page = 1 }, QueryHistory.Replace);
+
+    private void WriteAndLeave()
+    {
+        Group.Update(s => s with { Q = "left" }, QueryHistory.Replace);
+        Navigation.NavigateTo("docs");
+    }
 
     private void ToggleSort() => Group.Update(s => s with { Desc = !s.Desc, Page = 1 }, QueryHistory.Push);
 
