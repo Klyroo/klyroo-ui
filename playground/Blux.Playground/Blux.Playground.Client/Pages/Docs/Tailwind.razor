@@ -19,7 +19,7 @@
     <p>In Release the CSS is minified. <code>dotnet watch</code> rebuilds when the stylesheet changes: it is declared as a watched file.</p>
 
     <h2>The binary</h2>
-    <p>The build downloads <code>tailwindcss-&lt;os&gt;-&lt;arch&gt;</code> for the machine that builds from the GitHub release of the pinned version (4.3.5, the same one the library is built with) and keeps it in a cache folder. It is checked against a SHA-256 that ships inside the package and discarded if it differs, and the executable bit is set on Linux and macOS. Linux x64 and arm64 (glibc and musl), macOS x64 and arm64, and Windows x64 are supported; Windows on ARM runs the x64 binary. The release has no other builds.</p>
+    <p>The build downloads <code>tailwindcss-&lt;os&gt;-&lt;arch&gt;</code> for the machine that builds from the GitHub release of the pinned version (4.3.5, the same one the library is built with) and keeps it in a cache folder. It is checked against a SHA-256 that ships inside the package and discarded if it differs, and the executable bit is set on Linux and macOS. The hash is computed once per cached binary: a stamp next to it records its size and modification time, later builds trust the stamp, and a file that changed since is hashed again and deleted when it differs, so an unverified binary is never run. Linux x64 and arm64 (glibc and musl), macOS x64 and arm64, and Windows x64 are supported; Windows on ARM runs the x64 binary. The release has no other builds.</p>
 
     <h2>Properties</h2>
     <ul>
@@ -29,16 +29,25 @@
         <li><code>BluxTailwindMinify</code>: default <code>true</code> in Release.</li>
         <li><code>BluxTailwindExecutable</code>: a Tailwind binary to use instead of the download, with no check. A path that does not exist is an error.</li>
         <li><code>BluxTailwindVersion</code>: the release to download. Only the default has embedded checksums; another version is refused, so use <code>BluxTailwindExecutable</code> for it.</li>
-        <li><code>BluxTailwindCacheDir</code>: the cache of binaries. Default <code>obj/blux/tailwind-cache</code>, next to the fonts and icons caches (<code>BluxCacheDir</code>); point it at a folder shared between projects and kept between CI runs to download once.</li>
+        <li><code>BluxTailwindCacheDir</code>: the cache of binaries. Default: one folder per user, shared by every project and solution (<code>~/.blux/tailwind</code> on Linux and macOS, <code>%LOCALAPPDATA%\Blux\tailwind</code> on Windows), so the binary is downloaded once per machine. Keep it between CI runs to download once there too.</li>
+        <li><code>BluxTailwindAdditionalInput</code>: files outside the project that the stylesheet reads (items, globs allowed). See below.</li>
         <li><code>BluxOffline</code>: <code>true</code> never touches the network.</li>
     </ul>
+
+    <h2>Shared projects</h2>
+    <p>The CLI reads what <code>@@source</code> points at, but MSBuild only knows the files of the project folder (and the stylesheet itself, even outside it). For a folder outside the project, add an <code>@@source</code> to the stylesheet and list the same files as additional inputs so that editing them rebuilds the CSS:</p>
+    <CodeBlock Title="Site.csproj" Code="@Shared" />
+    <CodeBlock Title="Styles/app.css" Code="@SharedCss" />
 
     <h2>Offline builds</h2>
     <p>The download is the only network use. Fill the cache with one online build and set <code>BluxOffline=true</code> afterwards, or install Tailwind another way and give its path to <code>BluxTailwindExecutable</code>. When the download is impossible, the build fails with <code>BLUXTW001</code>, an error that names <code>BluxTailwindExecutable</code>, because without the CSS the app would run unstyled.</p>
     <CodeBlock Title="Site.csproj" Code="@Offline" />
 
     <h2>Incremental builds</h2>
-    <p>The CLI runs again only when a <code>.razor</code>, <code>.cs</code>, <code>.cshtml</code>, <code>.html</code> or <code>.css</code> file of the project, the Blux theme or the binary changed. The output lives in <code>obj</code>, which is not an input, so a watch loop does not trigger itself. Design-time builds (an IDE refreshing IntelliSense) never run it.</p>
+    <p>The CLI runs again only when a <code>.razor</code>, <code>.cs</code>, <code>.cshtml</code>, <code>.html</code> or <code>.css</code> file of the project, the Blux theme or the binary changed. The output lives in <code>obj</code>, which is not an input, so a watch loop does not trigger itself. Design-time builds (an IDE refreshing IntelliSense) and <code>dotnet publish --no-build</code> never run it (the stylesheet is already part of what the build produced).</p>
+
+    <h2>dotnet watch</h2>
+    <p>Under <code>dotnet watch</code> (checked on SDK 10.0.404) an edit to the stylesheet or a <code>.razor</code> file makes the build targets evaluate again, and the CSS is regenerated. The browser is not told: watch does not follow files under <code>obj</code>, and a CSS-only edit does not refresh it, so reload the page to see new styles. A <code>.razor</code> edit refreshes the browser at once, which can be before the CSS is regenerated: reload once more if a new class does not show.</p>
 </div>
 
 @code {
@@ -57,6 +66,18 @@
 
     private const string Link = """
         <link rel="stylesheet" href="@Assets["app.css"]" />
+        """;
+
+    private const string Shared = """
+        <ItemGroup>
+          <BluxTailwindAdditionalInput Include="../Shared/**/*.razor;../Shared/**/*.cs" />
+        </ItemGroup>
+        """;
+
+    private const string SharedCss = """
+        @import "tailwindcss";
+        @import "../obj/blux/blux.theme.css";
+        @source "../../Shared";
         """;
 
     private const string Offline = """

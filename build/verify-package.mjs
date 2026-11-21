@@ -267,10 +267,19 @@ try {
     check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/blux/blux.theme.css copied by the targets, identical to the package's`);
   }
 
-  // Tailwind compiled by the app at build time, without Node: BluxTailwind=true downloads the pinned standalone CLI. The download is cached
-  // outside the throwaway consumer (a second run does not download it again) and is checked against the embedded SHA-256 whenever it happens.
+  // Tailwind compiled by the app at build time, without Node: BluxTailwind=true downloads the pinned standalone CLI. The cache is a fresh folder
+  // of this run, so the first build really downloads, hashes and chmods it; the builds after it are the cached scenario.
   {
-    const tailwindCache = join(tmpdir(), "blux-verify-tailwind-cache");
+    const tailwindCache = join(work, "tailwind-cache");
+    // A razor class library with BluxTailwind, referenced by the server: its stylesheet must reach the host, also through publish with no build.
+    const rcl = join(app, "Site", "Rcl");
+    mkdirSync(join(rcl, "Styles"), { recursive: true });
+    writeFileSync(join(rcl, "Rcl.csproj"), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><BluxTailwind>true</BluxTailwind></PropertyGroup>\n  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /><PackageReference Include="Blux.UI" Version="${version}" /></ItemGroup>\n</Project>\n`);
+    writeFileSync(join(rcl, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n`);
+    writeFileSync(join(rcl, "Widget.razor"), `<p class="tracking-[0.246em]">Rcl widget</p>\n`);
+    writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><ProjectReference Include="..\\Rcl\\Rcl.csproj" /></ItemGroup>\n</Project>`));
+    // In the solution, so that a Release build of it builds the library in Release too (a project outside the solution is built as Debug).
+    check(run("dotnet", ["sln", join(app, "Site", "Site.sln"), "add", join(rcl, "Rcl.csproj")], app, consumerEnv).code === 0, "tailwind: the library is added to the consumer solution");
     // The server project sets BluxOffline=true for the icons check; the first Tailwind build needs the network (a global property wins over it).
     const flags = ["-p:BluxOffline=false", `-p:BluxTailwindCacheDir=${tailwindCache}`];
     const buildTw = (label, extra = flags) => {
@@ -281,7 +290,12 @@ try {
       return r;
     };
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <PropertyGroup><BluxTailwind>true</BluxTailwind></PropertyGroup>\n</Project>`));
-    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n`);
+    // A shared folder outside the project, read through @source: BluxTailwindAdditionalInput makes edits there rebuild the stylesheet.
+    const shared = join(app, "Site", "Shared");
+    mkdirSync(shared, { recursive: true });
+    writeFileSync(join(shared, "Shared.razor"), `<p class="tracking-[0.555em]">shared</p>\n`);
+    writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxTailwindAdditionalInput Include="../Shared/**/*.razor" /></ItemGroup>\n</Project>`));
+    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@source "../../Shared";\n`);
     const homeSource = readFileSync(home, "utf8");
     const withClasses = (classes) => writeFileSync(home, `${homeSource}\n<p class="${classes}">Tailwind check</p>\n`);
     // tracking-[0.123em] is an arbitrary value: it is in no precompiled stylesheet, only a build that scans the app's sources can produce it.
@@ -319,8 +333,26 @@ try {
     buildTw("tailwind: after a source change");
     check(stamp() > t1 && css().includes("1.234"), "tailwind: a changed .razor runs the CLI again and its new utility appears");
 
+    // An edit that changes no CSS (a comment in a .cs file): the CLI leaves its output alone, so the target must still settle (its output is touched).
+    const programSource = readFileSync(prog, "utf8");
+    writeFileSync(prog, `${programSource}\n// edited without a class name\n`);
+    buildTw("tailwind: after a .cs edit");
+    const t3 = stamp();
+    buildTw("tailwind: build after the .cs edit");
+    check(stamp() === t3, "tailwind: after an edit that changes no CSS the next build skips the target (it does not rerun on every build)");
+    // The minify setting is part of the inputs: switching it within one configuration recompiles.
+    buildTw("tailwind: minify off", [...flags, "-p:BluxTailwindMinify=false"]);
+    check(css().trim().split("\n").length > 10, "tailwind: BluxTailwindMinify=false in Release gives readable CSS (the setting reruns the CLI)");
+    buildTw("tailwind: minify back on");
+    check(css().trim().split("\n").length <= 3, "tailwind: minify back on gives minified CSS again");
+    // A file outside the project folder, listed in BluxTailwindAdditionalInput, is tracked.
+    check(css().includes(".555em"), "tailwind: a class of the shared folder outside the project is generated (@source)");
+    writeFileSync(join(shared, "Shared.razor"), `<p class="tracking-[0.555em] leading-[1.666]">shared</p>\n`);
+    buildTw("tailwind: after an edit outside the project");
+    check(css().includes("1.666"), "tailwind: an edit in a BluxTailwindAdditionalInput file outside the project rebuilds the stylesheet");
+
     // An override binary: no download, whatever the cache holds. Offline with nothing cached and no override: an error that names the property.
-    const cached = existsSync(tailwindCache) ? readdirSync(tailwindCache, { recursive: true }).map((f) => join(tailwindCache, String(f))).find((f) => /tailwindcss-(linux|macos|windows)[^/\\]*$/.test(f) && statSync(f).isFile() && !f.endsWith(".tmp")) : undefined;
+    const cached = existsSync(tailwindCache) ? readdirSync(tailwindCache, { recursive: true }).map((f) => join(tailwindCache, String(f))).find((f) => /tailwindcss-(linux|macos|windows)[^/\\]*$/.test(f) && statSync(f).isFile() && !/\.(tmp|verified)$/.test(f)) : undefined;
     const emptyCache = join(work, "empty-tailwind-cache");
     if (check(!!cached, "tailwind: the verified binary is in the cache folder")) {
       withClasses("tracking-[0.123em] leading-[1.345]");
@@ -332,8 +364,33 @@ try {
       check(off.code !== 0 && /BLUXTW001[^\n]*BluxTailwindExecutable/.test(off.out), "tailwind: offline with an empty cache fails with an error that names BluxTailwindExecutable");
     }
 
+    // A cached binary that changed after it was verified is never run: offline it is rejected and deleted, online it is downloaded again.
+    if (cached) {
+      writeFileSync(cached, Buffer.concat([readFileSync(cached), Buffer.from("x")]));
+      writeFileSync(home, `${homeSource}\n<p class="tracking-[0.123em] leading-[1.567]">Tailwind check</p>\n`);
+      const bad = run("dotnet", ["build", "-c", "Release", "-p:BluxOffline=true", `-p:BluxTailwindCacheDir=${tailwindCache}`, join(app, "Site", "Site.sln")], app, consumerEnv);
+      check(bad.code !== 0 && /BLUXTW001[^\n]*(SHA-256|checksum)/.test(bad.out) && !existsSync(cached), "tailwind: a modified cached binary is rejected offline and deleted, never run");
+    }
+
     // The app serves it.
     buildTw("tailwind: final build");
+    check(!!cached && existsSync(cached) && existsSync(cached + ".verified"), "tailwind: the binary is downloaded again and stamped after it was rejected");
+    // build, then publish with no build: the stylesheets of the server and of the library must be published (the targets must not run again).
+    {
+      const out = join(server, "bin", "Release", "net10.0", "publish");
+      rmSync(out, { recursive: true, force: true });
+      const r = run("dotnet", ["publish", join(server, "Site.csproj"), "-c", "Release", "--no-build", ...flags], server, consumerEnv);
+      if (r.code !== 0) console.log(r.out);
+      check(r.code === 0, "tailwind: dotnet publish --no-build after the build succeeds");
+      const published = existsSync(join(out, "wwwroot")) ? readdirSync(join(out, "wwwroot"), { recursive: true }).map(String) : [];
+      // The library alone: without the NoBuild guard its definition of the asset ran with an empty base path ("No metadata 'BasePath'").
+      const rclPublish = run("dotnet", ["publish", join(rcl, "Rcl.csproj"), "-c", "Release", "--no-build", ...flags], rcl, consumerEnv);
+      if (rclPublish.code !== 0) console.log(rclPublish.out);
+      check(rclPublish.code === 0, "tailwind: dotnet publish --no-build of the razor class library itself succeeds");
+      check(published.some((f) => /^site\.tailwind(\.[^./]+)?\.css$/.test(f)), "tailwind: the web project's stylesheet is published");
+      check(published.some((f) => /^_content[/\\]Rcl[/\\]app(\.[^./]+)?\.css$/.test(f)), "tailwind: the library's stylesheet is published at _content/Rcl/app.css");
+      check(published.some((f) => /^_blux[/\\]fonts[/\\]blux\.fonts(\.[^./]+)?\.css$/.test(f)), "fonts: the stylesheet is published by publish --no-build too");
+    }
     {
       const port = 20000 + Math.floor(Math.random() * 20000);
       const url = `http://127.0.0.1:${port}`;
