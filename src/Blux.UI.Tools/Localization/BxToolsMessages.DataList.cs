@@ -49,4 +49,28 @@ public sealed partial record BxToolsMessages
 
     /// <summary>The accessible name of the pagination of a labelled data list. {0} is the label of the list.</summary>
     public string PaginationFor { get; init; } = "Pagination, {0}";
+
+    /// <summary>Placeholder of the search field of a data list.</summary>
+    public string SearchPlaceholder { get; init; } = "Search…";
+
+    /// <summary>Accessible name of the search field of a data list that has no label. It also labels the button that submits the search of a statically rendered list.</summary>
+    public string Search { get; init; } = "Search";
+
+    /// <summary>Accessible name of the search field of a labelled data list. {0} is the label of the list.</summary>
+    public string SearchFor { get; init; } = "Search {0}";
+
+    /// <summary>Accessible name of the button that empties the search field, and label of the action of the empty state that clears the search.</summary>
+    public string ClearSearch { get; init; } = "Clear search";
+
+    /// <summary>Title of the empty state of a data list when a search matches nothing, and the text its result count announces. {0} is the search text.</summary>
+    public string NoResultsFor { get; init; } = "No results for “{0}”";
+
+    /// <summary>Hint under the title of the empty state of a data list when a search matches nothing.</summary>
+    public string NoResultsForDescription { get; init; } = "Check the spelling or try a different search.";
+
+    /// <summary>Title of the empty state of a data list when its filters match nothing.</summary>
+    public string NoResultsFiltered { get; init; } = "No results match the filters";
+
+    /// <summary>Action of the empty state of a data list that removes its search and its filters.</summary>
+    public string ResetFilters { get; init; } = "Reset filters";
 }

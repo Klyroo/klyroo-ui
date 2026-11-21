@@ -22,5 +22,13 @@ public static partial class BxToolsLocales
             Retry = "إعادة المحاولة",
             Results = "النتائج",
             PaginationFor = "ترقيم الصفحات، {0}",
+            SearchPlaceholder = "بحث…",
+            Search = "بحث",
+            SearchFor = "البحث في {0}",
+            ClearSearch = "مسح البحث",
+            NoResultsFor = "لا توجد نتائج لـ «{0}»",
+            NoResultsForDescription = "تحقق من الإملاء أو جرّب بحثًا آخر.",
+            NoResultsFiltered = "لا توجد نتائج تطابق عوامل التصفية",
+            ResetFilters = "إعادة تعيين عوامل التصفية",
         };
 }

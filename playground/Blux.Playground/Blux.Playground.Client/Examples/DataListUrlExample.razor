@@ -3,11 +3,12 @@
 @inject ProviderCallLog Calls
 @inject NavigationManager Navigation
 
-@* No UrlKey: the state uses the plain keys s, p and ps. Sort or page, then use Back and Forward, or share the address. The footer is a test hook that counts the provider calls
+@* No UrlKey: the state uses the plain keys q, s, p and ps. Sort or page, then use Back and Forward, or share the address. The footer is a test hook that counts the provider calls
    of this render: a list that shows the result of its prerender loads nothing a second time. *@
 <div class="w-full space-y-3" data-testid="list-url">
     <BxDataList TItem="Invoice" Label="Invoices in the URL" Schema="InvoiceData.Schema" Provider="LoadAsync" ResultJson="DemoJson.Default.DataListResultInvoice">
         <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListSearch data-testid="url-search" />
             <BxDataListResultCount data-testid="url-count" />
             <BxDataListRefresh data-testid="url-refresh" />
         </div>

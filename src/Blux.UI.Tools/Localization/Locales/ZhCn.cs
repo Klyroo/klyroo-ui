@@ -22,5 +22,13 @@ public static partial class BxToolsLocales
             Retry = "重试",
             Results = "结果",
             PaginationFor = "分页，{0}",
+            SearchPlaceholder = "搜索…",
+            Search = "搜索",
+            SearchFor = "搜索{0}",
+            ClearSearch = "清除搜索",
+            NoResultsFor = "没有找到与“{0}”相关的结果",
+            NoResultsForDescription = "请检查拼写或尝试其他搜索词。",
+            NoResultsFiltered = "没有符合筛选条件的结果",
+            ResetFilters = "重置筛选",
         };
 }

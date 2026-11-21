@@ -18,7 +18,12 @@
         {
             if (Context.IsInitial) return ToolsMessages.Loading;
             if (Context.Result is not { } result) return "";
-            if (result.Items.Count == 0) return ToolsMessages.NoResults;
+            if (result.Items.Count == 0)
+            {
+                // Said once the search matched nothing: the polite region is what tells a screen reader, which cannot see the empty state appear.
+                var search = (Context.LoadedState ?? Context.State).Search.Trim();
+                return search.Length > 0 ? string.Format(FormatCulture, ToolsMessages.NoResultsFor, search) : ToolsMessages.NoResults;
+            }
             var loaded = Context.LoadedState ?? Context.State;
             var first = (long)(loaded.Page - 1) * loaded.PageSize + 1;
             var last = first + result.Items.Count - 1;
