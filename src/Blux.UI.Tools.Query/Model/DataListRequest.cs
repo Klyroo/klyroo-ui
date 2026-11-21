@@ -11,9 +11,6 @@ public abstract record DataListPaging
 {
     private protected DataListPaging() { }
 
-    /// <summary>The whole result, no paging.</summary>
-    public static DataListPaging Unpaged { get; } = new None();
-
     /// <summary>Skip a number of rows, then take a page.</summary>
     /// <param name="Skip">Rows to skip.</param>
     /// <param name="Take">Page size.</param>
@@ -38,8 +35,12 @@ public abstract record DataListPaging
     /// <param name="Count">Also compute <see cref="DataListResult{T}.TotalCount"/>.</param>
     public sealed record Cursor(string? After, int Take, bool Count = false) : DataListPaging;
 
-    /// <summary>No paging.</summary>
-    public sealed record None : DataListPaging;
+    /// <summary>No paging: the whole result.</summary>
+    public sealed record None : DataListPaging
+    {
+        /// <summary>The shared instance.</summary>
+        public static None Instance { get; } = new();
+    }
 }
 
 /// <summary>One sort rule.</summary>
@@ -69,15 +70,17 @@ public sealed record DataListFacetRequest(
 /// <summary>What a data list asks a provider for: a page of rows under a sort, a filter tree and a search, plus facet counts.</summary>
 public sealed record DataListRequest
 {
-    /// <summary>Creates a request. Null lists are read as empty and a null <paramref name="paging"/> as <see cref="DataListPaging.Unpaged"/>.</summary>
+    /// <summary>Creates a request. Null lists are read as empty and a null <paramref name="paging"/> as <see cref="DataListPaging.None"/>. <paramref name="timeZone"/> is the IANA id of the user's time zone, see <see cref="TimeZone"/>.</summary>
     public DataListRequest(
         DataListPaging paging,
         IReadOnlyList<DataListSort> sort,
         DataListFilterGroup filter,
         DataListSearch? search = null,
-        IReadOnlyList<DataListFacetRequest>? facets = null)
+        IReadOnlyList<DataListFacetRequest>? facets = null,
+        string? timeZone = null)
     {
-        Paging = paging ?? DataListPaging.Unpaged;
+        TimeZone = timeZone;
+        Paging = paging ?? DataListPaging.None.Instance;
         Sort = sort ?? [];
         Filter = filter ?? DataListFilterGroup.Empty;
         Search = search;
@@ -99,8 +102,15 @@ public sealed record DataListRequest
     /// <summary>The facets to count.</summary>
     public IReadOnlyList<DataListFacetRequest> Facets { get; init; }
 
+    /// <summary>
+    /// The IANA id of the user's time zone (<c>Europe/Paris</c>), sent by the client with each request; never part of the URL state. A <see cref="FilterValue.Date"/>
+    /// on a <see cref="DateTimeOffset"/> or <see cref="DateTime"/> field means that day in this zone, and hour, minute and second units are cut in it.
+    /// <see langword="null"/>, or an id the server does not know, means UTC (<see cref="DataListSchema.Sanitize(DataListRequest)"/> clears unknown ids).
+    /// </summary>
+    public string? TimeZone { get; init; }
+
     /// <summary>A request for everything: no paging, sort, filter, search or facets.</summary>
-    public static DataListRequest Empty { get; } = new(DataListPaging.Unpaged, [], DataListFilterGroup.Empty);
+    public static DataListRequest Empty { get; } = new(DataListPaging.None.Instance, [], DataListFilterGroup.Empty);
 
     /// <inheritdoc />
     public bool Equals(DataListRequest? other) =>
@@ -109,9 +119,10 @@ public sealed record DataListRequest
         && SequenceEquality.Equal(Sort, other.Sort)
         && Filter == other.Filter
         && Search == other.Search
-        && SequenceEquality.Equal(Facets, other.Facets);
+        && SequenceEquality.Equal(Facets, other.Facets)
+        && TimeZone == other.TimeZone;
 
     /// <inheritdoc />
     public override int GetHashCode() =>
-        HashCode.Combine(Paging, SequenceEquality.Hash(Sort), Filter, Search, SequenceEquality.Hash(Facets));
+        HashCode.Combine(Paging, SequenceEquality.Hash(Sort), Filter, Search, SequenceEquality.Hash(Facets), TimeZone);
 }

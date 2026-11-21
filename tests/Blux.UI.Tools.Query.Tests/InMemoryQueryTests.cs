@@ -220,24 +220,33 @@ public class InMemoryPagingTests
     }
 
     [Theory]
-    [InlineData("")]
     [InlineData("not base64 !!")]
     [InlineData("e30")]
     [InlineData("W10")]
     [InlineData("WyIxIl0")]
-    public void A_cursor_that_does_not_decode_reads_as_the_first_page(string cursor)
+    public void A_cursor_that_does_not_decode_ends_the_walk_with_an_empty_page(string cursor)
     {
         var sort = new[] { new DataListSort("name") };
-        var result = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor(cursor, 2), sort, DataListFilterGroup.Empty));
+        var result = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor(cursor, 2, true), sort, DataListFilterGroup.Empty));
+        Assert.Empty(result.Items);
+        Assert.Null(result.NextCursor);
+        Assert.Equal(6, result.TotalCount);
+    }
+
+    [Fact]
+    public void An_empty_cursor_is_the_first_page()
+    {
+        var result = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor("", 2), [new DataListSort("name")], DataListFilterGroup.Empty));
         Assert.Equal([1, 2], result.Ids());
     }
 
     [Fact]
-    public void A_cursor_made_for_another_sort_reads_as_the_first_page()
+    public void A_cursor_made_for_another_sort_ends_the_walk_with_an_empty_page()
     {
         var byName = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor(null, 2), [new DataListSort("name")], DataListFilterGroup.Empty));
         var byAge = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor(byName.NextCursor, 2), [new DataListSort("age")], DataListFilterGroup.Empty));
-        Assert.Equal([6, 2], byAge.Ids());
+        Assert.Empty(byAge.Items);
+        Assert.Null(byAge.NextCursor);
     }
 
     [Fact]
@@ -274,7 +283,7 @@ public class InMemoryPagingTests
 public class InMemoryFacetTests
 {
     private static DataListResult<Employee> Run(DataListFilterGroup? filter, DataListSearch? search, params DataListFacetRequest[] facets) =>
-        Schema.ExecuteInMemory(Employees, new DataListRequest(DataListPaging.Unpaged, [], filter ?? DataListFilterGroup.Empty, search, facets));
+        Schema.ExecuteInMemory(Employees, new DataListRequest(DataListPaging.None.Instance, [], filter ?? DataListFilterGroup.Empty, search, facets));
 
     private static DataListFacetResult Facet(DataListResult<Employee> r, string key) => r.Facets!.Single(f => f.Key == key);
 

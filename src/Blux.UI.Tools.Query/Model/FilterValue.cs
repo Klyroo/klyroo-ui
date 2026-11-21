@@ -28,10 +28,10 @@ public abstract record FilterValue
     /// <summary>A boolean.</summary>
     public sealed record Bool(bool Value) : FilterValue;
 
-    /// <summary>A calendar day. Compared against <see cref="DateTimeOffset"/> and <see cref="DateTime"/> fields as the whole UTC day.</summary>
+    /// <summary>A calendar day. On <see cref="DateTimeOffset"/> and <see cref="DateTime"/> fields it is that day in the time zone of the request (<see cref="DataListRequest.TimeZone"/>, UTC when absent), as the half-open range from its first instant to the next day's. <see cref="DateOnly"/> fields compare the day itself.</summary>
     public sealed record Date(DateOnly Value) : FilterValue;
 
-    /// <summary>An instant, compared exactly (to <see cref="DateOnly"/> fields it reduces to its UTC day).</summary>
+    /// <summary>An instant. A date filter matches the whole hour, minute or second (the filter's <see cref="DateGranularity"/>) that contains it, cut in the request's time zone; against a <see cref="DateOnly"/> field it reduces to its local day.</summary>
     public sealed record Moment(DateTimeOffset Value) : FilterValue;
 
     /// <summary>A list of option values. Values are strings and are converted to the type of the field (enum name, number, bool, Guid, ISO date).</summary>

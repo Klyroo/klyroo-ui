@@ -52,8 +52,8 @@ public sealed record DataListState
     /// <summary>The state with nothing applied: empty search, no filters or sort, page 1, 50 rows, table layout.</summary>
     public static DataListState Initial { get; } = new("", [], [], 1, 50, DataListLayout.Table);
 
-    /// <summary>Builds the request for this state: offset paging at <see cref="Page"/>, or cursor paging with <see cref="Cursor"/> when <paramref name="cursorPaging"/> is set.</summary>
-    public DataListRequest ToRequest(bool cursorPaging = false, IReadOnlyList<DataListFacetRequest>? facets = null)
+    /// <summary>Builds the request for this state: offset paging at <see cref="Page"/>, or cursor paging with <see cref="Cursor"/> when <paramref name="cursorPaging"/> is set. <paramref name="timeZone"/> is the IANA id of the browser's time zone (<see cref="DataListRequest.TimeZone"/>); it comes from the client at request time, not from the state.</summary>
+    public DataListRequest ToRequest(bool cursorPaging = false, IReadOnlyList<DataListFacetRequest>? facets = null, string? timeZone = null)
     {
         DataListPaging paging = cursorPaging
             ? new DataListPaging.Cursor(Cursor, Math.Max(1, PageSize), Count: true)
@@ -63,7 +63,8 @@ public sealed record DataListState
             Sort,
             new DataListFilterGroup(FilterCombinator.And, [.. Filters]),
             string.IsNullOrWhiteSpace(Search) ? null : new DataListSearch(Search),
-            facets);
+            facets,
+            timeZone);
     }
 
     /// <inheritdoc />
