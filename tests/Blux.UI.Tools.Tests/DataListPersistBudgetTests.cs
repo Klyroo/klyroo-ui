@@ -34,12 +34,12 @@ public class DataListPersistBudgetTests
     }
 
     [Fact]
-    public void The_limits_default_to_16_and_24_KB_and_refuse_a_negative_value()
+    public void The_limits_default_to_16_and_8_KB_and_refuse_a_negative_value()
     {
         var options = new BluxToolsOptions();
 
         Assert.Equal(16 * 1024, options.PersistMaxBytes);
-        Assert.Equal(24 * 1024, options.PersistPageMaxBytes);
+        Assert.Equal(8 * 1024, options.PersistPageMaxBytes);
         Assert.Throws<ArgumentOutOfRangeException>(() => options.PersistMaxBytes = -1);
         Assert.Throws<ArgumentOutOfRangeException>(() => options.PersistPageMaxBytes = -1);
     }
