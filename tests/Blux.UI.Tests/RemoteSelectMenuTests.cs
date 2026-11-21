@@ -380,4 +380,101 @@ public class RemoteSelectMenuTests : BluxTestContext
 
         Assert.False(cut.Find("[data-slot=trigger]").HasAttribute("disabled"));
     }
+
+    [Fact]
+    public void Without_Items_or_OptionsProvider_the_first_render_throws_and_names_both_parameters()
+    {
+        var error = Assert.ThrowsAny<Exception>(() => Render<BxSelectMenu>());
+
+        var message = (error.InnerException ?? error).Message;
+        Assert.Contains("BxSelectMenu", message);
+        Assert.Contains("Items", message);
+        Assert.Contains("OptionsProvider", message);
+    }
+
+    [Fact]
+    public void An_empty_Items_list_is_a_set_Items()
+    {
+        var cut = Render<BxSelectMenu>(p => p.Add(s => s.Items, []));
+
+        Assert.NotNull(cut.Find("bx-select-menu"));
+    }
+
+    [Fact]
+    public void Statically_rendered_the_labels_of_Items_travel_to_the_browser_too()
+    {
+        SetRendererInfo(new RendererInfo("Static", false));
+        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new BxSelectItem("fr", "France")]).Add(s => s.Value, ["fr"]));
+
+        // The browser paints from data-known, so it keeps France instead of writing the raw value over it.
+        Assert.Equal("fr" + Sep + "France", cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Equal("France", cut.Find("[data-slot=label]").GetAttribute("data-label"));
+        Assert.Equal("0", cut.Find("bx-select-menu").GetAttribute("data-epoch"));
+    }
+
+    [Fact]
+    public async Task A_text_that_is_already_a_value_shows_no_results_and_no_create_option()
+    {
+        var cut = Open(new Fake(), p => p.Add(s => s.Create, true).Add(s => s.Multiple, true).Add(s => s.Value, ["zork"]));
+
+        await Search(cut, "zork");
+        Assert.Equal("No results", cut.Find("[data-slot=empty]").TextContent);
+
+        await Search(cut, "zork2");
+        Assert.Empty(cut.FindAll("[data-slot=empty]"));
+    }
+
+    [Fact]
+    public async Task OptionsKey_changing_resets_the_list_the_labels_and_asks_again_but_a_new_delegate_does_not()
+    {
+        var fake = new Fake();
+        var resolved = 0;
+        BxSelectedOptionsResolver resolver = (values, _) =>
+        {
+            resolved++;
+            return new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item seven")]);
+        };
+        var cut = Open(fake, p => p.Add(s => s.OptionsKey, "fr").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
+        cut.WaitForAssertion(() => Assert.Equal("Item seven", cut.Find("[data-slot=label]").GetAttribute("data-label")));
+        await Search(cut, "");
+        Assert.Equal(10, Labels(cut).Length);
+        Assert.Equal(1, resolved);
+
+        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "fr").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
+        Assert.Equal(10, Labels(cut).Length);
+        Assert.Equal(1, resolved);
+        var epoch = cut.Find("bx-select-menu").GetAttribute("data-epoch");
+
+        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "de").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
+
+        Assert.Empty(Labels(cut));
+        Assert.NotEqual(epoch, cut.Find("bx-select-menu").GetAttribute("data-epoch"));
+        cut.WaitForAssertion(() => Assert.Equal(2, resolved));
+        var requests = fake.Requests.Count;
+        await Search(cut, "");
+        Assert.Equal(requests + 1, fake.Requests.Count);
+        Assert.Equal(10, Labels(cut).Length);
+    }
+
+    [Fact]
+    public void A_resolution_that_threw_is_tried_again_when_the_list_opens()
+    {
+        var calls = 0;
+        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Value, ["i7"])
+            .Add(s => s.ResolveSelected, (_, _) =>
+            {
+                calls++;
+                return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item seven")]);
+            }));
+        cut.WaitForAssertion(() => Assert.Equal(1, calls));
+        Assert.Equal("i7", cut.Find("[data-slot=label]").GetAttribute("data-label"));
+
+        // Typing is not opening: only the empty text the list reports when it opens retries.
+        _ = Search(cut, "x");
+        Assert.Equal(1, calls);
+        _ = Search(cut, "");
+
+        cut.WaitForAssertion(() => Assert.Equal("Item seven", cut.Find("[data-slot=label]").GetAttribute("data-label")));
+        Assert.Equal(2, calls);
+    }
 }

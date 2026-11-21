@@ -24,6 +24,13 @@ public sealed class RemoteDirectory
         new("gb", "United Kingdom"), new("us", "United States"), new("uy", "Uruguay"), new("vn", "Vietnam"), new("zw", "Zimbabwe"),
     ];
 
+    private static readonly Dictionary<string, string[]> Cities = new()
+    {
+        ["fr"] = ["Paris", "Lyon", "Marseille", "Toulouse", "Nice", "Nantes", "Strasbourg", "Bordeaux", "Lille", "Rennes"],
+        ["de"] = ["Berlin", "Hamburg", "Munich", "Cologne", "Frankfurt", "Stuttgart", "Dusseldorf", "Leipzig", "Dresden", "Bremen"],
+        ["it"] = ["Rome", "Milan", "Naples", "Turin", "Palermo", "Genoa", "Bologna", "Florence", "Venice", "Verona"],
+    };
+
     /// <summary>The delay of every call, to see the loading state.</summary>
     public int LatencyMs { get; init; } = 400;
 
@@ -76,5 +83,15 @@ public sealed class RemoteDirectory
     {
         await Enter($"resolve {string.Join(", ", values)}", ct);
         return [.. All.Where(c => values.Contains(c.Value))];
+    }
+
+    /// <summary>The cities of one country, paged with Skip and Take: what a source whose options depend on another field looks like (see <c>OptionsKey</c>).</summary>
+    public async ValueTask<BxOptionsResult> CitiesOf(string? country, BxOptionsRequest request, CancellationToken ct)
+    {
+        await Enter($"cities of {country ?? "nowhere"}, search \"{request.Search}\", skip {request.Skip}, take {request.Take}", ct);
+        var cities = (country is not null && Cities.TryGetValue(country, out var list) ? list : [])
+            .Where(c => request.Search.Length == 0 || c.Contains(request.Search, StringComparison.OrdinalIgnoreCase)).ToList();
+        var page = cities.Skip(request.Skip).Take(request.Take).Select(c => new BxSelectItem(c.ToLowerInvariant(), c)).ToList();
+        return new BxOptionsResult(page, HasMore: request.Skip + page.Count < cities.Count);
     }
 }

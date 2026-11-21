@@ -101,6 +101,7 @@ public static partial class BxLocales
             SelectMenuCreate = "创建“{0}”",
             InputMenuNoResults = "无结果",
             InputMenuSuggestions = "建议",
+            // Draft translations of the four RemoteOptions messages, marked for review by a native speaker before a stable release.
             RemoteOptionsLoading = "正在加载...",
             RemoteOptionsError = "无法加载选项。",
             RemoteOptionsRetry = "重试",

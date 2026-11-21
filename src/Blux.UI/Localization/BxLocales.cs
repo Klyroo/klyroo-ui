@@ -17,6 +17,12 @@ public static partial class BxLocales
     public static IReadOnlyList<BxLocale> All => _all ??= [En, Fr, De, Es, It, Pt, PtBr, Nl, Ja, ZhCn, Ar, Ru];
 
     /// <summary>
+    /// The codes whose texts were reviewed by a native speaker. The other locales hold drafts, at least the messages that a comment in their file marks as
+    /// "Draft translations" (the messages added since the first review: the <c>RemoteOptions</c> ones), until a native speaker reviews them.
+    /// </summary>
+    public static IReadOnlyList<string> ReviewedCodes { get; } = ["en", "fr"];
+
+    /// <summary>
     /// Derives a locale from another one, like <c>extendLocale</c> of Nuxt UI: everything you do not override is kept.
     /// </summary>
     /// <example>
