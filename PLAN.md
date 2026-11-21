@@ -174,15 +174,18 @@ CI de build seule). Apps (Starter, Dashboard, Chat, Editor, Calendar) : RCL part
 Changelog) : Web, SSR statique. Contenu Markdig + YamlDotNet, copie de référence `templates/_shared/Content`. Page `/templates` du site avec démos en direct
 (processus enfants derrière YARP, chien de garde si l'hôte meurt). Prérequis livrés dans la librairie : Tailwind sans Node (`BluxTailwind`), apps sous un
 chemin de base, `BxSkipLink`, fond du `body`, index de recherche chargé à la demande.
-Faits : Starter, Landing, Docs. En cours : Changelog. Restent : Dashboard (sur `BxDataList`), SaaS, Portfolio, Chat, Editor, Calendar (sur `BxScheduler`).
+Faits : Starter, Landing, Docs, Changelog, Dashboard (sur `BxDataList`, couleurs en cookie lues au rendu serveur). Restent : SaaS, Portfolio, Chat, Editor,
+Calendar (sur `BxScheduler`).
 
 **Port de nuxt-ui-tools (2026-11-21)** : les 11 domaines (spécifications dans `.claude/specs/nuxt-ui-tools/`, non versionnées). Paquets compagnons
 `Blux.UI.Tools`, `Blux.UI.Tools.Query` (sans Blazor), `Blux.UI.Tools.EntityFrameworkCore`, plus tard `Blux.UI.Spreadsheet` : même version exacte que Blux.UI,
 compilation Tailwind obligatoire. API d'extension publique dans le cœur. Faits : état d'URL (`QueryState`), modèle de requête et moteur en mémoire, application
-sur `IQueryable` (tests différentiels EF Core/SQLite, NativeAOT), premier `BxDataList` (tri, pagination, URL, SSR, prérendu persisté) ; dans le cœur : case
-indéterminée, `BxInput.Debounce`/`SetValueAsync`, classes `FieldCssClassProvider` sur tous les contrôles. En cours : recherche (T8), `BxInfiniteScroll`, options
-avec compteurs/icônes/groupes. Restent : filtres, panneaux, sélection, curseur, colonnes, grille, groupes, arbre, totaux, puis Forms, Analytics,
-Display/Media/FilePreview, Spreadsheet (ordre alterné avec les templates).
+sur `IQueryable` (tests différentiels EF Core/SQLite, NativeAOT), `BxDataList` (tri, pagination, URL, SSR, prérendu persisté sous budget de taille,
+recherche, filtres texte/option/booléen/nombre/date avec presets et plages, fuseau de l'utilisateur via cookie) ; paquet `Blux.UI.Server` (`AddBluxServer`,
+`IBxRequestCookies` dans le cœur, cookies lus au rendu serveur) ; dans le cœur : case indéterminée, `BxInput.Debounce`/`SetValueAsync`, classes
+`FieldCssClassProvider` partout, `BxInfiniteScroll`, options avec compteurs/icônes/groupes, options chargées à la demande (`OptionsProvider`, `OptionsKey`)
+pour `BxSelectMenu`/`BxInputMenu`. Restent : panneau de filtres, facettes et filtres d'options distants, sélection, actions, curseur, colonnes, grille,
+groupes, arbre, totaux, puis Forms, Analytics, Display/Media/FilePreview, Spreadsheet (ordre alterné avec les templates).
 
 Reste à faire :
 
