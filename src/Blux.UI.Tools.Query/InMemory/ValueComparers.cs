@@ -55,3 +55,18 @@ internal sealed class SortValueComparer(bool descending) : IComparer<object?>
         return (a.Length - i).CompareTo(b.Length - j);
     }
 }
+
+/// <summary>Compares row keys by their own type; strings are ordinal. The same tie-break the IQueryable applier puts after the sort.</summary>
+internal sealed class RowKeyComparer : IComparer<object?>
+{
+    public static readonly RowKeyComparer Instance = new();
+
+    public int Compare(object? x, object? y)
+    {
+        if (x is null) return y is null ? 0 : 1;
+        if (y is null) return -1;
+        if (x is string a && y is string b) return Math.Sign(string.CompareOrdinal(a, b));
+        if (x is IComparable comparable && x.GetType() == y.GetType()) return Math.Sign(comparable.CompareTo(y));
+        return Math.Sign(string.CompareOrdinal(x.ToString(), y.ToString()));
+    }
+}

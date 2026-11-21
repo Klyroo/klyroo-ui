@@ -53,9 +53,9 @@ public class InMemoryFilterTests
         { "double lte", Rule("score", Op.Lte, Num(1.5m)), [1, 4] },
 
         // Boolean
-        { "bool is true", Rule("active", Op.Is, new FilterValue.Bool(true)), [1, 2, 4, 6] },
-        { "bool is false", Rule("active", Op.Is, new FilterValue.Bool(false)), [3, 5] },
-        { "bool isNot true", Rule("active", Op.IsNot, new FilterValue.Bool(true)), [3, 5] },
+        { "bool is true", Rule("active", Op.Is, new FilterValue.Boolean(true)), [1, 2, 4, 6] },
+        { "bool is false", Rule("active", Op.Is, new FilterValue.Boolean(false)), [3, 5] },
+        { "bool isNot true", Rule("active", Op.IsNot, new FilterValue.Boolean(true)), [3, 5] },
 
         // Date on a DateOnly field: a day value is the whole day, before and after are strict
         { "dateonly is", Rule("hired", Op.Is, Day("2020-01-15")), [1, 4] },
@@ -100,7 +100,7 @@ public class InMemoryFilterTests
         { "unknown key is ignored", Rule("nope", Op.Is, Text("x")), [1, 2, 3, 4, 5, 6] },
         { "wrong value shape is ignored", Rule("age", Op.Gt, Text("x")), [1, 2, 3, 4, 5, 6] },
         { "disallowed operator is ignored", Rule("age", Op.Contains, Text("3")), [1, 2, 3, 4, 5, 6] },
-        { "query only filter is skipped", Rule("archived", Op.Is, new FilterValue.Bool(true)), [1, 2, 3, 4, 5, 6] },
+        { "query only filter is skipped", Rule("archived", Op.Is, new FilterValue.Boolean(true)), [1, 2, 3, 4, 5, 6] },
         { "empty option list without includeEmpty is inactive", Rule("status", Op.IsAnyOf, List()), [1, 2, 3, 4, 5, 6] },
     };
 
@@ -127,7 +127,7 @@ public class InMemoryFilterTests
     public void Nested_groups_combine()
     {
         var group = DataListFilterGroup.And(
-            Rule("active", Op.Is, new FilterValue.Bool(true)),
+            Rule("active", Op.Is, new FilterValue.Boolean(true)),
             DataListFilterGroup.Or(Rule("age", Op.Gt, Num(40)), Rule("name", Op.Contains, Text("alice"))));
         Assert.Equal([1, 4], Schema.ExecuteInMemory(Employees, Request(group)).Ids().Order());
     }
@@ -143,7 +143,7 @@ public class InMemoryFilterTests
     [Fact]
     public void Query_only_rules_are_returned_for_the_provider()
     {
-        var archived = Rule("archived", Op.Is, new FilterValue.Bool(true));
+        var archived = Rule("archived", Op.Is, new FilterValue.Boolean(true));
         var request = Request(DataListFilterGroup.And(Rule("age", Op.Gt, Num(1)), DataListFilterGroup.And(archived)));
         Assert.Equal([archived], Schema.QueryFilterRules(request));
     }

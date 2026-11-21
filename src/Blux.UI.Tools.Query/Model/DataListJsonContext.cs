@@ -22,6 +22,7 @@ namespace Blux.UI.Tools.Query;
 [JsonSerializable(typeof(DataListFilterGroup))]
 [JsonSerializable(typeof(FilterRule))]
 [JsonSerializable(typeof(FilterValue))]
+[JsonSerializable(typeof(FilterValue.Boolean), TypeInfoPropertyName = "FilterValueBoolean")]
 [JsonSerializable(typeof(DataListState))]
 [JsonSerializable(typeof(string[]))]
 public sealed partial class DataListJsonContext : JsonSerializerContext

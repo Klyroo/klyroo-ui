@@ -45,6 +45,14 @@ jobs:
         run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
       - name: Blux.UI.Tools.Query tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tools.Query.Tests -c Release --no-build
+      # The IQueryable applier translated by EF Core to SQLite SQL and compared with the in-memory executor on the same rows.
+      - name: Blux.UI.Tools.Query against EF Core and SQLite (net10.0)
+        run: dotnet test --project tests/Blux.UI.Tools.Query.EfTests -c Release --no-build
+      # Backs IsAotCompatible: the in-memory executor, published with NativeAOT and run (needs clang, which the runner image has).
+      - name: Blux.UI.Tools.Query NativeAOT smoke
+        run: |
+          dotnet publish tests/Blux.UI.Tools.Query.AotSmoke -c Release -r linux-x64 -o "$RUNNER_TEMP/aot-smoke"
+          "$RUNNER_TEMP/aot-smoke/Blux.UI.Tools.Query.AotSmoke"
       - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
         run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Template demo supervisor tests (docs host, fake demo, watchdog)
