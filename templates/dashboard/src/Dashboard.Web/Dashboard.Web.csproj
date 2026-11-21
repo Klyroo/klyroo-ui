@@ -14,6 +14,8 @@
     <ProjectReference Include="..\Dashboard.Web.Client\Dashboard.Web.Client.csproj" />
     <ProjectReference Include="..\Dashboard.Shared\Dashboard.Shared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
+    <!-- The server side of Blux: lets components read cookies while the server renders. Not in the client or the MAUI app, which have no request. -->
+    <PackageReference Include="Blux.UI.Server" />
   </ItemGroup>
 
   <!-- Fonts are downloaded at build time and served from the app's own origin (BxFonts in App.razor links them). They belong to the host project. -->

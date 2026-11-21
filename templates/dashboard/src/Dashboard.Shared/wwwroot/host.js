@@ -11,6 +11,22 @@ export function watchDark(dotnet) {
   return { dispose: () => document.removeEventListener('bx-color-mode', send) };
 }
 
+/** The value of a cookie of the page, or null. The names the app uses are plain (letters, dashes, dots and tildes), so they are compared as they are. */
+export function getCookie(name) {
+  const prefix = name + '=';
+  const found = document.cookie.split('; ').find((c) => c.startsWith(prefix));
+  return found ? decodeURIComponent(found.slice(prefix.length)) : null;
+}
+
+/**
+ * Writes a cookie for the path of the app: SameSite=Lax, Secure on https, 400 days. The server reads it while it renders, which is why it is a cookie and not local storage.
+ * The value is a palette name; it is checked against the offered names when it is read.
+ */
+export function setCookie(name, value, path) {
+  const secure = location.protocol === 'https:' ? '; secure' : '';
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=${path}; max-age=34560000; samesite=lax${secure}`;
+}
+
 /** The IANA time zone of the browser ("Europe/Paris"), or null when it cannot be read. */
 export function timeZone() {
   try {

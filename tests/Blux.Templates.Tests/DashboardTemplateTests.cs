@@ -232,6 +232,102 @@ public class DashboardTemplateTests
         Assert.All(AppearanceState.Neutrals.Skip(1), p => Assert.Contains(p, BxPalette.TailwindPalettes));
     }
 
+    private sealed class FakeCookies(string? pathBase, params (string Name, string Value)[] cookies) : IBxRequestCookies
+    {
+        public string? PathBase => pathBase;
+
+        public string? Get(string name) => cookies.Where(c => c.Name == name).Select(c => c.Value).FirstOrDefault();
+    }
+
+    private sealed class MemoryStore : IAppearanceStore
+    {
+        public (string? Primary, string? Neutral) Saved { get; set; }
+
+        public ValueTask<(string? Primary, string? Neutral)> LoadAsync() => ValueTask.FromResult(Saved);
+
+        public ValueTask SaveAsync(string primary, string neutral)
+        {
+            Saved = (primary, neutral);
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    [Fact]
+    public void A_render_with_a_request_starts_with_the_colors_of_the_cookies()
+    {
+        var cookies = new FakeCookies(null, ("dashboard-primary", "emerald"), ("dashboard-neutral", "zinc"));
+
+        var state = new AppearanceState(new MemoryStore(), cookies);
+
+        Assert.Equal("emerald", state.Primary.Name);
+        Assert.Equal("zinc", state.Neutral.Name);
+        Assert.Equal(BxPalette.Emerald, state.Colors.Primary);
+        Assert.Equal(BxPalette.Zinc, state.Colors.Neutral);
+        // No request (WebAssembly, MAUI): the defaults.
+        var none = new AppearanceState(new MemoryStore());
+        Assert.True(none.Primary.IsBlux && none.Neutral.IsBlux);
+    }
+
+    [Fact]
+    public void The_cookies_are_scoped_to_the_path_base_like_the_other_cookies_of_blux()
+    {
+        var scoped = BxPathScope.CookieName("dashboard-primary", "/demo/dashboard");
+        Assert.NotEqual("dashboard-primary", scoped);
+        Assert.Equal(scoped, AppearanceCookies.Name(AppearanceCookies.PrimaryKey, "/demo/dashboard"));
+        Assert.Equal("dashboard-neutral", AppearanceCookies.Name(AppearanceCookies.NeutralKey, null));
+
+        // Only the cookie of this path base counts: the one of the root is not read below a path base.
+        var cookies = new FakeCookies("/demo/dashboard", ("dashboard-primary", "rose"), (scoped, "violet"));
+        Assert.Equal("violet", new AppearanceState(new MemoryStore(), cookies).Primary.Name);
+    }
+
+    [Theory]
+    [InlineData("<script>")]
+    [InlineData("red")]
+    [InlineData("blux; path=/")]
+    [InlineData("")]
+    [InlineData("EMERALD")]
+    public void A_cookie_that_is_not_the_name_of_an_offered_palette_is_ignored(string value)
+    {
+        // "red" is a palette of Blux, but not one the dialog offers; the others are not palettes at all.
+        var state = new AppearanceState(new MemoryStore(), new FakeCookies(null, ("dashboard-primary", value), ("dashboard-neutral", value)));
+
+        Assert.True(state.Primary.IsBlux);
+        Assert.True(state.Neutral.IsBlux);
+        // A neutral name is not a primary one and the other way round.
+        var swapped = new AppearanceState(new MemoryStore(), new FakeCookies(null, ("dashboard-primary", "zinc"), ("dashboard-neutral", "emerald")));
+        Assert.True(swapped.Primary.IsBlux && swapped.Neutral.IsBlux);
+    }
+
+    [Fact]
+    public async Task Choosing_a_color_applies_it_and_saves_it_and_loading_reads_the_store_once()
+    {
+        var store = new MemoryStore();
+        var state = new AppearanceState(store);
+        var changes = 0;
+        state.Changed += () => changes++;
+
+        await state.SetAsync(BxPalette.Violet, BxPalette.Stone);
+        Assert.Equal(("violet", "stone"), store.Saved);
+        Assert.Equal(1, changes);
+        await state.SetAsync(BxPalette.Rose);
+        Assert.Equal(("rose", "stone"), store.Saved);
+
+        // A new session reads what the store has, once, and says so only when it changed something.
+        store.Saved = ("blue", "slate");
+        var next = new AppearanceState(store);
+        var nextChanges = 0;
+        next.Changed += () => nextChanges++;
+        await next.LoadAsync();
+        await next.LoadAsync();
+        Assert.Equal(("blue", "slate"), (next.Primary.Name, next.Neutral.Name));
+        Assert.Equal(1, nextChanges);
+        // What a prerender hands over is restored without a notification.
+        next.Restore("emerald", "gray");
+        Assert.Equal(("emerald", "gray"), (next.Primary.Name, next.Neutral.Name));
+        Assert.Equal(1, nextChanges);
+    }
+
     [Fact]
     public void The_primary_colors_on_offer_are_blux_or_tailwind_palettes_that_the_contrast_tests_cover()
     {

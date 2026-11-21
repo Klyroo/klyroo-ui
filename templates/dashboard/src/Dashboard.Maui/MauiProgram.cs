@@ -24,6 +24,8 @@ public static class MauiProgram
         builder.Services.AddMauiBlazorWebView();
         // The system bars are the host's: registered before AddDashboardUi, which would otherwise add the one that does nothing.
         builder.Services.AddSingleton<ISystemBars, SystemBars>();
+        // No request in the app, so no cookie to read: the web view keeps the color choice in its local storage. Registered before AddDashboardUi, which would add the cookie one.
+        builder.Services.AddScoped<IAppearanceStore, LocalStorageAppearanceStore>();
         builder.Services.AddDashboardUi();
         // Where BxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.

@@ -236,7 +236,7 @@ try {
   const pack = run("dotnet", ["pack", "src/Blux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack src/Blux.UI -c Release succeeds without warnings")) console.log(pack.out);
   // The data list packages too, for the templates that use it (Dashboard): Blux.UI.Tools.Query first, Blux.UI.Tools depends on it and on Blux.UI at exactly this version.
-  for (const project of ["src/Blux.UI.Tools.Query", "src/Blux.UI.Tools"]) {
+  for (const project of ["src/Blux.UI.Tools.Query", "src/Blux.UI.Tools", "src/Blux.UI.Server"]) {
     const packed = run("dotnet", ["pack", project, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(packed.code === 0, `dotnet pack ${project} -c Release succeeds without warnings`)) console.log(packed.out);
   }
@@ -247,7 +247,7 @@ try {
 
   // The sources: the feed for Blux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
   const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /><package pattern="Blux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -277,6 +277,8 @@ try {
     const packages = readFileSync(join(repo, "Directory.Packages.props"), "utf8");
     const pinned = /<PackageVersion Include="Blux\.UI" Version="([^"]+)"/.exec(packages)?.[1];
     check(pinned === expectedVersion, `${template.name}: Blux.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
+    const serverPinned = /<PackageVersion Include="Blux\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
+    if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Blux.UI.Server is pinned to the version of build/Version.props, the one of Blux.UI (${serverPinned} / ${expectedVersion})`);
     const toolsPinned = /<PackageVersion Include="Blux\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
     if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Blux.UI.Tools is pinned to the version of build/Version.props, the one of Blux.UI (${toolsPinned} / ${expectedVersion})`);
 

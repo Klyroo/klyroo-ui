@@ -40,6 +40,55 @@ internal static class DashboardChecks
         await Assertions.Expect(page.GetByTestId("stat-revenue-value")).Not.ToHaveTextAsync(before!);
     }
 
+    /// <summary>The value of a cookie of the app by its name at the root (below a path base the name carries a slug of it).</summary>
+    public static async Task<string?> CookieValue(IPage page, string name) =>
+        (await page.Context.CookiesAsync()).FirstOrDefault(c => c.Name == name || c.Name.StartsWith(name + ".", StringComparison.Ordinal))?.Value;
+
+    /// <summary>
+    /// The color choice is a cookie that the server reads while it renders: after a choice, the HTML of the first response (what the browser paints before any script runs)
+    /// already carries the style of the chosen colors, and a value that is not an offered palette is ignored. The cookie is for the path of the app, SameSite=Lax and long-lived.
+    /// </summary>
+    public static async Task AssertColorsInThePrerender(IPage page, IBrowser browser, string baseUrl, string? pathBase)
+    {
+        var cookies = (await page.Context.CookiesAsync()).Where(c => c.Name.StartsWith("dashboard-primary", StringComparison.Ordinal) || c.Name.StartsWith("dashboard-neutral", StringComparison.Ordinal)).ToList();
+        Assert.Equal(2, cookies.Count);
+        Assert.All(cookies, c =>
+        {
+            Assert.Equal(string.IsNullOrEmpty(pathBase) ? "/" : pathBase, c.Path);
+            Assert.Equal(SameSiteAttribute.Lax, c.SameSite);
+            Assert.True(c.Expires > DateTimeOffset.UtcNow.AddDays(300).ToUnixTimeSeconds(), "the cookie lasts more than 300 days");
+        });
+        if (!string.IsNullOrEmpty(pathBase)) Assert.All(cookies, c => Assert.Contains("~~", c.Name));
+
+        // The response of the server, before any script: it has the style of the chosen colors (the same as the live page has after the choice).
+        var live = await page.EvaluateAsync<string>("() => [...document.querySelectorAll('style[data-bx-theme]')].map(e => e.textContent).join('')");
+        var html = await (await page.Context.APIRequest.GetAsync("customers")).TextAsync();
+        Assert.Contains("data-bx-theme", html);
+        var themed = System.Text.RegularExpressions.Regex.Matches(html, "<style data-bx-theme[^>]*>(.*?)</style>", RegexOptions.Singleline).Select(m => m.Groups[1].Value).ToArray();
+        Assert.Contains(live, themed);
+
+        // The interactive render that follows the prerender keeps the colors (the prerender hands them over), and so does a reload.
+        var primary = () => page.EvaluateAsync<string>("() => getComputedStyle(document.documentElement).getPropertyValue('--blux-primary').trim()");
+        var chosen = await primary();
+        await page.ReloadAsync();
+        Assert.Equal(chosen, await primary());
+        await WaitInteractive(page);
+        Assert.Equal(chosen, await primary());
+        Assert.Equal(live, await page.EvaluateAsync<string>("() => [...document.querySelectorAll('style[data-bx-theme]')].map(e => e.textContent).join('')"));
+
+        // A visitor with no cookie, and one with an edited cookie, get the default colors.
+        foreach (var value in new[] { null, "<script>", "red" })
+        {
+            await using var plain = await browser.NewContextAsync(new() { BaseURL = baseUrl, JavaScriptEnabled = false });
+            if (value is not null)
+            {
+                await plain.AddCookiesAsync(cookies.Select(c => new Microsoft.Playwright.Cookie { Name = c.Name, Value = value, Domain = c.Domain, Path = c.Path }));
+            }
+            var defaults = await (await plain.APIRequest.GetAsync("customers")).TextAsync();
+            Assert.DoesNotContain(live, System.Text.RegularExpressions.Regex.Matches(defaults, "<style data-bx-theme[^>]*>(.*?)</style>", RegexOptions.Singleline).Select(m => m.Groups[1].Value));
+        }
+    }
+
     /// <summary>The sidebar, the command palette, the notifications and the appearance dialog: the parts of the shell.</summary>
     public static async Task AssertShell(IPage page)
     {
@@ -74,14 +123,14 @@ internal static class DashboardChecks
         await page.GetByTestId("palette-emerald").ClickAsync();
         await Assertions.Expect(page.GetByTestId("palette-emerald")).ToHaveAttributeAsync("aria-pressed", "true");
         Assert.NotEqual(before, await primary());
-        Assert.Equal("emerald", await page.EvaluateAsync<string>("() => localStorage.getItem('dashboard-primary')"));
+        Assert.Equal("emerald", await CookieValue(page, "dashboard-primary"));
         // The neutral color drives the gray of the text, the backgrounds and the borders.
         var grays = () => page.EvaluateAsync<string>("() => ['--blux-text', '--blux-bg-muted', '--blux-border'].map(n => getComputedStyle(document.documentElement).getPropertyValue(n).trim()).join('|')");
         var grayBefore = await grays();
         await page.GetByTestId("neutral-zinc").ClickAsync();
         await Assertions.Expect(page.GetByTestId("neutral-zinc")).ToHaveAttributeAsync("aria-pressed", "true");
         Assert.NotEqual(grayBefore, await grays());
-        Assert.Equal("zinc", await page.EvaluateAsync<string>("() => localStorage.getItem('dashboard-neutral')"));
+        Assert.Equal("zinc", await CookieValue(page, "dashboard-neutral"));
         // The primary color is still the one that was chosen.
         await Assertions.Expect(page.GetByTestId("palette-emerald")).ToHaveAttributeAsync("aria-pressed", "true");
         await page.Keyboard.PressAsync("Escape");
@@ -517,6 +566,7 @@ public class DashboardTemplateTests(PlaygroundServer server)
             await page.GotoAsync("");
             await DashboardChecks.WaitInteractive(page);
             await DashboardChecks.AssertShell(page);
+            await DashboardChecks.AssertColorsInThePrerender(page, server.Browser, baseUrl, pathBase);
 
             lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
             lock (consoleErrors) Assert.True(consoleErrors.Count == 0, "Console errors:\n" + string.Join("\n", consoleErrors));
