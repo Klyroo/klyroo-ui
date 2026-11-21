@@ -22,8 +22,8 @@ public class DataListPersistenceTests(PlaygroundServer server) : PlaygroundTest(
         // The big list shows its 300 rows, prerendered and after the interactive start.
         await Assertions.Expect(large.Locator("tbody tr[data-slot=row]")).ToHaveCountAsync(300);
         await Assertions.Expect(large.Locator("[data-slot=result-count]")).ToHaveTextAsync("1–300 of 600");
-        // The small list of the page kept its result: the interactive render did not call its provider.
-        await Assertions.Expect(Page.GetByTestId("url-calls")).ToHaveTextAsync("0");
+        // The small list of the page kept its result: the interactive render did not call its provider (the static render calls it once).
+        await Assertions.Expect(Page.GetByTestId("url-calls")).ToHaveTextAsync(mode == "ssr" ? "1" : "0");
 
         if (mode != "ssr")
         {

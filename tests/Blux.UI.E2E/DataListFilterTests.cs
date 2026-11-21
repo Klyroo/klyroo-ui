@@ -246,7 +246,8 @@ public class DataListFilterTests(PlaygroundServer server) : PlaygroundTest(serve
         await Assertions.Expect(Tag("Reviewed is No")).ToBeVisibleAsync();
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 80");
 
-        await OpenTag("Reviewed is No", "Edit filter Reviewed");
+        // The editor stays open while a change applies at once.
+        await Assertions.Expect(Editor("Edit filter Reviewed")).ToBeVisibleAsync();
         await Editor("Edit filter Reviewed").GetByRole(Control(mode), new() { Name = "Any", Exact = true }).ClickAsync();
 
         await WaitForQuery("");
