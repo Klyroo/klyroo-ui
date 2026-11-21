@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Blux.UI.Tools;
 
@@ -20,6 +21,8 @@ public static class BluxToolsServiceCollectionExtensions
             var tools = options.Extension<BluxToolsOptions>();
             configure?.Invoke(tools);
         });
+        // One per circuit or browser tab: it follows the NavigationManager of its scope.
+        services.TryAddScoped<QueryState>();
         return services;
     }
 }

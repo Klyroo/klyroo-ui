@@ -5,4 +5,4 @@ records that a data list sends to a provider, and the code that applies them to 
 It has no ASP.NET Core and no Blux.UI dependency, so an API server can reference it to answer the same requests the
 components make.
 
-This package is a scaffold: the types arrive with the data list.
+It also holds the URL codecs of the URL state of Blux.UI.Tools (`IQueryCodec<T>` and `QueryCodecs`: numbers, dates, enums, lists, ranges), so an API server can parse the query strings the components write. The request and filter types arrive with the data list.
