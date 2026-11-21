@@ -70,7 +70,7 @@ else
                     data-required="@(Required || Field?.Required == true ? "true" : null)"
                     data-editor-id="@ControlId"
                     disabled="@Disabled"
-                    class="@_slots["root"]"
+                    class="@binding.WithFieldClass(_slots["root"])"
                     data-color="@Color.Value"
                     @onbxchange="ChangeHandler"
                     @onbxchange:stopPropagation="true"

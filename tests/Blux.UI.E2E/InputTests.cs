@@ -159,4 +159,176 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(State).ToHaveTextAsync("Value: XYabc");
         await Assertions.Expect(Debounced).ToHaveValueAsync("XYabc");
     }
+
+    private ILocator EscapeOnly => Page.GetByTestId("escape-only");
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Text_deleted_back_to_the_starting_value_does_not_leave_the_field_stuck(string mode)
+    {
+        await Open(mode, "input");
+        await EscapeOnly.FocusAsync();
+        await Page.Keyboard.TypeAsync("ab");
+        await Page.Keyboard.PressAsync("Backspace");
+        await Page.Keyboard.PressAsync("Backspace");
+
+        // No native change event fires for text that is back to what it was; leaving the field must release it.
+        await Page.Keyboard.PressAsync("Tab");
+        await Page.GetByTestId("escape-only-set").ClickAsync();
+
+        await Assertions.Expect(EscapeOnly).ToHaveValueAsync("from parent");
+    }
+
+    [Fact]
+    public async Task A_composition_is_not_reported_until_it_ends()
+    {
+        Assert.SkipUnless(BrowserName == "chromium", "IME composition is driven through the Chromium protocol.");
+        await Open("server", "input");
+        var cdp = await Page.Context.NewCDPSessionAsync(Page);
+        await Debounced.FocusAsync();
+
+        await cdp.SendAsync("Input.imeSetComposition", new Dictionary<string, object> { ["text"] = "ni", ["selectionStart"] = 2, ["selectionEnd"] = 2 });
+        await Page.WaitForTimeoutAsync(900);
+        await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 0");
+
+        await cdp.SendAsync("Input.insertText", new Dictionary<string, object> { ["text"] = "你" });
+
+        await Assertions.Expect(State).ToHaveTextAsync("Value: 你");
+        await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 1");
+    }
+
+    [Fact]
+    public async Task Leaving_the_field_in_the_middle_of_a_composition_reports_it_once_it_ends()
+    {
+        Assert.SkipUnless(BrowserName == "chromium", "IME composition is driven through the Chromium protocol.");
+        await Open("server", "input");
+        var cdp = await Page.Context.NewCDPSessionAsync(Page);
+        await EscapeOnly.FocusAsync();
+
+        await cdp.SendAsync("Input.imeSetComposition", new Dictionary<string, object> { ["text"] = "kana", ["selectionStart"] = 4, ["selectionEnd"] = 4 });
+        await Page.GetByTestId("plain").FocusAsync();
+
+        await Assertions.Expect(Page.GetByTestId("escape-only-state")).ToHaveTextAsync("Escape only: kana");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task SetValueAsync_replaces_pending_text_keeps_focus_and_reports_nothing_stale(string mode)
+    {
+        await Open(mode, "input");
+        await Debounced.PressSequentiallyAsync("abc", new() { Delay = 20 });
+        await Assertions.Expect(State).ToHaveTextAsync("Value: abc");
+        await Debounced.PressSequentiallyAsync("d", new() { Delay = 20 });
+
+        // "d" is still waiting for its pause.
+        await Page.GetByTestId("reset").ClickAsync();
+
+        await Assertions.Expect(Debounced).ToHaveValueAsync("");
+        await Assertions.Expect(Debounced).ToBeFocusedAsync();
+        await Assertions.Expect(State).ToHaveTextAsync("Value:");
+        await Assertions.Expect(State).Not.ToContainTextAsync("abc");
+        await Page.WaitForTimeoutAsync(900);
+        await Assertions.Expect(Debounced).ToHaveValueAsync("");
+        await Assertions.Expect(State).Not.ToContainTextAsync("abcd");
+        await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 2");
+
+        // Typing goes on from the new sequence.
+        await Debounced.PressSequentiallyAsync("z", new() { Delay = 20 });
+        await Assertions.Expect(State).ToHaveTextAsync("Value: z");
+        await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 3");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task The_Escape_that_clears_is_consumed_and_the_next_one_closes_the_dialog(string mode)
+    {
+        await Open(mode, "input");
+        await Page.GetByTestId("escape-trigger").ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Search" });
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        var input = Page.GetByTestId("escape-input");
+        await input.FillAsync("abc");
+        await Assertions.Expect(Page.GetByTestId("escape-state")).ToContainTextAsync("text: abc");
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(input).ToHaveValueAsync("");
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await Assertions.Expect(Page.GetByTestId("escape-state")).ToHaveTextAsync("Dialog: open, text:");
+        // Blazor's @onkeydown on an ancestor never saw that Escape.
+        await Assertions.Expect(Page.GetByTestId("escape-keys")).ToHaveTextAsync("Escape keydowns seen by the page: 0");
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+        await Assertions.Expect(Page.GetByTestId("escape-state")).ToContainTextAsync("Dialog: closed");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Escape_does_not_clear_a_read_only_input(string mode)
+    {
+        await Open(mode, "input");
+        await Page.GetByTestId("escape-trigger").ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog, new() { Name = "Search" });
+        var locked = Page.GetByTestId("escape-readonly");
+        await locked.FocusAsync();
+
+        await Page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(locked).ToHaveValueAsync("locked");
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task In_an_EditForm_the_debounced_input_validates_after_the_pause_and_carries_the_field_classes(string mode)
+    {
+        await Open(mode, "input");
+        var email = Page.GetByTestId("email");
+
+        await email.PressSequentiallyAsync("nope", new() { Delay = 30 });
+        await Assertions.Expect(email).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Assertions.Expect(Page.Locator("form .validation-message")).ToHaveTextAsync("Not an email address.");
+        await Assertions.Expect(email).ToHaveAttributeAsync("aria-invalid", "true");
+        await Assertions.Expect(email).ToHaveClassAsync(new System.Text.RegularExpressions.Regex(@"\bmodified\b.*\binvalid\b"));
+
+        await email.FillAsync("ada@example.com");
+
+        await Assertions.Expect(Page.Locator("form .validation-message")).ToBeHiddenAsync();
+        await Assertions.Expect(email).ToHaveClassAsync(new System.Text.RegularExpressions.Regex(@"\bmodified\b.*\bvalid\b"));
+        await Assertions.Expect(email).Not.ToHaveAttributeAsync("aria-invalid", "true");
+    }
+
+    [Fact]
+    public async Task A_render_delayed_in_transit_does_not_overwrite_what_was_typed_meanwhile()
+    {
+        // Every message from the Blazor Server circuit is delayed once the test says so: the render of the first report
+        // arrives after the second report was sent.
+        await Page.AddInitScriptAsync(@"(() => {
+            const Native = window.WebSocket;
+            window.__bxDelay = 0;
+            const wrap = (self, fn) => (event) => { const d = window.__bxDelay; if (d) setTimeout(() => fn.call(self, event), d); else fn.call(self, event); };
+            window.WebSocket = class extends Native {
+                set onmessage(fn) { super.onmessage = fn ? wrap(this, fn) : null; }
+                get onmessage() { return super.onmessage; }
+                addEventListener(type, fn, options) { super.addEventListener(type, type === 'message' ? wrap(this, fn) : fn, options); }
+            };
+        })();");
+        await Open("server", "input");
+        await Page.EvaluateAsync("() => { window.__bxDelay = 900; }");
+
+        await Debounced.PressSequentiallyAsync("a", new() { Delay = 20 });
+        await Page.WaitForTimeoutAsync(550); // report 1 is sent at 400 ms; its render is in transit until about 1300 ms
+        await Debounced.PressSequentiallyAsync("b", new() { Delay = 20 });
+        var seen = new HashSet<string>();
+        for (var i = 0; i < 30; i++)
+        {
+            seen.Add(await Debounced.InputValueAsync());
+            await Page.WaitForTimeoutAsync(100);
+        }
+
+        Assert.Equal(["ab"], seen);
+        await Assertions.Expect(State).ToHaveTextAsync("Value: ab", new() { Timeout = 10_000 });
+    }
 }

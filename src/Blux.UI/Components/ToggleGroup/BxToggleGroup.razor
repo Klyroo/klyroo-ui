@@ -45,7 +45,7 @@ else
                           aria-labelledby="@(AriaLabel is null ? Field?.LabelId : null)"
                           aria-describedby="@Field?.DescribedBy"
                           disabled="@Disabled"
-                          class="@_slots["root"]"
+                          class="@binding.WithFieldClass(_slots["root"])"
                           data-color="@Color.Value"
                           @onbxchange="ChangeHandler"
                           @onbxchange:stopPropagation="true"

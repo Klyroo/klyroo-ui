@@ -35,7 +35,8 @@ public static partial class Catalog
 
         new("input", "Input", "Form", "A single-line text field.",
             [new("Variants and icons", typeof(Examples.InputExample)),
-             new("Debounce and keyboard", typeof(Examples.InputDebounceExample), "Debounce reports once per pause, Enter reports at once and Escape clears (ClearOnEscape). The browser does the waiting: Server mode makes one round trip per pause, not per key.")],
+             new("Debounce and keyboard", typeof(Examples.InputDebounceExample), "Debounce reports once per pause, Enter reports at once and Escape clears (ClearOnEscape). The browser does the waiting: Server mode makes one round trip per pause, not per key. Reset calls SetValueAsync, and the form validates after each pause."),
+             new("Escape in a dialog", typeof(Examples.InputEscapeExample), "The Escape that clears text is consumed; Escape on an empty field closes the dialog.")],
             [typeof(BxInput)]),
         new("textarea", "Textarea", "Form", "A multi-line text field that can grow with its content.",
             [new("Textarea", typeof(Examples.TextareaExample))], [typeof(BxTextarea)]),

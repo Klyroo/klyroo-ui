@@ -1,4 +1,4 @@
-import { Reporter } from './shared.js';
+import { Reporter, isTvMode } from './shared.js';
 import { createDebouncer, parseDelay, holdsTypedText } from './debounce.js';
 
 /**
@@ -11,6 +11,9 @@ import { createDebouncer, parseDelay, holdsTypedText } from './debounce.js';
  *   its end.
  * - data-bx-clear-on-escape: Escape empties a non-empty field and reports the empty value; on an empty field it is left to
  *   the page (a modal still closes).
+ *
+ * - SetValueAsync (BxInput, from .NET) renders a new data-bx-force with the value in data-bx-set: whatever is pending is
+ *   dropped, the text is replaced, and the sequence restarts from the one .NET rendered.
  *
  * The report is the bx-change event of every other Blux element, dispatched on the input with an increasing sequence;
  * .NET renders the last one back in data-bx-seq. Blazor writes the rendered Value into the input's `value` property, so
@@ -26,6 +29,8 @@ function stateOf(input) {
   let state = states.get(input);
   if (state) return state;
   state = { dirty: false, composing: false, silent: false, reporter: new Reporter(input), debouncer: null };
+  // A new <input> can appear while the component lives (its sequence is already N): continue from the rendered one.
+  state.reporter.adopt();
   state.debouncer = createDebouncer(() => commit(input));
   states.set(input, state);
   Object.defineProperty(input, 'value', {
@@ -88,8 +93,34 @@ document.addEventListener('compositionend', (event) => {
   if (!input) return;
   const state = stateOf(input);
   state.composing = false;
-  if (state.dirty) typed(input, state);
+  if (!state.dirty) return;
+  // The field was left in the middle of the composition: nothing will report it later.
+  if (document.activeElement !== input) commit(input);
+  else typed(input, state);
 });
+
+// Leaving the field reports what is left, including text that is back to the value it started with (which fires no
+// native change event). A composition in progress is reported when it ends.
+document.addEventListener('focusout', (event) => {
+  const input = target(event);
+  if (!input) return;
+  const state = stateOf(input);
+  if (state.dirty && !state.composing) commit(input);
+});
+
+// SetValueAsync: a render with a new data-bx-force replaces the text, even text still waiting to be reported.
+new MutationObserver((records) => {
+  for (const record of records) {
+    const input = record.target;
+    if (!(input instanceof HTMLInputElement) || !input.matches(SELECTOR)) continue;
+    const state = stateOf(input);
+    state.debouncer.cancel();
+    state.dirty = false;
+    state.composing = false;
+    state.reporter.adopt();
+    valueProperty.set.call(input, input.getAttribute('data-bx-set') ?? '');
+  }
+}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['data-bx-force'] });
 
 // The native change event: blur, or Enter. Whatever is still waiting is reported now.
 document.addEventListener('change', (event) => {
@@ -99,12 +130,24 @@ document.addEventListener('change', (event) => {
 
 document.addEventListener('keydown', (event) => {
   const input = target(event);
-  if (!input || event.isComposing) return;
+  if (!input || event.isComposing || event.key !== 'Enter') return;
   const state = stateOf(input);
-  if (state.composing) return;
-  if (event.key === 'Enter') {
-    commit(input);
-  } else if (event.key === 'Escape' && input.hasAttribute('data-bx-clear-on-escape')) {
+  if (!state.composing) commit(input);
+});
+
+// Escape is handled in the capture phase of the window, before every other listener: the Escape that clears text is
+// spent on it, so Blazor's own handlers (it listens on the document) and the page never see it. On an empty field it
+// passes through and closes the modal or popover around it. In TV mode, while the field is being edited, Escape/Back
+// leaves the editing mode first (spatial-nav.js), so it is left alone there.
+window.addEventListener(
+  'keydown',
+  (event) => {
+    if (event.key !== 'Escape' || event.isComposing) return;
+    const input = target(event);
+    if (!input || !input.hasAttribute('data-bx-clear-on-escape') || input.readOnly) return;
+    if (isTvMode() && input.hasAttribute('data-bx-editing')) return;
+    const state = stateOf(input);
+    if (state.composing) return;
     if (read(input) === '') {
       commit(input);
       return;
@@ -116,8 +159,8 @@ document.addEventListener('keydown', (event) => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     state.silent = false;
     commit(input);
-    // The Escape was spent on the text: it does not also close the modal or popover around the field.
     event.preventDefault();
-    event.stopPropagation();
-  }
-});
+    event.stopImmediatePropagation();
+  },
+  true,
+);

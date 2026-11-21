@@ -71,6 +71,7 @@ else
         if (Disabled) attributes["disabled"] = true;
         if (Required || Field?.Required == true) attributes["aria-required"] = "true";
         if (binding.Invalid || (!UseEditContext && Field?.Invalid == true)) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         if (index == 0 && FormFieldContext.Join(Field?.DescribedBy) is { } describedBy) attributes["aria-describedby"] = describedBy;
         return attributes;
     }

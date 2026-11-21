@@ -66,6 +66,7 @@ else
         attributes.Remove("required");
         if (Required || Field?.Required == true) attributes["aria-required"] = "true";
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         attributes["data-slot"] = "input";
         attributes["type"] = "text";
         attributes["role"] = "spinbutton";
