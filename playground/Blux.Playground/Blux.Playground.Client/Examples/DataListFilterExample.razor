@@ -1,6 +1,6 @@
 @* The default layout with filters: a schema whose fields have filters adds the tags, the add filter button and clear filters. Add a Customer filter and type a name, add a Status filter and tick
    options (the counts leave out the filter's own selection, so the other statuses stay visible), choose Yes or No for Reviewed, then Back: every applied change is a history entry (flt.f.*).
-   No ResultJson here: the page already hands the result of several lists to the interactive render, and a circuit refuses a state past 32 KB. Statically rendered the tags are links, the options and choices are links and the customer text is a GET form. *@
+   Statically rendered the tags are links, the options and choices are links and the customer text is a GET form. *@
 <div class="w-full" data-testid="list-filters">
-    <BxDataList TItem="Invoice" Label="Invoices with filters" Schema="InvoiceFilterData.Schema" Items="InvoiceData.All" UrlKey="flt" />
+    <BxDataList TItem="Invoice" Label="Invoices with filters" Schema="InvoiceFilterData.Schema" Items="InvoiceData.All" UrlKey="flt" ResultJson="DemoJson.Default.DataListResultInvoice" />
 </div>
