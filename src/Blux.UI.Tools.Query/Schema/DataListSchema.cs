@@ -83,6 +83,13 @@ public abstract class DataListSchema
     /// <summary>The most values <see cref="Sanitize(DataListRequest)"/> keeps in the list of one rule (500 unless set); later ones are dropped.</summary>
     public int MaxListValues { get; internal set; } = 500;
 
+    /// <summary>
+    /// The most distinct options a facet keeps (1000 unless set): the ones with the highest counts, ties by value. A facet over more values is cut and marked
+    /// <see cref="DataListFacetResult.Truncated"/>; the search among the options and the window (<c>Skip</c>, <c>Limit</c>) apply to the kept ones. In a database
+    /// the cap is a <c>TAKE</c> on the group-by, so a column with millions of values never transfers them all.
+    /// </summary>
+    public int MaxFacetBuckets { get; internal set; } = 1000;
+
     /// <summary>The deepest nesting of filter groups kept by <see cref="Sanitize(DataListRequest)"/>; deeper groups are dropped.</summary>
     public const int MaxFilterDepth = 16;
 

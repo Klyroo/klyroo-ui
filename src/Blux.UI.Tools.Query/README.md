@@ -40,7 +40,7 @@ received: it drops unknown keys, disallowed operators and malformed values, and 
 
 `DataListRequest(Paging, Sort, Filter, Search, Facets)` with `DataListPaging.Offset`, `.Cursor` or `.None`; a filter tree
 of `FilterRule(Key, Operator, Value, IncludeEmpty)` and `DataListFilterGroup`; values are `FilterValue.Text`, `.Number`,
-`.Bool`, `.Date`, `.Moment`, `.List` and `.Range`. `IncludeEmpty` also matches rows where the field is empty. The answer
+`.Boolean`, `.Date`, `.Moment`, `.List` and `.Range`. `IncludeEmpty` also matches rows where the field is empty. The answer
 is a `DataListResult<T>(Items, TotalCount, NextCursor, Facets)`. `DataListJsonContext` is the System.Text.Json
 source-generated context of these records; declare `DataListResult<YourRow>` in a context of your own.
 
@@ -77,7 +77,7 @@ app.MapPost("/api/employees/query", async (DataListRequest request, AppDb db, Ca
         .Select(e => new EmployeeRow { Id = e.Id, Name = e.Name, Age = e.Age, DepartmentName = e.Department!.Name });
 
     var query = schema.Apply(rows, clean);
-    var page = await query.Page.ToListAsync(ct);
+    var rows = await query.Rows.ToListAsync(ct);                   // the page with each row's sort values, read by the database
     int? total = query.WantsTotal ? await query.Matching.CountAsync(ct) : null;
 
     var facets = new List<DataListFacetResult>();
@@ -87,7 +87,7 @@ app.MapPost("/api/employees/query", async (DataListRequest request, AppDb db, Ca
         int? missing = facet.Missing is null ? null : await facet.Missing.CountAsync(ct);
         facets.Add(facet.ToResult(buckets, missing));
     }
-    return schema.ToResult(clean, page, total, facets.Count == 0 ? null : facets);   // trims the cursor's extra row, makes NextCursor
+    return schema.ToResult(clean, rows, total, facets.Count == 0 ? null : facets);   // trims the cursor's extra row, makes NextCursor
 });
 ```
 
@@ -96,8 +96,9 @@ along a path such as `e.Department.Name` is SQL null), then the sort with nulls 
 (so pages never repeat or skip a row), then `Skip`/`Take` as parameters. Cursor paging adds a keyset `WHERE` over the sort values and the row key and takes one row more than the page, which
 `ToResult` removes after using it to know that a next page exists. `Matching` is unordered and unpaged, for the count. A facet counts the rows that match the search and the filters
 (not the facet's own filter, unless `FacetMode.IncludeSelf`), once per distinct value even when several elements of a collection carry it (`COUNT(DISTINCT key)`), so a collection facet needs a
-`RowKey`. `ToResult` of a facet orders, searches and windows the buckets exactly like the in-memory executor, so every distinct value is transferred: do not offer a facet on a column with
-millions of values.
+`RowKey`. A facet keeps at most `MaxFacetBuckets` distinct values (1000, `.MaxFacetBuckets(n)` on the schema): the most counted ones, ties by value, as a `TAKE` on the group-by, so a column with millions of values never
+transfers them all. The result says `Truncated` when values were cut (a UI can say "more values"), and the search among the options and the window (`Skip`, `Limit`) apply among the kept ones, in memory and in a
+database alike. At the cut itself, values with the same count are kept in the order of the database (by value, in its type), which can differ from the in-memory text order for non-text values.
 
 Results equal those of `ExecuteInMemory` over the same rows (the EF tests run both on SQLite and compare), except where the database decides:
 
@@ -113,9 +114,10 @@ Providers must be able to compare the types of your fields: with EF Core's SQLit
 (`configurationBuilder.Properties<DateTimeOffset>().HaveConversion<UtcTicksConverter>()`, `v => v.UtcTicks`); `decimal` needs nothing on EF Core 10 (it orders and compares it with its own collation and functions). Other providers: check the types of your fields against what the provider can compare. Nothing
 is evaluated on the client: a query the provider cannot translate throws when it runs, and `Apply` and `FacetQueries` refuse an in-memory `AsQueryable()` (use `ExecuteInMemory`).
 
-Two rules for cursor paging. The next cursor is made from the sort values of the last loaded row, so that row must carry them: sorting by `e.Department.Name` on an entity needs the
-`Department` loaded (`Include`), and **the simplest and safest source is a query projected to a flat row type** (`Select(e => new EmployeeRow ...)` as above), which also keeps the SQL narrow.
-And a schema without `RowKey` cannot page by cursor (`InvalidOperationException`).
+Cursor paging: load `query.Rows`, not `query.Page`. Each row comes with the value of every sort field and the row key as the database computed them (`DataListRow<T>`: `Item`, `SortValues`, `Key`),
+and `ToResult` makes `NextCursor` from those, so sorting by `e.Department.Name` works without `Include` and the cursor never depends on what the entity happens to have loaded.
+`ToResult` over plain entities is for offset and unpaged requests and throws for a cursor request. A schema without `RowKey` cannot page by cursor (`InvalidOperationException`). A query projected to a
+flat row type (`Select(e => new EmployeeRow ...)` as above) is still the leanest source.
 
 ## Semantics worth knowing
 
@@ -137,5 +139,4 @@ And a schema without `RowKey` cannot page by cursor (`InvalidOperationException`
 - **NativeAOT.** The in-memory executor runs in a NativeAOT image (`tests/Blux.UI.Tools.Query.AotSmoke` publishes and runs it in CI): expression trees are interpreted there, a list of
   option values is a chain of equalities, and the operators of date and decimal types are kept for the interpreter. The `IQueryable` applier builds generic `Queryable` calls over the
   types of your fields at runtime, which needs a runtime that can create generic instantiations (CoreCLR, Mono): that is where EF Core runs anyway, and the few reflection points carry
-  justified suppressions. `DataListJsonContext` (the JSON wire model) is not covered by the smoke check: the ILCompiler of .NET 10.0.15 and 11.0.0 crashes on a source-generated
-  polymorphic hierarchy with a nested record named `Bool` (the cursor has a context of its own so that running a request never reaches it).
+  justified suppressions. The JSON wire model (`DataListJsonContext`) round-trips a request in that image too. Boolean filter values are `FilterValue.Boolean` and `"type": "boolean"` on the wire.

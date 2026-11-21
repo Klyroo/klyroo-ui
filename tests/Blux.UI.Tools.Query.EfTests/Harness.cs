@@ -43,7 +43,7 @@ public static class H
 
     public static FilterValue Text(string v) => new FilterValue.Text(v);
     public static FilterValue Num(decimal v) => new FilterValue.Number(v);
-    public static FilterValue Bool(bool v) => new FilterValue.Bool(v);
+    public static FilterValue Bool(bool v) => new FilterValue.Boolean(v);
     public static FilterValue List(params string[] v) => new FilterValue.List(v);
     public static FilterValue Day(string iso) => new FilterValue.Date(DateOnly.Parse(iso));
     public static FilterValue At(string iso) => new FilterValue.Moment(DateTimeOffset.Parse(iso));
@@ -71,7 +71,7 @@ public static class H
     public static DataListResult<T> Run<T>(DataListSchema<T> schema, IQueryable<T> source, DataListRequest request)
     {
         var query = schema.Apply(source, request);
-        var rows = query.Page.ToList();
+        var rows = query.Rows.ToList();
         int? total = query.WantsTotal ? query.Matching.Count() : null;
         IReadOnlyList<DataListFacetResult>? facets = null;
         var facetQueries = schema.FacetQueries(source, request);
@@ -80,9 +80,8 @@ public static class H
         return schema.ToResult(request, rows, total, facets);
     }
 
-    /// <summary>The Department is included because the cursor of a page sorted by it reads the sort value from the last row, which must carry it (see the README).</summary>
-    public static DataListResult<Employee> Run(QueryContext db, DataListRequest request) =>
-        Run(Schemas.Employees, db.Employees.AsNoTracking().Include(e => e.Department), request);
+    /// <summary>No Include: the sort values of a cursor come from the database (<see cref="DataListQuery{T}.Rows"/>), not from the loaded entity.</summary>
+    public static DataListResult<Employee> Run(QueryContext db, DataListRequest request) => Run(Schemas.Employees, db.Employees.AsNoTracking(), request);
 
     public static DataListResult<Employee> Memory(List<Employee> rows, DataListRequest request) => Schemas.Employees.ExecuteInMemory(rows, request);
 

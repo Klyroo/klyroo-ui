@@ -1,6 +1,6 @@
 using Blux.UI.Tools.Query;
 
-// Exit code 0 when every check passes. The JSON wire model is not exercised here: see the comment in the project file.
+// Exit code 0 when every check passes.
 // Run from a NativeAOT publish: tests/Blux.UI.Tools.Query.AotSmoke/bin/Release/net10.0/<rid>/publish/Blux.UI.Tools.Query.AotSmoke
 
 var failures = new List<string>();
@@ -64,7 +64,7 @@ var dates = schema.ExecuteInMemory(people, new DataListRequest(
     DataListPaging.None.Instance,
     [new DataListSort("hired", Descending: true)],
     DataListFilterGroup.And(
-        new FilterRule("active", FilterOperator.Is, new FilterValue.Bool(true)),
+        new FilterRule("active", FilterOperator.Is, new FilterValue.Boolean(true)),
         new FilterRule("hired", FilterOperator.Before, new FilterValue.Date(new DateOnly(2021, 1, 1))),
         new FilterRule("lastLogin", FilterOperator.Is, new FilterValue.Date(new DateOnly(2024, 3, 31)))),
     timeZone: "Europe/Paris"));
@@ -84,6 +84,25 @@ Check("cursor on an enum and a bool", byRole.Items.Select(p => p.Id).SequenceEqu
 
 var query = DataListStateQuery.ToQuery(schema.DefaultState, schema);
 Check("state to query", query is not null);
+
+var wire = new DataListRequest(
+    new DataListPaging.Cursor("abc", 5, Count: true),
+    [new DataListSort("age", Descending: true)],
+    DataListFilterGroup.And(
+        new FilterRule("active", FilterOperator.Is, new FilterValue.Boolean(true)),
+        new FilterRule("name", FilterOperator.Contains, new FilterValue.Text("a")),
+        new FilterRule("age", FilterOperator.Between, new FilterValue.Range(new FilterValue.Number(1), new FilterValue.Number(9))),
+        new FilterRule("hired", FilterOperator.Is, new FilterValue.Date(new DateOnly(2020, 1, 15))),
+        new FilterRule("lastLogin", FilterOperator.After, new FilterValue.Moment(DateTimeOffset.Parse("2024-03-31T00:30:00Z"))),
+        new FilterRule("role", FilterOperator.IsAnyOf, new FilterValue.List(["Admin", "User"]))),
+    new DataListSearch("a"),
+    [new DataListFacetRequest("role", Limit: 5, IncludeMissing: true)],
+    "Europe/Paris");
+var json = System.Text.Json.JsonSerializer.Serialize(wire, DataListJsonContext.Default.DataListRequest);
+var back = System.Text.Json.JsonSerializer.Deserialize(json, DataListJsonContext.Default.DataListRequest);
+Check("json round trip of a request", back is not null && back.Equals(wire) && json.Contains("\"type\":\"boolean\""));
+var facetJson = System.Text.Json.JsonSerializer.Serialize(new DataListFacetResult("role", [new DataListFacetOption("Admin", 1)], 0, 1) { Truncated = true }, DataListJsonContext.Default.DataListFacetResult);
+Check("json of a truncated facet", facetJson.Contains("\"truncated\":true"));
 
 Console.WriteLine(failures.Count == 0 ? "all checks passed" : $"{failures.Count} check(s) failed");
 return failures.Count == 0 ? 0 : 1;

@@ -117,7 +117,7 @@ public class SchemaTests
         Assert.Equal(DataListLayout.Grid, state.Layout);
         Assert.Equal([new DataListSort("name")], state.Sort);
         Assert.Equal(
-            [new FilterRule("active", Op.Is, new FilterValue.Bool(true)), new FilterRule("archived", Op.Is, new FilterValue.Bool(false))],
+            [new FilterRule("active", Op.Is, new FilterValue.Boolean(true)), new FilterRule("archived", Op.Is, new FilterValue.Boolean(false))],
             state.Filters);
         Assert.Equal(25, DataListSchema.For<Employee>(s => s.DefaultPageSize(500).MaxPageSize(25)).DefaultPageSize);
     }
@@ -172,7 +172,7 @@ public class SchemaTests
         Assert.Equal(0, filter.Min);
         Assert.Equal(1, filter.Step);
         Assert.True(filter.WithPersist().Persist);
-        Assert.Throws<ArgumentException>(() => DataListFilter.Boolean().WithDefault(new FilterValue.Bool(true), Op.Gt));
+        Assert.Throws<ArgumentException>(() => DataListFilter.Boolean().WithDefault(new FilterValue.Boolean(true), Op.Gt));
     }
 
     [Theory]
@@ -198,7 +198,7 @@ public class SchemaTests
             "x" => new FilterValue.Text("x"),
             "" => new FilterValue.Text(""),
             "n" => new FilterValue.Number(1),
-            "b" => new FilterValue.Bool(true),
+            "b" => new FilterValue.Boolean(true),
             "d" => new FilterValue.Date(new DateOnly(2024, 1, 1)),
             "m" => new FilterValue.Moment(DateTimeOffset.UnixEpoch),
             "r" => new FilterValue.Range(new FilterValue.Number(1), null),
@@ -252,7 +252,7 @@ public class SanitizeTests
     [Fact]
     public void Nested_groups_are_cleaned_and_empty_ones_removed()
     {
-        var good = Rule("active", Op.Is, new FilterValue.Bool(true));
+        var good = Rule("active", Op.Is, new FilterValue.Boolean(true));
         var filter = DataListFilterGroup.Or(
             DataListFilterGroup.And(Rule("nope", Op.Is, Text("x"))),
             DataListFilterGroup.And(good, Rule("nope", Op.Is, Text("y"))));
@@ -264,7 +264,7 @@ public class SanitizeTests
     [Fact]
     public void Query_only_rules_are_kept_for_the_provider()
     {
-        var rule = Rule("archived", Op.Is, new FilterValue.Bool(true));
+        var rule = Rule("archived", Op.Is, new FilterValue.Boolean(true));
         Assert.Equal([rule], Sanitized(Request(DataListFilterGroup.And(rule))).Filter.Children);
     }
 
