@@ -330,6 +330,46 @@ public class ChangelogTemplateTests(PlaygroundServer server)
         }
     }
 
+    /// <summary>Nothing set at all: the sample releases are shown, and the page says they are made up.</summary>
+    [Fact]
+    public async Task With_no_repository_and_no_source_the_sample_releases_are_shown_with_a_notice()
+    {
+        Assert.SkipWhen(string.IsNullOrEmpty(Published) || string.IsNullOrEmpty(AssemblyName), "BLUX_TEMPLATE_PUBLISHED and BLUX_TEMPLATE_ASSEMBLY are not set.");
+
+        var port = FreePort();
+        var host = $"http://127.0.0.1:{port}";
+        var directory = Path.GetFullPath(Published!);
+        var start = new ProcessStartInfo("dotnet", [Path.Combine(directory, AssemblyName!), "--urls", host]) { WorkingDirectory = directory, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start the template.");
+        var log = new List<string>();
+        process.OutputDataReceived += (_, e) => { if (e.Data is not null) lock (log) log.Add(e.Data); };
+        process.ErrorDataReceived += (_, e) => { if (e.Data is not null) lock (log) log.Add(e.Data); };
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        try
+        {
+            await WaitUntilReady(process, host + "/", log);
+            await using var context = await server.Browser.NewContextAsync(new() { BaseURL = host + "/" });
+            var page = await context.NewPageAsync();
+            foreach (var path in new[] { "", "releases/v1.4.0" })
+            {
+                var response = await page.GotoAsync(path);
+                Assert.Equal(200, response!.Status);
+                await Assertions.Expect(page.GetByTestId("sample-notice")).ToContainTextAsync("Set Changelog:Repository");
+            }
+            await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Tern 1.4.0");
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync(TestContext.Current.CancellationToken);
+            }
+        }
+    }
+
     private static async Task WaitUntilReady(Process process, string url, List<string> log)
     {
         using var http = new HttpClient();
