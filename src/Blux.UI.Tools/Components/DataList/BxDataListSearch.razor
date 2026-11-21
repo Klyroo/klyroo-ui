@@ -1,0 +1,176 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+@using Microsoft.JSInterop
+
+@*
+    The search field of a data list. Interactive, the browser waits for a pause in the typing (Debounce) or for Enter, then the text goes to the state of the list,
+    which writes it to the address with a replace (typing does not fill the history) and goes back to the first page. Escape and the clear button empty the field.
+    Statically rendered (and prerendered), the field is in a GET form that keeps the other parameters of the address and searches on Enter or on the button.
+*@
+@if (Context.IsInteractive)
+{
+    <div class="@_slots["search"]" data-slot="search" role="search" aria-label="@Name" @attributes="AdditionalAttributes">
+        <div class="@_slots["searchField"]">
+            @Field(false)
+            <button type="button" class="@_slots["searchClear"]" data-slot="search-clear" aria-label="@ToolsMessages.ClearSearch" @onclick="ClearAsync" @onmousedown:preventDefault="true">
+                @RenderIcon(Options.Icons.Close, _slots["searchClearIcon"])
+            </button>
+        </div>
+    </div>
+}
+else if (Context.CanLink)
+{
+    <form method="get" action="@Context.Path" data-enhance role="search" aria-label="@Name" class="@_slots["search"]" data-slot="search" @attributes="AdditionalAttributes">
+        @foreach (var (name, value) in Context.FormFields(Context.State with { Search = "", Page = 1 }, "q", "p"))
+        {
+            <input type="hidden" name="@name" value="@value" />
+        }
+        <div class="@_slots["searchField"]">
+            @Field(true)
+            @if (Context.HrefWith(s => s with { Search = "", Page = 1 }) is { } href && !string.IsNullOrEmpty(Context.State.Search))
+            {
+                <a href="@href" class="@_slots["searchClear"]" data-slot="search-clear" aria-label="@ToolsMessages.ClearSearch">@RenderIcon(Options.Icons.Close, _slots["searchClearIcon"])</a>
+            }
+        </div>
+        <BxButton Type="submit" Label="@ToolsMessages.Search" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="@(Size ?? BxSize.Md)" Class="@_slots["searchSubmit"]" data-slot="search-submit" />
+    </form>
+}
+else
+{
+    <div class="@_slots["search"]" data-slot="search" @attributes="AdditionalAttributes">
+        <div class="@_slots["searchField"]">
+            @Field(false)
+        </div>
+    </div>
+}
+
+@code {
+    private readonly string _id = NewId("dl-search");
+    private readonly HashSet<string> _written = [];
+    private SlotSet _slots = default!;
+    private BxInput? _input;
+    private string _text = "";
+    private string _seen = "";
+    private DataListContext<TItem>? _focusSource;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    /// <summary>The placeholder of the field. Without it, the localized "Search…".</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The accessible name of the field and of its search landmark. Without it, "Search &lt;label of the list&gt;" for a list with a label, else the localized "Search".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>
+    /// Milliseconds of quiet after the last keystroke before the list searches. Without it, <c>SearchDebounce</c> of <see cref="BluxToolsOptions"/> (300). Enter searches at once.
+    /// Statically rendered, nothing is searched before Enter or the search button.
+    /// </summary>
+    [Parameter] public int? Debounce { get; set; }
+
+    /// <summary>
+    /// The fewest characters (once the spaces around the text are trimmed) a search must have: a shorter text searches nothing, so the rows come back as if the field were empty.
+    /// Zero by default. Statically rendered, the browser refuses to submit a shorter text.
+    /// </summary>
+    [Parameter] public int MinLength { get; set; }
+
+    /// <summary>The size of the field. Defaults to medium.</summary>
+    [Parameter] public BxSize? Size { get; set; }
+
+    private string Name => AriaLabel ?? (Context.Label is { } label ? string.Format(FormatCulture, ToolsMessages.SearchFor, label) : ToolsMessages.Search);
+
+    private int EffectiveDebounce => Math.Max(0, Debounce ?? ToolsOptions.SearchDebounce);
+
+    private InputUi _inputUi = new();
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _text = _seen = Context.State.Search;
+        _focusSource = Context;
+        Context.SearchFocusRequested += OnFocusRequested;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "search");
+        // The padding that makes room for the clear button has to reach the native input.
+        _inputUi = new InputUi { Base = _slots["searchInput"] };
+    }
+
+    // The text without the spaces around it, or nothing when it is too short to search.
+    private string Effective(string text)
+    {
+        var trimmed = text.Trim();
+        return trimmed.Length >= MinLength ? trimmed : "";
+    }
+
+    // A statically rendered field has nothing to report to: without a callback the script of Blux.UI does not guard its value, so an enhanced navigation (Back) can write the text of the address into it.
+    private EventCallback<string?> TextChanged => EventCallback.Factory.Create<string?>(this, OnTextAsync);
+
+    private RenderFragment Field(bool form) => @<BxInput @ref="_input" Id="@_id" Name="@(form ? Context.FieldName("q") : null)" Type="search" Value="@(form ? Context.State.Search : _text)"
+                                                       ValueChanged="@(form ? default : TextChanged)" Debounce="@(form ? null : EffectiveDebounce)" ClearOnEscape="true" Size="@(Size ?? BxSize.Md)"
+                                                       Placeholder="@(Placeholder ?? ToolsMessages.SearchPlaceholder)" Disabled="@(!form && !Context.IsInteractive)"
+                                                       LeadingIcon="@RenderIcon(Options.Icons.Search, "size-5")" Ui="_inputUi"
+                                                       aria-label="@Name" enterkeyhint="search" autocomplete="off" spellcheck="false"
+                                                       minlength="@(form && MinLength > 0 ? MinLength : null)" data-slot="search-input" />;
+
+    // The browser reports the text after a pause, on Enter, on Escape and when the clear button empties the field.
+    private Task OnTextAsync(string? value)
+    {
+        _text = value ?? "";
+        var term = Effective(_text);
+        if (term != _seen) _written.Add(term);
+        // The same search with other spaces around it, or one that is too short, is not a change: the page stays.
+        Context.SetState(s => s.Search == term ? s : s with { Search = term, Page = 1 }, QueryHistory.Replace);
+        return Task.CompletedTask;
+    }
+
+    private async Task ClearAsync()
+    {
+        if (_input is not null) await _input.SetValueAsync("");
+        await FocusAsync();
+    }
+
+    private void OnFocusRequested() => _ = InvokeAsync(FocusAsync);
+
+    private async Task FocusAsync()
+    {
+        if (!Context.IsInteractive) return;
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.focusId", _id);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side: focus stays where the browser leaves it.
+        }
+    }
+
+    // A search that changed without this field (Back, a link, a reset button, a bound state) is written into the field. The searches this field sent that are still on their way
+    // back are not: a later keystroke would be erased by an older one coming home.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Context.IsInteractive || _input is null) return;
+        var search = Context.State.Search;
+        if (search == _seen) return;
+        _seen = search;
+        if (search == Effective(_text))
+        {
+            _written.Clear();
+            return;
+        }
+        if (_written.Contains(search)) return;
+        _written.Clear();
+        _text = search;
+        await _input.SetValueAsync(search);
+    }
+
+    /// <summary>Unsubscribes from the list.</summary>
+    public override void Dispose()
+    {
+        if (_focusSource is not null) _focusSource.SearchFocusRequested -= OnFocusRequested;
+        base.Dispose();
+    }
+}

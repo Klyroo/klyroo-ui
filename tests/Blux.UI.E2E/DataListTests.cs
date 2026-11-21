@@ -452,6 +452,278 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
         Assert.True(box!.X + box.Width <= 375.5, $"the table container is {box.Width}px wide at x={box.X}");
     }
 
+    // ---- search
+
+    private ILocator SearchField(ILocator list, string name) => list.GetByRole(AriaRole.Searchbox, new() { Name = name, Exact = true });
+
+    private ILocator UrlSearch => SearchField(Url, "Search Invoices in the URL");
+
+    private Task<int> HistoryLength() => Page.EvaluateAsync<int>("() => history.length");
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Typing_searches_after_a_pause_with_one_provider_call_and_replaces_the_address(string mode)
+    {
+        await OpenList(mode);
+        await Assertions.Expect(Calls).ToHaveTextAsync("0");
+        var history = await HistoryLength();
+
+        // Faster than the pause: one report, one call.
+        await UrlSearch.PressSequentiallyAsync("acme", new() { Delay = 40 });
+
+        await WaitForQuery("?q=acme");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(Cell(Url, 0, 1)).ToHaveTextAsync("Acme Corp");
+        await Page.WaitForTimeoutAsync(800);
+        await Assertions.Expect(Calls).ToHaveTextAsync("1");
+        Assert.Equal(history, await HistoryLength());
+        // The page did not reload: the field kept what was typed and the focus.
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("acme");
+        await Assertions.Expect(UrlSearch).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_pause_between_words_is_one_call_each_and_the_page_goes_back_to_the_first(string mode)
+    {
+        await OpenList(mode, "?p=3");
+        await Assertions.Expect(Cell(Url, 0, 0)).ToHaveTextAsync("21");
+
+        await UrlSearch.PressSequentiallyAsync("stark", new() { Delay = 30 });
+        await WaitForQuery("?q=stark");
+        await Assertions.Expect(Calls).ToHaveTextAsync("1");
+        await UrlSearch.PressSequentiallyAsync(" ind", new() { Delay = 30 });
+
+        await WaitForQuery("?q=stark%20ind");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(Calls).ToHaveTextAsync("2");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Enter_searches_at_once_and_cancels_the_pending_pause(string mode)
+    {
+        await OpenList(mode);
+
+        await UrlSearch.FillAsync("globex");
+        await UrlSearch.PressAsync("Enter");
+
+        await WaitForQuery("?q=globex");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(Cell(Url, 0, 1)).ToHaveTextAsync("Globex");
+        await Page.WaitForTimeoutAsync(700);
+        // One load for Enter, none for the pause it replaced (static: the one of the request).
+        await Assertions.Expect(Calls).ToHaveTextAsync("1");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("globex");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Escape_empties_the_field_and_an_interactive_list_shows_every_row_again(string mode)
+    {
+        await OpenList(mode, "?q=acme");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("acme");
+
+        await UrlSearch.PressAsync("Escape");
+
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
+        if (mode == "ssr")
+        {
+            // Without .NET to report to, Escape only empties the field: the list changes when the form is submitted.
+            Assert.Equal("?q=acme", new Uri(Page.Url).Query);
+            await UrlSearch.PressAsync("Enter");
+        }
+        await WaitForQuery(mode == "ssr" ? "?q=" : "");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task The_clear_button_empties_the_field_and_keeps_the_focus_in_it(string mode)
+    {
+        await OpenList(mode, "?q=acme");
+        var clear = Url.GetByRole(AriaRole.Button, new() { Name = "Clear search", Exact = true });
+
+        await clear.ClickAsync();
+
+        await WaitForQuery("");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
+        await Assertions.Expect(UrlSearch).ToBeFocusedAsync();
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
+        // Nothing to clear any more: the button is out of the page for everyone.
+        await Assertions.Expect(clear).ToHaveCountAsync(0);
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_typed_address_with_a_search_fills_the_field_and_trims_it(string mode)
+    {
+        await OpenList(mode, "?q=%20Acme%20");
+
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("Acme");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        if (mode != "ssr") await WaitForQuery("?q=Acme");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_search_without_a_match_shows_its_own_empty_state_and_Clear_search_restores_the_list(string mode)
+    {
+        await OpenList(mode, mode == "ssr" ? "?q=zzz" : "");
+        if (mode != "ssr")
+        {
+            await UrlSearch.PressSequentiallyAsync("zzz", new() { Delay = 20 });
+            await WaitForQuery("?q=zzz");
+        }
+        var empty = Url.Locator("[data-slot=empty-row]");
+
+        await Assertions.Expect(empty.Locator("[data-slot=title]")).ToHaveTextAsync("No results for “zzz”");
+        await Assertions.Expect(empty.Locator("[data-slot=description]")).ToHaveTextAsync("Check the spelling or try a different search.");
+        await Assertions.Expect(Rows(Url)).ToHaveCountAsync(0);
+        // The polite region says it too, once, since the last pause.
+        await Assertions.Expect(Count).ToHaveTextAsync("No results for “zzz”");
+
+        await empty.GetByRole(mode == "ssr" ? AriaRole.Link : AriaRole.Button, new() { Name = "Clear search" }).ClickAsync();
+
+        await WaitForQuery("");
+        await Assertions.Expect(Rows(Url)).ToHaveCountAsync(10);
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
+        if (mode != "ssr") await Assertions.Expect(UrlSearch).ToBeFocusedAsync();
+    }
+
+    [Fact]
+    public async Task The_empty_state_without_a_list_behind_it_keeps_its_plain_text_and_has_no_action()
+    {
+        await Page.GotoAsync("/ssr/components/data-list-empty");
+        var empty = Page.GetByTestId("empty-default");
+
+        await Assertions.Expect(empty.Locator("[data-slot=title]")).ToHaveTextAsync("No results");
+        await Assertions.Expect(empty.GetByRole(AriaRole.Button)).ToHaveCountAsync(0);
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Back_after_the_empty_state_was_cleared_shows_the_search_in_the_field_again(string mode)
+    {
+        await OpenList(mode, "?s=customer");
+        await UrlSearch.PressSequentiallyAsync("zzz", new() { Delay = 20 });
+        await WaitForQuery("?s=customer&q=zzz");
+        await Url.Locator("[data-slot=empty-row]").GetByRole(AriaRole.Button, new() { Name = "Clear search" }).ClickAsync();
+        await WaitForQuery("?s=customer");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
+
+        await Page.GoBackAsync();
+
+        await WaitForQuery("?s=customer&q=zzz");
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("zzz");
+        await Assertions.Expect(Url.Locator("[data-slot=empty-row] [data-slot=title]")).ToHaveTextAsync("No results for “zzz”");
+    }
+
+    [Fact]
+    public async Task A_static_search_is_a_get_form_that_keeps_the_rest_of_the_address_and_Back_returns()
+    {
+        await OpenList("ssr", "?s=-amount&utm_source=mail&mem.p=2&p=3");
+
+        await UrlSearch.FillAsync("initech");
+        await Url.GetByRole(AriaRole.Button, new() { Name = "Search", Exact = true }).ClickAsync();
+
+        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("q=initech"), new() { Timeout = 15_000 });
+        var query = System.Web.HttpUtility.ParseQueryString(new Uri(Page.Url).Query);
+        Assert.Equal("initech", query["q"]);
+        Assert.Equal("-amount", query["s"]);
+        Assert.Equal("mail", query["utm_source"]);
+        Assert.Equal("2", query["mem.p"]);
+        // The page goes back to the first.
+        Assert.Null(query["p"]);
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(Cell(Url, 0, 1)).ToHaveTextAsync("Initech");
+
+        await Page.GoBackAsync();
+
+        await Page.WaitForURLAsync(url => !new Uri(url).Query.Contains("q=initech"), new() { Timeout = 15_000 });
+        await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
+        await Assertions.Expect(Count).ToHaveTextAsync("21–30 of 120");
+    }
+
+    [Fact]
+    public async Task Blazor_enhances_the_GET_form_of_a_static_search_without_reloading_the_page()
+    {
+        await OpenList("ssr");
+        // A marker that survives only when the page is not reloaded.
+        await Page.EvaluateAsync("() => { window.__bxMarker = 'same-document'; }");
+
+        await UrlSearch.FillAsync("hooli");
+        await UrlSearch.PressAsync("Enter");
+
+        await WaitForQuery("?q=hooli");
+        await Assertions.Expect(Cell(Url, 0, 1)).ToHaveTextAsync("Hooli");
+        Assert.Equal("same-document", await Page.EvaluateAsync<string?>("() => window.__bxMarker ?? null"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_search_of_the_default_layout_uses_its_url_key_and_searches_on_Enter(string mode)
+    {
+        await OpenList(mode);
+        var list = Page.GetByTestId("list-search");
+        var field = SearchField(list, "Search Invoices with search");
+
+        await field.FillAsync("umbrella");
+        await field.PressAsync("Enter");
+
+        await WaitForQuery("?find.q=umbrella");
+        await Assertions.Expect(Rows(list)).ToHaveCountAsync(10);
+        await Assertions.Expect(list.Locator("[data-slot=result-count]")).ToHaveTextAsync("1–10 of 10");
+        await Assertions.Expect(Cell(list, 0, 1)).ToHaveTextAsync("Umbrella");
+        // The other lists did not hear about it.
+        await Assertions.Expect(Cell(Url, 0, 0)).ToHaveTextAsync("1");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_search_matches_without_regard_to_case_and_a_status_counts_even_when_it_is_no_column(string mode)
+    {
+        await OpenList(mode, "?q=OVERDUE");
+
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 30");
+        // Invoice 2 is the first of the 30 that are overdue.
+        await Assertions.Expect(Cell(Url, 0, 0)).ToHaveTextAsync("2");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_search_with_no_match_has_no_accessibility_violations_in_light_and_dark(string mode)
+    {
+        await OpenList(mode, "?q=zzz");
+        await Assertions.Expect(Url.Locator("[data-slot=empty-row]")).ToBeVisibleAsync();
+
+        await AssertNoAccessibilityViolations();
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Toggle dark mode" }).ClickAsync();
+        await Assertions.Expect(Page.Locator("html")).ToHaveClassAsync(new Regex("dark"));
+        await Page.WaitForFunctionAsync("() => document.getAnimations().length === 0");
+
+        await AssertNoAccessibilityViolations();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task On_a_phone_the_search_fits_the_screen_and_the_page_does_not_scroll_sideways(string mode)
+    {
+        await Page.SetViewportSizeAsync(375, 800);
+        await OpenList(mode, "?q=zzz");
+
+        var overflow = await Page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth");
+        Assert.False(overflow, "the page scrolls horizontally at 375px with a search that matches nothing");
+        var box = await UrlSearch.BoundingBoxAsync();
+        Assert.NotNull(box);
+        Assert.True(box!.X >= 0 && box.X + box.Width <= 375.5, $"the search field is {box.Width}px wide at x={box.X}");
+        // As high as the other controls of the library (32px), and above the 24px that WCAG 2.5.8 asks for.
+        Assert.True(box.Height >= 32, $"the search field is only {box.Height}px high");
+    }
+
     [Theory]
     [MemberData(nameof(InteractiveModes))]
     public async Task Texts_follow_the_language_of_the_user(string mode)

@@ -24,7 +24,12 @@ function focusPage(root) {
   root.querySelector('[aria-current="page"]')?.focus();
 }
 
-const tools = { version: 1, timeZone, focusPage };
+// Puts the focus in the control with this id (the search field after its "clear" action removed the button that had it).
+function focusId(id) {
+  document.getElementById(id)?.focus();
+}
+
+const tools = { version: 1, timeZone, focusPage, focusId };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });

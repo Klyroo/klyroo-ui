@@ -103,13 +103,14 @@ public sealed class DataListController<TItem> : IDisposable
         throw new InvalidOperationException("A data list needs a source: give it Items, a Queryable or a Provider.");
     }
 
-    /// <summary>Brings a state into the range the schema allows: a page of at least 1 and a page size from 1 to <see cref="DataListSchema.MaxPageSize"/> (the default one for zero or less).</summary>
+    /// <summary>Brings a state into the range the schema allows: a page of at least 1, a page size from 1 to <see cref="DataListSchema.MaxPageSize"/> (the default one for zero or less) and a search without the spaces around it.</summary>
     public DataListState Normalize(DataListState state)
     {
         ArgumentNullException.ThrowIfNull(state);
         var size = state.PageSize <= 0 ? Schema.DefaultPageSize : Math.Min(state.PageSize, Schema.MaxPageSize);
         var page = Math.Clamp(state.Page, 1, DataListState.MaxPage);
-        return size == state.PageSize && page == state.Page ? state : state with { Page = page, PageSize = size };
+        var search = state.Search.Trim();
+        return size == state.PageSize && page == state.Page && search == state.Search ? state : state with { Page = page, PageSize = size, Search = search };
     }
 
     /// <summary>The request for a state: sanitized by the schema, carrying the default sort when the state has none and the time zone.</summary>

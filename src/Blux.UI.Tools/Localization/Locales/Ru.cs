@@ -22,5 +22,13 @@ public static partial class BxToolsLocales
             Retry = "Повторить",
             Results = "Результаты",
             PaginationFor = "Страницы, {0}",
+            SearchPlaceholder = "Поиск…",
+            Search = "Поиск",
+            SearchFor = "Поиск: {0}",
+            ClearSearch = "Очистить поиск",
+            NoResultsFor = "Нет результатов по запросу «{0}»",
+            NoResultsForDescription = "Проверьте написание или попробуйте другой запрос.",
+            NoResultsFiltered = "Нет результатов, соответствующих фильтрам",
+            ResetFilters = "Сбросить фильтры",
         };
 }
