@@ -212,10 +212,13 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         var response = await Page.APIRequest.GetAsync(BaseUrl + "/_blux/templates/ready");
 
         Assert.True(response.Ok);
-        var body = await response.TextAsync();
-        Assert.Contains("\"name\":\"starter\"", body);
-        Assert.Contains("\"name\":\"landing\"", body);
-        Assert.DoesNotContain("\"state\":\"starting\"", body);
+        using var status = System.Text.Json.JsonDocument.Parse(await response.TextAsync());
+        var states = status.RootElement.EnumerateArray().ToDictionary(e => e.GetProperty("name").GetString()!, e => e.GetProperty("state").GetString());
+        foreach (var template in Blux.Playground.Client.Templates.TemplateRegistry.All.Where(t => t.HasDemo))
+        {
+            Assert.True(states.TryGetValue(template.Name, out var state), $"the host does not list the demo {template.Name}");
+            Assert.Equal("ready", state);
+        }
     }
 
     [Fact]

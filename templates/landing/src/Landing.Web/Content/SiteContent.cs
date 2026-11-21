@@ -22,6 +22,16 @@ public sealed record Plan(string Name, string Description, int MonthlyPrice, int
     public bool Highlight { get; init; }
 
     public int YearlyTotal => YearlyMonthlyPrice * 12;
+
+    /// <summary>The months of a year that the yearly price does not charge (2 for 18 a month or 180 a year); 0 for a free plan.</summary>
+    public int MonthsFree => MonthlyPrice == 0 ? 0 : (MonthlyPrice * 12 - YearlyTotal) / MonthlyPrice;
+
+    public string Price(bool yearly) => $"${(yearly ? YearlyMonthlyPrice : MonthlyPrice)}";
+
+    public string Terms(bool yearly) =>
+        MonthlyPrice == 0 ? "No payment details needed."
+        : yearly ? $"${YearlyTotal} billed once a year."
+        : "Billed monthly, cancel at any time.";
 }
 
 public static class SiteContent
@@ -35,6 +45,15 @@ public static class SiteContent
     public const string ContactUrl = "mailto:hello@example.com";
 
     public const string Tagline = "Invoicing for freelancers and small studios.";
+
+    // Layout
+
+    public const string HeaderLabel = "Main";
+    public const string HeaderMenuTitle = "Menu";
+    public const string HeaderButtonLabel = "Start free";
+    public const string FooterLabel = "Footer";
+
+    public static string Copyright => $"\u00a9 {DateTime.UtcNow.Year} {Name}. Built with Blux UI.";
 
     public static IReadOnlyList<BxNavigationItem> Navigation { get; } =
     [
@@ -117,6 +136,23 @@ public static class SiteContent
     public const string PricingHeadline = "Pricing";
     public const string PricingTitle = "Pay for what you send";
     public const string PricingDescription = "Start on the Free plan and move up when you need more invoices, more people or more control. Prices are in US dollars.";
+
+    public const string BillingLabel = "Billing period";
+    public const string MonthlyLabel = "Monthly";
+    public const string PerMonth = "/month";
+
+    /// <summary>
+    /// The label of the yearly option, worked out from the prices: the months that every paid plan gets free when billed yearly
+    /// ("Yearly, 2 months free"), so changing a price changes the label. Just "Yearly" when there is no saving.
+    /// </summary>
+    public static string YearlyLabel
+    {
+        get
+        {
+            var saved = Plans.Where(p => p.MonthlyPrice > 0).Select(p => p.MonthsFree).DefaultIfEmpty(0).Min();
+            return saved <= 0 ? "Yearly" : $"Yearly, {saved} month{(saved == 1 ? "" : "s")} free";
+        }
+    }
 
     public static IReadOnlyList<Plan> Plans { get; } =
     [

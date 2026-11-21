@@ -215,6 +215,36 @@ public class TemplateLaunchTests
     }
 
     [Fact]
+    public void Every_template_with_a_demo_is_in_the_template_check_the_solution_the_e2e_project_and_the_publish_step_of_the_ci()
+    {
+        var root = RepositoryRoot();
+        var verify = File.ReadAllText(Path.Combine(root, "build", "verify-templates.mjs"));
+        var solution = File.ReadAllText(Path.Combine(root, "Blux.UI.slnx"));
+        var e2e = File.ReadAllText(Path.Combine(root, "tests", "Blux.UI.E2E", "Blux.UI.E2E.csproj"));
+        var ci = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
+
+        foreach (var template in TemplateRegistry.All.Where(t => t.HasDemo))
+        {
+            Assert.Contains($"name: \"{template.Name}\"", verify);
+            Assert.Contains($"web: \"{template.WebProject}\"", verify);
+            Assert.Contains($"templates/{template.Name}/{template.WebProject}/{template.WebAssembly}.csproj", solution);
+            Assert.Contains($"templates\\{template.Name}\\{template.WebProject!.Replace('/', '\\')}\\{template.WebAssembly}.csproj", e2e);
+            Assert.Contains($"templates/{template.Name}/{template.WebProject}", ci);
+            Assert.Contains($"published-templates/{template.Name}", ci);
+            Assert.True(File.Exists(Path.Combine(root, "templates", template.Name, template.WebProject.Replace('/', Path.DirectorySeparatorChar), template.WebAssembly + ".csproj")));
+        }
+    }
+
+    private static string RepositoryRoot()
+    {
+        for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "Blux.UI.slnx"))) return dir.FullName;
+        }
+        throw new DirectoryNotFoundException("Blux.UI.slnx not found above the test output directory.");
+    }
+
+    [Fact]
     public void The_demo_path_is_relative_to_the_site_root_with_a_trailing_slash()
     {
         var starter = TemplateRegistry.Find("starter")!;
