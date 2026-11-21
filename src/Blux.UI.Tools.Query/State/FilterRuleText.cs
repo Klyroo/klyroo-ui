@@ -42,8 +42,11 @@ internal static class FilterRuleText
         _ => "",
     };
 
-    /// <summary>Reads a rule from its URL text, or returns <see langword="null"/> when the text does not fit the filter.</summary>
-    public static FilterRule? Parse(DataListFilter filter, string key, FilterOperator op, string raw)
+    /// <summary>
+    /// Reads a rule from its URL text, or returns <see langword="null"/> when the text does not fit the filter. A date-time without an offset (<c>2026-11-05T14:00</c>, what a <c>datetime-local</c> field of a static form
+    /// posts) is the wall clock of <paramref name="zone"/> (UTC when it is null), like the time field of the interactive editor; with an offset (<c>Z</c>, <c>+01:00</c>) it is that instant.
+    /// </summary>
+    public static FilterRule? Parse(DataListFilter filter, string key, FilterOperator op, string raw, TimeZoneInfo? zone = null)
     {
         if (op is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)
         {
@@ -65,7 +68,7 @@ internal static class FilterRuleText
             FilterKind.Option => ParseOption(op, payload),
             FilterKind.Boolean => payload is [var b] && bool.TryParse(b, out var flag) ? new FilterValue.Boolean(flag) : null,
             FilterKind.Number => op == FilterOperator.Between ? ParseRange(payload, ParseNumber) : payload is [var n] ? ParseNumber(n) : null,
-            _ => op == FilterOperator.Between ? ParseRange(payload, ParseDate) : payload is [var d] ? ParseDate(d) : null,
+            _ => op == FilterOperator.Between ? ParseRange(payload, t => ParseDate(t, zone, filter.Granularity)) : payload is [var d] ? ParseDate(d, zone, filter.Granularity) : null,
         };
         if (value is null) return null;
 
@@ -101,10 +104,18 @@ internal static class FilterRuleText
     private static FilterValue? ParseNumber(string text) =>
         decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var n) ? new FilterValue.Number(n) : null;
 
-    private static FilterValue? ParseDate(string text)
+    private static readonly string[] LocalFormats = ["yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm:ss.FFFFFFF"];
+
+    private static FilterValue? ParseDate(string text, TimeZoneInfo? zone, DateGranularity granularity)
     {
         if (DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var day))
             return new FilterValue.Date(day);
+        // No offset: the wall clock of the zone of the request, cut to the unit of the filter like the editor does.
+        if (DateTime.TryParseExact(text, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var local))
+        {
+            var time = new TimeOnly(local.Hour, granularity == DateGranularity.Hour ? 0 : local.Minute, granularity == DateGranularity.Second ? local.Second : 0);
+            return new FilterValue.Moment(LocalInstants.At(DateOnly.FromDateTime(local), time, zone ?? TimeZoneInfo.Utc));
+        }
         return DateTimeOffset.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind | DateTimeStyles.AssumeUniversal, out var moment)
             ? new FilterValue.Moment(moment)
             : null;

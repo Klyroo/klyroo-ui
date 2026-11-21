@@ -18,11 +18,13 @@ else
     private RemoteOptions? _remote;
     private bool _iconsSeen;
     private IReadOnlyList<BxSelectItem>? _items;
+    private bool _itemsPassed;
     private object? _optionsKey;
 
     /// <summary>
     /// The options. Not needed when <see cref="OptionsProvider"/> loads them; given together with it, these items are not listed but
-    /// their labels are known (the label of a value the provider has not returned yet).
+    /// their labels are known (the label of a value the provider has not returned yet). The parameter must be passed when there is no provider,
+    /// and a null value (<c>Items="@_list"</c> while the list is still loading) is an empty list, before and after it loads.
     /// </summary>
     [Parameter]
     public IReadOnlyList<BxSelectItem> Items
@@ -99,9 +101,16 @@ else
         ? string.Join(", ", Value.Select(LabelOf))
         : Placeholder ?? "";
 
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        // Items passed as null (a list that is still loading) is a list with no items; only a component given neither Items nor a provider has nothing to show.
+        if (parameters.TryGetValue<IReadOnlyList<BxSelectItem>>(nameof(Items), out _)) _itemsPassed = true;
+        return base.SetParametersAsync(parameters);
+    }
+
     protected override void OnParametersSet()
     {
-        if (_items is null && OptionsProvider is null)
+        if (!_itemsPassed && OptionsProvider is null)
         {
             throw new InvalidOperationException($"{nameof(BxSelectMenu)} needs its options: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (options loaded from a source).");
         }

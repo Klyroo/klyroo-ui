@@ -30,6 +30,8 @@ internal sealed class RemoteOptions : IDisposable
     private readonly HashSet<string> _attempted = new(StringComparer.Ordinal);
     private readonly HashSet<string> _failedResolve = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _lifetime = new();
+    // The resolutions of one source: cancelled and replaced by Reset, so a resolve that started for the old source stops, and is ignored if it finishes anyway.
+    private CancellationTokenSource _resolving;
     private CancellationTokenSource? _request;
     private int _version;
     private int _received;
@@ -42,6 +44,7 @@ internal sealed class RemoteOptions : IDisposable
     {
         Provider = provider;
         _changed = changed;
+        _resolving = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
     }
 
     /// <summary>The provider used for the next request. A parent that renders again with an equal one (a lambda that captures) keeps the state of the list.</summary>
@@ -110,6 +113,11 @@ internal sealed class RemoteOptions : IDisposable
         _failedMore = false;
         Status = RemoteStatus.Idle;
         Epoch++;
+        // The resolve of the old source in flight is cancelled; its answer, if it comes, is dropped (it checks the epoch).
+        var old = _resolving;
+        _resolving = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        old.Cancel();
+        old.Dispose();
         _changed();
     }
 
@@ -236,17 +244,21 @@ internal sealed class RemoteOptions : IDisposable
         }
         var missing = values.Where(v => !Knows(v) && _attempted.Add(v)).ToList();
         if (missing.Count == 0) return;
+        // What the answer is for: a Reset while it is on its way means another source, whose labels this one must not enter.
+        var epoch = Epoch;
         IReadOnlyList<BxSelectItem>? found;
         try
         {
-            found = await resolver(missing, _lifetime.Token).ConfigureAwait(true);
+            found = await resolver(missing, _resolving.Token).ConfigureAwait(true);
         }
         catch (Exception)
         {
+            // A failure of the old source (often the cancellation Reset asked for) says nothing about the new one.
+            if (_disposed || epoch != Epoch) return;
             foreach (var value in missing) _failedResolve.Add(value);
             return;
         }
-        if (_disposed || found is null) return;
+        if (_disposed || epoch != Epoch || found is null) return;
         foreach (var item in found)
         {
             if (missing.Contains(item.Value)) _known[item.Value] = item;
@@ -259,6 +271,7 @@ internal sealed class RemoteOptions : IDisposable
         if (_disposed) return;
         _disposed = true;
         _lifetime.Cancel();
+        _resolving.Dispose();
         _lifetime.Dispose();
         _request?.Cancel();
         _request?.Dispose();
