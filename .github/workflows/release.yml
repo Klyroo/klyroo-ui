@@ -64,6 +64,8 @@ jobs:
         run: |
           dotnet test --project tests/Blux.UI.Images.Tests -c Release --no-build
           dotnet test --project tests/Blux.UI.Images.Local.Tests -c Release --no-build
+      - name: Blux.UI.Server tests (request cookies)
+        run: dotnet test --project tests/Blux.UI.Server.Tests -c Release --no-build
       - name: Package check
         run: node build/verify-package.mjs --online
       - name: Pack the library, the MCP tool, the image packages and the Tools packages (same version)
@@ -72,6 +74,7 @@ jobs:
           dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Server -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
@@ -97,7 +100,7 @@ jobs:
         with:
           name: nuget
           path: artifacts
-      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query, Blux.UI.Tools and Blux.UI.Tools.EntityFrameworkCore packages.
+      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Server, Blux.UI.Tools.Query, Blux.UI.Tools and Blux.UI.Tools.EntityFrameworkCore packages.
       - name: Push
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

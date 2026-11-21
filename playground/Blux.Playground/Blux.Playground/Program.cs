@@ -1,6 +1,7 @@
 using Blux.Playground;
 using Blux.Playground.Client;
 using Blux.UI;
+using Blux.UI.Server;
 using Blux.Playground.Components;
 using Blux.Playground.Templates;
 
@@ -8,6 +9,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddPlaygroundBlux();
+// The server reads the time zone cookie in static renders and prerenders (IBxRequestCookies), so the data list cuts days like the interactive render.
+builder.Services.AddBluxServer();
 builder.Services.AddBluxAi(builder.Configuration);
 // The live demos of the templates: child processes behind /templates/{name}/demo/ (Templates/TemplateDemos.cs).
 builder.Services.AddTemplateDemos(builder.Configuration);

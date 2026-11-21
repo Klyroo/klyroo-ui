@@ -298,9 +298,8 @@
         {
             _timeZone = await TimeZoneAsync();
             controller.TimeZone = _timeZone;
-            if (adopted) controller.SetLoadedTimeZone(_timeZone);
             // A result whose days were cut in the zone the browser has is as good as a new one.
-            else if (taken is { } late && DataListDates.SameZone(late.Zone, _timeZone)) adopted = Adopt(late);
+            if (!adopted && taken is { } late && DataListDates.SameZone(late.Zone, _timeZone)) adopted = Adopt(late);
             if (adopted) controller.SetLoadedTimeZone(_timeZone);
         }
         if (adopted)
