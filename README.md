@@ -48,6 +48,17 @@ Requires .NET 10.
 dotnet add package Blux.UI
 ```
 
+### Packages
+
+| Package | What it is |
+|---|---|
+| `Blux.UI` | The components, themes, 12 locales and the build-time features (fonts, icons, Tailwind). |
+| `Blux.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `BxImage`. |
+| `Blux.UI.Images.Local` | A local image optimizer endpoint (NetVips). |
+| `Blux.UI.Tools` | Data-heavy components built on Blux.UI (the data list and its parts, under construction). `services.AddBluxUiTools()` registers it, and Blux.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `blux.css`. With `<BluxTailwind>true</BluxTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/blux/blux-tools.theme.css` after `blux.theme.css` and set `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>`. Depends on exactly the same version of `Blux.UI`. |
+| `Blux.UI.Tools.Query` | The Blazor-free request and filter models of the data list, for API servers (no ASP.NET Core, no Blux.UI). |
+| `Blux.UI.Mcp` | The MCP server for agents (a dotnet tool). |
+
 ## Use it
 
 ```csharp

@@ -25,6 +25,16 @@
     <CodeBlock Title="_Imports.razor" Code="@("@using Blux.UI")" />
     <p>Remove Bootstrap from the Blazor template, or import it in a cascade layer: CSS outside layers overrides Tailwind's.</p>
 
+    <h2>Sister packages</h2>
+    <p>
+        <code>Blux.UI.Tools</code> (and the packages after it) <strong>require Tailwind compiled by your app</strong>. Their stylesheet is not precompiled: a second precompiled sheet would repeat utilities after
+        <code>blux.css</code> and override its responsive and dark variants. Add the package and turn on <code>&lt;BluxTailwind&gt;true&lt;/BluxTailwind&gt;</code>, and the build imports the package's classes for you.
+        With your own Tailwind, import <code>obj/blux/blux-tools.theme.css</code> after the Blux theme and set <code>BluxToolsOwnTailwind</code> to <code>true</code> to silence the warning <code>BLUXTOOLS001</code>.
+        See the <a href="/docs/tailwind">Tailwind</a> guide.
+    </p>
+    <CodeBlock Title="app.css (your own Tailwind)" Code="@ToolsCss" />
+    <p>A sister package and Blux.UI must have the same version: <code>Blux.UI.Tools</code> depends on exactly the version of Blux.UI it was built with.</p>
+
     <h2>MAUI Blazor Hybrid apps</h2>
     <p>
         In a MAUI app the package and the stylesheets are the same, but there are no render modes and no server. Call <code>AddBluxUi</code>
@@ -48,6 +58,12 @@
             <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
             <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
         </head>
+        """;
+
+    private const string ToolsCss = """
+        @import "tailwindcss";
+        @import "../obj/blux/blux.theme.css";
+        @import "../obj/blux/blux-tools.theme.css";
         """;
 
     private const string AppCss = """

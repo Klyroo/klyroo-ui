@@ -42,7 +42,7 @@ public static class LlmsText
             sb.Append($"\n## Components: {group}\n\n");
             foreach (var component in bundle.Components.Where(c => c.Group == group))
             {
-                sb.Append($"- [{component.Name}]({baseUrl}/components/{component.Slug}): {component.Description}\n");
+                sb.Append($"- [{component.Name}]({baseUrl}/components/{component.Slug}): {component.Description}{(component.InstallCommand() is { } install ? $" Package {component.Package}: `{install}`." : "")}\n");
             }
         }
 

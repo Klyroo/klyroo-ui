@@ -658,6 +658,15 @@
   - Parameters: `Class`, `Field`, `Sortable`, `Title` (required)
   - Slots: `Template`
 
+### DataListEmpty
+
+`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+
+- `<BxDataListEmpty>`
+  - Parameters: `Class`, `Description`, `Icon`, `Title`, `Ui`
+  - Slots: `Actions`, `ChildContent`
+  - `Ui` (`DataListEmptyUi`): `Root`, `Icon`, `Title`, `Description`, `Actions`
+
 ### Carousel
 
 `/components/carousel`. Slides in a scroll-snap viewport with previous and next buttons, a slide picker and optional autoplay that can be paused.

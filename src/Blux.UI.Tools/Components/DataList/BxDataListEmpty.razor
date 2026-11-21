@@ -1,0 +1,50 @@
+@namespace Blux.UI.Tools
+@inherits BxToolsComponentBase
+
+<div class="@_slots["root"]" data-slot="root" @attributes="AdditionalAttributes">
+    @if (!string.IsNullOrEmpty(_icon))
+    {
+        @RenderIcon(_icon, _slots["icon"])
+    }
+    <p class="@_slots["title"]" data-slot="title">@(Title ?? ToolsMessages.NoResults)</p>
+    @if (!string.IsNullOrEmpty(_description))
+    {
+        <p class="@_slots["description"]" data-slot="description">@_description</p>
+    }
+    @ChildContent
+    @if (Actions is not null)
+    {
+        <div class="@_slots["actions"]" data-slot="actions">@Actions</div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private string? _icon;
+    private string? _description;
+
+    /// <summary>The title. Without it, the localized "No results".</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>The text under the title. Without it, the localized hint to change the search or the filters; an empty string shows none.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>The icon above the title, by name (any icon name Blux.UI accepts). Defaults to <c>search-x</c>; an empty string shows none.</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Extra content between the description and the actions.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Buttons or links shown under the text, for example one that clears the filters.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    /// <summary>Per-instance classes for each slot.</summary>
+    [Parameter] public DataListEmptyUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _icon = Icon ?? "search-x";
+        _description = Description ?? ToolsMessages.NoResultsDescription;
+        _slots = ResolveSlots(ToolsOptions.DataListEmpty, new Dictionary<string, string?>(), Ui, "root");
+    }
+}

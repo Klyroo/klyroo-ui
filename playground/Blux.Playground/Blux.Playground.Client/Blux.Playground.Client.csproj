@@ -20,12 +20,15 @@
   <Target Name="EmbedBluxDocumentation" AfterTargets="ResolveProjectReferences" BeforeTargets="PrepareResourceNames">
     <ItemGroup>
       <EmbeddedResource Include="$(MSBuildThisFileDirectory)../../../src/Blux.UI/bin/$(Configuration)/net10.0/Blux.UI.xml" LogicalName="Blux.UI.xml" />
+      <EmbeddedResource Include="$(MSBuildThisFileDirectory)../../../src/Blux.UI.Tools/bin/$(Configuration)/net10.0/Blux.UI.Tools.xml" LogicalName="Blux.UI.Tools.xml" />
     </ItemGroup>
   </Target>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" />
     <ProjectReference Include="..\..\..\src\Blux.UI\Blux.UI.csproj" />
+    <!-- Data-heavy components (the data list and its parts), documented in the same catalog. -->
+    <ProjectReference Include="..\..\..\src\Blux.UI.Tools\Blux.UI.Tools.csproj" />
     <!-- Only the URL builder of the local image optimizer: the endpoint itself runs on the server. -->
     <ProjectReference Include="..\..\..\src\Blux.UI.Images\Blux.UI.Images.csproj" />
   </ItemGroup>
