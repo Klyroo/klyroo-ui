@@ -68,7 +68,7 @@ public sealed class DataListFilter
     public static DataListFilter Boolean(bool? defaultValue = null)
     {
         var filter = new DataListFilter(FilterKind.Boolean, BooleanOperators, FilterOperator.Is);
-        return defaultValue is { } v ? filter.WithDefault(new FilterValue.Bool(v)) : filter;
+        return defaultValue is { } v ? filter.WithDefault(new FilterValue.Boolean(v)) : filter;
     }
 
     /// <summary>A number filter: <c>is</c> (default), <c>isNot</c>, <c>gt</c>, <c>gte</c>, <c>lt</c>, <c>lte</c>, <c>between</c>.</summary>
@@ -154,11 +154,11 @@ public sealed class DataListFilter
                 {
                     FilterValue.Text { Value.Length: > 0 } => true,
                     FilterValue.List list => list.Values.Count > 0 || rule.IncludeEmpty,
-                    FilterValue.Number or FilterValue.Bool => true,
+                    FilterValue.Number or FilterValue.Boolean => true,
                     _ => false,
                 };
             case FilterKind.Boolean:
-                return value is FilterValue.Bool;
+                return value is FilterValue.Boolean;
             case FilterKind.Number:
                 return op == FilterOperator.Between
                     ? IsValidRange(value, static v => v is FilterValue.Number)

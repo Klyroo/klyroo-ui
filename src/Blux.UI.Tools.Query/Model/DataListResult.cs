@@ -29,13 +29,16 @@ public sealed record DataListFacetResult
     /// <summary>The number of distinct options before <c>Skip</c> and <c>Limit</c> (after <c>Search</c>); more are available when <c>Skip + Options.Count &lt; Total</c>.</summary>
     public int Total { get; init; }
 
+    /// <summary>The facet has more distinct values than <see cref="DataListSchema.MaxFacetBuckets"/>: the options are the ones with the highest counts, and the others are not listed or counted in <see cref="Total"/>. A UI can say "more values".</summary>
+    public bool Truncated { get; init; }
+
     /// <inheritdoc />
     public bool Equals(DataListFacetResult? other) =>
-        other is not null && Key == other.Key && Missing == other.Missing && Total == other.Total
+        other is not null && Key == other.Key && Missing == other.Missing && Total == other.Total && Truncated == other.Truncated
         && SequenceEquality.Equal(Options, other.Options);
 
     /// <inheritdoc />
-    public override int GetHashCode() => HashCode.Combine(Key, Missing, Total, SequenceEquality.Hash(Options));
+    public override int GetHashCode() => HashCode.Combine(Key, Missing, Total, Truncated, SequenceEquality.Hash(Options));
 }
 
 /// <summary>A page of rows and what goes with it.</summary>

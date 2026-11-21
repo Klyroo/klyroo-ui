@@ -172,28 +172,34 @@ public static class InMemoryDataList
             foreach (var text in seen) counts[text] = counts.GetValueOrDefault(text) + 1;
         }
 
-        return FacetResults.Create(facet, counts, missing);
+        return FacetResults.Create(facet, counts, missing, schema.MaxFacetBuckets);
     }
 }
 
 /// <summary>The part of a facet shared by the in-memory executor and the IQueryable applier: search among the options, order, window, totals.</summary>
 internal static class FacetResults
 {
-    public static DataListFacetResult Create(DataListFacetRequest facet, IEnumerable<KeyValuePair<string, int>> counts, int missing)
+    public static DataListFacetResult Create(DataListFacetRequest facet, IEnumerable<KeyValuePair<string, int>> counts, int missing, int maxBuckets)
     {
-        IEnumerable<KeyValuePair<string, int>> options = counts;
+        // the cap comes first: the options kept are the most counted ones, and the search and the window apply among them
+        var ranked = counts.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
+        var truncated = ranked.Count > maxBuckets;
+        IEnumerable<KeyValuePair<string, int>> options = truncated ? ranked.Take(maxBuckets) : ranked;
         if (!string.IsNullOrWhiteSpace(facet.Search))
         {
             var needle = facet.Search.Trim();
             options = options.Where(o => TextFold.Contains(o.Key, needle));
         }
-        var all = options.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
+        var all = options.ToList();
         IEnumerable<KeyValuePair<string, int>> window = all.Skip(facet.Skip);
         if (facet.Limit is { } limit) window = window.Take(limit);
         return new DataListFacetResult(
             facet.Key,
             [.. window.Select(o => new DataListFacetOption(o.Key, o.Value))],
             facet.IncludeMissing ? missing : null,
-            all.Count);
+            all.Count)
+        {
+            Truncated = truncated,
+        };
     }
 }

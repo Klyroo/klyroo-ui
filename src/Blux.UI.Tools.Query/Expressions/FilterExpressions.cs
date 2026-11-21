@@ -107,7 +107,7 @@ internal static class FilterExpressions
         {
             FilterKind.Text => TextRule(v, positive, (FilterValue.Text)rule.Value!, inMemory),
             FilterKind.Option => OptionRule(v, accessor, rule.Value!, inMemory),
-            FilterKind.Boolean => BoolRule(v, (FilterValue.Bool)rule.Value!),
+            FilterKind.Boolean => BoolRule(v, (FilterValue.Boolean)rule.Value!),
             FilterKind.Number => NumberRule(v, accessor, positive, rule.Value!),
             _ => DateRule(v, accessor, positive, rule.Value!, filter.Granularity, zone),
         };
@@ -161,7 +161,7 @@ internal static class FilterExpressions
         {
             case FilterValue.Text t: Add(t.Value); break;
             case FilterValue.List l: foreach (var text in l.Values) Add(text); break;
-            case FilterValue.Bool b: Add(b.Value ? "true" : "false"); break;
+            case FilterValue.Boolean b: Add(b.Value ? "true" : "false"); break;
             case FilterValue.Number n:
                 // exact conversion for numeric fields; a normalized text ("1.0" and "1" are the same number) for the others
                 if (TextConvert.IsNumeric(accessor.UnderlyingType))
@@ -200,7 +200,7 @@ internal static class FilterExpressions
 
     // ---- boolean
 
-    private static Expression BoolRule(Expression v, FilterValue.Bool value) =>
+    private static Expression BoolRule(Expression v, FilterValue.Boolean value) =>
         Expression.Equal(v, Param(value.Value, typeof(bool?)));
 
     // ---- number

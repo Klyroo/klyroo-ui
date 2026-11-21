@@ -253,7 +253,7 @@ public class InMemoryPagingTests
     public void A_tampered_cursor_cannot_leave_the_filtered_set()
     {
         // The cursor carries a position, not rows: whatever it says, only rows matching the filter come back.
-        var filter = DataListFilterGroup.And(Rule("active", Op.Is, new FilterValue.Bool(true)));
+        var filter = DataListFilterGroup.And(Rule("active", Op.Is, new FilterValue.Boolean(true)));
         var sort = new[] { new DataListSort("name") };
         var first = Schema.ExecuteInMemory(Employees, new DataListRequest(new DataListPaging.Cursor(null, 1), sort, filter));
         var forged = first.NextCursor![..^1] + "A";
@@ -300,7 +300,7 @@ public class InMemoryFacetTests
     public void A_facet_leaves_out_its_own_filter_by_default_and_keeps_it_on_request()
     {
         var filter = DataListFilterGroup.And(
-            Rule("active", Op.Is, new FilterValue.Bool(true)),
+            Rule("active", Op.Is, new FilterValue.Boolean(true)),
             Rule("status", Op.IsAnyOf, List("Active")));
         var exclude = Facet(Run(filter, null, new DataListFacetRequest("status")), "status");
         Assert.Equal([new DataListFacetOption("Active", 3), new DataListFacetOption("Pending", 1)], exclude.Options);
@@ -365,7 +365,7 @@ public class InMemoryFacetTests
     [Fact]
     public void Query_only_filters_do_not_change_counts()
     {
-        var filter = DataListFilterGroup.And(Rule("archived", Op.Is, new FilterValue.Bool(true)));
+        var filter = DataListFilterGroup.And(Rule("archived", Op.Is, new FilterValue.Boolean(true)));
         var facet = Facet(Run(filter, null, new DataListFacetRequest("status")), "status");
         Assert.Equal(3, facet.Total);
     }

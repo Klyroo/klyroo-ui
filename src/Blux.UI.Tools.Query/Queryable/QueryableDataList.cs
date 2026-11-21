@@ -11,10 +11,11 @@ namespace Blux.UI.Tools.Query;
 /// <typeparam name="T">The row type.</typeparam>
 public sealed class DataListQuery<T>
 {
-    internal DataListQuery(IQueryable<T> matching, IQueryable<T> page, bool wantsTotal)
+    internal DataListQuery(IQueryable<T> matching, IQueryable<T> page, IQueryable<DataListRow<T>> rows, bool wantsTotal)
     {
         Matching = matching;
         Page = page;
+        Rows = rows;
         WantsTotal = wantsTotal;
     }
 
@@ -23,9 +24,16 @@ public sealed class DataListQuery<T>
 
     /// <summary>
     /// The page: <see cref="Matching"/> sorted (nulls last in both directions, then by row key) and cut by the paging. With cursor paging it holds one
-    /// row more than the page size, which <see cref="QueryableDataList.ToResult{T}"/> uses to know that a next page exists and removes.
+    /// row more than the page size, which <see cref="QueryableDataList"/>.ToResult uses to know that a next page exists and removes.
     /// </summary>
     public IQueryable<T> Page { get; }
+
+    /// <summary>
+    /// <see cref="Page"/> with each row's sort values and key read by the database next to it (<see cref="DataListRow{T}"/>). Load this one for cursor paging: the
+    /// next cursor is made from these values, not from the loaded entity, so a sort on <c>e.Department.Name</c> needs no <c>Include</c> and a projected row type needs
+    /// nothing special. For offset paging or no paging, <see cref="Page"/> is enough.
+    /// </summary>
+    public IQueryable<DataListRow<T>> Rows { get; }
 
     /// <summary>Whether the result carries a total: always for offset and no paging, for a cursor only when the request asked (<c>Count</c>). Count <see cref="Matching"/> only then.</summary>
     public bool WantsTotal { get; }
@@ -36,6 +44,20 @@ public sealed class DataListQuery<T>
         matching = Matching;
         page = Page;
     }
+}
+
+/// <summary>A row of a page together with what the database computed for its cursor: the value of each sort field, in the order of the sort, and the row key.</summary>
+/// <typeparam name="T">The row type.</typeparam>
+public sealed class DataListRow<T>
+{
+    /// <summary>The row.</summary>
+    public T Item { get; set; } = default!;
+
+    /// <summary>The sort values, boxed, one per sort rule (a null is a null in the database).</summary>
+    public object?[] SortValues { get; set; } = [];
+
+    /// <summary>The row key, boxed.</summary>
+    public object? Key { get; set; }
 }
 
 /// <summary>One option of a facet as read from the database: the value in its own type, and the number of rows that have it.</summary>
@@ -53,10 +75,12 @@ public sealed class DataListFacetBucket
 public sealed class DataListFacetQuery<T>
 {
     private readonly DataListFacetRequest _request;
+    private readonly int _maxBuckets;
 
-    internal DataListFacetQuery(DataListFacetRequest request, IQueryable<DataListFacetBucket> buckets, IQueryable<T>? missing)
+    internal DataListFacetQuery(DataListFacetRequest request, IQueryable<DataListFacetBucket> buckets, IQueryable<T>? missing, int maxBuckets)
     {
         _request = request;
+        _maxBuckets = maxBuckets;
         Buckets = buckets;
         Missing = missing;
     }
@@ -64,7 +88,7 @@ public sealed class DataListFacetQuery<T>
     /// <summary>The key of the facet.</summary>
     public string Key => _request.Key;
 
-    /// <summary>A group-by query: one row per distinct non-empty value and its count. Load it with <c>ToListAsync()</c>; every value is transferred (the window, the search among the options and the order are applied by <see cref="ToResult"/>).</summary>
+    /// <summary>A group-by query: one row per distinct non-empty value and its count, the most counted first (ties by value), at most <see cref="DataListSchema.MaxFacetBuckets"/> plus one (the extra row tells <see cref="ToResult"/> that the facet is truncated). Load it with <c>ToListAsync()</c>; the search among the options and the window are applied by <see cref="ToResult"/>.</summary>
     public IQueryable<DataListFacetBucket> Buckets { get; }
 
     /// <summary>The rows where the field is empty, or <see langword="null"/> when the request did not ask for <see cref="DataListFacetRequest.IncludeMissing"/>: count them with <c>CountAsync()</c>.</summary>
@@ -85,7 +109,7 @@ public sealed class DataListFacetQuery<T>
             // two values that format the same (a database whose collation merges 'a' and 'A' returns one of them) are one option
             if (TextConvert.Format(bucket.Value) is { } text) counts[text] = counts.GetValueOrDefault(text) + bucket.Count;
         }
-        return FacetResults.Create(_request, counts, missing ?? 0);
+        return FacetResults.Create(_request, counts, missing ?? 0, _maxBuckets);
     }
 }
 
@@ -136,12 +160,15 @@ public static class QueryableDataList
                 var page = Order(schema, matching, sortFields);
                 page = Skip(page, offset.Skip);
                 page = Take(page, offset.Take);
-                return new DataListQuery<T>(matching, page, wantsTotal: true);
+                return new DataListQuery<T>(matching, page, ToRows(schema, page, sortFields), wantsTotal: true);
             }
             case DataListPaging.Cursor cursor:
                 return ApplyCursor(schema, matching, sortFields, cursor);
             default:
-                return new DataListQuery<T>(matching, Order(schema, matching, sortFields), wantsTotal: true);
+            {
+                var all = Order(schema, matching, sortFields);
+                return new DataListQuery<T>(matching, all, ToRows(schema, all, sortFields), wantsTotal: true);
+            }
         }
     }
 
@@ -170,21 +197,16 @@ public static class QueryableDataList
                 var p = Expression.Parameter(typeof(T), "e");
                 missing = rows.Where(Expression.Lambda<Func<T, bool>>(FilterExpressions.EmptyOf(field!.Source, p, inMemory: false), p));
             }
-            queries.Add(new DataListFacetQuery<T>(facet, QueryableBuilder.Buckets(schema, field!, rows), missing));
+            queries.Add(new DataListFacetQuery<T>(facet, QueryableBuilder.Buckets(schema, field!, rows), missing, schema.MaxFacetBuckets));
         }
         return queries;
     }
 
     /// <summary>
-    /// The <see cref="DataListResult{T}"/> of a request from what the caller loaded: the rows of <see cref="DataListQuery{T}.Page"/>, the count of
-    /// <see cref="DataListQuery{T}.Matching"/> and the facets (<see cref="DataListFacetQuery{T}.ToResult"/>). With cursor paging the extra row is removed and
-    /// <see cref="DataListResult{T}.NextCursor"/> is made from the last row of the page.
+    /// The <see cref="DataListResult{T}"/> of an offset or unpaged request from what the caller loaded: the rows of <see cref="DataListQuery{T}.Page"/>, the count of
+    /// <see cref="DataListQuery{T}.Matching"/> and the facets (<see cref="DataListFacetQuery{T}.ToResult"/>).
     /// </summary>
-    /// <param name="schema">The schema of the rows.</param>
-    /// <param name="request">The request that was applied.</param>
-    /// <param name="pageRows">The rows loaded from <see cref="DataListQuery{T}.Page"/>.</param>
-    /// <param name="totalCount">The count of <see cref="DataListQuery{T}.Matching"/>, when <see cref="DataListQuery{T}.WantsTotal"/>.</param>
-    /// <param name="facets">The facet results, or <see langword="null"/> when none were requested.</param>
+    /// <exception cref="InvalidOperationException">The request pages by cursor: load <see cref="DataListQuery{T}.Rows"/> and use the overload that takes them, because the cursor needs the sort values the database computed.</exception>
     public static DataListResult<T> ToResult<T>(
         this DataListSchema<T> schema,
         DataListRequest request,
@@ -197,27 +219,54 @@ public static class QueryableDataList
         ArgumentNullException.ThrowIfNull(pageRows);
 
         var clean = schema.Sanitize(request);
-        switch (clean.Paging)
+        return clean.Paging switch
         {
-            case DataListPaging.Cursor cursor:
-            {
-                var sort = clean.Sort.Count > 0 ? clean.Sort : schema.DefaultSort;
-                var total = cursor.Count ? totalCount : null;
-                if (pageRows.Count <= cursor.Take) return new DataListResult<T>(pageRows, total, null, facets);
-                var page = pageRows.Take(cursor.Take).ToList();
-                var last = page[^1];
-                var fields = sort.Select(s => ResolveSort(schema, s.Key)).ToList();
-                var next = DataListCursor.Encode(
-                    CursorPaging.Signature(sort),
-                    schema.GetRowKey(last),
-                    [.. fields.Select(f => CursorValue.Format(f.Getter(last)))]);
-                return new DataListResult<T>(page, total, next, facets);
-            }
-            case DataListPaging.Offset:
-                return new DataListResult<T>(pageRows, totalCount, null, facets);
-            default:
-                return new DataListResult<T>(pageRows, totalCount ?? pageRows.Count, null, facets);
+            DataListPaging.Cursor => throw new InvalidOperationException(
+                "A cursor is made from the sort values of the last row, which the database computes: load DataListQuery.Rows and pass those rows to ToResult."),
+            DataListPaging.Offset => new DataListResult<T>(pageRows, totalCount, null, facets),
+            _ => new DataListResult<T>(pageRows, totalCount ?? pageRows.Count, null, facets),
+        };
+    }
+
+    /// <summary>
+    /// The <see cref="DataListResult{T}"/> of any request from the rows of <see cref="DataListQuery{T}.Rows"/>. With cursor paging the extra row is removed and
+    /// <see cref="DataListResult{T}.NextCursor"/> is made from the sort values and the key that the database returned for the last row of the page.
+    /// </summary>
+    /// <param name="schema">The schema of the rows.</param>
+    /// <param name="request">The request that was applied.</param>
+    /// <param name="rows">The rows loaded from <see cref="DataListQuery{T}.Rows"/>.</param>
+    /// <param name="totalCount">The count of <see cref="DataListQuery{T}.Matching"/>, when <see cref="DataListQuery{T}.WantsTotal"/>.</param>
+    /// <param name="facets">The facet results, or <see langword="null"/> when none were requested.</param>
+    public static DataListResult<T> ToResult<T>(
+        this DataListSchema<T> schema,
+        DataListRequest request,
+        IReadOnlyList<DataListRow<T>> rows,
+        int? totalCount = null,
+        IReadOnlyList<DataListFacetResult>? facets = null)
+    {
+        ArgumentNullException.ThrowIfNull(schema);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(rows);
+
+        var clean = schema.Sanitize(request);
+        if (clean.Paging is not DataListPaging.Cursor cursor)
+        {
+            var items = rows.Select(r => r.Item).ToList();
+            return clean.Paging is DataListPaging.Offset
+                ? new DataListResult<T>(items, totalCount, null, facets)
+                : new DataListResult<T>(items, totalCount ?? items.Count, null, facets);
         }
+
+        var sort = clean.Sort.Count > 0 ? clean.Sort : schema.DefaultSort;
+        var total = cursor.Count ? totalCount : null;
+        if (rows.Count <= cursor.Take) return new DataListResult<T>([.. rows.Select(r => r.Item)], total, null, facets);
+        var page = rows.Take(cursor.Take).ToList();
+        var last = page[^1];
+        var next = DataListCursor.Encode(
+            CursorPaging.Signature(sort),
+            TextConvert.Format(last.Key) ?? "",
+            [.. last.SortValues.Select(CursorValue.Format)]);
+        return new DataListResult<T>([.. page.Select(r => r.Item)], total, next, facets);
     }
 
     // ---- internals
@@ -268,6 +317,22 @@ public static class QueryableDataList
     private static bool NeedsNullFlag(FieldAccessor accessor) =>
         !accessor.Type.IsValueType || Nullable.GetUnderlyingType(accessor.Type) is not null || accessor.Chain is not { Length: 1 };
 
+    /// <summary>The page with the sort values and the key computed by the database: <c>Select(e =&gt; new DataListRow { Item = e, SortValues = new object[] { (object)e.Sort1, ... }, Key = (object)e.Key })</c>.</summary>
+    [UnconditionalSuppressMessage("AOT", "IL3050", Justification = "An array of object, a type every runtime has.")]
+    private static IQueryable<DataListRow<T>> ToRows<T>(DataListSchema<T> schema, IQueryable<T> page, List<(DataListField<T> Field, DataListSort Rule)> sort)
+    {
+        var p = Expression.Parameter(typeof(T), "e");
+        var values = sort.Select(s => (Expression)Expression.Convert(s.Field.Accessor.Bind(p, nullSafe: false), typeof(object)));
+        var init = Expression.MemberInit(
+            Expression.New(typeof(DataListRow<T>)),
+            Expression.Bind(typeof(DataListRow<T>).GetProperty(nameof(DataListRow<T>.Item))!, p),
+            Expression.Bind(typeof(DataListRow<T>).GetProperty(nameof(DataListRow<T>.SortValues))!, Expression.NewArrayInit(typeof(object), values)),
+            Expression.Bind(
+                typeof(DataListRow<T>).GetProperty(nameof(DataListRow<T>.Key))!,
+                schema.RowKeyAccessor is { } key ? Expression.Convert(key.Bind(p, nullSafe: false), typeof(object)) : Expression.Constant(null, typeof(object))));
+        return page.Select(Expression.Lambda<Func<T, DataListRow<T>>>(init, p));
+    }
+
     private static IQueryable<T> Skip<T>(IQueryable<T> source, int count) =>
         count <= 0 ? source : QueryableBuilder.Window(source, QueryableBuilder.SkipMethod, count);
 
@@ -290,13 +355,16 @@ public static class QueryableDataList
             if (!DataListCursor.TryDecode(cursor.After, signature, sort.Count, out var afterKeyText, out var afterValues)
                 || !CursorPaging.TryParse(sort.Select(s => s.Field).ToList(), afterValues, out var parsed)
                 || !TextConvert.TryParse(afterKeyText, keyAccessor.UnderlyingType, out var afterKey))
-                return new DataListQuery<T>(matching, Take(matching, 0), cursor.Count);
+            {
+                var none = Take(matching, 0);
+                return new DataListQuery<T>(matching, none, ToRows(schema, none, sort), cursor.Count);
+            }
 
             var p = Expression.Parameter(typeof(T), "e");
             rows = rows.Where(Expression.Lambda<Func<T, bool>>(QueryableBuilder.After(p, sort, parsed, keyAccessor, afterKey), p));
         }
         var page = Take(Order(schema, rows, sort), cursor.Take + 1);
-        return new DataListQuery<T>(matching, page, cursor.Count);
+        return new DataListQuery<T>(matching, page, ToRows(schema, page, sort), cursor.Count);
     }
 }
 
@@ -472,7 +540,7 @@ internal static class QueryableBuilder
             var keyType = value.Type;
             var filtered = rows.Where(Expression.Lambda<Func<T, bool>>(Expression.Not(FilterExpressions.IsEmpty(value, accessor)), p));
             var grouped = CallAny(filtered, GroupByDef, [typeof(T), keyType], Expression.Quote(QueryableBuilder.Lambda(value, p)));
-            return Project(grouped, typeof(IGrouping<,>).MakeGenericType(keyType, typeof(T)), typeof(T), countOf: null);
+            return Project(grouped, typeof(IGrouping<,>).MakeGenericType(keyType, typeof(T)), typeof(T), countOf: null, schema.MaxFacetBuckets);
         }
 
         // A collection: one (row key, value) pair per element, then the distinct rows per value. A row is counted once per value. The result-selector form
@@ -500,7 +568,7 @@ internal static class QueryableBuilder
         var whereMethod = ((Func<IQueryable<int>, Expression<Func<int, bool>>, IQueryable<int>>)Queryable.Where).Method.GetGenericMethodDefinition();
         var nonEmptyPairs = CallAny(pairs, whereMethod, [pairType], Expression.Quote(nonEmpty));
         var groupedPairs = CallAny(nonEmptyPairs, GroupByDef, [pairType, accessor.LiftedType], Expression.Quote(QueryableBuilder.Lambda(pairValue, q)));
-        return Project(groupedPairs, typeof(IGrouping<,>).MakeGenericType(accessor.LiftedType, pairType), pairType, countOf: nameof(FacetPair<int, int>.Row));
+        return Project(groupedPairs, typeof(IGrouping<,>).MakeGenericType(accessor.LiftedType, pairType), pairType, countOf: nameof(FacetPair<int, int>.Row), schema.MaxFacetBuckets);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = Justification)]
@@ -510,7 +578,7 @@ internal static class QueryableBuilder
     [UnconditionalSuppressMessage("AOT", "IL3050", Justification = Justification)]
     [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = Justification)]
     [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = Justification)]
-    private static IQueryable<DataListFacetBucket> Project(IQueryable grouped, Type groupingType, Type elementType, string? countOf)
+    private static IQueryable<DataListFacetBucket> Project(IQueryable grouped, Type groupingType, Type elementType, string? countOf, int maxBuckets)
     {
         var g = Expression.Parameter(groupingType, "g");
         Expression count;
@@ -529,6 +597,11 @@ internal static class QueryableBuilder
             var distinct = Expression.Call(EnumerableDistinctDef.MakeGenericMethod(elementType.GetProperty(countOf)!.PropertyType), rowOf);
             count = Expression.Call(EnumerableCountDef.MakeGenericMethod(elementType.GetProperty(countOf)!.PropertyType), distinct);
         }
+        // the most counted values first, ties by value, and one more than the cap: a result longer than the cap says that the facet is truncated
+        var keyMember = Member(g, "Key");
+        grouped = CallAny(grouped, OrderByDescendingDef, [groupingType, typeof(int)], Expression.Quote(QueryableBuilder.Lambda(count, g)));
+        grouped = CallAny(grouped, ThenByDef, [groupingType, keyMember.Type], Expression.Quote(QueryableBuilder.Lambda(keyMember, g)));
+        grouped = CallAny(grouped, TakeMethod, [groupingType], Expression.Convert(Expression.Field(Expression.Constant(new ValueBox(maxBuckets + 1)), ValueBox.ValueField), typeof(int)));
         var bucket = Expression.MemberInit(
             Expression.New(typeof(DataListFacetBucket)),
             Expression.Bind(typeof(DataListFacetBucket).GetProperty(nameof(DataListFacetBucket.Value))!, Expression.Convert(Member(g, "Key"), typeof(object))),

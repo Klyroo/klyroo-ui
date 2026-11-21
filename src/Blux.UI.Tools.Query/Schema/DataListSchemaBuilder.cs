@@ -30,6 +30,7 @@ public sealed class DataListSchemaBuilder<T>
     private int _maxPageSize = 500;
     private int _maxFilterRules = 100;
     private int _maxListValues = 500;
+    private int _maxFacetBuckets = 1000;
     private int _defaultPageSize = 50;
     private DataListLayout _layout = DataListLayout.Table;
 
@@ -160,6 +161,14 @@ public sealed class DataListSchemaBuilder<T>
         return this;
     }
 
+    /// <summary>The most distinct options a facet keeps (1000 by default); more are cut and the facet is marked truncated. See <see cref="DataListSchema.MaxFacetBuckets"/>.</summary>
+    public DataListSchemaBuilder<T> MaxFacetBuckets(int count)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(count, 1);
+        _maxFacetBuckets = count;
+        return this;
+    }
+
     /// <summary>The page size when none is given (50 by default, never above the maximum).</summary>
     public DataListSchemaBuilder<T> DefaultPageSize(int size)
     {
@@ -236,6 +245,7 @@ public sealed class DataListSchemaBuilder<T>
             _layout);
         schema.MaxFilterRules = _maxFilterRules;
         schema.MaxListValues = _maxListValues;
+        schema.MaxFacetBuckets = _maxFacetBuckets;
         return schema;
     }
 
