@@ -22,6 +22,7 @@ public sealed class DataListSchemaBuilder<T>
     private readonly List<(string Key, DataListFilter Filter)> _queryFilters = [];
     private readonly List<ValueSource> _search = [];
     private Func<T, string>? _rowKey;
+    private FieldAccessor? _rowKeyAccessor;
     private Func<T, string?>? _rowLabel;
     private string? _defaultSortKey;
     private bool _defaultSortDescending;
@@ -40,6 +41,7 @@ public sealed class DataListSchemaBuilder<T>
         ArgumentNullException.ThrowIfNull(selector);
         var read = selector.Compile();
         _rowKey = item => TextConvert.Format(read(item)) ?? "";
+        _rowKeyAccessor = FieldAccessor.Create(selector);
         return this;
     }
 
@@ -226,6 +228,7 @@ public sealed class DataListSchemaBuilder<T>
             _queryFilters.Select(q => q.Key),
             _search,
             _rowKey,
+            _rowKeyAccessor,
             _rowLabel,
             defaultSort,
             _defaultPageSize,

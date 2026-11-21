@@ -215,6 +215,7 @@ public sealed class DataListSchema<T> : DataListSchema
         IEnumerable<string> queryOnlyKeys,
         IReadOnlyList<ValueSource> search,
         Func<T, string>? rowKey,
+        FieldAccessor? rowKeyAccessor,
         Func<T, string?>? rowLabel,
         IReadOnlyList<DataListSort> defaultSort,
         int defaultPageSize,
@@ -235,8 +236,31 @@ public sealed class DataListSchema<T> : DataListSchema
         _fields = fields.ToDictionary(f => f.Key, StringComparer.Ordinal);
         SearchSources = search;
         _rowKey = rowKey;
+        RowKeyAccessor = rowKeyAccessor;
         _rowLabel = rowLabel;
     }
+
+    /// <summary>The row key as an expression (for the IQueryable applier and the typed tie-break), or <see langword="null"/> without a row key.</summary>
+    internal FieldAccessor? RowKeyAccessor { get; }
+
+    private Func<T, object?>? _rowKeyValue;
+
+    /// <summary>The row key as a boxed value of its own type (not text), compiled once.</summary>
+    internal Func<T, object?> RowKeyValue => _rowKeyValue ??= CompileRowKey();
+
+    private Func<T, object?> CompileRowKey()
+    {
+        var accessor = RowKeyAccessor ?? throw new InvalidOperationException("The schema has no RowKey; declare one with RowKey(e => e.Id).");
+        var p = System.Linq.Expressions.Expression.Parameter(typeof(T), "e");
+        var body = System.Linq.Expressions.Expression.Convert(accessor.Bind(p, nullSafe: true), typeof(object));
+        return System.Linq.Expressions.Expression.Lambda<Func<T, object?>>(body, p).Compile();
+    }
+
+    /// <summary>
+    /// Orders two rows by their key, by the type of the key (so 2 comes before 10), strings ordinal: the tie-break of every sort, in memory and in the
+    /// IQueryable applier. A key is never null in practice; a null one sorts last.
+    /// </summary>
+    internal int CompareRowKeys(T a, T b) => RowKeyComparer.Instance.Compare(RowKeyValue(a), RowKeyValue(b));
 
     internal IReadOnlyList<DataListField<T>> Fields { get; }
 
