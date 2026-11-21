@@ -40,6 +40,24 @@ public static class InvoiceData
         .DefaultPageSize(10));
 }
 
+/// <summary>600 invoices and a schema that shows 300 at a time: a first result too big to hand from the prerender to the interactive render (see <c>PersistMaxBytes</c>).</summary>
+public static class InvoiceLargeData
+{
+    /// <summary>600 invoices.</summary>
+    public static readonly Invoice[] All = [.. Enumerable.Range(0, 5).SelectMany(round => InvoiceData.All.Select(i => i with { Id = i.Id + round * 120 }))];
+
+    /// <summary>Sort by number, 300 rows per page.</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable())
+        .Field(i => i.Status)
+        .Field(i => i.Amount, f => f.Sortable())
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(300)
+        .MaxPageSize(500));
+}
+
 /// <summary>The schema of the filter examples: a text filter on the customer, an option filter on the status (declared options, counts) and a boolean one.</summary>
 public static class InvoiceFilterData
 {
