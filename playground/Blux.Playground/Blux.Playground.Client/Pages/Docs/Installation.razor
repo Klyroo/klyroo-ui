@@ -19,6 +19,7 @@
     <CodeBlock Title="App.razor" Code="@AppRazor" />
     <p>With Tailwind v4 in your app, each build copies the Blux theme to <code>obj/blux/blux.theme.css</code>. Import it after Tailwind:</p>
     <CodeBlock Title="app.css" Code="@AppCss" />
+    <p>No Node needed: <code>&lt;BluxTailwind&gt;true&lt;/BluxTailwind&gt;</code> compiles that stylesheet at build time with the Tailwind standalone CLI. See the <a href="/docs/tailwind">Tailwind</a> guide.</p>
 
     <h2>4. Use the components</h2>
     <CodeBlock Title="_Imports.razor" Code="@("@using Blux.UI")" />

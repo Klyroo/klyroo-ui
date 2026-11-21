@@ -83,6 +83,7 @@ public static partial class Catalog
         ("/docs/theming", "Theming", "Getting started"),
         ("/docs/design-system", "Design system", "Getting started"),
         ("/docs/css-variables", "CSS variables", "Getting started"),
+        ("/docs/tailwind", "Tailwind", "Getting started"),
         ("/docs/fonts", "Fonts", "Getting started"),
         ("/docs/icons", "Icons", "Getting started"),
         ("/docs/internationalization", "Internationalization", "Getting started"),
