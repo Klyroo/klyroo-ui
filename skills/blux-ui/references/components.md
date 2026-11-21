@@ -3,7 +3,7 @@
 <!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
      dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-137 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+138 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -657,6 +657,34 @@
 - `<BxColumn>`
   - Parameters: `Class`, `Field`, `Sortable`, `Title` (required)
   - Slots: `Template`
+
+### DataList
+
+`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Blux.UI.Tools.EntityFrameworkCore adapter), with sortable columns, pagination, a result count, loading and error states, and its state in the URL. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+
+- `<BxDataList>`
+  - Parameters: `Class`, `Density`, `Items`, `Label`, `PersistKey`, `Provider`, `Queryable`, `ResultJson`, `Schema`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
+  - Slots: `ChildContent`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListTable>`
+  - Parameters: `AriaLabel`, `Caption`, `Class`, `Ui`
+  - Slots: `Empty`, `ChildContent`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListColumn>`
+  - Parameters: `Align`, `Class`, `Field`, `Format`, `Key`, `Order`, `Property`, `Sortable`, `Title`, `Visible`
+  - Slots: `Template`
+- `<BxDataListPagination>`
+  - Parameters: `AriaLabel`, `Class`, `PageSizes`, `ShowFirstLast`, `ShowPageSize`, `SiblingCount`, `Ui`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListResultCount>`
+  - Parameters: `Class`, `Ui`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListRefresh>`
+  - Parameters: `Class`, `Ui`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
+- `<BxDataListErrorState>`
+  - Parameters: `Class`, `Description`, `Title`, `Ui`
+  - `Ui` (`DataListUi`): `Root`, `Toolbar`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`
 
 ### DataListEmpty
 

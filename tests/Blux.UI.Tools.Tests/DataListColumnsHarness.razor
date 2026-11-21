@@ -1,0 +1,18 @@
+@* Columns that come and go: an @if, and Visible. The probe lists what the list registered. *@
+<BxDataList TItem="Person" Schema="DataListControllerTests.Schema" Items="DataListControllerTests.People" UrlSync="false" data-testid="list">
+    <BxDataListTable>
+        <BxDataListColumn Field="name" />
+        @if (ShowAge)
+        {
+            <BxDataListColumn Field="age" Order="@(Ordered ? 1 : 0)" />
+        }
+        <BxDataListColumn Field="city" Visible="ShowCity" Order="@(Ordered ? 2 : 0)" />
+    </BxDataListTable>
+    <DataListColumnsProbe />
+</BxDataList>
+
+@code {
+    [Parameter] public bool ShowAge { get; set; }
+    [Parameter] public bool Ordered { get; set; }
+    [Parameter] public bool ShowCity { get; set; } = true;
+}

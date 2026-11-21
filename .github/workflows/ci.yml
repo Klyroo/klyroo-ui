@@ -49,6 +49,9 @@ jobs:
       - name: Blux.UI.Tools.Query against EF Core and SQLite (net10.0)
         run: dotnet test --project tests/Blux.UI.Tools.Query.EfTests -c Release --no-build
       # Backs IsAotCompatible: the in-memory executor, published with NativeAOT and run (needs clang, which the runner image has).
+      - name: Blux.UI.Tools.EntityFrameworkCore adapter against EF Core and SQLite (net10.0)
+        run: dotnet test --project tests/Blux.UI.Tools.EntityFrameworkCore.Tests -c Release --no-build
+
       - name: Blux.UI.Tools.Query NativeAOT smoke
         run: |
           dotnet publish tests/Blux.UI.Tools.Query.AotSmoke -c Release -r linux-x64 -o "$RUNNER_TEMP/aot-smoke"
@@ -71,6 +74,7 @@ jobs:
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
       # Inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App against the package in both CSS modes.
       # It packs on its own and needs the network on a fresh runner (framework packages), hence --online.
       - name: Package check

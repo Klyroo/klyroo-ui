@@ -27,7 +27,7 @@ public class ToolsPackageTests
     [Fact]
     public void Components_of_Blux_UI_have_no_package()
     {
-        Assert.All(TestSupport.Bundle.Components.Where(c => c.Slug != "data-list-empty"), c => Assert.Null(c.Package));
+        Assert.All(TestSupport.Bundle.Components.Where(c => c.Slug is not ("data-list-empty" or "data-list")), c => Assert.Null(c.Package));
     }
 
     [Fact]
@@ -35,6 +35,21 @@ public class ToolsPackageTests
     {
         Assert.Contains("search-x", TestSupport.Bundle.Icons);
         Assert.Contains("search", TestSupport.Bundle.Icons);
+    }
+
+    [Fact]
+    public void The_data_list_is_in_the_bundle_with_its_parts_and_its_theme()
+    {
+        var list = TestSupport.Service.FindComponent("data-list")!;
+
+        Assert.Equal("Blux.UI.Tools", list.Package);
+        Assert.Equal(["BxDataList<TItem>", "BxDataListTable<TItem>", "BxDataListColumn<TItem>", "BxDataListPagination<TItem>", "BxDataListResultCount<TItem>", "BxDataListRefresh<TItem>", "BxDataListErrorState<TItem>"], list.Api.Select(a => a.Name));
+        var root = list.Api[0];
+        Assert.Contains(root.Parameters, p => p.Name == "UrlSync" && p.Description is not null);
+        Assert.Contains(root.Parameters, p => p.Name == "ResultJson" && p.Description is not null);
+        Assert.Equal("DataList", root.Theme!.Property);
+        Assert.Contains("tableRoot", root.Theme.Slots.Keys);
+        Assert.Contains("### DataList", File.ReadAllText(Path.Combine(TestSupport.RepoRoot, SkillReference.RelativePath)));
     }
 
     [Fact]

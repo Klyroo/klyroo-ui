@@ -1,0 +1,32 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+
+@* A polite live region: the count is what changes when a page, a sort or a refresh brings other rows, so it is what a screen reader announces. *@
+<p class="@_slots["resultCount"]" data-slot="result-count" role="status" aria-live="polite" aria-atomic="true" @attributes="AdditionalAttributes">@Text</p>
+
+@code {
+    private SlotSet _slots = default!;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "resultCount");
+
+    // The rows on screen, not the ones being loaded: the text changes when they do.
+    private string Text
+    {
+        get
+        {
+            if (Context.IsInitial) return ToolsMessages.Loading;
+            if (Context.Result is not { } result) return "";
+            if (result.Items.Count == 0) return ToolsMessages.NoResults;
+            var loaded = Context.LoadedState ?? Context.State;
+            var first = (long)(loaded.Page - 1) * loaded.PageSize + 1;
+            var last = first + result.Items.Count - 1;
+            // Numbers are written with the group separator of the culture.
+            string Number(long value) => value.ToString("N0", FormatCulture);
+            return result.TotalCount is { } total
+                ? string.Format(FormatCulture, ToolsMessages.ResultCount, Number(first), Number(last), Number(total))
+                : string.Format(FormatCulture, ToolsMessages.ResultRange, Number(first), Number(last));
+        }
+    }
+}
