@@ -26,6 +26,9 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
 
     protected string BaseUrl => server.BaseUrl;
 
+    /// <summary>True when the docs host started its template demos and every one answers.</summary>
+    protected bool TemplatesReady => server.TemplatesReady;
+
     /// <summary>chromium, firefox or webkit.</summary>
     protected string BrowserName => server.Browser.BrowserType.Name;
 

@@ -16,6 +16,8 @@
     <!-- The MCP server at /mcp and the llms.txt files, generated from the docs bundle. -->
     <ProjectReference Include="..\..\..\src\Blux.UI.Mcp.Core\Blux.UI.Mcp.Core.csproj" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <!-- The live demos of the templates (/templates/{name}/demo/) are child processes behind this reverse proxy. -->
+    <PackageReference Include="Yarp.ReverseProxy" />
   </ItemGroup>
 
   <!--
