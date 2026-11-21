@@ -15,6 +15,9 @@ const skipped = new Set(["bin", "obj", "node_modules", "TestResults", ".git"]);
 
 /** Copies the template and commits it. Returns the output folder. */
 export function exportTemplate(name, out, { commit = true } = {}) {
+  if (name.startsWith("_")) {
+    throw new Error(`'${name}' is not a template: folders that start with an underscore hold what the templates share`);
+  }
   const source = join(root, "templates", name);
   if (!existsSync(source) || !statSync(source).isDirectory()) {
     throw new Error(`no template named '${name}' in templates/`);

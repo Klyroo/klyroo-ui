@@ -1,0 +1,44 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/src/Docs.Web"],
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "watch",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["watch", "run", "--project", "${workspaceFolder}/src/Docs.Web"],
+      "isBackground": true,
+      "problemMatcher": "$msCompile",
+      "presentation": { "group": "dev" }
+    },
+    {
+      "label": "tailwind watch",
+      "type": "process",
+      "command": "dotnet",
+      "args": ["build", "${workspaceFolder}/src/Docs.Web", "-t:BluxTailwindWatch"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "dev" }
+    },
+    {
+      "label": "dev servers",
+      "dependsOn": ["watch", "tailwind watch"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "dev",
+      "dependsOn": ["build", "dev servers"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    }
+  ]
+}

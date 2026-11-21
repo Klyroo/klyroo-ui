@@ -1,0 +1,66 @@
+@page "/{*Slug}"
+@inject MarkdownStore Store
+@inject NavigationManager Navigation
+
+@* One component for every page of the content folder: the address is the path of the file, without .md. *@
+@if (_page is not null)
+{
+    <PageTitle>@_page.Title - @SiteInfo.Name</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@(_page.Description ?? SiteInfo.Description)" />
+    </HeadContent>
+
+    <BxContainer Class="py-8 lg:py-10">
+        <BxPage Ui="_columnsUi" Left="_nav" Right="_toc">
+            <article class="min-w-0" data-testid="article">
+                <BxPageHeader Title="@_page.Title" Description="@_page.Description" />
+
+                @if (_toc is not null)
+                {
+                    @* Below the lg breakpoint the table of contents is a disclosure above the text; from lg up it is in the right column. *@
+                    <div class="mt-6 lg:hidden">
+                        <BxContentToc Links="_page.Toc" Title="On this page" />
+                    </div>
+                }
+
+                @* The prose styles of the Blux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
+                <BxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</BxPageBody>
+
+                <BxContentSurround Previous="_previous" Next="_next" Class="border-t border-(--blux-border) pt-8" />
+            </article>
+        </BxPage>
+    </BxContainer>
+}
+
+@code {
+    private static readonly PageUi _columnsUi = new() { Left = "hidden lg:block", Right = "hidden lg:block" };
+
+    private MarkdownSite _site = default!;
+    private MarkdownPage? _page;
+    private BxContentSurroundLink? _previous;
+    private BxContentSurroundLink? _next;
+
+    [Parameter] public string? Slug { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _site = Store.Site;
+        _page = _site.Find(Slug);
+        if (_page is null)
+        {
+            // Answers 404 with the page of Pages/NotFound.razor.
+            Navigation.NotFound();
+            return;
+        }
+        (_previous, _next) = _site.Surround(_page);
+    }
+
+    // The tree in the left column. A complementary landmark inside main would be a mistake, so the aside is a plain div.
+    private RenderFragment? _nav => _page is null ? null : @<BxPageAside As="div" Class="py-1">
+        <BxContentNavigation Items="_site.Navigation" AriaLabel="Documentation" />
+    </BxPageAside>;
+
+    private RenderFragment? _toc => _page is null || _page.Toc.Count == 0 ? null : @<BxPageAside As="div">
+        <BxContentToc Links="_page.Toc" Title="On this page" />
+    </BxPageAside>;
+}
