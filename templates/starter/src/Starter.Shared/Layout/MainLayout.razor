@@ -1,0 +1,55 @@
+@inherits LayoutComponentBase
+
+@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+   It renders nothing on the web, where App.razor places them. *@
+<BxHead />
+<SystemBars />
+
+<BxApp>
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-(--blux-bg) focus:px-3 focus:py-2 focus:ring-2 focus:ring-(--blux-primary)">Skip to content</a>
+
+    @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
+    <BxHeader Items="_items" AriaLabel="Main" MenuTitle="Menu">
+        <Left>
+            <a href="./" class="flex items-center gap-2 font-semibold text-(--blux-text-highlighted)">
+                <BxIcon Name="ph:stack" Class="size-6" />
+                <span>Starter</span>
+            </a>
+        </Left>
+        <Right>
+            <BxLocaleSelect Size="BxSize.Sm" />
+            <BxColorModeButton Size="BxSize.Sm" />
+        </Right>
+    </BxHeader>
+
+    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+        @Body
+    </BxMain>
+
+    <BxFooter>
+        <Left>
+            <p class="text-sm text-(--blux-text-muted)">&copy; @DateTime.UtcNow.Year Starter. Built with Blux UI.</p>
+        </Left>
+        <Right>
+            <nav aria-label="Footer" class="flex gap-4 text-sm">
+                <a href="./" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Home</a>
+                <a href="about" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">About</a>
+            </nav>
+        </Right>
+    </BxFooter>
+</BxApp>
+
+<div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
+    An unhandled error has occurred.
+    <a href="." class="reload underline">Reload</a>
+    <span class="dismiss ms-4 cursor-pointer">x</span>
+</div>
+
+@code {
+    private static readonly BxNavigationItem[] _items =
+    [
+        new("Home") { Href = "./", Exact = true },
+        new("Features") { Href = "./#features", Active = false },
+        new("About") { Href = "about" },
+    ];
+}

@@ -1,0 +1,76 @@
+@page "/"
+@inject IToastService Toasts
+
+<PageTitle>Starter</PageTitle>
+
+<BxPageHero Headline="Blux UI"
+            Title="Start your Blazor app with a real design system"
+            Description="Accessible, themable components, light and dark mode, twelve languages and Tailwind CSS, wired once. The same pages run on the web (server, then WebAssembly) and in a native app."
+            Links="_heroLinks" />
+
+<BxPageSection id="features"
+               Headline="What is in the box"
+               Title="Everything a new app needs on day one"
+               Description="Replace this page with your own: the pieces below are plain Razor, there is nothing to unlearn."
+               Orientation="BxOrientation.Vertical"
+               Features="_features" />
+
+<section id="demo" aria-labelledby="demo-title" class="px-4 py-16 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-[37rem] flex-col gap-6">
+        <div class="flex flex-col gap-2">
+            <h2 id="demo-title" class="text-2xl font-semibold text-(--blux-text-highlighted)">See it respond</h2>
+            <p class="text-(--blux-text-muted)">
+                The page is rendered by the server first, then becomes interactive without a reload: on the server connection at once,
+                and in WebAssembly once the runtime has downloaded.
+            </p>
+        </div>
+
+        <BxCard>
+            <Header>
+                <div class="flex items-center justify-between gap-3">
+                    <h3 class="font-semibold">Interactive demo</h3>
+                    <BxBadge Label="@($"Running on {RendererInfo.Name}")" Variant="BxVariant.Subtle" data-testid="renderer" />
+                </div>
+            </Header>
+            <ChildContent>
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <BxButton Label="Count" OnClick="() => _count++" data-testid="counter-button" />
+                        <BxBadge Label="@($"Clicked {_count} times")" Color="BxColor.Neutral" Variant="BxVariant.Outline" data-testid="counter" />
+                    </div>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <BxInput @bind-Value="_name" Immediate="true" Placeholder="Your name" aria-label="Your name" Class="w-56" data-testid="name" />
+                        <BxButton Label="Say hello" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="SayHello" data-testid="hello" />
+                    </div>
+                </div>
+            </ChildContent>
+        </BxCard>
+    </div>
+</section>
+
+@code {
+    private int _count;
+    private string? _name;
+
+    private static readonly IReadOnlyList<PageLinkItem> _heroLinks =
+    [
+        new("Try the demo", "./#demo") { Icon = "ph:lightning" },
+        new("Read the About page", "about") { Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+    ];
+
+    private static readonly IReadOnlyList<PageFeatureItem> _features =
+    [
+        new("Real components", "Buttons, forms, overlays, navigation and page sections that follow WAI-ARIA, with keyboard support.") { Icon = "ph:squares-four" },
+        new("Light and dark", "A color mode button in the header; the choice is remembered and applied before the first paint.") { Icon = "ph:moon" },
+        new("Twelve languages", "The locale select translates every built-in text and flips the layout for right-to-left languages.") { Icon = "ph:globe" },
+        new("Tailwind, no Node", "The build downloads the Tailwind CLI once and compiles Styles/app.css. No npm, no package.json.") { Icon = "ph:paint-brush" },
+        new("Web and native", "One Razor class library of pages, a web host and a MAUI Blazor Hybrid app for phones and desktops.") { Icon = "ph:device-mobile" },
+        new("Self-hosted fonts and icons", "Fonts and the icons you name are fetched at build time and served from your own origin.") { Icon = "ph:lightning" },
+    ];
+
+    private async Task SayHello()
+    {
+        var who = string.IsNullOrWhiteSpace(_name) ? "there" : _name.Trim();
+        await Toasts.Add(new BxToast { Title = $"Hello, {who}", Description = $"Handled on {RendererInfo.Name}.", Color = BxColor.Success });
+    }
+}
