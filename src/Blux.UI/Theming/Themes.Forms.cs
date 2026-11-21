@@ -63,21 +63,23 @@ internal static partial class Themes
     }
 
     public static ComponentTheme Checkbox() =>
-        new ComponentTheme("checkbox", "root", "container", "base", "icon", "wrapper", "label", "description")
+        new ComponentTheme("checkbox", "root", "container", "base", "icon", "indeterminateIcon", "wrapper", "label", "description")
             .Slot("root", "group relative flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
             .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-[calc(var(--blux-radius)_-_2px)] bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) indeterminate:bg-(--bx-color) indeterminate:ring-(--bx-color-text) " +
+                          "disabled:cursor-not-allowed disabled:opacity-60 " +
                           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " + ControlInvalid)
-            .Slot("icon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-checked:opacity-100")
+            .Slot("icon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-checked:opacity-100 peer-indeterminate:opacity-0")
+            .Slot("indeterminateIcon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-indeterminate:opacity-100")
             .Slot("wrapper", "flex flex-col")
             .Slot("label", "font-medium text-(--blux-text) cursor-pointer group-data-disabled:cursor-not-allowed group-data-disabled:opacity-60")
             .Slot("description", "text-(--blux-text-muted)")
-            .Variant("size", "xs", "base", "size-3").Variant("size", "xs", "icon", "size-2.5").Variant("size", "xs", "wrapper", "text-xs").Variant("size", "xs", "container", "h-4")
-            .Variant("size", "sm", "base", "size-3.5").Variant("size", "sm", "icon", "size-3").Variant("size", "sm", "wrapper", "text-xs").Variant("size", "sm", "container", "h-4")
-            .Variant("size", "md", "base", "size-4").Variant("size", "md", "icon", "size-3.5").Variant("size", "md", "wrapper", "text-sm").Variant("size", "md", "container", "h-5")
-            .Variant("size", "lg", "base", "size-[18px]").Variant("size", "lg", "icon", "size-4").Variant("size", "lg", "wrapper", "text-sm").Variant("size", "lg", "container", "h-5")
-            .Variant("size", "xl", "base", "size-5").Variant("size", "xl", "icon", "size-4.5").Variant("size", "xl", "wrapper", "text-base").Variant("size", "xl", "container", "h-6")
+            .Variant("size", "xs", "base", "size-3").Variant("size", "xs", "icon", "size-2.5").Variant("size", "xs", "indeterminateIcon", "size-2.5").Variant("size", "xs", "wrapper", "text-xs").Variant("size", "xs", "container", "h-4")
+            .Variant("size", "sm", "base", "size-3.5").Variant("size", "sm", "icon", "size-3").Variant("size", "sm", "indeterminateIcon", "size-3").Variant("size", "sm", "wrapper", "text-xs").Variant("size", "sm", "container", "h-4")
+            .Variant("size", "md", "base", "size-4").Variant("size", "md", "icon", "size-3.5").Variant("size", "md", "indeterminateIcon", "size-3.5").Variant("size", "md", "wrapper", "text-sm").Variant("size", "md", "container", "h-5")
+            .Variant("size", "lg", "base", "size-[18px]").Variant("size", "lg", "icon", "size-4").Variant("size", "lg", "indeterminateIcon", "size-4").Variant("size", "lg", "wrapper", "text-sm").Variant("size", "lg", "container", "h-5")
+            .Variant("size", "xl", "base", "size-5").Variant("size", "xl", "icon", "size-4.5").Variant("size", "xl", "indeterminateIcon", "size-4.5").Variant("size", "xl", "wrapper", "text-base").Variant("size", "xl", "container", "h-6")
             .Default("size", "md");
 
     public static ComponentTheme RadioGroup() =>
