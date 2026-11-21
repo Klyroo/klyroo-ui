@@ -9,6 +9,7 @@
 @using Blux.UI.Tools.Query
 @using System.Diagnostics.CodeAnalysis
 @using Microsoft.JSInterop
+@using Microsoft.Extensions.Logging
 
 <CascadingValue TValue="DataListContext<TItem>" Value="_context" IsFixed="true">
     <div class="@_slots["root"]" data-slot="root" @attributes="AdditionalAttributes">
@@ -26,6 +27,10 @@
                 <BxDataListResultCount TItem="TItem" />
                 <BxDataListRefresh TItem="TItem" />
             </div>
+            @if (_schema is { FilterKeys.Count: > 0 })
+            {
+                <BxDataListFilterTags TItem="TItem" ShowAdd="true" ShowClear="true" />
+            }
             <BxDataListErrorState TItem="TItem" />
             <BxDataListTable TItem="TItem" />
             <BxDataListPagination TItem="TItem" />
@@ -474,12 +479,31 @@
     {
         if (Controller is { Result: { } result, LoadedState: { } loaded, RequestedState: { } requested } && ResultJson is not null && _persistent is not null)
         {
-            // PersistAsJson<string> carries text through the built-in converter; the text itself is written with the metadata of the app, so the result needs no reflection.
-            _persistent.PersistAsJson(PersistedKey + ":state", JsonSerializer.Serialize(requested, DataListJsonContext.Default.DataListState));
-            _persistent.PersistAsJson(PersistedKey + ":loaded", JsonSerializer.Serialize(loaded, DataListJsonContext.Default.DataListState));
-            _persistent.PersistAsJson(PersistedKey + ":result", JsonSerializer.Serialize(result, ResultJson));
+            // The text itself is written with the metadata of the app, so the result needs no reflection; facets are part of the result and count.
+            var stateText = JsonSerializer.Serialize(requested, DataListJsonContext.Default.DataListState);
+            var loadedText = JsonSerializer.Serialize(loaded, DataListJsonContext.Default.DataListState);
+            var resultText = JsonSerializer.Serialize(result, ResultJson);
+            var bytes = (long)System.Text.Encoding.UTF8.GetByteCount(stateText) + System.Text.Encoding.UTF8.GetByteCount(loadedText) + System.Text.Encoding.UTF8.GetByteCount(resultText);
+            // The client sends the whole persisted state to the server when a circuit starts, and SignalR refuses a message past 32 KB: one list over its own limit, or lists that together pass the page budget, are not persisted.
+            var allowed = DataListPersistBudget.Reserve(Services, bytes, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes);
+            if (!allowed)
+            {
+                if (Services.GetService(typeof(ILoggerFactory)) is ILoggerFactory factory) Log(factory, PersistedKey, bytes);
+                return Task.CompletedTask;
+            }
+            // PersistAsJson<string> carries text through the built-in converter.
+            _persistent.PersistAsJson(PersistedKey + ":state", stateText);
+            _persistent.PersistAsJson(PersistedKey + ":loaded", loadedText);
+            _persistent.PersistAsJson(PersistedKey + ":result", resultText);
         }
         return Task.CompletedTask;
+    }
+
+    private void Log(ILoggerFactory factory, string key, long bytes)
+    {
+        factory.CreateLogger("Blux.UI.Tools.DataList").LogWarning(
+            "The data list '{Key}' did not hand its prerendered result to the interactive render: it is {Bytes} bytes, over the {List}-byte limit of one list or the {Page}-byte budget of the page (BluxToolsOptions.PersistMaxBytes, PersistPageMaxBytes). The interactive render loads it again once. Use a smaller first page, or no ResultJson.",
+            key, bytes, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes);
     }
 
     // The result of the prerender, when it was loaded for the state this render starts from.

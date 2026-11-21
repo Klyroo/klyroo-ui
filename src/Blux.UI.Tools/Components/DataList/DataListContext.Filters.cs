@@ -1,0 +1,179 @@
+using System.Globalization;
+using Blux.UI.Tools.Query;
+
+namespace Blux.UI.Tools;
+
+/// <summary>How a filter editor applies what the user changes.</summary>
+public enum DataListApplyMode
+{
+    /// <summary>Each change applies at once (a text filter after a pause in the typing). The history gets an entry per change.</summary>
+    Live,
+
+    /// <summary>Changes wait in the editor until the Apply button; Cancel, Escape or a click outside drop them.</summary>
+    Submit,
+}
+
+/// <summary>An option an option filter editor lists: a value, what to show for it and, when the list asked for them, how many rows have it.</summary>
+/// <param name="Value">The value a rule carries.</param>
+/// <param name="Label">The text shown.</param>
+/// <param name="Count">The number of rows that have the value, or <see langword="null"/> when the list has no count for this filter.</param>
+internal readonly record struct FilterChoice(string Value, string Label, int? Count);
+
+public sealed partial class DataListContext<TItem>
+{
+    // The kinds that have an editor: text, option and boolean. A number or date filter of the schema still applies (and shows as a tag, which cannot be edited).
+    internal static bool HasEditor(DataListFilter filter) => filter.Kind is FilterKind.Text or FilterKind.Option or FilterKind.Boolean;
+
+    /// <summary>The key of every filter of the schema that has an editor, in the order the schema declares them.</summary>
+    internal IReadOnlyList<string> EditableFilterKeys =>
+        Schema is null ? [] : [.. Schema.FilterKeys.Where(k => Schema.TryGetFilter(k, out var filter) && HasEditor(filter))];
+
+    /// <summary>Raised when something asks for the focus to go to the filter tags (the clear filters button, which is gone once it worked).</summary>
+    internal event Action? FilterFocusRequested;
+
+    internal void RequestFilterFocus() => FilterFocusRequested?.Invoke();
+
+    /// <summary>The rules of the state that belong to a filter of the schema, in the order of the state.</summary>
+    internal IReadOnlyList<FilterRule> ActiveFilters =>
+        Schema is null ? [] : [.. State.Filters.Where(r => Schema.TryGetFilter(r.Key, out _))];
+
+    internal FilterRule? RuleFor(string key) => State.Filters.FirstOrDefault(r => r.Key == key);
+
+    internal DataListFilter? FilterOf(string key) => Schema is not null && Schema.TryGetFilter(key, out var filter) ? filter : null;
+
+    /// <summary>The name of a filter: its <see cref="DataListFilter.Label"/>, else the title of the column with that key, else the key written as words.</summary>
+    internal string FilterLabel(string key)
+    {
+        if (FilterOf(key)?.Label is { Length: > 0 } label) return label;
+        var column = Columns.FirstOrDefault(c => c.EffectiveKey == key);
+        return column?.EffectiveTitle ?? DataListText.Humanize(key);
+    }
+
+    /// <summary>
+    /// The options an option filter lists: the ones its definition declares and, when the list asked for counts, their counts; without declared options the
+    /// values of the counts. A selected value that is in neither stays in the list so that it can be taken off.
+    /// </summary>
+    internal IReadOnlyList<FilterChoice> FilterChoices(string key, IEnumerable<string> selected)
+    {
+        var filter = FilterOf(key);
+        var facet = Result?.Facets?.FirstOrDefault(f => f.Key == key);
+        var counts = facet?.Options.ToDictionary(o => o.Value, o => o.Count, StringComparer.Ordinal);
+        var choices = new List<FilterChoice>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        if (filter is { Options.Count: > 0 })
+        {
+            foreach (var option in filter.Options)
+            {
+                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, option.Label, counts is null ? null : counts.GetValueOrDefault(option.Value)));
+            }
+        }
+        else if (facet is not null)
+        {
+            foreach (var option in facet.Options)
+            {
+                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, option.Value, option.Count));
+            }
+        }
+        foreach (var value in selected)
+        {
+            if (seen.Add(value)) choices.Add(new FilterChoice(value, value, counts?.GetValueOrDefault(value)));
+        }
+        return choices;
+    }
+
+    /// <summary>The state with the rule of <paramref name="key"/> replaced by <paramref name="rule"/> (added at the end when the key has none), or taken off when it is <see langword="null"/>; back on the first page.</summary>
+    internal static DataListState WithFilter(DataListState state, string key, FilterRule? rule)
+    {
+        var filters = new List<FilterRule>(state.Filters.Count + 1);
+        var placed = false;
+        foreach (var existing in state.Filters)
+        {
+            if (existing.Key != key) filters.Add(existing);
+            else if (rule is not null && !placed)
+            {
+                filters.Add(rule);
+                placed = true;
+            }
+        }
+        if (rule is not null && !placed) filters.Add(rule);
+        return state with { Filters = filters, Page = 1, Cursor = null };
+    }
+
+    /// <summary>The state with every filter taken off (the search, sort and page size stay), on the first page.</summary>
+    internal static DataListState WithoutFilters(DataListState state) => state with { Filters = [], Page = 1, Cursor = null };
+
+    /// <summary>Applies a rule (or takes the filter off with <see langword="null"/>) to the state: written to the URL with <paramref name="history"/> and back on page 1.</summary>
+    internal void ApplyFilter(string key, FilterRule? rule, QueryHistory history = QueryHistory.Push) =>
+        SetState(state => WithFilter(state, key, rule), history);
+
+    /// <summary>The name of the field a GET form uses for the rule of a filter: <c>f.key</c> for its default operator, <c>f.key.op</c> for another one.</summary>
+    internal string FilterFieldName(string key, FilterOperator op)
+    {
+        var filter = FilterOf(key);
+        var name = filter is null || op == filter.DefaultOperator ? "f." + key : "f." + key + "." + FilterRuleText.OperatorName(op);
+        return FieldName(name);
+    }
+
+    /// <summary>The names, relative to <see cref="UrlKey"/>, of every URL key a rule of <paramref name="key"/> can use: a GET form that edits the filter leaves them out of its hidden fields.</summary>
+    internal string[] FilterKeyNames(string key)
+    {
+        var filter = FilterOf(key);
+        var names = new List<string> { "f." + key };
+        if (filter is not null) names.AddRange(filter.AllowedOperators.Select(op => "f." + key + "." + FilterRuleText.OperatorName(op)));
+        names.AddRange(Enum.GetValues<FilterOperator>().Select(op => "f." + key + "." + FilterRuleText.OperatorName(op)));
+        return [.. names.Distinct()];
+    }
+
+    /// <summary>The operators the editor of a filter offers: the ones the filter allows. An option filter does not list <c>is</c> next to <c>isAnyOf</c> (it is one value of it) unless its rule already uses it.</summary>
+    internal IReadOnlyList<FilterOperator> EditorOperators(string key, FilterOperator? current)
+    {
+        var filter = FilterOf(key);
+        if (filter is null) return [];
+        var operators = filter.AllowedOperators.Where(op => op is not (FilterOperator.IsEmpty or FilterOperator.IsNotEmpty)).ToList();
+        if (filter.Kind == FilterKind.Option && operators.Contains(FilterOperator.IsAnyOf) && current != FilterOperator.Is) operators.Remove(FilterOperator.Is);
+        return operators;
+    }
+
+    /// <summary>The "operator value" parts of a filter tag for a rule: <c>is not</c> and <c>Active, Paused +2</c>.</summary>
+    internal (string Operator, string Value) Summarize(FilterRule rule, BxToolsMessages messages, CultureInfo culture)
+    {
+        var filter = FilterOf(rule.Key);
+        var op = messages.OperatorLabel(rule.Operator, forTag: true);
+        if (rule.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty) return (op, "");
+
+        string ValueLabel(string value) => filter is { Options.Count: > 0 } && filter.Options.FirstOrDefault(o => o.Value == value) is { } option ? option.Label : value;
+
+        var text = rule.Value switch
+        {
+            FilterValue.Text t => filter?.Kind == FilterKind.Option ? ValueLabel(t.Value) : t.Value,
+            FilterValue.List list => ListText(list.Values.Select(ValueLabel).ToList(), messages, culture),
+            FilterValue.Boolean b => b.Value ? messages.FilterYes : messages.FilterNo,
+            FilterValue.Number n => n.Value.ToString("0.############################", culture),
+            FilterValue.Date d => d.Value.ToString("d", culture),
+            FilterValue.Moment m => m.Value.ToString("g", culture),
+            FilterValue.Range r => RangeText(r, culture),
+            _ => "",
+        };
+        if (rule.IncludeEmpty) text = text.Length == 0 ? messages.FilterEmpty : text + " " + messages.FilterOrEmpty;
+        return (op, text);
+    }
+
+    private static string ListText(IReadOnlyList<string> labels, BxToolsMessages messages, CultureInfo culture)
+    {
+        const int shown = 2;
+        var text = string.Join(", ", labels.Take(shown));
+        return labels.Count > shown ? text + " " + string.Format(culture, messages.FilterMore, labels.Count - shown) : text;
+    }
+
+    private static string RangeText(FilterValue.Range range, CultureInfo culture)
+    {
+        static string Bound(FilterValue? value, CultureInfo culture) => value switch
+        {
+            FilterValue.Number n => n.Value.ToString("0.############################", culture),
+            FilterValue.Date d => d.Value.ToString("d", culture),
+            FilterValue.Moment m => m.Value.ToString("g", culture),
+            _ => "",
+        };
+        return Bound(range.From, culture) + " – " + Bound(range.To, culture);
+    }
+}

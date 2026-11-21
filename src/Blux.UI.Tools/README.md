@@ -12,6 +12,7 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 ```razor
 <BxDataList TItem="Invoice" Schema="InvoiceSchema" Provider="LoadAsync" UrlKey="invoices" ResultJson="AppJson.Default.DataListResultInvoice">
     <BxDataListSearch />
+    <BxDataListFilterTags ShowAdd="true" ShowClear="true" />
     <BxDataListResultCount />
     <BxDataListErrorState />
     <BxDataListTable Caption="Invoices">
