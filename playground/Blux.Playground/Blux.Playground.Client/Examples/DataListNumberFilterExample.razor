@@ -1,0 +1,6 @@
+@* A number filter: the amount of an invoice. Add the Amount filter and type a number, choose an operator (is greater than, is at most, is between...) or move the slider; a range has a From and a To field, either of
+   which may stay empty, and a slider with two ends. The tag writes the number in the culture of the user and the number format of the filter ("Amount is at least 100.00"). Each applied change is a history entry
+   (num.f.amount.gte=100). Statically rendered the operators are links and the number is a GET form (a range sends num.f.amount.from and num.f.amount.to); there is no slider without the script and .NET. *@
+<div class="w-full" data-testid="list-number">
+    <BxDataList TItem="Invoice" Label="Invoices with an amount filter" Schema="InvoiceNumberFilterData.Schema" Items="InvoiceData.All" UrlKey="num" />
+</div>

@@ -18,6 +18,7 @@ border-(--blux-border-accented)
 border-b
 border-s
 break-words
+col-span-2
 disabled:cursor-not-allowed
 end-1
 flex
@@ -34,6 +35,8 @@ gap-1
 gap-1.5
 gap-2
 gap-3
+grid
+grid-cols-2
 group-has-[input:placeholder-shown]/search:invisible
 group/search
 h-4
@@ -115,5 +118,6 @@ transition-opacity
 truncate
 w-3/4
 w-72
+w-80
 w-full
 whitespace-nowrap

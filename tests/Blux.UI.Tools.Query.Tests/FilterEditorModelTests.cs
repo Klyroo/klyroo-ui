@@ -75,4 +75,25 @@ public class FilterEditorModelTests
 
         Assert.Equal([new FilterRule("name", Op.Contains, new FilterValue.Text("ann"))], state.Filters);
     }
+
+    [Fact]
+    public void The_number_display_the_format_and_the_range_limit_survive_every_copy_and_belong_to_their_kind()
+    {
+        var number = DataListFilter.Number(0, 5, 100).WithNumberDisplay(DataListNumberDisplay.InputAndSlider).WithNumberFormat("N0").WithLabel("Amount").WithPersist()
+            .WithOperators(Op.Gte, Op.Lte, Op.Between).WithDefault(new FilterValue.Number(5), Op.Gte);
+        var date = DataListFilter.Date(DateGranularity.Minute).WithMaxRangeDays(31).WithLabel("When");
+
+        Assert.Equal(DataListNumberDisplay.InputAndSlider, number.NumberDisplay);
+        Assert.Equal("N0", number.NumberFormat);
+        Assert.Equal((0m, 100m, 5m), (number.Min!.Value, number.Max!.Value, number.Step!.Value));
+        Assert.Equal(DataListNumberDisplay.Input, DataListFilter.Number().NumberDisplay);
+        Assert.Equal(31, date.MaxRangeDays);
+        Assert.Equal(DateGranularity.Minute, date.Granularity);
+        Assert.Null(DataListFilter.Date().MaxRangeDays);
+        Assert.Throws<InvalidOperationException>(() => DataListFilter.Date().WithNumberDisplay(DataListNumberDisplay.Slider));
+        Assert.Throws<InvalidOperationException>(() => DataListFilter.Text().WithNumberFormat("N0"));
+        Assert.Throws<InvalidOperationException>(() => DataListFilter.Number().WithMaxRangeDays(3));
+        Assert.Throws<ArgumentException>(() => DataListFilter.Number().WithNumberFormat("N1000000000"));
+        Assert.Throws<ArgumentOutOfRangeException>(() => DataListFilter.Date().WithMaxRangeDays(0));
+    }
 }

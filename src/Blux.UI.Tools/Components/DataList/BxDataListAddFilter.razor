@@ -6,11 +6,11 @@
 
 @*
     A button that opens a menu of the filters that are not on yet. Interactive, picking one swaps the menu for the editor of that filter (a back button returns). Statically rendered there is no pick step:
-    the popover lists an editor per filter, each made of links and a GET form. Text, option and boolean filters only; the others join the menu with their editors.
+    the popover lists an editor per filter, each made of links and a GET form. 
 *@
 @if (Context.Schema is not null && Context.EditableFilterKeys.Count > 0 && (Context.IsInteractive || Context.CanLink))
 {
-    <BxPopover Open="@_open" OpenChanged="@OnOpen" Placement="bottom-start" AriaLabel="@ToolsMessages.AddFilter" Ui="@_popoverUi" data-slot="add-filter-popover" @attributes="AdditionalAttributes">
+    <BxPopover Open="@_open" OpenChanged="@OnOpen" Placement="bottom-start" AriaLabel="@ToolsMessages.AddFilter" Ui="@(Wide ? _popoverWideUi : _popoverUi)" data-slot="add-filter-popover" @attributes="AdditionalAttributes">
         <ChildContent>
             <BxButton Label="@ToolsMessages.AddFilter" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="@(Size ?? BxSize.Sm)" Class="@_slots["addFilter"]"
                       LeadingIcon="@RenderIcon("plus", "size-4")" data-slot="add-filter" />
@@ -52,6 +52,7 @@
 @code {
     private SlotSet _slots = default!;
     private PopoverUi _popoverUi = new();
+    private PopoverUi _popoverWideUi = new();
     private bool _open;
     private string? _picked;
     private string _search = "";
@@ -80,7 +81,13 @@
     {
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "addFilter");
         _popoverUi = new PopoverUi { Content = _slots["filterPopover"] };
+        _popoverWideUi = new PopoverUi { Content = _slots["filterPopoverWide"] };
     }
+
+    // The editor of a date filter holds a calendar: while one is shown the popover is wider (the picked one, or any of the editors a static render lists).
+    private bool Wide => Context.IsInteractive ? _picked is { } picked && IsDate(picked) : Available.Any(IsDate);
+
+    private bool IsDate(string key) => Context.FilterOf(key)?.Kind == FilterKind.Date;
 
     // Escape or a click outside: back to the menu, and what was not applied is dropped.
     private void OnOpen(bool open)

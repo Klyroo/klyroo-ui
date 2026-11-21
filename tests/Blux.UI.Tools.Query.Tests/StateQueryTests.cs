@@ -369,4 +369,47 @@ public class StateQueryTests
         Assert.Equal(new DataListPaging.Cursor("c1", 20, true), cursor.Paging);
         Assert.Equal(state.Filters, cursor.Filter.Children);
     }
+
+    // ---- a range sent by a GET form as two keys
+
+    [Fact]
+    public void A_range_sent_as_a_from_key_and_a_to_key_reads_as_between()
+    {
+        var number = Parse(("f.age.from", "20"), ("f.age.to", "30.5"));
+        var date = Parse(("f.hired.from", "2020-01-01"), ("f.hired.to", "2020-12-31"));
+
+        Assert.Equal(new FilterRule("age", Op.Between, new FilterValue.Range(new FilterValue.Number(20), new FilterValue.Number(30.5m))), number.Filters.Single(r => r.Key == "age"));
+        Assert.Equal(new FilterRule("hired", Op.Between, new FilterValue.Range(new FilterValue.Date(new DateOnly(2020, 1, 1)), new FilterValue.Date(new DateOnly(2020, 12, 31)))), date.Filters.Single(r => r.Key == "hired"));
+        // Written back, it is the key the app owns.
+        Assert.Equal("20..30.5", Write(number)["f.age.between"]);
+    }
+
+    [Fact]
+    public void An_empty_side_of_a_form_range_is_an_open_end_and_two_empty_sides_clear_the_filter()
+    {
+        var open = Parse(("f.age.from", ""), ("f.age.to", "30"));
+        var none = Parse(("f.age.from", ""), ("f.age.to", ""));
+
+        Assert.Equal(new FilterRule("age", Op.Between, new FilterValue.Range(null, new FilterValue.Number(30))), open.Filters.Single(r => r.Key == "age"));
+        Assert.DoesNotContain(none.Filters, r => r.Key == "age");
+    }
+
+    [Fact]
+    public void A_form_range_that_does_not_parse_or_whose_filter_has_no_between_is_dropped_and_between_wins()
+    {
+        Assert.DoesNotContain(Parse(("f.age.from", "x"), ("f.age.to", "3")).Filters, r => r.Key == "age");
+        Assert.DoesNotContain(Parse(("f.name.from", "a"), ("f.name.to", "b")).Filters, r => r.Key == "name");
+        Assert.DoesNotContain(Parse(("f.nothing.from", "1")).Filters, r => r.Key == "nothing");
+
+        var both = Parse(("f.age.between", "1..2"), ("f.age.from", "5"), ("f.age.to", "9"));
+        Assert.Equal(new FilterRule("age", Op.Between, new FilterValue.Range(new FilterValue.Number(1), new FilterValue.Number(2))), both.Filters.Single(r => r.Key == "age"));
+    }
+
+    [Fact]
+    public void A_form_range_keeps_the_prefix_of_the_list()
+    {
+        var state = DataListStateQuery.FromQuery([KeyValuePair.Create("x.f.age.from", (string?)"3"), KeyValuePair.Create("f.age.from", (string?)"9")], UrlSchema, "x");
+
+        Assert.Equal(new FilterRule("age", Op.Between, new FilterValue.Range(new FilterValue.Number(3), null)), state.Filters.Single(r => r.Key == "age"));
+    }
 }

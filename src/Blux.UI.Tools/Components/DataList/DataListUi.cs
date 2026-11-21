@@ -65,6 +65,11 @@ public sealed record DataListUi : ISlotOverrides
     public string? FilterMenuHeader { get; init; }
     public string? FilterBack { get; init; }
     public string? FilterSection { get; init; }
+    public string? FilterRange { get; init; }
+    public string? FilterRangeSlider { get; init; }
+    public string? FilterPresets { get; init; }
+    public string? FilterHint { get; init; }
+    public string? FilterPopoverWide { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -128,6 +133,11 @@ public sealed record DataListUi : ISlotOverrides
         "filterMenuHeader" => FilterMenuHeader,
         "filterBack" => FilterBack,
         "filterSection" => FilterSection,
+        "filterRange" => FilterRange,
+        "filterRangeSlider" => FilterRangeSlider,
+        "filterPresets" => FilterPresets,
+        "filterHint" => FilterHint,
+        "filterPopoverWide" => FilterPopoverWide,
         _ => null,
     };
 }
