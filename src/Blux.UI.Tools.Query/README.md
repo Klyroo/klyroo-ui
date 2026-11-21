@@ -22,6 +22,12 @@ var schema = DataListSchema.For<Employee>(s => s
     .MaxPageSize(500));
 ```
 
+Collection-valued fields use `.Collection(e => e.Tags, t => t.Name, f => f.Filter(DataListFilter.Option()))` (key
+`tags.name`, `.SearchAny(e => e.Tags, t => t.Name)` for search). A row matches when at least one element does and the
+predicate is `collection.Any(x => ...)`. `isNot` means no element is any of the values (a row without elements matches),
+`isEmpty` means no non-empty element (an empty or null collection included), facets count a row once per distinct value, and a
+collection cannot be sorted.
+
 Keys are the member path in camelCase unless `f.Key("...")` says otherwise. Each filter kind allows a set of operators
 (text: `contains` `is` `isNot`; option: `isAnyOf` `is` `isNot`; boolean: `is` `isNot`; number: `is` `isNot` `gt` `gte`
 `lt` `lte` `between`; date: `is` `isNot` `before` `after` `between`) and has a default operator. `WithOperators` narrows

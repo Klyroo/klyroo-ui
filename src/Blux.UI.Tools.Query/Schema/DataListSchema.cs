@@ -182,7 +182,7 @@ public sealed class DataListSchema<T> : DataListSchema
         IReadOnlyList<DataListField<T>> fields,
         IReadOnlyDictionary<string, DataListFilter> filters,
         IEnumerable<string> queryOnlyKeys,
-        IReadOnlyList<FieldAccessor> search,
+        IReadOnlyList<ValueSource> search,
         Func<T, string>? rowKey,
         Func<T, string?>? rowLabel,
         IReadOnlyList<DataListSort> defaultSort,
@@ -202,14 +202,31 @@ public sealed class DataListSchema<T> : DataListSchema
     {
         Fields = fields;
         _fields = fields.ToDictionary(f => f.Key, StringComparer.Ordinal);
-        SearchAccessors = search;
+        SearchSources = search;
         _rowKey = rowKey;
         _rowLabel = rowLabel;
     }
 
     internal IReadOnlyList<DataListField<T>> Fields { get; }
 
-    internal IReadOnlyList<FieldAccessor> SearchAccessors { get; }
+    internal IReadOnlyList<ValueSource> SearchSources { get; }
+
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<(DataListFilterGroup Filter, string? Term, string? Exclude), Func<T, bool>?> _predicates = new();
+
+    /// <summary>
+    /// The compiled row predicate for a sanitized filter, search term and excluded key (<see langword="null"/> when nothing restricts the rows). Compiling an
+    /// expression costs about a millisecond, and a list asks for the same predicate again for every page and facet, so the last 64 are kept.
+    /// </summary>
+    internal Func<T, bool>? GetPredicate(DataListFilterGroup filter, DataListSearch? search, string? excludeKey)
+    {
+        var term = string.IsNullOrWhiteSpace(search?.Term) ? null : search!.Term.Trim();
+        var key = (filter, term, excludeKey);
+        if (_predicates.TryGetValue(key, out var cached)) return cached;
+        var predicate = FilterExpressions.Rows(this, filter, term is null ? null : new DataListSearch(term), excludeKey, nullSafe: true)?.Compile();
+        if (_predicates.Count >= 64) _predicates.Clear();
+        _predicates[key] = predicate;
+        return predicate;
+    }
 
     internal bool TryGetField(string key, [NotNullWhen(true)] out DataListField<T>? field) => _fields.TryGetValue(key, out field);
 

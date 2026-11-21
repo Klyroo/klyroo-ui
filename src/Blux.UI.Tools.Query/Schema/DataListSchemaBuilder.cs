@@ -20,7 +20,7 @@ public sealed class DataListSchemaBuilder<T>
 {
     private readonly List<FieldDefinition> _fields = [];
     private readonly List<(string Key, DataListFilter Filter)> _queryFilters = [];
-    private readonly List<FieldAccessor> _search = [];
+    private readonly List<ValueSource> _search = [];
     private Func<T, string>? _rowKey;
     private Func<T, string?>? _rowLabel;
     private string? _defaultSortKey;
@@ -53,7 +53,7 @@ public sealed class DataListSchemaBuilder<T>
     public DataListSchemaBuilder<T> Search(params Expression<Func<T, string?>>[] fields)
     {
         ArgumentNullException.ThrowIfNull(fields);
-        foreach (var field in fields) _search.Add(FieldAccessor.Create(field));
+        foreach (var field in fields) _search.Add(ValueSource.Scalar(FieldAccessor.Create(field)));
         return this;
     }
 
@@ -62,9 +62,44 @@ public sealed class DataListSchemaBuilder<T>
     {
         ArgumentNullException.ThrowIfNull(selector);
         var accessor = FieldAccessor.Create(selector);
-        var definition = new FieldDefinition(accessor);
+        var definition = new FieldDefinition(ValueSource.Scalar(accessor));
         configure?.Invoke(new DataListFieldBuilder<T, TProp>(definition));
         _fields.Add(definition);
+        return this;
+    }
+
+    /// <summary>
+    /// Registers a field that reads one value from each element of a collection of the row:
+    /// <c>.Collection(e =&gt; e.Tags, t =&gt; t.Name, f =&gt; f.Filter(DataListFilter.Option()))</c>. The key joins both paths in camelCase
+    /// (<c>tags.name</c>). A row matches a rule when at least one element does; <c>isNot</c> is the negation of <c>is</c>/<c>isAnyOf</c> (no element is any
+    /// of the values, so a row without elements matches); <c>isEmpty</c> means no non-empty element (an empty or null collection included). The predicate
+    /// becomes <c>collection.Any(x =&gt; ...)</c>. Collection fields cannot be sorted.
+    /// </summary>
+    /// <typeparam name="TElem">The element type.</typeparam>
+    /// <typeparam name="TProp">The type of the value read from an element.</typeparam>
+    /// <param name="collection">The collection of the row (a property of a type that is an <see cref="IEnumerable{T}"/> of <typeparamref name="TElem"/>).</param>
+    /// <param name="element">The value read from an element.</param>
+    /// <param name="configure">The key and the filter.</param>
+    public DataListSchemaBuilder<T> Collection<TElem, TProp>(
+        Expression<Func<T, IEnumerable<TElem>?>> collection,
+        Expression<Func<TElem, TProp>> element,
+        Action<DataListCollectionFieldBuilder<T, TProp>>? configure = null)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+        ArgumentNullException.ThrowIfNull(element);
+        var source = ValueSource.OfCollection<TElem>(FieldAccessor.Create(collection), FieldAccessor.Create(element, guardRoot: true));
+        var definition = new FieldDefinition(source);
+        configure?.Invoke(new DataListCollectionFieldBuilder<T, TProp>(definition));
+        _fields.Add(definition);
+        return this;
+    }
+
+    /// <summary>The search also looks at a string of each element of a collection (any element matches).</summary>
+    public DataListSchemaBuilder<T> SearchAny<TElem>(Expression<Func<T, IEnumerable<TElem>?>> collection, Expression<Func<TElem, string?>> element)
+    {
+        ArgumentNullException.ThrowIfNull(collection);
+        ArgumentNullException.ThrowIfNull(element);
+        _search.Add(ValueSource.OfCollection<TElem>(FieldAccessor.Create(collection), FieldAccessor.Create(element, guardRoot: true)));
         return this;
     }
 
@@ -125,10 +160,10 @@ public sealed class DataListSchemaBuilder<T>
         var defaultSort = new List<DataListSort>();
         if (_defaultSortAccessor is { } accessor)
         {
-            var existing = accessor.Path is null ? null : _fields.FirstOrDefault(f => f.Accessor.Path == accessor.Path);
+            var existing = accessor.Path is null ? null : _fields.FirstOrDefault(f => !f.Source.IsCollection && f.Source.Path == accessor.Path);
             if (existing is null)
             {
-                existing = new FieldDefinition(accessor);
+                existing = new FieldDefinition(ValueSource.Scalar(accessor));
                 _fields.Add(existing);
             }
             existing.IsSortable = true;
@@ -145,10 +180,10 @@ public sealed class DataListSchemaBuilder<T>
             if (!used.Add(key)) throw new InvalidOperationException($"The key '{key}' is used by two fields. Give one a distinct key with f.Key(\"...\").");
             if (def.Filter is { } filter)
             {
-                CheckKind(key, filter.Kind, def.Accessor.UnderlyingType);
+                CheckKind(key, filter.Kind, def.Source.Value.UnderlyingType);
                 filters[key] = filter;
             }
-            fields.Add(new DataListField<T>(key, def.Accessor, def.IsSortable, def.Filter));
+            fields.Add(new DataListField<T>(key, def.Source, def.IsSortable, def.Filter));
         }
 
         foreach (var (key, filter) in _queryFilters)
@@ -160,6 +195,8 @@ public sealed class DataListSchemaBuilder<T>
 
         if (_defaultSortKey is { } sortKey)
         {
+            if (fields.Any(f => f.Key == sortKey && f.IsCollection))
+                throw new InvalidOperationException($"DefaultSort(\"{sortKey}\"): a collection field cannot be sorted.");
             if (!fields.Any(f => f.Key == sortKey && f.Sortable))
                 throw new InvalidOperationException($"DefaultSort(\"{sortKey}\"): no sortable field has this key.");
             defaultSort.Add(new DataListSort(sortKey, _defaultSortDescending));
@@ -198,15 +235,15 @@ public sealed class DataListSchemaBuilder<T>
     }
 
     /// <summary>A field being declared, shared between the builders.</summary>
-    internal sealed class FieldDefinition(FieldAccessor accessor)
+    internal sealed class FieldDefinition(ValueSource source)
     {
-        public FieldAccessor Accessor { get; } = accessor;
+        public ValueSource Source { get; } = source;
         public string? ExplicitKey { get; set; }
         public bool IsSortable { get; set; }
         public DataListFilter? Filter { get; set; }
 
         public string ResolveKey() =>
-            ExplicitKey ?? Accessor.DefaultKey
+            ExplicitKey ?? Source.DefaultKey
             ?? throw new InvalidOperationException("The field is not a plain member access (e => e.A.B); give it a key with f.Key(\"...\").");
     }
 }
@@ -237,6 +274,32 @@ public sealed class DataListFieldBuilder<T, TProp>
 
     /// <summary>Gives the field a filter. The filter kind must suit the type of the field (text on a string, number on a numeric type, and so on).</summary>
     public DataListFieldBuilder<T, TProp> Filter(DataListFilter filter)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+        _definition.Filter = filter;
+        return this;
+    }
+}
+
+/// <summary>The options of a collection field, passed to <see cref="DataListSchemaBuilder{T}.Collection{TElem, TProp}"/>. There is no <c>Sortable</c>: a collection has no single value to sort by.</summary>
+/// <typeparam name="T">The row type.</typeparam>
+/// <typeparam name="TProp">The type of the value read from an element.</typeparam>
+public sealed class DataListCollectionFieldBuilder<T, TProp>
+{
+    private readonly DataListSchemaBuilder<T>.FieldDefinition _definition;
+
+    internal DataListCollectionFieldBuilder(DataListSchemaBuilder<T>.FieldDefinition definition) => _definition = definition;
+
+    /// <summary>Overrides the stable key (<c>tags.name</c> by default).</summary>
+    public DataListCollectionFieldBuilder<T, TProp> Key(string key)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        _definition.ExplicitKey = key;
+        return this;
+    }
+
+    /// <summary>Gives the field a filter; the kind must suit the element value type.</summary>
+    public DataListCollectionFieldBuilder<T, TProp> Filter(DataListFilter filter)
     {
         ArgumentNullException.ThrowIfNull(filter);
         _definition.Filter = filter;

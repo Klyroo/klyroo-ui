@@ -4,6 +4,8 @@ public enum Status { Active, Pending, Archived }
 
 public sealed record Dept(string Name);
 
+public sealed record Tag(string? Name, int Weight = 0);
+
 public sealed record Employee(
     int Id,
     string Name,
@@ -15,7 +17,8 @@ public sealed record Employee(
     DateTimeOffset? LastLogin,
     Dept? Department,
     Status Status,
-    double Score = 0);
+    double Score = 0,
+    IReadOnlyList<Tag>? Tags = null);
 
 internal static class TestData
 {
