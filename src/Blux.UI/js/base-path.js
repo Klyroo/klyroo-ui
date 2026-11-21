@@ -70,6 +70,15 @@ export function sidebarCookiePrefix(basePath) {
 }
 
 /**
+ * The name of a cookie kept under `name`: the name at the root, "{name}.{slug}~~" below a path base (the rule of BxPathScope.CookieName).
+ * @param {string} basePath
+ * @param {string} name
+ */
+export function scopedCookieName(basePath, name) {
+  return basePath ? `${name}.${slugFor(basePath)}~~` : name;
+}
+
+/**
  * The localStorage key of an app: the key itself at the root, prefixed with the base path below one.
  * @param {string} basePath
  * @param {string} key

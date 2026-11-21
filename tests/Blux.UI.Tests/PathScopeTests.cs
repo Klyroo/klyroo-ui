@@ -59,4 +59,13 @@ public class PathScopeTests : BluxTestContext
         Assert.Equal("./", Render<BxHeader>(p => p.Add(h => h.Title, "App")).Find("a").GetAttribute("href"));
         Assert.Contains("href=\"./\"", Render<BxError>().Markup);
     }
+
+    [Fact]
+    public void A_named_cookie_keeps_its_name_at_the_root_and_carries_the_slug_below_a_path_base()
+    {
+        Assert.Equal("blux-timezone", BxPathScope.CookieName("blux-timezone"));
+        Assert.Equal("blux-timezone", BxPathScope.CookieName("blux-timezone", "/"));
+        Assert.Equal("blux-timezone.sub~~", BxPathScope.CookieName("blux-timezone", "/sub"));
+        Assert.Equal("blux-timezone.a.b~20c~~", BxPathScope.CookieName("blux-timezone", "/a/b c"));
+    }
 }

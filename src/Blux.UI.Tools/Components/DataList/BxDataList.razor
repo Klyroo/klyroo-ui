@@ -285,12 +285,22 @@
         _lastProvider = Provider;
         _lastStateParam = State;
         _state = controller.Normalize(InitialState());
-        var adopted = TryAdopt(_state);
+        // The time zone of the user cuts the days of the date filters. A static render and a prerender have the one the browser left in its cookie (UTC on the first visit); an interactive render asks the browser.
+        if (!RendererInfo.IsInteractive)
+        {
+            _timeZone = ServerTimeZone.Read(Services);
+            controller.TimeZone = _timeZone;
+        }
+        var taken = TakePersisted(_state);
+        // A result that does not depend on the zone shows at once, before the call to the browser: the render waits for that call, not for the rows.
+        var adopted = taken is { } early && !NeedsTimeZone(early.Request.Filter) && Adopt(early);
         if (RendererInfo.IsInteractive)
         {
-            // After the adoption, which shows its rows at once: the render waits for this call, not the rows. Only lists that cut days need the zone of the browser.
             _timeZone = await TimeZoneAsync();
             controller.TimeZone = _timeZone;
+            if (adopted) controller.SetLoadedTimeZone(_timeZone);
+            // A result whose days were cut in the zone the browser has is as good as a new one.
+            else if (taken is { } late && DataListDates.SameZone(late.Zone, _timeZone)) adopted = Adopt(late);
             if (adopted) controller.SetLoadedTimeZone(_timeZone);
         }
         if (adopted)
@@ -501,6 +511,8 @@
             _persistent.PersistAsJson(PersistedKey + ":state", stateText);
             _persistent.PersistAsJson(PersistedKey + ":loaded", loadedText);
             _persistent.PersistAsJson(PersistedKey + ":result", resultText);
+            // The zone the days of the result were cut in: the interactive render adopts the result only for the same zone.
+            _persistent.PersistAsJson(PersistedKey + ":zone", _timeZone ?? "");
         }
         return Task.CompletedTask;
     }
@@ -512,32 +524,36 @@
             key, bytes, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes);
     }
 
-    // The result of the prerender, when it was loaded for the state this render starts from.
+    // What the prerender handed over, when it was loaded for the state this render starts from; the keys are taken whether or not it is used.
+    private sealed record Persisted(DataListState Loaded, DataListRequest Request, DataListResult<TItem> Result, string? Zone);
+
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the result itself is read with the JsonTypeInfo of the app.")]
-    private bool TryAdopt(DataListState state)
+    private Persisted? TakePersisted(DataListState state)
     {
-        if (ResultJson is null || _persistent is null || !RendererInfo.IsInteractive) return false;
+        if (ResultJson is null || _persistent is null || !RendererInfo.IsInteractive) return null;
         var key = PersistedKey;
         // Every key is taken (a bitwise and, not a short circuit): what is left unread would be offered to another list.
         var found = _persistent.TryTakeFromJson<string>(key + ":state", out var stateText) & _persistent.TryTakeFromJson<string>(key + ":loaded", out var loadedText)
-                    & _persistent.TryTakeFromJson<string>(key + ":result", out var resultText);
-        if (!found) return false;
+                    & _persistent.TryTakeFromJson<string>(key + ":result", out var resultText) & _persistent.TryTakeFromJson<string>(key + ":zone", out var zone);
+        if (!found) return null;
         try
         {
             var requested = JsonSerializer.Deserialize(stateText!, DataListJsonContext.Default.DataListState);
             var loaded = JsonSerializer.Deserialize(loadedText!, DataListJsonContext.Default.DataListState);
             var result = JsonSerializer.Deserialize(resultText!, ResultJson);
-            if (requested is null || loaded is null || result is null || !requested.Equals(state)) return false;
-            var request = Controller!.BuildRequest(loaded);
-            // A day is cut in the time zone of the browser: a result of the prerender (UTC) is not the one this render would ask for.
-            if (NeedsTimeZone(request.Filter)) return false;
-            Controller.Adopt(state, loaded, request, result);
-            return true;
+            if (requested is null || loaded is null || result is null || !requested.Equals(state)) return null;
+            return new Persisted(loaded, Controller!.BuildRequest(loaded), result, string.IsNullOrEmpty(zone) ? null : zone);
         }
         catch (JsonException)
         {
-            return false;
+            return null;
         }
+    }
+
+    private bool Adopt(Persisted taken)
+    {
+        Controller!.Adopt(_state, taken.Loaded, taken.Request, taken.Result);
+        return true;
     }
 
     private static bool NeedsTimeZone(DataListFilterNode node) => node switch
@@ -547,9 +563,10 @@
         _ => false,
     };
 
+    // Any value that is a day or an instant is cut in a time zone: a day is the local day, an instant belongs to the hour or minute of the zone.
     private static bool HasDate(FilterValue? value) => value switch
     {
-        FilterValue.Date => true,
+        FilterValue.Date or FilterValue.Moment => true,
         FilterValue.Range range => HasDate(range.From) || HasDate(range.To),
         _ => false,
     };

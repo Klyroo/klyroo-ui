@@ -88,7 +88,7 @@ public static class InvoiceNumberFilterData
         .Field(i => i.Id, f => f.Sortable())
         .Field(i => i.Customer, f => f.Sortable())
         .Field(i => i.Status, f => f.Sortable())
-        .Field(i => i.Amount, f => f.Sortable().Filter(DataListFilter.Number(0, 10, 700).WithLabel("Amount").WithNumberDisplay(DataListNumberDisplay.InputAndSlider).WithFormat("N2")))
+        .Field(i => i.Amount, f => f.Sortable().Filter(DataListFilter.Number(0, 10, 700).WithLabel("Amount").WithNumberDisplay(DataListNumberDisplay.InputAndSlider).WithNumberFormat("N2")))
         .Field(i => i.Issued, f => f.Sortable())
         .DefaultSort(i => i.Id)
         .DefaultPageSize(10));

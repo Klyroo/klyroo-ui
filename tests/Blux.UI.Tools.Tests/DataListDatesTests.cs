@@ -85,18 +85,61 @@ public class DataListDatesTests
         Assert.Equal(new DateTimeOffset(2026, 11, 5, 14, 0, 0, TimeSpan.Zero), moment);
     }
 
-    [Fact]
-    public void A_time_in_the_gap_of_a_clock_change_moves_to_the_first_valid_time_and_an_ambiguous_one_takes_the_earlier_instant()
+    [Theory]
+    [InlineData(2, 0)]
+    [InlineData(2, 15)]
+    [InlineData(2, 59)]
+    public void Any_time_in_the_spring_gap_of_Paris_is_the_first_time_after_it(int hour, int minute)
     {
         var zone = DataListDates.Zone("Europe/Paris");
 
-        // 2026-03-29 02:30 does not exist in Paris (the clocks go from 02:00 to 03:00).
-        var gap = DataListDates.Moment(new DateOnly(2026, 3, 29), new TimeOnly(2, 30), zone, DateGranularity.Minute);
-        // 2026-10-25 02:30 happens twice: the earlier one is still summer time (+02:00).
-        var overlap = DataListDates.Moment(new DateOnly(2026, 10, 25), new TimeOnly(2, 30), zone, DateGranularity.Minute);
+        // The clocks go from 02:00 to 03:00 on 2026-03-29: every time in between is 03:00 (+02:00).
+        var moment = DataListDates.Moment(new DateOnly(2026, 3, 29), new TimeOnly(hour, minute), zone, DateGranularity.Minute);
 
-        Assert.Equal(new DateTimeOffset(2026, 3, 29, 3, 0, 0, TimeSpan.FromHours(2)), gap);
-        Assert.Equal(new DateTimeOffset(2026, 10, 25, 2, 30, 0, TimeSpan.FromHours(2)), overlap);
+        Assert.Equal(new DateTimeOffset(2026, 3, 29, 3, 0, 0, TimeSpan.FromHours(2)), moment);
+    }
+
+    [Fact]
+    public void The_times_around_the_spring_gap_are_not_moved()
+    {
+        var zone = DataListDates.Zone("Europe/Paris");
+
+        Assert.Equal(new DateTimeOffset(2026, 3, 29, 1, 59, 0, TimeSpan.FromHours(1)), DataListDates.Moment(new DateOnly(2026, 3, 29), new TimeOnly(1, 59), zone, DateGranularity.Minute));
+        Assert.Equal(new DateTimeOffset(2026, 3, 29, 3, 0, 0, TimeSpan.FromHours(2)), DataListDates.Moment(new DateOnly(2026, 3, 29), new TimeOnly(3, 0), zone, DateGranularity.Minute));
+    }
+
+    [Fact]
+    public void A_gap_that_is_not_an_hour_long_ends_where_the_clocks_resume()
+    {
+        // Lord Howe Island moves its clocks by 30 minutes: 02:00 becomes 02:30 on 2026-10-04.
+        var zone = DataListDates.Zone("Australia/Lord_Howe");
+
+        var moment = DataListDates.Moment(new DateOnly(2026, 10, 4), new TimeOnly(2, 10), zone, DateGranularity.Minute);
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 4, 2, 30, 0, TimeSpan.FromHours(11)), moment);
+    }
+
+    [Theory]
+    [InlineData(2, 0)]
+    [InlineData(2, 30)]
+    [InlineData(2, 59)]
+    public void Any_time_in_the_repeated_hour_of_the_autumn_change_in_Paris_is_the_earlier_instant(int hour, int minute)
+    {
+        var zone = DataListDates.Zone("Europe/Paris");
+
+        // The clocks go back from 03:00 to 02:00 on 2026-10-25: 02:xx happens at +02:00 and again at +01:00, and the earlier one is taken.
+        var moment = DataListDates.Moment(new DateOnly(2026, 10, 25), new TimeOnly(hour, minute), zone, DateGranularity.Minute);
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 25, hour, minute, 0, TimeSpan.FromHours(2)), moment);
+    }
+
+    [Fact]
+    public void The_times_around_the_autumn_change_are_not_moved()
+    {
+        var zone = DataListDates.Zone("Europe/Paris");
+
+        Assert.Equal(new DateTimeOffset(2026, 10, 25, 1, 59, 0, TimeSpan.FromHours(2)), DataListDates.Moment(new DateOnly(2026, 10, 25), new TimeOnly(1, 59), zone, DateGranularity.Minute));
+        Assert.Equal(new DateTimeOffset(2026, 10, 25, 3, 0, 0, TimeSpan.FromHours(1)), DataListDates.Moment(new DateOnly(2026, 10, 25), new TimeOnly(3, 0), zone, DateGranularity.Minute));
     }
 
     [Fact]

@@ -4,15 +4,19 @@
 //
 // A helper of Blux.UI can be imported from source and is bundled here, for example:
 //   import { Reporter, ensureId } from '../../Blux.UI/js/shared.js';
+import { timeZone, storeTimeZone } from './time-zone-cookie.js';
 
-// The IANA id of the time zone of the browser ("Europe/Paris"), sent with the requests of a data list so that a day is cut where the user lives.
-function timeZone() {
+// The time zone of the browser goes to the server in a cookie, which the next static or prerendered render reads (the first visit has none and cuts days in UTC).
+function rememberTimeZone() {
+  if (typeof document === 'undefined') return;
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    storeTimeZone(document, timeZone(), location.protocol);
   } catch {
-    return null;
+    // Cookies refused: the server keeps cutting days in UTC until the interactive render knows the zone.
   }
 }
+
+rememberTimeZone();
 
 // After a page change the control that was pressed can be gone or disabled (the "next" button on the last page): focus goes to the current page.
 // A disabled button keeps document.activeElement until the browser fixes focus up, so a disabled one does not count as focused.
@@ -47,6 +51,7 @@ function refreshElements() {
 // Blazor Web App.
 export function afterWebStarted(blazor) {
   blazor.addEventListener('enhancedload', refreshElements);
+  rememberTimeZone();
 }
 
 // Standalone WebAssembly or Server hosting, and Blazor Hybrid: no enhanced navigation, nothing to merge.

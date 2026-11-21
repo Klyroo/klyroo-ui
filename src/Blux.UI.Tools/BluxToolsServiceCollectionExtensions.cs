@@ -25,6 +25,8 @@ public static class BluxToolsServiceCollectionExtensions
         services.TryAddScoped<QueryState>();
         // How a Queryable source runs its queries: blocking by default, replaced by an adapter package (AddBluxUiToolsEntityFrameworkAdapter).
         services.TryAddSingleton<IDataListQueryExecutor>(SynchronousDataListQueryExecutor.Instance);
+        // A static or prerendered list reads the time zone cookie of the request.
+        ServerTimeZone.Register(services);
         return services;
     }
 }

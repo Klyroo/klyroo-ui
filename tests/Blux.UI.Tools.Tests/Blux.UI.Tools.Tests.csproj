@@ -10,6 +10,8 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="bunit" />
+    <!-- DefaultHttpContext, for the tests of the time zone cookie of a static render. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

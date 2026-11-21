@@ -73,9 +73,13 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
     {
         await Page.GotoAsync($"/{mode}/components/button");
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        // A navigation before the circuit or the runtime is up would be lost.
+        if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
         await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list{query}");
         await Page.EvaluateAsync("() => window.__enhanced");
+        // The page of the list is there (the address changes before the content, and the page left has no skeleton rows to wait for).
+        await Assertions.Expect(Number).ToBeVisibleAsync(new() { Timeout = 30_000 });
         await WaitForList(Page, mode);
     }
 
@@ -414,6 +418,65 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         var number = await Editor(Number, "Edit filter Amount").BoundingBoxAsync();
         Assert.NotNull(number);
         Assert.True(number!.X >= 0 && number.X + number.Width <= 375.5, $"the number editor is {number.Width}px wide at x={number.X}");
+    }
+
+    // ---- the time zone cookie
+
+    [Fact]
+    public async Task The_script_leaves_the_time_zone_in_a_cookie_and_the_next_static_render_cuts_days_in_it()
+    {
+        var context = await NewContext(new() { TimezoneId = "Asia/Tokyo" });
+        var page = await context.NewPageAsync();
+
+        // The first visit has no cookie yet: the static render has no zone.
+        await page.GotoAsync("/ssr/components/data-list");
+        await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await Assertions.Expect(page.GetByTestId("url-zone")).ToHaveTextAsync("none");
+        var cookie = await WaitForCookie(context, "blux-timezone");
+        Assert.Equal("Asia/Tokyo", cookie.Value);
+        Assert.Equal("/", cookie.Path);
+        Assert.Equal(SameSiteAttribute.Lax, cookie.SameSite);
+        Assert.True(cookie.Expires > DateTimeOffset.UtcNow.AddDays(300).ToUnixTimeSeconds());
+
+        await page.ReloadAsync();
+        await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+
+        await Assertions.Expect(page.GetByTestId("url-zone")).ToHaveTextAsync("Asia/Tokyo");
+    }
+
+    [Fact]
+    public async Task A_cookie_with_an_unknown_zone_leaves_the_static_render_in_utc()
+    {
+        var context = await NewContext(new());
+        await context.AddCookiesAsync([new() { Name = "blux-timezone", Value = "Nowhere/Land", Url = BaseUrl }]);
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync("/ssr/components/data-list");
+
+        await Assertions.Expect(page.GetByTestId("url-zone")).ToHaveTextAsync("none");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task With_the_cookie_a_prerendered_date_filter_still_shows_the_right_rows_once_interactive(string mode)
+    {
+        var context = await NewContext(new() { TimezoneId = "Pacific/Kiritimati" });
+        await context.AddCookiesAsync([new() { Name = "blux-timezone", Value = "Pacific/Kiritimati", Url = BaseUrl }]);
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync($"/{mode}/components/data-list?dat.f.issued=2026-01-03");
+        await WaitForList(page, mode);
+
+        await Assertions.Expect(page.GetByTestId("list-date").Locator("[data-slot=result-count]")).ToHaveTextAsync("1–1 of 1");
+    }
+
+    private static async Task<BrowserContextCookiesResult> WaitForCookie(IBrowserContext context, string name)
+    {
+        for (var deadline = DateTime.UtcNow.AddSeconds(5); DateTime.UtcNow < deadline; await Task.Delay(50))
+        {
+            if ((await context.CookiesAsync()).FirstOrDefault(c => c.Name == name) is { } cookie) return cookie;
+        }
+        throw new TimeoutException($"No cookie named {name}.");
     }
 
     // ---- language

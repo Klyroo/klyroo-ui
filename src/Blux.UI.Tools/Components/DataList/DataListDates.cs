@@ -73,6 +73,13 @@ internal static class DataListDates
         _ => messages.DatePresetYearToDate,
     };
 
+    /// <summary>The id if this machine knows a zone by that name (at most 64 characters), else <see langword="null"/>.</summary>
+    public static string? ValidId(string? id) =>
+        !string.IsNullOrWhiteSpace(id) && id.Length <= 64 && TimeZoneInfo.TryFindSystemTimeZoneById(id, out _) ? id : null;
+
+    /// <summary>Whether two ids stand for the same zone (an absent or unknown id is UTC).</summary>
+    public static bool SameZone(string? a, string? b) => Zone(a).Id == Zone(b).Id;
+
     /// <summary>The zone with this IANA id, or UTC when there is none (a render with no browser, an id the platform does not know).</summary>
     public static TimeZoneInfo Zone(string? id)
     {
@@ -83,14 +90,35 @@ internal static class DataListDates
     /// <summary>The calendar day it is in <paramref name="zone"/> at <paramref name="now"/>.</summary>
     public static DateOnly Today(DateTimeOffset now, TimeZoneInfo zone) => DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, zone).DateTime);
 
-    /// <summary>The instant of a local day and time (cut to the hour for <see cref="DateGranularity.Hour"/>). A time in a gap of the clock moves to the first time after it, an ambiguous one to the earlier instant.</summary>
+    /// <summary>
+    /// The instant of a local day and time (cut to the hour for <see cref="DateGranularity.Hour"/>). A time in the gap of a clock change (02:15 when the clocks go from 02:00 to 03:00) is the first time after the
+    /// gap (03:00), so a day that starts in a gap starts when the clocks resume. An ambiguous time (02:30 when the clocks go back from 03:00 to 02:00) is the earlier instant, so the end bound of a range
+    /// that falls in the repeated hour stops at its first pass.
+    /// </summary>
     public static DateTimeOffset Moment(DateOnly day, TimeOnly time, TimeZoneInfo zone, DateGranularity granularity)
     {
         var minutes = granularity == DateGranularity.Hour ? 0 : time.Minute;
         var local = day.ToDateTime(new TimeOnly(time.Hour, minutes));
-        for (var i = 0; i < 8 && zone.IsInvalidTime(local); i++) local = local.AddMinutes(30);
+        if (zone.IsInvalidTime(local)) return GapEnd(local, zone);
         var offset = zone.IsAmbiguousTime(local) ? zone.GetAmbiguousTimeOffsets(local).Max() : zone.GetUtcOffset(local);
         return new DateTimeOffset(local, offset);
+    }
+
+    // The instant the clocks resume after the gap that holds an invalid local time: the transition is found by bisection between the instant that local time would be before the change (which is after it) and a day earlier.
+    private static DateTimeOffset GapEnd(DateTime local, TimeZoneInfo zone)
+    {
+        var before = zone.GetUtcOffset(local.AddDays(-1));
+        var after = zone.GetUtcOffset(local.AddDays(1));
+        var end = DateTime.SpecifyKind(local - before, DateTimeKind.Utc);
+        long low = -86400, high = 0;
+        while (high - low > 1)
+        {
+            var middle = low + (high - low) / 2;
+            if (zone.GetUtcOffset(new DateTimeOffset(end.AddSeconds(middle))) == before) low = middle;
+            else high = middle;
+        }
+        var resumes = end.AddSeconds(high);
+        return new DateTimeOffset(DateTime.SpecifyKind(resumes + after, DateTimeKind.Unspecified), after);
     }
 
     /// <summary>The local day and time of an instant in <paramref name="zone"/>.</summary>
