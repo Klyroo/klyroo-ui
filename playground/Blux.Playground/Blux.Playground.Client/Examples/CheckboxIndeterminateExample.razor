@@ -1,0 +1,34 @@
+<div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2">
+        <BxCheckbox Value="AllSelected" ValueChanged="SelectAll" Indeterminate="SomeSelected" Label="Select all" data-testid="select-all" />
+        <div class="flex flex-col gap-2 pl-6">
+            @for (var i = 0; i < _items.Length; i++)
+            {
+                var index = i;
+                <BxCheckbox Value="_selected[index]" ValueChanged="(bool v) => Select(index, v)" Label="@_items[index]" />
+            }
+        </div>
+        <p class="text-sm text-(--blux-text-muted)" data-testid="select-all-state">Selected: @_selected.Count(s => s) of @_selected.Length</p>
+    </div>
+    <div class="flex flex-col gap-2">
+        <BxCheckbox @bind-Value="_pinned" Indeterminate Label="Always mixed" Description="Indeterminate stays true: every render puts the mixed state back." data-testid="mixed" />
+        <BxButton Variant="ButtonVariant.Outline" Label="@($"Render again ({_renders})")" OnClick="() => _renders++" data-testid="rerender" />
+    </div>
+</div>
+
+@code {
+    private static readonly string[] _items = ["Email", "SMS", "Push"];
+    private readonly bool[] _selected = [true, false, false];
+    private bool _pinned;
+    private int _renders;
+
+    private bool AllSelected => _selected.All(s => s);
+
+    // The parent owns the mixed state: it derives it from the items, so a click on the box (which selects everything)
+    // leaves nothing mixed.
+    private bool SomeSelected => _selected.Any(s => s) && !AllSelected;
+
+    private void SelectAll(bool value) => Array.Fill(_selected, value);
+
+    private void Select(int index, bool value) => _selected[index] = value;
+}

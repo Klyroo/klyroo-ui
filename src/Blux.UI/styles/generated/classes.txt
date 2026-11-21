@@ -653,6 +653,8 @@ hover:text-(--blux-text-muted)
 hover:underline
 hover:underline-offset-4
 in-[[data-bx-main]]:pb-0
+indeterminate:bg-(--bx-color)
+indeterminate:ring-(--bx-color-text)
 inline-block
 inline-flex
 inset-0
@@ -912,6 +914,8 @@ peer-checked:translate-x-5
 peer-checked:translate-x-[18px]
 peer-disabled:cursor-not-allowed
 peer-disabled:opacity-60
+peer-indeterminate:opacity-0
+peer-indeterminate:opacity-100
 placeholder:text-(--blux-text-dimmed)
 pointer-events-auto
 pointer-events-none

@@ -96,6 +96,48 @@ public class FormTests : BluxTestContext
     }
 
     [Fact]
+    public void Checkbox_renders_data_indeterminate_and_a_minus_only_while_indeterminate()
+    {
+        var plain = Render<BxCheckbox>(p => p.Add(c => c.Label, "A"));
+        Assert.False(plain.Find("input").HasAttribute("data-indeterminate"));
+        Assert.Single(plain.FindAll("svg"));
+
+        var mixed = Render<BxCheckbox>(p => p.Add(c => c.Label, "A").Add(c => c.Indeterminate, true));
+        Assert.True(mixed.Find("input").HasAttribute("data-indeterminate"));
+        Assert.Equal(2, mixed.FindAll("svg").Count);
+        Assert.Contains("peer-indeterminate:opacity-100", mixed.FindAll("svg")[1].GetAttribute("class"));
+        Assert.Contains("peer-indeterminate:opacity-0", mixed.FindAll("svg")[0].GetAttribute("class"));
+        Assert.Contains("indeterminate:bg-(--bx-color)", mixed.Find("input").GetAttribute("class"));
+    }
+
+    [Fact]
+    public void Checkbox_changes_data_indeterminate_on_every_render_so_the_script_sets_the_property_again()
+    {
+        var value = false;
+        var cut = Render<BxCheckbox>(p => p.Add(c => c.Indeterminate, true)
+            .Add(c => c.Value, value).Add(c => c.ValueChanged, (bool v) => value = v));
+        var first = cut.Find("input").GetAttribute("data-indeterminate");
+
+        cut.Find("input").Change(true);
+        var afterClick = cut.Find("input").GetAttribute("data-indeterminate");
+        cut.Render(p => p.Add(c => c.Indeterminate, true).Add(c => c.Value, true));
+        var afterParent = cut.Find("input").GetAttribute("data-indeterminate");
+
+        Assert.True(value);
+        Assert.NotEqual(first, afterClick);
+        Assert.NotEqual(afterClick, afterParent);
+    }
+
+    [Fact]
+    public void Checkbox_Ui_overrides_the_indeterminate_icon_slot()
+    {
+        var cut = Render<BxCheckbox>(p => p.Add(c => c.Indeterminate, true)
+            .Add(c => c.Ui, new CheckboxUi { IndeterminateIcon = "text-red-500" }));
+
+        Assert.Contains("text-red-500", cut.FindAll("svg")[1].GetAttribute("class"));
+    }
+
+    [Fact]
     public void RadioGroup_selects_the_bound_item_and_reports_changes()
     {
         var value = "b";
