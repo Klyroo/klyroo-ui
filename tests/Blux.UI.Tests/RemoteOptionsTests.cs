@@ -424,6 +424,125 @@ public class RemoteOptionsTests
         Assert.Equal(RemoteStatus.Idle, options.Status);
     }
 
+    /// <summary>A resolver whose calls complete when the test says so, in any order, and that ignores cancellation (a source that does not honour the token).</summary>
+    private sealed class ControlledResolver
+    {
+        public List<(IReadOnlyList<string> Values, TaskCompletionSource<IReadOnlyList<BxSelectItem>> Gate, CancellationToken Token)> Calls { get; } = [];
+
+        public ValueTask<IReadOnlyList<BxSelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken ct)
+        {
+            var gate = new TaskCompletionSource<IReadOnlyList<BxSelectItem>>();
+            Calls.Add((values, gate, ct));
+            return new ValueTask<IReadOnlyList<BxSelectItem>>(gate.Task);
+        }
+    }
+
+    [Fact]
+    public async Task A_resolve_of_the_old_source_that_finishes_after_Reset_leaves_no_label_and_the_new_source_resolves_the_value()
+    {
+        var (options, changes) = Create(new Source());
+        var resolver = new ControlledResolver();
+        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        var oldResolve = options.ResolveAsync(["x"], resolve);
+
+        options.Reset();
+        var changesAfterReset = changes();
+        // The new source asks for the same value; the old answer comes last.
+        var newResolve = options.ResolveAsync(["x"], resolve);
+        Assert.Equal(2, resolver.Calls.Count);
+        Assert.True(resolver.Calls[0].Token.IsCancellationRequested);
+        Assert.False(resolver.Calls[1].Token.IsCancellationRequested);
+        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        await newResolve;
+        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Old label")]);
+        await oldResolve;
+
+        Assert.Equal("New label", options.LabelOf("x"));
+        Assert.True(changes() > changesAfterReset);
+    }
+
+    [Fact]
+    public async Task A_resolve_of_the_old_source_that_finishes_after_Reset_does_not_make_the_value_known()
+    {
+        var (options, changes) = Create(new Source());
+        var resolver = new ControlledResolver();
+        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        var oldResolve = options.ResolveAsync(["x"], resolve);
+
+        options.Reset();
+        var changesAfterReset = changes();
+        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Old label")]);
+        await oldResolve;
+
+        // Nothing knows x for the new source, so the next resolution asks again instead of being blocked by Knows.
+        Assert.False(options.Knows("x"));
+        Assert.Equal("x", options.LabelOf("x"));
+        Assert.Equal(changesAfterReset, changes());
+        var again = options.ResolveAsync(["x"], resolve);
+        Assert.Equal(2, resolver.Calls.Count);
+        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        await again;
+        Assert.Equal("New label", options.LabelOf("x"));
+    }
+
+    [Fact]
+    public async Task A_resolve_of_the_old_source_that_fails_after_Reset_does_not_mark_the_value_as_failed()
+    {
+        var (options, _) = Create(new Source());
+        var resolver = new ControlledResolver();
+        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        var oldResolve = options.ResolveAsync(["x"], resolve);
+
+        options.Reset();
+        var newResolve = options.ResolveAsync(["x"], resolve);
+        resolver.Calls[0].Gate.SetException(new InvalidOperationException("old source down"));
+        await oldResolve;
+        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        await newResolve;
+
+        Assert.Equal("New label", options.LabelOf("x"));
+        // The failure of the old source is not remembered: a retry request does not ask again for a value that is known.
+        await options.ResolveAsync(["x"], resolve, retryFailed: true);
+        Assert.Equal(2, resolver.Calls.Count);
+    }
+
+    [Fact]
+    public async Task A_resolve_without_a_Reset_still_records_its_labels_and_its_failures()
+    {
+        var (options, _) = Create(new Source());
+        var resolver = new ControlledResolver();
+        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        var first = options.ResolveAsync(["x"], resolve);
+        var second = options.ResolveAsync(["y"], resolve);
+
+        resolver.Calls[1].Gate.SetException(new InvalidOperationException("down"));
+        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Ex")]);
+        await Task.WhenAll(first, second);
+
+        Assert.Equal("Ex", options.LabelOf("x"));
+        Assert.False(options.Knows("y"));
+        var retry = options.ResolveAsync(["y"], resolve, retryFailed: true);
+        Assert.Equal(3, resolver.Calls.Count);
+        resolver.Calls[2].Gate.SetResult([new BxSelectItem("y", "Why")]);
+        await retry;
+        Assert.Equal("Why", options.LabelOf("y"));
+    }
+
+    [Fact]
+    public async Task Dispose_cancels_a_resolve_in_flight_and_drops_its_answer()
+    {
+        var (options, _) = Create(new Source());
+        var resolver = new ControlledResolver();
+        var pending = options.ResolveAsync(["x"], resolver.Resolve);
+
+        options.Dispose();
+        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Ex")]);
+        await pending;
+
+        Assert.True(resolver.Calls[0].Token.IsCancellationRequested);
+        Assert.False(options.Knows("x"));
+    }
+
     [Fact]
     public async Task A_resolution_that_threw_is_asked_again_only_when_retry_is_requested()
     {

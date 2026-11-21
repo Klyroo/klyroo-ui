@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Fixed
+
+- **A static date filter form no longer drifts.** The `datetime-local` field of a timed date filter is written in the time zone of the cookie, but the posted value was read as UTC, so with a `Europe/Paris` cookie a 13:00 UTC bound showed 14:00 and was applied again as 14:00 UTC (one hour further on every apply), and a whole-day bound came back as a one-minute instant at UTC midnight. A date-time without an offset in a filter value is now the wall clock of the time zone of the request (`DataListStateQuery.FromQuery(query, schema, prefix, timeZone)` and the data list; without a zone it stays UTC, as before for API servers), and a whole-day bound is rendered in a date field, which reads back as the same whole day.
+- **A remote option resolve that outlives a source change no longer poisons the new source.** `RemoteOptions.Reset` (a new `OptionsKey` of `BxSelectMenu` or `BxInputMenu`) now cancels the `ResolveSelected` call in flight and ignores its answer or failure, so a late answer for the old source cannot write a stale label that stops the value from being resolved again.
+- **The start of a day that begins in a daylight saving gap is the same instant on the server and in the editor.** `DateUnit` stepped 30 minutes over a gap (01:00+14:00 for the skipped 2011-12-30 in Pacific/Apia, or 01:00 for a 45-minute gap) while the filter editor found the exact end of the gap; both now use one rule (`LocalInstants` in Blux.UI.Tools.Query), so a skipped day is an empty range that ends where the next day starts.
+- **`BxSelectMenu` and `BxInputMenu` throw about missing options only when `Items` is not passed at all and there is no `OptionsProvider`.** `Items="@_list"` with a null list (still loading) renders an empty list, before and after the list arrives.
+- The data list calls `SetLoadedTimeZone` once, not twice, when it adopts the prerendered result.
+
 ### Added
 
 - **`Blux.UI.Server`: a package that lets components read the request in a static render or a prerender, and `IBxRequestCookies` in Blux.UI.** `IBxRequestCookies` (`PathBase`, `Get(name)`) is the only way Blux reads a cookie of the current request; nothing implements it by default, so WebAssembly, MAUI and an interactive render after a prerender have no request. `services.AddBluxServer()` (package `Blux.UI.Server`, ASP.NET Core only, same version as Blux.UI) calls `AddHttpContextAccessor()` and registers it. The data list reads the `blux-timezone` cookie through it, and the reflection on `IHttpContextAccessor` is gone from Blux.UI.Tools, which no longer registers the accessor: a server app must call `AddBluxServer()` in its server `Program.cs` for static and prerendered lists to use the time zone of the user. Without it they use UTC until the page is interactive, and Development logs one warning.

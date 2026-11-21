@@ -58,13 +58,11 @@ internal readonly record struct DateUnit(DateTimeOffset StartUtc, DateTimeOffset
         catch (ArgumentOutOfRangeException) { return DateTimeOffset.MinValue; }
     }
 
-    /// <summary>Midnight of a local day as an instant.</summary>
+    /// <summary>Midnight of a local day as an instant (the instant the clocks resume when midnight is in a gap, see <see cref="LocalInstants"/>).</summary>
     private static DateTimeOffset LocalStart(DateOnly day, TimeZoneInfo zone)
     {
-        var local = day.ToDateTime(TimeOnly.MinValue);
-        for (var i = 0; i < 8 && zone.IsInvalidTime(local); i++) local = local.AddMinutes(30); // a gap: the first valid time after it
-        var offset = zone.IsAmbiguousTime(local) ? zone.GetAmbiguousTimeOffsets(local).Max() : zone.GetUtcOffset(local);
-        return FromLocal(local, offset);
+        try { return LocalInstants.At(day, TimeOnly.MinValue, zone); }
+        catch (ArgumentOutOfRangeException) { return DateTimeOffset.MinValue; }
     }
 }
 

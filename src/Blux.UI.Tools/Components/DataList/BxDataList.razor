@@ -59,6 +59,7 @@
     private string? _claimedKey;
     private string? _timeZone;
     private bool _writeInitialState;
+    private bool _stateFromUrl;
     private bool _disposed;
 
     public BxDataList() => _context = new DataListContext<TItem>(this);
@@ -284,22 +285,28 @@
         _lastQueryable = Queryable;
         _lastProvider = Provider;
         _lastStateParam = State;
-        _state = controller.Normalize(InitialState());
-        // The time zone of the user cuts the days of the date filters. A static render and a prerender have the one the browser left in its cookie (UTC on the first visit); an interactive render asks the browser.
+        // The time zone of the user cuts the days of the date filters, and a date-time of the URL without an offset is read in it. A static render and a prerender have the one the browser left in its cookie (UTC on the first visit); an interactive render asks the browser.
         if (!RendererInfo.IsInteractive)
         {
             _timeZone = ServerTimeZone.Read(Services);
             controller.TimeZone = _timeZone;
         }
-        var taken = TakePersisted(_state);
+        _state = controller.Normalize(InitialState());
+        var taken = TakePersisted();
         // A result that does not depend on the zone shows at once, before the call to the browser: the render waits for that call, not for the rows.
-        var adopted = taken is { } early && !NeedsTimeZone(early.Request.Filter) && Adopt(early);
+        var adopted = taken is { } early && early.Requested.Equals(_state) && !NeedsTimeZone(early.Request.Filter) && Adopt(early);
         if (RendererInfo.IsInteractive)
         {
             _timeZone = await TimeZoneAsync();
             controller.TimeZone = _timeZone;
+            // The state was read before the zone was known: a date-time without an offset in the URL means another instant in the zone of the browser.
+            if (_stateFromUrl && !DataListDates.SameZone(null, _timeZone) && controller.Normalize(ReadState()) is var again && !again.Equals(_state))
+            {
+                _state = again;
+                adopted = false;
+            }
             // A result whose days were cut in the zone the browser has is as good as a new one.
-            if (!adopted && taken is { } late && DataListDates.SameZone(late.Zone, _timeZone)) adopted = Adopt(late);
+            if (!adopted && taken is { } late && late.Requested.Equals(_state) && DataListDates.SameZone(late.Zone, _timeZone)) adopted = Adopt(late);
             if (adopted) controller.SetLoadedTimeZone(_timeZone);
         }
         if (adopted)
@@ -349,7 +356,8 @@
     private bool HoldsOwnKeys() => Query.Snapshot(NormalizedUrlKey ?? "").Any(pair => IsOwned(pair.Key));
 
     // The state the URL holds, with defaults for what it does not say.
-    private DataListState ReadState() => DataListStateQuery.FromQuery(Query.Snapshot(NormalizedUrlKey ?? ""), _schema!, NormalizedUrlKey);
+    // A date-time of the URL without an offset (what a static form posts) is a wall clock in the zone of the request.
+    private DataListState ReadState() => DataListStateQuery.FromQuery(Query.Snapshot(NormalizedUrlKey ?? ""), _schema!, NormalizedUrlKey, _timeZone);
 
     // The state a list starts from: its URL; the State of the parent when the URL holds none of the keys of the list.
     private DataListState InitialState()
@@ -360,6 +368,7 @@
             _writeInitialState = true;
             return State;
         }
+        _stateFromUrl = true;
         return ReadState();
     }
 
@@ -523,11 +532,11 @@
             key, bytes, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes);
     }
 
-    // What the prerender handed over, when it was loaded for the state this render starts from; the keys are taken whether or not it is used.
-    private sealed record Persisted(DataListState Loaded, DataListRequest Request, DataListResult<TItem> Result, string? Zone);
+    // What the prerender handed over, with the state it was loaded for (it is used only when that is the state this render starts from); the keys are taken whether or not it is used.
+    private sealed record Persisted(DataListState Requested, DataListState Loaded, DataListRequest Request, DataListResult<TItem> Result, string? Zone);
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the result itself is read with the JsonTypeInfo of the app.")]
-    private Persisted? TakePersisted(DataListState state)
+    private Persisted? TakePersisted()
     {
         if (ResultJson is null || _persistent is null || !RendererInfo.IsInteractive) return null;
         var key = PersistedKey;
@@ -540,8 +549,8 @@
             var requested = JsonSerializer.Deserialize(stateText!, DataListJsonContext.Default.DataListState);
             var loaded = JsonSerializer.Deserialize(loadedText!, DataListJsonContext.Default.DataListState);
             var result = JsonSerializer.Deserialize(resultText!, ResultJson);
-            if (requested is null || loaded is null || result is null || !requested.Equals(state)) return null;
-            return new Persisted(loaded, Controller!.BuildRequest(loaded), result, string.IsNullOrEmpty(zone) ? null : zone);
+            if (requested is null || loaded is null || result is null) return null;
+            return new Persisted(requested, loaded, Controller!.BuildRequest(loaded), result, string.IsNullOrEmpty(zone) ? null : zone);
         }
         catch (JsonException)
         {
