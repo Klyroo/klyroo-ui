@@ -188,6 +188,51 @@ public class DashboardTemplateTests
     }
 
     [Fact]
+    public void The_selection_keeps_only_the_rows_a_new_query_still_matches()
+    {
+        var selection = new RowSelection();
+        var changes = 0;
+        selection.Changed += () => changes++;
+        selection.Set([1, 2, 3, 4], true);
+
+        selection.Retain(new HashSet<int> { 2, 4, 9 });
+        Assert.Equal([2, 4], selection.Ids.Order());
+        Assert.Equal(2, changes);
+        // Nothing to drop: nothing is announced.
+        selection.Retain(new HashSet<int> { 2, 4, 5 });
+        Assert.Equal(2, changes);
+        selection.Retain(new HashSet<int>());
+        Assert.Equal(0, selection.Count);
+        Assert.Equal(3, changes);
+    }
+
+    [Fact]
+    public void The_rows_a_query_matches_are_all_of_them_not_one_page_of_them()
+    {
+        // What the Customers page does when the search or the filters change: the matching ids over the whole set, with no paging.
+        var state = DataListState.Initial with { Search = "a", PageSize = 10 };
+        var request = state.ToRequest() with { Paging = DataListPaging.None.Instance };
+        var matching = CustomerData.Schema.ExecuteInMemory(CustomerData.All, request).Items.Select(c => c.Id).ToHashSet();
+
+        var onePage = CustomerData.Schema.ExecuteInMemory(CustomerData.All, state.ToRequest()).Items;
+        Assert.Equal(10, onePage.Count);
+        Assert.True(matching.Count > 10);
+        Assert.All(onePage, c => Assert.Contains(c.Id, matching));
+        Assert.All(CustomerData.All.Where(c => matching.Contains(c.Id)), c => Assert.Contains("a", $"{c.Name} {c.Email} {c.Company}", StringComparison.OrdinalIgnoreCase));
+        // A search that matches nobody empties the selection.
+        var none = CustomerData.Schema.ExecuteInMemory(CustomerData.All, (DataListState.Initial with { Search = "zzzzqq" }).ToRequest() with { Paging = DataListPaging.None.Instance });
+        Assert.Empty(none.Items);
+    }
+
+    [Fact]
+    public void The_neutral_colors_on_offer_are_blux_or_tailwind_neutral_scales_that_the_contrast_tests_cover()
+    {
+        Assert.True(AppearanceState.Neutrals[0].IsBlux);
+        Assert.Equal(["slate", "gray", "zinc", "neutral", "stone"], AppearanceState.Neutrals.Skip(1).Select(p => p.Name));
+        Assert.All(AppearanceState.Neutrals.Skip(1), p => Assert.Contains(p, BxPalette.TailwindPalettes));
+    }
+
+    [Fact]
     public void The_primary_colors_on_offer_are_blux_or_tailwind_palettes_that_the_contrast_tests_cover()
     {
         Assert.True(AppearanceState.Palettes[0].IsBlux);

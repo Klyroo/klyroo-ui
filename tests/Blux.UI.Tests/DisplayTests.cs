@@ -27,6 +27,17 @@ public class DisplayTests : BluxTestContext
     }
 
     [Fact]
+    public void Avatar_initials_use_the_text_color_not_the_muted_one_because_the_fill_is_darker_than_the_page()
+    {
+        var cut = Render<BxAvatar>(p => p.Add(a => a.Alt, "Ada Lovelace"));
+
+        // text-muted on bg-accented was 3.98:1 in dark mode with the zinc neutrals (see PaletteContrastTests).
+        var classes = cut.Find("[aria-hidden=true]").ClassName ?? "";
+        Assert.Contains("text-(--blux-text)", classes);
+        Assert.DoesNotContain("text-muted", classes);
+    }
+
+    [Fact]
     public void Avatar_with_image_keeps_the_name_on_the_root_for_when_it_fails()
     {
         var cut = Render<BxAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada"));

@@ -6,22 +6,22 @@
    only the page that matches the search is loaded. *@
 <BxSlideover Open="Open" OpenChanged="OpenChanged" Title="New customer" Description="The customer is added to the table for this session." Side="SlideoverSide.Right" data-testid="new-customer">
     <Body>
-        <BxForm Model="_model" FormName="new-customer" OnValidSubmit="CreateAsync" id="new-customer-form" class="flex flex-col gap-4">
-            <BxFormField Label="Name" Required For="() => _model.Name">
-                <BxInput @bind-Value="_model.Name" autocomplete="off" data-testid="new-name" />
+        <BxForm Model="Model" FormName="new-customer" OnValidSubmit="CreateAsync" id="new-customer-form" class="flex flex-col gap-4">
+            <BxFormField Label="Name" Required For="() => Model!.Name">
+                <BxInput @bind-Value="Model!.Name" autocomplete="off" data-testid="new-name" />
             </BxFormField>
-            <BxFormField Label="Email" Required For="() => _model.Email">
-                <BxInput @bind-Value="_model.Email" Type="email" autocomplete="off" data-testid="new-email" />
+            <BxFormField Label="Email" Required For="() => Model!.Email">
+                <BxInput @bind-Value="Model!.Email" Type="email" autocomplete="off" data-testid="new-email" />
             </BxFormField>
-            <BxFormField Label="Company" For="() => _model.Company">
-                <BxInput @bind-Value="_model.Company" autocomplete="off" />
+            <BxFormField Label="Company" For="() => Model!.Company">
+                <BxInput @bind-Value="Model!.Company" autocomplete="off" />
             </BxFormField>
             <BxFormField Label="Country" Required Error="@_countryError">
                 <BxSelectMenu OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
                               Value="_country" ValueChanged="OnCountry" data-testid="new-country" />
             </BxFormField>
             <BxFormField Label="Plan">
-                <BxSelect Items="_plans" @bind-Value="_model.Plan" />
+                <BxSelect Items="_plans" @bind-Value="Model!.Plan" />
             </BxFormField>
         </BxForm>
     </Body>
@@ -34,13 +34,21 @@
 @code {
     private static readonly BxSelectItem[] _plans = [.. CustomerData.Plans.Select(p => new BxSelectItem(p, p))];
 
-    private readonly NewCustomer _model = new();
+    // Bound to the posted form: a static post (before the page is interactive) is validated by the server like an interactive one.
+    [SupplyParameterFromForm(FormName = "new-customer")]
+    private NewCustomer? Model { get; set; }
+
     private IReadOnlyList<string> _country = [];
     private string? _countryError;
 
     [Parameter] public bool Open { get; set; }
 
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    /// <summary>Raised with the customer that was added, for the page to say so where it is always visible.</summary>
+    [Parameter] public EventCallback<Customer> OnCreated { get; set; }
+
+    protected override void OnInitialized() => Model ??= new();
 
     private void OnCountry(IReadOnlyList<string>? value)
     {
@@ -55,15 +63,16 @@
             _countryError = "Pick a country.";
             return;
         }
-        var customer = Store.Add(_model.Name!.Trim(), _model.Email!.Trim(), string.IsNullOrWhiteSpace(_model.Company) ? "Independent" : _model.Company.Trim(), CountryDirectory.NameOf(_country[0]), _model.Plan);
-        await Toasts.Add(new BxToast { Title = "Customer added", Description = $"{customer.Name} is in the table.", Color = BxColor.Success });
-        _model.Name = _model.Email = _model.Company = null;
-        _model.Plan = "Free";
+        var customer = Store.Add(Model!.Name!.Trim(), Model!.Email!.Trim(), string.IsNullOrWhiteSpace(Model!.Company) ? "Independent" : Model!.Company.Trim(), CountryDirectory.NameOf(_country[0]), Model!.Plan);
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Customer added", Description = $"{customer.Name} is in the table.", Color = BxColor.Success });
+        Model!.Name = Model!.Email = Model!.Company = null;
+        Model!.Plan = "Free";
         _country = [];
+        await OnCreated.InvokeAsync(customer);
         await OpenChanged.InvokeAsync(false);
     }
 
-    private sealed class NewCustomer
+    public sealed class NewCustomer
     {
         [Required(ErrorMessage = "The name is required.")]
         public string? Name { get; set; }
