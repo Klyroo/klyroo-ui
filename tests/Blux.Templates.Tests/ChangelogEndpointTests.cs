@@ -218,7 +218,7 @@ public class ChangelogOptionsTests
     [Fact]
     public void The_github_source_needs_a_repository_and_the_message_names_the_setting_not_a_value()
     {
-        Assert.Contains("Changelog:Repository is not set", new ChangelogOptions { Repository = "" }.Problem());
+        Assert.Contains("Changelog:Repository is not set", new ChangelogOptions { Source = ChangelogSource.GitHub, Repository = "" }.Problem());
         Assert.Contains("owner/repo", new ChangelogOptions { Repository = "nonsense" }.Problem());
         Assert.Null(new ChangelogOptions { Repository = "octo/tern", GitHubToken = "ghp_secret" }.Problem());
         Assert.DoesNotContain("ghp_secret", new ChangelogOptions { Repository = "bad repo", GitHubToken = "ghp_secret" }.Problem());
@@ -254,12 +254,29 @@ public class ChangelogOptionsTests
         Assert.Null(new ChangelogOptions { Repository = "octo/tern/../x" }.RepositoryUrl);
     }
 
+    [Theory]
+    [InlineData(null, "", ChangelogSource.File, true)]
+    [InlineData(null, "  ", ChangelogSource.File, true)]
+    [InlineData(null, "octo/tern", ChangelogSource.GitHub, false)]
+    [InlineData(ChangelogSource.GitHub, "", ChangelogSource.GitHub, false)]
+    [InlineData(ChangelogSource.File, "octo/tern", ChangelogSource.File, false)]
+    [InlineData(ChangelogSource.File, "", ChangelogSource.File, true)]
+    public void With_no_source_the_repository_decides_and_a_source_that_is_set_wins(ChangelogSource? source, string repository, ChangelogSource effective, bool sample)
+    {
+        var options = new ChangelogOptions { Source = source, Repository = repository };
+
+        Assert.Equal(effective, options.EffectiveSource);
+        Assert.Equal(sample, options.IsSample);
+    }
+
     [Fact]
     public void The_defaults_are_the_github_source_with_a_one_hour_cache()
     {
         var options = new ChangelogOptions();
 
-        Assert.Equal(ChangelogSource.GitHub, options.Source);
+        Assert.Null(options.Source);
+        Assert.Equal(ChangelogSource.File, options.EffectiveSource);
+        Assert.True(options.IsSample);
         Assert.Equal(TimeSpan.FromHours(1), options.CacheDuration);
         Assert.Equal("https://api.github.com/", options.ApiUrl);
     }
@@ -421,6 +438,56 @@ public class ChangelogEndpointTests
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
         Assert.True(response.Headers.Contains("Retry-After"));
         Assert.Equal("text/plain; charset=utf-8", response.Content.Headers.ContentType!.ToString());
+    }
+
+    [Fact]
+    public async Task With_nothing_set_the_sample_releases_are_used_and_the_feed_works()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?> { ["Changelog:File"] = Path.Combine(AppContext.BaseDirectory, "changelog-releases.json") });
+        builder.Services.AddChangelog(builder.Configuration);
+        await using var app = builder.Build();
+        app.MapReleaseFeed("Tern releases", "What changed");
+        await app.StartAsync(TestContext.Current.CancellationToken);
+
+        var response = await app.GetTestClient().GetAsync("/feed.xml", TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task With_AllowedHosts_set_a_request_for_another_host_never_reaches_the_feed_and_the_feed_of_an_allowed_host_has_only_that_host()
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>(FileSource()) { ["AllowedHosts"] = "news.example.com" });
+        builder.Services.AddChangelog(builder.Configuration);
+        await using var app = builder.Build();
+        app.MapReleaseFeed("Tern releases", "What changed");
+        await app.StartAsync(TestContext.Current.CancellationToken);
+        var client = app.GetTestClient();
+
+        string Get(string host) => host;
+        async Task<HttpResponseMessage> Request(string host)
+        {
+            var request = new HttpRequestMessage(HttpMethod.Get, "/feed.xml");
+            request.Headers.Host = Get(host);
+            return await client.SendAsync(request, TestContext.Current.CancellationToken);
+        }
+
+        var evil = await Request("evil.example");
+        var good = await Request("news.example.com");
+        var other = await Request("news.example.com");
+
+        Assert.Equal(HttpStatusCode.BadRequest, evil.StatusCode);
+        Assert.DoesNotContain("evil", await evil.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        var xml = await good.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, good.StatusCode);
+        Assert.Contains("http://news.example.com/feed.xml", xml);
+        Assert.DoesNotContain("evil", xml);
+        // The same host gives the same document, with the same ETag: nothing of the request but the host is in it.
+        Assert.Equal(good.Headers.ETag, other.Headers.ETag);
     }
 
     [Fact]

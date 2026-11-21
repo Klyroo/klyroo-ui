@@ -1,4 +1,13 @@
 @inject IHostEnvironment Environment
+@inject IOptions<ChangelogOptions> Options
+
+@* Shown while the releases are the sample ones because no repository is set: a visitor must not take them for the real thing. *@
+@if (Options.Value.IsSample && List.Available)
+{
+    <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Class="mt-8" data-testid="sample-notice"
+             Title="Sample data"
+             Description="These releases are made up. Set Changelog:Repository to owner/repo to show the releases of a GitHub repository." />
+}
 
 @* What a visitor sees when there are no releases to show because something is wrong. The page answers 503 (set by the page); the cause is in the log. *@
 @if (List.Available)

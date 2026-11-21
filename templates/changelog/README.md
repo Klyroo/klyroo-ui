@@ -24,10 +24,10 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Changelog.Web
 ```
 
-In Development the site shows the sample releases of `src/Changelog.Web/data/releases.json` (`appsettings.Development.json` sets `Changelog:Source` to `File`), so it runs without a network. To show the releases of a real repository set the source and the repository, here with environment variables:
+Out of the box the site shows the sample releases of `src/Changelog.Web/data/releases.json`, with a "Sample data" notice, so it runs without a network. As soon as `Changelog:Repository` is set it reads that repository from GitHub instead, here with an environment variable:
 
 ```bash
-Changelog__Source=GitHub Changelog__Repository=dotnet/aspnetcore dotnet run --project src/Changelog.Web
+Changelog__Repository=dotnet/aspnetcore dotnet run --project src/Changelog.Web
 ```
 
 The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `Changelog.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
@@ -38,8 +38,8 @@ Under `Changelog` in `appsettings.json`, or as environment variables with two un
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
-| `Source` | `GitHub` | `GitHub` reads the API. `File` reads a JSON file in the format of the API (the sample releases), with no network. |
-| `Repository` | none | `owner/repo`. Required for the GitHub source: without it the site starts, logs a warning and answers 503 with a page that says the releases are not available. With the file source it only decides where the links to GitHub point. |
+| `Source` | from `Repository` | Optional. `GitHub` reads the API. `File` reads a JSON file in the format of the API (the sample releases), with no network. Unset, the sample file is used while `Repository` is empty and GitHub once it is set; a value that is set always wins (`Source=GitHub` with no repository answers 503 with a page that says the releases are not available). |
+| `Repository` | none | `owner/repo`. Without it (and without `Source`) the sample releases are shown with a notice. With the file source it only decides where the links to GitHub point. |
 | `GitHubToken` | none | Optional. Without a token the API allows 60 requests an hour per address, with one 5,000. A fine-grained token with no permission at all is enough for a public repository; a private one needs read access to its contents. Use an environment variable (or `dotnet user-secrets init` and `dotnet user-secrets set Changelog:GitHubToken ...`), never `appsettings.json`. |
 | `CacheDuration` | `01:00:00` | How long the releases are used before they are asked for again. |
 | `RequestTimeout` | `00:00:15` | How long one request to GitHub may take. |
@@ -93,7 +93,7 @@ A release body can be written by anyone who can publish a release, and generated
 - Raw HTML is shown as text, never run. Attributes written in Markdown (`{onclick=...}`), math and media embeds are not supported.
 - A link keeps its address only for `http`, `https` and `mailto`. `javascript:`, `data:`, `vbscript:` and the like lose the link and keep their text, whether written in capitals, with tabs or with entities. A relative link would point into your site, so it is dropped too.
 - Every link has `rel="noopener noreferrer nofollow"` and opens in the same tab. There is no `target`, so there is no new window to take over, and a reader who wants a new tab asks for one.
-- Images must be `https`; they load lazily and send no referrer. Any host is allowed, because release notes show badges and screenshots from several: if you want only GitHub's, add `img-src 'self' https://github.com https://*.githubusercontent.com` to a Content-Security-Policy.
+- Images must be `https`; they load lazily and send no referrer. Any host is allowed, because release notes show badges and screenshots from several. Privacy: an image from a third-party host makes the visitor's browser contact that host, which learns the visitor's IP address and that they read these notes. If you want only GitHub's, add `img-src 'self' https://github.com https://*.githubusercontent.com` to a Content-Security-Policy.
 - `@user` and `#123` in running text (not in code, not inside a link) become links to `github.com/user` and to the issue or pull request of the repository, built from the name or the number and never from the text around it.
 - Ids start with the slug of the release, so a heading cannot take the id of an element of the page and two releases on one page never share an id.
 - Markdown that the parser refuses (nested too deeply to be sensible) is shown as plain text.
@@ -110,7 +110,11 @@ Set the `PathBase` setting (an environment variable `PathBase=/site`, or `appset
 
 ### Behind a reverse proxy
 
-A proxy that terminates TLS hands the app plain HTTP on its own address, and tells it the real ones in `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host`. The app ignores those headers unless you turn them on, because a visitor could send them too. Set `ForwardedHeaders:Enabled` to `true` (the environment variable `ForwardedHeaders__Enabled=true`) and list the addresses of your proxies in `ForwardedHeaders:KnownProxies` (`ForwardedHeaders__KnownProxies__0=10.0.0.5`); a proxy on the same machine (loopback) is trusted without being listed. Headers from any other sender are not believed. If the proxy passes the original `Host` header, also set `AllowedHosts` in `appsettings.json` to your domain, and set `Changelog:SiteUrl` so the feed does not depend on the header at all.
+A proxy that terminates TLS hands the app plain HTTP on its own address, and tells it the real ones in `X-Forwarded-For`, `X-Forwarded-Proto` and `X-Forwarded-Host`. The app ignores those headers unless you turn them on, because a visitor could send them too. Set `ForwardedHeaders:Enabled` to `true` (the environment variable `ForwardedHeaders__Enabled=true`) and list the addresses of your proxies in `ForwardedHeaders:KnownProxies` (`ForwardedHeaders__KnownProxies__0=10.0.0.5`); a proxy on the same machine (loopback) is trusted without being listed. Headers from any other sender are not believed.
+
+### Production: set `AllowedHosts` and `Changelog:SiteUrl`
+
+When `Changelog:SiteUrl` is not set, the links of the feed are built from the `Host` header of the request. A client can send any host, so in production set both: `AllowedHosts` in `appsettings.json` to your domain (ASP.NET Core host filtering then answers 400 to any other host before the feed or a page runs), and `Changelog:SiteUrl` so the feed does not depend on the header at all. The rendering of the notes never contains the host, so nothing a request can choose is kept in the cache; the `Host` header only reaches the feed's `xml:base` and its links, and a shared cache that keys on the URL will only ever see hosts that `AllowedHosts` lets through.
 
 ## Why the site is static
 
