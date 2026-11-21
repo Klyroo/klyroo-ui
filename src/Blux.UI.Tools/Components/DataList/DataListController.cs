@@ -116,8 +116,22 @@ public sealed class DataListController<TItem> : IDisposable
     /// <summary>The request for a state: sanitized by the schema, carrying the default sort when the state has none and the time zone.</summary>
     public DataListRequest BuildRequest(DataListState state)
     {
-        var request = Schema.Sanitize(Normalize(state).ToRequest(timeZone: TimeZone));
+        var request = Schema.Sanitize(Normalize(state).ToRequest(facets: FacetRequests(), timeZone: TimeZone));
         return request.Sort.Count == 0 && Schema.DefaultSort.Count > 0 ? request with { Sort = Schema.DefaultSort } : request;
+    }
+
+    // The option filters that ask for their counts (WithFacets): one facet request each, without the filter's own rule so the other options stay visible.
+    private IReadOnlyList<DataListFacetRequest>? FacetRequests()
+    {
+        List<DataListFacetRequest>? facets = null;
+        foreach (var key in Schema.FilterKeys)
+        {
+            if (Schema.TryGetFilter(key, out var filter) && filter is { Kind: FilterKind.Option, Facets: true } && !Schema.IsQueryFilter(key))
+            {
+                (facets ??= []).Add(new DataListFacetRequest(key, IncludeMissing: true));
+            }
+        }
+        return facets;
     }
 
     /// <summary>

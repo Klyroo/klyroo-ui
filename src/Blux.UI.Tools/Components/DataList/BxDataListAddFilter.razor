@@ -1,0 +1,139 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+@using Microsoft.AspNetCore.Components.Web
+
+@*
+    A button that opens a menu of the filters that are not on yet. Interactive, picking one swaps the menu for the editor of that filter (a back button returns). Statically rendered there is no pick step:
+    the popover lists an editor per filter, each made of links and a GET form. Text, option and boolean filters only; the others join the menu with their editors.
+*@
+@if (Context.Schema is not null && Context.EditableFilterKeys.Count > 0 && (Context.IsInteractive || Context.CanLink))
+{
+    <BxPopover Open="@_open" OpenChanged="@OnOpen" Placement="bottom-start" AriaLabel="@ToolsMessages.AddFilter" Ui="@_popoverUi" data-slot="add-filter-popover" @attributes="AdditionalAttributes">
+        <ChildContent>
+            <BxButton Label="@ToolsMessages.AddFilter" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="@(Size ?? BxSize.Sm)" Class="@_slots["addFilter"]"
+                      LeadingIcon="@RenderIcon("plus", "size-4")" data-slot="add-filter" />
+        </ChildContent>
+        <Content>
+            @if (Context.IsInteractive)
+            {
+                @if (_picked is { } picked)
+                {
+                    <div class="@_slots["filterEditor"]">
+                        <BxButton Label="@ToolsMessages.AddFilterBack" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Class="@_slots["filterBack"]"
+                                  LeadingIcon="@RenderIcon("chevron-left", "size-4")" OnClick="Back" data-slot="filter-back" />
+                    </div>
+                    <BxDataListFilterEditor TItem="TItem" Key="@picked" ApplyMode="ApplyMode" ResetToken="_token" OnDone="Close" />
+                }
+                else
+                {
+                    @Menu
+                }
+            }
+            else
+            {
+                var keys = Available;
+                @if (keys.Count == 0)
+                {
+                    <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@ToolsMessages.AddFilterNone</p>
+                }
+                @foreach (var key in keys)
+                {
+                    <div class="@_slots["filterSection"]" data-slot="filter-section">
+                        <BxDataListFilterEditor TItem="TItem" Key="@key" />
+                    </div>
+                }
+            }
+        </Content>
+    </BxPopover>
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private PopoverUi _popoverUi = new();
+    private bool _open;
+    private string? _picked;
+    private string _search = "";
+    private int _token;
+
+    /// <summary>Whether the editors apply each change at once (<see cref="DataListApplyMode.Live"/>) or wait for an Apply button (<see cref="DataListApplyMode.Submit"/>).</summary>
+    [Parameter] public DataListApplyMode ApplyMode { get; set; }
+
+    /// <summary>The size of the button. Defaults to small.</summary>
+    [Parameter] public BxSize? Size { get; set; }
+
+    /// <summary>The number of filters from which the menu has a search field. Defaults to 8.</summary>
+    [Parameter] public int SearchFrom { get; set; } = 8;
+
+    // The editable filters that are not on: a filter has one rule, so the one that is on is edited from its tag.
+    private IReadOnlyList<string> Available
+    {
+        get
+        {
+            var active = Context.ActiveFilters.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
+            return [.. Context.EditableFilterKeys.Where(k => !active.Contains(k))];
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "addFilter");
+        _popoverUi = new PopoverUi { Content = _slots["filterPopover"] };
+    }
+
+    // Escape or a click outside: back to the menu, and what was not applied is dropped.
+    private void OnOpen(bool open)
+    {
+        _open = open;
+        if (open) return;
+        _picked = null;
+        _search = "";
+        _token++;
+    }
+
+    private void Close() => OnOpen(false);
+
+    private void Pick(string key) => _picked = key;
+
+    private void Back() => _picked = null;
+
+    private Task OnSearch(string? value)
+    {
+        _search = value ?? "";
+        return Task.CompletedTask;
+    }
+
+    private RenderFragment Menu =>
+        @<text>
+            @{
+                var keys = Available;
+                var labelled = keys.Select(k => (Key: k, Label: Context.FilterLabel(k)))
+                    .Where(x => _search.Length == 0 || FormatCulture.CompareInfo.IndexOf(x.Label, _search, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) >= 0)
+                    .ToList();
+            }
+            @if (Context.EditableFilterKeys.Count >= SearchFrom)
+            {
+                <div class="@_slots["filterMenuHeader"]">
+                    <BxInput Value="@_search" ValueChanged="@OnSearch" Debounce="100" ClearOnEscape="true" Type="search" Placeholder="@ToolsMessages.AddFilterSearch" aria-label="@ToolsMessages.AddFilterSearch"
+                             autocomplete="off" LeadingIcon="@RenderIcon(Options.Icons.Search, "size-4")" data-slot="add-filter-search" />
+                </div>
+            }
+            @if (labelled.Count == 0)
+            {
+                <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@(keys.Count == 0 ? ToolsMessages.AddFilterNone : ToolsMessages.FilterNoOptionsMatch)</p>
+            }
+            else
+            {
+                <ul class="@_slots["filterMenu"]" data-slot="filter-menu" aria-label="@ToolsMessages.AddFilter">
+                    @foreach (var item in labelled)
+                    {
+                        var key = item.Key;
+                        <li>
+                            <button type="button" class="@_slots["filterMenuItem"]" data-slot="filter-menu-item" data-filter="@key" @onclick="@(() => Pick(key))">@item.Label</button>
+                        </li>
+                    }
+                </ul>
+            }
+        </text>;
+}

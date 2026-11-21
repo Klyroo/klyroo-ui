@@ -14,6 +14,13 @@ public partial class ToolsLocalizationTests
 
     private static string[] Placeholders(string text) => Placeholder().Matches(text).Select(m => m.Value).Order().ToArray();
 
+    // Words that are the same in English and in a language: "No" in Spanish, Italian and Portuguese, "is" in Dutch, and the "+{0}" of a count that is more.
+    private static readonly HashSet<(string Code, string Name)> SharedWords =
+    [
+        ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"),
+        .. new[] { "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru" }.Select(code => (code, "FilterMore")),
+    ];
+
     public static TheoryData<string> LocaleCodes()
     {
         var data = new TheoryData<string>();
@@ -55,9 +62,9 @@ public partial class ToolsLocalizationTests
         if (code == "en") return;
         var same = MessageProperties
             .Where(p => (string)p.GetValue(BxToolsLocales.En)! == (string)p.GetValue(BxToolsLocales.Tables[code])!)
-            .Select(p => p.Name).ToList();
+            .Select(p => p.Name).Where(name => !SharedWords.Contains((code, name))).ToList();
 
-        // Few messages so far, and none is a word shared between languages: raise the allowance (core allows 20 of ~200) when one is added.
+        // Few messages so far, and none is a word shared between languages except the ones listed: raise the allowance (core allows 20 of ~200) when one is added.
         Assert.True(same.Count == 0, $"{code} keeps {same.Count} English messages: {string.Join(", ", same)}");
     }
 
