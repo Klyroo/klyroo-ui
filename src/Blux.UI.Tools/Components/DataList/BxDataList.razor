@@ -26,6 +26,10 @@
                 <BxDataListResultCount TItem="TItem" />
                 <BxDataListRefresh TItem="TItem" />
             </div>
+            @if (_schema is { FilterKeys.Count: > 0 })
+            {
+                <BxDataListFilterTags TItem="TItem" ShowAdd="true" ShowClear="true" />
+            }
             <BxDataListErrorState TItem="TItem" />
             <BxDataListTable TItem="TItem" />
             <BxDataListPagination TItem="TItem" />

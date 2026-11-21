@@ -34,6 +34,37 @@ public sealed record DataListUi : ISlotOverrides
     public string? PageSizeSelect { get; init; }
     public string? PageSizeForm { get; init; }
     public string? Error { get; init; }
+    public string? Filters { get; init; }
+    public string? FilterTags { get; init; }
+    public string? FilterTag { get; init; }
+    public string? FilterTagButton { get; init; }
+    public string? FilterTagLabel { get; init; }
+    public string? FilterTagOperator { get; init; }
+    public string? FilterTagValue { get; init; }
+    public string? FilterTagRemove { get; init; }
+    public string? FilterTagRemoveIcon { get; init; }
+    public string? AddFilter { get; init; }
+    public string? ClearFilters { get; init; }
+    public string? FilterPopover { get; init; }
+    public string? FilterEditor { get; init; }
+    public string? FilterEditorTitle { get; init; }
+    public string? FilterField { get; init; }
+    public string? FilterFieldLabel { get; init; }
+    public string? FilterOperator { get; init; }
+    public string? FilterInput { get; init; }
+    public string? FilterOptions { get; init; }
+    public string? FilterOption { get; init; }
+    public string? FilterOptionLink { get; init; }
+    public string? FilterOptionCount { get; init; }
+    public string? FilterOptionCheck { get; init; }
+    public string? FilterEmpty { get; init; }
+    public string? FilterActions { get; init; }
+    public string? FilterChoices { get; init; }
+    public string? FilterMenu { get; init; }
+    public string? FilterMenuItem { get; init; }
+    public string? FilterMenuHeader { get; init; }
+    public string? FilterBack { get; init; }
+    public string? FilterSection { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -66,6 +97,37 @@ public sealed record DataListUi : ISlotOverrides
         "pageSizeSelect" => PageSizeSelect,
         "pageSizeForm" => PageSizeForm,
         "error" => Error,
+        "filters" => Filters,
+        "filterTags" => FilterTags,
+        "filterTag" => FilterTag,
+        "filterTagButton" => FilterTagButton,
+        "filterTagLabel" => FilterTagLabel,
+        "filterTagOperator" => FilterTagOperator,
+        "filterTagValue" => FilterTagValue,
+        "filterTagRemove" => FilterTagRemove,
+        "filterTagRemoveIcon" => FilterTagRemoveIcon,
+        "addFilter" => AddFilter,
+        "clearFilters" => ClearFilters,
+        "filterPopover" => FilterPopover,
+        "filterEditor" => FilterEditor,
+        "filterEditorTitle" => FilterEditorTitle,
+        "filterField" => FilterField,
+        "filterFieldLabel" => FilterFieldLabel,
+        "filterOperator" => FilterOperator,
+        "filterInput" => FilterInput,
+        "filterOptions" => FilterOptions,
+        "filterOption" => FilterOption,
+        "filterOptionLink" => FilterOptionLink,
+        "filterOptionCount" => FilterOptionCount,
+        "filterOptionCheck" => FilterOptionCheck,
+        "filterEmpty" => FilterEmpty,
+        "filterActions" => FilterActions,
+        "filterChoices" => FilterChoices,
+        "filterMenu" => FilterMenu,
+        "filterMenuItem" => FilterMenuItem,
+        "filterMenuHeader" => FilterMenuHeader,
+        "filterBack" => FilterBack,
+        "filterSection" => FilterSection,
         _ => null,
     };
 }

@@ -4,7 +4,7 @@ using Blux.UI.Tools.Query;
 namespace Blux.Playground.Client.Examples;
 
 /// <summary>A row of the data list examples.</summary>
-public sealed record Invoice(int Id, string Customer, string Status, decimal Amount, DateOnly Issued);
+public sealed record Invoice(int Id, string Customer, string Status, decimal Amount, DateOnly Issued, bool Reviewed = false);
 
 /// <summary>The rows, the schema and the JSON metadata the data list examples share.</summary>
 public static class InvoiceData
@@ -22,7 +22,8 @@ public static class InvoiceData
             Customers[(i - 1) % Customers.Length],
             Statuses[(i * 7) % Statuses.Length],
             Math.Round(40m + (i * 37 % 500) * 1.25m, 2),
-            new DateOnly(2026, 1, 1).AddDays(i * 2))),
+            new DateOnly(2026, 1, 1).AddDays(i * 2),
+            i % 3 == 0)),
     ];
 
     /// <summary>Which fields search and sort, the key of a row, the default sort and page size.</summary>
@@ -35,6 +36,26 @@ public static class InvoiceData
         .Field(i => i.Status, f => f.Sortable())
         .Field(i => i.Amount, f => f.Sortable())
         .Field(i => i.Issued, f => f.Sortable())
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(10));
+}
+
+/// <summary>The schema of the filter examples: a text filter on the customer, an option filter on the status (declared options, counts) and a boolean one.</summary>
+public static class InvoiceFilterData
+{
+    /// <summary>The invoice schema of <see cref="InvoiceData"/> plus filters: customer (text), status (options with counts) and reviewed (yes / no).</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .RowLabel(i => $"Invoice {i.Id}")
+        .Search(i => i.Customer, i => i.Status)
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable().Filter(DataListFilter.Text().WithLabel("Customer")))
+        .Field(i => i.Status, f => f.Sortable().Filter(DataListFilter.Option(
+            new DataListFilterOption("Paid", "Paid"), new DataListFilterOption("Pending", "Pending"),
+            new DataListFilterOption("Overdue", "Overdue"), new DataListFilterOption("Draft", "Draft")).WithLabel("Status").WithFacets()))
+        .Field(i => i.Amount, f => f.Sortable())
+        .Field(i => i.Issued, f => f.Sortable())
+        .Field(i => i.Reviewed, f => f.Filter(DataListFilter.Boolean().WithLabel("Reviewed")))
         .DefaultSort(i => i.Id)
         .DefaultPageSize(10));
 }

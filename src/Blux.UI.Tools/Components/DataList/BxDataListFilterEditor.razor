@@ -1,0 +1,428 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+@using Microsoft.AspNetCore.Components.Web
+
+@*
+    The editor of one filter: the operator, then the value (a text field, a list of options or yes / no / any). It is the content of the popover of a filter tag and of the add filter menu,
+    and it can be placed anywhere inside a data list. Interactive, each change applies at once (Live: a text after a pause in the typing) or waits for Apply (Submit). Statically rendered
+    there is no .NET to run handlers: the operators, the options and the yes / no / any choices are links that rewrite the address, and a text filter is a GET form.
+*@
+@if (_filter is not null && DataListContext<TItem>.HasEditor(_filter))
+{
+    <div class="@_slots["filterEditor"]" data-slot="filter-editor" data-filter="@Key" role="group" aria-label="@_label" @attributes="AdditionalAttributes">
+        @if (ShowTitle)
+        {
+            <p class="@_slots["filterEditorTitle"]" data-slot="filter-editor-title">@_label</p>
+        }
+        @if (Context.IsInteractive)
+        {
+            @Interactive
+        }
+        else if (Context.CanLink)
+        {
+            @Static
+        }
+    </div>
+}
+
+@code {
+    private readonly string _id = NewId("dl-filter");
+    private readonly HashSet<FilterRule?> _written = [];
+    private SlotSet _slots = default!;
+    private DataListFilter? _filter;
+    private string _label = "";
+    private BxInput? _input;
+    private FilterRule? _seen;
+    private FilterOperator _op;
+    private string _text = "";
+    private string _search = "";
+    private List<string> _selected = [];
+    private bool _includeEmpty;
+    private bool? _bool;
+    private int _token;
+    private bool _loaded;
+    private bool _syncInput;
+    private DataListState? _lastTextState;
+
+    [Inject] private Microsoft.JSInterop.IJSRuntime JS { get; set; } = default!;
+
+    /// <summary>The key of the filter to edit: one of the filters of the schema of the list with a text, option or boolean kind.</summary>
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+
+    /// <summary>Whether a change applies at once (<see cref="DataListApplyMode.Live"/>, the default) or waits for the Apply button (<see cref="DataListApplyMode.Submit"/>). Statically rendered, a filter always applies on a link or a submit.</summary>
+    [Parameter] public DataListApplyMode ApplyMode { get; set; }
+
+    /// <summary>Shows the name of the filter above the editor. True by default.</summary>
+    [Parameter] public bool ShowTitle { get; set; } = true;
+
+    /// <summary>Raised after Apply or Cancel (the Submit apply mode), so that the popover around the editor closes.</summary>
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    /// <summary>Change it to drop what was typed and show the filter as the list has it: the popover around the editor does it each time it closes.</summary>
+    [Parameter] public int ResetToken { get; set; }
+
+    private bool Live => ApplyMode == DataListApplyMode.Live;
+
+    private FilterRule? Rule => Context.RuleFor(Key);
+
+    private IReadOnlyList<FilterOperator> Operators => Context.EditorOperators(Key, Rule?.Operator ?? _op);
+
+    private int EffectiveDebounce => Math.Max(0, ToolsOptions.SearchDebounce);
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "filterEditor");
+        SyncDraft();
+    }
+
+    // The list changed (Back, a link, a reset, the echo of what this editor sent): the draft follows the rule unless it is the echo.
+    protected override void OnContextUpdated() => SyncDraft();
+
+    private void SyncDraft()
+    {
+        _filter = Context.FilterOf(Key);
+        _label = _filter is null ? "" : Context.FilterLabel(Key);
+        if (_filter is null || !DataListContext<TItem>.HasEditor(_filter)) return;
+        var rule = Rule;
+        if (!_loaded || _token != ResetToken)
+        {
+            // The first draft needs no write into the field: its value is the draft. A reset after the first render does.
+            _syncInput = _loaded;
+            _token = ResetToken;
+            _loaded = true;
+            Load(rule);
+            return;
+        }
+        if (Equals(rule, _seen)) return;
+        _seen = rule;
+        if (Equals(rule, BuildRule()))
+        {
+            // What this editor sent has come back.
+            _written.Clear();
+            return;
+        }
+        // A rule that an older report of this editor wrote is on its way home: a later keystroke would be erased by it.
+        if (_written.Contains(rule)) return;
+        _written.Clear();
+        Load(rule);
+        _syncInput = true;
+    }
+
+    // The draft from the rule of the list (Back, a link, a reset, a typed address, or the first render).
+    private void Load(FilterRule? rule)
+    {
+        _seen = rule;
+        _op = rule?.Operator is { } op && _filter!.AllowedOperators.Contains(op) ? op : _filter!.DefaultOperator;
+        _text = rule?.Value is FilterValue.Text text && _filter!.Kind == FilterKind.Text ? text.Value : "";
+        _selected = rule?.Value switch
+        {
+            FilterValue.Text t when _filter!.Kind == FilterKind.Option => [t.Value],
+            FilterValue.List list => [.. list.Values],
+            _ => [],
+        };
+        _includeEmpty = rule?.IncludeEmpty ?? false;
+        _bool = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : null;
+        _search = "";
+    }
+
+    // The text of the field follows a rule that changed without it; what the user typed stays when it is the editor that wrote the rule.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_syncInput || !Context.IsInteractive) return;
+        _syncInput = false;
+        if (_input is not null) await _input.SetValueAsync(_text);
+    }
+
+    // The rule the draft stands for, or null when the draft filters nothing.
+    private FilterRule? BuildRule() => _filter!.Kind switch
+    {
+        FilterKind.Text => _text.Trim() is { Length: > 0 } text ? new FilterRule(Key, _op, new FilterValue.Text(text)) : null,
+        FilterKind.Option => OptionRule(Key, _op, _selected, _includeEmpty),
+        FilterKind.Boolean => _bool is { } value ? new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(value)) : null,
+        _ => null,
+    };
+
+    // The shapes the URL gives back: one value with <c>is</c> is a text, anything else a list.
+    private static FilterRule? OptionRule(string key, FilterOperator op, IReadOnlyList<string> values, bool includeEmpty)
+    {
+        if (values.Count == 0 && !includeEmpty) return null;
+        FilterValue value = op == FilterOperator.Is && values.Count == 1 ? new FilterValue.Text(values[0]) : new FilterValue.List([.. values]);
+        return new FilterRule(key, op, value, includeEmpty);
+    }
+
+    private static List<string> ValuesOf(FilterRule? rule) => rule?.Value switch
+    {
+        FilterValue.Text t => [t.Value],
+        FilterValue.List list => [.. list.Values],
+        _ => [],
+    };
+
+    // ---- changes of the interactive editor
+
+    private Task OnOperator(ChangeEventArgs e)
+    {
+        foreach (var op in Operators)
+        {
+            if (FilterRuleText.OperatorName(op) != e.Value as string) continue;
+            _op = op;
+            // One value only with <c>is</c>.
+            if (_filter!.Kind == FilterKind.Option && op == FilterOperator.Is && _selected.Count > 1) _selected = [_selected[0]];
+            if (Live) Commit(text: false);
+            break;
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task OnText(string? value)
+    {
+        _text = value ?? "";
+        if (Live) Commit(text: true);
+        return Task.CompletedTask;
+    }
+
+    private void OnToggle(string value, bool on)
+    {
+        if (_op == FilterOperator.Is) _selected = on ? [value] : [];
+        else if (on) { if (!_selected.Contains(value)) _selected.Add(value); }
+        else _selected.Remove(value);
+        if (Live) Commit(text: false);
+    }
+
+    private void OnIncludeEmpty(bool value)
+    {
+        _includeEmpty = value;
+        if (Live) Commit(text: false);
+    }
+
+    private void OnBool(IReadOnlyList<string> values)
+    {
+        _bool = values.Count == 0 || values[0] == "any" ? null : values[0] == "true";
+        if (Live) Commit(text: false);
+    }
+
+    private Task OnSearch(string? value)
+    {
+        _search = value ?? "";
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // Applies the draft: a history entry per change, except that the typing of one text goes on in the entry its first pause made.
+    private void Commit(bool text)
+    {
+        var rule = BuildRule();
+        var next = DataListContext<TItem>.WithFilter(Context.State, Key, rule);
+        var history = text && _lastTextState is not null && Context.State.Equals(_lastTextState) ? QueryHistory.Replace : QueryHistory.Push;
+        _lastTextState = text ? next : null;
+        if (Equals(rule, _seen)) return;
+        _seen = rule;
+        _written.Add(rule);
+        Context.ApplyFilter(Key, rule, history);
+    }
+
+    private async Task ApplyAsync()
+    {
+        Commit(text: false);
+        await OnDone.InvokeAsync();
+    }
+
+    private async Task CancelAsync()
+    {
+        Load(Rule);
+        _syncInput = true;
+        await OnDone.InvokeAsync();
+    }
+
+    // ---- the interactive editor
+
+    private bool Matches(FilterChoice choice) =>
+        _search.Length == 0 || FormatCulture.CompareInfo.IndexOf(choice.Label, _search, System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) >= 0;
+
+    private RenderFragment Interactive =>
+        @<text>
+            @if (_filter!.Kind != FilterKind.Boolean && Operators.Count > 1)
+            {
+                <div class="@_slots["filterField"]">
+                    <select class="@_slots["filterOperator"]" data-slot="filter-operator" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterOperatorFor, _label)" @onchange="OnOperator">
+                        @foreach (var op in Operators)
+                        {
+                            <option value="@FilterRuleText.OperatorName(op)" selected="@(op == _op)">@ToolsMessages.OperatorLabel(op)</option>
+                        }
+                    </select>
+                </div>
+            }
+            @switch (_filter.Kind)
+            {
+                case FilterKind.Text:
+                    <div class="@_slots["filterField"]">
+                        <BxInput @ref="_input" Value="@_text" ValueChanged="@OnText" Debounce="@EffectiveDebounce" ClearOnEscape="true" Placeholder="@ToolsMessages.FilterTextPlaceholder"
+                                 aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" autocomplete="off" data-slot="filter-input" />
+                    </div>
+                    break;
+                case FilterKind.Option:
+                    @OptionList
+                    break;
+                case FilterKind.Boolean:
+                    <div class="@_slots["filterField"]">
+                        <BxToggleGroup Items="@BoolItems" Value="@BoolValue" ValueChanged="@OnBool" AriaLabel="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean" />
+                    </div>
+                    break;
+            }
+            @if (!Live)
+            {
+                <div class="@_slots["filterActions"]" data-slot="filter-actions">
+                    <BxButton Label="@ToolsMessages.FilterCancel" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" OnClick="CancelAsync" data-slot="filter-cancel" />
+                    <BxButton Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" OnClick="ApplyAsync" data-slot="filter-apply" />
+                </div>
+            }
+        </text>;
+
+    private IReadOnlyList<BxToggleItem> BoolItems =>
+    [
+        new BxToggleItem("true", ToolsMessages.FilterYes),
+        new BxToggleItem("false", ToolsMessages.FilterNo),
+        new BxToggleItem("any", ToolsMessages.FilterAny),
+    ];
+
+    private IReadOnlyList<string> BoolValue => [_bool is { } value ? (value ? "true" : "false") : "any"];
+
+    private RenderFragment OptionList =>
+        @<text>
+            @{
+                var choices = Context.FilterChoices(Key, _selected);
+                var visible = choices.Where(Matches).ToList();
+            }
+            @if (choices.Count > 8 || _search.Length > 0)
+            {
+                <div class="@_slots["filterField"]">
+                    <BxInput Value="@_search" ValueChanged="@OnSearch" Debounce="150" ClearOnEscape="true" Type="search" Placeholder="@ToolsMessages.FilterOptionsSearch"
+                             aria-label="@ToolsMessages.FilterOptionsSearch" autocomplete="off" LeadingIcon="@RenderIcon(Options.Icons.Search, "size-4")" data-slot="filter-options-search" />
+                </div>
+            }
+            <div role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)">
+            <ul class="@_slots["filterOptions"]" data-slot="filter-options">
+                @foreach (var choice in visible)
+                {
+                    var value = choice.Value;
+                    <li class="@_slots["filterOption"]" data-value="@value">
+                        <BxCheckbox Value="@_selected.Contains(value)" ValueChanged="@(on => OnToggle(value, on))" Label="@choice.Label" />
+                        @if (choice.Count is { } count)
+                        {
+                            <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                        }
+                    </li>
+                }
+            </ul>
+            </div>
+            @if (visible.Count == 0)
+            {
+                <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@(choices.Count == 0 ? ToolsMessages.FilterNoOptions : ToolsMessages.FilterNoOptionsMatch)</p>
+            }
+            <BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />
+        </text>;
+
+    // ---- the static editor: links and a GET form
+
+    private string? Href(FilterRule? rule) => Context.HrefWith(state => DataListContext<TItem>.WithFilter(state, Key, rule));
+
+    private RenderFragment Link(string? href, string label, bool active, string? name = null) =>
+        @<BxButton Href="@href" Label="@label" Variant="@(active ? ButtonVariant.Solid : ButtonVariant.Outline)" Color="@(active ? BxColor.Primary : BxColor.Neutral)" Size="BxSize.Sm"
+                   aria-current="@(active ? "true" : null)" aria-label="@name" data-slot="filter-choice" />;
+
+    private RenderFragment Static =>
+        @<text>
+            @{
+                var rule = Rule;
+                var op = rule?.Operator ?? _filter!.DefaultOperator;
+            }
+            @if (_filter!.Kind != FilterKind.Boolean && rule is not null && Operators.Count > 1)
+            {
+                <div class="@_slots["filterChoices"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterOperatorFor, _label)" data-slot="filter-operators">
+                    @foreach (var candidate in Operators)
+                    {
+                        @Link(Href(WithOperator(rule, candidate)), ToolsMessages.OperatorLabel(candidate), candidate == op)
+                    }
+                </div>
+            }
+            @switch (_filter.Kind)
+            {
+                case FilterKind.Text:
+                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
+                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
+                        {
+                            <input type="hidden" name="@name" value="@value" />
+                        }
+                        <input type="text" name="@Context.FilterFieldName(Key, op)" value="@(rule?.Value is FilterValue.Text text ? text.Value : "")" class="@_slots["filterInput"]"
+                               placeholder="@ToolsMessages.FilterTextPlaceholder" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" autocomplete="off" data-slot="filter-input" />
+                        <div class="@_slots["filterActions"]">
+                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
+                        </div>
+                    </form>
+                    break;
+                case FilterKind.Option:
+                    var selected = ValuesOf(rule);
+                    var choices = Context.FilterChoices(Key, selected);
+                    <ul class="@_slots["filterOptions"]" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-options">
+                        @foreach (var choice in choices)
+                        {
+                            var on = selected.Contains(choice.Value);
+                            <li>
+                                <a href="@Href(Toggled(rule, op, selected, choice.Value))" class="@_slots["filterOptionLink"]" aria-current="@(on ? "true" : null)" data-value="@choice.Value" data-slot="filter-option">
+                                    <span class="inline-flex min-w-0 items-center gap-2">
+                                        <span class="@(on ? "" : "invisible")" aria-hidden="true">@RenderIcon(Options.Icons.Check, _slots["filterOptionCheck"])</span>
+                                        <span class="truncate">@choice.Label</span>
+                                    </span>
+                                    @if (choice.Count is { } count)
+                                    {
+                                        <span class="@_slots["filterOptionCount"]"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+                        @if (choices.Count == 0)
+                        {
+                            <li class="@_slots["filterEmpty"]">@ToolsMessages.FilterNoOptions</li>
+                        }
+                        <li>
+                            <a href="@Href(OptionRule(Key, op, selected, !(rule?.IncludeEmpty ?? false)))" class="@_slots["filterOptionLink"]" aria-current="@((rule?.IncludeEmpty ?? false) ? "true" : null)" data-slot="filter-include-empty">
+                                <span class="inline-flex min-w-0 items-center gap-2">
+                                    <span class="@((rule?.IncludeEmpty ?? false) ? "" : "invisible")" aria-hidden="true">@RenderIcon(Options.Icons.Check, _slots["filterOptionCheck"])</span>
+                                    <span class="truncate">@ToolsMessages.FilterIncludeEmpty</span>
+                                </span>
+                            </a>
+                        </li>
+                    </ul>
+                    break;
+                case FilterKind.Boolean:
+                    <div class="@_slots["filterChoices"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean">
+                        @{
+                            var current = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : (bool?)null;
+                        }
+                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(true))), ToolsMessages.FilterYes, current == true)
+                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(false))), ToolsMessages.FilterNo, current == false)
+                        @Link(Href(null), ToolsMessages.FilterAny, current is null)
+                    </div>
+                    break;
+            }
+        </text>;
+
+    // The rule with another operator: an option rule keeps its values (one only with <c>is</c>), a text rule its text.
+    private FilterRule WithOperator(FilterRule rule, FilterOperator op)
+    {
+        if (_filter!.Kind != FilterKind.Option) return rule with { Operator = op };
+        var values = ValuesOf(rule);
+        if (op == FilterOperator.Is && values.Count > 1) values = [values[0]];
+        return OptionRule(Key, op, values, rule.IncludeEmpty) ?? rule with { Operator = op };
+    }
+
+    // The rule after a click on an option: the value added or taken off (replaced with <c>is</c>).
+    private FilterRule? Toggled(FilterRule? rule, FilterOperator op, List<string> selected, string value)
+    {
+        List<string> values;
+        if (op == FilterOperator.Is) values = selected.Contains(value) ? [] : [value];
+        else values = selected.Contains(value) ? [.. selected.Where(v => v != value)] : [.. selected, value];
+        return OptionRule(Key, op, values, rule?.IncludeEmpty ?? false);
+    }
+}

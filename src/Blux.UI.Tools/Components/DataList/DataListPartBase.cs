@@ -38,6 +38,7 @@ public abstract class DataListPartBase<TItem> : BxToolsComponentBase, IDisposabl
             _ = InvokeAsync(() =>
             {
                 Interlocked.Exchange(ref _renderQueued, 0);
+                OnContextUpdated();
                 StateHasChanged();
             });
         }
@@ -45,6 +46,11 @@ public abstract class DataListPartBase<TItem> : BxToolsComponentBase, IDisposabl
         {
             // The renderer went away with the page.
         }
+    }
+
+    /// <summary>Called on the renderer's thread when the list announced a change, just before this part renders again. Override it to read the new state of the list (a part that keeps a draft of it).</summary>
+    protected virtual void OnContextUpdated()
+    {
     }
 
     /// <summary>Unsubscribes from the list.</summary>

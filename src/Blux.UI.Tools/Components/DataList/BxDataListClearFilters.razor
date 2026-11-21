@@ -1,0 +1,43 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+@using Microsoft.AspNetCore.Components.Web
+
+@*
+    Takes every filter off (the search, the sort and the page size stay). It shows only while a filter is on, and works alone, outside the filter tags. Interactive it is a button that adds a history entry
+    and goes back to the first page; statically rendered it is a link.
+*@
+@if (Context.Schema is not null && Context.ActiveFilters.Count > 0)
+{
+    @if (Context.IsInteractive)
+    {
+        <BxButton Label="@(Label ?? ToolsMessages.ClearFilters)" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="@(Size ?? BxSize.Sm)" Class="@_slots["clearFilters"]"
+                  OnClick="Clear" data-slot="clear-filters" @attributes="AdditionalAttributes" />
+    }
+    else if (Context.HrefWith(DataListContext<TItem>.WithoutFilters) is { } href)
+    {
+        <BxButton Label="@(Label ?? ToolsMessages.ClearFilters)" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="@(Size ?? BxSize.Sm)" Class="@_slots["clearFilters"]"
+                  Href="@href" data-slot="clear-filters" @attributes="AdditionalAttributes" />
+    }
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The text of the button. Without it, the localized "Clear filters".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The size of the button. Defaults to small.</summary>
+    [Parameter] public BxSize? Size { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "clearFilters");
+
+    private void Clear(MouseEventArgs e)
+    {
+        // The button is gone once the filters are: the focus goes to the tags, which are still there to hold it.
+        Context.RequestFilterFocus();
+        Context.SetState(DataListContext<TItem>.WithoutFilters, QueryHistory.Push);
+    }
+}

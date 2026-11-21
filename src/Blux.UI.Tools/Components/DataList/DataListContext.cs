@@ -34,7 +34,7 @@ public enum DataListAlign
 /// again when it is raised. Write your own part by taking it as a cascading parameter.
 /// </summary>
 /// <typeparam name="TItem">The row type.</typeparam>
-public sealed class DataListContext<TItem>
+public sealed partial class DataListContext<TItem>
 {
     private readonly BxDataList<TItem> _owner;
 
