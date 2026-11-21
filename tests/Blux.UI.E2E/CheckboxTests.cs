@@ -71,7 +71,7 @@ public class CheckboxTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Mixed).ToBeCheckedAsync();
         await ExpectIndeterminate(Mixed, true);
 
-        // A render that does not involve the box leaves it alone.
+        // A parent render bumps the box's version, so the mixed state stays applied.
         await Page.GetByTestId("rerender").ClickAsync();
         await Assertions.Expect(Page.GetByTestId("rerender")).ToContainTextAsync("(1)");
         await ExpectIndeterminate(Mixed, true);
