@@ -39,7 +39,7 @@ public class StateQueryTests
         Assert.Equal(defaults, Parse());
         Assert.Equal([new DataListSort("name")], defaults.Sort);
         Assert.Equal(25, defaults.PageSize);
-        Assert.Equal([new FilterRule("archived", Op.Is, new FilterValue.Bool(false))], defaults.Filters);
+        Assert.Equal([new FilterRule("archived", Op.Is, new FilterValue.Boolean(false))], defaults.Filters);
     }
 
     private static DataListState Rich() => new(
@@ -51,9 +51,9 @@ public class StateQueryTests
             new FilterRule("lastLogin", Op.After, At("2024-03-02T10:30:00+02:00")),
             new FilterRule("status", Op.IsAnyOf, List("Active", "we,ird~"), IncludeEmpty: true),
             new FilterRule("department.name", Op.IsNot, List("Sales")),
-            new FilterRule("active", Op.Is, new FilterValue.Bool(true)),
+            new FilterRule("active", Op.Is, new FilterValue.Boolean(true)),
             new FilterRule("email", Op.IsEmpty),
-            new FilterRule("archived", Op.Is, new FilterValue.Bool(true)),
+            new FilterRule("archived", Op.Is, new FilterValue.Boolean(true)),
         ],
         [new DataListSort("age", true), new DataListSort("name")],
         3, 50, DataListLayout.Grid);
@@ -115,7 +115,7 @@ public class StateQueryTests
         var state = UrlSchema.DefaultState with
         {
             Search = "x", Page = 2, Layout = DataListLayout.Grid,
-            Filters = [new FilterRule("archived", Op.Is, new FilterValue.Bool(false)), new FilterRule("age", Op.Gt, Num(1))],
+            Filters = [new FilterRule("archived", Op.Is, new FilterValue.Boolean(false)), new FilterRule("age", Op.Gt, Num(1))],
         };
         var query = Write(state, "users");
         Assert.All(query.Keys, k => Assert.StartsWith("users.", k));
@@ -142,9 +142,9 @@ public class StateQueryTests
     public void A_url_rule_replaces_the_default_rule_of_its_key()
     {
         var state = Parse(("f.archived", "true"));
-        Assert.Equal([new FilterRule("archived", Op.Is, new FilterValue.Bool(true))], state.Filters);
+        Assert.Equal([new FilterRule("archived", Op.Is, new FilterValue.Boolean(true))], state.Filters);
         var other = Parse(("f.archived.isNot", "false"));
-        Assert.Equal([new FilterRule("archived", Op.IsNot, new FilterValue.Bool(false))], other.Filters);
+        Assert.Equal([new FilterRule("archived", Op.IsNot, new FilterValue.Boolean(false))], other.Filters);
     }
 
     // ---- invalid input never throws and falls back to the defaults
@@ -167,7 +167,7 @@ public class StateQueryTests
             ("f.name", "kept"),
             ("zzz", "1"));
         Assert.Equal(
-            [new FilterRule("archived", Op.Is, new FilterValue.Bool(false)), new FilterRule("name", Op.Contains, Text("kept"))],
+            [new FilterRule("archived", Op.Is, new FilterValue.Boolean(false)), new FilterRule("name", Op.Contains, Text("kept"))],
             state.Filters);
     }
 
@@ -177,7 +177,7 @@ public class StateQueryTests
         Assert.Equal(new FilterRule("age", Op.Gte, Num(3)), Parse(("f.age.GTE", "3")).Filters.Last());
         Assert.Equal(new FilterRule("age", Op.Gte, Num(3)), Parse(("f.age.gte", "3")).Filters.Last());
         Assert.DoesNotContain(Parse(("f.age.5", "3")).Filters, r => r.Key == "age");
-        Assert.Equal(new FilterRule("active", Op.Is, new FilterValue.Bool(true)), Parse(("f.active", "TRUE")).Filters.Last());
+        Assert.Equal(new FilterRule("active", Op.Is, new FilterValue.Boolean(true)), Parse(("f.active", "TRUE")).Filters.Last());
     }
 
     [Fact]
