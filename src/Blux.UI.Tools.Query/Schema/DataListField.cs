@@ -7,24 +7,36 @@ internal sealed class DataListField<T>
 {
     private Func<T, object?>? _getter;
 
-    public DataListField(string key, FieldAccessor accessor, bool sortable, DataListFilter? filter)
+    public DataListField(string key, ValueSource source, bool sortable, DataListFilter? filter)
     {
         Key = key;
-        Accessor = accessor;
+        Source = source;
         Sortable = sortable;
         Filter = filter;
     }
 
     public string Key { get; }
 
-    public FieldAccessor Accessor { get; }
+    public ValueSource Source { get; }
+
+    /// <summary>The scalar field, or the value read from one element of a collection field.</summary>
+    public FieldAccessor Accessor => Source.Value;
+
+    public bool IsCollection => Source.IsCollection;
 
     public bool Sortable { get; }
 
     public DataListFilter? Filter { get; }
 
     /// <summary>The value of the field for a row, boxed and null-safe along the chain. Compiled once.</summary>
-    public Func<T, object?> Getter => _getter ??= Compile();
+    public Func<T, object?> Getter => IsCollection
+        ? throw new InvalidOperationException("A collection field has no single value; it cannot be sorted.")
+        : _getter ??= Compile();
+
+    private Func<T, IEnumerable<object?>>? _values;
+
+    /// <summary>Every value of the field for a row: one for a scalar, one per element for a collection. Compiled once.</summary>
+    public Func<T, IEnumerable<object?>> Values => _values ??= Source.CompileValues<T>();
 
     private Func<T, object?> Compile()
     {

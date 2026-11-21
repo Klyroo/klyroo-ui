@@ -30,8 +30,8 @@ internal static class FilterExpressions
         var term = search?.Term?.Trim();
         if (string.IsNullOrEmpty(term)) return null;
         Expression? any = null;
-        foreach (var accessor in schema.SearchAccessors)
-            any = Or(any, ContainsIgnoreCase(accessor.Bind(p, nullSafe), term));
+        foreach (var source in schema.SearchSources)
+            any = Or(any, source.Exists(p, nullSafe, v => ContainsIgnoreCase(v, term)));
         return any;
     }
 
@@ -57,21 +57,33 @@ internal static class FilterExpressions
         if (rule.Key == excludeKey || schema.IsQueryFilter(rule.Key)) return null;
         if (!schema.TryGetField(rule.Key, out var field) || field.Filter is not { } filter || !filter.IsValid(rule)) return null;
 
-        var accessor = field.Accessor;
-        var v = accessor.Bind(p, nullSafe);
+        var source = field.Source;
+        var accessor = source.Value;
         var op = rule.Operator;
-        if (op == FilterOperator.IsEmpty) return IsEmpty(v, accessor);
-        if (op == FilterOperator.IsNotEmpty) return Expression.Not(IsEmpty(v, accessor));
 
-        var body = filter.Kind switch
+        // "The field is empty" is "no value is non-empty": a null or "" scalar, or a collection without any non-empty element (or a null collection).
+        Expression Empty() => source.IsCollection
+            ? Expression.Not(source.Exists(p, nullSafe, v => Expression.Not(IsEmpty(v, accessor))))
+            : IsEmpty(accessor.Bind(p, nullSafe), accessor);
+
+        if (op == FilterOperator.IsEmpty) return Empty();
+        if (op == FilterOperator.IsNotEmpty) return Expression.Not(Empty());
+
+        // isNot is the negation of is/isAnyOf, so on a collection it means "no element is any of the values".
+        var negate = op == FilterOperator.IsNot;
+        var positive = negate ? FilterOperator.Is : op;
+        Expression PerValue(Expression v) => filter.Kind switch
         {
-            FilterKind.Text => TextRule(v, op, (FilterValue.Text)rule.Value!),
-            FilterKind.Option => OptionRule(v, accessor, op, rule.Value!),
-            FilterKind.Boolean => BoolRule(v, op, (FilterValue.Bool)rule.Value!),
-            FilterKind.Number => NumberRule(v, accessor, op, rule.Value!),
-            _ => DateRule(v, accessor, op, rule.Value!),
+            FilterKind.Text => TextRule(v, positive, (FilterValue.Text)rule.Value!),
+            FilterKind.Option => OptionRule(v, accessor, positive, rule.Value!),
+            FilterKind.Boolean => BoolRule(v, positive, (FilterValue.Bool)rule.Value!),
+            FilterKind.Number => NumberRule(v, accessor, positive, rule.Value!),
+            _ => DateRule(v, accessor, positive, rule.Value!),
         };
-        return rule.IncludeEmpty ? Expression.OrElse(body, IsEmpty(v, accessor)) : body;
+
+        var body = source.Exists(p, nullSafe, PerValue);
+        if (negate) body = Expression.Not(body);
+        return rule.IncludeEmpty ? Expression.OrElse(body, Empty()) : body;
     }
 
     private static Expression TextRule(Expression v, FilterOperator op, FilterValue.Text value) => op switch

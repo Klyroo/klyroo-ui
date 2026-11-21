@@ -25,7 +25,7 @@ public static class InMemoryDataList
         var clean = schema.Sanitize(request);
         var rows = items as IReadOnlyList<T> ?? [.. items];
 
-        var predicate = FilterExpressions.Rows(schema, clean.Filter, clean.Search, excludeKey: null, nullSafe: true)?.Compile();
+        var predicate = schema.GetPredicate(clean.Filter, clean.Search, excludeKey: null);
         var matching = predicate is null ? rows : rows.Where(predicate).ToList();
 
         IReadOnlyList<DataListFacetResult>? facets = clean.Facets.Count == 0
@@ -146,16 +146,20 @@ public static class InMemoryDataList
     {
         schema.TryGetField(facet.Key, out var field);
         var exclude = facet.Mode == FacetMode.ExcludeSelf ? facet.Key : null;
-        var predicate = FilterExpressions.Rows(schema, request.Filter, request.Search, exclude, nullSafe: true)?.Compile();
+        var predicate = schema.GetPredicate(request.Filter, request.Search, exclude);
 
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         var missing = 0;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var row in rows)
         {
             if (predicate is not null && !predicate(row)) continue;
-            var text = TextConvert.Format(field!.Getter(row));
-            if (text is null) missing++;
-            else counts[text] = counts.GetValueOrDefault(text) + 1;
+            // a row counts once per distinct value, whatever the number of elements that carry it
+            seen.Clear();
+            foreach (var value in field!.Values(row))
+                if (TextConvert.Format(value) is { } text) seen.Add(text);
+            if (seen.Count == 0) missing++;
+            foreach (var text in seen) counts[text] = counts.GetValueOrDefault(text) + 1;
         }
 
         IEnumerable<KeyValuePair<string, int>> options = counts;

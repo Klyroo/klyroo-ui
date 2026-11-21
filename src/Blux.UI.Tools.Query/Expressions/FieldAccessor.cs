@@ -11,8 +11,9 @@ namespace Blux.UI.Tools.Query;
 /// </summary>
 internal sealed class FieldAccessor
 {
-    private FieldAccessor(LambdaExpression lambda, Expression body, MemberInfo[]? chain)
+    private FieldAccessor(LambdaExpression lambda, Expression body, MemberInfo[]? chain, bool guardRoot)
     {
+        GuardRoot = guardRoot;
         Lambda = lambda;
         Body = body;
         Chain = chain;
@@ -21,6 +22,9 @@ internal sealed class FieldAccessor
         LiftedType = Lift(Type);
         Path = chain is null ? null : string.Join('.', chain.Select(m => m.Name));
     }
+
+    /// <summary>Whether the root of the chain (the lambda parameter) is null-checked too: true for the elements of a collection, which can be null.</summary>
+    public bool GuardRoot { get; }
 
     public LambdaExpression Lambda { get; }
 
@@ -43,7 +47,7 @@ internal sealed class FieldAccessor
     /// <summary>The default stable key: the path with each segment in camelCase (<c>department.name</c>), or <see langword="null"/> when the body is not a member chain.</summary>
     public string? DefaultKey => Path is null ? null : string.Join('.', Path.Split('.').Select(CamelCase));
 
-    public static FieldAccessor Create(LambdaExpression lambda)
+    public static FieldAccessor Create(LambdaExpression lambda, bool guardRoot = false)
     {
         ArgumentNullException.ThrowIfNull(lambda);
         var body = lambda.Body;
@@ -64,11 +68,11 @@ internal sealed class FieldAccessor
             members.Reverse();
             chain = [.. members];
         }
-        return new FieldAccessor(lambda, body, chain);
+        return new FieldAccessor(lambda, body, chain, guardRoot);
     }
 
     /// <summary>The expression of the field for <paramref name="parameter"/>, lifted; null-safe along the chain when <paramref name="nullSafe"/> and the body is a member chain.</summary>
-    public Expression Bind(ParameterExpression parameter, bool nullSafe)
+    public Expression Bind(Expression parameter, bool nullSafe)
     {
         if (nullSafe && Chain is not null)
         {
@@ -85,7 +89,7 @@ internal sealed class FieldAccessor
         if (index == chain.Length)
             return LiftedType == current.Type ? current : Expression.Convert(current, LiftedType);
         // The parameter itself (index 0) is never null; every later link is checked before its members are read.
-        if (index > 0 && (!current.Type.IsValueType || Nullable.GetUnderlyingType(current.Type) is not null))
+        if ((index > 0 || GuardRoot) && (!current.Type.IsValueType || Nullable.GetUnderlyingType(current.Type) is not null))
         {
             var next = Expression.MakeMemberAccess(current, chain[index]);
             return Expression.Condition(
@@ -104,7 +108,7 @@ internal sealed class FieldAccessor
     internal static string CamelCase(string name) =>
         name.Length == 0 || char.IsLower(name[0]) ? name : char.ToLowerInvariant(name[0]) + name[1..];
 
-    internal sealed class ParameterReplacer(ParameterExpression from, ParameterExpression to) : ExpressionVisitor
+    internal sealed class ParameterReplacer(ParameterExpression from, Expression to) : ExpressionVisitor
     {
         [return: NotNullIfNotNull(nameof(node))]
         public override Expression? Visit(Expression? node) => base.Visit(node);
