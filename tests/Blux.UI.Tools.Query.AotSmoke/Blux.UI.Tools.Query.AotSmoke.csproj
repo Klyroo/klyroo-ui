@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- A NativeAOT smoke check for Blux.UI.Tools.Query: the console app builds a schema, sanitizes a request and runs the in-memory executor, and it must do so
+       after `dotnet publish -p:PublishAot=true` (the trim and AOT analyzers run on it too). It backs the IsAotCompatible claim of the package.
+       Publishing needs the platform linker (clang on Linux and macOS, the C++ build tools on Windows); CI runs it in the build job.
+       Not covered: DataListJsonContext (the JSON wire model). ILCompiler 10.0.15 and 11.0.0 fail on it with "An item with the same key has already been added.
+       Key: __GenericInstance_Object_..._FilterValue_Bool": a nested record named Bool in a System.Text.Json polymorphic hierarchy with source generation is enough to
+       reproduce it, renaming the nested type fixes it. The cursor therefore has a JSON context of its own, so that running a request never reaches the wire model. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Blux.UI.Tools.Query\Blux.UI.Tools.Query.csproj" />
+  </ItemGroup>
+
+</Project>
