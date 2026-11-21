@@ -4,17 +4,17 @@
 @attribute [CascadingTypeParameter(nameof(TItem))]
 @using Blux.UI.Internal
 
-<CascadingValue TValue="BxDataListTable<TItem>" Value="this" IsFixed="true">
     @ChildContent
     @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
     <DataListLoadTrigger TItem="TItem" />
     <Defer>
         @{
             var columns = Columns();
-            var label = Caption ?? AriaLabel;
+            var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
         }
-        <div class="@_slots["tableRoot"]" data-slot="table-root" tabindex="0" role="@(label is null ? null : "region")" aria-label="@label" @attributes="AdditionalAttributes">
-            <table class="@_slots["table"]" data-slot="table">
+        @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
+        <div class="@_slots["tableRoot"]" data-slot="table-root" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
+            <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>
@@ -58,30 +58,29 @@
                     }
                     else
                     {
-                        @foreach (var item in Context.Rows)
+                        @foreach (var row in RowEntries())
                         {
-                            <tr class="@_slots["tr"]" data-slot="row">
+                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" Class="@_slots["tr"]">
                                 @foreach (var column in columns)
                                 {
-                                    <td class="@CellClass(column)">@Cell(column, item)</td>
+                                    <td class="@CellClass(column)">@Cell(column, row.Item)</td>
                                 }
-                            </tr>
+                            </DataListRowView>
                         }
                     }
                 </tbody>
             </table>
         </div>
     </Defer>
-</CascadingValue>
 
 @code {
-    private readonly List<BxDataListColumn<TItem>> _columns = [];
     private SlotSet _slots = default!;
+    private int _parentRenders;
 
     /// <summary>The columns: <see cref="BxDataListColumn{TItem}"/> components. Without any, the table shows one column per field of the schema.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>Names the table for assistive technologies (visually hidden), and the scrolling region around it.</summary>
+    /// <summary>Names the table for assistive technologies (visually hidden), and the scrolling region around it. Without it, the <c>AriaLabel</c> of the table, then the label of the list, then the localized "Results".</summary>
     [Parameter] public string? Caption { get; set; }
 
     /// <summary>The accessible name of the table when there is no <see cref="Caption"/>.</summary>
@@ -90,21 +89,21 @@
     /// <summary>Shown when the list has no rows. It receives the list, whose <see cref="DataListContext{TItem}.IsFiltered"/> tells "nothing matches" from "nothing exists". Without it, <see cref="BxDataListEmpty"/>.</summary>
     [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
 
-    internal void AddColumn(BxDataListColumn<TItem> column)
+    // Parts that list the columns (a columns panel) render before the columns exist: they hear about a change in the registry once the table has rendered.
+    protected override void OnAfterRender(bool firstRender)
     {
-        if (!_columns.Contains(column)) _columns.Add(column);
+        var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}"));
+        if (signature == Context.ColumnsSignature) return;
+        Context.ColumnsSignature = signature;
+        Context.NotifyChanged();
     }
 
-    internal void RemoveColumn(BxDataListColumn<TItem> column) => _columns.Remove(column);
+    // A render caused by the parent (new templates, new parameters) rebuilds the rows; one caused by the list (a flag, a new result) rebuilds them only for a new result.
+    private int Revision => unchecked(_parentRenders * 7919 + Context.ResultVersion);
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        base.OnInitialized();
-        // A list without a schema builds one from the columns that name a property.
-        Context.SetImplicitColumns(() => [.. _columns.Where(c => c.Property is not null).Select(c => ((System.Linq.Expressions.LambdaExpression)c.Property!, c.Key, c.Sortable ?? true))]);
-    }
-
-    protected override void OnParametersSet() =>
+        _parentRenders++;
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>
         {
             ["density"] = Context.Density switch
@@ -114,6 +113,39 @@
                 _ => "default",
             },
         }, Ui, "tableRoot");
+    }
+
+    private sealed record RowEntry(object Key, TItem Item);
+
+    // The rows with a key each: the row key of the schema, else the identity of the row. A schema whose keys repeat (a data error) falls back to the position.
+    private List<RowEntry> RowEntries()
+    {
+        var schema = Context.Schema;
+        var rows = Context.Rows;
+        var entries = new List<RowEntry>(rows.Count);
+        if (schema is { HasRowKey: true })
+        {
+            var seen = new HashSet<object>();
+            var unique = true;
+            foreach (var item in rows)
+            {
+                var key = schema.GetRowKey(item);
+                unique &= seen.Add(key);
+                entries.Add(new RowEntry(key, item));
+            }
+            if (unique) return entries;
+            entries.Clear();
+        }
+        var identities = new HashSet<object>();
+        var index = 0;
+        foreach (var item in rows)
+        {
+            object key = item is not null && identities.Add(new RowReferenceKey(item)) ? new RowReferenceKey(item) : index;
+            entries.Add(new RowEntry(key, item));
+            index++;
+        }
+        return entries;
+    }
 
     private sealed record View(BxDataListColumn<TItem>? Source, string? Key, string Title, DataListAlign Align, bool Sortable, string? Class);
 
@@ -121,9 +153,9 @@
     private List<View> Columns()
     {
         var schema = Context.Schema;
-        if (_columns.Count > 0)
+        if (Context.Columns.Count > 0)
         {
-            return [.. _columns.Select(c =>
+            return [.. Context.Columns.Where(c => c.Visible).Select(c =>
             {
                 var key = c.ResolvedKey;
                 var sortable = key is not null && schema is not null && schema.SortKeys.Contains(key) && (c.Sortable ?? true);

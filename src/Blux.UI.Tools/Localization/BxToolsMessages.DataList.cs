@@ -43,4 +43,10 @@ public sealed partial record BxToolsMessages
 
     /// <summary>Button of the error state that sends the request again.</summary>
     public string Retry { get; init; } = "Try again";
+
+    /// <summary>The default accessible name of the table of a data list that has no label of its own.</summary>
+    public string Results { get; init; } = "Results";
+
+    /// <summary>The accessible name of the pagination of a labelled data list. {0} is the label of the list.</summary>
+    public string PaginationFor { get; init; } = "Pagination, {0}";
 }

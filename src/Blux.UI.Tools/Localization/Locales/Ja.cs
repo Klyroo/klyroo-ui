@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "データを読み込めませんでした",
             ErrorDescription = "データの読み込み中にエラーが発生しました。もう一度お試しください。",
             Retry = "再試行",
+            Results = "結果",
+            PaginationFor = "ページ送り、{0}",
         };
 }

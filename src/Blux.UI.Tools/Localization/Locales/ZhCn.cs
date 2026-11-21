@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "无法加载数据",
             ErrorDescription = "加载数据时出错，请重试。",
             Retry = "重试",
+            Results = "结果",
+            PaginationFor = "分页，{0}",
         };
 }

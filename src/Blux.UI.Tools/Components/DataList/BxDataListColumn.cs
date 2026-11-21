@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components;
 namespace Blux.UI.Tools;
 
 /// <summary>
-/// A column of <see cref="BxDataListTable{TItem}"/>. Renders nothing itself: it registers with its table, in the order the columns first rendered.
+/// A column of <see cref="BxDataListTable{TItem}"/>. Renders nothing itself: it registers with its list (<see cref="DataListContext{TItem}.Columns"/>).
 /// What a cell shows comes from one of three places: <see cref="Template"/>, <see cref="Property"/> or <see cref="Field"/>.
 /// </summary>
 /// <typeparam name="TItem">The row type.</typeparam>
@@ -15,7 +15,8 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     private Expression<Func<TItem, object?>>? _compiledFrom;
     private Func<TItem, object?>? _compiled;
 
-    [CascadingParameter] private BxDataListTable<TItem>? Table { get; set; }
+    // The list: columns register with it, not with a table, so a columns panel can see them.
+    [CascadingParameter] private DataListContext<TItem>? Context { get; set; }
 
     /// <summary>The key of a field of the schema: the cell shows its value and the header sorts by it when the schema allows. With <see cref="Template"/> it names the field the header sorts by.</summary>
     [Parameter] public string? Field { get; set; }
@@ -49,6 +50,24 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// <summary>Classes added to the header and the cells of this column.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <summary>
+    /// Where the column sits among the others: columns are sorted by this number, then by the order in which they first rendered (the order of the markup for columns that
+    /// exist from the start). A column that an <c>@if</c> adds later renders after the others unless it has an <c>Order</c>; <see cref="Visible"/> avoids the question.
+    /// </summary>
+    [Parameter] public int Order { get; set; }
+
+    /// <summary>
+    /// Whether the table shows the column (true by default). A hidden column stays in <see cref="DataListContext{TItem}.Columns"/> and keeps its place in the order, which
+    /// is why this is the way to show and hide columns; an <c>@if</c> around a column works too, but the column then registers at its place in the markup only while it exists.
+    /// </summary>
+    [Parameter] public bool Visible { get; set; } = true;
+
+    /// <summary>The key of the column: <see cref="Key"/>, <see cref="Field"/> or the member path of <see cref="Property"/> in camel case.</summary>
+    public string? EffectiveKey => ResolvedKey;
+
+    /// <summary>The header of the column: <see cref="Title"/>, or its key written as words.</summary>
+    public string EffectiveTitle => ResolvedTitle;
+
     internal string? ResolvedKey
     {
         get
@@ -63,9 +82,9 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
 
     internal bool HasValue => Template is not null || Property is not null || Field is not null;
 
-    protected override void OnInitialized()
+    protected override void OnParametersSet()
     {
-        if (Table is null)
+        if (Context is null)
         {
             throw new InvalidOperationException($"{nameof(BxDataListColumn<TItem>)} must be placed inside a {nameof(BxDataListTable<TItem>)}.");
         }
@@ -77,8 +96,15 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
         {
             throw new InvalidOperationException($"{nameof(BxDataListColumn<TItem>)} '{Title}' sorts but has no {nameof(Field)} or {nameof(Key)}: a template has no value to sort by.");
         }
-        Table.AddColumn(this);
+        _registeredWith = Context;
+        _index ??= Context.NextColumnIndex();
+        Context.AddColumn(this);
     }
+
+    private DataListContext<TItem>? _registeredWith;
+    private int? _index;
+
+    internal int RegistrationIndex => _index ?? int.MaxValue;
 
     // The table reads the values of its columns when it renders, after them: a column never renders by itself.
     protected override bool ShouldRender() => false;
@@ -116,7 +142,7 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     }
 
     /// <summary>Takes the column out of its table.</summary>
-    public void Dispose() => Table?.RemoveColumn(this);
+    public void Dispose() => _registeredWith?.RemoveColumn(this);
 }
 
 /// <summary>Small text helpers of the data list.</summary>

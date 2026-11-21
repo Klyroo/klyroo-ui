@@ -268,6 +268,39 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Calls).ToHaveTextAsync("0");
     }
 
+    [Theory]
+    [InlineData("server")]
+    [InlineData("wasm")]
+    [InlineData("auto")]
+    public async Task With_per_page_interactivity_a_prerendered_list_is_not_loaded_a_second_time(string mode)
+    {
+        // The router renders statically and only this page has a render mode: the component that registers the persisted result sees no mode from a parent.
+        await Page.GotoAsync($"/perpage/{mode}");
+        await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+
+        await Assertions.Expect(Rows(Url)).ToHaveCountAsync(10);
+        await Assertions.Expect(Calls).ToHaveTextAsync("0");
+        await Page.WaitForTimeoutAsync(500);
+        await Assertions.Expect(Calls).ToHaveTextAsync("0");
+
+        await Sort(mode, "Customer", "ascending").ClickAsync();
+
+        await Assertions.Expect(Calls).ToHaveTextAsync("1");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Every_list_has_a_named_table_and_its_own_pagination_landmark(string mode)
+    {
+        await OpenList(mode);
+
+        foreach (var label in new[] { "Invoices in memory", "Invoices from a provider", "Invoices in the URL", "Invoices from a flaky backend" })
+        {
+            await Assertions.Expect(Page.GetByRole(AriaRole.Navigation, new() { Name = $"Pagination, {label}", Exact = true })).ToHaveCountAsync(1);
+        }
+        await Assertions.Expect(Page.GetByRole(AriaRole.Region, new() { Name = "Invoices", Exact = true })).ToHaveCountAsync(1);
+    }
+
     [Fact]
     public async Task A_static_render_loads_the_list_once()
     {

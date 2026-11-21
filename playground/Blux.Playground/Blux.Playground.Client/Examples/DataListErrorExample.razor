@@ -9,7 +9,7 @@
         <BxButton Label="Break the backend" Href="@Query.HrefWith(("broken", "1"))" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" data-testid="err-break" />
         <BxButton Label="Repair the backend" Href="@Query.HrefWith(("broken", (string?)null))" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" data-testid="err-repair" />
     </p>
-    <BxDataList TItem="Invoice" Schema="InvoiceData.Schema" Provider="LoadAsync" UrlKey="err">
+    <BxDataList TItem="Invoice" Label="Invoices from a flaky backend" Schema="InvoiceData.Schema" Provider="LoadAsync" UrlKey="err">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <BxDataListResultCount />
             <BxDataListRefresh />
@@ -20,7 +20,7 @@
             <BxDataListColumn Field="customer" />
             <BxDataListColumn Field="status" />
         </BxDataListTable>
-        <BxDataListPagination AriaLabel="Flaky backend pagination" />
+        <BxDataListPagination />
     </BxDataList>
 </div>
 

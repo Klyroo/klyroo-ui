@@ -23,6 +23,9 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 
 `BxDataList` sorts and pages in memory (`Items`) or asks a provider; its state (sort, page, page size) lives in the URL, as links and GET forms in static rendering and as buttons otherwise.
 
+A list takes one source: `Items` (in memory), a `Provider`, or a `Queryable` (an EF Core query, with a schema). A queryable runs through an `IDataListQueryExecutor`; the default one blocks the thread,
+so add [Blux.UI.Tools.EntityFrameworkCore](https://www.nuget.org/packages/Blux.UI.Tools.EntityFrameworkCore) and `services.AddBluxUiToolsEntityFrameworkAdapter()` for `CountAsync` and `ToListAsync`.
+
 Styles: this package has **no precompiled stylesheet** (a second sheet loaded after `blux.css` would repeat base utilities in its own layer and override the
 responsive and dark variants of Blux.UI), so the app must compile Tailwind.
 

@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "تعذّر تحميل البيانات",
             ErrorDescription = "حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.",
             Retry = "إعادة المحاولة",
+            Results = "النتائج",
+            PaginationFor = "ترقيم الصفحات، {0}",
         };
 }

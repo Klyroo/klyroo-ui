@@ -1,6 +1,6 @@
 @* Rows in memory, described by a schema: the list sorts and pages them itself. The state lives in the URL under the prefix "mem" (mem.s, mem.p, mem.ps). *@
 <div class="w-full" data-testid="list-memory">
-    <BxDataList TItem="Invoice" Schema="InvoiceData.Schema" Items="InvoiceData.All" UrlKey="mem" ResultJson="DemoJson.Default.DataListResultInvoice">
+    <BxDataList TItem="Invoice" Label="Invoices in memory" Schema="InvoiceData.Schema" Items="InvoiceData.All" UrlKey="mem" ResultJson="DemoJson.Default.DataListResultInvoice">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <BxDataListResultCount />
             <BxDataListRefresh />
@@ -13,6 +13,6 @@
             <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
             <BxDataListColumn Field="issued" Format="d" />
         </BxDataListTable>
-        <BxDataListPagination AriaLabel="Invoices pagination" />
+        <BxDataListPagination />
     </BxDataList>
 </div>

@@ -6,7 +6,7 @@
 @* No UrlKey: the state uses the plain keys s, p and ps. Sort or page, then use Back and Forward, or share the address. The footer is a test hook that counts the provider calls
    of this render: a list that shows the result of its prerender loads nothing a second time. *@
 <div class="w-full space-y-3" data-testid="list-url">
-    <BxDataList TItem="Invoice" Schema="InvoiceData.Schema" Provider="LoadAsync" ResultJson="DemoJson.Default.DataListResultInvoice">
+    <BxDataList TItem="Invoice" Label="Invoices in the URL" Schema="InvoiceData.Schema" Provider="LoadAsync" ResultJson="DemoJson.Default.DataListResultInvoice">
         <div class="flex flex-wrap items-center justify-between gap-2">
             <BxDataListResultCount data-testid="url-count" />
             <BxDataListRefresh data-testid="url-refresh" />
@@ -18,7 +18,7 @@
             <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
             <BxDataListColumn Field="issued" Format="d" />
         </BxDataListTable>
-        <BxDataListPagination AriaLabel="URL pagination" data-testid="url-pagination" />
+        <BxDataListPagination data-testid="url-pagination" />
     </BxDataList>
     <p class="font-mono text-xs text-(--blux-text-muted)">
         Provider calls: <span data-testid="url-calls">@Calls.Count</span>

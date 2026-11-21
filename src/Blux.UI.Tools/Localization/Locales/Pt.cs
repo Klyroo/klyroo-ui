@@ -20,5 +20,7 @@ public static partial class BxToolsLocales
             ErrorTitle = "Não foi possível carregar os dados",
             ErrorDescription = "Ocorreu um erro ao carregar os dados. Tente novamente.",
             Retry = "Tentar novamente",
+            Results = "Resultados",
+            PaginationFor = "Paginação, {0}",
         };
 }

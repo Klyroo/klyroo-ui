@@ -349,4 +349,57 @@ public class DataListControllerTests
 
         Assert.Equal([(true, 0), (false, 10)], raised);
     }
+
+    [Fact]
+    public async Task Cancel_announces_the_end_of_the_load_it_stops()
+    {
+        var gate = new Gate();
+        using var controller = new DataListController<Person>(Schema, gate.Provider);
+        var load = controller.LoadAsync(State());
+        var raised = 0;
+        controller.Changed += () => raised++;
+
+        controller.Cancel();
+        await load;
+
+        Assert.False(controller.IsLoading);
+        Assert.Equal(1, raised);
+        controller.Cancel();
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
+    public async Task The_time_zone_of_an_adopted_result_is_set_once_the_browser_told_it()
+    {
+        var provider = Schema.InMemoryProvider(People);
+        using var controller = new DataListController<Person>(Schema, provider);
+        var state = State();
+        var request = controller.BuildRequest(state);
+        controller.Adopt(state, state, request, await provider(request, CancellationToken.None));
+        Assert.Null(controller.LoadedRequest!.TimeZone);
+
+        controller.SetLoadedTimeZone("Europe/Paris");
+
+        Assert.Equal("Europe/Paris", controller.LoadedRequest!.TimeZone);
+    }
+
+    [Fact]
+    public async Task The_result_version_counts_new_results_and_not_flags()
+    {
+        var gate = new Gate();
+        using var controller = new DataListController<Person>(Schema, gate.Provider);
+        Assert.Equal(0, controller.ResultVersion);
+
+        var load = controller.LoadAsync(State());
+        Assert.Equal(0, controller.ResultVersion);
+        gate.Calls[0].Done.SetResult(Gate.Page(45, 1));
+        await load;
+
+        Assert.Equal(1, controller.ResultVersion);
+        var refresh = controller.RefreshAsync();
+        Assert.Equal(1, controller.ResultVersion);
+        gate.Calls[1].Done.SetResult(Gate.Page(45, 1));
+        await refresh;
+        Assert.Equal(2, controller.ResultVersion);
+    }
 }

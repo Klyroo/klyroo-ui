@@ -8,9 +8,8 @@ namespace Blux.UI.Tools;
 /// <see cref="BxDataList{TItem}"/> component owns one and publishes its flags to the parts through <see cref="DataListContext{TItem}"/>.
 /// </summary>
 /// <remarks>
-/// Exactly one source feeds a list: <c>Items</c> (run in memory by <see cref="InMemoryDataList"/>) or a <see cref="DataListProvider{T}"/>.
-/// <c>Queryable</c> is not a source yet: the applier that turns a request into a query on an <c>IQueryable</c> is being built in
-/// <c>Blux.UI.Tools.Query</c>, and running a query through the in-memory path would pull the whole table into memory.
+/// Exactly one source feeds a list: <c>Items</c> (run in memory by <see cref="InMemoryDataList"/>), a <c>Queryable</c> (a database query, translated by
+/// <see cref="QueryableDataList"/> and run by an <see cref="IDataListQueryExecutor"/>) or a <see cref="DataListProvider{T}"/>.
 /// </remarks>
 /// <typeparam name="TItem">The row type.</typeparam>
 public sealed class DataListController<TItem> : IDisposable
@@ -58,6 +57,9 @@ public sealed class DataListController<TItem> : IDisposable
     /// <summary>Why the newest load failed; <see langword="null"/> when it did not. The rows of the previous result stay in <see cref="Rows"/>.</summary>
     public Exception? Error { get; private set; }
 
+    /// <summary>Counts the results shown so far: it changes when a load or an adoption replaces <see cref="Result"/>, not when only a flag changes.</summary>
+    public int ResultVersion { get; private set; }
+
     /// <summary>The rows of <see cref="Result"/>, empty before the first load.</summary>
     public IReadOnlyList<TItem> Rows => Result?.Items ?? [];
 
@@ -83,15 +85,22 @@ public sealed class DataListController<TItem> : IDisposable
     /// <param name="items">Rows in memory.</param>
     /// <param name="provider">A provider.</param>
     /// <exception cref="InvalidOperationException">None or both were given.</exception>
-    public static DataListProvider<TItem> CreateProvider(DataListSchema<TItem> schema, IEnumerable<TItem>? items, DataListProvider<TItem>? provider)
+    /// <param name="queryable">A query of a database provider, run through <see cref="QueryableDataList"/> with <paramref name="executor"/>.</param>
+    /// <param name="executor">Runs the queries of <paramref name="queryable"/>; the synchronous one when <see langword="null"/>.</param>
+    public static DataListProvider<TItem> CreateProvider(
+        DataListSchema<TItem> schema,
+        IEnumerable<TItem>? items,
+        DataListProvider<TItem>? provider,
+        IQueryable<TItem>? queryable = null,
+        IDataListQueryExecutor? executor = null)
     {
         ArgumentNullException.ThrowIfNull(schema);
-        if (items is not null && provider is not null)
-            throw new InvalidOperationException("A data list takes one source: give it Items or a Provider, not both.");
+        if ((items is not null ? 1 : 0) + (provider is not null ? 1 : 0) + (queryable is not null ? 1 : 0) > 1)
+            throw new InvalidOperationException("A data list takes one source: give it Items, a Queryable or a Provider, not several.");
         if (provider is not null) return provider;
-        // TODO(Queryable): when the IQueryable applier of Blux.UI.Tools.Query lands, a third source runs the request on the query and the provider here goes through it.
+        if (queryable is not null) return DataListQueryableProvider.Create(schema, queryable, executor ?? SynchronousDataListQueryExecutor.Instance);
         if (items is not null) return schema.InMemoryProvider(items);
-        throw new InvalidOperationException("A data list needs a source: give it Items or a Provider.");
+        throw new InvalidOperationException("A data list needs a source: give it Items, a Queryable or a Provider.");
     }
 
     /// <summary>Brings a state into the range the schema allows: a page of at least 1 and a page size from 1 to <see cref="DataListSchema.MaxPageSize"/> (the default one for zero or less).</summary>
@@ -121,6 +130,7 @@ public sealed class DataListController<TItem> : IDisposable
     {
         Interlocked.Increment(ref _version);
         Result = result;
+        ResultVersion++;
         LoadedState = loaded;
         LoadedRequest = request;
         RequestedState = state;
@@ -178,6 +188,7 @@ public sealed class DataListController<TItem> : IDisposable
             }
 
             Result = result;
+            ResultVersion++;
             LoadedState = normalized;
             LoadedRequest = request;
         }
@@ -195,6 +206,12 @@ public sealed class DataListController<TItem> : IDisposable
         IsLoading = false;
         _refreshing = false;
         Changed?.Invoke();
+    }
+
+    /// <summary>Sets the time zone of the request an adopted result stands for, once the browser told it (the prerender ran in UTC).</summary>
+    public void SetLoadedTimeZone(string? timeZone)
+    {
+        if (LoadedRequest is { } request) LoadedRequest = request with { TimeZone = timeZone };
     }
 
     /// <summary>Loads the state of the newest load again: the retry after an error and the refresh button.</summary>
@@ -216,8 +233,10 @@ public sealed class DataListController<TItem> : IDisposable
         {
             cts.Dispose();
         }
+        var wasLoading = IsLoading;
         IsLoading = false;
         _refreshing = false;
+        if (wasLoading) Changed?.Invoke();
     }
 
     /// <summary>Cancels the running load. The controller cannot load afterwards.</summary>
