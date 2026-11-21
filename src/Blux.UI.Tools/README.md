@@ -9,10 +9,14 @@ Interactive Server, WebAssembly and Auto, in 12 languages, and is themed through
 builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 ```
 
-Stylesheet:
+Styles: this package has **no precompiled stylesheet** (a second sheet loaded after `blux.css` would repeat base utilities in its own layer and override the
+responsive and dark variants of Blux.UI), so the app must compile Tailwind.
 
-- Without Tailwind in the app, link `_content/Blux.UI.Tools/blux-tools.css` after `blux.css`.
-- With Tailwind in the app, import `obj/blux/blux-tools.theme.css` (copied by the package) after `obj/blux/blux.theme.css`.
+- With `<BluxTailwind>true</BluxTailwind>` (Tailwind at build time, no Node) there is nothing to add: the build imports the classes of this package.
+- With your own Tailwind, import `obj/blux/blux-tools.theme.css` (copied by the package) after `obj/blux/blux.theme.css`, and set
+  `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>` in the project. Without either, the build warns with `BLUXTOOLS001`.
+
+The package depends on exactly the version of Blux.UI (and of Blux.UI.Tools.Query) it was built with: keep them at the same version.
 
 Texts are in `BxToolsMessages`, one table per locale of Blux.UI (`BluxToolsOptions.Messages` overrides a table).
 `Blux.UI.Tools.Query` holds the Blazor-free request and filter models, for API servers.

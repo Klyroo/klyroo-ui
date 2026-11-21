@@ -118,10 +118,15 @@ try {
       check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
     }
     if (id === "Blux.UI.Tools") {
-      check(new RegExp(`<dependency id="Blux\\.UI\\.Tools\\.Query"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on Blux.UI.Tools.Query ${version}`);
-      for (const n of ["staticwebassets/blux-tools.css", "staticwebassets/blux-tools.theme.css", "buildTransitive/Blux.UI.Tools.targets", "build/Blux.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
+      // Lockstep: exactly the version of Blux.UI and of the query package, and the build assets of Blux.UI still flow to an app that only references Tools.
+      for (const dep of ["Blux\\.UI", "Blux\\.UI\\.Tools\\.Query"]) {
+        check(new RegExp(`<dependency id="${dep}" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly ${dep.replace(/\\/g, "")} [${version}]`);
+      }
+      check(!/<dependency id="Blux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Blux.UI flow through this package`);
+      for (const n of ["staticwebassets/blux-tools.theme.css", "buildTransitive/Blux.UI.Tools.targets", "build/Blux.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
       const names = [...pkg.keys()];
       check(names.some((n) => /^staticwebassets\/Blux\.UI\.Tools(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), `${id}: nupkg contains the JS initializer (Blux.UI.Tools.lib.module.js, fingerprinted)`);
+      check(!names.includes("staticwebassets/blux-tools.css"), `${id}: no precompiled stylesheet in the nupkg (it needs Tailwind compiled by the app)`);
       check(names.some((n) => /^build\/.*StaticWebAssets/i.test(n)), `${id}: nupkg declares its static web assets for consumers`);
       check(!names.some((n) => /^(js|styles)\//.test(n)), `${id}: sources of generated assets (js/, styles/) are not shipped`);
       const toolsTheme = readFileSync(join(root, "src", "Blux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8");
@@ -151,7 +156,7 @@ try {
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
   // The server also uses the local image optimizer; the client only needs the URL builder. Both use Blux.UI.Tools (a Razor class library with its own CSS and JS initializer).
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Blux.UI.Tools" Version="${version}" /></ItemGroup>\n</Project>`));
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Blux.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><BluxToolsOwnTailwind>true</BluxToolsOwnTailwind></PropertyGroup>\n</Project>`));
   }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
@@ -185,15 +190,21 @@ try {
   };
 
   // Mode A: precompiled CSS.
-  writeFileSync(appRazor, original.replace(/ *<link rel="stylesheet" href="@Assets\["lib\/bootstrap[^\n]*\n/, `    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI.Tools/blux-tools.css"]" />\n`));
+  writeFileSync(appRazor, original.replace(/ *<link rel="stylesheet" href="@Assets\["lib\/bootstrap[^\n]*\n/, `    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />\n`));
   build("precompiled mode");
   const manifestFile = join(server, "obj", "Release", "net10.0", "staticwebassets.build.json");
   const manifest = existsSync(manifestFile) ? readFileSync(manifestFile, "utf8") : "";
   for (const f of ["blux.css", "blux.preflight.css", "Blux.UI.lib.module.js", "blux-editor.js"]) {
     check(manifest.includes(`_content/Blux.UI/${f}`), `precompiled mode: static web asset _content/Blux.UI/${f}`);
   }
-  for (const f of ["blux-tools.css", "Blux.UI.Tools.lib.module.js"]) {
+  for (const f of ["blux-tools.theme.css", "Blux.UI.Tools.lib.module.js"]) {
     check(manifest.includes(`_content/Blux.UI.Tools/${f}`), `precompiled mode: static web asset _content/Blux.UI.Tools/${f}`);
+  }
+  {
+    // Without BluxTailwind and without BluxToolsOwnTailwind the build tells the app that Tools needs Tailwind.
+    const r = run("dotnet", ["build", "-c", "Release", "-p:BluxToolsOwnTailwind=false", join(app, "Site", "Site.sln")], app, consumerEnv);
+    check(r.code === 0 && /warning BLUXTOOLS001[^\n]*BluxToolsOwnTailwind/.test(r.out), "tools: referencing Blux.UI.Tools without Tailwind and without BluxToolsOwnTailwind warns with BLUXTOOLS001");
+    build("own tailwind declared");
   }
 
   // Self-hosted fonts: generated by the task from the package's targets, then part of the static web assets.
@@ -236,11 +247,7 @@ try {
     }
     try {
       check(/data-testid="pkg-empty"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*><g[^>]*><path[\s\S]*?<p class="[^"]*" data-slot="title">No results<\/p>/.test(html) && !/data-bx-missing-icon="search-x"/.test(html), "tools: the page renders BxDataListEmpty with the icon of Blux.UI.Tools and its default text");
-      const toolsSheet = /<link rel="stylesheet" href="([^"]*blux-tools[^"]*\.css)"/.exec(html)?.[1];
-      const coreHref = [...html.matchAll(/<link rel="stylesheet" href="([^"]*_content\/Blux\.UI\/blux[^"]*\.css)"/g)].map((m) => m[1]).find((h) => !h.includes("preflight"));
-      const coreAt = coreHref ? html.indexOf(coreHref) : -1;
-      check(!!toolsSheet && coreAt >= 0 && html.indexOf(toolsSheet) > coreAt, `tools: blux-tools.css is linked after blux.css (${toolsSheet})`);
-      if (toolsSheet) { const r = await fetch(`${url}/${toolsSheet}`); const text = await r.text(); check(r.ok && text.includes(".py-12") && !text.includes("--blux-primary:"), "tools: blux-tools.css is served, with the utilities of the components and no copy of the tokens"); }
+      check(!/blux-tools[^"]*\.css/.test(html), "tools: the page links no precompiled Tools stylesheet (there is none)");
       check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-bx-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
       const preload = /<link rel="preload" as="font" type="font\/woff2" crossorigin href="([^"]+)"/.exec(html)?.[1];
       const sheet = /<link rel="stylesheet" href="(_blux\/fonts\/blux\.fonts[^"]*\.css)"/.exec(html)?.[1];
@@ -320,7 +327,7 @@ try {
     mkdirSync(shared, { recursive: true });
     writeFileSync(join(shared, "Shared.razor"), `<p class="tracking-[0.555em]">shared</p>\n`);
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxTailwindAdditionalInput Include="../Shared/**/*.razor" /></ItemGroup>\n</Project>`));
-    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@import "../obj/blux/blux-tools.theme.css";\n@source "../../Shared";\n`);
+    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@source "../../Shared";\n`);
     const homeSource = readFileSync(home, "utf8");
     const withClasses = (classes) => writeFileSync(home, `${homeSource}\n<p class="${classes}">Tailwind check</p>\n`);
     // tracking-[0.123em] is an arbitrary value: it is in no precompiled stylesheet, only a build that scans the app's sources can produce it.
@@ -344,6 +351,13 @@ try {
     check(!readFileSync(join(root, "src", "Blux.UI", "wwwroot", "blux.css"), "utf8").includes("123em"), "tailwind: that utility is not in the precompiled blux.css, so the check proves the app's CSS was compiled");
     check(!css().includes(".987em"), "tailwind: obj is not scanned for class names");
     check(css().includes("--blux-primary") && css().includes(".bg-\\(--blux-bg-elevated\\)"), "tailwind: the Blux theme tokens and the classes of the Blux components are generated too");
+    // Blux.UI.Tools has no precompiled sheet: with BluxTailwind the generated entry imports its theme by itself, and the single compiled sheet holds the classes of Blux.UI, of Tools and the variants of both.
+    const wrapperText = existsSync(join(twDir, "blux.tailwind.input.css")) ? readFileSync(join(twDir, "blux.tailwind.input.css"), "utf8") : "";
+    check(/@import "[^"]*blux-tools\.theme\.css";/.test(wrapperText), "tailwind: the generated entry imports the Tools theme, the app's stylesheet does not have to");
+    const toolsClasses = readFileSync(join(root, "src", "Blux.UI.Tools", "styles", "generated", "classes.txt"), "utf8").split("\n").filter(Boolean);
+    const escapeClass = (c) => c.replace(/[^a-zA-Z0-9_-]/g, (ch) => "\\" + ch);
+    check(toolsClasses.length > 0 && toolsClasses.every((c) => css().includes("." + escapeClass(c))), "tailwind: every class of the Tools components is in the compiled sheet");
+    check(css().includes(".lg\\:flex-row") && /\.dark\\:/.test(css()), "tailwind: the same sheet has the lg: and dark: variants of the Blux.UI components (nothing repeats them after them)");
     check(css().trim().split("\n").length <= 3, "tailwind: Release output is minified");
     const swa = readFileSync(manifestFile, "utf8");
     check(swa.includes("blux/tailwind/site.tailwind.css") && swa.includes('"RelativePath":"site.tailwind#[.{fingerprint}]?.css"'), "tailwind: the stylesheet (from obj) is a static web asset");

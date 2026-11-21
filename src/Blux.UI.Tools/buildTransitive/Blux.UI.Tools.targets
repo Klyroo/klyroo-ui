@@ -1,18 +1,29 @@
 <Project>
   <!--
-    Mode with Tailwind compiled by the app: copies the classes the Tools components use (one @source inline(...)) to a stable path,
-    obj/blux/blux-tools.theme.css, next to blux.theme.css (the tokens and the dark variant come from Blux.UI). The app's stylesheet
-    imports it after the Blux theme:
+    Blux.UI.Tools has no precompiled stylesheet: a second sheet loaded after blux.css would repeat base utilities in its own @layer utilities and
+    override the responsive and dark variants of Blux.UI. It needs Tailwind compiled by the app.
+
+    With <BluxTailwind>true</BluxTailwind> nothing else is needed: this file copies the classes the Tools components use (one @source inline(...))
+    to obj/blux/blux-tools.theme.css and sets BluxToolsPresent, and the generated Tailwind entry of Blux.UI imports that theme.
+
+    With the app's own Tailwind (Node or another pipeline), import the theme after the Blux one and say so with BluxToolsOwnTailwind=true:
 
       @import "tailwindcss";
       @import "../obj/blux/blux.theme.css";
       @import "../obj/blux/blux-tools.theme.css";
-
-    Without Tailwind in the app, link _content/Blux.UI.Tools/blux-tools.css after blux.css instead.
   -->
+  <PropertyGroup>
+    <BluxToolsPresent>true</BluxToolsPresent>
+  </PropertyGroup>
+
   <Target Name="BluxToolsCopyTailwindTheme" BeforeTargets="BeforeBuild">
     <Copy SourceFiles="$(MSBuildThisFileDirectory)../staticwebassets/blux-tools.theme.css"
           DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))"
           SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="BluxToolsCheckTailwind" BeforeTargets="BeforeBuild" Condition="'$(BluxTailwind)' != 'true' And '$(BluxToolsOwnTailwind)' != 'true' And '$(DesignTimeBuild)' != 'true'">
+    <Warning Code="BLUXTOOLS001"
+             Text="$(MSBuildProjectName) references Blux.UI.Tools, which has no precompiled stylesheet and needs Tailwind compiled by the app. Set &lt;BluxTailwind&gt;true&lt;/BluxTailwind&gt; (Node-free build, nothing else to do), or, if the app compiles Tailwind itself, import obj/blux/blux-tools.theme.css after obj/blux/blux.theme.css in your stylesheet and set &lt;BluxToolsOwnTailwind&gt;true&lt;/BluxToolsOwnTailwind&gt; to silence this warning." />
   </Target>
 </Project>

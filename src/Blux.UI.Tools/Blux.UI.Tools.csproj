@@ -29,12 +29,16 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <!-- Exact dependency versions ([x.y.z]) on Blux.UI and Blux.UI.Tools.Query in the nuspec. -->
+  <Import Project="..\..\build\ExactProjectReferences.targets" />
+
   <ItemGroup>
     <SupportedPlatform Include="browser" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Blux.UI\Blux.UI.csproj" />
+    <!-- Not private: the build assets of Blux.UI (its Tailwind and icon targets) must reach an app that only references this package. -->
+    <ProjectReference Include="..\Blux.UI\Blux.UI.csproj" PrivateAssets="contentfiles;analyzers" />
     <ProjectReference Include="..\Blux.UI.Tools.Query\Blux.UI.Tools.Query.csproj" />
   </ItemGroup>
 

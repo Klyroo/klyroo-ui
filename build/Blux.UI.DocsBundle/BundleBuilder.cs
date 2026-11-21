@@ -143,12 +143,15 @@ public static class BundleBuilder
         var fromExtension = component.Assembly != typeof(BxButton).Assembly;
         var candidates = (fromExtension ? themes.OrderBy(t => t.Owner is null) : themes.Where(t => t.Owner is null)).ToList();
 
-        // The component says which theme it resolves: the first "Options.X" or "Options.Extension<T>().X" of its source that names a theme.
+        // The component says which theme it resolves: the first "Options.X", "Options.Extension<T>().X" or "<Prefix>Options.X" (a property of the options of a sister package, like
+        // ToolsOptions.X) of its source that names a theme. A prefix means the theme is one of an extension.
         var match = SourceFiles(repoRoot, component)
-            .SelectMany(file => OptionsAccess.Matches(File.ReadAllText(file)).Select(m => (Property: m.Groups["p"].Value, Owner: m.Groups["t"].Success ? m.Groups["t"].Value : null)))
-            .Select(a => a.Owner is null
-                ? candidates.FirstOrDefault(t => t.Owner is null && t.Property == a.Property)
-                : candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property && OwnerMatches(t.Owner, a.Owner)))
+            .SelectMany(file => OptionsAccess.Matches(File.ReadAllText(file)).Select(m => (Property: m.Groups["p"].Value, Owner: m.Groups["t"].Success ? m.Groups["t"].Value : null, Prefixed: m.Groups["o"].Length > 0)))
+            .Select(a => a.Owner is not null
+                ? candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property && OwnerMatches(t.Owner, a.Owner))
+                : a.Prefixed
+                    ? candidates.FirstOrDefault(t => t.Owner is not null && t.Property == a.Property)
+                    : candidates.FirstOrDefault(t => t.Owner is null && t.Property == a.Property))
             .FirstOrDefault(t => t is not null);
         match ??= candidates.FirstOrDefault(t => string.Equals(t.Property, name, StringComparison.OrdinalIgnoreCase));
         if (match is null) return null;
@@ -177,8 +180,8 @@ public static class BundleBuilder
         return Directory.Exists(directory) ? Directory.EnumerateFiles(directory, name + ".razor*", SearchOption.AllDirectories) : [];
     }
 
-    /// <summary><c>Options.Button</c> (core) or <c>Options.Extension&lt;ToolsOptions&gt;().DataList</c> (a sister package).</summary>
-    private static readonly Regex OptionsAccess = new(@"\bOptions\.(?:Extension<(?<t>[\w.]+)>\(\)\.)?(?<p>\w+)", RegexOptions.Compiled);
+    /// <summary><c>Options.Button</c> (core), <c>Options.Extension&lt;ToolsOptions&gt;().DataList</c> or <c>ToolsOptions.DataList</c> (a sister package).</summary>
+    private static readonly Regex OptionsAccess = new(@"\b(?<o>\w*)Options\.(?:Extension<(?<t>[\w.]+)>\(\)\.)?(?<p>\w+)", RegexOptions.Compiled);
 
     private static bool OwnerMatches(Type owner, string written) =>
         written == owner.Name || written == owner.FullName || written.EndsWith("." + owner.Name, StringComparison.Ordinal);

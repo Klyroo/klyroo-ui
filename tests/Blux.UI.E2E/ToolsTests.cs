@@ -60,15 +60,15 @@ public class ToolsTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
-    public async Task The_stylesheets_of_the_package_are_served()
+    public async Task The_package_serves_its_tailwind_theme_and_no_precompiled_stylesheet()
     {
         await Open("ssr", "data-list-empty");
 
-        foreach (var asset in new[] { "blux-tools.css", "blux-tools.theme.css" })
-        {
-            var response = await Page.APIRequest.GetAsync($"/_content/Blux.UI.Tools/{asset}");
-            Assert.True(response.Ok, $"{asset}: {response.Status}");
-        }
+        var theme = await Page.APIRequest.GetAsync("/_content/Blux.UI.Tools/blux-tools.theme.css");
+        Assert.True(theme.Ok, $"blux-tools.theme.css: {theme.Status}");
+        // A precompiled sheet after blux.css would override the variants of Blux.UI: the package ships none.
+        var precompiled = await Page.APIRequest.GetAsync("/_content/Blux.UI.Tools/blux-tools.css");
+        Assert.False(precompiled.Ok, "blux-tools.css must not exist");
     }
 
     [Theory]

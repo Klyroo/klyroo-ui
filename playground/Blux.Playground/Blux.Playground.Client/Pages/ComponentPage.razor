@@ -24,7 +24,7 @@ else
     @if (_doc.Api.Select(t => t.Assembly.GetName().Name).FirstOrDefault(name => name != "Blux.UI") is { } package)
     {
         @* A component of a sister package: say which one to add. *@
-        <p class="mt-2 text-sm text-(--blux-text-muted)" data-testid="package-note">Part of the <code>@package</code> package: <code>dotnet add package @package --prerelease</code>, then <code>services.AddBluxUiTools()</code>.</p>
+        <p class="mt-2 text-sm text-(--blux-text-muted)" data-testid="package-note">Part of the <code>@package</code> package: <code>dotnet add package @package --prerelease</code>, then <code>services.@("AddBluxUi" + package["Blux.UI.".Length..].Replace(".", ""))()</code>. It needs Tailwind compiled by your app (<code>&lt;BluxTailwind&gt;true&lt;/BluxTailwind&gt;</code> does it without Node): see the <a href="/docs/installation">Installation</a> guide.</p>
     }
 
     <div class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-(--blux-border) bg-(--blux-bg-muted) px-4 py-3">

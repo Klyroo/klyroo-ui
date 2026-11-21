@@ -46,7 +46,11 @@ public sealed partial class BluxToolsOptions
     /// <summary>The texts for a locale code (<see cref="BxLocale.Code"/>), cached per code. The first call makes <see cref="Messages"/> read-only.</summary>
     internal BxToolsMessages ResolveMessages(string localeCode)
     {
-        lock (_gate) _frozen = true;
+        // Read on every render: take the lock only the first time.
+        if (!_frozen)
+        {
+            lock (_gate) _frozen = true;
+        }
         return _resolved.GetOrAdd(localeCode, static (code, self) => self.Compute(code), this);
     }
 
