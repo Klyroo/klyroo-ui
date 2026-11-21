@@ -34,7 +34,9 @@ public static partial class Catalog
             [new("Variants", typeof(Examples.AlertExample)), new("Actions and close", typeof(Examples.AlertActionsExample))], [typeof(BxAlert)]),
 
         new("input", "Input", "Form", "A single-line text field.",
-            [new("Variants and icons", typeof(Examples.InputExample))], [typeof(BxInput)]),
+            [new("Variants and icons", typeof(Examples.InputExample)),
+             new("Debounce and keyboard", typeof(Examples.InputDebounceExample), "Debounce reports once per pause, Enter reports at once and Escape clears (ClearOnEscape). The browser does the waiting: Server mode makes one round trip per pause, not per key.")],
+            [typeof(BxInput)]),
         new("textarea", "Textarea", "Form", "A multi-line text field that can grow with its content.",
             [new("Textarea", typeof(Examples.TextareaExample))], [typeof(BxTextarea)]),
         new("checkbox", "Checkbox", "Form", "A native checkbox with a label and a description.",

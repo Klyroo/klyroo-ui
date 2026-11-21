@@ -181,7 +181,7 @@
 `/components/input`. A single-line text field.
 
 - `<BxInput>`
-  - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Immediate`, `Name`, `Placeholder`, `Required`, `Size`, `Type`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `ClearOnEscape`, `Color`, `Debounce`, `Disabled`, `Id`, `Immediate`, `Name`, `Placeholder`, `Required`, `Size`, `Type`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
   - Slots: `LeadingIcon`, `TrailingIcon`
   - `Ui` (`InputUi`): `Root`, `Base`, `Leading`, `LeadingIcon`, `Trailing`, `TrailingIcon`
 

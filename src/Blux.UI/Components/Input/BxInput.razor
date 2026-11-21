@@ -1,4 +1,5 @@
 @namespace Blux.UI
+@using Blux.UI.Internal
 @inherits BxFieldBase<string>
 
 <div class="@_slots["root"]" data-color="@Color.Value">
@@ -6,7 +7,18 @@
     {
         <span class="@_slots["leading"]"><span class="@_slots["leadingIcon"]" aria-hidden="true">@LeadingIcon</span></span>
     }
-    @if (UseEditContext)
+    @if (BrowserCommit)
+    {
+        @if (UseEditContext)
+        {
+            <ValueBridge TValue="string" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+        }
+        else
+        {
+            @Markup(new EditBinding(Name, Field?.Invalid == true))
+        }
+    }
+    else if (UseEditContext)
     {
         <InputText Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
     }
@@ -37,10 +49,36 @@
 
     /// <summary>Update the bound value on every keystroke instead of on change. Costs a round trip per key in Server mode.</summary>
     [Parameter] public bool Immediate { get; set; }
+
+    /// <summary>
+    /// Milliseconds of quiet after the last keystroke before the value is reported, in the browser: typing a word raises one
+    /// <c>ValueChanged</c> per pause instead of one per key (a round trip each in Server mode). Enter and leaving the field
+    /// report at once, and nothing is reported in the middle of an IME composition. A render that arrives with an older
+    /// value does not overwrite what was typed after it. <c>null</c> (the default) keeps the plain behavior; it replaces
+    /// <see cref="Immediate"/> when both are set. Static rendering has no .NET to report to, so there it only holds the attribute.
+    /// </summary>
+    [Parameter] public int? Debounce { get; set; }
+
+    /// <summary>
+    /// Escape empties the field and reports the empty value (immediately, whatever <see cref="Debounce"/> says). On an already
+    /// empty field Escape is left alone, so it still closes a modal around the field. The browser does the work, in every render mode.
+    /// </summary>
+    [Parameter] public bool ClearOnEscape { get; set; }
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public RenderFragment? LeadingIcon { get; set; }
     [Parameter] public RenderFragment? TrailingIcon { get; set; }
     [Parameter] public InputUi? Ui { get; set; }
+
+    private int _sequence;
+
+    // Debounce and ClearOnEscape are done by a script of Blux on the native input, which reports through bx-change.
+    private bool BrowserCommit => Debounce is not null || ClearOnEscape;
+
+    // Immediate without Debounce is a delay of 0: report on every input.
+    private int? DelayAttribute => Debounce is { } ms ? Math.Max(ms, 0) : Immediate ? 0 : null;
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Input, new Dictionary<string, string?>
@@ -58,4 +96,33 @@
         if (Placeholder is not null) attributes["placeholder"] = Placeholder;
         return attributes;
     }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = e.Value ?? "";
+        if (value == (Value ?? ""))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    // data-bx-seq comes before value: Blazor applies attributes in order, and the script ignores a write of value that a
+    // render older than its last report made, which it can only tell once it has seen the sequence of that render.
+    private RenderFragment Markup(EditBinding binding) =>
+        @<input data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                data-bx-debounce="@DelayAttribute"
+                data-bx-clear-on-escape="@(ClearOnEscape ? "" : null)"
+                name="@binding.Name"
+                value="@Value"
+                aria-invalid="@(binding.Invalid ? "true" : null)"
+                @onbxchange="ChangeHandler"
+                @onbxchange:stopPropagation="true"
+                @attributes="Attributes()" />;
 }

@@ -34,6 +34,7 @@ import './content.js';
 import './platform-keys.js';
 import './spatial-nav.js';
 import './switch-hit.js';
+import './input-commit.js';
 import { syncIndeterminate } from './indeterminate.js';
 import { markHost, isHybrid } from './host.js';
 import { toast } from './toaster.js';

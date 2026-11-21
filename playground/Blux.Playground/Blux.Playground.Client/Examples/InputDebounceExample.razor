@@ -1,0 +1,21 @@
+<div class="flex w-full max-w-sm flex-col gap-3">
+    <BxInput Value="@_query" ValueChanged="OnQuery" Debounce="400" ClearOnEscape Type="search" Placeholder="Type, then pause" aria-label="Debounced search" data-testid="debounced" />
+    <p class="text-sm text-(--blux-text-muted)" data-testid="debounced-state">Value: @_query</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="debounced-count">Reports: @_reports</p>
+    <BxInput Value="@_plain" ValueChanged="OnPlain" aria-label="Plain input" Placeholder="No debounce: reported on change" data-testid="plain" />
+    <p class="text-sm text-(--blux-text-muted)" data-testid="plain-state">Plain: @_plain</p>
+</div>
+
+@code {
+    private string? _query;
+    private string? _plain;
+    private int _reports;
+
+    private void OnQuery(string? value)
+    {
+        _query = value;
+        _reports++;
+    }
+
+    private void OnPlain(string? value) => _plain = value;
+}
