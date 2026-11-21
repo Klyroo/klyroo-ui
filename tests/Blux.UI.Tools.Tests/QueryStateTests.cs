@@ -468,13 +468,18 @@ public class QueryStateTests : BluxToolsTestContext
         Nav.NavigateTo("/users");
         var users = FilterGroup("UsersPage", null, "q");
 
-        // The router creates the next page before it disposes the previous one: the keys are used twice for a moment.
-        Nav.NavigateTo("/orders");
-        var orders = FilterGroup("OrdersPage", null, "q");
-        users.Dispose();
+        // The router creates the next page before it disposes the previous one, in the same render batch: the keys are
+        // used twice for a moment. The batch is one dispatcher work item, so the claim check (after Task.Yield) runs after it.
+        QueryGroup<Filters>? orders = null;
+        await Handler(() =>
+        {
+            Nav.NavigateTo("/orders");
+            orders = FilterGroup("OrdersPage", null, "q");
+            users.Dispose();
+        });
         await Settle();
 
-        orders.ThrowIfConflicted();
+        orders!.ThrowIfConflicted();
         Assert.NotNull(orders.Value);
     }
 
