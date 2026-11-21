@@ -110,6 +110,55 @@ public class LayoutTests : BluxTestContext
         Assert.DoesNotContain("sticky", cut.Find("header").ClassList);
     }
 
+    // ---- SkipLink
+
+    [Fact]
+    public void SkipLink_is_a_link_to_main_with_the_text_of_the_locale()
+    {
+        var cut = Render<BxSkipLink>();
+
+        var link = cut.Find("a");
+        Assert.Equal("#main", link.GetAttribute("href"));
+        Assert.True(link.HasAttribute("data-bx-skip-link"));
+        Assert.Equal("Skip to content", link.TextContent);
+        // Hidden until it has the focus, but still in the tab order: sr-only, not display:none.
+        Assert.Contains("sr-only", link.ClassName);
+        Assert.Contains("focus:not-sr-only", link.ClassName);
+    }
+
+    [Fact]
+    public void SkipLink_names_its_target_and_takes_its_own_text_and_classes()
+    {
+        var cut = Render<BxSkipLink>(p => p.Add(s => s.Target, "content").Add(s => s.Label, "Jump").Add(s => s.Class, "bg-red-500").Add(s => s.Ui, new SkipLinkUi { Root = "uppercase" }));
+
+        var link = cut.Find("a");
+        Assert.Equal("#content", link.GetAttribute("href"));
+        Assert.Equal("Jump", link.TextContent);
+        Assert.Contains("bg-red-500", link.ClassName);
+        Assert.Contains("uppercase", link.ClassName);
+
+        cut.Render(p => p.Add(s => s.ChildContent, "Passer"));
+        Assert.Equal("Passer", cut.Find("a").TextContent);
+    }
+
+    [Fact]
+    public void SkipLink_is_translated_in_every_locale()
+    {
+        foreach (var locale in BxLocales.All.Where(l => l.Code != "en"))
+        {
+            Assert.False(string.IsNullOrWhiteSpace(locale.Messages.SkipToContent), locale.Code);
+            Assert.NotEqual(BxLocales.En.Messages.SkipToContent, locale.Messages.SkipToContent);
+        }
+    }
+
+    [Fact]
+    public void SkipLink_follows_the_locale_of_the_app()
+    {
+        var cut = Render<BxApp>(p => p.Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, (RenderFragment)(b => { b.OpenComponent<BxSkipLink>(0); b.CloseComponent(); })));
+
+        Assert.Equal(BxLocales.Fr.Messages.SkipToContent, cut.Find("a[data-bx-skip-link]").TextContent);
+    }
+
     // ---- Footer and FooterColumns
 
     [Fact]

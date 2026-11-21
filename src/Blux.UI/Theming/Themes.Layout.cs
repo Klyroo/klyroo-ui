@@ -1,6 +1,6 @@
 namespace Blux.UI.Theming;
 
-/// <summary>Themes of the layout family: app, header, footer, footer columns, main, sidebar, error, locale select.</summary>
+/// <summary>Themes of the layout family: app, header, footer, footer columns, main, skip link, sidebar, error, locale select.</summary>
 internal static partial class Themes
 {
     private const string LayoutFocus =
@@ -56,6 +56,12 @@ internal static partial class Themes
             // The bottom inset is applied once, at the outermost bottom edge: here, unless a footer follows (it takes it). The TV
             // overscan margins (--bx-tv-inset, set on html in TV mode) are taken from the minimum height so the page does not always scroll.
             .Slot("base", "min-h-[calc(100dvh_-_var(--bx-header-height,var(--blux-header-height))_-_var(--bx-safe-top)_-_var(--bx-tv-inset,0px))] pb-(--bx-safe-bottom) has-[~footer]:pb-0 focus:outline-none");
+
+    /// <summary>Hidden (not removed from the tab order) until it has the focus, then pinned to the top start corner of the screen above the page.</summary>
+    public static ComponentTheme SkipLink() =>
+        new ComponentTheme("skipLink", "root")
+            .Slot("root", "sr-only focus:not-sr-only focus:fixed focus:start-4 focus:top-4 focus:z-50 focus:rounded-(--blux-radius) focus:bg-(--blux-bg) focus:px-3 focus:py-2 " +
+                          "focus:text-sm focus:font-medium focus:text-(--blux-text-highlighted) focus:shadow-md focus:ring-2 focus:ring-(--blux-primary-text) focus:outline-none");
 
     /// <summary>
     /// The aside carries <c>group/sidebar</c> and <c>data-state</c>, so anything inside it can react to the collapsed

@@ -106,6 +106,7 @@ public static partial class BxLocales
             HeaderNavigation = "Главное меню",
             HeaderMenu = "Меню",
             OpenHeaderMenu = "Открыть меню",
+            SkipToContent = "Перейти к содержимому",
             SidebarLabel = "Боковая панель",
             OpenSidebar = "Открыть боковую панель",
             CollapseSidebar = "Свернуть боковую панель",

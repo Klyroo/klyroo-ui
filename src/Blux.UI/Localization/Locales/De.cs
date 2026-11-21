@@ -106,6 +106,7 @@ public static partial class BxLocales
             HeaderNavigation = "Hauptmenü",
             HeaderMenu = "Menü",
             OpenHeaderMenu = "Menü öffnen",
+            SkipToContent = "Zum Inhalt springen",
             SidebarLabel = "Seitenleiste",
             OpenSidebar = "Seitenleiste öffnen",
             CollapseSidebar = "Seitenleiste einklappen",
