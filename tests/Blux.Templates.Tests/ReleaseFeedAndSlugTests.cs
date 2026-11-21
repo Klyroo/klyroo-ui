@@ -1,5 +1,5 @@
 using System.Xml.Linq;
-using Changelog.Web.Releases;
+using Changelog.Web.ReleaseNotes;
 
 namespace Blux.Templates.Tests;
 

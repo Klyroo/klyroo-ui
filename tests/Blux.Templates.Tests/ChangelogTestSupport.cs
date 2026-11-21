@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Changelog.Web.Releases;
+using Changelog.Web.ReleaseNotes;
 using Microsoft.Extensions.Logging;
 
 namespace Blux.Templates.Tests;
