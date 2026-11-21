@@ -18,7 +18,15 @@
     <CodeBlock Title="App.razor" Code="@Link" />
     <p>In Release the CSS is minified. <code>dotnet watch</code> rebuilds when the stylesheet changes: it is declared as a watched file.</p>
 
-    <h2>The binary</h2>
+    <h2>Sister packages</h2>
+<p>
+    <code>Blux.UI.Tools</code> and the packages after it have no precompiled stylesheet, so they need Tailwind compiled by your app. With <code>BluxTailwind=true</code> nothing else is needed: when the package is
+    referenced, the generated entry also imports <code>obj/blux/blux-tools.theme.css</code> (the classes of the package's components), so the single compiled sheet holds Blux.UI, Blux.UI.Tools and your own classes,
+    variants included. With your own Tailwind pipeline, add the import yourself and set <code>&lt;BluxToolsOwnTailwind&gt;true&lt;/BluxToolsOwnTailwind&gt;</code> in the project, which tells the build that you compile Tailwind;
+    without either, the build warns with <code>BLUXTOOLS001</code>.
+</p>
+
+<h2>The binary</h2>
     <p>The build downloads <code>tailwindcss-&lt;os&gt;-&lt;arch&gt;</code> for the machine that builds from the GitHub release of the pinned version (4.3.5, the same one the library is built with) and keeps it in a cache folder. It is checked against a SHA-256 that ships inside the package and discarded if it differs, and the executable bit is set on Linux and macOS. The hash is computed once per cached binary: a stamp next to it records its size and modification time, later builds trust the stamp, and a file that changed since is hashed again and deleted when it differs, so an unverified binary is never run. Linux x64 and arm64 (glibc and musl), macOS x64 and arm64, and Windows x64 are supported; Windows on ARM runs the x64 binary. The release has no other builds.</p>
 
     <h2>Properties</h2>

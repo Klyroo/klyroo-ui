@@ -162,6 +162,31 @@ public class BundleTests
 
     public sealed class FakeNamedSister : Blux.UI.Theming.BxComponentBase;
 
+    public sealed class FakePrefixed : Blux.UI.Theming.BxComponentBase;
+
+    [Fact]
+    public void A_prefixed_options_property_names_an_extension_theme_that_is_not_named_after_the_component()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "blux-bundle-" + Guid.NewGuid().ToString("N"));
+        var components = Path.Combine(root, "src", typeof(FakePrefixed).Assembly.GetName().Name!, "Components");
+        Directory.CreateDirectory(components);
+        try
+        {
+            // The component is FakePrefixed, the theme is Sister, and the source reads it the way the components of Blux.UI.Tools do.
+            File.WriteAllText(Path.Combine(components, "FakePrefixed.razor"), "var slots = ResolveSlots(SisterOptions.Sister, null, null, \"root\");");
+
+            var theme = BundleBuilder.ThemeFor(typeof(FakePrefixed), root, [typeof(SisterOptions)]);
+
+            Assert.Equal("Sister", theme!.Property);
+            // Without the extension there is no such theme: a prefixed access never falls back to a core theme.
+            Assert.Null(BundleBuilder.ThemeFor(typeof(FakePrefixed), root));
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+
     [Fact]
     public void A_component_of_an_extension_assembly_maps_to_its_own_theme_even_when_core_has_one_of_the_same_name()
     {

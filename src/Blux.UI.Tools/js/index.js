@@ -10,10 +10,13 @@ const tools = { version: 1 };
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });
 
-/** What an enhanced navigation merge resets: every element of Tools re-applies it (the elements are named bx-data-list-*). */
+// The custom elements of Tools (none yet): an enhanced navigation merge resets what they set, so each re-applies it. Add the tag names here.
+const ELEMENTS = [];
+
 function refreshElements() {
-  for (const el of document.querySelectorAll('*')) {
-    if (el.localName.startsWith('bx-data-list') && typeof el.refresh === 'function') el.refresh();
+  if (ELEMENTS.length === 0) return;
+  for (const el of document.querySelectorAll(ELEMENTS.join(','))) {
+    if (typeof el.refresh === 'function') el.refresh();
   }
 }
 

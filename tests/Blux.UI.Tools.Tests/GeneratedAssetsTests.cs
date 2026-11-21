@@ -1,4 +1,3 @@
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Blux.UI.Tools.Tests;
@@ -44,49 +43,10 @@ public class GeneratedAssetsTests
     }
 
     [Fact]
-    public void Every_theme_class_exists_in_the_compiled_stylesheet()
+    public void There_is_no_precompiled_stylesheet()
     {
-        var css = File.ReadAllText(Path.Combine(PackageRoot, "wwwroot", "blux-tools.css"));
-
-        var missing = ExpectedClasses().Where(c => !css.Contains("." + CssEscape(c), StringComparison.Ordinal)).ToList();
-
-        Assert.Empty(missing);
-    }
-
-    [Fact]
-    public void The_compiled_stylesheet_has_no_second_copy_of_the_tokens_of_Blux_UI()
-    {
-        var css = File.ReadAllText(Path.Combine(PackageRoot, "wwwroot", "blux-tools.css"));
-
-        // blux.css defines the --blux-* variables; defining them again here, after it, would undo a rebrand made between the two.
-        Assert.DoesNotContain("--blux-primary:", css);
-    }
-
-    [Fact]
-    public void The_token_mapping_is_the_one_of_Blux_UI()
-    {
-        var tokens = File.ReadAllText(Path.Combine(PackageRoot, "styles", "blux-tools.tokens.css")).Replace("\r\n", "\n");
-        var body = tokens[tokens.IndexOf("@custom-variant", StringComparison.Ordinal)..].TrimEnd();
-        var core = File.ReadAllText(Path.Combine(PackageRoot, "..", "Blux.UI", "styles", "blux.base.css")).Replace("\r\n", "\n");
-
-        Assert.Contains(body, core);
-    }
-
-    private static string CssEscape(string className)
-    {
-        var sb = new StringBuilder(className.Length * 2);
-        foreach (var ch in className)
-        {
-            if (char.IsAsciiLetterOrDigit(ch) || ch is '-' or '_' || ch > 0x7f)
-            {
-                sb.Append(ch);
-            }
-            else
-            {
-                sb.Append('\\').Append(ch);
-            }
-        }
-        return sb.ToString();
+        // A second precompiled sheet after blux.css would repeat base utilities in its own layer and override the variants of Blux.UI.
+        Assert.False(File.Exists(Path.Combine(PackageRoot, "wwwroot", "blux-tools.css")));
     }
 
     private static string FindPackageRoot()
