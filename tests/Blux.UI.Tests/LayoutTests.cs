@@ -294,7 +294,7 @@ public class LayoutTests : BluxTestContext
         Assert.Equal("404", cut.Find("p").TextContent);
         Assert.Equal("Page not found", cut.Find("h1").TextContent);
         var home = cut.Find("a");
-        Assert.Equal("/", home.GetAttribute("href"));
+        Assert.Equal("./", home.GetAttribute("href"));
         Assert.Equal("Back to home", home.TextContent.Trim());
         Assert.Contains("does not exist", cut.Markup);
     }
@@ -374,7 +374,7 @@ public class LayoutTests : BluxTestContext
 
         var host = cut.Find("[data-bx-locale-select]");
         Assert.Equal(".AspNetCore.Culture", host.GetAttribute("data-bx-cookie"));
-        Assert.False(host.HasAttribute("data-bx-cookie-path"), "without a CookiePath the browser scopes the cookie to the base path of the app");
+        Assert.Equal("/", host.GetAttribute("data-bx-cookie-path"));
         Assert.True(host.HasAttribute("data-bx-reload"));
         Assert.Equal("Language", cut.Find("button[role=combobox]").GetAttribute("aria-label"));
         Assert.Equal(["EN English", "FR Français"], cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")));

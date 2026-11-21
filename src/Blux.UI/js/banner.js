@@ -1,3 +1,5 @@
+import { appStorageKey } from './base-path.js';
+
 const STORAGE_PREFIX = 'blux:banner:';
 
 /**
@@ -32,7 +34,7 @@ export class BxBannerElement extends HTMLElement {
 
   #key() {
     const id = this.getAttribute('data-bx-banner-id');
-    return id ? STORAGE_PREFIX + id : null;
+    return id ? appStorageKey(STORAGE_PREFIX + id) : null;
   }
 
   #dismissed() {

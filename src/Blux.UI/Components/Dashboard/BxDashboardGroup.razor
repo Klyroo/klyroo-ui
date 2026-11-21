@@ -32,7 +32,7 @@
 
     /// <summary>
     /// Key under which the dashboard remembers its state (sidebar in cookies, panel sizes in localStorage): the collapsed state and the width of its
-    /// sidebar (cookies "blux-sidebar-" followed by the key, see BxSidebar.Id) and the sizes of its panels ("blux:dashboard:" key ":panels").
+    /// sidebar (cookies "blux-sidebar-" followed by the key, see BxSidebar.Id and BxPathScope.SidebarCookieName for an app below a path base) and the sizes of its panels ("blux:dashboard:" key ":panels").
     /// Without a key nothing is remembered. Use a different key for each dashboard of the app.
     /// </summary>
     [Parameter] public string? StorageKey { get; set; }
