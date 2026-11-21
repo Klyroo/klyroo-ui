@@ -128,6 +128,7 @@ jobs:
       - run: dotnet publish playground/Blux.Playground/Blux.Playground -c Release -o published
       # The live demos of the templates run published too: one publish output per template, in the folder the docs host reads.
       - run: dotnet publish templates/starter/src/Starter.Web -c Release -o published-templates/starter
+      - run: dotnet publish templates/dashboard/src/Dashboard.Web -c Release -o published-templates/dashboard
       - run: dotnet publish templates/landing/src/Landing.Web -c Release -o published-templates/landing
       - run: dotnet publish templates/docs/src/Docs.Web -c Release -o published-templates/docs
       - run: dotnet publish templates/changelog/src/Changelog.Web -c Release -o published-templates/changelog
@@ -181,3 +182,6 @@ jobs:
       - name: Build the Starter template head
         working-directory: templates/starter
         run: dotnet build src/Starter.Maui/Starter.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}
+      - name: Build the Dashboard template head
+        working-directory: templates/dashboard
+        run: dotnet build src/Dashboard.Maui/Dashboard.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}

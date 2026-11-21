@@ -1,0 +1,54 @@
+@implements IDisposable
+@inject AppState App
+@inject AppearanceState Appearance
+
+@* The primary color, and the color mode. The mode is Blux's own control: it is remembered in the browser and applied before the first paint. *@
+<BxModal @bind-Open="_open" Title="Appearance" Description="Pick the color of buttons, links and focus rings." data-testid="appearance">
+    <Body>
+        <div class="flex flex-col gap-5">
+            <div role="group" aria-label="Primary color" class="flex flex-wrap gap-2">
+                @foreach (var palette in AppearanceState.Palettes)
+                {
+                    var current = palette;
+                    <BxButton Label="@Label(current)" Size="BxSize.Sm" Color="BxColor.Neutral"
+                              Variant="@(current == Appearance.Primary ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                              aria-pressed="@(current == Appearance.Primary ? "true" : "false")"
+                              data-testid="@($"palette-{current.Name}")"
+                              OnClick="@(() => Appearance.SetAsync(current))" />
+                }
+            </div>
+            <BxFormField Label="Color mode">
+                <BxColorModeSelect />
+            </BxFormField>
+        </div>
+    </Body>
+    <Footer>
+        <BxButton Label="Done" data-bx-close />
+    </Footer>
+</BxModal>
+
+@code {
+    private bool _open;
+
+    private static string Label(BxPalette palette) => palette.IsBlux ? "Default" : char.ToUpperInvariant(palette.Name[0]) + palette.Name[1..];
+
+    protected override void OnInitialized()
+    {
+        App.AppearanceRequested += OnRequested;
+        Appearance.Changed += OnChanged;
+    }
+
+    private void OnRequested() => _ = InvokeAsync(() =>
+    {
+        _open = true;
+        StateHasChanged();
+    });
+
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        App.AppearanceRequested -= OnRequested;
+        Appearance.Changed -= OnChanged;
+    }
+}
