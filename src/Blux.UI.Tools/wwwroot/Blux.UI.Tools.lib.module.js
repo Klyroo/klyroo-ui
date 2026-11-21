@@ -1,0 +1,1 @@
+var t={version:1};globalThis.Blux=Object.assign(globalThis.Blux??{},{tools:t});function o(){for(let e of document.querySelectorAll("*"))e.localName.startsWith("bx-data-list")&&typeof e.refresh=="function"&&e.refresh()}function r(e){e.addEventListener("enhancedload",o)}function n(){}function a(){}export{a as afterStarted,r as afterWebStarted,n as beforeStart};

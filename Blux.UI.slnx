@@ -3,6 +3,8 @@
     <Project Path="src/Blux.UI/Blux.UI.csproj" />
     <Project Path="src/Blux.UI.Build.Tasks/Blux.UI.Build.Tasks.csproj" />
     <Project Path="src/Blux.UI.Images/Blux.UI.Images.csproj" />
+    <Project Path="src/Blux.UI.Tools.Query/Blux.UI.Tools.Query.csproj" />
+    <Project Path="src/Blux.UI.Tools/Blux.UI.Tools.csproj" />
     <Project Path="src/Blux.UI.Images.Local/Blux.UI.Images.Local.csproj" />
     <Project Path="src/Blux.UI.Mcp.Model/Blux.UI.Mcp.Model.csproj" />
     <Project Path="src/Blux.UI.Mcp.Core/Blux.UI.Mcp.Core.csproj" />
@@ -11,6 +13,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/Blux.UI.Tests/Blux.UI.Tests.csproj" />
     <Project Path="tests/Blux.UI.Images.Tests/Blux.UI.Images.Tests.csproj" />
+    <Project Path="tests/Blux.UI.Tools.Tests/Blux.UI.Tools.Tests.csproj" />
     <Project Path="tests/Blux.UI.Images.Local.Tests/Blux.UI.Images.Local.Tests.csproj" />
     <Project Path="tests/Blux.UI.Mcp.Tests/Blux.UI.Mcp.Tests.csproj" />
     <Project Path="tests/Blux.UI.E2E/Blux.UI.E2E.csproj" />

@@ -29,7 +29,9 @@ public static class SkillReference
             foreach (var component in bundle.Components.Where(c => c.Group == group))
             {
                 sb.Append($"\n### {component.Name}\n\n");
-                sb.Append($"`/components/{component.Slug}`. {component.Description}\n");
+                sb.Append($"`/components/{component.Slug}`. {component.Description}");
+                if (component.InstallCommand() is { } install) sb.Append($" Package {component.Package}, not part of Blux.UI: `{install}`.");
+                sb.Append('\n');
                 foreach (var api in component.Api)
                 {
                     sb.Append($"\n- `<{TagName(api.Name)}>`");

@@ -1,4 +1,4 @@
-// Packaging check: packs Blux.UI (and the image packages Blux.UI.Images and Blux.UI.Images.Local) in Release, inspects the .nupkg and
+// Packaging check: packs Blux.UI (and the sister packages Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query and Blux.UI.Tools) in Release, inspects the .nupkg and
 // .snupkg files, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
 //
 //   node build/verify-package.mjs [--online] [--keep]
@@ -98,8 +98,8 @@ try {
   check(snupkg.has("lib/net10.0/Blux.UI.pdb"), "snupkg contains lib/net10.0/Blux.UI.pdb");
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
-  // 3b. The image packages: same version, readme, icon, documentation, and the dependencies they promise.
-  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local"]) {
+  // 3b. The sister packages: same version, readme, icon, documentation, and the dependencies they promise.
+  for (const id of ["Blux.UI.Images", "Blux.UI.Images.Local", "Blux.UI.Tools.Query", "Blux.UI.Tools"]) {
     const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
     const file = `${id}.${version}.nupkg`;
@@ -110,9 +110,23 @@ try {
     check([...pkg.keys()].every((n) => !n.endsWith(".pdb")), `${id}: no .pdb in the .nupkg`);
     const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
     check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
-    // The local optimizer reaches Blux.UI through Blux.UI.Images.
+    // The local optimizer reaches Blux.UI through Blux.UI.Images. The query package depends on no Blux package and no ASP.NET Core.
     const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : "Blux\\.UI";
-    check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    if (id === "Blux.UI.Tools.Query") {
+      check(!/<dependency id="Blux\.UI/.test(spec) && !/Microsoft\.AspNetCore/.test(spec), `${id}: depends on no Blux package and no ASP.NET Core`);
+    } else {
+      check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    }
+    if (id === "Blux.UI.Tools") {
+      check(new RegExp(`<dependency id="Blux\\.UI\\.Tools\\.Query"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on Blux.UI.Tools.Query ${version}`);
+      for (const n of ["staticwebassets/blux-tools.css", "staticwebassets/blux-tools.theme.css", "buildTransitive/Blux.UI.Tools.targets", "build/Blux.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
+      const names = [...pkg.keys()];
+      check(names.some((n) => /^staticwebassets\/Blux\.UI\.Tools(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), `${id}: nupkg contains the JS initializer (Blux.UI.Tools.lib.module.js, fingerprinted)`);
+      check(names.some((n) => /^build\/.*StaticWebAssets/i.test(n)), `${id}: nupkg declares its static web assets for consumers`);
+      check(!names.some((n) => /^(js|styles)\//.test(n)), `${id}: sources of generated assets (js/, styles/) are not shipped`);
+      const toolsTheme = readFileSync(join(root, "src", "Blux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8");
+      check(pkg.has("staticwebassets/blux-tools.theme.css") && pkg.get("staticwebassets/blux-tools.theme.css")().toString("utf8") === toolsTheme, `${id}: packed blux-tools.theme.css equals the committed one`);
+    }
     if (id.endsWith(".Local")) {
       check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
       check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
@@ -129,15 +143,15 @@ try {
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Blux.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Images" /><package pattern="Blux.UI.Images.Local" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
   if (!check(created.code === 0, "dotnet new blazor (Auto)")) { console.log(created.out); throw new Error("template failed"); }
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
-  // The server also uses the local image optimizer; the client only needs the URL builder.
+  // The server also uses the local image optimizer; the client only needs the URL builder. Both use Blux.UI.Tools (a Razor class library with its own CSS and JS initializer).
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /></ItemGroup>\n</Project>`));
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Blux.UI.Tools" Version="${version}" /></ItemGroup>\n</Project>`));
   }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
@@ -154,9 +168,9 @@ try {
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Blux.UI\n`);
   const prog = join(server, "Program.cs");
-  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;"));
+  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddBluxUi();\nbuilder.Services.AddBluxUiTools();\nbuilder.Services.AddBluxImagesLocal();\n\nvar app = builder.Build();\napp.MapBluxImages();").replace("using Site.Components;", "using Site.Components;\nusing Blux.UI;\nusing Blux.UI.Tools;"));
   const home = join(server, "Components", "Pages", "Home.razor");
-  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n<BxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<BxButton Label="Close" LeadingIcon='BxIcons.Named("pkg:check-mark")' />\n`);
+  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Blux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n<BxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<BxButton Label="Close" LeadingIcon='BxIcons.Named("pkg:check-mark")' />\n@using Blux.UI.Tools\n<BxDataListEmpty data-testid="pkg-empty" />\n`);
   const appRazor = join(server, "Components", "App.razor");
   const original = readFileSync(appRazor, "utf8").replace("<ResourcePreloader />", "<BxFonts />\n    <ResourcePreloader />");
   check(original.includes("<BxFonts />"), "consumer App.razor has BxFonts");
@@ -171,12 +185,15 @@ try {
   };
 
   // Mode A: precompiled CSS.
-  writeFileSync(appRazor, original.replace(/ *<link rel="stylesheet" href="@Assets\["lib\/bootstrap[^\n]*\n/, `    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />\n`));
+  writeFileSync(appRazor, original.replace(/ *<link rel="stylesheet" href="@Assets\["lib\/bootstrap[^\n]*\n/, `    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />\n    <link rel="stylesheet" href="@Assets["_content/Blux.UI.Tools/blux-tools.css"]" />\n`));
   build("precompiled mode");
   const manifestFile = join(server, "obj", "Release", "net10.0", "staticwebassets.build.json");
   const manifest = existsSync(manifestFile) ? readFileSync(manifestFile, "utf8") : "";
   for (const f of ["blux.css", "blux.preflight.css", "Blux.UI.lib.module.js", "blux-editor.js"]) {
     check(manifest.includes(`_content/Blux.UI/${f}`), `precompiled mode: static web asset _content/Blux.UI/${f}`);
+  }
+  for (const f of ["blux-tools.css", "Blux.UI.Tools.lib.module.js"]) {
+    check(manifest.includes(`_content/Blux.UI.Tools/${f}`), `precompiled mode: static web asset _content/Blux.UI.Tools/${f}`);
   }
 
   // Self-hosted fonts: generated by the task from the package's targets, then part of the static web assets.
@@ -218,6 +235,12 @@ try {
       try { const res = await fetch(url + "/"); if (res.ok) html = await res.text(); } catch { /* not up yet */ }
     }
     try {
+      check(/data-testid="pkg-empty"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*><g[^>]*><path[\s\S]*?<p class="[^"]*" data-slot="title">No results<\/p>/.test(html) && !/data-bx-missing-icon="search-x"/.test(html), "tools: the page renders BxDataListEmpty with the icon of Blux.UI.Tools and its default text");
+      const toolsSheet = /<link rel="stylesheet" href="([^"]*blux-tools[^"]*\.css)"/.exec(html)?.[1];
+      const coreHref = [...html.matchAll(/<link rel="stylesheet" href="([^"]*_content\/Blux\.UI\/blux[^"]*\.css)"/g)].map((m) => m[1]).find((h) => !h.includes("preflight"));
+      const coreAt = coreHref ? html.indexOf(coreHref) : -1;
+      check(!!toolsSheet && coreAt >= 0 && html.indexOf(toolsSheet) > coreAt, `tools: blux-tools.css is linked after blux.css (${toolsSheet})`);
+      if (toolsSheet) { const r = await fetch(`${url}/${toolsSheet}`); const text = await r.text(); check(r.ok && text.includes(".py-12") && !text.includes("--blux-primary:"), "tools: blux-tools.css is served, with the utilities of the components and no copy of the tokens"); }
       check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-bx-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
       const preload = /<link rel="preload" as="font" type="font\/woff2" crossorigin href="([^"]+)"/.exec(html)?.[1];
       const sheet = /<link rel="stylesheet" href="(_blux\/fonts\/blux\.fonts[^"]*\.css)"/.exec(html)?.[1];
@@ -260,11 +283,13 @@ try {
   // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/blux/ on every build.
   for (const dir of [server, client]) rmSync(join(dir, "obj", "blux"), { recursive: true, force: true });
   mkdirSync(join(server, "Styles"));
-  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n`);
+  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@import "../obj/blux/blux-tools.theme.css";\n`);
   build("tailwind mode");
   for (const [label, dir] of [["server", server], ["client", client]]) {
     const copied = join(dir, "obj", "blux", "blux.theme.css");
     check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/blux/blux.theme.css copied by the targets, identical to the package's`);
+    const copiedTools = join(dir, "obj", "blux", "blux-tools.theme.css");
+    check(existsSync(copiedTools) && readFileSync(copiedTools, "utf8") === readFileSync(join(root, "src", "Blux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8"), `tailwind mode: ${label} obj/blux/blux-tools.theme.css copied by the targets, identical to the package's`);
   }
 
   // Tailwind compiled by the app at build time, without Node: BluxTailwind=true downloads the pinned standalone CLI. The cache is a fresh folder
@@ -295,7 +320,7 @@ try {
     mkdirSync(shared, { recursive: true });
     writeFileSync(join(shared, "Shared.razor"), `<p class="tracking-[0.555em]">shared</p>\n`);
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><BluxTailwindAdditionalInput Include="../Shared/**/*.razor" /></ItemGroup>\n</Project>`));
-    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@source "../../Shared";\n`);
+    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/blux.theme.css";\n@import "../obj/blux/blux-tools.theme.css";\n@source "../../Shared";\n`);
     const homeSource = readFileSync(home, "utf8");
     const withClasses = (classes) => writeFileSync(home, `${homeSource}\n<p class="${classes}">Tailwind check</p>\n`);
     // tracking-[0.123em] is an arbitrary value: it is in no precompiled stylesheet, only a build that scans the app's sources can produce it.

@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Mode with Tailwind compiled by the app: copies the classes the Tools components use (one @source inline(...)) to a stable path,
+    obj/blux/blux-tools.theme.css, next to blux.theme.css (the tokens and the dark variant come from Blux.UI). The app's stylesheet
+    imports it after the Blux theme:
+
+      @import "tailwindcss";
+      @import "../obj/blux/blux.theme.css";
+      @import "../obj/blux/blux-tools.theme.css";
+
+    Without Tailwind in the app, link _content/Blux.UI.Tools/blux-tools.css after blux.css instead.
+  -->
+  <Target Name="BluxToolsCopyTailwindTheme" BeforeTargets="BeforeBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../staticwebassets/blux-tools.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))"
+          SkipUnchangedFiles="true" />
+  </Target>
+</Project>

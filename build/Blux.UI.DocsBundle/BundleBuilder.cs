@@ -25,7 +25,8 @@ public static class BundleBuilder
             .Select(c => new BundleComponent(
                 c.Slug, c.Name, c.Group, c.Description,
                 [.. c.Examples.Select(Example)],
-                [.. c.Api.Select(t => ApiType(t, themes, repoRoot))]))
+                [.. c.Api.Select(t => ApiType(t, themes, repoRoot))],
+                PackageOf(c)))
             .ToList();
 
         return new Blux.UI.Mcp.Model.DocsBundle(
@@ -34,8 +35,12 @@ public static class BundleBuilder
             [.. Catalog.Groups.Where(g => components.Any(c => c.Group == g))],
             components,
             Guides(repoRoot),
-            Icons());
+            Icons(repoRoot));
     }
+
+    /// <summary>The NuGet package of a component when it is not Blux.UI: the assembly of its first type from a sister package (<c>Blux.UI.Tools</c>).</summary>
+    private static string? PackageOf(ComponentDoc component) =>
+        component.Api.Select(t => t.Assembly.GetName().Name).FirstOrDefault(name => name != typeof(BxButton).Assembly.GetName().Name);
 
     private static string Version()
     {
@@ -195,12 +200,17 @@ public static class BundleBuilder
     public static BundleTheme? ThemeFor(Type component, string repoRoot, IEnumerable<Type>? extensions = null) =>
         ThemeOf(component, ThemesOf(new BluxOptions(), extensions), repoRoot);
 
-    private static IReadOnlyList<string> Icons()
+    private static IReadOnlyList<string> Icons(string repoRoot)
     {
         // The Lucide icons embedded in the library; the class is internal, so it is read by reflection.
         var registry = typeof(BxButton).Assembly.GetType("Blux.UI.BuiltinIcons");
         var builtin = registry?.GetField("Lucide", BindingFlags.Public | BindingFlags.Static)?.GetValue(null) as IReadOnlyDictionary<string, string>;
-        return builtin is null ? [] : [.. builtin.Keys.Order(StringComparer.Ordinal)];
+        // Plus the ones of the sister packages: their registrars add them at startup, so the list they are generated from is read (build/tools-icons.json).
+        var tools = Path.Combine(repoRoot, "build", "tools-icons.json");
+        var fromTools = File.Exists(tools)
+            ? System.Text.Json.JsonDocument.Parse(File.ReadAllText(tools)).RootElement.GetProperty("icons").EnumerateArray().Select(e => e.GetString()!)
+            : [];
+        return [.. (builtin?.Keys ?? []).Union(fromTools, StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
 
     private static IReadOnlyList<BundleGuide> Guides(string repoRoot)

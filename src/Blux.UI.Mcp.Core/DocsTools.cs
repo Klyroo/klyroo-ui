@@ -228,5 +228,5 @@ public sealed class DocsTools(DocsService docs)
         return [.. ComponentMarkdown.Sections.Where(wanted.Contains)];
     }
 
-    private string Line(BundleComponent c) => $"- **{c.Name}** (`{c.Slug}`, {c.Group}): {c.Description} {ComponentMarkdown.Link(c, docs.SiteUrl)}\n";
+    private string Line(BundleComponent c) => $"- **{c.Name}** (`{c.Slug}`, {c.Group}): {c.Description}{(c.InstallCommand() is { } install ? $" Package {c.Package}: `{install}`." : "")} {ComponentMarkdown.Link(c, docs.SiteUrl)}\n";
 }

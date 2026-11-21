@@ -16,7 +16,8 @@ if (output is null && !skill)
     return 2;
 }
 
-var bundle = BundleBuilder.Build(repo);
+// The sister packages whose themes the bundle lists next to those of Blux.UI.
+var bundle = BundleBuilder.Build(repo, [typeof(Blux.UI.Tools.BluxToolsOptions)]);
 if (output is not null)
 {
     Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output))!);

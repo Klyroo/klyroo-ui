@@ -67,13 +67,36 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 Form controls derive from `BxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
 uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-popover>` / `<bx-modal>` patterns.
 
+## Adding a component to Blux.UI.Tools
+
+`src/Blux.UI.Tools` is the home of data-heavy components (the data list and its parts). It follows the rules above, with these differences:
+
+| What | Where |
+|---|---|
+| Component | `src/Blux.UI.Tools/Components/<Family>/Bx<Name>.razor`, deriving from `BxToolsComponentBase` (it adds `ToolsOptions` and `ToolsMessages` to `BxComponentBase`) |
+| Theme | `Theming/Themes.<Family>.cs` (`internal static partial class ToolsThemes`) and a `ComponentTheme` property in `Theming/BluxToolsOptions.<Family>.cs`. The property is named after the component without `Bx` (`BxDataListEmpty` is `DataListEmpty`), which is how the docs bundle finds it. |
+| Resolving a theme | `ResolveSlots(ToolsOptions.<Name>, variants, Ui, "root")`: the same call as a core component, so `Class`, `Ui`, `BxTheme` scopes and the freeze of themes behave the same |
+| Texts | `Localization/BxToolsMessages.<Family>.cs`, and the value in each of the twelve `Localization/Locales/<Code>.cs` files (the codes are those of `BxLocales.All`; a test fails when one is missing or a placeholder changes). English and French are reviewed; the other ten are drafts, marked with a comment and absent from `BxToolsLocales.ReviewedCodes`, until a native speaker reviews them. |
+| Icons | add the Lucide name to `build/tools-icons.json`; `npm run icons` writes `Icons/ToolsIcons.g.cs`, registered through `BluxIconBundle` (an icon Blux.UI already has needs no entry) |
+| Browser behavior | `js/index.js` (the second JS initializer, bundled to `wwwroot/Blux.UI.Tools.lib.module.js`). Report through the `bx-change` and `bx-toggle` events of Blux.UI; register no event type of your own. Helpers of `src/Blux.UI/js/shared.js` can be imported by relative path. |
+| CSS | `npm run build` extracts the classes of the Tools themes (`classes:tools`) into `styles/generated/classes.txt` and `wwwroot/blux-tools.theme.css`, and compiles `wwwroot/blux-tools.css` (`css:tools`). Both are committed. |
+| Docs | `Docs/Catalog.DataList.cs` (or a new `Catalog.<Family>.cs`), examples as usual. The bundle gives the component a `Package` of `Blux.UI.Tools`, and the tools, `llms.txt` and the skill reference say `dotnet add package Blux.UI.Tools`. |
+| Tests | `tests/Blux.UI.Tools.Tests` (bUnit, deriving from `BluxToolsTestContext`), and E2E in `tests/Blux.UI.E2E` as for core |
+
+`BxDataListEmpty` is the smallest example of all of this. Two cautions:
+
+- `blux-tools.css` is a second stylesheet loaded after `blux.css`, each with its own `@layer utilities`. Within one element the class merger drops conflicting
+  utilities, but a longhand in one sheet and a shorthand in the other (`px-2` in `blux.css`, `p-6` in `blux-tools.css`) are ordered by sheet, and the
+  later sheet wins. In a Tools theme, do not rely on a core utility to override a shorthand written in the Tools theme of the same element: use the same property group.
+- `styles/blux-tools.tokens.css` is a verbatim copy of the token mapping at the top of `styles/blux.base.css`; a test fails when they differ.
+
 ## Documentation site
 
 The documentation site lives in `playground/`. Run it with
 `ASPNETCORE_ENVIRONMENT=Development dotnet run --project playground/Blux.Playground/Blux.Playground`, then open `/`.
 Component pages are at `/components/{name}` (Auto mode) and `/{ssr|server|wasm|auto}/components/{name}`.
 The site compiles its own Tailwind (`npm run site:css`), so it exercises the "Tailwind in the app" mode.
-Generated files (`src/Blux.UI/wwwroot`, `src/Blux.UI/styles/generated`, the site's `wwwroot/site.css`) are committed;
+Generated files (`src/Blux.UI/wwwroot`, `src/Blux.UI/styles/generated`, the same two folders of `src/Blux.UI.Tools`, `src/Blux.UI.Tools/Icons`, the site's `wwwroot/site.css`) are committed;
 CI fails if `npm run build` changes them.
 
 ## Images
@@ -111,6 +134,7 @@ npm run build              # theme classes, blux.css, JS bundle, site.css: commi
 dotnet build Blux.UI.slnx  # warnings are errors
 dotnet test --project tests/Blux.UI.Tests
 dotnet test --project tests/Blux.UI.Mcp.Tests   # bundle, MCP tools, llms.txt, skill
+dotnet test --project tests/Blux.UI.Tools.Tests  # Blux.UI.Tools: components, messages, generated assets
 dotnet test --project tests/Blux.UI.Images.Tests         # provider URLs
 dotnet test --project tests/Blux.UI.Images.Local.Tests   # optimizer parameters, security, resizing
 dotnet build tests/Blux.UI.E2E && dotnet test --project tests/Blux.UI.E2E --no-build -- --filter-class Blux.UI.E2E.<Family>Tests

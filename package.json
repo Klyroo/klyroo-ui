@@ -5,12 +5,15 @@
   "type": "module",
   "scripts": {
     "classes": "dotnet run --project build/Blux.UI.ClassExtractor -- src/Blux.UI",
+    "classes:tools": "dotnet build src/Blux.UI.Tools -c Debug --nologo -v q && dotnet run --project build/Blux.UI.ClassExtractor -- src/Blux.UI.Tools --assembly src/Blux.UI.Tools/bin/Debug/net10.0/Blux.UI.Tools.dll --extension Blux.UI.Tools.BluxToolsOptions --only-extensions --theme-css blux-tools.theme.css",
     "css": "tailwindcss -i src/Blux.UI/styles/blux.css -o src/Blux.UI/wwwroot/blux.css --minify && tailwindcss -i src/Blux.UI/styles/blux.preflight.css -o src/Blux.UI/wwwroot/blux.preflight.css --minify",
+    "css:tools": "tailwindcss -i src/Blux.UI.Tools/styles/blux-tools.css -o src/Blux.UI.Tools/wwwroot/blux-tools.css --minify",
     "js": "esbuild src/Blux.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/Blux.UI.lib.module.js",
+    "js:tools": "esbuild src/Blux.UI.Tools/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI.Tools/wwwroot/Blux.UI.Tools.lib.module.js",
     "editor": "esbuild src/Blux.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/blux-editor.js",
     "icons": "node build/gen-icons.mjs",
     "test:js": "node --test tests/js/*.test.mjs",
-    "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor && npm run site:css",
+    "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor && npm run classes:tools && npm run css:tools && npm run js:tools && npm run site:css",
     "site:css": "tailwindcss -i playground/Blux.Playground/Blux.Playground/Styles/site.css -o playground/Blux.Playground/Blux.Playground/wwwroot/site.css --minify"
   },
   "devDependencies": {
