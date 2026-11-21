@@ -130,6 +130,7 @@ jobs:
       - run: dotnet publish templates/starter/src/Starter.Web -c Release -o published-templates/starter
       - run: dotnet publish templates/landing/src/Landing.Web -c Release -o published-templates/landing
       - run: dotnet publish templates/docs/src/Docs.Web -c Release -o published-templates/docs
+      - run: dotnet publish templates/changelog/src/Changelog.Web -c Release -o published-templates/changelog
       - run: dotnet build tests/Blux.UI.E2E
       - name: Install browser
         run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium

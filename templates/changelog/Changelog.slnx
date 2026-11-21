@@ -1,0 +1,5 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Changelog.Web/Changelog.Web.csproj" />
+  </Folder>
+</Solution>

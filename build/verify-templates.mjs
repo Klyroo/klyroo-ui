@@ -11,7 +11,7 @@
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
 //      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
-//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs) (--no-browser skips that part);
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
 //      is finished by running it again.
@@ -57,6 +57,19 @@ const templates = [
     probe: { utility: "max-w-[29rem]", css: "max-width:29rem" },
     pages: ["/", "/getting-started/installation", "/guides/configuration"],
     browserClass: "Blux.UI.E2E.DocsTemplateTests",
+  },
+  {
+    name: "changelog",
+    web: "src/Changelog.Web",
+    name_in_files: "Changelog",
+    renames: ["Acme", "changelogApp"],
+    probe: { utility: "max-w-[46rem]", css: "max-width:46rem" },
+    pages: ["/", "/?page=2", "/releases/v1.4.0", "/feed.xml"],
+    // No network: the releases are the sample ones of the template, with a repository for the links to point at.
+    env: { Changelog__Source: "File", Changelog__Repository: "tern-cli/tern" },
+    // Blux's own components (BxChangelogVersions) are not the template name: rename.cs leaves them alone.
+    keep: /Bx(?:Changelog)Version(?:s)?/g,
+    browserClass: "Blux.UI.E2E.ChangelogTemplateTests",
   },
 ];
 
@@ -216,7 +229,7 @@ try {
       for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: `/demo/${template.name}` }, `/demo/${template.name}`]]) {
         let app;
         try {
-          app = await start(assembly, web, extraEnv);
+          app = await start(assembly, web, { ...template.env, ...extraEnv });
         } catch (error) {
           check(false, `${template.name}: runs ${label}`);
           console.log(error.message);
@@ -254,7 +267,7 @@ try {
       for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: `/demo/${template.name}` }, `/demo/${template.name}`]]) {
         let app;
         try {
-          app = await start(publishedDll, published, { ...extraEnv, ASPNETCORE_ENVIRONMENT: "Production" });
+          app = await start(publishedDll, published, { ...template.env, ...extraEnv, ASPNETCORE_ENVIRONMENT: "Production" });
         } catch (error) {
           check(false, `${template.name}: the published app runs in Production ${label}`);
           console.log(error.message);
@@ -308,7 +321,7 @@ try {
       check(existsSync(join(copy, `${newName}.slnx`)), `${template.name}: ${newName}: the solution is ${newName}.slnx`);
       check(renamed.out.includes(`dotnet run --project src/${newName}.Web`) && existsSync(join(copy, "src", `${newName}.Web`)), `${template.name}: ${newName}: the hint points to a folder that exists`);
       // What is left of the template name once the new name (which may contain it) is taken out.
-      const strip = (text) => text.replace(new RegExp(newName, "gi"), "");
+      const strip = (text) => text.replace(template.keep ?? /$^/, "").replace(new RegExp(newName, "gi"), "");
       const left = textFiles(copy).filter(({ text }) => new RegExp(template.name, "i").test(strip(text))).map(({ path }) => path.slice(copy.length + 1));
       check(left.length === 0, `${template.name}: ${newName}: no occurrence of the template name is left in a file${left.length ? ` (${left.join(", ")})` : ""}`);
       const leftNames = allPaths(copy).filter((p) => new RegExp(template.name, "i").test(strip(p.slice(copy.length)))).map((p) => p.slice(copy.length + 1));

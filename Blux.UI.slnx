@@ -37,6 +37,7 @@
     <Project Path="templates/starter/src/Starter.Web.Client/Starter.Web.Client.csproj" />
     <Project Path="templates/landing/src/Landing.Web/Landing.Web.csproj" />
     <Project Path="templates/docs/src/Docs.Web/Docs.Web.csproj" />
+    <Project Path="templates/changelog/src/Changelog.Web/Changelog.Web.csproj" />
   </Folder>
   <Folder Name="/build/">
     <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />

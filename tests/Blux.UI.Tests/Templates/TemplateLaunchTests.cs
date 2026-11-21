@@ -119,6 +119,43 @@ public class TemplateLaunchTests
         Assert.DoesNotContain("BLUX_WATCHDOG_PARENT_PID", env.Keys);
     }
 
+    [Fact]
+    public void The_settings_of_a_demo_reach_it_as_environment_variables_by_the_names_of_the_configuration_keys()
+    {
+        var settings = new Dictionary<string, string> { ["Changelog:Source"] = "File", ["Changelog:Repository"] = "tern-cli/tern", ["Plain"] = "x" };
+
+        var env = Env([], new TemplateLaunch.ChildSettings(null, 1, 0, settings));
+
+        Assert.Equal("File", env["Changelog__Source"]);
+        Assert.Equal("tern-cli/tern", env["Changelog__Repository"]);
+        Assert.Equal("x", env["Plain"]);
+    }
+
+    [Fact]
+    public void The_settings_of_a_demo_are_not_on_its_command_line_and_do_not_replace_what_the_supervisor_decides()
+    {
+        var settings = new Dictionary<string, string>
+        {
+            ["Changelog:GitHubToken"] = "ghp_secret", ["ASPNETCORE_ENVIRONMENT"] = "Staging", ["DOTNET_STARTUP_HOOKS"] = "/evil.dll", ["DOTNET_GCHeapHardLimit"] = "1",
+        };
+        var host = new KeyValuePair<string, string?>[] { new("PATH", "/usr/bin") };
+
+        var command = TemplateLaunch.Build(TemplateRunMode.Published, "Starter.Web", "/srv/d", "/srv/d", 5000, "/templates/starter/demo", host,
+            new TemplateLaunch.ChildSettings("/app/Blux.Playground.DemoWatchdog.dll", 4242, 512, settings));
+
+        Assert.DoesNotContain(command.Arguments, argument => argument.Contains("ghp_secret", StringComparison.Ordinal));
+        Assert.Equal("ghp_secret", command.Environment["Changelog__GitHubToken"]);
+        Assert.Equal("Production", command.Environment["ASPNETCORE_ENVIRONMENT"]);
+        Assert.Equal("/app/Blux.Playground.DemoWatchdog.dll", command.Environment["DOTNET_STARTUP_HOOKS"]);
+        Assert.Equal("20000000", command.Environment["DOTNET_GCHeapHardLimit"]);
+    }
+
+    [Fact]
+    public void A_demo_with_no_settings_gets_the_same_environment_as_before()
+    {
+        Assert.Equal(Env([]).OrderBy(p => p.Key), Env([], new TemplateLaunch.ChildSettings(null, 1, 0, new Dictionary<string, string>())).OrderBy(p => p.Key));
+    }
+
     [Theory]
     [InlineData(200, "<head><base href=\"/templates/starter/demo/\" /></head>", "/templates/starter/demo", true)]
     [InlineData(302, "<BASE HREF=\"/templates/starter/demo/\">", "/templates/starter/demo/", true)]
@@ -211,7 +248,7 @@ public class TemplateLaunchTests
             Assert.False(string.IsNullOrEmpty(t.WebAssembly));
         });
         Assert.All(TemplateRegistry.All.Where(t => !t.HasDemo), t => Assert.Null(t.WebAssembly));
-        Assert.Equal(["starter", "landing", "docs"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
+        Assert.Equal(["starter", "landing", "docs", "changelog"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
     }
 
     [Fact]

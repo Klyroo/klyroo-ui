@@ -145,10 +145,10 @@ live in each project file, like the output of `dotnet new`, and it refers to the
   works below a path base), and a second export is renamed with `rename.cs` and built. It needs the network.
 - The MAUI heads are built here from the source of the library only (the `maui` CI job). Building a head against the packed package, as a user does,
   is left to the CI of the exported repository: `verify-templates` does not build MAUI heads because it has no workloads.
-- The browser check of `verify-templates` publishes the web project and runs the browser class of the template (`browserClass` in the script: `TemplateTests` for the Starter, `LandingTemplateTests` for the Landing, `DocsTemplateTests` for the Docs) against the published folder in
+- The browser check of `verify-templates` publishes the web project and runs the browser class of the template (`browserClass` in the script: `TemplateTests` for the Starter, `LandingTemplateTests` for the Landing, `DocsTemplateTests` for the Docs, `ChangelogTemplateTests` for the Changelog, which runs with the sample releases, `Changelog:Source=File`: no network) against the published folder in
   Production (it needs Chromium for Playwright; `--no-browser` skips it).
 - `templates/_shared/Content` is not a template: it is the reference copy of the Markdown content code (Markdig and YamlDotNet: front matter, navigation, search index,
-  highlighting, sanitizing) that every content template (Docs, then SaaS, Portfolio and Changelog) carries in its own `src/<Project>/Content` folder, so each stays a
+  highlighting, sanitizing) that every content template (Docs and Changelog, then SaaS and Portfolio) carries in its own `src/<Project>/Content` folder, so each stays a
   complete repository. Folders that start with an underscore are skipped as templates (`export-template.mjs` refuses them, `verify-templates.mjs` only requires
   the other folders to be in its list). Change shared code in the reference, copy the folder over each template's `Content` (`cp templates/_shared/Content/*.cs
   templates/<name>/src/<Project>/Content/`), and run `dotnet test --project tests/Blux.Templates.Tests`: its unit tests compile the reference, and
@@ -172,6 +172,7 @@ Settings, under `Blux:Templates` (environment variables `Blux__Templates__...`):
 | `LivenessIntervalSeconds` | `30` | A running demo is asked for its home page this often; two answers in a row that are not the demo's restart it. |
 | `MemoryLimitMegabytes` | `512` | Managed heap limit of each demo (`DOTNET_GCHeapHardLimit`; `0` for none). `DOTNET_GCConserveMemory=5` is always set. |
 | `RepositoryBase` | none | Where the "Source" buttons point (`https://github.com/<org>`); unset, the gallery says the repositories are not published. |
+| `Demos:<name>:...` | none | Settings of one demo, with the keys its app reads: `Demos:changelog:Changelog:Repository` (environment variable `Blux__Templates__Demos__changelog__Changelog__Repository`). They reach the demo as environment variables (`Changelog__Repository`), not on its command line, and never replace what the host decides (environment name, memory limit, watchdog). The `appsettings.json` of the docs host sets the Changelog demo to `Source=GitHub`, `Repository=dotnet/aspnetcore` (a public repository with many releases, until blux-ui has its own); `appsettings.Development.json` and the E2E fixture (`PlaygroundServer`) set `Source=File` with the sample releases, so the tests need no network. A token for a busier demo is `Blux__Templates__Demos__changelog__Changelog__GitHubToken`. |
 
 What the host guarantees, whatever supervises it:
 
