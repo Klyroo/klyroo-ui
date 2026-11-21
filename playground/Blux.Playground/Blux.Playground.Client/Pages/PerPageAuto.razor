@@ -1,0 +1,13 @@
+@page "/perpage/auto"
+@attribute [ExcludeFromInteractiveRouting]
+@rendermode InteractiveAuto
+@using Blux.Playground.Client.Examples
+
+<PageTitle>Per-page interactivity (auto) · blux/ui</PageTitle>
+
+@* The router renders statically; only this page opts into a render mode. E2E tests check that a data list still hands its prerendered result to the interactive render here. *@
+<div class="mx-auto max-w-4xl space-y-4 p-6">
+    <h1 class="text-2xl font-semibold">Per-page interactivity: auto</h1>
+    <RendererBadge />
+    <DataListUrlExample />
+</div>

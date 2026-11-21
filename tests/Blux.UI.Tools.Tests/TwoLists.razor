@@ -1,0 +1,22 @@
+@* Two lists on one page, each with its own URL prefix (or the same one, to prove the claim). *@
+<div data-testid="a">
+    <BxDataList TItem="Person" Schema="DataListControllerTests.Schema" Items="Items" UrlKey="a">
+        <BxDataListTable>
+            <BxDataListColumn Field="name" />
+            <BxDataListColumn Field="age" />
+        </BxDataListTable>
+    </BxDataList>
+</div>
+<div data-testid="b">
+    <BxDataList TItem="Person" Schema="DataListControllerTests.Schema" Items="Items" UrlKey="@(SamePrefix ? "a" : "b")">
+        <BxDataListTable>
+            <BxDataListColumn Field="name" />
+            <BxDataListColumn Field="age" />
+        </BxDataListTable>
+    </BxDataList>
+</div>
+
+@code {
+    [Parameter] public IEnumerable<Person>? Items { get; set; }
+    [Parameter] public bool SamePrefix { get; set; }
+}
