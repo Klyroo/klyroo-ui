@@ -9,6 +9,18 @@ public sealed partial record BxMessages
     public string SelectMenuCreate { get; init; } = "Create \"{0}\"";
     public string InputMenuNoResults { get; init; } = "No results";
     public string InputMenuSuggestions { get; init; } = "Suggestions";
+
+    /// <summary>Announced politely while a <c>SelectMenu</c> or <c>InputMenu</c> with an <c>OptionsProvider</c> loads its options.</summary>
+    public string RemoteOptionsLoading { get; init; } = "Loading...";
+
+    /// <summary>Shown (and announced) when the <c>OptionsProvider</c> of a <c>SelectMenu</c> or <c>InputMenu</c> fails.</summary>
+    public string RemoteOptionsError { get; init; } = "The options could not be loaded.";
+
+    /// <summary>Text of the button that asks the <c>OptionsProvider</c> again after a failure.</summary>
+    public string RemoteOptionsRetry { get; init; } = "Retry";
+
+    /// <summary>Shown when the typed text is shorter than <c>MinLength</c>; <c>{0}</c> is that length.</summary>
+    public string RemoteOptionsMinLength { get; init; } = "Type at least {0} characters to search.";
     public string InputNumberIncrement { get; init; } = "Increase";
     public string InputNumberDecrement { get; init; } = "Decrease";
 

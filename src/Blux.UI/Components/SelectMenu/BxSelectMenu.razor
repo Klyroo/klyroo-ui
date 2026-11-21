@@ -1,6 +1,7 @@
 @namespace Blux.UI
 @using Blux.UI.Internal
 @inherits BxListFieldBase
+@implements IDisposable
 
 @if (UseEditContext)
 {
@@ -14,10 +15,46 @@ else
 @code {
     private SlotSet _slots = default!;
     private string _id = default!;
-    private IReadOnlyList<SelectSection> _sections = [];
-    private bool _hasIcons;
+    private RemoteOptions? _remote;
+    private bool _iconsSeen;
 
-    [Parameter, EditorRequired] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+    /// <summary>
+    /// The options. Not needed when <see cref="OptionsProvider"/> loads them; given together with it, these items are not listed but
+    /// their labels are known (the label of a value the provider has not returned yet).
+    /// </summary>
+    [Parameter] public IReadOnlyList<BxSelectItem> Items { get; set; } = [];
+
+    /// <summary>
+    /// Loads the options from a remote source, one page at a time, instead of listing <see cref="Items"/>. The filter field
+    /// searches the source (the browser does not filter): the text is trimmed, sent after <see cref="Debounce"/> milliseconds
+    /// and only when it has at least <see cref="MinLength"/> characters (an empty text lists the unfiltered options); an older request is
+    /// cancelled and an old answer never replaces a newer one. The next page loads as the list scrolls, a bit before its end, and by the
+    /// "Load more" button. While loading the list is <c>aria-busy</c> and a polite status says so; when the provider throws, the
+    /// list shows a translated error with a Retry button (also reached with Enter in the filter field).
+    /// <para>
+    /// Interactive only: a statically rendered page (and the prerender before the page becomes interactive) has nobody to call the provider,
+    /// so the field renders its current values (as their raw values, unless <see cref="Items"/> names them) with a disabled trigger, and still posts
+    /// them with the form. The provider is first called when the list opens. A parent that renders again with an equal or a new delegate keeps the loaded
+    /// state; give the component a <c>@key</c> to start from scratch.
+    /// </para>
+    /// </summary>
+    [Parameter] public BxOptionsProvider? OptionsProvider { get; set; }
+
+    /// <summary>
+    /// With <see cref="OptionsProvider"/>: returns the options of selected values the loaded pages do not contain (values restored from
+    /// the address or a saved form), so the field shows their labels. Called once for each such value, as soon as the component is
+    /// interactive. Without it, such values show their raw value.
+    /// </summary>
+    [Parameter] public BxSelectedOptionsResolver? ResolveSelected { get; set; }
+
+    /// <summary>With <see cref="OptionsProvider"/>: the quiet time in milliseconds after typing before the source is searched.</summary>
+    [Parameter] public int Debounce { get; set; } = 250;
+
+    /// <summary>With <see cref="OptionsProvider"/>: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing.</summary>
+    [Parameter] public int MinLength { get; set; }
+
+    /// <summary>With <see cref="OptionsProvider"/>: the number of options requested per page.</summary>
+    [Parameter] public int PageSize { get; set; } = RemoteOptions.DefaultPageSize;
 
     /// <summary>Several values can be selected; each one posts under <c>Name</c>. Otherwise the list holds at most one value.</summary>
     [Parameter] public bool Multiple { get; set; }
@@ -31,26 +68,79 @@ else
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
     [Parameter] public SelectMenuUi? Ui { get; set; }
 
+    // With a provider the options are the loaded ones; a statically rendered page has none.
+    private bool Remote => _remote is not null;
+
+    // Only an interactive component can hear the browser and call the provider.
+    private bool RemoteActive => _remote is not null && RendererInfo.IsInteractive;
+
+    private IReadOnlyList<BxSelectItem> Listed => _remote is null ? Items : _remote.Items;
+
+    private bool HasIcons => _remote is null ? Items.Any(i => i.Icon is not null) : _iconsSeen;
+
+    private string LabelOf(string value) => _remote is null ? Items.FirstOrDefault(i => i.Value == value)?.Label ?? value : _remote.LabelOf(value);
+
     private string Label => Value is { Count: > 0 }
-        ? string.Join(", ", Value.Select(v => Items.FirstOrDefault(i => i.Value == v)?.Label ?? v))
+        ? string.Join(", ", Value.Select(LabelOf))
         : Placeholder ?? "";
 
     protected override void OnParametersSet()
     {
         _id ??= NewId("selectmenu");
-        _sections = SelectSections.Of(Items);
-        _hasIcons = Items.Any(i => i.Icon is not null);
+        if (OptionsProvider is null)
+        {
+            _remote?.Dispose();
+            _remote = null;
+        }
+        else
+        {
+            _remote ??= new RemoteOptions(OptionsProvider, OnRemoteChanged);
+            _remote.Provider = OptionsProvider;
+            _remote.PageSize = PageSize;
+            _remote.MinLength = Math.Max(0, MinLength);
+            _remote.StaticItems = Items;
+            _remote.RememberSelected(Value);
+            _iconsSeen |= _remote.Items.Any(i => i.Icon is not null) || Items.Any(i => i.Icon is not null);
+        }
         _slots = ResolveSlots(Options.SelectMenu, new Dictionary<string, string?>
         {
             ["variant"] = VariantValue.Of(Variant),
             ["size"] = VariantValue.Of(EffectiveSize),
+            ["remote"] = RemoteActive ? "true" : "false",
         }, Ui, "root");
     }
+
+    protected override Task OnParametersSetAsync() =>
+        _remote is not null && ResolveSelected is not null && RendererInfo.IsInteractive
+            ? _remote.ResolveAsync(Value, ResolveSelected)
+            : Task.CompletedTask;
+
+    private void OnRemoteChanged()
+    {
+        _remote!.RememberSelected(Value);
+        _iconsSeen |= _remote.Items.Any(i => i.Icon is not null);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => _remote?.Dispose();
+
+    private EventCallback<BxSearchEventArgs> SearchHandler =>
+        RemoteActive ? EventCallback.Factory.Create<BxSearchEventArgs>(this, OnSearch) : default;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxSearchEventArgs))]
+    private Task OnSearch(BxSearchEventArgs e) => _remote!.SearchAsync(e.Value);
+
+    // The labels of the selected values the browser cannot read from the list (it may no longer hold them): value, label, value, label...
+    private string? KnownLabels => RemoteActive && ListValue.Join(_remote!.KnownLabels(Value)) is { Length: > 0 } known ? known : null;
 
     private Dictionary<string, object> TriggerAttributes(EditBinding binding)
     {
         var attributes = PartAttributes(_slots["base"], binding, "combobox");
         attributes["data-slot"] = "trigger";
+        // Nothing can load the options before the page is interactive: the list would open empty.
+        if (Remote && !RendererInfo.IsInteractive) attributes["disabled"] = true;
         return attributes;
     }
 
@@ -74,6 +164,47 @@ else
             @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
         </text>;
 
+    private RenderFragment Listbox =>
+        @<div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)"
+              aria-multiselectable="@(Multiple ? "true" : null)"
+              aria-busy="@(RemoteActive && _remote!.Busy ? "true" : null)"
+              data-generation="@(RemoteActive ? _remote!.Generation.ToString() : null)"
+              hidden="@(Remote && Listed.Count == 0 && !Create ? true : null)">
+            @{ var sections = SelectSections.Of(Listed); }
+            @for (var s = 0; s < sections.Count; s++)
+            {
+                var section = sections[s];
+                if (section.Label is null)
+                {
+                    foreach (var item in section.Items)
+                    {
+                        @Option(item)
+                    }
+                }
+                else
+                {
+                    var groupId = _id + "-group-" + s;
+                    <div role="group" aria-labelledby="@groupId" class="@_slots["group"]" data-slot="group">
+                        <div id="@groupId" role="presentation" class="@_slots["groupLabel"]" data-slot="group-label">@section.Label</div>
+                        @foreach (var item in section.Items)
+                        {
+                            @Option(item)
+                        }
+                    </div>
+                }
+            }
+            @if (Create)
+            {
+                <div role="option" class="@($"{_slots["item"]} {_slots["create"]}")" data-slot="create" data-label="" aria-selected="false" hidden></div>
+            }
+        </div>;
+
+    private RenderFragment Results =>
+        RemoteActive
+            ? RemoteOptionsView.Scroller(_remote!, _slots, _id + "-scroller", Messages, FormatCulture,
+                RenderIcon(Options.Icons.Loading, _slots["spinner"]), Messages.SelectMenuNoResults, Create && _remote!.Term.Length > 0, this, Listbox)
+            : Listbox;
+
     private RenderFragment Markup(EditBinding binding) =>
         @<bx-select-menu data-bx-seq="@SequenceAttribute"
                          name="@binding.Name"
@@ -82,14 +213,19 @@ else
                          data-post-empty="@(Multiple ? null : "")"
                          data-create="@(Create ? "" : null)"
                          data-create-label="@(Create ? Messages.SelectMenuCreate : null)"
+                         data-remote="@(RemoteActive ? "" : null)"
+                         data-debounce="@(RemoteActive ? Math.Max(0, Debounce).ToString() : null)"
+                         data-known="@KnownLabels"
                          disabled="@Disabled"
                          class="@_slots["root"]"
                          data-color="@Color.Value"
                          @onbxchange="ChangeHandler"
-                         @onbxchange:stopPropagation="true">
+                         @onbxchange:stopPropagation="true"
+                         @onbxsearch="SearchHandler"
+                         @onbxsearch:stopPropagation="true">
             <span data-slot="values" hidden></span>
             <button type="button" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
-                @if (_hasIcons)
+                @if (HasIcons)
                 {
                     @* Filled by the browser with the icon of the selected item: no Blazor children, so nothing to diff. *@
                     <span class="@_slots["leadingIcon"]" data-slot="selectedIcon" aria-hidden="true"></span>
@@ -105,36 +241,11 @@ else
                     <input type="text" role="combobox" class="@_slots["search"]" data-slot="search" autocomplete="off" aria-autocomplete="list" aria-expanded="true"
                            aria-label="@(SearchLabel ?? Messages.SelectMenuSearch)" />
                 </div>
-                <div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-labelledby="@(Field?.LabelId ?? ControlId)"
-                     aria-multiselectable="@(Multiple ? "true" : null)">
-                    @for (var s = 0; s < _sections.Count; s++)
-                    {
-                        var section = _sections[s];
-                        if (section.Label is null)
-                        {
-                            foreach (var item in section.Items)
-                            {
-                                @Option(item)
-                            }
-                        }
-                        else
-                        {
-                            var groupId = _id + "-group-" + s;
-                            <div role="group" aria-labelledby="@groupId" class="@_slots["group"]" data-slot="group">
-                                <div id="@groupId" role="presentation" class="@_slots["groupLabel"]" data-slot="group-label">@section.Label</div>
-                                @foreach (var item in section.Items)
-                                {
-                                    @Option(item)
-                                }
-                            </div>
-                        }
-                    }
-                    @if (Create)
-                    {
-                        <div role="option" class="@($"{_slots["item"]} {_slots["create"]}")" data-slot="create" data-label="" aria-selected="false" hidden></div>
-                    }
-                </div>
-                <p class="@_slots["empty"]" data-slot="empty" hidden>@Messages.SelectMenuNoResults</p>
+                @Results
+                @if (!Remote)
+                {
+                    <p class="@_slots["empty"]" data-slot="empty" hidden>@Messages.SelectMenuNoResults</p>
+                }
             </div>
         </bx-select-menu>;
 }
