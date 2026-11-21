@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* The site can be served below a path base (see Program.cs): every relative URL, the stylesheet and the framework included, follows this. *@
+    <base href="@_baseHref" />
+    <BxColorModeScript />
+    <BxThemeStyle />
+    @* Self-hosted at build time from the BluxFont items of Changelog.Web.csproj: no third-party request. *@
+    <BxFonts />
+    <ResourcePreloader />
+    @* Compiled by the build from Styles/app.css (Tailwind, with the Blux theme). *@
+    <link rel="stylesheet" href="@Assets["app.css"]" />
+    <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    @* No render mode: every page is rendered once by the server and sent as HTML. The menu and the color mode run in the browser (Blux's own script) and
+       the copy buttons of the code blocks of a release run on the small script below, so there is no circuit and no WebAssembly to download. *@
+    <Routes />
+    @* Copies the code of a block when its button is pressed (Content/CodeCopy.cs). A site with a Content-Security-Policy serves it as a file instead. *@
+    <script>@((MarkupString)CodeCopy.Script)</script>
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    // The PathBase setting as configured, normalized to "/x/": the root when there is none.
+    private string _baseHref => Configuration["PathBase"] is { Length: > 0 } pathBase ? "/" + pathBase.Trim('/') + "/" : "/";
+}

@@ -14,6 +14,9 @@ public static class SyntaxHighlighter
     private const RegexOptions Options = RegexOptions.Multiline | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture;
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(1);
 
+    /// <summary>Code longer than this (in characters) is shown without color: a block that long is not meant to be read as code, and highlighting it costs time.</summary>
+    public const int MaxLength = 20_000;
+
     private static Regex Build(string pattern) => new(pattern, Options, Timeout);
 
     private const string DoubleQuoted = @"""(?:\\.|[^""\\\n])*""";
@@ -35,11 +38,11 @@ public static class SyntaxHighlighter
         """|(?<keyword>\b(?:true|false)\b)|(?<number>(?<![\w.-])-?\d+(?:\.\d+)?(?![\w.-]))""");
 
     private static readonly Regex CSharp = Build(
-        """(?<comment>//[^\n]*|/\*[\s\S]*?\*/)|(?<string>[$@]{0,2}"(?:\\.|[^"\\\n])*")|(?<keyword>\b(?:abstract|as|async|await|base|bool|break|case|catch|char|class|const|continue|decimal|default|delegate|do|double|else|enum|event|false|finally|float|for|foreach|if|in|int|interface|internal|is|lock|long|namespace|new|null|object|out|override|private|protected|public|readonly|record|ref|return|sealed|static|string|struct|switch|this|throw|true|try|typeof|using|var|virtual|void|while|get|set|init)\b)""" +
+        """(?<comment>//[^\n]*|/\*[\s\S]*?(?:\*/|\z))|(?<string>[$@]{0,2}"(?:\\.|[^"\\\n])*")|(?<keyword>\b(?:abstract|as|async|await|base|bool|break|case|catch|char|class|const|continue|decimal|default|delegate|do|double|else|enum|event|false|finally|float|for|foreach|if|in|int|interface|internal|is|lock|long|namespace|new|null|object|out|override|private|protected|public|readonly|record|ref|return|sealed|static|string|struct|switch|this|throw|true|try|typeof|using|var|virtual|void|while|get|set|init)\b)""" +
         """|(?<type>\b[A-Z][A-Za-z0-9_]*\b)|(?<number>\b\d+(?:\.\d+)?\b)""");
 
     private static readonly Regex Html = Build(
-        """(?<comment><!--[\s\S]*?-->|@\*[\s\S]*?\*@)|(?<tag></?[A-Za-z][\w:.\-]*)|(?<property>(?<=\s)[\w:@.\-]+(?==))|(?<string>""" + DoubleQuoted + """|'[^'\n]*')|(?<variable>@[\w.]+)""");
+        """(?<comment><!--[\s\S]*?(?:-->|\z)|@\*[\s\S]*?(?:\*@|\z))|(?<tag></?[A-Za-z][\w:.\-]*)|(?<property>(?<=\s)[\w:@.\-]+(?==))|(?<string>""" + DoubleQuoted + """|'[^'\n]*')|(?<variable>@[\w.]+)""");
 
     private static readonly Dictionary<string, Regex> Languages = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -57,7 +60,7 @@ public static class SyntaxHighlighter
     /// <summary>The code as HTML: encoded, with the tokens of a known language in spans.</summary>
     public static string ToHtml(string code, string? language)
     {
-        if (language is null || !Languages.TryGetValue(language, out var pattern))
+        if (language is null || code.Length > MaxLength || !Languages.TryGetValue(language, out var pattern))
         {
             return WebUtility.HtmlEncode(code);
         }
@@ -66,8 +69,14 @@ public static class SyntaxHighlighter
         {
             var html = new StringBuilder(code.Length * 2);
             var last = 0;
+            // The timeout of the pattern is for one match; text made of many short matches that are each slow would add up, so the whole block has a budget too.
+            var clock = System.Diagnostics.Stopwatch.StartNew();
             foreach (Match match in pattern.Matches(code))
             {
+                if (clock.Elapsed > Timeout)
+                {
+                    return WebUtility.HtmlEncode(code);
+                }
                 if (match.Length == 0)
                 {
                     continue;

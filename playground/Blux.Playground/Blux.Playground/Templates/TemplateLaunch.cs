@@ -46,11 +46,17 @@ public static class TemplateLaunch
     /// <param name="WatchdogHook">The startup hook assembly that ends the demo when the host dies, or null to run without it.</param>
     /// <param name="ParentPid">The id of the host process, for the fallback of the watchdog.</param>
     /// <param name="MemoryLimitMegabytes">The managed heap hard limit of the demo (0 for none); a small <c>GCConserveMemory</c> is always set.</param>
-    public sealed record ChildSettings(string? WatchdogHook, int ParentPid, int MemoryLimitMegabytes);
+    /// <param name="Settings">
+    /// The settings of this demo from <c>Blux:Templates:Demos:{name}</c>, by configuration key (<c>Changelog:Source</c>). They reach the demo as environment variables
+    /// (<c>Changelog__Source</c>), so a secret in them is not on its command line. They never replace what this launch decides itself (the environment name, the
+    /// watchdog, the memory limit).
+    /// </param>
+    public sealed record ChildSettings(string? WatchdogHook, int ParentPid, int MemoryLimitMegabytes, IReadOnlyDictionary<string, string>? Settings = null);
 
     /// <summary>
     /// The environment of a demo: only what a .NET app needs to run (the path, the home folder, locale and time zone, the <c>DOTNET_</c> settings) from
-    /// the environment of the host, never the rest of it (<c>Kestrel__*</c>, <c>Blux__*</c>, connection strings, tokens), then what the supervisor decides.
+    /// the environment of the host, never the rest of it (<c>Kestrel__*</c>, <c>Blux__*</c>, connection strings, tokens), then the settings given for this demo
+    /// (<see cref="ChildSettings.Settings"/>), then what the supervisor decides.
     /// The address and the path base are command line arguments, not variables.
     /// </summary>
     public static IReadOnlyDictionary<string, string> ChildEnvironment(IEnumerable<KeyValuePair<string, string?>> host, TemplateRunMode mode, ChildSettings settings)
@@ -59,6 +65,11 @@ public static class TemplateLaunch
         foreach (var (name, value) in host)
         {
             if (value is not null && IsInherited(name)) environment[name] = value;
+        }
+        // What the operator configured for this demo. Applied before the decisions below, so those win.
+        foreach (var (key, value) in settings.Settings ?? new Dictionary<string, string>())
+        {
+            if (key.Length > 0) environment[key.Replace(":", "__", StringComparison.Ordinal)] = value;
         }
         // Development serves the static web assets of referenced libraries from their source folders; Production reads the publish folder.
         environment["ASPNETCORE_ENVIRONMENT"] = mode == TemplateRunMode.Published ? "Production" : "Development";

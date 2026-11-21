@@ -25,6 +25,27 @@ public sealed record MarkdownHeading(string Id, string Text, int Level);
 public sealed record RenderedMarkdown(string Html, IReadOnlyList<MarkdownHeading> Headings, string Text, IReadOnlyList<string> Links, IReadOnlyList<string> Images);
 
 /// <summary>
+/// Extra rules for Markdown that nobody of the team wrote (release notes, comments, anything fetched from another service). Pass it to
+/// <see cref="MarkdownRenderer.Render(string, string, string, UntrustedMarkdown)"/>. On top of what the renderer always does (raw HTML is shown as text,
+/// <see cref="ContentUrl.AllowedSchemes"/> only), it makes the output safe to put on a page next to other content:
+/// <list type="bullet">
+/// <item>A link must be absolute (<c>http</c>, <c>https</c> or <c>mailto</c>) or a <c>#fragment</c> of the body; a relative address would point into this site, so it loses its link.
+///   An image must be <c>https</c>: <c>http</c>, relative and protocol-relative images are dropped (the alternative text stays).</item>
+/// <item>Links get <c>rel="noopener noreferrer nofollow"</c> and no <c>target</c>; images get <c>loading="lazy"</c>, <c>decoding="async"</c> and
+///   <c>referrerpolicy="no-referrer"</c>.</item>
+/// <item>Every id the body creates (headings, footnotes) starts with <see cref="IdPrefix"/> and <c>#fragment</c> links follow, so a body cannot take the
+///   id of an element of the page and two bodies on one page do not share ids.</item>
+/// <item>Headings are not higher than <see cref="MinHeadingLevel"/>.</item>
+/// <item><c>@user</c> and <c>#123</c> in running text become links built from <see cref="MentionUrlFormat"/> and <see cref="IssueUrlFormat"/>, never from the text itself.</item>
+/// </list>
+/// </summary>
+/// <param name="IdPrefix">What every id of the body starts with, for example <c>rel-v1-2-0-</c>.</param>
+/// <param name="MentionUrlFormat">The address of a user, with <c>{0}</c> for the name (<c>https://github.com/{0}</c>); null leaves <c>@user</c> as text.</param>
+/// <param name="IssueUrlFormat">The address of an issue or pull request, with <c>{0}</c> for the number; null leaves <c>#123</c> as text.</param>
+/// <param name="MinHeadingLevel">The level of the highest heading of the body (2 to 6): a body shown under an <c>h2</c> passes 3, so a <c>#</c> in it does not outrank the page's own headings. Lower headings are not moved up.</param>
+public sealed record UntrustedMarkdown(string IdPrefix, string? MentionUrlFormat = null, string? IssueUrlFormat = null, int MinHeadingLevel = 1);
+
+/// <summary>
 /// Renders Markdown to HTML with Markdig, for content that is shown to visitors.
 /// <list type="bullet">
 /// <item>Raw HTML is not rendered: it is shown as text (unless <c>allowRawHtml</c>, for content you alone can write).</item>
@@ -71,9 +92,21 @@ public sealed partial class MarkdownRenderer
     /// <param name="markdown">The Markdown, without its front matter.</param>
     /// <param name="sourceDirectory">The folder of the file, as slugs without a leading slash ("" for the root): relative links start from it.</param>
     /// <param name="pageHref">The address of the page, relative to the base: the target of <c>#fragment</c> links.</param>
-    public RenderedMarkdown Render(string markdown, string sourceDirectory, string pageHref)
+    public RenderedMarkdown Render(string markdown, string sourceDirectory, string pageHref) =>
+        Render(markdown, sourceDirectory, pageHref, null);
+
+    /// <summary>Renders a body that comes from outside the team, with the extra rules of <paramref name="untrusted"/>.</summary>
+    /// <param name="markdown">The Markdown.</param>
+    /// <param name="sourceDirectory">The folder of the file ("" when there is none).</param>
+    /// <param name="pageHref">The address of the page that shows the body: the target of <c>#fragment</c> links. A feed passes an absolute one.</param>
+    /// <param name="untrusted">The rules for content nobody of the team wrote, or null for a page of the site.</param>
+    public RenderedMarkdown Render(string markdown, string sourceDirectory, string pageHref, UntrustedMarkdown? untrusted)
     {
         var document = Markdown.Parse(markdown, _pipeline);
+        if (untrusted is not null)
+        {
+            LinkReferences(document, untrusted);
+        }
         var links = new List<string>();
         var images = new List<string>();
 
@@ -84,8 +117,12 @@ public sealed partial class MarkdownRenderer
         var headings = new List<MarkdownHeading>();
         foreach (var heading in headingBlocks)
         {
+            if (untrusted is not null && heading.Level < untrusted.MinHeadingLevel)
+            {
+                heading.Level = Math.Min(6, untrusted.MinHeadingLevel);
+            }
             var attributes = heading.GetAttributes();
-            if (attributes.Id is { } id && ReservedIds.Contains(id))
+            if (untrusted is null && attributes.Id is { } id && ReservedIds.Contains(id))
             {
                 var renamed = id + "-section";
                 for (var n = 1; used.Contains(renamed); n++)
@@ -95,6 +132,10 @@ public sealed partial class MarkdownRenderer
                 used.Add(renamed);
                 attributes.Id = renamed;
             }
+            if (untrusted is not null && attributes.Id is not null)
+            {
+                attributes.Id = untrusted.IdPrefix + attributes.Id;
+            }
             if (attributes.Id is not null)
             {
                 headings.Add(new MarkdownHeading(attributes.Id, heading.Inline is null ? "" : InlineText(heading.Inline), heading.Level));
@@ -103,7 +144,7 @@ public sealed partial class MarkdownRenderer
 
         foreach (var link in document.Descendants<LinkInline>().ToList())
         {
-            if (!ContentUrl.IsAllowed(link.Url))
+            if (!ContentUrl.IsAllowed(link.Url) || (untrusted is not null && !IsRemote(link)))
             {
                 // Keep what the reader would have seen: the text of a link, the alt text of an image. The address is gone.
                 link.ReplaceBy(new ContainerInline(), copyChildren: true);
@@ -123,22 +164,38 @@ public sealed partial class MarkdownRenderer
                 }
                 if (ContentUrl.IsExternal(url) && !link.IsImage)
                 {
-                    link.GetAttributes().AddProperty("rel", "noopener noreferrer");
+                    link.GetAttributes().AddProperty("rel", untrusted is null ? "noopener noreferrer" : "noopener noreferrer nofollow");
+                }
+                if (untrusted is not null && link.IsImage)
+                {
+                    var imageAttributes = link.GetAttributes();
+                    imageAttributes.AddProperty("loading", "lazy");
+                    imageAttributes.AddProperty("decoding", "async");
+                    imageAttributes.AddProperty("referrerpolicy", "no-referrer");
                 }
             }
         }
         foreach (var auto in document.Descendants<AutolinkInline>().ToList())
         {
-            if (!ContentUrl.IsAllowed(auto.Url))
+            if (!ContentUrl.IsAllowed(auto.Url) || (untrusted is not null && !ContentUrl.HasScheme(auto.Url, "http", "https", "mailto")))
             {
                 auto.ReplaceBy(new LiteralInline(auto.Url), copyChildren: false);
+            }
+            else if (untrusted is not null)
+            {
+                auto.GetAttributes().AddProperty("rel", "noopener noreferrer nofollow");
             }
         }
 
         var html = Markdown.ToHtml(document, _pipeline);
         // Footnote links are "#fn:1". Below a <base href> a bare fragment leaves the page, so each one gets the address of its page. Text that looks
         // like this cannot come from the content: a quote in text is encoded.
-        html = html.Replace("href=\"#", $"href=\"{WebUtility.HtmlEncode(pageHref)}#", StringComparison.Ordinal);
+        html = html.Replace("href=\"#", $"href=\"{WebUtility.HtmlEncode(pageHref)}#{(untrusted is null ? "" : WebUtility.HtmlEncode(untrusted.IdPrefix))}", StringComparison.Ordinal);
+        if (untrusted is not null)
+        {
+            // Footnote ids, like the headings above, must not be the ids of another body or of the page.
+            html = html.Replace("id=\"fn", $"id=\"{WebUtility.HtmlEncode(untrusted.IdPrefix)}fn", StringComparison.Ordinal);
+        }
         // A wide table scrolls inside its own box, and the box can be reached with the keyboard.
         // Each box is a region with a name of its own (landmarks must be told apart).
         var tables = 0;
@@ -151,6 +208,72 @@ public sealed partial class MarkdownRenderer
 
     [GeneratedRegex(@"\s+")]
     private static partial Regex Whitespace();
+
+    // @user and #123 in running text. The lookbehind keeps an e-mail address ("a@b.com"), a path ("owner/repo#1") and a word ("C#12") out of it.
+    [GeneratedRegex(@"(?<![\w@/&.])@([A-Za-z0-9](?:[A-Za-z0-9]|-(?=[A-Za-z0-9])){0,38})(?![\w@-])|(?<![\w/&#])#([0-9]{1,9})(?![\w#])")]
+    private static partial Regex Reference();
+
+    // Whether a link or an image may stay in a body from outside: an absolute address, a #fragment of the body, an https image.
+    private static bool IsRemote(LinkInline link)
+    {
+        var url = link.Url;
+        if (link.IsImage)
+        {
+            return ContentUrl.HasScheme(url, "https");
+        }
+        return !string.IsNullOrEmpty(url) && (ContentUrl.HasScheme(url, "http", "https", "mailto") || url.TrimStart().StartsWith('#'));
+    }
+
+    // Turns "@user" and "#123" of the text (not of code, not of a link) into links, in the tree: the text goes through the renderer's encoding like any other.
+    private static void LinkReferences(MarkdownDocument document, UntrustedMarkdown untrusted)
+    {
+        if (untrusted.MentionUrlFormat is null && untrusted.IssueUrlFormat is null)
+        {
+            return;
+        }
+        foreach (var literal in document.Descendants<LiteralInline>().ToList())
+        {
+            if (literal.Parent is null || literal.FirstParentOfType<LinkInline>() is not null || literal.FirstParentOfType<AutolinkInline>() is not null)
+            {
+                continue;
+            }
+            var text = literal.Content.ToString();
+            var matches = Reference().Matches(text);
+            if (matches.Count == 0)
+            {
+                continue;
+            }
+            var replacement = new ContainerInline();
+            var position = 0;
+            foreach (Match match in matches)
+            {
+                var mention = match.Groups[1].Success;
+                var format = mention ? untrusted.MentionUrlFormat : untrusted.IssueUrlFormat;
+                if (format is null)
+                {
+                    continue;
+                }
+                if (match.Index > position)
+                {
+                    replacement.AppendChild(new LiteralInline(text[position..match.Index]));
+                }
+                var name = mention ? match.Groups[1].Value : match.Groups[2].Value;
+                var link = new LinkInline(string.Format(System.Globalization.CultureInfo.InvariantCulture, format, name), string.Empty);
+                link.AppendChild(new LiteralInline(match.Value));
+                replacement.AppendChild(link);
+                position = match.Index + match.Length;
+            }
+            if (position == 0)
+            {
+                continue;
+            }
+            if (position < text.Length)
+            {
+                replacement.AppendChild(new LiteralInline(text[position..]));
+            }
+            literal.ReplaceBy(replacement, copyChildren: false);
+        }
+    }
 
     private static string InlineText(ContainerInline container)
     {

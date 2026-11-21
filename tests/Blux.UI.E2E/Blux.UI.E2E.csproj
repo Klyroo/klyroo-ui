@@ -24,6 +24,7 @@
     <ProjectReference Include="..\..\templates\starter\src\Starter.Web\Starter.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\landing\src\Landing.Web\Landing.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\docs\src\Docs.Web\Docs.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\changelog\src\Changelog.Web\Changelog.Web.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- The canned chat replies, so chat tests compare with the whole answer instead of guessing a length. -->
