@@ -21,6 +21,13 @@ public sealed class FrontMatter
 
     /// <summary>A draft is not served, listed or searched (unless <see cref="ContentOptions.IncludeDrafts"/> is on).</summary>
     public bool Draft { get; set; }
+
+    /// <summary>
+    /// Every key of the block as it was written, the ones above included, for a site that puts its own data in the front matter (the date and the tags of a
+    /// blog post). A scalar is a string, a list is a <c>List&lt;object&gt;</c> and a map a <c>Dictionary&lt;object, object&gt;</c>, as YamlDotNet reads them.
+    /// </summary>
+    [YamlIgnore]
+    public IReadOnlyDictionary<string, object?> Meta { get; set; } = new Dictionary<string, object?>();
 }
 
 /// <summary>The <c>_dir.yml</c> file of a folder: how the folder shows in the navigation.</summary>
@@ -60,7 +67,9 @@ public static class FrontMatterParser
 
         var yaml = string.Join('\n', lines[1..close]);
         var body = string.Join('\n', lines[(close + 1)..]);
-        return (Deserialize<FrontMatter>(yaml, path) ?? new FrontMatter(), body);
+        var data = Deserialize<FrontMatter>(yaml, path) ?? new FrontMatter();
+        data.Meta = Deserialize<Dictionary<string, object?>>(yaml, path) ?? new Dictionary<string, object?>();
+        return (data, body);
     }
 
     /// <summary>Reads the YAML of a <c>_dir.yml</c> file.</summary>

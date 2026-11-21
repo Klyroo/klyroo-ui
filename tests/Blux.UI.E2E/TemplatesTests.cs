@@ -11,6 +11,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
 {
     private const string DemoPath = "/templates/starter/demo/";
     private const string LandingPath = "/templates/landing/demo/";
+    private const string SaasPath = "/templates/saas/demo/";
     private const string DocsPath = "/templates/docs/demo/";
     private const string ChangelogPath = "/templates/changelog/demo/";
 
@@ -47,7 +48,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
     }
 
     [Fact]
-    public async Task The_gallery_lists_the_ten_templates_and_only_the_starter_the_dashboard_the_landing_the_docs_and_the_changelog_are_live()
+    public async Task The_gallery_lists_the_ten_templates_and_only_the_starter_the_dashboard_the_landing_the_saas_the_docs_and_the_changelog_are_live()
     {
         await OpenGallery();
 
@@ -63,7 +64,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(starter.GetByTestId("template-source-missing")).ToHaveTextAsync("Repository not published yet");
 
         // The light and the dark screenshot are both images of the site that load.
-        foreach (var name in new[] { "starter", "dashboard", "landing", "docs", "changelog" })
+        foreach (var name in new[] { "starter", "dashboard", "landing", "saas", "docs", "changelog" })
         {
             var live = cards.Filter(new() { Has = Page.Locator($"img[src$='img/template-{name}-light.png']") });
             await Assertions.Expect(live).ToHaveCountAsync(1);
@@ -78,16 +79,18 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
                 Assert.True(response.Ok, $"the {name} {mode} screenshot answers {response.Status}");
             }
         }
+        var saas = Card("SaaS");
+        await Assertions.Expect(saas.GetByRole(AriaRole.List, new() { Name = "SaaS features" }).GetByRole(AriaRole.Listitem)).ToHaveCountAsync(3);
         var landing = Card("Landing");
         await Assertions.Expect(landing.GetByRole(AriaRole.List, new() { Name = "Landing features" }).GetByRole(AriaRole.Listitem)).ToHaveCountAsync(3);
 
-        // The five others are planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
+        // The four others are planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
         var planned = cards.Filter(new() { HasNot = Page.GetByTestId("template-preview") });
-        await Assertions.Expect(planned).ToHaveCountAsync(5);
-        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(5);
+        await Assertions.Expect(planned).ToHaveCountAsync(4);
+        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(4);
         await Assertions.Expect(planned.Locator("a")).ToHaveCountAsync(0);
         await Assertions.Expect(planned.Locator("img")).ToHaveCountAsync(0);
-        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(5);
+        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(4);
     }
 
     [Fact]
@@ -309,6 +312,107 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.WaitForURLAsync(url => url.EndsWith(LandingPath + "#pricing"));
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
+    [Fact]
+    public async Task SaaS_preview_opens_the_static_site_through_the_proxy_and_stays_below_its_path()
+    {
+        RequireDemos();
+        var requests = new List<string>();
+        var failures = new List<string>();
+        var runtime = new List<string>();
+        var recording = false;
+        Page.Request += (_, request) =>
+        {
+            if (!recording) return;
+            lock (requests) requests.Add(request.Url);
+            if (Regex.IsMatch(request.Url, @"\.wasm(\?|$)|/_blazor(/|\?|$)")) lock (runtime) runtime.Add(request.Url);
+        };
+        Page.Response += (_, response) => { if (recording && response.Status >= 400 && !IsHotReloadTooling(response.Url)) lock (failures) failures.Add($"{response.Status} {response.Url}"); };
+        Page.WebSocket += (_, socket) => { lock (runtime) runtime.Add(socket.Url); };
+        await OpenGallery();
+        await Page.EvaluateAsync("() => document.fonts.ready");
+        await Task.Delay(500, TestContext.Current.CancellationToken);
+
+        recording = true;
+        await Card("SaaS").GetByTestId("template-preview").ClickAsync();
+        await Page.WaitForURLAsync(url => url.EndsWith(SaasPath));
+        await Assertions.Expect(Page).ToHaveTitleAsync(new Regex("^Tideline"));
+        await Assertions.Expect(Page.Locator("base")).ToHaveAttributeAsync("href", SaasPath);
+        await SaasChecks.AssertBehaviour(Page);
+        await SaasChecks.AssertAuthPages(Page);
+
+        var origin = new Uri(BaseUrl).GetLeftPart(UriPartial.Authority);
+        lock (requests)
+        {
+            var sameOrigin = requests.Where(url => url.StartsWith(origin + "/", StringComparison.Ordinal) && !IsHotReloadTooling(url)).ToList();
+            Assert.NotEmpty(sameOrigin);
+            var outside = sameOrigin.Where(url => !url.StartsWith(origin + SaasPath, StringComparison.Ordinal)).ToList();
+            Assert.True(outside.Count == 0, "Requests outside " + SaasPath + ":\n" + string.Join("\n", outside));
+        }
+        lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
+        lock (runtime) Assert.True(runtime.Count == 0, "A static demo started a circuit or loaded WebAssembly:\n" + string.Join("\n", runtime));
+    }
+
+    [Theory]
+    [InlineData(ColorScheme.Light)]
+    [InlineData(ColorScheme.Dark)]
+    public async Task SaaS_demo_pages_have_no_accessibility_violations(ColorScheme scheme)
+    {
+        RequireDemos();
+        await Page.EmulateMediaAsync(new() { ColorScheme = scheme });
+        // The home page, pricing with its table, the blog, an article, the docs, a docs page with code, the changelog and the two forms.
+        foreach (var path in new[] { "", "pricing", "blog", "blog/how-we-keep-ping-latency-under-40-ms", "docs", "docs/guides/alert-channels", "changelog", "changelog/2-0", "login", "signup" })
+        {
+            await Page.GotoAsync(SaasPath.TrimStart('/') + path);
+            await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+            await Assertions.Expect(Page.Locator("html")).ToHaveClassAsync(scheme == ColorScheme.Dark ? new Regex("dark") : new Regex("^((?!dark).)*$"));
+            // The lazy cover images are in the page when the scan runs.
+            await Page.EvaluateAsync("() => document.querySelectorAll('img').forEach(i => i.loading = 'eager')");
+
+            await AssertNoAccessibilityViolations();
+        }
+    }
+
+    [Fact]
+    public async Task SaaS_demo_pricing_with_the_yearly_option_and_the_forms_with_errors_have_no_accessibility_violations()
+    {
+        RequireDemos();
+        await Page.GotoAsync(SaasPath.TrimStart('/') + "pricing");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-accordion')");
+        await Page.GetByText("Yearly, 2 months free").ClickAsync();
+        await AssertNoAccessibilityViolations();
+
+        await Page.GotoAsync(SaasPath.TrimStart('/') + "signup");
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Create account" }).ClickAsync();
+        await Assertions.Expect(Page.Locator("input[aria-invalid=true]").First).ToBeVisibleAsync();
+        await AssertNoAccessibilityViolations();
+    }
+
+    [Fact]
+    public async Task SaaS_demo_has_no_horizontal_scroll_at_375px()
+    {
+        RequireDemos();
+        var root = SaasPath.TrimStart('/');
+        await Page.GotoAsync(root);
+        await SaasChecks.AssertNoHorizontalScroll(Page, "", "pricing", "blog", "docs/reference/ping-api", "changelog", "login");
+    }
+
+    [Fact]
+    public async Task SaaS_mobile_menu_holds_the_navigation_and_a_link_goes_to_its_page()
+    {
+        RequireDemos();
+        await Page.SetViewportSizeAsync(375, 800);
+        await Page.GotoAsync(SaasPath.TrimStart('/'));
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+
+        await Page.GetByRole(AriaRole.Button, new() { Name = "Open menu" }).ClickAsync();
+        var dialog = Page.GetByRole(AriaRole.Dialog);
+        await Assertions.Expect(dialog).ToBeVisibleAsync();
+        await Assertions.Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Get started" })).ToBeVisibleAsync();
+        await dialog.GetByRole(AriaRole.Link, new() { Name = "Blog" }).ClickAsync();
+        await Page.WaitForURLAsync(url => url.EndsWith(SaasPath + "blog"));
+        await Assertions.Expect(dialog).ToBeHiddenAsync();
+    }
+
     [Fact]
     public async Task Docs_preview_opens_the_static_site_through_the_proxy_and_stays_below_its_path()
     {

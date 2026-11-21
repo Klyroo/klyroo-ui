@@ -1,0 +1,24 @@
+@inject MarkdownStore Store
+
+@* The three most recent posts of the blog, from the same files as the blog page. *@
+<BxPageSection id="blog"
+               Headline="@SiteInfo.PostsHeadline"
+               Title="@SiteInfo.PostsTitle"
+               Orientation="BxOrientation.Vertical"
+               Links="_links">
+    <BxBlogPosts Class="mt-10">
+        @foreach (var post in _posts)
+        {
+            <BxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
+                        Href="@post.Href" Authors="post.Authors" data-testid="latest-post" />
+        }
+    </BxBlogPosts>
+</BxPageSection>
+
+@code {
+    private static readonly PageLinkItem[] _links = [new("All posts", SiteInfo.BlogHref) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+
+    private IReadOnlyList<Post> _posts = [];
+
+    protected override void OnInitialized() => _posts = [.. Store.Site.Posts().Take(3)];
+}

@@ -1,0 +1,47 @@
+@page "/docs"
+@inject MarkdownStore Store
+
+<PageTitle>Documentation - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@SiteInfo.DocsDescription" />
+</HeadContent>
+
+<BxContainer Class="py-10 sm:py-14">
+    <BxPageHeader Headline="@SiteInfo.DocsHeadline" Title="@SiteInfo.DocsTitle" Description="@SiteInfo.DocsDescription" Links="_links" />
+
+    @* One card per section of the documentation: the folders of content/docs, each with the pages it holds. *@
+    <ul data-testid="sections" class="m-0 mt-10 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
+        @foreach (var section in _sections)
+        {
+            <li class="flex flex-col gap-3 rounded-[calc(var(--blux-radius)*2)] bg-(--blux-bg-elevated)/50 p-6 ring ring-(--blux-border)">
+                <h2 class="flex items-center gap-2 text-base font-semibold text-(--blux-text-highlighted)">
+                    @if (section.Icon is not null)
+                    {
+                        <BxIcon Name="@section.Icon" Class="size-5 text-(--blux-text-muted)" />
+                    }
+                    @section.Title
+                </h2>
+                <ul class="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
+                    @foreach (var link in section.Children ?? [])
+                    {
+                        <li><a href="@link.Href" class="rounded-sm text-(--blux-primary-text) underline underline-offset-4">@link.Title</a></li>
+                    }
+                </ul>
+            </li>
+        }
+    </ul>
+</BxContainer>
+
+@code {
+    private static readonly PageLinkItem[] _links =
+    [
+        new("Quick start", "docs/getting-started/quick-start") { TrailingIcon = "ph:arrow-right" },
+        new("Ping API", "docs/reference/ping-api") { Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+    ];
+
+    private IReadOnlyList<BxContentNavigationItem> _sections = [];
+
+    protected override void OnInitialized() =>
+        _sections = [.. Store.Site.DocsNavigation().Where(item => item.Children is { Count: > 0 })];
+}

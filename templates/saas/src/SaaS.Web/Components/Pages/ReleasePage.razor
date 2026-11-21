@@ -1,0 +1,55 @@
+@page "/changelog/{Slug}"
+@inject MarkdownStore Store
+@inject NavigationManager Navigation
+
+@* One version on a page of its own: the address that the search and the title of a version in the changelog lead to. *@
+@if (_release is not null)
+{
+    <PageTitle>@_release.Version - @SiteInfo.ChangelogTitle - @SiteInfo.Name</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@(_release.Page.Description ?? SiteInfo.ChangelogDescription)" />
+    </HeadContent>
+
+    <BxContainer Class="py-10 sm:py-14">
+        <div class="mx-auto max-w-3xl">
+            <BxBreadcrumb Items="_crumbs" />
+            <article data-testid="release-page" class="mt-8">
+                <header class="flex flex-col gap-3">
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-(--blux-text-muted)">
+                        <time datetime="@_release.Date.ToString("yyyy-MM-dd")">@_release.Date.ToString("MMMM d, yyyy", CultureInfo.CurrentCulture)</time>
+                        @if (_release.Badge is not null)
+                        {
+                            <BxBadge Label="@_release.Badge" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                        }
+                    </div>
+                    <h1 class="text-3xl font-semibold tracking-tight text-(--blux-text-highlighted)">@_release.Version</h1>
+                    @if (_release.Page.Description is not null)
+                    {
+                        <p class="text-lg text-pretty text-(--blux-text-muted)">@_release.Page.Description</p>
+                    }
+                </header>
+                <BxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_release.Page.Html)</BxPageBody>
+            </article>
+            <BxButton Label="All versions" Href="@SiteInfo.ChangelogHref" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+        </div>
+    </BxContainer>
+}
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private Release? _release;
+    private IReadOnlyList<BxBreadcrumbItem> _crumbs = [];
+
+    protected override void OnParametersSet()
+    {
+        _release = Store.Site.Releases().FirstOrDefault(r => string.Equals(r.Name, Slug, StringComparison.OrdinalIgnoreCase));
+        if (_release is null)
+        {
+            // Answers 404 with the page of Pages/NotFound.razor.
+            Navigation.NotFound();
+            return;
+        }
+        _crumbs = [new(SiteInfo.ChangelogTitle) { Href = SiteInfo.ChangelogHref }, new(_release.Version)];
+    }
+}
