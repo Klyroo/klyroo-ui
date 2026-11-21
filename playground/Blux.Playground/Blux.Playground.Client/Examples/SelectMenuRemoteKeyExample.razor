@@ -1,0 +1,31 @@
+<div class="flex w-full max-w-xs flex-col gap-3">
+    <BxFormField Label="Country of the city">
+        <BxSelect Items="Countries" Value="_country" ValueChanged="OnCountryChanged" data-testid="key-country" />
+    </BxFormField>
+    @* OptionsKey is the country: when it changes, the pages loaded for the other country are forgotten and the list loads again when it opens. The provider is a new
+       delegate on every render here, which alone would keep what was loaded. *@
+    <BxFormField Label="City">
+        <BxSelectMenu OptionsProvider="@((request, ct) => _source.CitiesOf(_country, request, ct))" OptionsKey="_country" PageSize="5" Placeholder="Pick a city"
+                      Value="_cities" ValueChanged="@(v => _cities = v ?? [])" data-testid="key-city" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="key-state">City: @(_cities.Count > 0 ? string.Join(", ", _cities) : "none")</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="key-requests">Source calls: @_source.Requests</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="key-last">Last call: @_source.Last</p>
+</div>
+
+@code {
+    private RemoteDirectory _source = default!;
+    private string? _country = "fr";
+    private IReadOnlyList<string> _cities = [];
+
+    private static readonly BxSelectItem[] Countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
+
+    protected override void OnInitialized() => _source = new RemoteDirectory { Changed = () => _ = InvokeAsync(StateHasChanged), LatencyMs = 200 };
+
+    private void OnCountryChanged(string? country)
+    {
+        _country = country;
+        // A city of the other country is no longer a valid value.
+        _cities = [];
+    }
+}

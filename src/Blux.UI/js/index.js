@@ -107,6 +107,10 @@ function registerEvents(blazor) {
     browserEventName: 'bx-change',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });
+  blazor.registerCustomEventType('bxsearch', {
+    browserEventName: 'bx-search',
+    createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
+  });
 }
 
 /** What an enhanced navigation merge resets: every Blux element re-applies it. No list to keep in sync with the components. */

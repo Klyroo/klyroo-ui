@@ -58,9 +58,22 @@ internal static partial class Themes
         .Slot("groupLabel", ListGroupLabel)
         .Slot("empty", "px-3 py-2 text-sm text-(--blux-text-muted) " + HiddenAttribute);
 
+    /// <summary>
+    /// The states of a menu whose options come from an OptionsProvider. With one, the list scrolls inside "scroller" (the sentinel of the
+    /// next page has to sit in the scrolled area, outside the listbox, which may only hold options), so the listbox stops scrolling.
+    /// </summary>
+    private static ComponentTheme RemoteSlots(ComponentTheme t) => t
+        .Slot("scroller", "")
+        .Variant("remote", "true", "scroller", "max-h-60 overflow-y-auto")
+        .Variant("remote", "true", "listbox", "max-h-none overflow-visible")
+        .Slot("loading", "flex items-center gap-2 px-3 py-2 text-sm text-(--blux-text-muted)")
+        .Slot("spinner", "size-4 shrink-0 motion-safe:animate-spin")
+        .Slot("error", "flex flex-col items-start gap-2 px-3 py-2 text-sm text-(--blux-error-text)")
+        .Slot("announcer", "sr-only");
+
     public static ComponentTheme SelectMenu()
     {
-        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon", "empty", "create")
+        var t = new ComponentTheme("selectMenu", "root", "base", "label", "trailingIcon", "content", "searchWrapper", "search", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon", "empty", "create", "scroller", "loading", "spinner", "error", "announcer")
             .Slot("create", "before:content-[attr(data-label)]")
             .Slot("leadingIcon", TriggerLeadingIcon)
             .Slot("root", "relative inline-flex w-full")
@@ -72,6 +85,7 @@ internal static partial class Themes
             .Slot("search", "block w-full rounded-[calc(var(--blux-radius)_-_2px)] border-0 bg-transparent px-2 py-1.5 text-sm text-(--blux-text) " +
                             "placeholder:text-(--blux-text-dimmed) focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-(--bx-color-text)");
         PopupItems(t, "max-h-60 overflow-y-auto p-1 focus:outline-none");
+        RemoteSlots(t);
         FieldVariants(t, "base");
         t.Variant("size", "xs", "trailingIcon", "size-4").Variant("size", "sm", "trailingIcon", "size-4").Variant("size", "md", "trailingIcon", "size-5")
          .Variant("size", "lg", "trailingIcon", "size-5").Variant("size", "xl", "trailingIcon", "size-6");
@@ -80,13 +94,14 @@ internal static partial class Themes
 
     public static ComponentTheme InputMenu()
     {
-        var t = new ComponentTheme("inputMenu", "root", "base", "trailing", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "empty")
+        var t = new ComponentTheme("inputMenu", "root", "base", "trailing", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "empty", "scroller", "loading", "spinner", "error", "announcer")
             .Slot("root", "relative inline-flex w-full items-center")
             .Slot("base", "w-full rounded-(--blux-radius) border-0 appearance-none placeholder:text-(--blux-text-dimmed) focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
             .Slot("trailing", "pointer-events-none absolute inset-y-0 end-0 flex items-center pe-2.5")
             .Slot("trailingIcon", "shrink-0 text-(--blux-text-dimmed)");
         PopupItems(t, "max-h-60 overflow-y-auto p-1");
+        RemoteSlots(t);
         FieldVariants(t, "base");
         t.Variant("size", "xs", "base", "pe-7").Variant("size", "sm", "base", "pe-8").Variant("size", "md", "base", "pe-9")
          .Variant("size", "lg", "base", "pe-10").Variant("size", "xl", "base", "pe-11")

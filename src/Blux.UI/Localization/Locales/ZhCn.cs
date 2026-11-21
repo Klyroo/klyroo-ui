@@ -101,6 +101,11 @@ public static partial class BxLocales
             SelectMenuCreate = "创建“{0}”",
             InputMenuNoResults = "无结果",
             InputMenuSuggestions = "建议",
+            // Draft translations of the four RemoteOptions messages, marked for review by a native speaker before a stable release.
+            RemoteOptionsLoading = "正在加载...",
+            RemoteOptionsError = "无法加载选项。",
+            RemoteOptionsRetry = "重试",
+            RemoteOptionsMinLength = "请至少输入 {0} 个字符进行搜索。",
             InputNumberIncrement = "增加",
             InputNumberDecrement = "减少",
             InputTagsRemove = "移除 {0}",
