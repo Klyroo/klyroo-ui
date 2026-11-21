@@ -20,6 +20,8 @@ public static class PlaygroundServices
         });
         // The data components: configures the same options as AddBluxUi above.
         services.AddBluxUiTools();
+        // A test hook of the data list examples: how many times the provider of a render was called.
+        services.AddScoped<Examples.ProviderCallLog>();
         return services;
     }
 

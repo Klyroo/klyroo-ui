@@ -23,6 +23,8 @@ public static class BluxToolsServiceCollectionExtensions
         });
         // One per circuit or browser tab: it follows the NavigationManager of its scope.
         services.TryAddScoped<QueryState>();
+        // How a Queryable source runs its queries: blocking by default, replaced by an adapter package (AddBluxUiToolsEntityFrameworkAdapter).
+        services.TryAddSingleton<IDataListQueryExecutor>(SynchronousDataListQueryExecutor.Instance);
         return services;
     }
 }

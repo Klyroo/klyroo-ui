@@ -74,6 +74,7 @@ jobs:
           dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
           dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
+          dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v7
         with:
           name: nuget
@@ -96,7 +97,7 @@ jobs:
         with:
           name: nuget
           path: artifacts
-      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query and Blux.UI.Tools packages.
+      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Tools.Query, Blux.UI.Tools and Blux.UI.Tools.EntityFrameworkCore packages.
       - name: Push
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

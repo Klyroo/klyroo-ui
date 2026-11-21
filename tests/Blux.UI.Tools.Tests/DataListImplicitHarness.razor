@@ -1,0 +1,14 @@
+@* A list of rows in memory with no schema: its columns name properties and describe the schema. *@
+<BxDataList TItem="Person" Items="Items" UrlSync="false" data-testid="list">
+    <BxDataListResultCount data-testid="count" />
+    <BxDataListTable>
+        <BxDataListColumn Property="@(p => p.Name)" Title="Full name" />
+        <BxDataListColumn Property="@(p => p.Age)" Align="DataListAlign.End" />
+        <BxDataListColumn Property="@(p => p.City)" Sortable="false" />
+    </BxDataListTable>
+    <BxDataListPagination />
+</BxDataList>
+
+@code {
+    [Parameter] public IEnumerable<Person>? Items { get; set; }
+}
