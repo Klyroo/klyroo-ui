@@ -5,6 +5,8 @@ using Bunit.TestDoubles;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Blux.UI.Server;
 
 namespace Blux.UI.Tools.Tests;
 
@@ -139,7 +141,7 @@ public class DataListZoneTests : BluxToolsTestContext
 
     private sealed class StaticContext : BluxToolsTestContext
     {
-        public StaticContext() : base(interactive: false)
+        public StaticContext(bool server = true, Action<IServiceCollection>? configure = null) : base(interactive: false, configureServices: services => { if (server) services.AddBluxServer(); configure?.Invoke(services); })
         {
         }
 
@@ -219,6 +221,86 @@ public class DataListZoneTests : BluxToolsTestContext
 
         Assert.Null(context.ZoneOfTheRequest());
     }
+
+    // ---- a server-rendered app without AddBluxServer
+
+    private sealed class Logs : ILoggerProvider, ILogger
+    {
+        public List<string> Warnings { get; } = [];
+
+        public ILogger CreateLogger(string categoryName) => this;
+
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        {
+            if (logLevel == LogLevel.Warning) lock (Warnings) Warnings.Add(formatter(state, exception));
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private static Action<IServiceCollection> Watch(Logs logs, string? environment) => services =>
+    {
+        services.AddLogging(b => b.AddProvider(logs));
+        services.AddSingleton(new MissingServerWarning(() => environment));
+    };
+
+    private static StaticContext WithoutServer(Logs logs, string? environment) => new(server: false, Watch(logs, environment));
+
+    [Fact]
+    public void Without_AddBluxServer_a_static_render_uses_utc_and_warns_once_in_development()
+    {
+        var logs = new Logs();
+        using var context = WithoutServer(logs, "Development");
+
+        Assert.Null(context.ZoneOfTheRequest());
+        Assert.Null(context.ZoneOfTheRequest());
+
+        var warning = Assert.Single(logs.Warnings);
+        Assert.Contains("AddBluxServer", warning);
+        Assert.Contains("UTC", warning);
+    }
+
+    [Fact]
+    public void Without_AddBluxServer_nothing_is_logged_outside_development()
+    {
+        var logs = new Logs();
+        using var context = WithoutServer(logs, "Production");
+
+        Assert.Null(context.ZoneOfTheRequest());
+
+        Assert.Empty(logs.Warnings);
+    }
+
+    [Fact]
+    public void With_AddBluxServer_nothing_is_logged()
+    {
+        var logs = new Logs();
+        using var context = new StaticContext(configure: Watch(logs, "Development"));
+        context.Request(null);
+
+        Assert.Null(context.ZoneOfTheRequest());
+
+        Assert.Empty(logs.Warnings);
+    }
+
+    [Fact]
+    public void An_interactive_render_never_asks_for_the_request_so_it_never_warns()
+    {
+        var logs = new Logs();
+        using var context = new InteractiveContext(logs);
+
+        context.Render<BxDataList<Order>>(p => p.Add(c => c.Schema, RangeData.Schema).Add(c => c.Items, new List<Order>()).Add(c => c.UrlSync, false));
+
+        Assert.Empty(logs.Warnings);
+    }
+
+    private sealed class InteractiveContext(Logs logs) : BluxToolsTestContext(configureServices: Watch(logs, "Development"));
 
     [Fact]
     public void A_static_tag_shows_an_instant_in_the_zone_of_the_cookie()

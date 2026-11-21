@@ -65,7 +65,18 @@ public static class DataListStateQuery
     /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts. Null values are ignored.</param>
     /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
     /// <param name="prefix">The key prefix given to <see cref="ToQuery"/>.</param>
-    public static DataListState FromQuery(IEnumerable<KeyValuePair<string, string?>> query, DataListSchema schema, string? prefix = null)
+    public static DataListState FromQuery(IEnumerable<KeyValuePair<string, string?>> query, DataListSchema schema, string? prefix = null) =>
+        FromQuery(query, schema, prefix, null);
+
+    /// <summary>
+    /// <see cref="FromQuery(IEnumerable{KeyValuePair{string, string?}}, DataListSchema, string?)"/> for a request that has a time zone: a date-time in a filter value without an offset (<c>2026-11-05T14:00</c>, what the
+    /// <c>datetime-local</c> field of a static form posts) is the wall clock of that zone, not UTC. A date (<c>2026-11-05</c>) and a value with an offset do not depend on it.
+    /// </summary>
+    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts. Null values are ignored.</param>
+    /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
+    /// <param name="prefix">The key prefix given to <see cref="ToQuery"/>.</param>
+    /// <param name="timeZone">The IANA id of the zone of the user; null or an unknown id means UTC.</param>
+    public static DataListState FromQuery(IEnumerable<KeyValuePair<string, string?>> query, DataListSchema schema, string? prefix, string? timeZone)
     {
         ArgumentNullException.ThrowIfNull(query);
         ArgumentNullException.ThrowIfNull(schema);
@@ -91,7 +102,7 @@ public static class DataListStateQuery
             sort = s.Length == 0 ? [] : parsed.Count > 0 ? parsed : defaults.Sort;
         }
 
-        var filters = ReadFilters(pairs, schema, prefix, defaults.Filters);
+        var filters = ReadFilters(pairs, schema, prefix, defaults.Filters, TimeZones.Resolve(timeZone));
 
         var layout = defaults.Layout;
         if (pairs.TryGetValue(Key(prefix, "l"), out var l) && Enum.TryParse<DataListLayout>(l, ignoreCase: true, out var parsedLayout)
@@ -154,7 +165,7 @@ public static class DataListStateQuery
         }
     }
 
-    private static List<FilterRule> ReadFilters(Dictionary<string, string> pairs, DataListSchema schema, string? prefix, IReadOnlyList<FilterRule> defaults)
+    private static List<FilterRule> ReadFilters(Dictionary<string, string> pairs, DataListSchema schema, string? prefix, IReadOnlyList<FilterRule> defaults, TimeZoneInfo? zone)
     {
         var fromUrl = new List<FilterRule>();
         var cleared = new HashSet<string>(StringComparer.Ordinal);
@@ -164,12 +175,12 @@ public static class DataListStateQuery
             if (!name.StartsWith(filterPrefix, StringComparison.Ordinal)) continue;
             if (!TryResolve(name[filterPrefix.Length..], schema, out var key, out var op, out var filter)) continue;
             if (raw.Length == 0) { cleared.Add(key); continue; }
-            var rule = FilterRuleText.Parse(filter, key, op ?? filter.DefaultOperator, raw);
+            var rule = FilterRuleText.Parse(filter, key, op ?? filter.DefaultOperator, raw, zone);
             if (rule is null || fromUrl.Any(r => r.Key == rule.Key && r.Operator == rule.Operator)) continue;
             fromUrl.Add(rule);
         }
 
-        ReadRangeFields(pairs, schema, filterPrefix, fromUrl, cleared);
+        ReadRangeFields(pairs, schema, filterPrefix, fromUrl, cleared, zone);
 
         var overridden = fromUrl.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
         var result = defaults.Where(d => !overridden.Contains(d.Key) && !cleared.Contains(d.Key)).ToList();
@@ -179,7 +190,7 @@ public static class DataListStateQuery
 
     // A GET form cannot write the "from..to" of a range in one field, so it sends two: f.<key>.from and f.<key>.to, which mean f.<key>.between. Both empty clears the filter, one empty is an open end.
     // The keys the app writes (f.<key>.between) win, and a filter whose key really ends in ".from" or ".to" keeps that meaning.
-    private static void ReadRangeFields(Dictionary<string, string> pairs, DataListSchema schema, string filterPrefix, List<FilterRule> fromUrl, HashSet<string> cleared)
+    private static void ReadRangeFields(Dictionary<string, string> pairs, DataListSchema schema, string filterPrefix, List<FilterRule> fromUrl, HashSet<string> cleared, TimeZoneInfo? zone)
     {
         Dictionary<string, (string From, string To, DataListFilter Filter)>? ranges = null;
         foreach (var (name, raw) in pairs)
@@ -202,7 +213,7 @@ public static class DataListStateQuery
         {
             if (fromUrl.Any(r => r.Key == key && r.Operator == FilterOperator.Between)) continue;
             if (from.Length == 0 && to.Length == 0) { cleared.Add(key); continue; }
-            var rule = FilterRuleText.Parse(filter, key, FilterOperator.Between, from + ".." + to);
+            var rule = FilterRuleText.Parse(filter, key, FilterOperator.Between, from + ".." + to, zone);
             if (rule is not null) fromUrl.Add(rule);
         }
     }
