@@ -142,6 +142,27 @@
   </Target>
 
   <!--
+    For `dotnet watch`: run it in a second terminal, next to the watch,
+
+      dotnet build -t:BluxTailwindWatch        (dotnet msbuild -t:BluxTailwindWatch does the same)
+
+    It resolves and verifies the binary exactly like the build does, then runs the CLI in the foreground with its own file watcher, on the
+    same entry file and the same output in obj, so the next page reload serves the new CSS. Ctrl+C ends it: MSBuild cancels the Exec task,
+    which stops the CLI with it. The project must have been built once (the theme is copied and the stylesheet defined by a build), and
+    nothing else runs: no static web assets, no compile.
+  -->
+  <Target Name="BluxTailwindWatch" DependsOnTargets="BluxTailwindResolve;_BluxTailwindCollectInputs" Condition="'$(BluxTailwind)' == 'true'">
+    <Error Code="BLUXTW003" Condition="!Exists('$(_BluxTailwindInputFile)')"
+           Text="BluxTailwind is on but the stylesheet '$(_BluxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/blux/blux.theme.css&quot;;  or set BluxTailwindInput to your stylesheet." />
+    <Message Importance="high" Text="Tailwind is watching $(MSBuildProjectName); the CSS is regenerated into $(_BluxTailwindOutputFile). Reload the page after an edit. Ctrl+C stops it." />
+    <Exec Command="&quot;$(_BluxTailwindExe)&quot; --input &quot;$(_BluxTailwindWrapper)&quot; --output &quot;$(_BluxTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_BluxTailwindMinifyArg) --watch=always"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          StandardOutputImportance="high"
+          StandardErrorImportance="high"
+          IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+  <!--
     The result lives in obj, not in wwwroot, so it is defined here with its own content root instead of being discovered (the same way as
     the fonts). BasePath is the project's: the root for a Web project, _content/<Rcl> for a Razor class library.
   -->
