@@ -12,7 +12,8 @@ namespace Blux.Playground.Templates;
 /// template, <c>{PublishRoot}/{name}/</c>; when set, the demos run published, in Production), <c>Configuration</c> (the build configuration the demos
 /// are run from when no <c>PublishRoot</c> is set, default Debug), <c>StartupTimeoutSeconds</c> (default 120), <c>LivenessIntervalSeconds</c> (how often
 /// a running demo is asked for its home page, default 30; two answers in a row that are not the demo's restart it), <c>MemoryLimitMegabytes</c> (the
-/// managed heap limit of each demo, default 512, 0 for none) and <c>RepositoryBase</c> (see <see cref="TemplateSettings"/>).
+/// managed heap limit of each demo, default 512, 0 for none) and <c>RepositoryBase</c> (see <see cref="TemplateSettings"/>). <c>Demos:{name}</c> holds the settings
+/// of one demo, whatever keys its app reads (<c>Demos:changelog:Changelog:Repository</c>): they are passed to it as environment variables.
 /// </summary>
 public sealed class TemplateDemoOptions
 {
@@ -51,6 +52,7 @@ public sealed class TemplateDemoSupervisor : BackgroundService, ITemplateDemoSta
     private readonly TemplateProxyConfigProvider _proxy;
     private readonly ILogger<TemplateDemoSupervisor> _logger;
     private readonly string? _docsPathBase;
+    private readonly IConfiguration _configuration;
     private readonly ConcurrentDictionary<string, TemplateDemoStatus> _status = new();
     private readonly ConcurrentDictionary<string, Process> _live = new();
     private readonly HashSet<int> _reserved = [];
@@ -69,6 +71,7 @@ public sealed class TemplateDemoSupervisor : BackgroundService, ITemplateDemoSta
         _proxy = proxy;
         _logger = logger;
         _docsPathBase = configuration["PathBase"];
+        _configuration = configuration;
         foreach (var template in catalog.Templates)
         {
             _status[template.Name] = new(template.Name, "starting", null, 0);
@@ -136,7 +139,7 @@ public sealed class TemplateDemoSupervisor : BackgroundService, ITemplateDemoSta
 
                 int port;
                 lock (_reserved) port = TemplateLaunch.AllocatePort(OsAssignedPort, _reserved);
-                var settings = new TemplateLaunch.ChildSettings(WatchdogPath(), Environment.ProcessId, _options.MemoryLimitMegabytes);
+                var settings = new TemplateLaunch.ChildSettings(WatchdogPath(), Environment.ProcessId, _options.MemoryLimitMegabytes, DemoSettings(name));
                 var command = TemplateLaunch.Build(mode, template.WebAssembly!, directory, workingDirectory, port, pathBase, Host(), settings);
                 var started = Stopwatch.StartNew();
                 using var process = Start(name, command);
@@ -288,6 +291,15 @@ public sealed class TemplateDemoSupervisor : BackgroundService, ITemplateDemoSta
     private static IEnumerable<KeyValuePair<string, string?>> Host() =>
         Environment.GetEnvironmentVariables().Cast<System.Collections.DictionaryEntry>()
             .Select(e => new KeyValuePair<string, string?>((string)e.Key, (string?)e.Value));
+
+    /// <summary>
+    /// The settings of one demo, <c>Blux:Templates:Demos:{name}:...</c> (a Changelog demo: <c>Blux:Templates:Demos:changelog:Changelog:Repository</c>, or the
+    /// environment variable <c>Blux__Templates__Demos__changelog__Changelog__Repository</c>), as keys relative to that section.
+    /// </summary>
+    private Dictionary<string, string> DemoSettings(string name) =>
+        _configuration.GetSection($"Blux:Templates:Demos:{name}").AsEnumerable(makePathsRelative: true)
+            .Where(pair => pair.Value is not null && pair.Key.Length > 0)
+            .ToDictionary(pair => pair.Key, pair => pair.Value!, StringComparer.Ordinal);
 
     private string? WatchdogPath()
     {
