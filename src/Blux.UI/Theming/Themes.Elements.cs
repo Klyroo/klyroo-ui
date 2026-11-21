@@ -49,6 +49,16 @@ internal static partial class Themes
         new ComponentTheme("skeleton", "base")
             .Slot("base", "animate-pulse rounded-(--blux-radius) bg-(--blux-bg-accented) motion-reduce:animate-none");
 
+    /// <summary>The sentinel is a 1px strip the browser watches; the button (a <c>BxButton</c>, styled by its own theme) is the manual way to load more.</summary>
+    public static ComponentTheme InfiniteScroll() =>
+        new ComponentTheme("infiniteScroll", "root", "sentinel", "trigger", "spinner", "status", "end")
+            .Slot("root", "flex w-full flex-col items-center gap-2 py-2")
+            .Slot("sentinel", "pointer-events-none h-px w-full shrink-0")
+            .Slot("trigger", "shrink-0")
+            .Slot("spinner", "size-full motion-safe:animate-spin")
+            .Slot("status", "sr-only")
+            .Slot("end", "text-sm text-(--blux-text-muted)");
+
     public static ComponentTheme Chip() =>
         new ComponentTheme("chip", "root", "base")
             .Slot("root", "relative inline-flex shrink-0 items-center justify-center")
