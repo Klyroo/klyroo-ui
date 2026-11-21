@@ -11,6 +11,9 @@ public sealed partial record BxMessages
     /// <summary>Name of the button that opens the mobile menu of a header.</summary>
     public string OpenHeaderMenu { get; init; } = "Open menu";
 
+    /// <summary>Text of the skip link (<c>BxSkipLink</c>): the first link of a page, to the main content.</summary>
+    public string SkipToContent { get; init; } = "Skip to content";
+
     /// <summary>Accessible name of a sidebar, and title of its mobile panel.</summary>
     public string SidebarLabel { get; init; } = "Sidebar";
 

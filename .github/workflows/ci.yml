@@ -60,6 +60,11 @@ jobs:
       # The project templates (templates/*): the web apps are built from the source of the library by the solution build above (Blux.UI.slnx lists
       # them); this exports each one as a repository of its own and builds, runs and renames it against the packed Blux.UI. Needs the network, hence
       # after the package check, which warms the NuGet cache.
+      # The browser part of the check (the published template in Chromium) uses the E2E project and its Playwright browser.
+      - name: Install Chromium for the template check
+        run: |
+          dotnet build tests/Blux.UI.E2E
+          pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
       - name: Template check
         run: node build/verify-templates.mjs
       - uses: actions/upload-artifact@v7

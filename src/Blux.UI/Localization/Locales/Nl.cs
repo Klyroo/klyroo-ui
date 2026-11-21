@@ -106,6 +106,7 @@ public static partial class BxLocales
             HeaderNavigation = "Hoofdmenu",
             HeaderMenu = "Menu",
             OpenHeaderMenu = "Menu openen",
+            SkipToContent = "Naar de inhoud",
             SidebarLabel = "Zijbalk",
             OpenSidebar = "Zijbalk openen",
             CollapseSidebar = "Zijbalk samenvouwen",

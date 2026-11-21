@@ -1,7 +1,7 @@
 // Template check: each project template, exported the way a user gets it, must restore, build and run against a PACKED Blux.UI, with nothing of
 // this monorepo around it.
 //
-//   node build/verify-templates.mjs [--keep] [template ...]
+//   node build/verify-templates.mjs [--keep] [--no-browser] [template ...]
 //
 // For every template (all of them by default):
 //   1. exports it to a temporary folder with no Directory.Build.*, Directory.Packages.props or nuget.config in any ancestor (the check fails if
@@ -9,14 +9,20 @@
 //   2. restores and builds its web project in Release with warnings as errors, from a local feed holding the packed library;
 //   3. runs it: / answers 200, the stylesheet it links contains a utility only the template uses (so Tailwind ran), and the app also works
 //      below a path base;
-//   4. runs `dotnet run rename.cs Acme` in a second export and builds the result.
+//   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
+//      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
+//      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (--no-browser skips that part);
+//   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
+//      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
+//      is finished by running it again.
 // The MAUI heads are not built here: they need workloads, so the `maui` job of the CI workflow builds them.
 //
 // Needs the .NET 10 SDK and the network (the first build downloads the Tailwind CLI, the fonts and the icons of the template, and NuGet restores
-// the framework packages). The pack output is a folder feed; Blux.UI comes only from it, through a global-packages folder of this run.
+// the framework packages from nuget.org). The pack output is a folder feed; Blux.UI comes only from it, through a global-packages folder of this
+// run. The browser check needs Chromium installed for Playwright (pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install chromium).
 import { spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { exportTemplate } from "./export-template.mjs";
@@ -26,13 +32,15 @@ const templates = [
   {
     name: "starter",
     web: "src/Starter.Web",
-    renamedWeb: "src/Acme.Web",
+    name_in_files: "Starter",
+    renames: ["Acme", "starterApp"],
     probe: { utility: "max-w-[37rem]", css: "max-width:37rem" },
     pages: ["/", "/about"],
   },
 ];
 
 const keep = process.argv.includes("--keep");
+const browser = !process.argv.includes("--no-browser");
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const work = mkdtempSync(join(tmpdir(), "blux-templates-"));
@@ -43,6 +51,12 @@ const env = { NUGET_PACKAGES: join(work, "packages"), DOTNET_NOLOGO: "1", DOTNET
 
 const run = (cmd, args, cwd) => {
   const r = spawnSync(cmd, args, { cwd, encoding: "utf8", env: { ...process.env, ...env }, maxBuffer: 1 << 28 });
+  return { code: r.status ?? 1, out: `${r.stdout ?? ""}${r.stderr ?? ""}` };
+};
+
+/** Runs a command with the environment of the developer (their NuGet cache), for the repository's own projects. */
+const runPlain = (cmd, args, cwd, extraEnv = {}) => {
+  const r = spawnSync(cmd, args, { cwd, encoding: "utf8", env: { ...process.env, DOTNET_NOLOGO: "1", DOTNET_CLI_TELEMETRY_OPTOUT: "1", ...extraEnv }, maxBuffer: 1 << 28 });
   return { code: r.status ?? 1, out: `${r.stdout ?? ""}${r.stderr ?? ""}` };
 };
 
@@ -127,10 +141,9 @@ try {
   const version = nupkg.replace(/^Blux\.UI\./, "").replace(/\.nupkg$/, "");
   check(version === expectedVersion, `the packed library has the version of build/Version.props (${version} / ${expectedVersion})`);
 
-  // The feed and the sources: the local cache serves the framework packages already restored on this machine, nuget.org the others.
-  const cache = process.env.NUGET_PACKAGES || join(homedir(), ".nuget", "packages");
-  const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="local-cache" value="${cache}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+  // The sources: the feed for Blux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
+  const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
+    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -200,24 +213,105 @@ try {
       }
     }
 
-    // 4. Rename, then build the renamed copy.
-    const copy = exportTemplate(template.name, join(work, template.name, "renamed"));
-    const renamed = run("dotnet", ["run", "rename.cs", "Acme"], copy);
-    if (!check(renamed.code === 0, `${template.name}: dotnet run rename.cs Acme`)) console.log(renamed.out);
-    if (renamed.code === 0) {
-      check(!existsSync(join(copy, "rename.cs")), `${template.name}: rename.cs deleted itself`);
-      check(existsSync(join(copy, "Acme.slnx")), `${template.name}: the solution is Acme.slnx`);
-      const left = textFiles(copy).filter(({ text }) => /starter/i.test(text)).map(({ path }) => path.slice(copy.length + 1));
-      check(left.length === 0, `${template.name}: no occurrence of the template name is left in a file${left.length ? ` (${left.join(", ")})` : ""}`);
-      const leftNames = allPaths(copy).filter((p) => /starter/i.test(p.slice(copy.length))).map((p) => p.slice(copy.length + 1));
-      check(leftNames.length === 0, `${template.name}: no file or folder name keeps the template name${leftNames.length ? ` (${leftNames.join(", ")})` : ""}`);
+    // 4. Publish, run the published app in Production.
+    const published = join(work, template.name, "published");
+    const publish = run("dotnet", ["publish", web, "-c", "Release", "-warnaserror", "-o", published], repo);
+    if (!check(publish.code === 0, `${template.name}: dotnet publish ${template.web} -c Release -warnaserror`)) console.log(publish.out);
+    if (publish.code === 0) {
+      const publishedDll = join(published, `${basename(template.web)}.dll`);
+      const { utility, css } = template.probe;
+      for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: "/demo/starter" }, "/demo/starter"]]) {
+        let app;
+        try {
+          app = await start(publishedDll, published, { ...extraEnv, ASPNETCORE_ENVIRONMENT: "Production" });
+        } catch (error) {
+          check(false, `${template.name}: the published app runs in Production ${label}`);
+          console.log(error.message);
+          continue;
+        }
+        try {
+          for (const page of template.pages) {
+            const res = await fetch(`${app.url}${prefix}${page}`);
+            check(res.status === 200, `${template.name}: published, GET ${prefix}${page} returns 200 in Production ${label} (${res.status})`);
+            if (page !== "/") continue;
+            const html = await res.text();
+            const sheet = /<link rel="stylesheet" href="([^"]*app[^"]*\.css)"/.exec(html)?.[1];
+            const cssRes = sheet ? await fetch(new URL(sheet, `${app.url}${prefix}/`)) : null;
+            check(!!cssRes?.ok && (await cssRes.text()).includes(css), `${template.name}: published, the stylesheet is served with ${utility} in Production ${label}`);
+            const script = /<script src="([^"]*blazor\.web[^"]*\.js)"/.exec(html)?.[1];
+            const scriptRes = script ? await fetch(new URL(script, `${app.url}${prefix}/`)) : null;
+            check(!!scriptRes?.ok && /javascript/.test(scriptRes.headers.get("content-type") ?? ""), `${template.name}: published, the Blazor script is served ${label} (${script})`);
+          }
+        } finally {
+          app.child.kill();
+        }
+      }
+      if (browser) {
+        // A real browser: the E2E project of this repository, pointed at the published folder.
+        const e2e = { BLUX_TEMPLATE_PUBLISHED: published, BLUX_TEMPLATE_ASSEMBLY: `${basename(template.web)}.dll`, BLUX_TEMPLATE_PROBE: template.probe.css };
+        const e2eBuild = runPlain("dotnet", ["build", "tests/Blux.UI.E2E"], root);
+        if (!check(e2eBuild.code === 0, `${template.name}: tests/Blux.UI.E2E builds`)) console.log(e2eBuild.out);
+        if (e2eBuild.code === 0) {
+          const browserRun = runPlain("dotnet", ["test", "--project", "tests/Blux.UI.E2E", "--no-build", "--", "--filter-class", "Blux.UI.E2E.TemplateTests"], root, e2e);
+          if (!check(browserRun.code === 0 && /succeeded: 2/.test(browserRun.out), `${template.name}: in a browser, the published app is interactive, the counter works and Auto hands off to WebAssembly (root and path base)`)) console.log(browserRun.out);
+        }
+      }
+    }
+
+    // 5. Rename. Names the script must refuse change nothing.
+    const refused = exportTemplate(template.name, join(work, template.name, "refused"));
+    for (const bad of ["System", "Task", "Microsoft", "Blux", "my_app", "9lives", "Web", "class", template.name_in_files]) {
+      const r = run("dotnet", ["run", "rename.cs", bad], refused);
+      const untouched = spawnSync("git", ["status", "--porcelain"], { cwd: refused, encoding: "utf8" }).stdout.trim() === "";
+      check(r.code !== 0 && /rename: /.test(r.out) && untouched && existsSync(join(refused, "rename.cs")), `${template.name}: rename.cs refuses '${bad}' and changes nothing`);
+    }
+    for (const newName of template.renames) {
+      const lower = newName.toLowerCase();
+      const copy = exportTemplate(template.name, join(work, template.name, `renamed-${newName}`));
+      const renamed = run("dotnet", ["run", "rename.cs", newName], copy);
+      if (!check(renamed.code === 0, `${template.name}: dotnet run rename.cs ${newName}`)) console.log(renamed.out);
+      if (renamed.code !== 0) continue;
+      check(!existsSync(join(copy, "rename.cs")) && !existsSync(join(copy, ".rename-state")), `${template.name}: ${newName}: rename.cs and its state file are gone`);
+      check(existsSync(join(copy, `${newName}.slnx`)), `${template.name}: ${newName}: the solution is ${newName}.slnx`);
+      check(renamed.out.includes(`dotnet run --project src/${newName}.Web`) && existsSync(join(copy, "src", `${newName}.Web`)), `${template.name}: ${newName}: the hint points to a folder that exists`);
+      // What is left of the template name once the new name (which may contain it) is taken out.
+      const strip = (text) => text.replace(new RegExp(newName, "gi"), "");
+      const left = textFiles(copy).filter(({ text }) => /starter/i.test(strip(text))).map(({ path }) => path.slice(copy.length + 1));
+      check(left.length === 0, `${template.name}: ${newName}: no occurrence of the template name is left in a file${left.length ? ` (${left.join(", ")})` : ""}`);
+      const leftNames = allPaths(copy).filter((p) => /starter/i.test(strip(p.slice(copy.length)))).map((p) => p.slice(copy.length + 1));
+      check(leftNames.length === 0, `${template.name}: ${newName}: no file or folder name keeps the template name${leftNames.length ? ` (${leftNames.join(", ")})` : ""}`);
+      // The names the template builds from its own name, never one the other spellings rewrote twice.
+      const services = textFiles(copy).find(({ path }) => path.endsWith(`${sep}${newName}Services.cs`));
+      check(!!services && services.text.includes(`Add${newName}Ui`) && services.text.includes(`namespace ${newName}.Shared;`), `${template.name}: ${newName}: the setup method is Add${newName}Ui in the namespace ${newName}.Shared`);
       const maui = readdirSync(join(copy, "src")).filter((d) => d.endsWith(".Maui"));
       if (maui.length) {
         const csproj = readFileSync(join(copy, "src", maui[0], `${maui[0]}.csproj`), "utf8");
-        check(csproj.includes("<ApplicationId>com.companyname.acme</ApplicationId>") && csproj.includes("<ApplicationTitle>Acme</ApplicationTitle>") && csproj.includes("<RootNamespace>Acme.Maui</RootNamespace>"), `${template.name}: the MAUI project has the new id, title and root namespace`);
+        check(csproj.includes(`<ApplicationId>com.companyname.${lower}</ApplicationId>`) && csproj.includes(`<ApplicationTitle>${newName}</ApplicationTitle>`) && csproj.includes(`<RootNamespace>${newName}.Maui</RootNamespace>`), `${template.name}: ${newName}: the MAUI project has the new id, title and root namespace`);
       }
-      const rebuilt = run("dotnet", ["build", join(copy, template.renamedWeb), "-c", "Release", "-warnaserror"], copy);
-      if (!check(rebuilt.code === 0, `${template.name}: dotnet build ${template.renamedWeb} -c Release -warnaserror after the rename`)) console.log(rebuilt.out);
+      const renamedWeb = template.web.replace(template.name_in_files, newName);
+      const rebuilt = run("dotnet", ["build", join(copy, renamedWeb), "-c", "Release", "-warnaserror"], copy);
+      if (!check(rebuilt.code === 0, `${template.name}: dotnet build ${renamedWeb} -c Release -warnaserror after the rename to ${newName}`)) console.log(rebuilt.out);
+    }
+
+    // A rename that fails half way (a folder that cannot be written) says so, and the same command finishes it without renaming twice, even
+    // for a name that contains the template name. Not on Windows (no chmod) and not as root (it ignores permissions).
+    if (process.platform !== "win32" && process.getuid?.() !== 0) {
+      const partial = exportTemplate(template.name, join(work, template.name, "partial"));
+      const src = join(partial, "src");
+      const newName = `My${template.name_in_files}`;
+      chmodSync(src, 0o555);
+      const first = run("dotnet", ["run", "rename.cs", newName], partial);
+      chmodSync(src, 0o755);
+      check(first.code !== 0 && /could not rename 'src\/[^']+' to 'src\/[^']+'/.test(first.out) && /partly renamed/.test(first.out) && first.out.includes(`dotnet run rename.cs ${newName}`), `${template.name}: a rename that fails half way names the path, says the repository is partly renamed and how to continue`);
+      check(existsSync(join(partial, ".rename-state")) && existsSync(join(partial, "rename.cs")), `${template.name}: the progress is kept for the next run`);
+      const second = run("dotnet", ["run", "rename.cs", newName], partial);
+      check(second.code === 0, `${template.name}: running the same command again finishes the rename`);
+      if (second.code !== 0) console.log(second.out);
+      check(existsSync(join(partial, "src", `${newName}.Web`)) && !existsSync(join(partial, "src", `${template.name_in_files}.Web`)) && !existsSync(join(partial, "rename.cs")) && !existsSync(join(partial, ".rename-state")), `${template.name}: after the second run every folder has the new name`);
+      const twice = textFiles(partial).filter(({ text }) => text.includes(`My${newName}`) || text.includes(`my${newName.toLowerCase()}`)).map(({ path }) => path.slice(partial.length + 1));
+      check(twice.length === 0 && !allPaths(partial).some((p) => p.includes(`My${newName}`)), `${template.name}: nothing was renamed twice${twice.length ? ` (${twice.join(", ")})` : ""}`);
+    } else {
+      console.log("skip  partial rename check (needs a POSIX file system and a user that is not root)");
     }
   }
 } catch (error) {

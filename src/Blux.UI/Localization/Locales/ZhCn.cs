@@ -106,6 +106,7 @@ public static partial class BxLocales
             HeaderNavigation = "主菜单",
             HeaderMenu = "菜单",
             OpenHeaderMenu = "打开菜单",
+            SkipToContent = "跳到正文",
             SidebarLabel = "侧边栏",
             OpenSidebar = "打开侧边栏",
             CollapseSidebar = "收起侧边栏",

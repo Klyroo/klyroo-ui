@@ -25,6 +25,7 @@ import './file-upload.js';
 import './carousel.js';
 import './form2.js';
 import './layout.js';
+import './skip-link.js';
 import './dashboard.js';
 import './marketing.js';
 import './chat.js';

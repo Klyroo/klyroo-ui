@@ -1,0 +1,27 @@
+@namespace Blux.UI
+@inherits BxComponentBase
+
+@*
+    The first stop of the page for keyboard users: a link to the main content, hidden until it has the focus. A plain "#main" link
+    would resolve against <base href> and load the home page from any other page, and the router only scrolls a hash link, so the focus
+    would stay on the link: a small handler of the JS bundle (the document level, so it works in static rendering, in every render mode
+    and in a web view) moves the focus to the target on the current page instead and leaves the address alone.
+*@
+<a href="@("#" + Target)" data-bx-skip-link class="@_slots["root"]" @attributes="AdditionalAttributes">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label ?? Messages.SkipToContent)))</a>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The id of the element that receives the focus, "main" by default. It gets <c>tabindex="-1"</c> when it has none.</summary>
+    [Parameter] public string Target { get; set; } = "main";
+
+    /// <summary>The text of the link. Defaults to the translated "Skip to content".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Replaces <see cref="Label"/>.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public SkipLinkUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.SkipLink, new Dictionary<string, string?>(), Ui, "root");
+}
