@@ -64,7 +64,7 @@ internal static partial class Themes
 
     public static ComponentTheme CommandPalette() =>
         new ComponentTheme("commandPalette", "root", "inputWrapper", "inputIcon", "input", "listbox", "group", "groupLabel",
-                "item", "itemIcon", "itemWrapper", "itemLabel", "itemDescription", "itemShortcut", "empty", "status")
+                "item", "itemIcon", "itemWrapper", "itemLabel", "itemDescription", "itemShortcut", "itemCount", "empty", "status")
             .Slot("root", "group/cmd block w-full min-w-0 text-(--blux-text)")
             .Slot("inputWrapper", "flex items-center gap-2 border-b border-(--blux-border) px-4")
             .Slot("inputIcon", "size-5 shrink-0 text-(--blux-text-muted)")
@@ -80,6 +80,7 @@ internal static partial class Themes
             .Slot("itemLabel", "truncate")
             .Slot("itemDescription", "truncate text-xs text-(--blux-text-muted)")
             .Slot("itemShortcut", "ms-auto ps-4 text-xs text-(--blux-text-muted)")
+            .Slot("itemCount", "shrink-0 ps-2 text-xs tabular-nums text-(--blux-text-muted)")
             .Slot("empty", "hidden px-6 py-10 text-center text-sm text-(--blux-text-muted) group-data-[empty]/cmd:block")
             .Slot("status", "sr-only");
 

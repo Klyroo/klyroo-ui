@@ -1,5 +1,5 @@
 import { ensureId, float, isTvMode, observeChildren } from './shared.js';
-import { ValueModel, navigable } from './form2-shared.js';
+import { ValueModel, navigable, syncGroups } from './form2-shared.js';
 
 /**
  * Select with a filter field inside the list. The trigger is a select-only combobox button; the popover holds a
@@ -117,6 +117,7 @@ export class BxSelectMenuElement extends HTMLElement {
       option.hidden = !match;
       if (match) shown++;
     }
+    syncGroups(this);
     const create = this.#create;
     if (create) {
       const exact = options.some((o) => (o.dataset.label ?? '').toLowerCase() === query) || this.#model.values.includes(text.trim());

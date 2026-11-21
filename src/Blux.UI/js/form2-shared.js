@@ -107,6 +107,13 @@ export class ValueModel {
 /** Options a user can land on: not hidden by a filter, not disabled. */
 export const navigable = (options) => options.filter((o) => !o.hidden && o.getAttribute('aria-disabled') !== 'true');
 
+/** A group whose options are all hidden by a filter hides with them, so no heading is left alone. A group is not an option: navigation never lands on it. */
+export function syncGroups(root) {
+  for (const group of root.querySelectorAll('[role="group"]')) {
+    group.hidden = group.querySelector('[role="option"]:not([hidden])') === null;
+  }
+}
+
 /** First-letter typeahead over option labels, with a short-lived buffer for multi-letter searches. */
 export class Typeahead {
   #buffer = '';
