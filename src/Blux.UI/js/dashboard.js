@@ -1,10 +1,11 @@
 import { Reporter, observeChildren } from './shared.js';
+import { appStorageKey } from './base-path.js';
 
 const PREFIX = 'blux:dashboard:';
 
 function read(key) {
   try {
-    return localStorage.getItem(key);
+    return localStorage.getItem(appStorageKey(key));
   } catch {
     return null;
   }
@@ -12,7 +13,7 @@ function read(key) {
 
 function write(key, value) {
   try {
-    localStorage.setItem(key, value);
+    localStorage.setItem(appStorageKey(key), value);
   } catch {
     // Storage unavailable (private window): the sizes last until the page is reloaded.
   }

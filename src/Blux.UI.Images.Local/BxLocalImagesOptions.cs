@@ -8,8 +8,8 @@ namespace Blux.UI.Images.Local;
 /// </summary>
 public sealed class BxLocalImagesOptions
 {
-    /// <summary>Where <c>MapBluxImages</c> maps the endpoint and where the <c>local</c> provider points. Default <c>/_blux/img</c>.</summary>
-    public string Endpoint { get; set; } = "/_blux/img";
+    /// <summary>Where <c>MapBluxImages</c> maps the endpoint and where the <c>local</c> provider points. Default <c>_blux/img</c>, relative to the base of the app (see <see cref="BxLocalImageProvider.DefaultEndpoint"/>).</summary>
+    public string Endpoint { get; set; } = BxLocalImageProvider.DefaultEndpoint;
 
     /// <summary>
     /// A token of yours (an application version, a deploy id) added as <c>v</c> to every URL. A request that carries it is answered with

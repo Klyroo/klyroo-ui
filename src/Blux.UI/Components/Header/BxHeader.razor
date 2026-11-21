@@ -59,8 +59,8 @@
     /// <summary>The title link on the left, used when <see cref="Left"/> is not set.</summary>
     [Parameter] public string? Title { get; set; }
 
-    /// <summary>Where the title link goes.</summary>
-    [Parameter] public string Href { get; set; } = "/";
+    /// <summary>Where the title link goes. The default "./" is the home of the app: relative to <c>&lt;base href&gt;</c>, so it is right below a path base too.</summary>
+    [Parameter] public string Href { get; set; } = "./";
 
     /// <summary>Replaces the title link: a logo, or a logo with the title.</summary>
     [Parameter] public RenderFragment? Left { get; set; }

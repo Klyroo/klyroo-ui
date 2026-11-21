@@ -294,14 +294,22 @@ public sealed class TemplateImageProvider(string name, string template, bool val
 }
 
 /// <summary>
-/// URLs of the endpoint of <c>Blux.UI.Images.Local</c> (<c>app.MapBluxImages("/_blux/img")</c>). This class only builds URLs, so it is safe
+/// URLs of the endpoint of <c>Blux.UI.Images.Local</c> (<c>app.MapBluxImages()</c>). This class only builds URLs, so it is safe
 /// in a WebAssembly client: register it on the server and the client with <see cref="BxImageProviders.AddLocal"/>.
 /// Widths are rounded up to <see cref="Steps"/> and the quality to a multiple of 5, so a page can only ask for a bounded set of variants; a height
 /// is scaled with its width so the aspect ratio holds, and <see cref="GetEffectiveWidth"/> reports the rounded width for the <c>srcset</c>. <c>v</c> is a cache-busting token of yours (an application version): with it the server
 /// answers with <c>immutable</c> caching.
+/// <para>
+/// The default endpoint is relative (<see cref="DefaultEndpoint"/>): the browser resolves it against <c>&lt;base href&gt;</c>, so an app deployed under a path base
+/// (<c>UsePathBase("/x")</c> with <c>&lt;base href="/x/"&gt;</c>) reaches its own optimizer at <c>/x/_blux/img</c> in every render mode, and not the one of
+/// another app on the same origin. An endpoint you pass that starts with "/" is used as it is, which is right only for an app served at the root.
+/// </para>
 /// </summary>
-public sealed class BxLocalImageProvider(string endpoint = "/_blux/img", string? version = null, string name = "local") : IBxImageProvider
+public sealed class BxLocalImageProvider(string endpoint = BxLocalImageProvider.DefaultEndpoint, string? version = null, string name = "local") : IBxImageProvider
 {
+    /// <summary>The endpoint when none is given, relative to the base of the app (<c>&lt;base href&gt;</c>), which <c>MapBluxImages</c> maps below the path base.</summary>
+    public const string DefaultEndpoint = "_blux/img";
+
     /// <summary>The widths the local optimizer produces (the device and icon widths of Next.js, which suit most layouts).</summary>
     public static IReadOnlyList<int> Steps { get; } = [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
 
@@ -363,7 +371,7 @@ public static class BxImageProviders
     public static BxImageSettings AddTemplate(this BxImageSettings images, string name, string template, bool makeDefault = false) => Register(images, new TemplateImageProvider(name, template), makeDefault);
 
     /// <summary>Registers the URL builder of the local optimizer under the name <c>local</c> (see <see cref="BxLocalImageProvider"/>).</summary>
-    public static BxImageSettings AddLocal(this BxImageSettings images, string endpoint = "/_blux/img", string? version = null, bool makeDefault = false) => Register(images, new BxLocalImageProvider(endpoint, version), makeDefault);
+    public static BxImageSettings AddLocal(this BxImageSettings images, string endpoint = BxLocalImageProvider.DefaultEndpoint, string? version = null, bool makeDefault = false) => Register(images, new BxLocalImageProvider(endpoint, version), makeDefault);
 
     private static BxImageSettings Register(BxImageSettings images, IBxImageProvider provider, bool makeDefault) =>
         makeDefault ? images.AddDefaultProvider(provider) : images.AddProvider(provider);

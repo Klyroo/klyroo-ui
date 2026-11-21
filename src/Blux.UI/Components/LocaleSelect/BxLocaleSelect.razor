@@ -45,7 +45,11 @@
     /// <summary>The cookie to write. The default is the one the ASP.NET Core request localization middleware reads.</summary>
     [Parameter] public string CookieName { get; set; } = ".AspNetCore.Culture";
 
-    /// <summary>The path of the cookie. It must cover every page that is localized.</summary>
+    /// <summary>
+    /// The path of the cookie. It must cover every page that is localized. The default "/" makes the culture one for the whole origin: a
+    /// language chosen in an app applies to the other apps of that origin, such as the ones served below a path base. It has to stay "/"
+    /// for that to work, because a server keeps the last of two cookies of the same name and the cookie of another path could win.
+    /// </summary>
     [Parameter] public string CookiePath { get; set; } = "/";
 
     /// <summary>

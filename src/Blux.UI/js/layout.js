@@ -1,11 +1,13 @@
 import { Reporter, ensureId } from './shared.js';
 import { isHybrid } from './host.js';
+import { appBasePath, appCookiePath, sidebarCookiePrefix } from './base-path.js';
 
 // The state is remembered in cookies, so the server can render it on the next request (the app reads them and passes
 // Collapsed): blux-sidebar-{id} is "1" when collapsed, blux-sidebar-{id}-width the width in pixels.
 // In a Blazor Hybrid web view there is no server to read them and cookies are unreliable there (WebKit's tracking
 // prevention on iOS and macOS), so the same names are kept in localStorage.
-const SIDEBAR_PREFIX = 'blux-sidebar-';
+// At the root the names are blux-sidebar-{id}; below a path base the base is part of the name (see base-path.js and BxPathScope), because
+// a server that reads the cookie keeps the last of two with the same name, and the cookie of another app on the origin can come after.
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
 function read(name) {
@@ -40,7 +42,7 @@ function write(name, value) {
   }
   try {
     const secure = location.protocol === 'https:' ? '; secure' : '';
-    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${ONE_YEAR}; samesite=lax${secure}`;
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=${appCookiePath()}; max-age=${ONE_YEAR}; samesite=lax${secure}`;
   } catch {
     // Cookies blocked: the state lasts until the page is reloaded.
   }
@@ -103,7 +105,7 @@ export class BxSidebarElement extends HTMLElement {
 
   get #key() {
     const id = this.getAttribute('data-bx-sidebar-id');
-    return id ? SIDEBAR_PREFIX + encodeURIComponent(id) : null;
+    return id ? sidebarCookiePrefix(appBasePath()) + encodeURIComponent(id) : null;
   }
 
   get #aside() {
@@ -334,6 +336,7 @@ document.addEventListener('bx-change', (event) => {
   // In a Blazor Hybrid app there is no ASP.NET Core to read the cookie: BxLocaleSelect keeps the choice in an IBxCultureStore (.NET side).
   if (isHybrid()) return;
   const name = host.getAttribute('data-bx-cookie') || '.AspNetCore.Culture';
+  // One culture for the whole origin, so the default path is "/": a language chosen in one app applies to the others.
   const path = host.getAttribute('data-bx-cookie-path') || '/';
   const secure = location.protocol === 'https:' ? '; secure' : '';
   try {
