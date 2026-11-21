@@ -30,6 +30,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Blux.UI.Tools" />
     <InternalsVisibleTo Include="Blux.UI.Tools.Tests" />
+    <InternalsVisibleTo Include="Blux.UI.Tools.Query.Tests" />
   </ItemGroup>
 
   <ItemGroup>
