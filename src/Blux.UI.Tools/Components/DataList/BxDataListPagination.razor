@@ -1,0 +1,148 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+
+@*
+    Offset paging: the pages and a page size picker. Interactive, the pages are buttons and the picker reports a change. Statically rendered
+    (and prerendered), the pages are links and the picker is a GET form, so reading works without a circuit or a WebAssembly runtime.
+*@
+@if (Context.Result is not null && Total > 0)
+{
+    <div class="@_slots["pagination"]" data-slot="pagination" @ref="_root" @attributes="AdditionalAttributes">
+        @if (ShowPageSize)
+        {
+            <div class="@_slots["pageSize"]" data-slot="page-size">
+                @if (Context.IsInteractive)
+                {
+                    <label for="@_id" class="@_slots["pageSizeLabel"]">@ToolsMessages.PageSize</label>
+                    <select id="@_id" class="@_slots["pageSizeSelect"]" value="@Context.State.PageSize" @onchange="OnPageSize">
+                        @foreach (var size in Sizes)
+                        {
+                            <option value="@size" selected="@(size == Context.State.PageSize)">@size.ToString(FormatCulture)</option>
+                        }
+                    </select>
+                }
+                else if (Context.CanLink)
+                {
+                    <form method="get" action="@Context.Path" class="@_slots["pageSizeForm"]">
+                        @foreach (var (name, value) in Context.FormFields(Context.State with { Page = 1 }, "ps", "p"))
+                        {
+                            <input type="hidden" name="@name" value="@value" />
+                        }
+                        <label for="@_id" class="@_slots["pageSizeLabel"]">@ToolsMessages.PageSize</label>
+                        <select id="@_id" name="@Context.FieldName("ps")" class="@_slots["pageSizeSelect"]">
+                            @foreach (var size in Sizes)
+                            {
+                                <option value="@size" selected="@(size == Context.State.PageSize)">@size.ToString(FormatCulture)</option>
+                            }
+                        </select>
+                        <BxButton Type="submit" Label="@ToolsMessages.ApplyPageSize" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" />
+                    </form>
+                }
+                else
+                {
+                    <label for="@_id" class="@_slots["pageSizeLabel"]">@ToolsMessages.PageSize</label>
+                    <select id="@_id" class="@_slots["pageSizeSelect"]" disabled>
+                        <option>@Context.State.PageSize.ToString(FormatCulture)</option>
+                    </select>
+                }
+            </div>
+        }
+        @if (PageCount > 1)
+        {
+            <BxPagination Total="Total" PageSize="Context.State.PageSize" Page="Context.State.Page" SiblingCount="SiblingCount" ShowFirstLast="ShowFirstLast" AriaLabel="@AriaLabel"
+                           HrefTemplate="@(Context.IsInteractive ? null : Template)" PageChanged="OnPage" />
+        }
+    </div>
+}
+
+@code {
+    private const int Sentinel = 999_999;
+    private readonly string _id = NewId("dl-ps");
+    private SlotSet _slots = default!;
+    private ElementReference _root;
+    private bool _focusPending;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    /// <summary>The page sizes of the picker. The current size and sizes above the schema's maximum are handled for you.</summary>
+    [Parameter] public int[] PageSizes { get; set; } = [10, 25, 50, 100];
+
+    /// <summary>Shows the page size picker.</summary>
+    [Parameter] public bool ShowPageSize { get; set; } = true;
+
+    /// <summary>Pages shown on each side of the current one.</summary>
+    [Parameter] public int SiblingCount { get; set; } = 1;
+
+    /// <summary>Buttons that jump to the first and the last page.</summary>
+    [Parameter] public bool ShowFirstLast { get; set; }
+
+    /// <summary>The accessible name of the pagination landmark. Give each list of a page its own: two landmarks with the same name cannot be told apart. Defaults to the localized "Pagination".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "pagination");
+
+    // Without a count from the provider, the pages known so far: the next one exists when this one is full.
+    private int Total
+    {
+        get
+        {
+            if (Context.Result is not { } result) return 0;
+            if (result.TotalCount is { } total) return total;
+            var size = Math.Max(1, Context.State.PageSize);
+            return (Context.State.Page - 1) * size + result.Items.Count + (result.Items.Count >= size ? 1 : 0);
+        }
+    }
+
+    private int PageCount => Math.Max(1, (int)Math.Ceiling(Total / (double)Math.Max(1, Context.State.PageSize)));
+
+    private IEnumerable<int> Sizes
+    {
+        get
+        {
+            var max = Context.Schema?.MaxPageSize ?? int.MaxValue;
+            return PageSizes.Append(Context.State.PageSize).Where(s => s > 0 && (s <= max || s == Context.State.PageSize)).Distinct().Order();
+        }
+    }
+
+    // A link per page: the URL of the page with a number the pagination fills in.
+    private string? Template
+    {
+        get
+        {
+            if (Context.HrefWith(s => s with { Page = Sentinel }) is not { } href) return null;
+            var key = Uri.EscapeDataString(Context.FieldName("p"));
+            return href.Replace($"{key}={Sentinel}", $"{key}={{page}}", StringComparison.Ordinal);
+        }
+    }
+
+    private void OnPage(int page)
+    {
+        _focusPending = true;
+        Context.SetState(s => s with { Page = page }, QueryHistory.Push);
+    }
+
+    private void OnPageSize(ChangeEventArgs e)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var size) || size < 1) return;
+        Context.SetState(s => s with { PageSize = size, Page = 1 }, QueryHistory.Push);
+    }
+
+    // After a page change the control the user pressed can be gone (the previous button is disabled on the first page): keep focus in the pagination.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusPending || !Context.IsInteractive) return;
+        _focusPending = false;
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.focusPage", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side: focus stays where the browser leaves it.
+        }
+    }
+}

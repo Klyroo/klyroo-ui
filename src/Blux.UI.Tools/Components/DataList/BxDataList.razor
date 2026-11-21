@@ -1,0 +1,454 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits BxToolsComponentBase
+@implements IDisposable
+@attribute [CascadingTypeParameter(nameof(TItem))]
+@using System.Linq.Expressions
+@using System.Text.Json
+@using System.Text.Json.Serialization.Metadata
+@using Blux.UI.Tools.Query
+@using System.Diagnostics.CodeAnalysis
+@using Microsoft.JSInterop
+
+<CascadingValue TValue="DataListContext<TItem>" Value="_context" IsFixed="true">
+    <div class="@_slots["root"]" data-slot="root" @attributes="AdditionalAttributes">
+        @if (ChildContent is not null)
+        {
+            @ChildContent
+        }
+        else
+        {
+            <div class="@_slots["toolbar"]" data-slot="toolbar">
+                <BxDataListResultCount TItem="TItem" />
+                <BxDataListRefresh TItem="TItem" />
+            </div>
+            <BxDataListErrorState TItem="TItem" />
+            <BxDataListTable TItem="TItem" />
+            <BxDataListPagination TItem="TItem" />
+        }
+    </div>
+</CascadingValue>
+
+@code {
+    private readonly DataListContext<TItem> _context;
+    private SlotSet _slots = default!;
+    private DataListSchema<TItem>? _schema;
+    private DataListState _state = DataListState.Initial;
+    private DataListState? _lastStateParam;
+    private IEnumerable<TItem>? _lastItems;
+    private DataListProvider<TItem>? _lastProvider;
+    private Task? _init;
+    private QueryClaim? _claim;
+    private IDisposable? _subscription;
+    private IDisposable? _persistSubscription;
+    private PersistentComponentState? _persistent;
+    private string? _timeZone;
+    private bool _disposed;
+
+    public BxDataList() => _context = new DataListContext<TItem>(this);
+
+    [Inject] private QueryState Query { get; set; } = default!;
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IServiceProvider Services { get; set; } = default!;
+
+    /// <summary>
+    /// What a request may ask for: which fields sort, which filter, the default sort and page size. Optional for a list of rows in memory whose
+    /// <see cref="BxDataListColumn{TItem}"/>s name a <c>Property</c>: those columns then describe the schema (every one sortable unless it says otherwise).
+    /// A provider needs a schema, because it is the schema that drops what a request must not ask for.
+    /// </summary>
+    [Parameter] public DataListSchema<TItem>? Schema { get; set; }
+
+    /// <summary>
+    /// The rows, kept in memory: the list sorts and pages them itself, with the semantics of <see cref="InMemoryDataList"/>. Give a stable collection (a field, not a new list on every render): a new reference loads the list again.
+    /// A list takes one source: <see cref="Items"/> or <see cref="Provider"/>. (A queryable source follows once the applier of Blux.UI.Tools.Query exists.)
+    /// </summary>
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+
+    /// <summary>Loads a page of rows for a request, from a database, an HTTP API or anything else. It receives a token that is cancelled when a newer request replaces it.</summary>
+    [Parameter] public DataListProvider<TItem>? Provider { get; set; }
+
+    /// <summary>
+    /// The search, filters, sort, page and page size. Bind it with <c>@bind-State</c> to read or set it from outside. With <see cref="UrlSync"/> the URL is the source of truth
+    /// and this value is only reported through <see cref="StateChanged"/>; without it the list starts from this value and follows it when it changes.
+    /// </summary>
+    [Parameter] public DataListState? State { get; set; }
+
+    /// <summary>Raised when the state changes, from the list or, with URL sync, from the URL (a link, Back and Forward, a typed address).</summary>
+    [Parameter] public EventCallback<DataListState> StateChanged { get; set; }
+
+    /// <summary>
+    /// A prefix for the URL keys of this list (<c>users</c> gives <c>users.s</c>, <c>users.p</c>): needed when a page has several lists that sync with the URL. Without it the keys are <c>q</c>, <c>p</c>, <c>ps</c>, <c>s</c>, <c>f.&lt;key&gt;</c>, <c>c</c> and <c>l</c>.
+    /// </summary>
+    [Parameter] public string? UrlKey { get; set; }
+
+    /// <summary>
+    /// Keeps the state in the URL (true by default): a page or a sort is pushed as a history entry, so Back restores it, and a typed or shared address loads its state.
+    /// In static server rendering the controls are links and GET forms. Turn it off for a list in a dialog.
+    /// </summary>
+    [Parameter] public bool UrlSync { get; set; } = true;
+
+    /// <summary>
+    /// Metadata to serialize the result of the prerender (<c>MyJson.Default.DataListResultMyRow</c>, from a <c>JsonSerializerContext</c> of the app with
+    /// <c>[JsonSerializable(typeof(DataListResult&lt;MyRow&gt;))]</c>). The result of a prerendered list is then handed to the interactive render (WebAssembly, Server or Auto), which shows it at
+    /// once and does not load it again. Without it nothing is persisted and the interactive render loads the list a second time. Lists that persist need distinct <see cref="UrlKey"/> or <see cref="PersistKey"/> values.
+    /// </summary>
+    [Parameter] public JsonTypeInfo<DataListResult<TItem>>? ResultJson { get; set; }
+
+    /// <summary>The key the prerendered result is persisted under, when the list has no <see cref="UrlKey"/> or two lists share it.</summary>
+    [Parameter] public string? PersistKey { get; set; }
+
+    /// <summary>How tight the rows are.</summary>
+    [Parameter] public DataListDensity Density { get; set; }
+
+    /// <summary>The parts of the list: toolbar items, the table with its columns, the pagination. Without it the list renders a default layout: result count, refresh, error state, table and pagination.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Per-instance classes for each slot.</summary>
+    [Parameter] public DataListUi? Ui { get; set; }
+
+    internal DataListController<TItem>? Controller { get; private set; }
+
+    internal DataListSchema<TItem>? CurrentSchema => _schema;
+
+    internal DataListState CurrentState => _state;
+
+    internal bool IsInteractive => RendererInfo.IsInteractive;
+
+    internal bool CanLink => UrlSync && !RendererInfo.IsInteractive;
+
+    internal string? NormalizedUrlKey => string.IsNullOrWhiteSpace(UrlKey) ? null : UrlKey;
+
+    internal string CurrentPath => new Uri(Navigation.Uri).AbsolutePath;
+
+    internal bool IsFiltered =>
+        !string.IsNullOrWhiteSpace(_state.Search)
+        || (_schema is not null && !_state.Filters.SequenceEqual(_schema.DefaultState.Filters));
+
+    /// <summary>Set by the table: describes the columns that name a property, so the list can build its schema from them.</summary>
+    internal Func<IReadOnlyList<(LambdaExpression Property, string? Key, bool Sortable)>>? ImplicitColumns { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Items is not null && Provider is not null)
+        {
+            throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} takes one source: give it Items or a Provider, not both.");
+        }
+        if (Items is null && Provider is null)
+        {
+            throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} needs a source: give it Items or a Provider.");
+        }
+        if (Provider is not null && Schema is null)
+        {
+            throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} with a Provider needs a Schema: it is the schema that drops what a request must not ask for.");
+        }
+        UpdateSlots();
+        _schema = Schema;
+        if (UrlSync)
+        {
+            // Only an interactive renderer can navigate: until it is known, a write would turn into a redirect of the request.
+            Query.UseRenderer(RendererInfo);
+            var prefix = NormalizedUrlKey ?? "";
+            _claim = Query.Claim(prefix, nameof(BxDataList<TItem>) + (prefix.Length == 0 ? "" : $" '{prefix}'"));
+            _subscription = Query.Subscribe(prefix, OnUrlChanged);
+        }
+        _persistent = Services.GetService(typeof(PersistentComponentState)) as PersistentComponentState;
+        if (ResultJson is not null && _persistent is not null && AssignedRenderMode is not null && !RendererInfo.IsInteractive)
+        {
+            // Prerendering a component of an interactive mode: hand the result to the interactive render.
+            _persistSubscription = _persistent.RegisterOnPersisting(PersistAsync, AssignedRenderMode);
+        }
+    }
+
+    protected override Task OnInitializedAsync() =>
+        // A list without a schema waits for its table: the columns describe the schema, and they exist once the table rendered.
+        Schema is not null ? EnsureLoadedAsync() : Task.CompletedTask;
+
+    // Also from OnInitialized: with a source that loads asynchronously the first render happens before the first OnParametersSet.
+    private void UpdateSlots() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>
+        {
+            ["density"] = Density switch
+            {
+                DataListDensity.Compact => "compact",
+                DataListDensity.Comfortable => "comfortable",
+                _ => "default",
+            },
+        }, Ui, "root");
+
+    protected override void OnParametersSet()
+    {
+        _claim?.ThrowIfConflicted();
+        UpdateSlots();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var controller = Controller;
+        if (controller is null || _init is not { IsCompletedSuccessfully: true }) return;
+        var reload = false;
+        if (!ReferenceEquals(Items, _lastItems) || !ReferenceEquals(Provider, _lastProvider))
+        {
+            // A provider is usually a lambda or a method group, new on every render of the parent: it replaces the old one without loading again. New rows load again.
+            var itemsChanged = !ReferenceEquals(Items, _lastItems);
+            _lastItems = Items;
+            _lastProvider = Provider;
+            if (Items is not null || Provider is not null)
+            {
+                controller.Provider = DataListController<TItem>.CreateProvider(controller.Schema, Items, Provider);
+                reload = itemsChanged;
+            }
+        }
+        if (!UrlSync && State is not null && !State.Equals(_lastStateParam))
+        {
+            _lastStateParam = State;
+            _state = controller.Normalize(State);
+            reload = true;
+        }
+        if (reload) await LoadAsync(_state);
+    }
+
+    /// <summary>Loads the list once, the first time something asks: the list itself, or its table once the columns registered.</summary>
+    internal Task EnsureLoadedAsync() => _init ??= InitializeAsync();
+
+    private async Task InitializeAsync()
+    {
+        _schema ??= BuildImplicitSchema();
+        var controller = Controller = new DataListController<TItem>(_schema, DataListController<TItem>.CreateProvider(_schema, Items, Provider));
+        controller.Changed += _context.NotifyChanged;
+        _lastItems = Items;
+        _lastProvider = Provider;
+        _lastStateParam = State;
+        _state = controller.Normalize(ReadState());
+        var adopted = TryAdopt(_state);
+        if (RendererInfo.IsInteractive)
+        {
+            // After the adoption, which shows its rows at once: the render waits for this call, not the rows. Only lists that cut days need the zone of the browser.
+            _timeZone = await TimeZoneAsync();
+            controller.TimeZone = _timeZone;
+        }
+        if (adopted)
+        {
+            AfterLoad();
+            return;
+        }
+        await LoadAsync(_state);
+    }
+
+    private DataListSchema<TItem> BuildImplicitSchema()
+    {
+        var columns = ImplicitColumns?.Invoke() ?? [];
+        if (columns.Count == 0)
+        {
+            throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} has no Schema and its table has no column with a Property: give it a Schema, or name a Property on its columns.");
+        }
+        return DataListSchema.For<TItem>(s =>
+        {
+            foreach (var (property, key, sortable) in columns)
+            {
+                // The property of a column is an expression returning object: the schema reads its member chain (the boxing is dropped).
+                s.Field((Expression<Func<TItem, object?>>)property, f =>
+                {
+                    if (key is not null) f.Key(key);
+                    f.Sortable(sortable);
+                });
+            }
+        });
+    }
+
+    private DataListState ReadState() =>
+        UrlSync
+            ? DataListStateQuery.FromQuery(Query.Snapshot(NormalizedUrlKey ?? ""), _schema!, NormalizedUrlKey)
+            : State ?? _schema!.DefaultState;
+
+    private async Task LoadAsync(DataListState state, bool refresh = false)
+    {
+        await Controller!.LoadAsync(state, refresh);
+        if (!_disposed) AfterLoad();
+    }
+
+    // The rows on screen are for a state that may differ from the requested one (a page past the end): show that one, in the URL too.
+    private void AfterLoad()
+    {
+        var controller = Controller!;
+        if (!controller.IsLoading && !controller.HasError && controller.LoadedState is { } loaded && !loaded.Equals(_state))
+        {
+            _state = loaded;
+            if (UrlSync && Query.Interactive == true) Query.SetMany(Changes(loaded), QueryHistory.Replace);
+            _ = StateChanged.InvokeAsync(loaded);
+        }
+        _context.NotifyChanged();
+    }
+
+    internal void SetState(Func<DataListState, DataListState> change, QueryHistory history)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        var controller = Controller;
+        if (controller is null || !RendererInfo.IsInteractive) return;
+        var next = controller.Normalize(change(_state));
+        if (next.Equals(_state)) return;
+        if (UrlSync)
+        {
+            // The write notifies the subscription below, which loads: the URL stays the one source of the state.
+            Query.SetMany(Changes(next), history);
+            return;
+        }
+        _state = next;
+        _ = StateChanged.InvokeAsync(next);
+        _ = InvokeAsync(() => LoadAsync(next));
+        _context.NotifyChanged();
+    }
+
+    internal string? HrefWith(Func<DataListState, DataListState> change)
+    {
+        ArgumentNullException.ThrowIfNull(change);
+        if (!UrlSync || _schema is null) return null;
+        return Query.HrefWith(Changes(Controller?.Normalize(change(_state)) ?? change(_state)));
+    }
+
+    internal IReadOnlyList<KeyValuePair<string, string>> FormFields(DataListState state, string[] exclude)
+    {
+        var fields = new List<KeyValuePair<string, string>>();
+        if (!UrlSync || _schema is null) return fields;
+        foreach (var (key, value) in Query.Snapshot(""))
+        {
+            if (!IsOwned(key) && value is not null) fields.Add(new(key, value));
+        }
+        var skipped = exclude.Select(name => NormalizedUrlKey is null ? name : NormalizedUrlKey + "." + name).ToHashSet(StringComparer.Ordinal);
+        foreach (var (key, value) in DataListStateQuery.ToQuery(state, _schema, NormalizedUrlKey))
+        {
+            if (!skipped.Contains(key)) fields.Add(new(key, value));
+        }
+        return fields;
+    }
+
+    internal Task RefreshAsync() => Controller is null ? Task.CompletedTask : InvokeAsync(async () =>
+    {
+        await Controller.RefreshAsync();
+        if (!_disposed) AfterLoad();
+    });
+
+    // The query keys this list owns: its own names under its prefix. Anything else in the URL is not touched.
+    private bool IsOwned(string key)
+    {
+        string name;
+        var prefix = NormalizedUrlKey;
+        if (prefix is null) name = key;
+        else if (key.Length > prefix.Length + 1 && key.StartsWith(prefix, StringComparison.Ordinal) && key[prefix.Length] == '.') name = key[(prefix.Length + 1)..];
+        else return false;
+        return name is "q" or "p" or "ps" or "s" or "c" or "l" || name.StartsWith("f.", StringComparison.Ordinal);
+    }
+
+    // The URL keys that write a state: the ones it needs, and a null for every key of this list the URL holds and the state no longer does.
+    private List<KeyValuePair<string, string?>> Changes(DataListState state)
+    {
+        var wanted = DataListStateQuery.ToQuery(state, _schema!, NormalizedUrlKey);
+        var changes = new List<KeyValuePair<string, string?>>();
+        foreach (var (key, value) in wanted) changes.Add(new(key, value));
+        foreach (var (key, _) in Query.Snapshot(NormalizedUrlKey ?? ""))
+        {
+            if (IsOwned(key) && !wanted.ContainsKey(key)) changes.Add(new(key, null));
+        }
+        return changes;
+    }
+
+    private void OnUrlChanged(IReadOnlyList<string> keys)
+    {
+        if (_disposed || Controller is null || !keys.Any(IsOwned)) return;
+        _ = InvokeAsync(ApplyUrlAsync);
+    }
+
+    private async Task ApplyUrlAsync()
+    {
+        var controller = Controller;
+        if (_disposed || controller is null) return;
+        var next = controller.Normalize(ReadState());
+        if (next.Equals(_state)) return;
+        _state = next;
+        await StateChanged.InvokeAsync(next);
+        await LoadAsync(next);
+    }
+
+    private string PersistedKey => "bx-dl:" + (PersistKey ?? NormalizedUrlKey ?? "");
+
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the result itself is written with the JsonTypeInfo of the app.")]
+    private Task PersistAsync()
+    {
+        if (Controller is { Result: { } result, LoadedState: { } loaded, RequestedState: { } requested } && ResultJson is not null && _persistent is not null)
+        {
+            // PersistAsJson<string> carries text through the built-in converter; the text itself is written with the metadata of the app, so the result needs no reflection.
+            _persistent.PersistAsJson(PersistedKey + ":state", JsonSerializer.Serialize(requested, DataListJsonContext.Default.DataListState));
+            _persistent.PersistAsJson(PersistedKey + ":loaded", JsonSerializer.Serialize(loaded, DataListJsonContext.Default.DataListState));
+            _persistent.PersistAsJson(PersistedKey + ":result", JsonSerializer.Serialize(result, ResultJson));
+        }
+        return Task.CompletedTask;
+    }
+
+    // The result of the prerender, when it was loaded for the state this render starts from.
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the result itself is read with the JsonTypeInfo of the app.")]
+    private bool TryAdopt(DataListState state)
+    {
+        if (ResultJson is null || _persistent is null || !RendererInfo.IsInteractive) return false;
+        var key = PersistedKey;
+        // Every key is taken (a bitwise and, not a short circuit): what is left unread would be offered to another list.
+        var found = _persistent.TryTakeFromJson<string>(key + ":state", out var stateText) & _persistent.TryTakeFromJson<string>(key + ":loaded", out var loadedText)
+                    & _persistent.TryTakeFromJson<string>(key + ":result", out var resultText);
+        if (!found) return false;
+        try
+        {
+            var requested = JsonSerializer.Deserialize(stateText!, DataListJsonContext.Default.DataListState);
+            var loaded = JsonSerializer.Deserialize(loadedText!, DataListJsonContext.Default.DataListState);
+            var result = JsonSerializer.Deserialize(resultText!, ResultJson);
+            if (requested is null || loaded is null || result is null || !requested.Equals(state)) return false;
+            var request = Controller!.BuildRequest(loaded);
+            // A day is cut in the time zone of the browser: a result of the prerender (UTC) is not the one this render would ask for.
+            if (NeedsTimeZone(request.Filter)) return false;
+            Controller.Adopt(state, loaded, request, result);
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
+    }
+
+    private static bool NeedsTimeZone(DataListFilterNode node) => node switch
+    {
+        DataListFilterGroup group => group.Children.Any(NeedsTimeZone),
+        FilterRule rule => HasDate(rule.Value),
+        _ => false,
+    };
+
+    private static bool HasDate(FilterValue? value) => value switch
+    {
+        FilterValue.Date => true,
+        FilterValue.Range range => HasDate(range.From) || HasDate(range.To),
+        _ => false,
+    };
+
+    private async Task<string?> TimeZoneAsync()
+    {
+        try
+        {
+            return await JS.InvokeAsync<string?>("Blux.tools.timeZone");
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended): the request goes out in UTC.
+            return null;
+        }
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        _subscription?.Dispose();
+        _claim?.Dispose();
+        _persistSubscription?.Dispose();
+        if (Controller is { } controller)
+        {
+            controller.Changed -= _context.NotifyChanged;
+            controller.Dispose();
+        }
+    }
+}

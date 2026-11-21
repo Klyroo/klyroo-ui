@@ -1,0 +1,226 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@attribute [CascadingTypeParameter(nameof(TItem))]
+@using Blux.UI.Internal
+
+<CascadingValue TValue="BxDataListTable<TItem>" Value="this" IsFixed="true">
+    @ChildContent
+    @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
+    <DataListLoadTrigger TItem="TItem" />
+    <Defer>
+        @{
+            var columns = Columns();
+            var label = Caption ?? AriaLabel;
+        }
+        <div class="@_slots["tableRoot"]" data-slot="table-root" tabindex="0" role="@(label is null ? null : "region")" aria-label="@label" @attributes="AdditionalAttributes">
+            <table class="@_slots["table"]" data-slot="table">
+                @if (Caption is not null)
+                {
+                    <caption class="@_slots["caption"]">@Caption</caption>
+                }
+                <thead class="@_slots["thead"]">
+                    <tr class="@_slots["tr"]">
+                        @foreach (var column in columns)
+                        {
+                            <th scope="col" class="@HeaderClass(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">@Header(column)</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody class="@_slots["tbody"]" aria-busy="@(Context.IsLoading || Context.IsInitial ? "true" : null)">
+                    @if (Context.IsInitial)
+                    {
+                        @* Placeholders keep the height of the page while the first rows load. *@
+                        @for (var row = 0; row < Math.Clamp(Context.State.PageSize, 3, 10); row++)
+                        {
+                            <tr class="@_slots["tr"]" data-slot="skeleton-row">
+                                @foreach (var column in columns)
+                                {
+                                    <td class="@CellClass(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
+                                }
+                            </tr>
+                        }
+                    }
+                    else if (Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError)
+                    {
+                        <tr class="@_slots["tr"]" data-slot="empty-row">
+                            <td colspan="@Math.Max(1, columns.Count)" class="@_slots["empty"]">
+                                @if (Empty is not null)
+                                {
+                                    @Empty(Context)
+                                }
+                                else
+                                {
+                                    <BxDataListEmpty />
+                                }
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Context.Rows)
+                        {
+                            <tr class="@_slots["tr"]" data-slot="row">
+                                @foreach (var column in columns)
+                                {
+                                    <td class="@CellClass(column)">@Cell(column, item)</td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Defer>
+</CascadingValue>
+
+@code {
+    private readonly List<BxDataListColumn<TItem>> _columns = [];
+    private SlotSet _slots = default!;
+
+    /// <summary>The columns: <see cref="BxDataListColumn{TItem}"/> components. Without any, the table shows one column per field of the schema.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Names the table for assistive technologies (visually hidden), and the scrolling region around it.</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>The accessible name of the table when there is no <see cref="Caption"/>.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Shown when the list has no rows. It receives the list, whose <see cref="DataListContext{TItem}.IsFiltered"/> tells "nothing matches" from "nothing exists". Without it, <see cref="BxDataListEmpty"/>.</summary>
+    [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
+
+    internal void AddColumn(BxDataListColumn<TItem> column)
+    {
+        if (!_columns.Contains(column)) _columns.Add(column);
+    }
+
+    internal void RemoveColumn(BxDataListColumn<TItem> column) => _columns.Remove(column);
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // A list without a schema builds one from the columns that name a property.
+        Context.SetImplicitColumns(() => [.. _columns.Where(c => c.Property is not null).Select(c => ((System.Linq.Expressions.LambdaExpression)c.Property!, c.Key, c.Sortable ?? true))]);
+    }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>
+        {
+            ["density"] = Context.Density switch
+            {
+                DataListDensity.Compact => "compact",
+                DataListDensity.Comfortable => "comfortable",
+                _ => "default",
+            },
+        }, Ui, "tableRoot");
+
+    private sealed record View(BxDataListColumn<TItem>? Source, string? Key, string Title, DataListAlign Align, bool Sortable, string? Class);
+
+    // The columns as declared, or one per field of the schema when none was.
+    private List<View> Columns()
+    {
+        var schema = Context.Schema;
+        if (_columns.Count > 0)
+        {
+            return [.. _columns.Select(c =>
+            {
+                var key = c.ResolvedKey;
+                var sortable = key is not null && schema is not null && schema.SortKeys.Contains(key) && (c.Sortable ?? true);
+                return new View(c, key, c.ResolvedTitle, c.Align, sortable, c.Class);
+            })];
+        }
+        if (schema is null) return [];
+        return [.. schema.Fields.Where(f => !f.IsCollection)
+            .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null))];
+    }
+
+    private string HeaderClass(View column) =>
+        $"{_slots["th"]} {AlignClass(column.Align, "th")} {column.Class}".Trim();
+
+    private string CellClass(View column) =>
+        $"{_slots["td"]} {AlignClass(column.Align, "td")} {column.Class}".Trim();
+
+    private string AlignClass(DataListAlign align, string kind) => align switch
+    {
+        DataListAlign.Center => _slots[kind + "Center"],
+        DataListAlign.End => _slots[kind + "End"],
+        _ => _slots[kind + "Start"],
+    };
+
+    private string? AriaSort(View column) =>
+        !column.Sortable ? null : Context.SortDescending(column.Key!) switch
+        {
+            null => "none",
+            false => "ascending",
+            true => "descending",
+        };
+
+    // What a click on the sort control of the column does, as its accessible name.
+    private string SortLabel(View column)
+    {
+        var template = Context.SortDescending(column.Key!) switch
+        {
+            null => ToolsMessages.SortAscending,
+            false => ToolsMessages.SortDescending,
+            true => ToolsMessages.SortClear,
+        };
+        return string.Format(FormatCulture, template, column.Title);
+    }
+
+    private RenderFragment Header(View column) => builder =>
+    {
+        if (!column.Sortable)
+        {
+            builder.AddContent(0, column.Title);
+            return;
+        }
+        var key = column.Key!;
+        var direction = Context.SortDescending(key);
+        var icon = direction switch
+        {
+            null => RenderIcon(Options.Icons.ChevronUpDown, _slots["sortIcon"]),
+            false => RenderIcon(Options.Icons.ArrowUp, _slots["sortIconActive"]),
+            true => RenderIcon(Options.Icons.ArrowDown, _slots["sortIconActive"]),
+        };
+        if (Context.IsInteractive)
+        {
+            builder.OpenElement(1, "button");
+            builder.AddAttribute(2, "type", "button");
+            builder.AddAttribute(3, "class", _slots["sortButton"]);
+            builder.AddAttribute(4, "aria-label", SortLabel(column));
+            builder.AddAttribute(5, "onclick", EventCallback.Factory.Create(this, () => Context.SetState(s => Context.NextSort(s, key), QueryHistory.Push)));
+            builder.AddContent(6, column.Title);
+            builder.AddContent(7, icon);
+            builder.CloseElement();
+        }
+        else if (Context.HrefWith(s => Context.NextSort(s, key)) is { } href)
+        {
+            builder.OpenElement(8, "a");
+            builder.AddAttribute(9, "href", href);
+            builder.AddAttribute(10, "class", _slots["sortButton"]);
+            builder.AddAttribute(11, "aria-label", SortLabel(column));
+            builder.AddContent(12, column.Title);
+            builder.AddContent(13, icon);
+            builder.CloseElement();
+        }
+        else
+        {
+            builder.AddContent(14, column.Title);
+        }
+    };
+
+    private RenderFragment Cell(View column, TItem item) => builder =>
+    {
+        if (column.Source?.Template is { } template)
+        {
+            builder.AddContent(0, template(item));
+            return;
+        }
+        var value = column.Source is { } source ? source.ReadValue(item, Context.Schema) : column.Key is not null ? Context.Schema?.ReadField(item, column.Key) : null;
+        var text = column.Source is { } formatter
+            ? formatter.FormatValue(value, FormatCulture)
+            : value is IFormattable formattable ? formattable.ToString(null, FormatCulture) : value?.ToString();
+        builder.AddContent(1, text);
+    };
+}

@@ -101,6 +101,17 @@ public sealed class QueryState : IDisposable
         }
     }
 
+    /// <summary>Every key and value of the query whose key matches <paramref name="prefix"/> (all of them for the empty prefix), with the writes of the current handler on top: what a component that owns a prefix reads its state from.</summary>
+    internal IReadOnlyList<KeyValuePair<string, string?>> Snapshot(string prefix)
+    {
+        ArgumentNullException.ThrowIfNull(prefix);
+        lock (_gate)
+        {
+            EnsureCurrent();
+            return [.. QueryPairs.Apply(_current!, _pending).Where(p => KeyMatches(prefix, p.Key)).Select(p => new KeyValuePair<string, string?>(p.Key, p.Value))];
+        }
+    }
+
     /// <summary>Sets a query key; a null value removes it. Returns false when nothing was written because the renderer is not interactive.</summary>
     /// <param name="key">The key.</param>
     /// <param name="value">The new text, or null to remove the key.</param>
