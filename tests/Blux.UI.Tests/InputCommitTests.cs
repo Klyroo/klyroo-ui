@@ -127,6 +127,50 @@ public class InputCommitTests : BluxTestContext
         Assert.Empty(cut.FindAll("[aria-invalid=true]"));
     }
 
+    [Fact]
+    public async Task SetValueAsync_renders_a_force_marker_with_the_value_reports_it_once_and_raises_the_sequence_floor()
+    {
+        var reports = new List<string?>();
+        var cut = Render<BxInput>(p => p.Add(i => i.Debounce, 300).Add(i => i.Value, "old")
+            .Add(i => i.ValueChanged, (string? v) => reports.Add(v)));
+        Assert.False(cut.Find("input").HasAttribute("data-bx-force"));
+
+        await cut.InvokeAsync(() => cut.Instance.SetValueAsync("new").AsTask());
+
+        var input = cut.Find("input");
+        Assert.Equal(["new"], reports);
+        Assert.Equal("1", input.GetAttribute("data-bx-force"));
+        Assert.Equal("new", input.GetAttribute("data-bx-set"));
+        var floor = int.Parse(input.GetAttribute("data-bx-seq")!);
+        Assert.True(floor >= 65536);
+        var names = input.Attributes.Select(a => a.Name).ToList();
+        Assert.True(names.IndexOf("data-bx-force") < names.IndexOf("value"), string.Join(",", names));
+
+        // A report the browser sent before the call and .NET handles after it is dropped; one from the new sequence counts.
+        await input.TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "typed before", Sequence = 7 });
+        Assert.Equal(["new"], reports);
+        await cut.Find("input").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "typed after", Sequence = floor + 1 });
+        Assert.Equal(["new", "typed after"], reports);
+
+        // Setting the same text again still cancels what is pending in the browser: the marker changes.
+        await cut.InvokeAsync(() => cut.Instance.SetValueAsync("typed after").AsTask());
+        Assert.Equal("2", cut.Find("input").GetAttribute("data-bx-force"));
+        Assert.Equal(2, reports.Count);
+    }
+
+    [Fact]
+    public async Task SetValueAsync_on_a_plain_input_only_sets_the_value()
+    {
+        string? value = "a";
+        var cut = Render<BxInput>(p => p.Add(i => i.Value, value).Add(i => i.ValueChanged, (string? v) => value = v));
+
+        await cut.InvokeAsync(() => cut.Instance.SetValueAsync("b").AsTask());
+
+        Assert.Equal("b", value);
+        Assert.Equal("b", cut.Find("input").GetAttribute("value"));
+        Assert.False(cut.Find("input").HasAttribute("data-bx-force"));
+    }
+
     private sealed class Account
     {
         [Required]

@@ -141,7 +141,7 @@ else
                       data-icon-prev="@IconRender.Svg(Options.Icons, Options.Icons.ChevronLeft, "size-4")"
                       data-icon-next="@IconRender.Svg(Options.Icons, Options.Icons.ChevronRight, "size-4")"
                       disabled="@(Disabled ? "" : null)"
-                      class="@_slots["root"]"
+                      class="@binding.WithFieldClass(_slots["root"])"
                       data-color="@Color.Value"
                       data-cls-header="@_slots["header"]"
                       data-cls-heading="@_slots["heading"]"

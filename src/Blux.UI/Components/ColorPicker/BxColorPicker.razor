@@ -73,6 +73,7 @@ else
         attributes["data-slot"] = "hex";
         attributes.Remove("aria-describedby");
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         return attributes;
     }
 

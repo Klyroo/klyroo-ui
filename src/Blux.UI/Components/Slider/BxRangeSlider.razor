@@ -82,6 +82,7 @@ else
         if (Disabled) attributes["disabled"] = true;
         if (Orientation == BxOrientation.Vertical) attributes["aria-orientation"] = "vertical";
         if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
         return attributes;
     }
 
