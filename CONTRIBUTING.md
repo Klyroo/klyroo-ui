@@ -102,6 +102,28 @@ guide pages. Nothing generated is committed, except the skill's component refere
   (`DocsService.MaxQueryLength`, `MaxQueryTokens`) so a long query cannot cost more CPU than a short one.
 - Document parameters with XML comments: they are the descriptions the tools return.
 
+## Project templates
+
+`templates/<name>/` is a complete repository: it becomes a GitHub template repository, so it has its own README, LICENSE, `.gitignore`,
+`global.json`, `Directory.Packages.props` (Blux.UI pinned to the version of `build/Version.props`), solution, CI workflow, VS Code tasks and a
+`rename.cs` (a .NET 10 file-based app: `dotnet run rename.cs MyApp`). A template never has a `Directory.Build.props` or `.targets`: the settings
+live in each project file, like the output of `dotnet new`, and it refers to the `Blux.UI` package.
+
+- Inside this repository, `templates/Directory.Build.props` and `templates/Directory.Build.targets` (the only ones, shared by every template) stop the
+  repository's own props from leaking in and swap the package for the source of the library: a PackageReference to `Blux.UI` becomes a
+  ProjectReference and the build features (fonts, icons, Tailwind) are imported from `src/Blux.UI/buildTransitive`. So
+  `dotnet build templates/starter/src/Starter.Web` builds against your working tree. The web projects are in `Blux.UI.slnx`; the MAUI heads are not
+  (they need workloads) and the `maui` CI job builds them.
+- `node build/export-template.mjs <name> <out-dir>` copies a template (without bin and obj), runs `git init` and makes one commit. It rewrites nothing.
+- `node build/verify-templates.mjs [name]` is the check of what a user gets: every template is exported to a clean temporary folder, built in
+  Release with warnings as errors against the packed library, run (the page answers, its stylesheet holds a utility only the template uses, it
+  works below a path base), and a second export is renamed with `rename.cs` and built. It needs the network.
+- The MAUI heads are built here from the source of the library only (the `maui` CI job). Building a head against the packed package, as a user does,
+  is left to the CI of the exported repository: `verify-templates` does not build MAUI heads because it has no workloads.
+- The browser check of `verify-templates` publishes the web project and runs `tests/Blux.UI.E2E/TemplateTests.cs` against the published folder in
+  Production (it needs Chromium for Playwright; `--no-browser` skips it).
+- A template sets `PathBase` support in `Program.cs` and `App.razor` (see the Starter) so its live demo can run below `/templates/<name>/demo/`.
+
 ## Commands
 
 ```bash

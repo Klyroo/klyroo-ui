@@ -57,6 +57,16 @@ jobs:
       # It packs on its own and needs the network on a fresh runner (framework packages), hence --online.
       - name: Package check
         run: node build/verify-package.mjs --online
+      # The project templates (templates/*): the web apps are built from the source of the library by the solution build above (Blux.UI.slnx lists
+      # them); this exports each one as a repository of its own and builds, runs and renames it against the packed Blux.UI. Needs the network, hence
+      # after the package check, which warms the NuGet cache.
+      # The browser part of the check (the published template in Chromium) uses the E2E project and its Playwright browser.
+      - name: Install Chromium for the template check
+        run: |
+          dotnet build tests/Blux.UI.E2E
+          pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+      - name: Template check
+        run: node build/verify-templates.mjs
       - uses: actions/upload-artifact@v7
         with:
           name: nuget
@@ -102,10 +112,10 @@ jobs:
         env:
           BLUX_PLAYGROUND_PUBLISHED: published
 
-  # The Blazor Hybrid sample (samples/Blux.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
+  # The Blazor Hybrid sample (samples/Blux.Maui) and the MAUI heads of the app templates (templates/*/src/*.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
   # iOS and Mac Catalyst need macOS, Windows needs Windows. Not run locally except for Android.
   maui:
-    name: MAUI sample (${{ matrix.name }})
+    name: MAUI sample and templates (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -139,3 +149,7 @@ jobs:
         if: matrix.name == 'android'
         working-directory: samples/Blux.Maui
         run: dotnet build Blux.Maui.Web/Blux.Maui.Web.csproj -c Release
+      # Built from the source of the library (templates/Directory.Build.targets swaps the package), with the global.json of the template.
+      - name: Build the Starter template head
+        working-directory: templates/starter
+        run: dotnet build src/Starter.Maui/Starter.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}

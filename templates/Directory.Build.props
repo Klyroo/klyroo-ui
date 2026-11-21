@@ -1,0 +1,14 @@
+<Project>
+  <!--
+    Monorepo only. Every folder below templates/ is a complete repository on its own (it becomes a GitHub template repository), so none of them
+    has a Directory.Build.props or Directory.Build.targets: the settings live in each project file, like the output of `dotnet new`.
+
+    This file stops MSBuild from importing the repository's own Directory.Build.props (central package versions of the library, warnings as errors
+    for its sources) and sets what the templates need while they are built from here. Directory.Build.targets, next to it, swaps the Blux.UI package
+    for the source of this repository. The nearest Directory.Packages.props is the one of the template, so its package versions are the ones used.
+  -->
+  <PropertyGroup>
+    <BluxRepoRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..'))</BluxRepoRoot>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

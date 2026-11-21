@@ -51,6 +51,20 @@ public class PathBaseTests(PathBaseFixture fixture) : IClassFixture<PathBaseFixt
         }
     }
 
+    [Fact]
+    public async Task Skip_link_keeps_the_address_and_focuses_main_below_the_path_base()
+    {
+        await Open("ssr", "button");
+
+        // "#main" resolves against <base href="/sub/">: without the handler of the Blux JS it would load the home page of the app.
+        var skip = Page.GetByRole(AriaRole.Link, new() { Name = "Skip to content" });
+        await skip.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(Page).ToHaveURLAsync(new System.Text.RegularExpressions.Regex("/sub/ssr/components/button$"));
+        await Assertions.Expect(Page.Locator("main#main")).ToBeFocusedAsync();
+    }
+
     /// <summary>Injected by the SDK in Development (browser refresh and hot reload tooling, from the <c>dotnet run</c> environment), not by the app or the library.</summary>
     private static bool IsSdkTooling(string pathOrUrl) => pathOrUrl.Contains("/_framework/dotnet-browser-tools/", StringComparison.Ordinal);
 

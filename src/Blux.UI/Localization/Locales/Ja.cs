@@ -106,6 +106,7 @@ public static partial class BxLocales
             HeaderNavigation = "メインメニュー",
             HeaderMenu = "メニュー",
             OpenHeaderMenu = "メニューを開く",
+            SkipToContent = "本文へスキップ",
             SidebarLabel = "サイドバー",
             OpenSidebar = "サイドバーを開く",
             CollapseSidebar = "サイドバーを折りたたむ",
