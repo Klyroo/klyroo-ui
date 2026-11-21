@@ -43,6 +43,8 @@ jobs:
         run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
       - name: Blux.UI.Tools tests (net10.0 and net11.0)
         run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
+      - name: Blux.UI.Tools.Query tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Blux.UI.Tools.Query.Tests -c Release --no-build
       - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
         run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
       - name: Template demo supervisor tests (docs host, fake demo, watchdog)
