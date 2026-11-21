@@ -1,0 +1,29 @@
+<div class="flex w-full max-w-xs flex-col gap-4">
+    <BxFormField Label="City or country (free text)">
+        <BxInputMenu OptionsProvider="_free.ByPage" PageSize="20" Placeholder="Type to search" @bind-Value="_text" data-testid="remote-free" />
+    </BxFormField>
+    <BxFormField Label="Country from the source (suggestion required)">
+        <BxInputMenu OptionsProvider="_strict.ByCursor" ResolveSelected="_strict.Resolve" Strict PageSize="20" Debounce="150" Placeholder="Pick a country"
+                     Value="@_country" ValueChanged="@(v => _country = v)" data-testid="remote-strict" />
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-input-state">Free: @(_text ?? "none"), strict: @(_country ?? "none")</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-free-requests">Free field calls: @_free.Requests</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-free-last">Last call: @_free.Last</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-strict-requests">Strict field calls: @_strict.Requests</p>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="remote-strict-last">Last call: @_strict.Last</p>
+</div>
+
+@code {
+    private RemoteDirectory _free = default!;
+    private RemoteDirectory _strict = default!;
+    private string? _text;
+
+    // A value restored from the address or a saved form: its page was never loaded, so ResolveSelected names it.
+    private string? _country = "fr";
+
+    protected override void OnInitialized()
+    {
+        _free = new RemoteDirectory { Changed = () => _ = InvokeAsync(StateHasChanged) };
+        _strict = new RemoteDirectory { Changed = () => _ = InvokeAsync(StateHasChanged) };
+    }
+}
