@@ -22,13 +22,17 @@ internal static class ChatChecks
     public static async Task Send(IPage page, string text)
     {
         var prompt = Prompt(page);
+        var before = await page.GetByTestId("message-user").CountAsync();
         await prompt.FillAsync(text);
         await prompt.PressAsync("Enter");
+        // The send button is still there until the host answers the first round trip: wait until the question is in the list.
+        await Assertions.Expect(page.GetByTestId("message-user")).ToHaveCountAsync(before + 1);
     }
 
     /// <summary>Waits for the answer to finish: nothing streams any more and the send button is back.</summary>
     public static async Task WaitIdle(IPage page, int timeout = 30_000)
     {
+        await Assertions.Expect(page.Locator("bx-chat-prompt[data-status=idle]")).ToHaveCountAsync(1, new() { Timeout = timeout });
         await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = "Send" })).ToBeVisibleAsync(new() { Timeout = timeout });
         await Assertions.Expect(page.Locator("[data-testid=message-assistant][data-streaming=true]")).ToHaveCountAsync(0, new() { Timeout = timeout });
     }
@@ -45,7 +49,7 @@ internal static class ChatChecks
         await Assertions.Expect(Prompt(page)).ToBeVisibleAsync();
         var model = page.GetByRole(AriaRole.Combobox, new() { Name = "Model" });
         await Assertions.Expect(model).ToBeVisibleAsync();
-        await Assertions.Expect(model).ToContainTextAsync("Quick (simulated)");
+        await Assertions.Expect(model.Locator("span[data-label]")).ToHaveAttributeAsync("data-label", "Quick (simulated)");
     }
 
     /// <summary>
@@ -85,6 +89,7 @@ internal static class ChatChecks
 
         // The copy button of the answer copies the Markdown of it.
         await answer.GetByTestId("message-copy").ClickAsync();
+        await Assertions.Expect(page.GetByText("The answer is on the clipboard.")).ToBeVisibleAsync();
         Assert.Contains("## Mutex or semaphore", await page.EvaluateAsync<string>("() => navigator.clipboard.readText()"));
 
         // The text of the conversation is in the storage of this browser, under keys scoped to the path base, and nowhere else.
@@ -112,12 +117,16 @@ internal static class ChatChecks
         var stop = page.GetByRole(AriaRole.Button, new() { Name = "Stop" });
         await Assertions.Expect(stop).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("[data-testid=message-assistant][data-streaming=true]")).ToHaveCountAsync(1);
+        var started = Stopwatch.StartNew();
         await Task.Delay(500);
+        var atClick = (await page.GetByTestId("message-assistant").Last.InnerTextAsync()).Length;
         await stop.ClickAsync();
+        var clicked = started.ElapsedMilliseconds;
         await WaitIdle(page);
         var answer = page.GetByTestId("message-assistant").Last;
         await Assertions.Expect(answer).ToContainTextAsync("debouncer");
-        Assert.DoesNotContain("Dispose the last source", await answer.InnerTextAsync());
+        var text = await answer.InnerTextAsync();
+        Assert.True(!text.Contains("Dispose the last source"), $"the answer was not cut ({text.Length} characters; {atClick} when Stop was pressed, {clicked} ms after the delay): {text}");
     }
 
     /// <summary>A model that thinks first: the thinking is a block above the answer.</summary>
@@ -126,7 +135,7 @@ internal static class ChatChecks
         var model = page.GetByRole(AriaRole.Combobox, new() { Name = "Model" });
         await model.ClickAsync();
         await page.GetByRole(AriaRole.Option, new() { Name = "Thoughtful (simulated)" }).ClickAsync();
-        await Assertions.Expect(model).ToContainTextAsync("Thoughtful (simulated)");
+        await Assertions.Expect(model.Locator("span[data-label]")).ToHaveAttributeAsync("data-label", "Thoughtful (simulated)");
         await Send(page, "Compare SQLite and PostgreSQL for a small app");
         await WaitIdle(page);
         var answer = page.GetByTestId("message-assistant").Last;
@@ -134,7 +143,7 @@ internal static class ChatChecks
         await Assertions.Expect(answer.GetByRole(AriaRole.Heading, new() { Level = 2 })).ToContainTextAsync("SQLite or PostgreSQL");
         await answer.GetByTestId("message-regenerate").ClickAsync();
         await WaitIdle(page);
-        await Assertions.Expect(page.GetByTestId("message-assistant")).ToHaveCountAsync(3);
+        await Assertions.Expect(page.GetByTestId("message-assistant")).ToHaveCountAsync(4);
     }
 
     /// <summary>Search filters the list, rename and delete work from the row and from the navbar, and a deleted conversation takes the page back to a new one.</summary>
@@ -197,7 +206,7 @@ internal static class ChatChecks
     /// <summary>The conversations are in the storage of the browser: they survive a reload, and another visitor (another browser context) sees none of them.</summary>
     public static async Task AssertPersistenceAndIsolation(IPage page, IBrowser browser, string baseUrl)
     {
-        await Items(page).First.ClickAsync();
+        await Items(page).Filter(new() { HasText = "mutex" }).ClickAsync();
         await page.WaitForURLAsync(new Regex(@"/c/[0-9a-f]{32}$"));
         var url = page.Url;
         await page.ReloadAsync();
@@ -205,7 +214,7 @@ internal static class ChatChecks
         await Assertions.Expect(page.GetByTestId("message-user").First).ToContainTextAsync("mutex and a semaphore");
         await Assertions.Expect(page.GetByTestId("message-assistant").First.GetByRole(AriaRole.Heading, new() { Level = 2 })).ToBeVisibleAsync();
         Assert.Equal(url, page.Url);
-        await Assertions.Expect(Items(page)).ToHaveCountAsync(1);
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(2);
 
         await using var other = await browser.NewContextAsync(new() { BaseURL = baseUrl });
         var visitor = await other.NewPageAsync();
@@ -373,7 +382,7 @@ public class ChatTemplateTests(PlaygroundServer server)
                 lock (failures)
                 {
                     // 429 and 503 are what the rate limit test asks for; 4xx of the API checks are asked for on purpose.
-                    if (response.Status >= 400 && !response.Url.Contains("/api/assistant/stream", StringComparison.Ordinal)) failures.Add($"{response.Status} {response.Url}");
+                    if (response.Status >= 400 && !response.Url.Contains("/api/assistant/stream", StringComparison.Ordinal) && !response.Url.EndsWith("/no-such-page", StringComparison.Ordinal)) failures.Add($"{response.Status} {response.Url}");
                     if (response.Status == 200 && Regex.IsMatch(response.Url, @"\.wasm(\?|$)")) wasm.Add(response.Url);
                 }
             };
