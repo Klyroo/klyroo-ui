@@ -54,6 +54,20 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Assertions.Expect(trigger).ToHaveAttributeAsync("aria-expanded", "true");
     }
 
+    // Interactive, Yes and No apply at once; statically rendered they are radios of the form, sent by Apply.
+    private static async Task PickYesNo(ILocator section, string mode, string name)
+    {
+        if (mode == "ssr")
+        {
+            await section.GetByRole(AriaRole.Radio, new() { Name = name, Exact = true }).CheckAsync();
+            await Apply(section.Locator("xpath=ancestor::*[@data-slot='filter-panel']"));
+        }
+        else
+        {
+            await section.GetByRole(AriaRole.Button, new() { Name = name, Exact = true }).ClickAsync();
+        }
+    }
+
     private static Task Apply(ILocator panel) => panel.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true }).ClickAsync();
 
     // What a click on a link of the docs does: Blazor fetches the address and merges the response into the document (an enhanced navigation), or the interactive router loads the page.
@@ -139,7 +153,9 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await OpenList(mode);
         await Expand(Panel, "status");
 
-        await Section(Panel, "status").GetByRole(mode == "ssr" ? AriaRole.Link : AriaRole.Checkbox, new() { Name = "Paid" }).ClickAsync();
+        await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
+        // Statically rendered the checkbox is a field of the form: nothing happens before Apply.
+        if (mode == "ssr") await Apply(Panel);
 
         await WaitForQuery("?pnl.f.status=Paid");
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 30");
@@ -155,11 +171,11 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await OpenList(mode);
         await Expand(Panel, "reviewed");
 
-        await Section(Panel, "reviewed").GetByRole(Control(mode), new() { Name = "Yes", Exact = true }).ClickAsync();
+        await PickYesNo(Section(Panel, "reviewed"), mode, "Yes");
 
         await WaitForQuery("?pnl.f.reviewed=true");
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 40");
-        await Section(Panel, "reviewed").GetByRole(Control(mode), new() { Name = "Any", Exact = true }).ClickAsync();
+        await PickYesNo(Section(Panel, "reviewed"), mode, "Any");
         await WaitForQuery("");
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
     }
@@ -241,7 +257,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
     {
         await OpenList(mode, "?pnl.f.status=Paid");
         await Expand(Panel, "reviewed");
-        await Section(Panel, "reviewed").GetByRole(Control(mode), new() { Name = "Yes", Exact = true }).ClickAsync();
+        await PickYesNo(Section(Panel, "reviewed"), mode, "Yes");
         await WaitForQuery("?pnl.f.status=Paid&pnl.f.reviewed=true");
 
         await Page.GoBackAsync();
@@ -306,6 +322,206 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Assertions.Expect(Tag("Status is Paid")).ToBeVisibleAsync();
         // Umbrella invoices are all paid.
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 10");
+    }
+
+
+    // ---- the form: several options, empty rows kept, the panel result count
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Several_options_are_sent_together_and_read_as_one_list(string mode)
+    {
+        await OpenList(mode);
+        await Expand(Panel, "status");
+
+        await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
+        // Interactive, each box applies by itself: the second one is ticked once the first has reached the address, as a person does.
+        if (mode != "ssr") await WaitForQuery("?pnl.f.status=Paid");
+        await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Pending" }).CheckAsync();
+        if (mode == "ssr") await Apply(Panel);
+
+        // Statically rendered the address is what the form sends: one parameter per option, which the page reads as one list.
+        await WaitForQuery(mode == "ssr" ? "?pnl.f.status=Paid&pnl.f.status=Pending" : "?pnl.f.status=Paid,Pending");
+        await Assertions.Expect(Tag("Status is Paid, Pending")).ToBeVisibleAsync();
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 60");
+        await Assertions.Expect(Panel.GetByRole(AriaRole.Button, new() { Name = "Status 2 active" })).ToBeVisibleAsync();
+        await Assertions.Expect(Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Pending" })).ToBeCheckedAsync();
+    }
+
+    [Fact]
+    public async Task Statically_unchecking_every_option_and_applying_takes_the_filter_off()
+    {
+        await OpenList("ssr", "?pnl.f.status=Paid");
+
+        await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).UncheckAsync();
+        await Apply(Panel);
+
+        await WaitForQuery("");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
+    }
+
+    [Fact]
+    public async Task Statically_applying_the_form_keeps_the_empty_rows_of_filters_that_were_not_touched()
+    {
+        await OpenList("ssr", "?pnl.f.status=Paid,~&pnl.f.customer=umbrella,~");
+        await Assertions.Expect(Tag("Status is Paid or empty")).ToBeVisibleAsync();
+        await Assertions.Expect(Tag("Customer contains umbrella or empty")).ToBeVisibleAsync();
+
+        await Section(Panel, "amount").Locator("xpath=ancestor::*[@data-slot='filter-panel']").GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true }).ClickAsync();
+
+        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("pnl.f.status=~"), new() { Timeout = 15_000 });
+        await Assertions.Expect(Tag("Status is Paid or empty")).ToBeVisibleAsync();
+        await Assertions.Expect(Tag("Customer contains umbrella or empty")).ToBeVisibleAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_panel_counts_the_results_in_a_live_region_that_follows_the_filters(string mode)
+    {
+        await OpenList(mode);
+        var results = Panel.Locator("[data-slot=filter-panel-results]");
+        await Assertions.Expect(results).ToHaveTextAsync("Results: 120");
+        await Assertions.Expect(results).ToHaveAttributeAsync("role", "status");
+        await Assertions.Expect(results).ToHaveAttributeAsync("aria-live", "polite");
+
+        await Page.GotoAsync($"/{mode}/components/data-list?pnl.f.status=Paid");
+        await WaitForList(Page, mode);
+
+        await Assertions.Expect(results).ToHaveTextAsync("Results: 30");
+    }
+
+    // ---- the Submit mode on a desktop: the sidebar of the drawer list
+
+    private ILocator Sidebar => DrawerList.GetByTestId("panel-sidebar");
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task In_submit_mode_Clear_filters_stages_the_removal_until_Apply_and_Reset_restores_it(string mode)
+    {
+        await OpenList(mode, "?pns.f.status=Paid&pns.f.reviewed=true");
+        var apply = Sidebar.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
+        var paid = Section(Sidebar, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" });
+        await Assertions.Expect(paid).ToBeCheckedAsync();
+
+        await Sidebar.GetByRole(AriaRole.Button, new() { Name = "Clear filters" }).ClickAsync();
+
+        await Assertions.Expect(paid).Not.ToBeCheckedAsync();
+        await Assertions.Expect(apply).Not.ToHaveAttributeAsync("aria-disabled", "true");
+        Assert.Equal("?pns.f.status=Paid&pns.f.reviewed=true", Uri.UnescapeDataString(new Uri(Page.Url).Query));
+        await Sidebar.GetByRole(AriaRole.Button, new() { Name = "Reset", Exact = true }).ClickAsync();
+        await Assertions.Expect(paid).ToBeCheckedAsync();
+
+        await Sidebar.GetByRole(AriaRole.Button, new() { Name = "Clear filters" }).ClickAsync();
+        await apply.ClickAsync();
+
+        await WaitForQuery("");
+        await Assertions.Expect(DrawerList.Locator("[data-slot=result-count]")).ToHaveTextAsync("1–10 of 120");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task In_submit_mode_Apply_Reset_and_Clear_keep_the_keyboard_focus_when_they_are_used(string mode)
+    {
+        await OpenList(mode);
+        var apply = Sidebar.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
+        var reset = Sidebar.GetByRole(AriaRole.Button, new() { Name = "Reset", Exact = true });
+        var clear = Sidebar.GetByRole(AriaRole.Button, new() { Name = "Clear filters" });
+        await Expand(Sidebar, "status");
+
+        // Idle, they can still be reached and pressed: nothing happens and the focus stays.
+        foreach (var button in new[] { apply, reset, clear })
+        {
+            await button.FocusAsync();
+            await Page.Keyboard.PressAsync("Enter");
+            await Assertions.Expect(button).ToBeFocusedAsync();
+        }
+
+        await Section(Sidebar, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
+        await reset.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(reset).ToBeFocusedAsync();
+        await Assertions.Expect(Section(Sidebar, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" })).Not.ToBeCheckedAsync();
+
+        await Section(Sidebar, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
+        await apply.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await WaitForQuery("?pns.f.status=Paid");
+        await Assertions.Expect(apply).ToBeFocusedAsync();
+
+        await clear.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(clear).ToBeFocusedAsync();
+        await Assertions.Expect(apply).Not.ToHaveAttributeAsync("aria-disabled", "true");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task In_live_mode_Clear_filters_keeps_the_focus(string mode)
+    {
+        await OpenList(mode, "?pnl.f.customer=globex");
+        var clear = Panel.GetByRole(AriaRole.Button, new() { Name = "Clear filters" });
+
+        await clear.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        await WaitForQuery("");
+        await Assertions.Expect(clear).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Typing_and_pressing_Apply_at_once_includes_the_text_by_mouse_and_by_keyboard(string mode)
+    {
+        await OpenList(mode);
+        var apply = Sidebar.GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true });
+        await Expand(Sidebar, "customer");
+        var field = Sidebar.GetByLabel("Value for Customer");
+
+        // No pause: the click lands before the debounce of the field ends, and Apply was idle when the typing began.
+        await field.PressSequentiallyAsync("stark");
+        await apply.ClickAsync();
+
+        await WaitForQuery("?pns.f.customer=stark");
+        await Assertions.Expect(DrawerList.Locator("[data-slot=result-count]")).ToHaveTextAsync("1–10 of 10");
+
+        await field.FillAsync("");
+        await field.PressSequentiallyAsync("umbrella");
+        // Tab leaves the field (that reports the text), then the keyboard reaches Apply, which was idle when the typing began.
+        await Page.Keyboard.PressAsync("Tab");
+        await apply.FocusAsync();
+        await Page.Keyboard.PressAsync("Enter");
+
+        await WaitForQuery("?pns.f.customer=umbrella");
+    }
+
+    // ---- sections the user opened by hand
+
+    [Fact]
+    public async Task Statically_a_section_opened_by_hand_stays_open_after_the_form_is_applied()
+    {
+        await OpenList("ssr");
+        await Expand(Panel, "amount");
+        await Expand(Panel, "customer");
+        await Panel.GetByLabel("Value for Customer").FillAsync("globex");
+
+        await Apply(Panel);
+
+        await WaitForQuery("?pnl.f.customer=globex");
+        await Assertions.Expect(Trigger(Panel, "customer")).ToHaveAttributeAsync("aria-expanded", "true");
+        await Assertions.Expect(Trigger(Panel, "amount")).ToHaveAttributeAsync("aria-expanded", "true");
+        await Assertions.Expect(Trigger(Panel, "issued")).ToHaveAttributeAsync("aria-expanded", "false");
+    }
+
+    [Fact]
+    public async Task Statically_a_section_opened_by_hand_stays_open_after_an_operator_link()
+    {
+        await OpenList("ssr", "?pnl.f.amount=500");
+        await Expand(Panel, "issued");
+
+        await Section(Panel, "amount").GetByRole(AriaRole.Link, new() { Name = "is at least" }).ClickAsync();
+
+        await WaitForQuery("?pnl.f.amount.gte=500");
+        await Assertions.Expect(Trigger(Panel, "issued")).ToHaveAttributeAsync("aria-expanded", "true");
     }
 
     // ---- accessibility and a narrow screen

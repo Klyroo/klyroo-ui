@@ -7,6 +7,7 @@
 [&_bx-popover]:flex
 [&_bx-popover]:min-w-0
 absolute
+accent-(--blux-primary-text)
 align-middle
 animate-spin
 aria-busy:opacity-60
@@ -20,6 +21,7 @@ border-s
 border-t
 break-words
 col-span-2
+cursor-pointer
 disabled:cursor-not-allowed
 end-1
 flex

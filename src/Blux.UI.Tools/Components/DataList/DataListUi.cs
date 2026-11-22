@@ -81,6 +81,9 @@ public sealed record DataListUi : ISlotOverrides
     public string? FilterPanelEditor { get; init; }
     public string? FilterPanelFooter { get; init; }
     public string? FilterPanelEmpty { get; init; }
+    public string? FilterNativeInput { get; init; }
+    public string? FilterNativeLabel { get; init; }
+    public string? FilterPanelResults { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -160,6 +163,9 @@ public sealed record DataListUi : ISlotOverrides
         "filterPanelEditor" => FilterPanelEditor,
         "filterPanelFooter" => FilterPanelFooter,
         "filterPanelEmpty" => FilterPanelEmpty,
+        "filterNativeInput" => FilterNativeInput,
+        "filterNativeLabel" => FilterNativeLabel,
+        "filterPanelResults" => FilterPanelResults,
         _ => null,
     };
 }

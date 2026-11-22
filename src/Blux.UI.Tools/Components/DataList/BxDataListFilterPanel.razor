@@ -9,7 +9,9 @@
     yes / no / any, a number or a range of numbers, a day or a range of days. A section that has a filter on starts expanded and shows how many values are on; Clear filters takes them all off. The panel
     sits anywhere inside a data list: next to the table as a sidebar, or inside a BxSlideover on a small screen.
     Live (the default) applies each change like the popovers do; Submit keeps the changes of all the sections until Apply (one history entry) and Reset drops them. Statically rendered there is no .NET:
-    the panel is one GET form whose Apply button sends the text, number and date fields (a range as f.key.from and f.key.to); the operators, options and yes / no choices are links that apply at once.
+    the panel is one GET form whose Apply button sends every field: text, number and date fields (a range as f.key.from and f.key.to), a checkbox per option (they share the name of the filter, which the address reader
+    merges) and Yes / No / Any radios; only the operators are links, and they apply at once. In Submit, Clear filters stages the removal like any other change. Apply, Reset and Clear stay focusable when there is nothing
+    to do (aria-disabled, no effect), so the keyboard focus never falls to the page when one of them is used.
 *@
 @if (Context.Schema is not null && (Context.IsInteractive || Context.CanLink))
 {
@@ -23,7 +25,8 @@
                 }</p>
             @if (Context.IsInteractive)
             {
-                <BxButton Label="@ToolsMessages.ClearFilters" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Disabled="@(Context.ActiveFilters.Count == 0 && !_scope.HasPending)"
+                var idle = Context.ActiveFilters.Count == 0 && !_scope.HasPending;
+                <BxButton Label="@ToolsMessages.ClearFilters" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Class="@(idle ? "opacity-60" : null)" aria-disabled="@(idle ? "true" : null)"
                           OnClick="ClearAll" data-slot="filter-panel-clear" />
             }
             else if (Context.ActiveFilters.Count > 0 && Context.HrefWith(DataListContext<TItem>.WithoutFilters) is { } clearHref)
@@ -35,43 +38,47 @@
         {
             <p class="@_slots["filterPanelDescription"]" data-slot="filter-panel-description">@Description</p>
         }
+        @if (Context.Result?.TotalCount is { } total)
+        {
+            <p class="@_slots["filterPanelResults"]" role="status" aria-live="polite" aria-atomic="true" data-slot="filter-panel-results">@string.Format(FormatCulture, ToolsMessages.FilterPanelResults, total.ToString("N0", FormatCulture))</p>
+        }
         @if (keys.Count == 0)
         {
             <p class="@_slots["filterPanelEmpty"]" data-slot="filter-panel-empty">@ToolsMessages.FilterPanelNone</p>
         }
         else if (Context.IsInteractive)
         {
-            <CascadingValue TValue="FilterDraftScope" Value="@(Submit ? _scope : null)" IsFixed="false">
+            <CascadingValue TValue="FilterDraftScope" Value="_scope" IsFixed="true">
                 <div data-slot="filter-panel-sections">
-                    @Sections(keys, embedded: false)
+                    @Sections(keys)
                 </div>
             </CascadingValue>
             @if (Submit)
             {
                 <div class="@_slots["filterPanelFooter"]" data-slot="filter-panel-footer">
-                    <BxButton Label="@ToolsMessages.FilterReset" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Disabled="@(!_scope.HasPending)" OnClick="Reset" data-slot="filter-panel-reset" />
-                    <BxButton Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" Disabled="@(!_scope.HasPending)" OnClick="Apply" data-bx-close="@(CloseOnApply ? "" : null)" data-slot="filter-panel-apply" />
+                    <BxButton Label="@ToolsMessages.FilterReset" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Class="@(_scope.HasPending ? null : "opacity-60")" aria-disabled="@(_scope.HasPending ? null : "true")"
+                              OnClick="Reset" data-slot="filter-panel-reset" />
+                    <BxButton Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" Class="@(_scope.HasPending ? null : "opacity-60")" aria-disabled="@(_scope.HasPending ? null : "true")"
+                              OnClick="Apply" data-bx-close="@(CloseOnApply ? "" : null)" data-slot="filter-panel-apply" />
                 </div>
             }
         }
         else
         {
-            var carried = CarriedKeys(keys);
-            <form method="get" action="@Context.Path" data-enhance data-slot="filter-panel-form">
-                @foreach (var (name, value) in FormFields(carried))
-                {
-                    <input type="hidden" name="@name" value="@value" />
-                }
-                <div data-slot="filter-panel-sections">
-                    @Sections(keys, embedded: true)
-                </div>
-                @if (carried.Count > 0)
-                {
+            <CascadingValue TValue="FilterDraftScope" Value="_scope" IsFixed="true">
+                <form method="get" action="@Context.Path" data-enhance data-slot="filter-panel-form">
+                    @foreach (var (name, value) in FormFields(keys))
+                    {
+                        <input type="hidden" name="@name" value="@value" />
+                    }
+                    <div data-slot="filter-panel-sections">
+                        @Sections(keys)
+                    </div>
                     <div class="@_slots["filterPanelFooter"]" data-slot="filter-panel-footer">
                         <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-bx-close="@(CloseOnApply ? "" : null)" data-slot="filter-panel-apply" />
                     </div>
-                }
-            </form>
+                </form>
+            </CascadingValue>
         }
     </div>
 }
@@ -111,6 +118,8 @@
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "filterPanel");
         _sectionUi = new CollapsibleUi { Root = _slots["filterPanelSection"], Trigger = _slots["filterPanelTrigger"], Content = _slots["filterPanelContent"] };
         _editorUi = new DataListUi { FilterEditor = _slots["filterPanelEditor"] };
+        _scope.Deferred = Submit;
+        _scope.Embedded = !Context.IsInteractive;
         if (!Submit) _scope.Clear();
         ExpandActive();
     }
@@ -155,19 +164,28 @@
         return Math.Max(1, values + (rule.IncludeEmpty ? 1 : 0));
     }
 
-    // The fields a static form carries: text, number and date editors. Options and yes / no are links, so their rules stay in the hidden fields.
-    private IReadOnlyList<string> CarriedKeys(IReadOnlyList<string> keys) =>
-        [.. keys.Where(k => Context.FilterOf(k)?.Kind is FilterKind.Text or FilterKind.Number or FilterKind.Date)];
-
-    private IReadOnlyList<KeyValuePair<string, string>> FormFields(IReadOnlyList<string> carried)
+    // Every filter has its fields in a static form (options as checkboxes, yes / no as radios), so the hidden fields are the rest of the address: what is not one of these filters.
+    private IReadOnlyList<KeyValuePair<string, string>> FormFields(IReadOnlyList<string> keys)
     {
         var state = Context.State;
-        foreach (var key in carried) state = DataListContext<TItem>.WithFilter(state, key, null);
-        return Context.FormFields(state, [.. carried.SelectMany(Context.FilterKeyNames)]);
+        foreach (var key in keys) state = DataListContext<TItem>.WithFilter(state, key, null);
+        return Context.FormFields(state, [.. keys.SelectMany(Context.FilterKeyNames)]);
     }
 
     private void ClearAll()
     {
+        if (Context.ActiveFilters.Count == 0 && !_scope.HasPending) return;
+        if (Submit)
+        {
+            // Like any change of this mode the removal waits for Apply, and Reset restores: every filter that is on is staged as taken off, and the editors show that.
+            foreach (var key in Context.EditableFilterKeys)
+            {
+                if (Context.RuleFor(key) is null) _scope.Unstage(key);
+                else _scope.Stage(key, null);
+            }
+            _token++;
+            return;
+        }
         // What was staged goes too, and the editors show the list again.
         _scope.Clear();
         _token++;
@@ -176,6 +194,7 @@
 
     private void Reset()
     {
+        if (!_scope.HasPending) return;
         _scope.Clear();
         _token++;
     }
@@ -191,7 +210,7 @@
         }, QueryHistory.Push);
     }
 
-    private RenderFragment Sections(IReadOnlyList<string> keys, bool embedded) =>
+    private RenderFragment Sections(IReadOnlyList<string> keys) =>
         @<text>
             @foreach (var key in keys)
             {
@@ -205,7 +224,7 @@
                         }
                     </Trigger>
                     <ChildContent>
-                        <BxDataListFilterEditor TItem="TItem" Key="@section" ShowTitle="false" Embedded="embedded" ResetToken="_token" Ui="_editorUi" />
+                        <BxDataListFilterEditor TItem="TItem" Key="@section" ShowTitle="false" ResetToken="_token" Ui="_editorUi" />
                     </ChildContent>
                 </BxCollapsible>
             }
