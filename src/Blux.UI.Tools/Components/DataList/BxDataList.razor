@@ -61,6 +61,7 @@
     private bool _writeInitialState;
     private bool _stateFromUrl;
     private bool _disposed;
+    private readonly CancellationTokenSource _lifetime = new();
 
     public BxDataList() => _context = new DataListContext<TItem>(this);
 
@@ -312,6 +313,7 @@
         if (adopted)
         {
             AfterLoad(force: true);
+            await LabelRemoteValuesAsync();
         }
         else
         {
@@ -375,7 +377,20 @@
     private async Task LoadAsync(DataListState state, bool refresh = false)
     {
         await Controller!.LoadAsync(state, refresh);
-        if (!_disposed) AfterLoad(force: false);
+        if (_disposed) return;
+        AfterLoad(force: false);
+        await LabelRemoteValuesAsync();
+    }
+
+    // The values of a remote option filter that the address restored have no label until the resolver gives one. A static render and a prerender wait for it (nothing renders again afterwards);
+    // an interactive list shows the raw values and swaps in the labels when they arrive.
+    private Task LabelRemoteValuesAsync()
+    {
+        if (_schema is null || _disposed) return Task.CompletedTask;
+        var resolving = _context.ResolveLabelsAsync(_lifetime.Token);
+        if (!RendererInfo.IsInteractive) return resolving;
+        _ = resolving;
+        return Task.CompletedTask;
     }
 
     // The rows on screen are for a state that may differ from the requested one (a page past the end): show that one, in the URL too.
@@ -595,6 +610,8 @@
     public void Dispose()
     {
         _disposed = true;
+        _lifetime.Cancel();
+        _lifetime.Dispose();
         _subscription?.Dispose();
         _claim?.Dispose();
         _persistSubscription?.Dispose();

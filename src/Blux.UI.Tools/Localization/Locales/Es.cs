@@ -44,6 +44,8 @@ public static partial class BxToolsLocales
             FilterOptionsSearch = "Buscar opciones",
             FilterNoOptions = "Sin opciones",
             FilterNoOptionsMatch = "Ninguna opción coincide con la búsqueda",
+            FilterOptionsMore = "Mostrar {0} más",
+            FilterOptionsNeedScript = "Buscar otras opciones requiere JavaScript.",
             FilterIncludeEmpty = "Incluir valores vacíos",
             FilterEmpty = "vacío",
             FilterOrEmpty = "o vacío",
