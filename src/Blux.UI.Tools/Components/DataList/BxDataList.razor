@@ -250,6 +250,8 @@
             {
                 controller.Provider = DataListController<TItem>.CreateProvider(controller.Schema, Items, Provider, Queryable, _executor);
                 reload = sourceChanged;
+                // Other rows: the counts of the old ones do not hold.
+                if (sourceChanged) controller.DropFacets();
             }
         }
         if (State is not null && !State.Equals(_lastStateParam))
