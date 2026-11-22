@@ -1,0 +1,70 @@
+@inherits LayoutComponentBase
+
+<BxApp>
+    <BxSkipLink />
+
+    @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
+    <BxHeader Items="SiteInfo.Navigation" AriaLabel="@SiteInfo.HeaderLabel" MenuTitle="@SiteInfo.HeaderMenuTitle">
+        <Left>
+            <a href="@SiteInfo.HomeHref" class="flex items-center gap-3 rounded-sm font-semibold text-(--blux-text-highlighted)">
+                @* The name next to it says the same, so the initials are hidden from assistive technology. *@
+                <BxAvatar Alt="@SiteInfo.Name" Size="BxSize.Sm" aria-hidden="true" />
+                <span>@SiteInfo.Name</span>
+            </a>
+        </Left>
+        <Right>
+            @* Two buttons for one search, so that only one shows: the label and the shortcut where there is room, the icon alone on a phone. *@
+            <BxContentSearchButton Collapsed="false" Size="BxSize.Sm" Class="hidden xl:inline-flex xl:w-48" />
+            <BxContentSearchButton Size="BxSize.Sm" Class="xl:hidden" />
+            <BxLocaleSelect Size="BxSize.Sm" Class="hidden sm:inline-flex" />
+            <BxColorModeButton Size="BxSize.Sm" />
+            <BxButton Label="Get in touch" Href="@SiteInfo.ContactHref" Size="BxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
+        </Right>
+        <Body>
+            @* The mobile menu: the links, then the button and the language select that the header only shows from the sm breakpoint up. *@
+            <BxNavigationMenu Items="SiteInfo.Navigation" Orientation="BxOrientation.Vertical" AriaLabel="@SiteInfo.HeaderMenuTitle" />
+            <div class="mt-6 flex flex-col gap-3">
+                <BxButton Label="Get in touch" Href="@SiteInfo.ContactHref" Block />
+                <BxLocaleSelect />
+            </div>
+        </Body>
+    </BxHeader>
+
+    @* The search of the whole site: the projects, the articles and the text pages. Ctrl+K (Cmd+K on a Mac) or one of the buttons above. The list is
+       not in the page: the browser fetches search-index.json (Program.cs) the first time the search opens. *@
+    <BxContentSearch IndexUrl="search-index.json" />
+
+    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+        @Body
+    </BxMain>
+
+    <BxFooter>
+        <Top>
+            @* Level 2: a page can end in its only h1, and a level 3 heading would skip one. *@
+            <BxFooterColumns Columns="SiteInfo.FooterColumns" AriaLabel="@SiteInfo.FooterLabel" HeadingLevel="2">
+                <Left>
+                    <a href="@SiteInfo.HomeHref" class="flex items-center gap-3 rounded-sm font-semibold text-(--blux-text-highlighted)">
+                        <BxAvatar Alt="@SiteInfo.Name" Size="BxSize.Sm" aria-hidden="true" />
+                        <span>@SiteInfo.Name</span>
+                    </a>
+                    <p class="mt-3 max-w-xs text-sm text-(--blux-text-muted)">@SiteInfo.Role in @SiteInfo.Location.</p>
+                </Left>
+            </BxFooterColumns>
+        </Top>
+        <Left>
+            <p class="text-sm text-(--blux-text-muted)">@SiteInfo.Copyright</p>
+        </Left>
+        <Right>
+            <ul class="m-0 flex list-none gap-1 p-0" aria-label="Social links">
+                @foreach (var link in SiteInfo.Social)
+                {
+                    <li>
+                        <BxButton Href="@link.Href" Square Size="BxSize.Sm" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="@link.Label">
+                            <LeadingIcon><BxIcon Name="@link.Icon" Class="size-5" /></LeadingIcon>
+                        </BxButton>
+                    </li>
+                }
+            </ul>
+        </Right>
+    </BxFooter>
+</BxApp>

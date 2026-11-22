@@ -1,0 +1,63 @@
+@page "/speaking"
+
+<PageTitle>@SiteInfo.SpeakingTitle - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@SiteInfo.SpeakingDescription" />
+</HeadContent>
+
+<BxContainer Class="py-10 sm:py-14">
+    <div class="mx-auto max-w-3xl">
+        <BxPageHeader Title="@SiteInfo.SpeakingTitle" Description="@SiteInfo.SpeakingDescription" />
+
+        @foreach (var year in _years)
+        {
+            var id = $"year-{year.Year}";
+            <section aria-labelledby="@id" class="mt-12" data-testid="talk-year">
+                <h2 id="@id" class="text-2xl font-semibold tracking-tight text-(--blux-text-highlighted)">@year.Year</h2>
+                <BxPageList Class="mt-4">
+                    @foreach (var talk in year.Talks)
+                    {
+                        <li class="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6" data-testid="talk">
+                            <div class="min-w-0">
+                                <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-(--blux-text-muted)">
+                                    <time datetime="@SiteDates.Iso(When(talk))">@SiteDates.Format(When(talk))</time>
+                                    <BxBadge Label="@talk.Kind.ToString()" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                                </p>
+                                <h3 class="mt-1 text-lg font-semibold text-balance text-(--blux-text-highlighted)">@talk.Title</h3>
+                                <p class="mt-1 text-sm text-(--blux-text-muted)">@talk.Event, @talk.Place</p>
+                            </div>
+                            @if (talk.Slides is not null || talk.Recording is not null)
+                            {
+                                <ul class="m-0 flex shrink-0 list-none gap-2 p-0" aria-label="@($"Materials of {talk.Title}")">
+                                    @if (talk.Slides is not null)
+                                    {
+                                        <li><BxButton Label="Slides" Href="@talk.Slides" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" aria-label="@($"Slides of {talk.Title}")" /></li>
+                                    }
+                                    @if (talk.Recording is not null)
+                                    {
+                                        <li><BxButton Label="Recording" Href="@talk.Recording" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" aria-label="@($"Recording of {talk.Title}")" /></li>
+                                    }
+                                </ul>
+                            }
+                        </li>
+                    }
+                </BxPageList>
+            </section>
+        }
+
+        <BxPageCta Variant="BxVariant.Outline" Title="Invite me to speak" Description="@SiteInfo.SpeakingInvite" Links="_invite" Class="mt-6 px-0" />
+    </div>
+</BxContainer>
+
+@code {
+    private sealed record TalkYear(int Year, IReadOnlyList<Talk> Talks);
+
+    private static readonly PageLinkItem[] _invite = [new("Write to me", SiteInfo.ContactHref)];
+
+    // The talks of each year, newest first, from the typed list in Site/Talks.cs.
+    private static readonly IReadOnlyList<TalkYear> _years =
+        [.. Talks.All.OrderByDescending(t => t.Date).GroupBy(t => t.Date.Year).Select(g => new TalkYear(g.Key, [.. g]))];
+
+    private static DateTimeOffset When(Talk talk) => new(talk.Date.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero);
+}

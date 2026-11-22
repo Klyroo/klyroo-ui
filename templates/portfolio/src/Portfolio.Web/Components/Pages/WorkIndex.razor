@@ -1,0 +1,25 @@
+@page "/work"
+@inject MarkdownStore Store
+
+<PageTitle>@SiteInfo.WorkPageTitle - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@SiteInfo.WorkPageDescription" />
+</HeadContent>
+
+<BxContainer Class="py-10 sm:py-14">
+    <BxPageHeader Title="@SiteInfo.WorkPageTitle" Description="@SiteInfo.WorkPageDescription" />
+
+    <BxPageGrid Columns="2" Class="mt-10 gap-6">
+        @foreach (var project in _projects)
+        {
+            <ProjectCard Project="project" HeadingLevel="2" />
+        }
+    </BxPageGrid>
+</BxContainer>
+
+@code {
+    private IReadOnlyList<Project> _projects = [];
+
+    protected override void OnParametersSet() => _projects = Store.Site.Projects();
+}
