@@ -40,6 +40,8 @@ internal static class PortfolioChecks
         await Assertions.Expect(facts).ToContainTextAsync("Meridian Credit");
         await Assertions.Expect(facts).ToContainTextAsync("Design tokens");
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Case study" })).ToHaveAttributeAsync("href", "https://example.com/quire/case-study");
+        // A link of the front matter to a page of the site is relative to the base, so it stays below a path base.
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "How I audit" })).ToHaveAttributeAsync("href", "writing/the-audit-i-run-before-writing-a-token");
         var project = page.GetByTestId("project-page");
         await Assertions.Expect(project.Locator("img")).ToHaveCountAsync(1);
         await page.WaitForFunctionAsync("() => { const i = document.querySelector('[data-testid=project-page] img'); return i && i.complete && i.naturalWidth > 0; }");
@@ -146,16 +148,48 @@ internal static class PortfolioChecks
 
         await form.GetByLabel("Email").FillAsync("ana@company.test");
         await form.GetByLabel("Message").FillAsync("I would like to talk about a design system for our product.");
-        await form.GetByRole(AriaRole.Combobox, new() { Name = "What is this about?" }).ClickAsync();
-        await page.GetByRole(AriaRole.Option, new() { Name = "A project" }).ClickAsync();
+        await form.GetByRole(AriaRole.Radio, new() { Name = "A project" }).CheckAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Send the message" }).ClickAsync();
+        // Post/Redirect/Get: the answer to the post is a redirect to a page that a reload loads again without posting.
+        await page.WaitForURLAsync(new Regex(@"/contact\?sent=1$"));
         var result = page.GetByTestId("contact-result");
-        await Assertions.Expect(result).ToContainTextAsync("Thank you, Ana Torres.");
         await Assertions.Expect(result).ToContainTextAsync("nothing was sent and nothing was stored");
-        // Nothing was stored: no cookie but the antiforgery one, the form is empty again and the message is not in the page.
+        // Nothing was stored: no cookie but the antiforgery one, the form is empty and the message is not in the page.
         Assert.DoesNotContain("design system for our product", await page.ContentAsync());
         await Assertions.Expect(form.GetByLabel("Name")).ToHaveValueAsync("");
         Assert.All(await page.Context.CookiesAsync(), c => Assert.Matches("Antiforgery|Culture|blux-", c.Name));
+        var reload = await page.ReloadAsync();
+        Assert.Equal("GET", reload!.Request.Method);
+        await Assertions.Expect(page.GetByTestId("contact-result")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[aria-invalid=true]")).ToHaveCountAsync(0);
+        // The form itself, without the query, shows no confirmation.
+        await Go(page, "contact");
+        await Assertions.Expect(page.GetByTestId("contact-result")).ToHaveCountAsync(0);
+    }
+
+    /// <summary>
+    /// The form works with JavaScript off, as every form of a static site has to: the topic is a group of radio buttons that the browser posts, the answer
+    /// to an empty form carries the errors, and a valid form redirects to the confirmation.
+    /// </summary>
+    public static async Task AssertContactFormWithoutScript(IBrowser browser, string contactUrl)
+    {
+        await using var context = await browser.NewContextAsync(new() { JavaScriptEnabled = false });
+        var page = await context.NewPageAsync();
+        await page.GotoAsync(contactUrl);
+        var form = page.GetByTestId("contact-form");
+
+        await page.GetByRole(AriaRole.Button, new() { Name = "Send the message" }).ClickAsync();
+        await Assertions.Expect(page.GetByText("Pick what this is about.")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("Enter your name.")).ToBeVisibleAsync();
+
+        await form.GetByLabel("Name").FillAsync("Ana Torres");
+        await form.GetByLabel("Email").FillAsync("ana@company.test");
+        await form.GetByLabel("Message").FillAsync("A message sent with no script at all.");
+        await form.GetByRole(AriaRole.Radio, new() { Name = "A talk or a workshop" }).CheckAsync();
+        await page.GetByRole(AriaRole.Button, new() { Name = "Send the message" }).ClickAsync();
+
+        await page.WaitForURLAsync(new Regex(@"/contact\?sent=1$"));
+        await Assertions.Expect(page.GetByTestId("contact-result")).ToContainTextAsync("nothing was sent and nothing was stored");
     }
 
     /// <summary>The color mode button flips the class of the page.</summary>
@@ -254,6 +288,7 @@ public class PortfolioTemplateTests(PlaygroundServer server)
             lock (consoleErrors) Assert.True(consoleErrors.Count == 0, "Console errors:\n" + string.Join("\n", consoleErrors));
 
             await PortfolioChecks.AssertContactForm(page);
+            await PortfolioChecks.AssertContactFormWithoutScript(server.Browser, new Uri(new Uri(baseUrl), "contact").ToString());
             lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
 
             // Addresses that are not pages answer 404 with the page of the template, below the path base too. Their 404s are the only failed requests there may be.

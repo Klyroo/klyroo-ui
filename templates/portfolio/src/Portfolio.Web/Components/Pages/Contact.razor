@@ -1,4 +1,5 @@
 @page "/contact"
+@inject NavigationManager Navigation
 
 <PageTitle>@SiteInfo.ContactTitle - @SiteInfo.Name</PageTitle>
 
@@ -8,17 +9,17 @@
 
 @* UI only. The form is Blux's BxForm, posted to the server with FormName (no circuit): the server checks the fields with the rules of ContactMessage and,
    when they are valid, calls SendAsync below, which sends nothing. There is no mail service, no database and no queue: the message is not stored, not
-   logged and not forwarded, and it is not echoed back, only the name. To make it real, send the message in SendAsync (an SMTP client, an email API or a
+   logged and not forwarded, and it is not echoed back. A valid post redirects to /contact?sent=1 (Post/Redirect/Get). To make it real, send the message in SendAsync (an SMTP client, an email API or a
    form service), return a message in _error when that fails, and add a way to stop bots (a hidden field, a rate limit, or a check such as Turnstile). *@
 <BxContainer Class="py-10 sm:py-14">
     <BxPageHeader Title="@SiteInfo.ContactTitle" Description="@SiteInfo.ContactDescription" />
 
     <div class="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div class="flex flex-col gap-6">
-            @if (_sentTo is not null)
+            @if (Sent == "1")
             {
                 <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Title="The form is valid" role="status" data-testid="contact-result"
-                         Description="@($"Thank you, {_sentTo}. This template has no mail service: nothing was sent and nothing was stored. Write to {SiteInfo.Email} to reach me.")" />
+                         Description="@($"Thank you. This template has no mail service: nothing was sent and nothing was stored. Write to {SiteInfo.Email} to reach me.")" />
             }
             @if (_error is not null)
             {
@@ -35,7 +36,8 @@
                     </BxFormField>
                 </div>
                 <BxFormField Label="What is this about?" Required For="() => Model!.Topic">
-                    <BxSelect @bind-Value="Model!.Topic" Items="SiteInfo.Topics" Placeholder="Pick one" />
+                    @* Radio buttons post natively: the form works with JavaScript off. *@
+                    <BxRadioGroup TValue="string" @bind-Value="Model!.Topic" Items="SiteInfo.Topics" />
                 </BxFormField>
                 <BxFormField Label="Message" Required For="() => Model!.Message" Help="@($"Up to {ContactMessage.MaxMessageLength} characters.")">
                     <BxTextarea @bind-Value="Model!.Message" Rows="7" />
@@ -78,17 +80,20 @@
     [SupplyParameterFromForm(FormName = "contact")]
     private ContactMessage? Model { get; set; }
 
-    private string? _sentTo;
+    // "1" on the page a successful post redirects to (Post/Redirect/Get), so that reloading it does not post the form again.
+    [SupplyParameterFromQuery(Name = "sent")]
+    public string? Sent { get; set; }
+
     private string? _error;
 
     protected override void OnInitialized() => Model ??= new();
 
-    // Called with a valid form. It only remembers who wrote: nothing is sent, stored or logged. Replace its body to deliver the message (see the note above).
+    // Called with a valid form. It sends nothing, stores nothing and logs nothing: it only redirects to the confirmation. Replace its body to deliver the
+    // message (see the note above), and keep the redirect, which is what stops a reload from sending the form twice.
     private Task SendAsync()
     {
         _error = null;
-        _sentTo = Model!.Name?.Trim();
-        Model = new();
+        Navigation.NavigateTo("contact?sent=1");
         return Task.CompletedTask;
     }
 }

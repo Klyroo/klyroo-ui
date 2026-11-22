@@ -48,6 +48,12 @@ public static class Library
     /// <summary>The slug of the page whose text <c>About.razor</c> shows. It is not a plain page: it has a page of its own.</summary>
     public const string AboutSlug = "about";
 
+    /// <summary>
+    /// The addresses that a page of <c>Components/Pages</c> answers: a plain page with one of these names would never be reached, because the
+    /// route of the component is more specific than the catch-all. <see cref="Validate"/> refuses it. Add the address of a page you add.
+    /// </summary>
+    public static readonly IReadOnlyList<string> FixedRoutes = ["work", "writing", "about", "speaking", "contact", "error", "not-found"];
+
     private sealed record Parts(IReadOnlyList<Project> Projects, IReadOnlyList<Article> Articles, MarkdownPage? About, IReadOnlyList<MarkdownPage> Plain);
 
     // The parts are worked out once for each version of the content (a reload in development makes a new MarkdownSite).
@@ -82,6 +88,13 @@ public static class Library
     {
         var projects = site.Projects();
         var articles = site.Articles();
+        foreach (var page in site.PlainPages())
+        {
+            if (FixedRoutes.FirstOrDefault(route => string.Equals(route, page.Slug, StringComparison.OrdinalIgnoreCase)) is { } route)
+            {
+                throw new ContentException($"{page.SourcePath}: the address '{route}' is the route of a page of the site (Components/Pages), so this file would never be shown. Rename the file.");
+            }
+        }
         if (string.IsNullOrEmpty(webRoot))
         {
             return [];
@@ -191,7 +204,9 @@ public static class Library
             {
                 throw new ContentException($"{page.SourcePath}: the link '{url}' cannot be used: an address with a scheme has to be http, https or mailto.");
             }
-            links.Add(new ProjectLink(label, url));
+            // An address of the site goes through the same rewrite as the links of a body, from the folder of the file: it follows a path base, and
+            // "/uses" and "kiln.md" are the pages they name. An address with a scheme (http, https, mailto) is kept as written.
+            links.Add(new ProjectLink(label, ContentUrl.Rewrite(url, page.Directory, out _)));
         }
         return links;
     }

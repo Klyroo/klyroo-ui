@@ -11,6 +11,8 @@ imageAlt: A grid of rounded tiles in purple, orange and yellow.
 links:
   - label: Case study
     url: https://example.com/quire/case-study
+  - label: How I audit
+    url: ../writing/the-audit-i-run-before-writing-a-token.md
 ---
 
 Meridian Credit had fourteen web apps built over twelve years by seven teams. They all looked like the same bank from a distance and like different banks up close: nine shades of the brand blue, five date pickers and three ideas of what a disabled button is.

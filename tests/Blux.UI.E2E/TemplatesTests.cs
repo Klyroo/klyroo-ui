@@ -443,6 +443,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.Locator("base")).ToHaveAttributeAsync("href", PortfolioPath);
         await PortfolioChecks.AssertBehaviour(Page);
         await PortfolioChecks.AssertContactForm(Page);
+        await PortfolioChecks.AssertContactFormWithoutScript(Page.Context.Browser!, new Uri(new Uri(BaseUrl + "/"), PortfolioPath.TrimStart('/') + "contact").ToString());
 
         var origin = new Uri(BaseUrl).GetLeftPart(UriPartial.Authority);
         lock (requests)

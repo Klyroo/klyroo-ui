@@ -173,8 +173,11 @@ public static class SiteInfo
     public const string ContactTitle = "Contact";
     public const string ContactDescription = "Tell me about the project, the talk or the question. I answer within two working days.";
 
-    /// <summary>The choices of the topic of the contact form.</summary>
-    public static IReadOnlyList<BxSelectItem> Topics { get; } =
+    /// <summary>
+    /// The choices of the topic of the contact form: radio buttons, which the browser posts by itself. The form has to work with JavaScript off, and
+    /// the scripted menus of Blux (<c>BxSelect</c>) post through a script.
+    /// </summary>
+    public static IReadOnlyList<BxRadioItem<string>> Topics { get; } =
     [
         new("project", "A project"),
         new("speaking", "A talk or a workshop"),
