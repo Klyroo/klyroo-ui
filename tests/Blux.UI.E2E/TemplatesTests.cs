@@ -360,7 +360,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         RequireDemos();
         await Page.EmulateMediaAsync(new() { ColorScheme = scheme });
         // The home page, pricing with its table, the blog, an article, the docs, a docs page with code, the changelog and the two forms.
-        foreach (var path in new[] { "", "pricing", "blog", "blog/how-we-keep-ping-latency-under-40-ms", "docs", "docs/guides/alert-channels", "changelog", "changelog/2-0", "login", "signup" })
+        foreach (var path in new[] { "", "pricing", "blog", "blog/how-we-keep-ping-latency-under-40-ms", "docs", "docs/guides/alert-channels", "changelog", "changelog/2-0", "login", "signup", "forgot-password", "legal/terms" })
         {
             await Page.GotoAsync(SaasPath.TrimStart('/') + path);
             await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");

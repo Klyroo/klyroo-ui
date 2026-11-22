@@ -1,0 +1,37 @@
+@page "/{*Slug}"
+@inject MarkdownStore Store
+@inject NavigationManager Navigation
+
+@* Every Markdown page that is not documentation, a post or a version: content/legal/terms.md is served at /legal/terms. The routes of the other pages
+   are more specific, so they win; this one answers what is left, and a path that is not a plain page is a 404. *@
+@if (_page is not null)
+{
+    <PageTitle>@_page.Title - @SiteInfo.Name</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@(_page.Description ?? SiteInfo.Description)" />
+    </HeadContent>
+
+    <BxContainer Class="py-10 sm:py-14">
+        <article class="mx-auto max-w-3xl" data-testid="plain-page">
+            <BxPageHeader Title="@_page.Title" Description="@_page.Description" />
+            <BxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</BxPageBody>
+        </article>
+    </BxContainer>
+}
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private MarkdownPage? _page;
+
+    protected override void OnParametersSet()
+    {
+        var slug = (Slug ?? "").Trim('/');
+        _page = Store.Site.PlainPages().FirstOrDefault(p => string.Equals(p.Slug, slug, StringComparison.OrdinalIgnoreCase));
+        if (_page is null)
+        {
+            // Answers 404 with the page of Pages/NotFound.razor.
+            Navigation.NotFound();
+        }
+    }
+}

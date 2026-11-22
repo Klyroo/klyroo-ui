@@ -13,6 +13,9 @@
             <Icon>
                 <BxIcon Name="ph:lock-key" Class="size-8" />
             </Icon>
+            <Validation>
+                <a href="@SiteInfo.ForgotPasswordHref" class="text-sm text-(--blux-primary-text) underline underline-offset-4">Forgot your password?</a>
+            </Validation>
             <Footer>
                 New to @SiteInfo.Name? <a href="@SiteInfo.SignUpHref" class="font-medium text-(--blux-primary-text) underline underline-offset-4">Create an account</a>
             </Footer>
@@ -22,10 +25,6 @@
         {
             <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Title="The form is valid" role="status" data-testid="auth-result"
                      Description="@($"{_email} would be signed in now. This template has no authentication: nothing was checked and nothing was stored.")" />
-        }
-        else
-        {
-            <p class="text-center text-xs text-(--blux-text-muted)" data-testid="auth-note">This page is a template: the form is checked, but nobody is signed in.</p>
         }
     </div>
 </BxContainer>
@@ -43,8 +42,8 @@
 
     private static readonly BxAuthProvider[] _providers =
     [
-        new("Continue with GitHub", SiteInfo.GitHubSignInUrl) { Icon = "code" },
-        new("Continue with Google", SiteInfo.GoogleSignInUrl) { Icon = "globe" },
+        new("Continue with GitHub (demo)", SiteInfo.GitHubSignInUrl) { Icon = "code" },
+        new("Continue with Google (demo)", SiteInfo.GoogleSignInUrl) { Icon = "globe" },
     ];
 
     private Task SignInAsync(IReadOnlyDictionary<string, string?> values)

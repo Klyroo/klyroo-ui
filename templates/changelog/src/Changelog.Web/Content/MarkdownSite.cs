@@ -172,8 +172,8 @@ public sealed class MarkdownSite
         return new MarkdownSite(ordered, navigation, ToSearch(ordered, folders, options.SearchTextLimit), broken, missing);
     }
 
-    // The file must be inside the web root: a path that climbs out of it never counts, whatever is there.
-    private static bool ImageExists(string webRoot, string path)
+    /// <summary>True when <paramref name="path"/> (relative to the web root, with or without a leading slash) is a file inside <paramref name="webRoot"/>: a path that climbs out of it never counts.</summary>
+    public static bool ImageExists(string webRoot, string path)
     {
         string decoded;
         try

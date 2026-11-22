@@ -22,10 +22,6 @@
             <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Title="The form is valid" role="status" data-testid="auth-result"
                      Description="@($"An account would be created for {_email} now. This template has no authentication: nothing was created and nothing was sent.")" />
         }
-        else
-        {
-            <p class="text-center text-xs text-(--blux-text-muted)" data-testid="auth-note">This page is a template: the form is checked, but no account is created.</p>
-        }
     </div>
 </BxContainer>
 
@@ -44,8 +40,8 @@
 
     private static readonly BxAuthProvider[] _providers =
     [
-        new("Sign up with GitHub", SiteInfo.GitHubSignInUrl) { Icon = "code" },
-        new("Sign up with Google", SiteInfo.GoogleSignInUrl) { Icon = "globe" },
+        new("Sign up with GitHub (demo)", SiteInfo.GitHubSignInUrl) { Icon = "code" },
+        new("Sign up with Google (demo)", SiteInfo.GoogleSignInUrl) { Icon = "globe" },
     ];
 
     private static IReadOnlyDictionary<string, string>? CheckPassword(IReadOnlyDictionary<string, string?> values) =>
