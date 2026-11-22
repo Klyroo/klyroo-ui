@@ -25,6 +25,10 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 
 `BxDataList` sorts and pages in memory (`Items`) or asks a provider; its state (search, sort, page, page size) lives in the URL, as links and GET forms in static rendering and as buttons otherwise. `BxDataListSearch` needs a schema with `Search(...)` fields; typing replaces the history entry instead of adding one.
 
+Row selection and actions: a list with a `BxDataListSelectionActions` bar (or `Selectable`, or a bound `SelectedKeys`) shows a checkbox column and needs a `RowKey` in its schema. The bar shows the count,
+"Select all N results" when the source knows the total (an action then gets the `DataListRequest` to send to your server), and the `DataListAction`s you give it, with an optional confirmation. `BxDataListActionsDropdown`
+holds toolbar actions. A list in memory keeps the selection across pages while the query still matches; a provider or a queryable keeps the rows of the page. Selection and actions are interactive only: a statically rendered list has none.
+
 A list takes one source: `Items` (in memory), a `Provider`, or a `Queryable` (an EF Core query, with a schema). A queryable runs through an `IDataListQueryExecutor`; the default one blocks the thread,
 so add [Blux.UI.Tools.EntityFrameworkCore](https://www.nuget.org/packages/Blux.UI.Tools.EntityFrameworkCore) and `services.AddBluxUiToolsEntityFrameworkAdapter()` for `CountAsync` and `ToListAsync`.
 

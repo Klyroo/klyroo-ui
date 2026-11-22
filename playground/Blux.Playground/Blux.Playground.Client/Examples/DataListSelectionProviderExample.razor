@@ -1,0 +1,64 @@
+@using Blux.UI.Tools.Query
+
+@* A provider with bound keys: the list keeps the ticked rows of the page only (move to another page and they leave the selection), and "Select all N results" makes an action work on every result
+   without the rows ever reaching the client: the action receives the request (search, filters, sort, no paging) and sends it to the server, which applies it. The keys are bound with @@bind-SelectedKeys. *@
+<div class="w-full" data-testid="list-selection-provider">
+    <div class="mb-2 flex flex-wrap items-center gap-2">
+        <BxButton Label="Select invoices 2 and 4" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="SelectTwo" data-testid="selp-two" />
+        <p class="text-sm text-(--blux-text-muted)" data-testid="selp-keys">Selected keys: @(_keys.Count == 0 ? "none" : string.Join(", ", _keys.OrderBy(k => int.Parse(k))))</p>
+    </div>
+    <p role="status" class="mb-2 min-h-5 text-sm text-(--blux-text-muted)" data-testid="selp-message">@_message</p>
+    <BxDataList TItem="Invoice" Label="Invoices from a provider, with a selection" Schema="InvoiceFilterData.Schema" Provider="LoadAsync" UrlKey="selp" @bind-SelectedKeys="_keys">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListSearch />
+            <BxDataListResultCount />
+        </div>
+        <BxDataListFilterTags ShowAdd ShowClear />
+        <BxDataListTable>
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+            <BxDataListColumn Field="customer" />
+            <BxDataListColumn Field="status" />
+            <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+        </BxDataListTable>
+        <BxDataListSelectionActions Actions="_actions" />
+        <BxDataListPagination />
+    </BxDataList>
+</div>
+
+@code {
+    private IReadOnlySet<string> _keys = new HashSet<string>();
+    private string? _message;
+    private DataListAction<Invoice>[] _actions = [];
+
+    protected override void OnInitialized() =>
+        _actions =
+        [
+            new DataListAction<Invoice>
+            {
+                Key = "archive",
+                Label = "Archive",
+                Icon = "download",
+                OnExecute = context =>
+                {
+                    if (context.Scope == DataListActionScope.All)
+                    {
+                        // The rows are not here: this is where the request goes to the server (schema.Apply(query, request)).
+                        var request = context.Request!;
+                        var search = request.Search?.Term;
+                        _message = $"Archive every result: {context.MatchingCount} invoices, search {(string.IsNullOrEmpty(search) ? "none" : $"“{search}”")}, {request.Filter.Children.Count} filters, no paging.";
+                    }
+                    else
+                    {
+                        _message = $"Archive invoices {string.Join(", ", context.SelectedKeys.OrderBy(k => int.Parse(k)))}.";
+                    }
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                },
+            },
+        ];
+
+    private void SelectTwo() => _keys = new HashSet<string> { "2", "4" };
+
+    private ValueTask<DataListResult<Invoice>> LoadAsync(DataListRequest request, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(InvoiceFilterData.Schema.ExecuteInMemory(InvoiceData.All, request));
+}

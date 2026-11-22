@@ -1,6 +1,5 @@
 using Blux.UI;
 using Blux.UI.Tools.Query;
-using Dashboard.Shared.Components;
 using Dashboard.Shared.Data;
 using Dashboard.Shared.Services;
 
@@ -8,7 +7,7 @@ namespace Blux.Templates.Tests;
 
 /// <summary>
 /// The Dashboard template's data and services, compiled here from the template's own source (see the project file): the sample customers and the schema of their
-/// table, the figures of the Home page, the stores of the session and the row selection. The pages are checked in a browser by the E2E project and by
+/// table, the figures of the Home page, the stores of the session. The row selection is the data list's own. The pages are checked in a browser by the E2E project and by
 /// build/verify-templates.mjs.
 /// </summary>
 public class DashboardTemplateTests
@@ -168,48 +167,20 @@ public class DashboardTemplateTests
     }
 
     [Fact]
-    public void The_row_selection_survives_pages_and_notifies_once_per_change()
+    public void The_customer_schema_gives_the_selection_a_key_and_a_name_for_each_row()
     {
-        var selection = new RowSelection();
-        var changes = 0;
-        selection.Changed += () => changes++;
-
-        selection.Set(3, true);
-        selection.Set(3, true);
-        selection.Set([4, 5, 6], true);
-        Assert.Equal(4, selection.Count);
-        Assert.Equal(2, changes);
-        selection.Set([4, 5], false);
-        Assert.True(selection.Contains(3) && selection.Contains(6) && !selection.Contains(4));
-        selection.Clear();
-        selection.Clear();
-        Assert.Equal(0, selection.Count);
-        Assert.Equal(4, changes);
-    }
-
-    [Fact]
-    public void The_selection_keeps_only_the_rows_a_new_query_still_matches()
-    {
-        var selection = new RowSelection();
-        var changes = 0;
-        selection.Changed += () => changes++;
-        selection.Set([1, 2, 3, 4], true);
-
-        selection.Retain(new HashSet<int> { 2, 4, 9 });
-        Assert.Equal([2, 4], selection.Ids.Order());
-        Assert.Equal(2, changes);
-        // Nothing to drop: nothing is announced.
-        selection.Retain(new HashSet<int> { 2, 4, 5 });
-        Assert.Equal(2, changes);
-        selection.Retain(new HashSet<int>());
-        Assert.Equal(0, selection.Count);
-        Assert.Equal(3, changes);
+        // The data list's selection ticks rows by RowKey and names each box "Select {RowLabel}".
+        Assert.True(CustomerData.Schema.HasRowKey);
+        var customer = CustomerData.All[3];
+        Assert.Equal(customer.Id.ToString(), CustomerData.Schema.GetRowKey(customer));
+        Assert.Equal(customer.Name, CustomerData.Schema.GetRowLabel(customer));
+        Assert.Equal(CustomerData.All.Length, CustomerData.All.Select(CustomerData.Schema.GetRowKey).Distinct().Count());
     }
 
     [Fact]
     public void The_rows_a_query_matches_are_all_of_them_not_one_page_of_them()
     {
-        // What the Customers page does when the search or the filters change: the matching ids over the whole set, with no paging.
+        // What the data list does for the selection of the Customers page when the search or the filters change: the matching ids over the whole set, with no paging.
         var state = DataListState.Initial with { Search = "a", PageSize = 10 };
         var request = state.ToRequest() with { Paging = DataListPaging.None.Instance };
         var matching = CustomerData.Schema.ExecuteInMemory(CustomerData.All, request).Items.Select(c => c.Id).ToHashSet();
@@ -219,7 +190,7 @@ public class DashboardTemplateTests
         Assert.True(matching.Count > 10);
         Assert.All(onePage, c => Assert.Contains(c.Id, matching));
         Assert.All(CustomerData.All.Where(c => matching.Contains(c.Id)), c => Assert.Contains("a", $"{c.Name} {c.Email} {c.Company}", StringComparison.OrdinalIgnoreCase));
-        // A search that matches nobody empties the selection.
+        // A search that matches nobody leaves nothing to keep selected.
         var none = CustomerData.Schema.ExecuteInMemory(CustomerData.All, (DataListState.Initial with { Search = "zzzzqq" }).ToRequest() with { Paging = DataListPaging.None.Instance });
         Assert.Empty(none.Items);
     }

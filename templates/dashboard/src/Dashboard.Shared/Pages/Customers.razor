@@ -1,10 +1,8 @@
 @page "/customers"
-@implements IDisposable
 @inject CustomerStore Store
 @inject IToastService Toasts
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
-@using Blux.UI.Tools.Query
 
 <PageTitle>Customers</PageTitle>
 
@@ -18,20 +16,9 @@
         @* One data list: the search, the filters, the sort, the page and the page size are in the address (q, f.status, s, p, ps), so a view can be shared and Back
            undoes a change. The rows are the customers of the session, in memory; give it a Provider or a Queryable to read them from your API or your database. *@
         <p role="status" class="sr-only" data-testid="customers-message">@_message</p>
-        <BxDataList TItem="Customer" Label="Customers" Schema="CustomerData.Schema" Items="Store.Items" ResultJson="DashboardJson.Default.DataListResultCustomer" StateChanged="OnStateChanged">
+        <BxDataList TItem="Customer" Label="Customers" Schema="CustomerData.Schema" Items="Store.Items" ResultJson="DashboardJson.Default.DataListResultCustomer">
             <div class="flex flex-wrap items-center gap-2" data-testid="customers-toolbar">
                 <BxDataListSearch Placeholder="Search customers" />
-                @* The live region is always there, empty when nothing is selected: one that appears together with its text is not announced. *@
-                <span class="@(_selection.Count > 0 ? "text-sm text-(--blux-text-muted)" : "sr-only")" role="status" data-testid="selection-count">@(_selection.Count > 0 ? $"{_selection.Count} selected" : "")</span>
-                @if (_selection.Count > 0)
-                {
-                    <div class="flex items-center gap-2" data-testid="selection-bar">
-                        <BxButton Label="Delete" Size="BxSize.Sm" Variant="ButtonVariant.Soft" Color="BxColor.Error" OnClick="@(() => _confirmOpen = true)" data-testid="delete-selected">
-                            <LeadingIcon>@BxIcons.Named("trash")</LeadingIcon>
-                        </BxButton>
-                        <BxButton Label="Clear" Size="BxSize.Sm" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="_selection.Clear" />
-                    </div>
-                }
                 <div class="ms-auto flex items-center gap-2">
                     <BxDataListResultCount />
                 </div>
@@ -39,12 +26,6 @@
             <BxDataListFilterTags ShowAdd ShowClear />
             <BxDataListErrorState />
             <BxDataListTable Caption="Customers">
-                <BxDataListColumn Key="select" Sortable="false" Class="w-10">
-                    <HeaderTemplate><SelectPageCheckbox Selection="_selection" /></HeaderTemplate>
-                    <Template Context="customer">
-                        <BxCheckbox Value="@_selection.Contains(customer.Id)" ValueChanged="@(on => _selection.Set(customer.Id, on))" aria-label="@($"Select {customer.Name}")" data-testid="@($"select-{customer.Id}")" />
-                    </Template>
-                </BxDataListColumn>
                 <BxDataListColumn Key="name" Title="Customer">
                     <Template Context="customer">
                         <div class="flex items-center gap-3">
@@ -80,6 +61,9 @@
                     </Template>
                 </BxDataListColumn>
             </BxDataListTable>
+            @* The checkbox column comes with this bar: the rows ticked on a page stay ticked on the next one, and only those the search and the filters still match stay ticked.
+               Interactive only, like every action. *@
+            <BxDataListSelectionActions Actions="_bulkActions" data-testid="customers-selection" />
             <BxDataListPagination AriaLabel="Customers pagination" />
         </BxDataList>
     </ChildContent>
@@ -87,18 +71,10 @@
 
 <NewCustomerSlideover @bind-Open="_newOpen" OnCreated="OnCreated" />
 
-<BxModal @bind-Open="_confirmOpen" Title="Delete customers" Description="@($"{_selection.Count} selected customers will be removed from the table.")" data-testid="confirm-delete">
-    <Footer>
-        <BxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
-        <BxButton Label="Delete" Color="BxColor.Error" OnClick="DeleteSelected" data-bx-close data-testid="confirm-delete-button" />
-    </Footer>
-</BxModal>
-
 @code {
-    private readonly RowSelection _selection = new();
     private string? _message;
     private bool _newOpen;
-    private bool _confirmOpen;
+    private DataListAction<Customer>[] _bulkActions = [];
 
     private static readonly BxMenuItem[] _rowActions =
     [
@@ -114,9 +90,27 @@
     // the form, so it waits for the interactive render, which sees the same address.
     [SupplyParameterFromQuery(Name = "new")] private bool? New { get; set; }
 
-    private string? _timeZone;
-
-    protected override void OnInitialized() => _selection.Changed += OnSelectionChanged;
+    protected override void OnInitialized() =>
+        _bulkActions =
+        [
+            new DataListAction<Customer>
+            {
+                Key = "delete",
+                Label = "Delete",
+                Icon = "trash",
+                Variant = ButtonVariant.Soft,
+                Color = BxColor.Error,
+                ClearSelection = DataListSelectionClear.Success,
+                Confirm = new DataListActionConfirm<Customer>
+                {
+                    Title = "Delete customers",
+                    Description = context => $"{context.TargetCount} customers will be removed from the table.",
+                    ConfirmLabel = "Delete",
+                    Color = BxColor.Error,
+                },
+                OnExecute = DeleteSelected,
+            },
+        ];
 
     protected override void OnParametersSet()
     {
@@ -127,34 +121,7 @@
         }
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender) return;
-        try
-        {
-            // The days of the date filter are the user's: the same zone the list sends with its own requests.
-            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Dashboard.Shared/host.js");
-            _timeZone = await module.InvokeAsync<string?>("timeZone");
-        }
-        catch (Exception error) when (error is JSException or JSDisconnectedException)
-        {
-            // Without a zone the days are UTC days, which is also what the list does then.
-        }
-    }
-
-    // The selection survives a move to another page, but only the rows that still match the search and the filters stay selected: a bulk action must never reach
-    // a row the user cannot see in the result they are looking at.
-    private void OnStateChanged(DataListState state)
-    {
-        if (_selection.Count == 0) return;
-        var request = state.ToRequest(timeZone: _timeZone) with { Paging = DataListPaging.None.Instance };
-        var matching = CustomerData.Schema.ExecuteInMemory(Store.Items, request).Items.Select(c => c.Id).ToHashSet();
-        _selection.Retain(matching);
-    }
-
     private void OnCreated(Customer customer) => _message = $"{customer.Name} was added.";
-
-    private void OnSelectionChanged() => _ = InvokeAsync(StateHasChanged);
 
     private static BxColor StatusColor(string status) => status switch
     {
@@ -180,20 +147,20 @@
                 }
                 break;
             case "delete":
+                // The list gets the new rows with the next render of the page and drops the customer from its selection.
                 Store.Remove([customer.Id]);
-                _selection.Set(customer.Id, false);
                 await Toasts.Add(new BxToast { Title = "Customer deleted", Description = customer.Name, Color = BxColor.Success });
                 break;
         }
     }
 
-    private async Task DeleteSelected()
+    private async Task DeleteSelected(DataListActionContext<Customer> context)
     {
-        var count = _selection.Count;
-        Store.Remove([.. _selection.Ids]);
-        _selection.Clear();
+        // For "every result" the context holds every customer the search and the filters match, not only the page.
+        var count = context.SelectedItems.Count;
+        Store.Remove([.. context.SelectedItems.Select(c => c.Id)]);
+        // The list reads Store.Items again with the render of this page.
+        StateHasChanged();
         await Toasts.Add(new BxToast { Title = count == 1 ? "Customer deleted" : $"{count} customers deleted", Color = BxColor.Success });
     }
-
-    public void Dispose() => _selection.Changed -= OnSelectionChanged;
 }

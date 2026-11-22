@@ -11,6 +11,7 @@
     <Defer>
         @{
             var columns = Columns();
+            var selecting = Context.SelectionVisible;
             var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
@@ -22,6 +23,11 @@
                 }
                 <thead class="@_slots["thead"]">
                     <tr class="@_slots["tr"]">
+                        @if (selecting)
+                        {
+                            @* The box of the header is named by itself: the cell has no text. *@
+                            <th scope="col" class="@SelectClass("th")" data-key="select"><DataListSelectAll TItem="TItem" /></th>
+                        }
                         @foreach (var column in columns)
                         {
                             <th scope="col" class="@HeaderClass(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">@Header(column)</th>
@@ -35,6 +41,10 @@
                         @for (var row = 0; row < Math.Clamp(Context.State.PageSize, 3, 10); row++)
                         {
                             <tr class="@_slots["tr"]" data-slot="skeleton-row">
+                                @if (selecting)
+                                {
+                                    <td class="@SelectClass("td")"></td>
+                                }
                                 @foreach (var column in columns)
                                 {
                                     <td class="@CellClass(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
@@ -45,7 +55,7 @@
                     else if (Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError)
                     {
                         <tr class="@_slots["tr"]" data-slot="empty-row">
-                            <td colspan="@Math.Max(1, columns.Count)" class="@_slots["empty"]">
+                            <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0))" class="@_slots["empty"]">
                                 @if (Empty is not null)
                                 {
                                     @Empty(Context)
@@ -66,9 +76,16 @@
                     }
                     else
                     {
+                        var position = 0;
                         @foreach (var row in RowEntries())
                         {
-                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" Class="@_slots["tr"]">
+                            position++;
+                            var rowPosition = position;
+                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" Class="@(selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"])">
+                                @if (selecting)
+                                {
+                                    <td class="@SelectClass("td")"><DataListRowSelect TItem="TItem" Item="row.Item" Position="rowPosition" /></td>
+                                }
                                 @foreach (var column in columns)
                                 {
                                     <td class="@CellClass(column)">@Cell(column, row.Item)</td>
@@ -215,6 +232,8 @@
         return [.. schema.Fields.Where(f => !f.IsCollection)
             .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null))];
     }
+
+    private string SelectClass(string kind) => $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]}";
 
     private string HeaderClass(View column) =>
         $"{_slots["th"]} {AlignClass(column.Align, "th")} {column.Class}".Trim();

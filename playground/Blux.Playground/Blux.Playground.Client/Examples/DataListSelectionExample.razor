@@ -1,0 +1,105 @@
+@using Blux.UI.Tools.Query
+
+@* Rows in memory with a selection: tick rows (Shift extends a range, the box in the header ticks the page), move to another page (a list in memory keeps the selection) and narrow it with the search or a filter
+   (only the selected rows that still match stay selected). The bar at the bottom shows the count, "Select all N results" and the actions; Delete asks first. Interactive only: statically rendered the table has no checkboxes. *@
+<div class="w-full" data-testid="list-selection">
+    <p role="status" class="mb-2 min-h-5 text-sm text-(--blux-text-muted)" data-testid="sel-message">@_message</p>
+    <BxDataList TItem="Invoice" Label="Invoices with a selection" Schema="InvoiceFilterData.Schema" Items="_items" UrlKey="sel">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListSearch />
+            <div class="flex items-center gap-2">
+                <BxDataListResultCount />
+                <BxDataListActionsDropdown Actions="_toolbarActions" />
+            </div>
+        </div>
+        <BxDataListFilterTags ShowAdd ShowClear />
+        <BxDataListTable>
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+            <BxDataListColumn Field="customer" />
+            <BxDataListColumn Field="status" />
+            <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+        </BxDataListTable>
+        <BxDataListSelectionActions Actions="_actions" />
+        <BxDataListPagination />
+    </BxDataList>
+</div>
+
+@code {
+    private IReadOnlyList<Invoice> _items = InvoiceData.All;
+    private string? _message;
+    private DataListAction<Invoice>[] _actions = [];
+    private DataListAction<Invoice>[] _toolbarActions = [];
+
+    protected override void OnInitialized()
+    {
+        _actions =
+        [
+            new DataListAction<Invoice>
+            {
+                Key = "export",
+                Label = "Export",
+                Icon = "download",
+                OnExecute = context =>
+                {
+                    // For "all results" of a list in memory the context holds every matching invoice.
+                    _message = $"Exported {context.SelectedItems.Count} invoices ({context.Scope}).";
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListAction<Invoice>
+            {
+                Key = "delete",
+                Label = "Delete",
+                Icon = "trash",
+                Color = BxColor.Error,
+                ClearSelection = DataListSelectionClear.Success,
+                Confirm = new DataListActionConfirm<Invoice>
+                {
+                    Title = "Delete invoices",
+                    Description = context => $"{context.TargetCount} invoices will be removed from the list.",
+                    ConfirmLabel = "Delete",
+                    Color = BxColor.Error,
+                },
+                OnExecute = context =>
+                {
+                    var gone = context.SelectedKeys.Select(int.Parse).ToHashSet();
+                    // New rows (a new reference) load the list again, and the selection drops what is gone.
+                    _items = [.. _items.Where(i => !gone.Contains(i.Id))];
+                    _message = $"Deleted {gone.Count} invoices.";
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                },
+            },
+        ];
+        _toolbarActions =
+        [
+            new DataListAction<Invoice>
+            {
+                Key = "restore",
+                Label = "Restore all invoices",
+                Icon = "upload",
+                Visible = _ => _items.Count < InvoiceData.All.Length,
+                OnExecute = _ =>
+                {
+                    _items = InvoiceData.All;
+                    _message = "All invoices are back.";
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListAction<Invoice>
+            {
+                Key = "print",
+                Label = "Print the list",
+                Icon = "copy",
+                OnExecute = _ =>
+                {
+                    _message = "Printing is not part of this example.";
+                    StateHasChanged();
+                    return Task.CompletedTask;
+                },
+            },
+        ];
+    }
+}

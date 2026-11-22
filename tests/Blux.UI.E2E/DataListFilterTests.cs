@@ -11,7 +11,7 @@ public class DataListFilterTests(PlaygroundServer server) : PlaygroundTest(serve
 {
     private async Task OpenList(string mode, string query = "")
     {
-        await Page.GotoAsync($"/{mode}/components/data-list{query}");
+        await Page.GotoAsync($"/{mode}/components/data-list-filters{query}");
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
         if (mode != "ssr")
         {
@@ -513,7 +513,7 @@ public class DataListFilterTests(PlaygroundServer server) : PlaygroundTest(serve
     public async Task Texts_follow_the_language_of_the_user(string mode)
     {
         var page = await NewPage("fr", "fr");
-        await page.GotoAsync($"/{mode}/components/data-list?flt.f.reviewed=true&flt.f.status.isNot=Paid");
+        await page.GotoAsync($"/{mode}/components/data-list-filters?flt.f.reviewed=true&flt.f.status.isNot=Paid");
         await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         var list = page.GetByTestId("list-filters");
 

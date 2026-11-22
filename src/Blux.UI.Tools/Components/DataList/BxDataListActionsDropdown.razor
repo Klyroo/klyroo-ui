@@ -1,0 +1,52 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListActionPartBase<TItem>
+
+@* The toolbar actions of a list (export, import, a new row...) as a menu behind one button. They do not need a selection; an action that wants one reads it from its context.
+   Interactive only: a menu needs handlers, so a statically rendered list draws nothing. *@
+@if (Context.IsInteractive)
+{
+    var describe = Describe();
+    var visible = Actions.Where(a => IsVisible(a, describe)).ToList();
+    @if (visible.Count > 0)
+    {
+        <div class="@_slots["actionsDropdown"]" data-slot="actions-dropdown" @attributes="AdditionalAttributes">
+            <BxDropdownMenu Items="Items(visible, describe)" OnSelect="OnSelect" Placement="bottom-end">
+                <BxButton Label="@(Label ?? ToolsMessages.ActionsMenu)" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm"
+                          Loading="visible.Any(IsRunning)" LeadingIcon="@RenderIcon(Icon, "size-4")" data-slot="actions-trigger" />
+            </BxDropdownMenu>
+            @if (Pending is { Confirm: not null })
+            {
+                var confirm = ConfirmText();
+                <DataListActionDialog Open="ConfirmOpen" OpenChanged="OnConfirmOpenChanged" Title="@confirm.Title" Description="@confirm.Description"
+                                      ConfirmLabel="@confirm.Label" Color="confirm.Color" OnConfirm="ConfirmAsync" />
+            }
+        </div>
+    }
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The label of the button that opens the menu. Without it the localized "Actions".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>The name of the icon of the button (<c>ellipsis</c> by default).</summary>
+    [Parameter] public string Icon { get; set; } = "ellipsis";
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "actionsDropdown");
+
+    private List<BxMenuItem> Items(List<DataListAction<TItem>> actions, DataListActionContext<TItem> describe) =>
+        [.. actions.Select(a => new BxMenuItem
+        {
+            Label = a.Label,
+            Value = a.Key,
+            Icon = a.Icon is null ? null : RenderIcon(a.Icon, "size-4"),
+            Disabled = IsDisabled(a, describe),
+            Color = a.Color.Equals(BxColor.Neutral) ? default(BxColor?) : a.Color,
+        })];
+
+    private Task OnSelect(BxMenuItem item) =>
+        Actions.FirstOrDefault(a => a.Key == item.Value) is { } action ? RequestAsync(action) : Task.CompletedTask;
+}
