@@ -119,7 +119,7 @@ public sealed partial class SimulatedCompletionProvider(AssistantOptions options
 
         Both guard a shared resource, and the difference is how many callers may hold them at once.
 
-        | | Mutex | Semaphore |
+        | Property | Mutex | Semaphore |
         | --- | --- | --- |
         | Holders at once | one | up to a count you choose |
         | Released by | the thread that took it | any thread |
@@ -196,7 +196,7 @@ public sealed partial class SimulatedCompletionProvider(AssistantOptions options
 
         Start from where the data lives and who writes to it.
 
-        | | SQLite | PostgreSQL |
+        | Property | SQLite | PostgreSQL |
         | --- | --- | --- |
         | Runs as | a file in your app | a server |
         | Writers at once | one | many |

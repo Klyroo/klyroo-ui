@@ -7,7 +7,7 @@
 <BxHead />
 <SystemBars />
 
-<BxApp>
+<BxApp Toaster="false">
     <BxSkipLink />
 
     @* The group fills its parent, so the parent needs a height: the page itself. It is the main landmark, so the sidebar and the conversation are both inside it
@@ -44,6 +44,9 @@
 
     @* One rename dialog and one delete dialog for every row of the list: they are outside the sidebar, which closes its panel on a phone before they open. *@
     <ConversationDialogs />
+
+    @* The toasts sit at the top, in the middle: the bottom right is where the send button of the prompt is, and a toast over it would be in the way of the next question. *@
+    <BxToaster Ui="_toastUi" />
 </BxApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
@@ -53,6 +56,8 @@
 </div>
 
 @code {
+    private static readonly ToastUi _toastUi = new() { Viewport = "top-[max(1rem,var(--bx-safe-top))] bottom-auto start-1/2 end-auto -translate-x-1/2 rtl:translate-x-1/2" };
+
     private IJSObjectReference? _module;
 
     // The Copy button of the code blocks of an answer is one listener on the page: it is installed once, when the browser is there.

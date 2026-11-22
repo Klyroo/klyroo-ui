@@ -99,6 +99,8 @@
     private bool _ready;
     private bool _refocus;
     private bool _creating;
+    // Conversations deleted while an answer was still arriving: the end of that answer must not write them back.
+    private readonly HashSet<string> _deleted = [];
     private bool _disposed;
     private bool _warnedStorage;
     private CancellationTokenSource? _generation;
@@ -119,7 +121,11 @@
     protected override void OnInitialized()
     {
         Conversations.Deleted += OnDeleted;
+        Conversations.Changed += OnChanged;
     }
+
+    // A rename from the sidebar or the dialog changes the title shown in the navbar.
+    private void OnChanged() => _ = InvokeAsync(StateHasChanged);
 
     protected override void OnParametersSet()
     {
@@ -334,7 +340,7 @@
         {
             conversation.Messages.Remove(answer);
         }
-        await KeepAsync(conversation);
+        if (!_deleted.Contains(conversation.Id)) await KeepAsync(conversation);
         if (_disposed || _conversation != conversation) return;
         _streaming = null;
         _error = error;
@@ -375,6 +381,7 @@
 
     private void OnDeleted(string id) => _ = InvokeAsync(() =>
     {
+        _deleted.Add(id);
         if (_conversation?.Id != id) return;
         Leave();
         Navigation.NavigateTo("./", replace: true);
@@ -397,6 +404,7 @@
     {
         _disposed = true;
         Conversations.Deleted -= OnDeleted;
+        Conversations.Changed -= OnChanged;
         _generation?.Cancel();
         return ValueTask.CompletedTask;
     }
