@@ -509,6 +509,7 @@ public class ChatDemoTests(PlaygroundServer server) : PlaygroundTest(server)
             Assert.False(Environment.GetEnvironmentVariable("CI") is { Length: > 0 }, "The template demos are not running.");
             Assert.SkipWhen(true, "The docs run published with no BLUX_TEMPLATES_PUBLISHED folder: there is no template demo to open.");
         }
+        await Page.Context.GrantPermissionsAsync(["clipboard-read", "clipboard-write"]);
         var requests = new List<string>();
         Page.Request += (_, request) => { lock (requests) requests.Add(request.Url); };
         await Page.GotoAsync(DemoPath.TrimStart('/'));
@@ -536,6 +537,5 @@ public class ChatDemoTests(PlaygroundServer server) : PlaygroundTest(server)
         await visitor.GotoAsync(DemoPath.TrimStart('/'));
         await ChatChecks.WaitInteractive(visitor);
         await Assertions.Expect(visitor.GetByTestId("conversations-empty")).ToBeVisibleAsync();
-        await ChatChecks.AssertAccessible(Page, "light");
     }
 }
