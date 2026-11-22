@@ -487,6 +487,39 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
     }
 
     [Fact]
+    public void Statically_rendered_an_option_with_is_has_an_any_radio_that_takes_the_choice_off()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.status.is=open");
+
+        var cut = context.Render<DataListPanelHarness>();
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        var none = form.QuerySelector("[data-filter=status] input[data-slot=filter-option-none]")!;
+        Assert.Equal("radio", none.GetAttribute("type"));
+        Assert.Equal("f.status.is", none.GetAttribute("name"));
+        Assert.False(none.HasAttribute("checked"));
+        Assert.True(none.HasAttribute("data-bx-prune"));
+        Assert.Equal("open", form.QuerySelectorAll("[data-filter=status] input[type=radio][checked]").Single().GetAttribute("value"));
+
+        // With the any radio picked and the form applied the filter is gone.
+        Assert.DoesNotContain(Rules(TicketSchemaForRadios, "f.status.is=", null), r => r.Key == "status");
+    }
+
+    private static readonly DataListSchema<Ticket> TicketSchemaForRadios = FilterData.Schema;
+
+    [Fact]
+    public void Statically_rendered_an_option_with_any_of_has_no_any_radio()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.status=open");
+
+        var cut = context.Render<DataListPanelHarness>();
+
+        Assert.Empty(cut.FindAll("[data-filter=status] input[data-slot=filter-option-none]"));
+    }
+
+    [Fact]
     public void Statically_rendered_the_blank_any_radio_is_marked_so_that_it_leaves_the_address()
     {
         using var context = new StaticContext();
