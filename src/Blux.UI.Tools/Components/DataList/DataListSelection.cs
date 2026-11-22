@@ -40,6 +40,8 @@ internal sealed class DataListSelection<TItem>
         return changed;
     }
 
+    public bool Remove(string key) => _entries.Remove(key);
+
     public bool Clear()
     {
         if (_entries.Count == 0) return false;

@@ -342,7 +342,7 @@ internal static class DashboardChecks
 
         // The confirmation counts the pruned selection, and the deletion reaches only those rows.
         await page.Locator("[data-slot=selection-bar] [data-action=delete]").ClickAsync();
-        await Assertions.Expect(page.Locator("[data-slot=action-dialog]")).ToContainTextAsync($"{expected} selected customers");
+        await Assertions.Expect(page.Locator("[data-slot=action-dialog]")).ToContainTextAsync($"{expected} customers will be removed");
         await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(live).ToHaveTextAsync("");
         await page.GetByRole(AriaRole.Searchbox).FillAsync("");
@@ -356,6 +356,49 @@ internal static class DashboardChecks
         await page.GetByRole(AriaRole.Searchbox).FillAsync("zzzzqq");
         await Assertions.Expect(live).ToHaveTextAsync("", new() { Timeout = 15_000 });
         await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
+    }
+
+    /// <summary>
+    /// "Select all N results" on the Delete action: two rows ticked, then every result of a search; the confirmation says the real count, the deletion removes exactly the matching rows,
+    /// and the keyboard focus lands on the select-all box of the table instead of falling to the page when the Delete button leaves with the bar.
+    /// </summary>
+    public static async Task AssertDeleteEveryResult(IPage page)
+    {
+        await page.GotoAsync("customers");
+        await WaitInteractive(page);
+        var rows = page.Locator("table tbody tr[data-slot=row]");
+        await Assertions.Expect(rows).ToHaveCountAsync(10);
+        var total = await page.Locator("[data-slot=result-count]").First.TextContentAsync();
+        var before = int.Parse(Regex.Match(total!, @"of ([\d,]+)").Groups[1].Value.Replace(",", ""));
+
+        // A search that matches more than a page.
+        await page.GetByRole(AriaRole.Searchbox).FillAsync("an");
+        await Assertions.Expect(page.Locator("[data-slot=result-count]").First).Not.ToHaveTextAsync(total!, new() { Timeout = 15_000 });
+        var matches = int.Parse(Regex.Match((await page.Locator("[data-slot=result-count]").First.TextContentAsync())!, @"of ([\d,]+)").Groups[1].Value.Replace(",", ""));
+        Assert.InRange(matches, 12, before - 1);
+
+        await rows.Nth(0).GetByRole(AriaRole.Checkbox).CheckAsync();
+        await rows.Nth(1).GetByRole(AriaRole.Checkbox).CheckAsync();
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("2 selected");
+        await page.GetByRole(AriaRole.Button, new() { Name = $"Select all {matches} results" }).ClickAsync();
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync($"All {matches} results selected");
+
+        // With the keyboard: Delete, then the confirm button.
+        var delete = page.Locator("[data-slot=selection-bar] [data-action=delete]");
+        await delete.FocusAsync();
+        await page.Keyboard.PressAsync("Enter");
+        var dialog = page.Locator("[data-slot=action-dialog]");
+        await Assertions.Expect(dialog).ToContainTextAsync($"{matches} customers will be removed");
+        await dialog.GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+
+        await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("");
+        // The focus is not lost to the page: with nothing left to select it is on the table region of the list (the select-all box is disabled).
+        await Assertions.Expect(page.Locator("[data-slot=table-root]").First).ToBeFocusedAsync(new() { Timeout = 15_000 });
+        // Exactly the matching rows are gone: the search is empty now, and the others remain.
+        await Assertions.Expect(page.Locator("[data-slot=result-count]").First).ToHaveTextAsync("No results for “an”", new() { Timeout = 15_000 });
+        await page.GetByRole(AriaRole.Searchbox).FillAsync("");
+        await Assertions.Expect(page.GetByText($"of {before - matches}")).ToBeVisibleAsync(new() { Timeout = 15_000 });
     }
 
     /// <summary>
@@ -601,6 +644,7 @@ public class DashboardTemplateTests(PlaygroundServer server)
 
             await DashboardChecks.AssertCreateMenu(page);
             await DashboardChecks.AssertSelectionFollowsTheQuery(page);
+            await DashboardChecks.AssertDeleteEveryResult(page);
             await DashboardChecks.AssertStaticPosts(server.Browser, baseUrl);
 
             await page.GotoAsync("inbox");

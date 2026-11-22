@@ -103,6 +103,16 @@ public partial class BxDataList<TItem>
         AfterUserChange(changed);
     }
 
+    // Unticks only these keys: the rows an action targeted, not the ones ticked while it ran.
+    internal void ClearSelection(IEnumerable<string> keys)
+    {
+        var changed = false;
+        foreach (var key in keys) changed |= _selection.Remove(key);
+        if (_anchorKey is not null && !_selection.Contains(_anchorKey)) _anchorKey = null;
+        if (_selection.Count == 0) _bulkScope = DataListActionScope.Selection;
+        AfterUserChange(changed);
+    }
+
     internal void ClearSelection()
     {
         var changed = _selection.Clear();
@@ -273,7 +283,8 @@ public partial class BxDataList<TItem>
             items = _selection.Items();
             keys = [.. _selection.Keys];
         }
-        return new DataListActionContext<TItem>(_context, scope, items, keys, MatchingCount, AllResultsRequest, cancellationToken);
+        var target = scope == DataListActionScope.All && MatchingCount is { } total ? total : _selection.Count;
+        return new DataListActionContext<TItem>(_context, scope, items, keys, MatchingCount, target, AllResultsRequest, cancellationToken);
     }
 
     // After the load of a refresh the rows may be other instances or gone: the selection checks them once more.

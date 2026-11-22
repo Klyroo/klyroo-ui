@@ -52,8 +52,9 @@ public enum DataListSelectionBarPosition
 /// <typeparam name="TItem">The row type.</typeparam>
 public sealed class DataListActionContext<TItem>
 {
-    internal DataListActionContext(DataListContext<TItem> list, DataListActionScope scope, IReadOnlyList<TItem> items, IReadOnlyList<string> keys, long? matchingCount, DataListRequest? request, CancellationToken cancellationToken)
+    internal DataListActionContext(DataListContext<TItem> list, DataListActionScope scope, IReadOnlyList<TItem> items, IReadOnlyList<string> keys, long? matchingCount, long targetCount, DataListRequest? request, CancellationToken cancellationToken)
     {
+        TargetCount = targetCount;
         List = list;
         Scope = scope;
         SelectedItems = items;
@@ -75,6 +76,13 @@ public sealed class DataListActionContext<TItem>
     /// queryable: empty, because the list never holds those rows; apply <see cref="Request"/> instead.
     /// </summary>
     public IReadOnlyList<TItem> SelectedItems { get; }
+
+    /// <summary>
+    /// How many rows the action will act on: <see cref="MatchingCount"/> when <see cref="Scope"/> is <see cref="DataListActionScope.All"/> (and the source knows it), else the number of ticked rows.
+    /// Use it, not <c>SelectedItems.Count</c>, in the text of a confirmation and in <c>Visible</c> and <c>Disabled</c>: before the action runs, <see cref="SelectedItems"/> holds only the ticked rows
+    /// (a list is never loaded just to describe an action), while the action itself gets every matching row of a list in memory.
+    /// </summary>
+    public long TargetCount { get; }
 
     /// <summary>The row keys (<c>RowKey</c> of the schema) of <see cref="SelectedItems"/>; empty where those are empty too.</summary>
     public IReadOnlyList<string> SelectedKeys { get; }
@@ -99,7 +107,7 @@ public sealed class DataListActionConfirm<TItem>
     /// <summary>The title of the dialog.</summary>
     public required string Title { get; init; }
 
-    /// <summary>The text under the title, built from the context so that it can count the rows (<c>c =&gt; $"{c.SelectedItems.Count} customers will be removed."</c>).</summary>
+    /// <summary>The text under the title, built from the context so that it can count the rows (<c>c =&gt; $"{c.TargetCount} customers will be removed."</c>, which is right for the ticked rows and for every result).</summary>
     public Func<DataListActionContext<TItem>, string?>? Description { get; init; }
 
     /// <summary>The label of the confirm button. Without it the localized "Confirm".</summary>
