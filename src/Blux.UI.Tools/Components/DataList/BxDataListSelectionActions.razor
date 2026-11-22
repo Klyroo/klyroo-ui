@@ -1,0 +1,127 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListActionPartBase<TItem>
+@using Microsoft.JSInterop
+
+@* The bar of the actions on the selected rows: how many are ticked, a switch to "every result" when the source knows how many there are, the actions and a clear button.
+   Interactive only: a statically rendered list has no selection, so nothing is drawn. The live region is always there while the list is interactive, empty when nothing is ticked:
+   a region that appears together with its text is not announced. *@
+@if (Context.SelectionVisible && Context.IsInteractive)
+{
+    var count = Context.SelectedCount;
+    var scopeAll = Context.BulkScope == DataListActionScope.All;
+    var describe = Describe();
+    var visible = Actions.Where(a => IsVisible(a, describe)).ToList();
+    var inline = visible.Take(Math.Max(0, MaxVisible)).ToList();
+    var overflow = visible.Skip(inline.Count).ToList();
+    var text = CountText(count, scopeAll);
+    <div @ref="_root" class="@_slots["selectionActions"]" data-slot="selection-actions" @attributes="AdditionalAttributes">
+        <p class="@_slots["selectionLive"]" role="status" aria-live="polite" aria-atomic="true" data-slot="selection-status">@(count > 0 ? text : "")</p>
+        @if (count > 0)
+        {
+            <div class="@_slots["selectionBar"]" role="group" aria-label="@ToolsMessages.SelectionActionsLabel" data-slot="selection-bar">
+                <span class="@_slots["selectionCount"]" aria-hidden="true" data-slot="selection-count">@text</span>
+                @if (Scope && !scopeAll && Context.CanSelectAllResults)
+                {
+                    <BxButton Label="@string.Format(FormatCulture, ToolsMessages.SelectionSelectAllResults, Number(Context.MatchingCount!.Value))" Variant="ButtonVariant.Link" Size="BxSize.Sm"
+                              Class="@_slots["selectionScope"]" OnClick="@(() => Context.SetBulkScope(DataListActionScope.All))" data-slot="select-all-results" />
+                }
+                else if (Scope && scopeAll)
+                {
+                    <BxButton Label="@string.Format(FormatCulture, ToolsMessages.SelectionOnlySelected, Number(count))" Variant="ButtonVariant.Link" Size="BxSize.Sm"
+                              Class="@_slots["selectionScope"]" OnClick="@(() => Context.SetBulkScope(DataListActionScope.Selection))" data-slot="select-only-selected" />
+                }
+                <div class="@_slots["selectionGroup"]">
+                    @foreach (var action in inline)
+                    {
+                        var item = action;
+                        <BxButton Label="@item.Label" Variant="item.Variant" Color="item.Color" Size="BxSize.Sm" Loading="IsRunning(item)" Disabled="@IsDisabled(item, describe)"
+                                  LeadingIcon="@(item.Icon is null ? null : RenderIcon(item.Icon, "size-4"))" OnClick="@(() => RequestAsync(item))"
+                                  data-slot="action" data-action="@item.Key" />
+                    }
+                    @if (overflow.Count > 0)
+                    {
+                        <BxDropdownMenu Items="OverflowItems(overflow, describe)" OnSelect="OnOverflowSelect" Placement="top-end">
+                            <BxButton Label="@ToolsMessages.ActionsMore" Variant="ButtonVariant.Soft" Color="BxColor.Neutral" Size="BxSize.Sm"
+                                      LeadingIcon="@RenderIcon("ellipsis", "size-4")" data-slot="actions-more" />
+                        </BxDropdownMenu>
+                    }
+                    <BxButton Label="@ToolsMessages.SelectionClear" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm"
+                              LeadingIcon="@RenderIcon("x", "size-4")" OnClick="@(() => Context.ClearSelection())" data-slot="clear-selection" />
+                </div>
+            </div>
+        }
+        @if (Pending is { Confirm: not null })
+        {
+            var confirm = ConfirmText();
+            <DataListActionDialog Open="ConfirmOpen" OpenChanged="OnConfirmOpenChanged" Title="@confirm.Title" Description="@confirm.Description"
+                                  ConfirmLabel="@confirm.Label" Color="confirm.Color" OnConfirm="ConfirmAsync" />
+        }
+    </div>
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private ElementReference _root;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // The button that ran the action left with the bar: the focus goes to the select-all box of the list instead of the top of the page.
+    protected override async Task AfterSelectionClearedAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.focusSelectAll", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
+    }
+
+    /// <summary>How many actions show as buttons; the others go into a "More actions" menu (3 by default).</summary>
+    [Parameter] public int MaxVisible { get; set; } = 3;
+
+    /// <summary>Shows the switch between the ticked rows and every result when the source knows how many results there are (true by default).</summary>
+    [Parameter] public bool Scope { get; set; } = true;
+
+    /// <summary>Whether the bar sticks to the bottom of its list while the list is on screen (the default) or is fixed to the bottom of the window.</summary>
+    [Parameter] public DataListSelectionBarPosition Position { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        // A list shows its checkbox column when it has a bar that acts on the selection.
+        Context.AddSelectionPart();
+    }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?> { ["position"] = Position == DataListSelectionBarPosition.Fixed ? "fixed" : "sticky" }, Ui, "selectionActions");
+
+    private string Number(long value) => value.ToString("N0", FormatCulture);
+
+    private string CountText(int count, bool scopeAll) =>
+        scopeAll && Context.MatchingCount is { } total
+            ? string.Format(FormatCulture, ToolsMessages.SelectionAllResults, Number(total))
+            : string.Format(FormatCulture, ToolsMessages.SelectionCount, Number(count));
+
+    private List<BxMenuItem> OverflowItems(List<DataListAction<TItem>> actions, DataListActionContext<TItem> describe) =>
+        [.. actions.Select(a => new BxMenuItem
+        {
+            Label = a.Label,
+            Value = a.Key,
+            Icon = a.Icon is null ? null : RenderIcon(a.Icon, "size-4"),
+            Disabled = IsDisabled(a, describe),
+            Color = a.Color.Equals(BxColor.Neutral) ? default(BxColor?) : a.Color,
+        })];
+
+    private Task OnOverflowSelect(BxMenuItem item) =>
+        Actions.FirstOrDefault(a => a.Key == item.Value) is { } action ? RequestAsync(action) : Task.CompletedTask;
+
+    public override void Dispose()
+    {
+        // Disposing unregisters; a part that renders again does not register twice.
+        Context.RemoveSelectionPart();
+        base.Dispose();
+    }
+}

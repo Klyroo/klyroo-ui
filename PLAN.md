@@ -184,7 +184,7 @@ sur `IQueryable` (tests différentiels EF Core/SQLite, NativeAOT), `BxDataList` 
 recherche, filtres texte/option/booléen/nombre/date avec presets et plages, panneau de filtres en barre latérale ou en tiroir, facettes (compteurs sur les filtres d'option et booléens, modes, tri, limite, conservés pendant la pagination) et filtres d'options distants, fuseau de l'utilisateur via cookie) ; paquet `Blux.UI.Server` (`AddBluxServer`,
 `IBxRequestCookies` dans le cœur, cookies lus au rendu serveur) ; dans le cœur : case indéterminée, `BxInput.Debounce`/`SetValueAsync`, classes
 `FieldCssClassProvider` partout, `BxInfiniteScroll`, options avec compteurs/icônes/groupes, options chargées à la demande (`OptionsProvider`, `OptionsKey`)
-pour `BxSelectMenu`/`BxInputMenu`. Restent : sélection, actions, curseur, colonnes, grille,
+pour `BxSelectMenu`/`BxInputMenu` ; sélection de lignes et actions (colonne de cases, tri-état, plage Maj, `SelectedKeys`, portées page/tout, barre d'actions avec confirmation, menu d'actions de barre d'outils, interactif seulement) ; pages de doc du DataList scindées pour tenir sous le budget d'état persisté. Restent : curseur, colonnes, grille,
 groupes, arbre, totaux, puis Forms, Analytics, Display/Media/FilePreview, Spreadsheet (ordre alterné avec les templates).
 
 Reste à faire :

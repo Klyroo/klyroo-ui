@@ -35,7 +35,6 @@
     <!-- The data and the services of the Dashboard template: plain C#, no Razor, so the sample data, the schema of the customer table and the stores are tested as they are. -->
     <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Data\*.cs" LinkBase="Dashboard\Data" />
     <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Services\AppStores.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppState.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppearanceStore.cs" LinkBase="Dashboard\Services" />
-    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Components\RowSelection.cs" LinkBase="Dashboard\Components" />
     <!-- The data code of the SaaS template (the library that reads the posts and versions, the pricing, the copy): plain C#, no Razor, so it is tested as it is, with its sample content. -->
     <Compile Include="..\..\templates\saas\src\SaaS.Web\Site\*.cs" LinkBase="SaaS" />
     <!-- The data code of the Portfolio template (the library that reads the projects and articles, the resume, the talks, the contact message): plain C#, no Razor, so it is tested as it is, with its sample content. -->
