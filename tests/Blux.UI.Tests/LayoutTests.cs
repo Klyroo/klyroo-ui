@@ -344,6 +344,49 @@ public class LayoutTests : BluxTestContext
     }
 
     [Fact]
+    public void Sidebar_As_is_case_insensitive_and_a_missing_one_is_an_aside()
+    {
+        var upper = Render<BxSidebar>(p => p.Add(s => s.As, "Aside"));
+        Assert.Equal("aside", upper.Find("[data-slot=root]").LocalName);
+        Assert.Equal("Sidebar", upper.Find("[data-slot=root]").GetAttribute("aria-label"));
+
+        var none = Render<BxSidebar>(p => p.Add(s => s.As, null!));
+        Assert.Equal("aside", none.Find("[data-slot=root]").LocalName);
+        Assert.Equal("div", Render<BxSidebar>(p => p.Add(s => s.As, "DIV")).Find("[data-slot=root]").LocalName);
+    }
+
+    [Fact]
+    public void Sidebar_panel_id_follows_the_storage_id_and_the_dialog_wrapper_holds_everything_but_the_handle()
+    {
+        var cut = Render<BxSidebar>(p => p.Add(s => s.Id, "my app/1").Add(s => s.Resizable, true).Add(s => s.Footer, "<i>F</i>"));
+
+        var aside = cut.Find("[data-slot=root]");
+        Assert.Equal("bx-sidebar-my-app-1", aside.GetAttribute("id"));
+        var panel = cut.Find("[data-slot=root] > [data-slot=panel]");
+        Assert.NotNull(panel.QuerySelector("[data-slot=mobile-header]"));
+        Assert.NotNull(panel.QuerySelector("[data-slot=content]"));
+        Assert.NotNull(panel.QuerySelector("[data-slot=footer]"));
+        Assert.Null(panel.QuerySelector("[data-slot=handle]"));
+        Assert.NotNull(cut.Find("[data-slot=root] > [data-slot=handle]"));
+        // Neither the aside nor the panel carry a dialog role until the browser opens the panel.
+        Assert.False(aside.HasAttribute("role"));
+        Assert.False(panel.HasAttribute("role"));
+    }
+
+    [Fact]
+    public void Sidebar_collapsed_styles_apply_from_lg_only_so_the_server_markup_is_right_at_every_width()
+    {
+        var cut = Render<BxSidebar>(p => p.Add(s => s.Collapsed, true).Add(s => s.Header, "<b>H</b>").Add(s => s.Footer, "<i>F</i>").Add(s => s.ChildContent, "<p>C</p>"));
+
+        var classes = cut.FindAll("[data-slot=root], [data-slot=root] *")
+            .SelectMany(e => e.ClassList)
+            .Where(c => c.Contains("data-[state=collapsed]"))
+            .ToList();
+        Assert.NotEmpty(classes);
+        Assert.All(classes, c => Assert.StartsWith("lg:", c));
+    }
+
+    [Fact]
     public void Sidebar_as_div_is_not_a_landmark()
     {
         var cut = Render<BxSidebar>(p => p.Add(s => s.As, "div"));

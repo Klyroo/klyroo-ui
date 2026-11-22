@@ -422,10 +422,6 @@ data-in-range:rounded-none
 data-invalid:ring-(--blux-error)
 data-invalid:ring-2
 data-placeholder:text-(--blux-text-dimmed)
-data-ready:data-dragging:transition-none
-data-ready:duration-200
-data-ready:motion-reduce:transition-none
-data-ready:transition-[width]
 data-selected:bg-(--bx-color)
 data-selected:hover:bg-(--bx-color)/90
 data-selected:ring-(--bx-color-text)
@@ -563,8 +559,6 @@ group-data-[half=right]:end-0
 group-data-[state=collapsed]/sidebar:hidden
 group-data-[state=collapsed]/sidebar:justify-center
 group-data-[state=collapsed]/sidebar:px-0
-group-data-[state=collapsed]/sidebar:px-2
-group-data-[state=collapsed]/sidebar:rotate-180
 group-data-[state=collapsed]/sidebar:sr-only
 group-data-[state=open]/disclosure:rotate-180
 group-data-[state=open]/item:rotate-180
@@ -710,6 +704,10 @@ lg:col-span-8
 lg:columns-3
 lg:columns-4
 lg:data-[state=collapsed]:w-16
+lg:data-ready:data-dragging:transition-none
+lg:data-ready:duration-200
+lg:data-ready:motion-reduce:transition-none
+lg:data-ready:transition-[width]
 lg:flex
 lg:flex-1
 lg:flex-row
@@ -724,6 +722,10 @@ lg:grid-cols-10
 lg:grid-cols-2
 lg:grid-cols-3
 lg:grid-cols-4
+lg:group-data-[state=collapsed]/sidebar:hidden
+lg:group-data-[state=collapsed]/sidebar:justify-center
+lg:group-data-[state=collapsed]/sidebar:px-2
+lg:group-data-[state=collapsed]/sidebar:rotate-180
 lg:h-auto
 lg:hidden
 lg:inline-flex
@@ -770,13 +772,12 @@ max-lg:open:flex
 max-lg:open:h-dvh
 max-lg:open:inset-y-0
 max-lg:open:max-w-[85vw]
-max-lg:open:motion-reduce:transition-none
 max-lg:open:overflow-hidden
 max-lg:open:shadow-xl
 max-lg:open:start-0
 max-lg:open:starting:-translate-x-full
 max-lg:open:starting:rtl:translate-x-full
-max-lg:open:transition-[translate]!
+max-lg:open:transition-[translate]
 max-lg:open:translate-x-0
 max-lg:open:w-80
 max-sm:hidden
@@ -861,6 +862,7 @@ min-w-9
 min-w-full
 motion-reduce:animate-none
 motion-reduce:bg-none
+motion-reduce:max-lg:open:transition-none
 motion-reduce:opacity-60
 motion-reduce:scroll-auto
 motion-reduce:text-(--blux-text-muted)

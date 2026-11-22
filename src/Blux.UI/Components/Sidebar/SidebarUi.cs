@@ -7,6 +7,8 @@ public sealed record SidebarUi : ISlotOverrides
 {
     public string? Root { get; init; }
     public string? Host { get; init; }
+    /// <summary>The wrapper of everything inside the aside but the resize handle; the panel takes its dialog role while it is open.</summary>
+    public string? Panel { get; init; }
     public string? Header { get; init; }
     public string? HeaderContent { get; init; }
     public string? Toggle { get; init; }
@@ -25,6 +27,7 @@ public sealed record SidebarUi : ISlotOverrides
     {
         "root" => Root,
         "host" => Host,
+        "panel" => Panel,
         "header" => Header,
         "headerContent" => HeaderContent,
         "toggle" => Toggle,

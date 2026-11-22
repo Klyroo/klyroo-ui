@@ -40,7 +40,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _tag = As.ToLowerInvariant();
+        _tag = string.IsNullOrWhiteSpace(As) ? "aside" : As.Trim().ToLowerInvariant();
         if (_tag is not ("aside" or "div"))
         {
             throw new ArgumentException($"BxPageAside: As must be \"aside\" or \"div\" (any case), not \"{As}\".", nameof(As));

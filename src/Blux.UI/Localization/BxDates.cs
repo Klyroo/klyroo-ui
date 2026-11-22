@@ -14,7 +14,7 @@ public static partial class BxDates
     /// Formats <paramref name="date"/> with <paramref name="format"/>, or, without one, with the long date pattern of the culture minus the day name
     /// ("March 4, 2026" in en-US, "4 mars 2026" in fr-FR, "4 марта 2026 г." in ru-RU: the order of the culture, not the English one).
     /// Without <paramref name="culture"/> it uses <see cref="FormatCulture()"/>, which knows only the built-in locales: inside a component that
-    /// follows <c>BluxOptions.Locale</c> or a cascading <see cref="BxLocale"/>, pass the culture from <see cref="FormatCulture(BxLocale)"/> or use the overload with the locale.
+    /// follows <c>BluxOptions.Locale</c> or a cascading <see cref="BxLocale"/>, pass the culture from <see cref="FormatCulture(BxLocale)"/> or use <see cref="FormatFor"/>.
     /// </summary>
     public static string Format(DateTimeOffset date, string? format = null, CultureInfo? culture = null)
     {
@@ -27,8 +27,8 @@ public static partial class BxDates
         return date.ToString(pattern.Length == 0 ? "D" : pattern, culture);
     }
 
-    /// <summary>Formats <paramref name="date"/> as the components do for <paramref name="locale"/>: with <see cref="FormatCulture(BxLocale)"/>.</summary>
-    public static string Format(DateTimeOffset date, BxLocale locale, string? format = null) => Format(date, format, FormatCulture(locale));
+    /// <summary>Formats <paramref name="date"/> as the components do for <paramref name="locale"/>: with <see cref="FormatCulture(BxLocale)"/>. Named apart from <c>Format</c> so no call is ambiguous.</summary>
+    public static string FormatFor(DateTimeOffset date, BxLocale locale, string? format = null) => Format(date, format, FormatCulture(locale));
 
     /// <summary>The value of the <c>datetime</c> attribute of a <c>time</c> element: <c>yyyy-MM-dd</c>, the same in every culture.</summary>
     public static string Iso(DateTimeOffset date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);

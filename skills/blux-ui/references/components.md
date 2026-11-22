@@ -805,7 +805,7 @@
 - `<BxSidebar>`
   - Parameters: `AriaLabel`, `As`, `Class`, `Collapsed` (@bind), `Collapsible`, `Id`, `MaxWidth`, `MinWidth`, `MobileTitle`, `MobileTrigger`, `Resizable`, `ScriptNonce`, `Ui`, `Width`
   - Slots: `Footer`, `Header`, `ChildContent`
-  - `Ui` (`SidebarUi`): `Root`, `Host`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
+  - `Ui` (`SidebarUi`): `Root`, `Host`, `Panel`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
 
 ### Error
 
@@ -1072,7 +1072,7 @@
 - `<BxDashboardSidebar>`
   - Parameters: `AriaLabel`, `As`, `Class`, `Collapsed` (@bind), `Collapsible`, `Id`, `MaxWidth`, `MinWidth`, `MobileTitle`, `Resizable`, `Ui`, `Width`
   - Slots: `Footer`, `Header`, `ChildContent`
-  - `Ui` (`SidebarUi`): `Root`, `Host`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
+  - `Ui` (`SidebarUi`): `Root`, `Host`, `Panel`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
 
 ### DashboardSidebarCollapse
 

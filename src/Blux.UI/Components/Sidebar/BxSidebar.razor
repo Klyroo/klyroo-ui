@@ -44,6 +44,8 @@
 @code {
     private SlotSet _slots = default!;
     private string? _id;
+    private string? _generatedId;
+    private string _tag = "aside";
     private int _sequence;
 
     /// <summary>The scrollable middle: navigation, search. It is rendered once and serves both the column and the off-canvas panel.</summary>
@@ -128,8 +130,10 @@
 
     protected override void OnParametersSet()
     {
-        // The panel's id: the popover buttons name it, so it is rendered. (An "id" attribute is the storage Id of the sidebar, never the element's.)
-        _id ??= NewId("sidebar");
+        // The panel's id: the popover buttons name it, so it is rendered. It follows the storage Id when there is one, which lets BxDashboardSidebarToggle
+        // name the panel from the server too. (An "id" attribute is the storage Id of the sidebar, never the element's.)
+        _id = Id is { Length: > 0 } ? PanelId(Id) : _generatedId ??= NewId("sidebar");
+        _tag = string.IsNullOrWhiteSpace(As) ? "aside" : As.Trim().ToLowerInvariant();
         _slots = ResolveSlots(Options.Sidebar, new Dictionary<string, string?>(), Ui, "root");
     }
 
@@ -148,13 +152,13 @@
 
     private RenderFragment Root => builder =>
     {
-        builder.OpenElement(0, As);
+        builder.OpenElement(0, _tag);
         builder.AddAttribute(1, "class", _slots["root"]);
         builder.AddAttribute(2, "data-slot", "root");
         builder.AddAttribute(3, "data-state", Collapsed ? "collapsed" : "expanded");
         builder.AddAttribute(4, "id", _id);
         builder.AddAttribute(5, "popover", "auto");
-        if (As is "aside" or "nav")
+        if (_tag is "aside" or "nav")
         {
             builder.AddAttribute(6, "aria-label", AriaLabel ?? Messages.SidebarLabel);
         }
@@ -163,8 +167,14 @@
         builder.CloseElement();
     };
 
+    /// <summary>The id of the panel of the sidebar with this storage id: what <see cref="BxDashboardSidebarToggle"/> points its <c>popovertarget</c> at.</summary>
+    internal static string PanelId(string storageId) =>
+        "bx-sidebar-" + System.Text.RegularExpressions.Regex.Replace(storageId.Trim(), "[^A-Za-z0-9_-]", "-");
+
+    // The panel element carries the dialog semantics while the off-canvas panel is open (set by js/layout.js): an aside may not be a dialog, so it is not the aside.
     private RenderFragment Panel =>
         @<text>
+          <div class="@_slots["panel"]" data-slot="panel">
             <div class="@_slots["mobileHeader"]" data-slot="mobile-header">
                 <h2 id="@(_id + "-title")" class="@_slots["mobileTitle"]">@(MobileTitle ?? Messages.SidebarLabel)</h2>
                 <button type="button" class="@_slots["mobileClose"]" aria-label="@Messages.Close" popovertarget="@_id" popovertargetaction="hide">
@@ -192,6 +202,7 @@
             {
                 <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
             }
+          </div>
             @if (Resizable)
             {
                 <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@Messages.ResizeSidebar"
