@@ -1,0 +1,11 @@
+@* BxPageSection renders each item of Features as a BxPageFeature. *@
+<BxPageSection id="skills"
+               Headline="@SiteInfo.SkillsHeadline"
+               Title="@SiteInfo.SkillsTitle"
+               Orientation="BxOrientation.Vertical"
+               Features="SiteInfo.Skills"
+               Links="_links" />
+
+@code {
+    private static readonly PageLinkItem[] _links = [new("More about me", SiteInfo.AboutHref) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+}

@@ -1,0 +1,25 @@
+@* A project as a card: the cover, the title as the only link, the description, and the year and the stack. Used by the home page and by the work page. *@
+<BxPageCard Title="@Project.Title" Description="@Project.Description" Href="@Project.Href" HeadingLevel="HeadingLevel" Color="BxColor.Neutral" Class="h-full" data-testid="project">
+    <Header>
+        @if (Project.Image is not null)
+        {
+            <BxImage Src="@Project.Image" Alt="@(Project.ImageAlt ?? "")" Class="aspect-[16/10] w-full object-cover" />
+        }
+    </Header>
+    <Footer>
+        <div class="flex flex-wrap items-center gap-2">
+            <BxBadge Label="@Project.Year.ToString()" Color="BxColor.Neutral" Variant="BxVariant.Outline" Size="BxSize.Sm" />
+            @foreach (var item in Project.Stack.Take(3))
+            {
+                <BxBadge Label="@item" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+            }
+        </div>
+    </Footer>
+</BxPageCard>
+
+@code {
+    [Parameter, EditorRequired] public Project Project { get; set; } = default!;
+
+    /// <summary>The level of the title: 2 on the work page, where the h1 is the title of the page, and 3 in a section of the home page.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+}

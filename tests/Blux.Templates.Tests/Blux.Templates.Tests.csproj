@@ -38,6 +38,8 @@
     <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Components\RowSelection.cs" LinkBase="Dashboard\Components" />
     <!-- The data code of the SaaS template (the library that reads the posts and versions, the pricing, the copy): plain C#, no Razor, so it is tested as it is, with its sample content. -->
     <Compile Include="..\..\templates\saas\src\SaaS.Web\Site\*.cs" LinkBase="SaaS" />
+    <!-- The data code of the Portfolio template (the library that reads the projects and articles, the resume, the talks, the contact message): plain C#, no Razor, so it is tested as it is, with its sample content. -->
+    <Compile Include="..\..\templates\portfolio\src\Portfolio.Web\Site\*.cs" LinkBase="Portfolio" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
     <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
   </ItemGroup>
