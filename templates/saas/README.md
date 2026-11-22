@@ -1,8 +1,8 @@
 # SaaS
 
-The marketing site of a subscription product, on Blux UI: a landing page, a pricing page with a monthly and yearly switch, a plan comparison and a FAQ, a blog, a documentation section with search, a changelog, and sign-in and sign-up pages. The product (Tideline, heartbeat monitoring for scheduled jobs) and every name, price and quote in it are made up.
+The marketing site of a subscription product, on Blux UI: a landing page, a pricing page with a monthly and yearly switch, a plan comparison and a FAQ, a blog, a documentation section with search, a changelog, legal pages, and sign-in, sign-up and forgot-password pages. The product (Tideline, heartbeat monitoring for scheduled jobs) and every name, price and quote in it are made up.
 
-The site is rendered by the server and sent as HTML. There is no circuit and no WebAssembly download, so it is quick to load and cheap to host. The documentation, the blog posts and the changelog are Markdown files that you write.
+The site is rendered by the server and sent as HTML. There is no circuit and no WebAssembly download, so it is quick to load and cheap to host. The documentation, the blog posts, the changelog and the legal pages are Markdown files that you write.
 
 > **The sign-in and sign-up pages are UI only.** They validate what is typed and then do nothing: no account is created, nobody is signed in, no cookie is set and nothing is stored or sent. See [Authentication](#authentication-is-ui-only) before you ship anything.
 
@@ -35,11 +35,13 @@ src/SaaS.Web/
   content/docs/              the documentation: folders of .md files, and a _dir.yml in a folder to name it
   content/blog/              one .md file per post (title, date, author, tags, image in the front matter)
   content/changelog/         one .md file per version
+  content/legal/             plain pages: the sample terms and privacy policy (any other folder works the same)
   Site/SiteInfo.cs           the name, the links and the words of the home page, as typed C#
   Site/PricingInfo.cs        the plans, the comparison table and the questions of the pricing page
-  Site/Library.cs            reads the posts, the versions and the documentation out of the content folder
+  Site/Library.cs            reads the posts, the versions, the documentation and the plain pages out of the content folder, and checks them
+  Site/SiteDates.cs          writes a date the way the Blux cards do (the culture of the visitor, no day name)
   Content/                   the Markdown code, shared with the other content templates (see below)
-  Components/Pages/          Home, Pricing, BlogIndex, BlogArticle, DocsHome, DocsArticle, ChangelogPage, ReleasePage, Login, Signup
+  Components/Pages/          Home, Pricing, BlogIndex, BlogArticle, DocsHome, DocsArticle, ChangelogPage, ReleasePage, PlainPage, Login, Signup, ForgotPassword
   Components/Sections/       the sections of the home page; each reads SiteInfo and has no text of its own
   Components/Layout/         the header with the search, the main area and the footer
   Components/App.razor       the document: theme, fonts, the base address, the stylesheet, the copy script
@@ -55,7 +57,16 @@ src/SaaS.Web/
 
 ## Write content
 
-Everything below `content/` is read when the site starts. A page is a `.md` file with a little YAML at the top. Its address is its path without `.md`: `content/docs/guides/setup.md` is `/docs/guides/setup`.
+Everything below `content/` is read when the site starts and is searchable. A page is a `.md` file with a little YAML at the top. Its address is its path without `.md`, and what serves it depends on the folder:
+
+| Where | What it is | Served by |
+| --- | --- | --- |
+| `content/docs/**` | A page of the documentation, at any depth | `/docs/...`, with the navigation, table of contents and previous and next links |
+| `content/blog/<name>.md` | A post (needs a `date`) | `/blog/<name>` and the list at `/blog` |
+| `content/changelog/<name>.md` | A version (needs a `date`) | `/changelog/<name>` and the list at `/changelog` |
+| Anywhere else, such as `content/legal/terms.md` | A plain page | `/legal/terms`, with the layout of the site and nothing else |
+
+The rule is that only the files directly in `blog/` and `changelog/` are posts and versions: a file in a folder below them (`blog/2026/post.md`) is a plain page at `/blog/2026/post`, not in the list of posts. Link to a plain page from the Razor components (the footer lists the two legal pages in `SiteInfo.FooterColumns`) or from Markdown (`[terms](/legal/terms)`).
 
 ### Documentation
 
@@ -80,7 +91,7 @@ imageAlt: What the cover shows.
 Start the body at `##`.
 ```
 
-`date` is required, written `yyyy-MM-dd`: the site stops at startup and names the file when it is missing or invalid. `author`, `authorRole`, `tags`, `image` (a path below `wwwroot`, written without a leading slash so that it works below a path base) and `imageAlt` are optional. Posts are listed newest first, the first one large; each tag is a link that filters the list (`/blog?tag=product`). The reading time is worked out from the text.
+`date` is required, written `yyyy-MM-dd`: the site stops at startup and names the file when it is missing or invalid. In Development, saving a file with such a mistake keeps the previous content and logs the error with the file name, instead of breaking the pages (`ContentOptions.Validate` in `Program.cs` runs at every read). `author`, `authorRole`, `tags`, `image` and `imageAlt` are optional. `image` is a path below `wwwroot`, from the root of the site, with or without a leading slash (`img/blog/waves.svg` and `/img/blog/waves.svg` are the same: it is rewritten like the images of a body, so it works below a path base), or an `https://` address. A cover that has no file in `wwwroot` is a warning in the log, like an image of a body. Posts are listed newest first, the first one large; each tag is a link that filters the list (`/blog?tag=product`). The reading time is worked out from the text.
 
 ### Changelog
 
@@ -94,14 +105,17 @@ The search covers the documentation, the blog and the changelog, in one index th
 
 ## Authentication is UI only
 
-`Components/Pages/Login.razor` and `Signup.razor` use Blux's `BxAuthForm`, posted to the server with a form name, so the pages need no circuit. The form checks the required fields, the format of the email and, on the sign-up page, a password of at least 8 characters. When everything is valid it calls `SignInAsync` or `SignUpAsync`, which only remember the email so that the page can say "the form is valid". **Nobody is signed in and nothing is stored.** The two "Continue with" buttons lead to placeholder addresses in `SiteInfo.cs`.
+`Components/Pages/Login.razor`, `Signup.razor` and `ForgotPassword.razor` use Blux's `BxAuthForm`, posted to the server with a form name, so the pages need no circuit. The form checks the required fields, the format of the email and, on the sign-up page, a password of at least 8 characters. When everything is valid it calls `SignInAsync`, `SignUpAsync` or `ResetAsync`, which only remember the email so that the page can say "the form is valid" and that nothing was stored. **Nobody is signed in, no account is created and no email is sent.** The pages carry no other notice: this README is where it is written down.
+
+The "Continue with GitHub (demo)" and "Continue with Google (demo)" buttons are placeholders: their labels say so, and they lead to example.com addresses in `SiteInfo.cs` (`GitHubSignInUrl`, `GoogleSignInUrl`). To wire a real provider, replace the address with the sign-in endpoint of your authentication (for ASP.NET Core, the challenge endpoint of the provider you added with `AddAuthentication().AddGitHub(...)`, `AddGoogle(...)` or `AddOpenIdConnect(...)`), drop "(demo)" from the label in `Login.razor` and `Signup.razor`, or delete the `Providers` of the form if you only want email and password.
 
 To make it real, you need an identity system (ASP.NET Core Identity, an OpenID Connect provider such as Entra ID, Auth0 or Keycloak, or your own API) and these changes:
 
 - Check the credentials in `SignInAsync` and put a message in `_error` when they are wrong; create the account in `SignUpAsync` and answer an email that is taken with the `FieldErrors` parameter of `BxAuthForm`.
 - Sign the user in (a cookie) and redirect with `NavigationManager.NavigateTo`. Add `UseAuthentication()` and `UseAuthorization()` to `Program.cs`.
-- Add rate limiting to the two pages, and a way to reset a password: the template has no page for it.
-- Replace the two example.com addresses of the "Continue with" buttons with the sign-in endpoints of your providers.
+- Send the reset link in `ResetAsync` (the same answer whether or not the address has an account), and add the page that takes the new password.
+- Add rate limiting to the three pages.
+- Replace the two example.com addresses of the "Continue with" buttons as described above.
 
 The app that sits behind the sign-in (a dashboard, say) is not part of this template.
 

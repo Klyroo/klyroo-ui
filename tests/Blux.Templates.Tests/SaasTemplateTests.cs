@@ -1,3 +1,4 @@
+using System.Globalization;
 using Blux.Templates.Content;
 using SaaS.Web.Site;
 
@@ -265,5 +266,172 @@ public class SaasTemplateTests
             Assert.True(!external || link.StartsWith("mailto:hello@example.com", StringComparison.Ordinal) || new Uri(link).Host == "example.com", link);
             Assert.False(link.StartsWith('/'), $"{link} is absolute: it would leave a path base");
         });
+    }
+
+    // ---- Plain pages
+
+    [Fact]
+    public void The_sample_legal_pages_are_plain_pages_and_are_in_the_search_index()
+    {
+        var site = Sample();
+
+        Assert.Equal(["legal/terms", "legal/privacy"], site.PlainPages().Select(p => p.Slug));
+        Assert.Contains(site.Search, page => page.Href == "legal/terms" && page.Group == "Legal");
+        Assert.All(SiteInfo.FooterColumns.SelectMany(c => c.Links).Select(l => l.Href!).Where(h => h.StartsWith("legal/")), href => Assert.NotNull(site.Find(href)));
+    }
+
+    [Fact]
+    public void A_page_outside_docs_blog_and_changelog_is_plain_and_so_is_a_file_in_a_folder_below_blog_or_changelog()
+    {
+        using var folder = new ContentFolder()
+            .Page("docs/a.md", "Docs page")
+            .Page("blog/post.md", "Post", extra: "date: 2026-01-02\n")
+            .Page("blog/2026/nested.md", "Nested post")
+            .Page("changelog/1-0.md", "1.0", extra: "date: 2026-01-02\n")
+            .Page("changelog/old/0-9.md", "0.9")
+            .Page("legal/terms.md", "Terms")
+            .Page("about.md", "About");
+
+        var site = folder.Load();
+
+        Assert.Equal(["about", "blog/2026/nested", "changelog/old/0-9", "legal/terms"], site.PlainPages().Select(p => p.Slug).Order(StringComparer.Ordinal));
+        Assert.Equal(["Post"], site.Posts().Select(p => p.Title));
+        Assert.Equal(["1.0"], site.Releases().Select(r => r.Version));
+        Assert.Equal(["docs/a"], site.DocsPages().Select(p => p.Slug));
+    }
+
+    // ---- Validation and covers
+
+    [Fact]
+    public void The_sample_content_passes_the_validation_with_no_warning()
+    {
+        Assert.Empty(Library.Validate(Sample(), Path.Combine(WebProject, "wwwroot")));
+    }
+
+    [Fact]
+    public void Validate_stops_on_a_post_without_a_date_and_the_store_keeps_the_previous_content_when_a_reload_fails_it()
+    {
+        using var folder = new ContentFolder().Page("blog/a.md", "A", extra: "date: 2026-01-02\n");
+        using var store = new MarkdownStore(new ContentOptions { Root = folder.Root, Validate = site => Library.Validate(site, null) });
+        var before = store.Site;
+
+        folder.Page("blog/new.md", "New");
+
+        Assert.False(store.Reload());
+        Assert.Same(before, store.Site);
+        Assert.Single(store.Site.Posts());
+
+        folder.Page("blog/new.md", "New", extra: "date: 2026-01-03\n");
+
+        Assert.True(store.Reload());
+        Assert.Equal(["New", "A"], store.Site.Posts().Select(p => p.Title));
+    }
+
+    [Fact]
+    public void The_first_read_of_a_post_without_a_date_stops_the_start_with_the_name_of_its_file()
+    {
+        using var folder = new ContentFolder().Page("blog/no-date.md", "No date");
+
+        var error = Assert.Throws<ContentException>(() => new MarkdownStore(new ContentOptions { Root = folder.Root, Validate = site => Library.Validate(site, null) }));
+
+        Assert.Contains("blog/no-date.md", error.Message);
+    }
+
+    [Theory]
+    [InlineData("/img/blog/a.svg", "img/blog/a.svg")]
+    [InlineData("img/blog/a.svg", "img/blog/a.svg")]
+    [InlineData("./img/a.svg", "img/a.svg")]
+    [InlineData("https://cdn.example.com/a.png", "https://cdn.example.com/a.png")]
+    public void A_cover_is_rewritten_like_the_images_of_a_body_so_a_path_from_the_root_works_below_a_path_base(string written, string expected)
+    {
+        using var folder = new ContentFolder().Page("blog/a.md", "A", extra: $"date: 2026-01-02\nimage: {written}\n");
+
+        Assert.Equal(expected, folder.Load().Posts()[0].Image);
+    }
+
+    [Theory]
+    [InlineData("http://example.com/a.png")]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("//example.com/a.png")]
+    public void A_cover_outside_the_site_has_to_be_https(string written)
+    {
+        using var folder = new ContentFolder().Page("blog/a.md", "A", extra: $"date: 2026-01-02\nimage: \"{written}\"\n");
+
+        var error = Assert.Throws<ContentException>(() => folder.Load().Posts());
+
+        Assert.Contains("blog/a.md", error.Message);
+        Assert.Contains("https://", error.Message);
+    }
+
+    [Fact]
+    public void A_cover_with_no_file_in_the_web_root_is_a_warning_naming_the_post_and_an_external_cover_is_not_checked()
+    {
+        using var webRoot = new ContentFolder().Add("img/there.svg", "<svg/>");
+        using var folder = new ContentFolder()
+            .Page("blog/missing.md", "Missing", extra: "date: 2026-01-02\nimage: /img/gone.svg\n")
+            .Page("blog/there.md", "There", extra: "date: 2026-01-02\nimage: img/there.svg\n")
+            .Page("blog/remote.md", "Remote", extra: "date: 2026-01-02\nimage: https://cdn.example.com/a.png\n")
+            .Page("blog/escape.md", "Escape", extra: "date: 2026-01-02\nimage: ../../etc/passwd\n")
+            .Page("blog/none.md", "None", extra: "date: 2026-01-02\n");
+
+        var warnings = Library.Validate(folder.Load(), webRoot.Root).ToList();
+
+        Assert.Equal(2, warnings.Count);
+        Assert.Contains(warnings, w => w.Contains("'blog/missing'") && w.Contains("img/gone.svg"));
+        Assert.Contains(warnings, w => w.Contains("'blog/escape'"));
+    }
+
+    // ---- Dates
+
+    [Theory]
+    [InlineData("en-US", "March 4, 2026")]
+    [InlineData("fr-FR", "4 mars 2026")]
+    [InlineData("de-DE", "4. März 2026")]
+    public void The_visible_date_is_the_long_date_of_the_culture_without_the_day_name(string culture, string expected)
+    {
+        Assert.Equal(expected, SiteDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), CultureInfo.GetCultureInfo(culture)));
+    }
+
+    [Fact]
+    public void The_date_in_russian_is_not_the_english_pattern_with_russian_month_names()
+    {
+        var text = SiteDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), CultureInfo.GetCultureInfo("ru-RU"));
+
+        // "4 марта 2026 г.": the day first, as the culture writes it, not "марта 4, 2026".
+        Assert.StartsWith("4 марта 2026", text);
+    }
+
+    [Fact]
+    public void The_datetime_attribute_is_the_same_in_every_culture()
+    {
+        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar-SA");
+            Assert.Equal("2026-03-04", SiteDates.Iso(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
+        }
+    }
+
+    [Theory]
+    [InlineData("en-GB", "en", "en-GB")]
+    [InlineData("en-US", "fr", "fr")]
+    [InlineData("fr-CA", "fr", "fr-CA")]
+    public void The_culture_of_the_date_is_the_regional_one_when_it_has_the_language_of_the_locale_otherwise_the_one_of_the_locale(string current, string ui, string expected)
+    {
+        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(current);
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(ui);
+            Assert.Equal(expected, SiteDates.Culture().Name);
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
+        }
     }
 }

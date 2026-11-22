@@ -30,7 +30,10 @@ public static class SiteInfo
 
     public const string StatusUrl = "https://example.com/status";
 
-    /// <summary>The sign-in buttons of the login and sign-up pages. Placeholders: the template has no authentication, see the README.</summary>
+    /// <summary>
+    /// The "Continue with" buttons of the login and sign-up pages. Demo placeholders: they carry "(demo)" in their label and lead to example.com, because
+    /// the template has no authentication. Replace the addresses with the sign-in endpoints of your providers and drop "(demo)", see the README.
+    /// </summary>
     public const string GitHubSignInUrl = "https://example.com/auth/github";
 
     public const string GoogleSignInUrl = "https://example.com/auth/google";
@@ -39,6 +42,9 @@ public static class SiteInfo
     public const string HomeHref = "./";
     public const string SignUpHref = "signup";
     public const string LoginHref = "login";
+    public const string ForgotPasswordHref = "forgot-password";
+    public const string TermsHref = "legal/terms";
+    public const string PrivacyHref = "legal/privacy";
     public const string PricingHref = "pricing";
     public const string DocsHref = "docs";
     public const string BlogHref = "blog";
@@ -79,6 +85,14 @@ public static class SiteInfo
                 new("Documentation") { Href = DocsHref },
                 new("Blog") { Href = BlogHref },
                 new("Status") { Href = StatusUrl },
+            ],
+        },
+        new("Legal")
+        {
+            Links =
+            [
+                new("Terms of service") { Href = TermsHref },
+                new("Privacy policy") { Href = PrivacyHref },
             ],
         },
         new("Account")

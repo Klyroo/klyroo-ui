@@ -101,6 +101,20 @@ internal static class SaasChecks
         await page.WaitForURLAsync(new Regex("/changelog/2-0$"));
         await Assertions.Expect(page.GetByTestId("release-page")).ToContainTextAsync("Public status pages");
 
+        // Dates: the visible date is the one of the culture, the datetime attribute is not; the page of a version says the same as the list.
+        await Assertions.Expect(page.GetByTestId("release-page").Locator("time")).ToHaveTextAsync("November 12, 2026");
+        await Assertions.Expect(page.GetByTestId("release-page").Locator("time")).ToHaveAttributeAsync("datetime", "2026-11-12");
+
+        // Plain pages: a Markdown page outside the docs, the blog and the changelog, reached from the footer, with a link to a sibling page.
+        await Go(page, "");
+        await page.GetByRole(AriaRole.Navigation, new() { Name = "Footer" }).GetByRole(AriaRole.Link, new() { Name = "Terms of service" }).ClickAsync();
+        await page.WaitForURLAsync(new Regex("/legal/terms$"));
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Terms of service");
+        await Assertions.Expect(page).ToHaveTitleAsync("Terms of service - Tideline");
+        await page.GetByTestId("plain-page").GetByRole(AriaRole.Link, new() { Name = "privacy policy" }).ClickAsync();
+        await page.WaitForURLAsync(new Regex("/legal/privacy$"));
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Privacy policy");
+
         // Search: one index for the docs, the blog and the changelog, fetched the first time the search opens.
         await Go(page, "");
         await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
@@ -122,7 +136,11 @@ internal static class SaasChecks
     {
         await Go(page, "login");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Sign in");
-        await Assertions.Expect(page.GetByTestId("auth-note")).ToContainTextAsync("nobody is signed in");
+        // No "this is a template" note on the page: the message after a valid submit is the only one, and the README says the rest.
+        await Assertions.Expect(page.GetByTestId("auth-note")).ToHaveCountAsync(0);
+        // Both "Continue with" buttons say that they are demos.
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Continue with GitHub (demo)" })).ToHaveAttributeAsync("href", "https://example.com/auth/github");
+        await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "Continue with Google (demo)" })).ToBeVisibleAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Sign in" }).ClickAsync();
         await Assertions.Expect(page.Locator("input[aria-invalid=true]")).ToHaveCountAsync(2);
         await Assertions.Expect(page.GetByTestId("auth-result")).ToHaveCountAsync(0);
@@ -141,6 +159,17 @@ internal static class SaasChecks
         // Nothing was stored: no cookie but the antiforgery one, and the password is not in the page.
         Assert.DoesNotContain("hunter2hunter2", await page.ContentAsync());
         Assert.All(await page.Context.CookiesAsync(), c => Assert.Matches("Antiforgery|Culture|blux-", c.Name));
+
+        // Forgot password: reached from the sign-in page, checks the email, sends nothing.
+        await Go(page, "login");
+        await page.GetByRole(AriaRole.Link, new() { Name = "Forgot your password?" }).ClickAsync();
+        await page.WaitForURLAsync(new Regex("/forgot-password$"));
+        await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Reset your password");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Send the link" }).ClickAsync();
+        await Assertions.Expect(page.Locator("input[aria-invalid=true]")).ToHaveCountAsync(1);
+        await page.GetByLabel("Email").FillAsync("ana@company.test");
+        await page.GetByRole(AriaRole.Button, new() { Name = "Send the link" }).ClickAsync();
+        await Assertions.Expect(page.GetByTestId("auth-result")).ToContainTextAsync("nothing was sent and nothing was stored");
 
         await Go(page, "signup");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Create your account");
@@ -265,7 +294,7 @@ public class SaasTemplateTests(PlaygroundServer server)
             await SaasChecks.AssertBehaviour(page);
             await SaasChecks.AssertForcedColors(page);
             await SaasChecks.AssertColorMode(page);
-            await SaasChecks.AssertNoHorizontalScroll(page, "", "pricing", "blog", "blog/how-we-keep-ping-latency-under-40-ms", "docs/reference/ping-api", "changelog", "login", "signup");
+            await SaasChecks.AssertNoHorizontalScroll(page, "", "pricing", "blog", "blog/how-we-keep-ping-latency-under-40-ms", "docs/reference/ping-api", "changelog", "login", "signup", "forgot-password", "legal/terms");
             await page.SetViewportSizeAsync(1280, 800);
 
             // Nothing failed and nothing was logged so far: the stylesheet, the fonts, the script, the covers and every link of the pages were found
@@ -277,13 +306,13 @@ public class SaasTemplateTests(PlaygroundServer server)
             lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
 
             // Addresses that are not pages answer 404 with the page of the template, below the path base too. Their 404s are the only failed requests there may be.
-            foreach (var path in new[] { "no-such-page", "blog/no-such-post", "docs/no-such-page", "changelog/9-9", "blog/index" })
+            foreach (var path in new[] { "no-such-page", "blog/no-such-post", "docs/no-such-page", "changelog/9-9", "blog/index", "legal/no-such-page", "docs/getting-started/introduction/extra" })
             {
                 var response = await page.GotoAsync(path);
                 Assert.Equal(404, response!.Status);
                 await Assertions.Expect(page.GetByText("There is nothing at this address.")).ToBeVisibleAsync();
             }
-            lock (failures) Assert.Equal(5, failures.Count);
+            lock (failures) Assert.Equal(7, failures.Count);
 
             lock (runtime) Assert.True(runtime.Count == 0, "A static site started a circuit or loaded WebAssembly:\n" + string.Join("\n", runtime));
 
