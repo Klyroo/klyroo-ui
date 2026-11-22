@@ -178,18 +178,18 @@ public class DashboardTests : BluxTestContext
     // ---- DashboardSidebar
 
     [Fact]
-    public void Sidebar_has_no_buttons_of_its_own_and_keeps_its_panel_trigger_out_of_the_row()
+    public void Sidebar_has_no_collapse_button_and_no_trigger_of_its_own_and_renders_its_content_once()
     {
         var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.ChildContent, "<p class=\"nav\">Nav</p>"));
 
         var aside = cut.Find("aside");
         Assert.Equal("Sidebar", aside.GetAttribute("aria-label"));
-        Assert.Empty(aside.QuerySelectorAll("button"));
-        // The panel still has its trigger, hidden: the dashboard's toggle clicks it.
-        var trigger = cut.Find("bx-modal [data-slot=trigger] button");
-        Assert.True(trigger.HasAttribute("hidden"));
-        Assert.Contains("contents", cut.Find("bx-sidebar > div").ClassList);
-        Assert.Equal(2, cut.FindAll("p.nav").Count);
+        Assert.Empty(aside.QuerySelectorAll("[data-bx-sidebar-toggle]"));
+        // The only button is the close button of the panel; the dashboard's toggle is the one that opens it.
+        Assert.Single(aside.QuerySelectorAll("button"));
+        Assert.Empty(cut.FindAll("[data-bx-sidebar-open]"));
+        Assert.Empty(cut.FindAll("bx-sidebar > div"));
+        Assert.Single(cut.FindAll("p.nav"));
     }
 
     [Fact]
@@ -252,6 +252,27 @@ public class DashboardTests : BluxTestContext
         Assert.True(button.HasAttribute("data-bx-sidebar-open"));
         Assert.Contains("lg:hidden", button.ClassList);
         Assert.False(button.HasAttribute("data-bx-sidebar-for"));
+    }
+
+    [Fact]
+    public void Toggle_names_the_panel_of_its_sidebar_from_the_server_so_it_needs_no_script()
+    {
+        // Without a group or a target there is nothing to name; the browser side wires it.
+        Assert.False(Render<BxDashboardSidebarToggle>().Find("button").HasAttribute("popovertarget"));
+        Assert.Equal("bx-sidebar-nav", Render<BxDashboardSidebarToggle>(p => p.Add(c => c.For, "nav")).Find("button").GetAttribute("popovertarget"));
+
+        var cut = Render<BxDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent((Microsoft.AspNetCore.Components.RenderFragment)(b =>
+        {
+            b.OpenComponent<BxDashboardSidebar>(0);
+            b.AddAttribute(1, nameof(BxDashboardSidebar.As), "div");
+            b.CloseComponent();
+            b.OpenComponent<BxDashboardSidebarToggle>(2);
+            b.CloseComponent();
+        })));
+
+        var panel = cut.Find("bx-sidebar > [data-slot=root]");
+        Assert.Equal("bx-sidebar-app", panel.GetAttribute("id"));
+        Assert.Equal("bx-sidebar-app", cut.Find("button[data-bx-sidebar-open]").GetAttribute("popovertarget"));
     }
 
     // ---- DashboardPanel and DashboardResizeHandle
@@ -340,6 +361,53 @@ public class DashboardTests : BluxTestContext
         Assert.Empty(cut.FindAll("h1"));
         Assert.Equal(["lead", "trail"], cut.Find("[data-slot=left]").Children.Select(c => c.ClassName));
         Assert.Single(cut.FindAll("[data-slot=center] .mid"));
+    }
+
+    [Fact]
+    public void Navbar_renders_a_header_and_an_h1_by_default()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Title, "Inbox"));
+
+        Assert.Equal("header", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("h1", cut.Find("[data-slot=left] > :nth-child(2)").LocalName);
+    }
+
+    [Fact]
+    public void Navbar_can_be_a_div_with_a_lower_heading_so_a_second_navbar_adds_no_banner_or_h1()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, "div").Add(n => n.HeadingLevel, 2)
+            .Add(n => n.Right, "<button>Act</button>"));
+
+        Assert.Empty(cut.FindAll("header"));
+        Assert.Empty(cut.FindAll("h1"));
+        Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("Message", cut.Find("h2").TextContent);
+        Assert.Single(cut.FindAll("[data-slot=right] button"));
+    }
+
+    [Fact]
+    public void Navbar_As_is_case_insensitive_and_rejects_other_elements()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.As, "DIV"));
+        Assert.Empty(cut.FindAll("header"));
+        Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+
+        var error = Assert.ThrowsAny<Exception>(() => Render<BxDashboardNavbar>(p => p.Add(n => n.As, "section")));
+        Assert.Contains("As must be", (error as ArgumentException ?? error.InnerException as ArgumentException ?? error.GetBaseException() as ArgumentException)!.Message);
+    }
+
+    [Fact]
+    public void Navbar_and_PageAside_take_a_missing_As_for_their_default_element()
+    {
+        Assert.Equal("header", Render<BxDashboardNavbar>(p => p.Add(n => n.As, null!)).Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("aside", Render<BxPageAside>(p => p.Add(a => a.As, null!)).Find("[data-slot=body]").ParentElement!.LocalName);
+    }
+
+    [Fact]
+    public void PageAside_As_is_case_insensitive_and_rejects_other_elements()
+    {
+        Assert.Equal("div", Render<BxPageAside>(p => p.Add(a => a.As, "Div")).Find("[data-slot=body]").ParentElement!.LocalName);
+        Assert.ThrowsAny<Exception>(() => Render<BxPageAside>(p => p.Add(a => a.As, "nav")));
     }
 
     [Fact]

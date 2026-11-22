@@ -1,0 +1,62 @@
+@inject NavigationManager Navigation
+
+@* Real components in a sidebar: the content is rendered once, whether the sidebar is the column or the off-canvas panel, so the search keeps its focus (it is
+   focused by id), the radio group keeps its explicit Name and nothing is posted twice. Below the lg breakpoint the Open sidebar button opens the aside as a modal panel.
+   The modal declared in the sidebar stays in it and works as in a page; the one declared outside is opened from the panel, which closes first. A form submitted in the panel,
+   or a navigation to another page, closes it too. *@
+<div class="w-full" data-testid="sidebar-content-demo">
+    <BxDataList TItem="Invoice" Label="Invoices next to a sidebar" Schema="InvoiceData.Schema" Items="InvoiceData.All" UrlKey="sbc">
+        <div class="flex h-[30rem] w-full flex-col overflow-hidden rounded-xl border border-(--blux-border) lg:flex-row">
+            <BxSidebar Id="playground-sidebar-content" As="div" Collapsible="false" Width="288" data-testid="sidebar-content">
+                <ChildContent>
+                    <BxDataListSearch Placeholder="Search invoices" AriaLabel="Search invoices" data-testid="sidebar-content-search" />
+                    <BxRadioGroup TValue="string" Name="sidebar-content-sort" Legend="Order" Value="@("recent")" Items="Orders" />
+                    <BxInput Name="sidebar-content-note" Placeholder="A note" aria-label="A note" data-testid="sidebar-content-note" />
+                    <form method="get" action="@Navigation.Uri.Split('?')[0]" data-enhance class="flex gap-2" data-testid="sidebar-content-form">
+                        <input type="text" name="sbq" aria-label="Go to" class="min-w-0 flex-1 rounded border border-(--blux-border) bg-(--blux-bg) px-2 py-1 text-sm" data-testid="sidebar-content-form-input" />
+                        <button type="submit" class="rounded border border-(--blux-border) px-2 py-1 text-sm" data-testid="sidebar-content-form-submit">Go</button>
+                    </form>
+                    <BxModal Title="Inside the sidebar" Description="Declared in the sidebar: it opens in place and the panel stays open." data-testid="sidebar-inner-modal">
+                        <ChildContent>
+                            <BxButton Label="Open inner modal" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" data-testid="sidebar-inner-open" />
+                        </ChildContent>
+                        <Body>
+                            <BxInput Placeholder="Inner field" aria-label="Inner field" data-testid="sidebar-inner-field" />
+                        </Body>
+                        <Footer>
+                            <BxButton Label="Done" data-bx-close data-testid="sidebar-inner-done" />
+                        </Footer>
+                    </BxModal>
+                    <BxButton Label="Open outer modal" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="@(() => _outer = true)" data-testid="sidebar-outer-open" />
+                    <BxButton Label="Go to the home page" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="@(() => Navigation.NavigateTo("/"))" data-testid="sidebar-navigate" />
+                </ChildContent>
+            </BxSidebar>
+            <div class="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+                <BxDataListResultCount />
+                <BxDataListTable Caption="Invoices">
+                    <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+                    <BxDataListColumn Field="customer" />
+                    <BxDataListColumn Field="status" />
+                </BxDataListTable>
+            </div>
+        </div>
+    </BxDataList>
+    <BxModal @bind-Open="_outer" Title="Outside the sidebar" Description="Declared outside the sidebar: the panel closes when it opens." data-testid="sidebar-outer-modal">
+        <Body>
+            <BxInput Placeholder="Outer field" aria-label="Outer field" data-testid="sidebar-outer-field" />
+        </Body>
+        <Footer>
+            <BxButton Label="Close outer" data-bx-close data-testid="sidebar-outer-done" />
+        </Footer>
+    </BxModal>
+</div>
+
+@code {
+    private bool _outer;
+
+    private static readonly BxRadioItem<string>[] Orders =
+    [
+        new("recent", "Most recent"),
+        new("amount", "Largest first"),
+    ];
+}

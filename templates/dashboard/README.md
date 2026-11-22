@@ -59,7 +59,7 @@ dotnet build src/Dashboard.Shared -t:BluxTailwindWatch
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.
 
-Blux.UI.Tools has no stylesheet of its own: the Tailwind build of `Dashboard.Shared` compiles its classes with yours. `BluxToolsOwnTailwind` in the other projects only tells the package that `Dashboard.Shared` does it.
+Blux.UI.Tools has no stylesheet of its own: the Tailwind build of `Dashboard.Shared` compiles its classes with yours.
 
 ## Native app
 

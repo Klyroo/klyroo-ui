@@ -805,7 +805,7 @@
 - `<BxSidebar>`
   - Parameters: `AriaLabel`, `As`, `Class`, `Collapsed` (@bind), `Collapsible`, `Id`, `MaxWidth`, `MinWidth`, `MobileTitle`, `MobileTrigger`, `Resizable`, `ScriptNonce`, `Ui`, `Width`
   - Slots: `Footer`, `Header`, `ChildContent`
-  - `Ui` (`SidebarUi`): `Root`, `Host`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileBody`
+  - `Ui` (`SidebarUi`): `Root`, `Host`, `Panel`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
 
 ### Error
 
@@ -1072,7 +1072,7 @@
 - `<BxDashboardSidebar>`
   - Parameters: `AriaLabel`, `As`, `Class`, `Collapsed` (@bind), `Collapsible`, `Id`, `MaxWidth`, `MinWidth`, `MobileTitle`, `Resizable`, `Ui`, `Width`
   - Slots: `Footer`, `Header`, `ChildContent`
-  - `Ui` (`SidebarUi`): `Root`, `Host`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileBody`
+  - `Ui` (`SidebarUi`): `Root`, `Host`, `Panel`, `Header`, `HeaderContent`, `Toggle`, `ToggleIcon`, `Content`, `Footer`, `Handle`, `Mobile`, `MobileHeader`, `MobileTitle`, `MobileClose`
 
 ### DashboardSidebarCollapse
 
@@ -1110,7 +1110,7 @@
 `/components/dashboard-navbar`. The top bar of a panel: sidebar toggle, title, and left, center and right areas.
 
 - `<BxDashboardNavbar>`
-  - Parameters: `Class`, `Title`, `Toggle`, `Ui`
+  - Parameters: `As`, `Class`, `HeadingLevel`, `Title`, `Toggle`, `Ui`
   - Slots: `Leading`, `Left`, `Right`, `Trailing`, `ChildContent`
   - `Ui` (`DashboardNavbarUi`): `Root`, `Left`, `Title`, `Center`, `Right`
 

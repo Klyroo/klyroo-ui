@@ -7,6 +7,8 @@ public sealed record SidebarUi : ISlotOverrides
 {
     public string? Root { get; init; }
     public string? Host { get; init; }
+    /// <summary>The wrapper of everything inside the aside but the resize handle; the panel takes its dialog role while it is open.</summary>
+    public string? Panel { get; init; }
     public string? Header { get; init; }
     public string? HeaderContent { get; init; }
     public string? Toggle { get; init; }
@@ -14,13 +16,18 @@ public sealed record SidebarUi : ISlotOverrides
     public string? Content { get; init; }
     public string? Footer { get; init; }
     public string? Handle { get; init; }
+    /// <summary>The wrapper of the button that opens the panel (below lg).</summary>
     public string? Mobile { get; init; }
-    public string? MobileBody { get; init; }
+    /// <summary>The title row of the panel, below lg.</summary>
+    public string? MobileHeader { get; init; }
+    public string? MobileTitle { get; init; }
+    public string? MobileClose { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
         "host" => Host,
+        "panel" => Panel,
         "header" => Header,
         "headerContent" => HeaderContent,
         "toggle" => Toggle,
@@ -29,7 +36,9 @@ public sealed record SidebarUi : ISlotOverrides
         "footer" => Footer,
         "handle" => Handle,
         "mobile" => Mobile,
-        "mobileBody" => MobileBody,
+        "mobileHeader" => MobileHeader,
+        "mobileTitle" => MobileTitle,
+        "mobileClose" => MobileClose,
         _ => null,
     };
 }

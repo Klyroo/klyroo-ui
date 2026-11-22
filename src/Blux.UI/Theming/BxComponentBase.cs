@@ -38,17 +38,7 @@ public abstract class BxComponentBase : ComponentBase
     /// Monday first and a 24 hour clock; "fr-CA" keeps its own formats), otherwise the culture of the locale (a locale forced
     /// to another language than the culture of the user). An explicit <c>Culture</c> parameter of a component wins over it.
     /// </summary>
-    protected System.Globalization.CultureInfo FormatCulture
-    {
-        get
-        {
-            var locale = CurrentLocale.Culture;
-            var current = System.Globalization.CultureInfo.CurrentCulture;
-            return string.Equals(current.TwoLetterISOLanguageName, locale.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase) && current.Name.Length > 0
-                ? current
-                : locale;
-        }
-    }
+    protected System.Globalization.CultureInfo FormatCulture => BxDates.FormatCulture(CurrentLocale);
 
     /// <summary>The texts of <see cref="CurrentLocale"/>.</summary>
     protected BxMessages Messages => CurrentLocale.Messages;
