@@ -21,7 +21,7 @@ internal static partial class ToolsThemes
                 "sortButton", "sortIcon", "sortIconActive", "tbody", "td", "tdStart", "tdCenter", "tdEnd",
                 "empty", "skeleton", "pagination", "pageSize", "pageSizeLabel", "pageSizeSelect", "pageSizeForm", "error",
                 "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide",
-                "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty")
+                "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -108,6 +108,9 @@ internal static partial class ToolsThemes
             .Slot("filterPanelContent", "px-3 pb-3")
             .Slot("filterPanelEditor", "max-h-none overflow-visible p-0")
             .Slot("filterPanelFooter", "flex flex-wrap items-center justify-end gap-2 border-t border-(--blux-border) px-3 py-2")
+            .Slot("filterPanelResults", "px-3 pt-2 text-sm tabular-nums text-(--blux-text-muted)")
+            .Slot("filterNativeLabel", "inline-flex min-h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm text-(--blux-text)")
+            .Slot("filterNativeInput", "size-4 shrink-0 accent-(--blux-primary-text)")
             .Slot("filterPanelEmpty", "px-3 py-3 text-sm text-(--blux-text-muted)")
             .Variant("density", "compact", "th", "px-3 py-2")
             .Variant("density", "default", "th", "px-4 py-3")

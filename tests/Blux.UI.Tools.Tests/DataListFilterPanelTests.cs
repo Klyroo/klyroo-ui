@@ -38,6 +38,9 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
     private static IElement[] OptionRows(IRenderedComponent<DataListPanelHarness> cut, string key) =>
         [.. Section(cut, key).QuerySelectorAll("[data-slot=filter-options] li")];
 
+    // Apply, Reset and Clear stay focusable when there is nothing to do: they say so with aria-disabled and do nothing.
+    private static bool Idle(IElement button) => button.GetAttribute("aria-disabled") == "true" && !button.HasAttribute("disabled");
+
     private static Task Type(IElement input, string text) =>
         input.TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = text, Sequence = int.Parse(input.GetAttribute("data-bx-seq") ?? "0") + 1 });
 
@@ -181,10 +184,10 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
     public void Clear_filters_is_disabled_without_a_filter_and_takes_them_all_off_with_one_history_entry()
     {
         var cut = RenderList();
-        Assert.True(cut.Find("button[data-slot=filter-panel-clear]").HasAttribute("disabled"));
+        Assert.True(Idle(cut.Find("button[data-slot=filter-panel-clear]")));
 
         Navigation.NavigateTo("/t?f.status=open&f.title=ann&f.active=true&s=-id&q=x");
-        cut.WaitForAssertion(() => Assert.False(cut.Find("button[data-slot=filter-panel-clear]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-clear]"))));
         var before = Navigation.History.Count;
 
         cut.Find("button[data-slot=filter-panel-clear]").Click();
@@ -193,7 +196,7 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         Assert.Equal(before + 1, Navigation.History.Count);
         Assert.False(Navigation.History.First().Options.ReplaceHistoryEntry);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("[data-slot=filter-panel-count]")));
-        Assert.True(cut.Find("button[data-slot=filter-panel-clear]").HasAttribute("disabled"));
+        Assert.True(Idle(cut.Find("button[data-slot=filter-panel-clear]")));
     }
 
     // ---- the Submit apply mode
@@ -204,8 +207,8 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         var cut = RenderList("/t?f.status=open", p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
         cut.WaitForAssertion(() => Assert.Equal(4, OptionRows(cut, "status").Length));
         var before = Navigation.History.Count;
-        Assert.True(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled"));
-        Assert.True(cut.Find("button[data-slot=filter-panel-reset]").HasAttribute("disabled"));
+        Assert.True(Idle(cut.Find("button[data-slot=filter-panel-apply]")));
+        Assert.True(Idle(cut.Find("button[data-slot=filter-panel-reset]")));
 
         OptionRows(cut, "status")[1].QuerySelector("input[type=checkbox]")!.Change(true);
         await Type(Section(cut, "title").QuerySelector("input[aria-label='Value for Title']")!, "ann");
@@ -214,7 +217,7 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         await Task.Delay(400, Xunit.TestContext.Current.CancellationToken);
         Assert.Equal("?f.status=open", Query(Navigation));
         Assert.Equal(before, Navigation.History.Count);
-        cut.WaitForAssertion(() => Assert.False(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
         Assert.Empty(cut.FindAll("[data-slot=filter-editor] [data-slot=filter-actions]"));
 
         cut.Find("button[data-slot=filter-panel-apply]").Click();
@@ -222,7 +225,7 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         await WaitForQuery(Navigation, "?f.status=open,paused&f.title=ann&f.active=false");
         Assert.Equal(before + 1, Navigation.History.Count);
         Assert.False(Navigation.History.First().Options.ReplaceHistoryEntry);
-        cut.WaitForAssertion(() => Assert.True(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.True(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
         Assert.Equal("2", Text(Section(cut, "status").QuerySelector("[data-slot=filter-panel-section-count]")!));
     }
 
@@ -233,11 +236,11 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         cut.WaitForAssertion(() => Assert.Equal(4, OptionRows(cut, "status").Length));
         OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.Change(true);
         await Type(Section(cut, "title").QuerySelector("input[aria-label='Value for Title']")!, "zed");
-        cut.WaitForAssertion(() => Assert.False(cut.Find("button[data-slot=filter-panel-reset]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-reset]"))));
 
         cut.Find("button[data-slot=filter-panel-reset]").Click();
 
-        cut.WaitForAssertion(() => Assert.True(cut.Find("button[data-slot=filter-panel-reset]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.True(Idle(cut.Find("button[data-slot=filter-panel-reset]"))));
         Assert.False(OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.HasAttribute("checked"));
         Assert.Equal("?f.title=bob", Query(Navigation));
 
@@ -252,26 +255,91 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         cut.WaitForAssertion(() => Assert.Equal(4, OptionRows(cut, "status").Length));
 
         OptionRows(cut, "status")[1].QuerySelector("input[type=checkbox]")!.Change(true);
-        cut.WaitForAssertion(() => Assert.False(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
         OptionRows(cut, "status")[1].QuerySelector("input[type=checkbox]")!.Change(false);
 
-        cut.WaitForAssertion(() => Assert.True(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
+        cut.WaitForAssertion(() => Assert.True(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
         await Task.CompletedTask;
     }
 
     [Fact]
-    public void In_submit_mode_clear_filters_applies_at_once_and_drops_what_was_staged()
+    public async Task In_submit_mode_clear_filters_stages_the_removal_until_Apply_and_Reset_restores_it()
     {
-        var cut = RenderList("/t?f.active=true", p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
+        var cut = RenderList("/t?f.active=true&f.status=open", p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
         cut.WaitForAssertion(() => Assert.Equal(4, OptionRows(cut, "status").Length));
-        OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.Change(true);
-        cut.WaitForAssertion(() => Assert.False(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
+        Assert.True(OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.HasAttribute("checked"));
+        var before = Navigation.History.Count;
 
         cut.Find("button[data-slot=filter-panel-clear]").Click();
 
-        cut.WaitForAssertion(() => Assert.Equal("", Query(Navigation)));
-        cut.WaitForAssertion(() => Assert.True(cut.Find("button[data-slot=filter-panel-apply]").HasAttribute("disabled")));
-        Assert.False(OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.HasAttribute("checked"));
+        // Nothing is applied, the editors show the removal and Apply is ready.
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
+        cut.WaitForAssertion(() => Assert.False(OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.HasAttribute("checked")));
+        Assert.Equal("?f.active=true&f.status=open", Query(Navigation));
+        Assert.Equal(before, Navigation.History.Count);
+
+        cut.Find("button[data-slot=filter-panel-reset]").Click();
+        cut.WaitForAssertion(() => Assert.True(OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.HasAttribute("checked")));
+        Assert.True(Idle(cut.Find("button[data-slot=filter-panel-apply]")));
+
+        cut.Find("button[data-slot=filter-panel-clear]").Click();
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
+        cut.Find("button[data-slot=filter-panel-apply]").Click();
+
+        await WaitForQuery(Navigation, "");
+        Assert.Equal(before + 1, Navigation.History.Count);
+    }
+
+    [Fact]
+    public void Apply_Reset_and_Clear_stay_buttons_that_can_take_the_focus_when_there_is_nothing_to_do()
+    {
+        var cut = RenderList(null, p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
+
+        foreach (var slot in new[] { "apply", "reset", "clear" })
+        {
+            var button = cut.Find($"button[data-slot=filter-panel-{slot}]");
+            Assert.False(button.HasAttribute("disabled"), slot);
+            Assert.Equal("true", button.GetAttribute("aria-disabled"));
+        }
+    }
+
+    [Fact]
+    public void Pressing_Apply_with_nothing_staged_does_nothing()
+    {
+        var cut = RenderList("/t?f.status=open", p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
+        var before = Navigation.History.Count;
+
+        cut.Find("button[data-slot=filter-panel-apply]").Click();
+        cut.Find("button[data-slot=filter-panel-reset]").Click();
+
+        Assert.Equal(before, Navigation.History.Count);
+        Assert.Equal("?f.status=open", Query(Navigation));
+    }
+
+    [Fact]
+    public async Task A_change_that_the_list_makes_to_a_staged_filter_clears_its_pending_flag()
+    {
+        var cut = RenderList("/t", p => p.Add(c => c.ApplyMode, DataListApplyMode.Submit));
+        cut.WaitForAssertion(() => Assert.Equal(4, OptionRows(cut, "status").Length));
+        OptionRows(cut, "status")[0].QuerySelector("input[type=checkbox]")!.Change(true);
+        cut.WaitForAssertion(() => Assert.False(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
+
+        // The address now has exactly what was staged (a tag, Back, a typed address).
+        Navigation.NavigateTo("/t?f.status=open");
+
+        cut.WaitForAssertion(() => Assert.True(Idle(cut.Find("button[data-slot=filter-panel-apply]"))));
+        await Task.CompletedTask;
+    }
+
+    [Fact]
+    public void The_result_count_is_a_live_region_in_the_panel()
+    {
+        var cut = RenderList("/t?f.active=true");
+
+        var results = cut.Find("[data-slot=filter-panel-results]");
+        cut.WaitForAssertion(() => Assert.Equal("Results: 13", Text(cut.Find("[data-slot=filter-panel-results]"))));
+        Assert.Equal("status", results.GetAttribute("role"));
+        Assert.Equal("polite", results.GetAttribute("aria-live"));
     }
 
     [Fact]
@@ -344,9 +412,9 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         Assert.Equal("f.title.isNot", input.GetAttribute("name"));
         Assert.Equal("ann", input.GetAttribute("value"));
         var hidden = Hidden(form).ToDictionary(h => h.Name, h => h.Value);
-        // The rules the form does not carry (options and yes / no are links) stay as hidden fields; the text rule is the field itself, and the page goes back to the first.
-        Assert.Equal("open", hidden["f.status"]);
-        Assert.Equal("true", hidden["f.active"]);
+        // Every filter has its own fields in the form, so no rule of the schema is a hidden field; the page goes back to the first.
+        Assert.DoesNotContain("f.status", hidden.Keys);
+        Assert.DoesNotContain("f.active", hidden.Keys);
         Assert.Equal("-id", hidden["s"]);
         Assert.Equal("mail", hidden["utm_source"]);
         Assert.DoesNotContain("f.title.isNot", hidden.Keys);
@@ -358,21 +426,75 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
     }
 
     [Fact]
-    public void Statically_rendered_the_options_the_boolean_and_the_operators_are_links_inside_the_sections()
+    public void Statically_rendered_options_are_checkboxes_and_yes_no_any_are_radios_of_the_form_and_only_the_operators_are_links()
     {
         using var context = new StaticContext();
-        context.Navigation.NavigateTo("/t?f.title=ann&f.status=open&f.active=true");
+        context.Navigation.NavigateTo("/t?f.title=ann&f.status=open,paused&f.active=true");
 
         var cut = context.Render<DataListPanelHarness>();
 
-        cut.WaitForAssertion(() => Assert.Equal(4, cut.FindAll("bx-collapsible[data-filter=status] a[data-slot=filter-option]").Count));
-        var options = cut.FindAll("bx-collapsible[data-filter=status] a[data-slot=filter-option]");
-        Assert.Equal("open,paused", QueryOf(options[1].GetAttribute("href")!)["f.status"]);
-        var yesNo = cut.FindAll("bx-collapsible[data-filter=active] [data-slot=filter-boolean] a");
-        Assert.Equal(["Yes", "No", "Any"], yesNo.Select(Text));
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        cut.WaitForAssertion(() => Assert.Equal(5, form.QuerySelectorAll("[data-filter=status] input[type=checkbox]").Length));
+        var boxes = form.QuerySelectorAll("[data-filter=status] input[data-slot=filter-option-input]");
+        Assert.All(boxes, b => Assert.Equal("f.status", b.GetAttribute("name")));
+        Assert.Equal(["open", "paused"], boxes.Where(b => b.HasAttribute("checked")).Select(b => b.GetAttribute("value")));
+        Assert.Equal("~", form.QuerySelector("[data-filter=status] input[data-slot=filter-include-empty]")!.GetAttribute("value"));
+        Assert.Empty(form.QuerySelectorAll("[data-filter=status] a[data-slot=filter-option]"));
+        var radios = form.QuerySelectorAll("[data-filter=active] input[type=radio]");
+        Assert.Equal(["true", "false", ""], radios.Select(r => r.GetAttribute("value")));
+        Assert.All(radios, r => Assert.Equal("f.active", r.GetAttribute("name")));
+        Assert.Equal("true", radios.Single(r => r.HasAttribute("checked")).GetAttribute("value"));
         var operators = cut.FindAll("bx-collapsible[data-filter=title] [data-slot=filter-operators] a");
         Assert.Equal(["contains", "is", "is not"], operators.Select(Text));
         Assert.Equal("ann", QueryOf(operators[2].GetAttribute("href")!)["f.title.isNot"]);
+    }
+
+    [Fact]
+    public void Statically_rendered_an_option_with_a_comma_is_escaped_the_way_the_address_writes_it_and_is_not_a_default_marker_without_a_default()
+    {
+        var schema = DataListSchema.For<Ticket>(s => s
+            .RowKey(t => t.Id)
+            .Field(t => t.Id, f => f.Sortable())
+            .Field(t => t.Status, f => f.Filter(DataListFilter.Option(new DataListFilterOption("a,b", "A, B"), new DataListFilterOption("c", "C")).WithLabel("Status")))
+            .DefaultSort(t => t.Id));
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t");
+
+        var cut = context.Render<DataListPanelHarness>(p => p.Add(c => c.Schema, schema));
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        Assert.Equal("a%2Cb", form.QuerySelector("input[data-slot=filter-option-input]")!.GetAttribute("value"));
+        Assert.Empty(form.QuerySelectorAll("input[type=hidden][name='f.status']"));
+    }
+
+    [Fact]
+    public void A_filter_with_a_default_rule_sends_a_blank_marker_so_that_unchecking_everything_removes_the_default()
+    {
+        var schema = DataListSchema.For<Ticket>(s => s
+            .RowKey(t => t.Id)
+            .Field(t => t.Id, f => f.Sortable())
+            .Field(t => t.Status, f => f.Filter(DataListFilter.Option(new DataListFilterOption("open", "Open"), new DataListFilterOption("closed", "Closed")).WithLabel("Status").WithDefault(new FilterValue.List(["open"]))))
+            .Field(t => t.Active, f => f.Filter(DataListFilter.Boolean().WithLabel("Active").WithDefault(new FilterValue.Boolean(true))))
+            .DefaultSort(t => t.Id));
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t");
+
+        var cut = context.Render<DataListPanelHarness>(p => p.Add(c => c.Schema, schema));
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        Assert.Single(form.QuerySelectorAll("input[type=hidden][name='f.status'][value='']"));
+        Assert.False(form.QuerySelector("input[type=radio][value='']")!.HasAttribute("data-bx-prune"));
+    }
+
+    [Fact]
+    public void Statically_rendered_the_blank_any_radio_is_marked_so_that_it_leaves_the_address()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t");
+
+        var cut = context.Render<DataListPanelHarness>();
+
+        Assert.True(cut.Find("form[data-slot=filter-panel-form] [data-filter=active] input[type=radio][value='']").HasAttribute("data-bx-prune"));
     }
 
     [Fact]
@@ -449,9 +571,11 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
 
     // What the browser sends when the form is submitted: every named field of the form, the hidden ones and the typed ones.
     private static string Submitted(IElement form) =>
-        string.Join('&', form.QuerySelectorAll("input[name]").Select(i => i.GetAttribute("name") + "=" + Uri.EscapeDataString(i.GetAttribute("value") ?? "")));
+        string.Join('&', form.QuerySelectorAll("input[name]")
+            .Where(i => i.GetAttribute("type") is not ("checkbox" or "radio") || i.HasAttribute("checked"))
+            .Select(i => i.GetAttribute("name") + "=" + Uri.EscapeDataString(i.GetAttribute("value") ?? "")));
 
-    private static IReadOnlyList<FilterRule> Rules(DataListSchema<Order> schema, string query, string? zone)
+    private static IReadOnlyList<FilterRule> Rules<T>(DataListSchema<T> schema, string query, string? zone)
     {
         var parsed = System.Web.HttpUtility.ParseQueryString(query);
         return DataListStateQuery.FromQuery(parsed.AllKeys.Select(k => KeyValuePair.Create(k!, (string?)parsed[k])), schema, null, zone).Filters;
@@ -463,7 +587,101 @@ public partial class DataListFilterPanelTests : BluxToolsTestContext
         { null, "f.amount.between=100..200&f.day.between=2026-11-02..2026-11-06" },
         { "Europe/Paris", "f.amount.lt=300&f.day.before=2026-11-12&f.created.after=2026-11-03T14%3A30" },
         { "Europe/Paris", "f.created.between=2026-11-02T09%3A00..2026-11-04T17%3A30&f.day.after=2026-11-01" },
+        { null, "f.amount=120%2C~&f.day=2026-11-05%2C~" },
+        { null, "f.amount.between=100..200%2C~&f.day.between=2026-11-02..2026-11-06%2C~" },
     };
+
+    // Number and date filters that also allow "is empty" and "is not empty".
+    private static readonly DataListSchema<Order> EmptyAwareSchema = DataListSchema.For<Order>(s => s
+        .RowKey(o => o.Id)
+        .Field(o => o.Id, f => f.Sortable())
+        .Field(o => o.Amount, f => f.Filter(DataListFilter.Number(0, 10, 500).WithLabel("Amount").WithOperators(FilterOperator.Is, FilterOperator.Between, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty)))
+        .Field(o => o.Day, f => f.Filter(DataListFilter.Date().WithLabel("Day").WithOperators(FilterOperator.Is, FilterOperator.Between, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty)))
+        .DefaultSort(o => o.Id));
+
+    [Theory]
+    [InlineData("f.amount.isEmpty=~")]
+    [InlineData("f.day.isNotEmpty=~")]
+    [InlineData("f.amount.isNotEmpty=~&f.day.isEmpty=~")]
+    public void Statically_rendered_a_rule_without_a_value_goes_back_as_it_came_when_the_form_is_applied(string query)
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?" + query);
+
+        var cut = context.Render<DataListOrderPanelHarness>(p => p.Add(c => c.Schema, EmptyAwareSchema));
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        var rules = Rules(EmptyAwareSchema, query, null);
+        Assert.NotEmpty(rules);
+        Assert.Equal(rules.OrderBy(r => r.Key, StringComparer.Ordinal), Rules(EmptyAwareSchema, Submitted(form), null).OrderBy(r => r.Key, StringComparer.Ordinal));
+        Assert.NotEmpty(form.QuerySelectorAll("[data-slot=filter-valueless]"));
+    }
+
+    [Fact]
+    public void Statically_rendered_a_rule_without_a_value_on_a_filter_with_a_default_is_not_taken_for_a_removed_default()
+    {
+        var schema = DataListSchema.For<Order>(s => s
+            .RowKey(o => o.Id)
+            .Field(o => o.Id, f => f.Sortable())
+            .Field(o => o.Amount, f => f.Filter(DataListFilter.Number(0, 10, 500).WithLabel("Amount").WithOperators(FilterOperator.Is, FilterOperator.IsEmpty).WithDefault(new FilterValue.Number(100))))
+            .DefaultSort(o => o.Id));
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.amount.isEmpty=~");
+
+        var cut = context.Render<DataListOrderPanelHarness>(p => p.Add(c => c.Schema, schema));
+
+        var rules = Rules(schema, "f.amount.isEmpty=~", null);
+        Assert.Equal(rules, Rules(schema, Submitted(cut.Find("form[data-slot=filter-panel-form]")), null));
+    }
+
+    private static readonly DataListSchema<Ticket> TicketSchema = DataListSchema.For<Ticket>(s => s
+        .RowKey(t => t.Id)
+        .Field(t => t.Id, f => f.Sortable())
+        .Field(t => t.Title, f => f.Filter(DataListFilter.Text().WithLabel("Title").WithOperators(FilterOperator.Contains, FilterOperator.Is, FilterOperator.IsEmpty, FilterOperator.IsNotEmpty)))
+        .Field(t => t.Status, f => f.Filter(DataListFilter.Option(new DataListFilterOption("open", "Open"), new DataListFilterOption("paused", "Paused"), new DataListFilterOption("a,b", "A and B")).WithLabel("Status")))
+        .Field(t => t.Active, f => f.Filter(DataListFilter.Boolean().WithLabel("Active")))
+        .Field(t => t.Owner, f => f.Filter(DataListFilter.Option().WithLabel("Owner")))
+        .DefaultSort(t => t.Id));
+
+    [Theory]
+    [InlineData("f.title.isEmpty=~")]
+    [InlineData("f.title=ann%2C~")]
+    [InlineData("f.title.is=ann%2C~&f.active=true")]
+    [InlineData("f.status=open,paused")]
+    [InlineData("f.status=open,~&f.owner.isNot=ann,bob")]
+    [InlineData("f.status=paused,a%252Cb")]
+    [InlineData("f.status=~")]
+    [InlineData("f.active=false&f.status.is=open")]
+    public void Statically_rendered_text_and_option_rules_round_trip_through_the_form_with_their_empty_rows(string query)
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?" + query);
+
+        var cut = context.Render<DataListPanelHarness>(p => p.Add(c => c.Schema, TicketSchema));
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        var rules = Rules(TicketSchema, query, null);
+        Assert.NotEmpty(rules);
+        Assert.Equal(rules.OrderBy(r => r.Key, StringComparer.Ordinal), Rules(TicketSchema, Submitted(form), null).OrderBy(r => r.Key, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void A_form_with_nothing_filled_in_applies_no_filter_and_a_removed_default_stays_removed()
+    {
+        var schema = DataListSchema.For<Ticket>(s => s
+            .RowKey(t => t.Id)
+            .Field(t => t.Id, f => f.Sortable())
+            .Field(t => t.Status, f => f.Filter(DataListFilter.Option(new DataListFilterOption("open", "Open"), new DataListFilterOption("closed", "Closed")).WithLabel("Status").WithDefault(new FilterValue.List(["open"]))))
+            .DefaultSort(t => t.Id));
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.status=");
+
+        var cut = context.Render<DataListPanelHarness>(p => p.Add(c => c.Schema, schema));
+
+        var form = cut.Find("form[data-slot=filter-panel-form]");
+        Assert.Empty(form.QuerySelectorAll("input[type=checkbox][checked]"));
+        Assert.DoesNotContain(Rules(schema, Submitted(form), null), r => r.Key == "status");
+    }
 
     [Theory]
     [MemberData(nameof(RoundTrips))]

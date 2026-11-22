@@ -55,6 +55,7 @@ public static partial class BxToolsLocales
             FilterMore = "+{0}",
             FilterPanelTitle = "Фильтры",
             FilterPanelActive = "активно: {0}",
+            FilterPanelResults = "Результатов: {0}",
             FilterPanelNone = "Нет доступных фильтров",
             FilterReset = "Сбросить",
             OperatorContains = "содержит",

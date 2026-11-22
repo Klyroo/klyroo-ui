@@ -55,6 +55,7 @@ public static partial class BxToolsLocales
             FilterMore = "+{0}",
             FilterPanelTitle = "フィルター",
             FilterPanelActive = "{0} 件が有効",
+            FilterPanelResults = "結果: {0} 件",
             FilterPanelNone = "利用できるフィルターはありません",
             FilterReset = "リセット",
             OperatorContains = "を含む",

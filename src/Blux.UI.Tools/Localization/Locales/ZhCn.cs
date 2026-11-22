@@ -55,6 +55,7 @@ public static partial class BxToolsLocales
             FilterMore = "+{0}",
             FilterPanelTitle = "筛选",
             FilterPanelActive = "{0} 个已启用",
+            FilterPanelResults = "结果：{0}",
             FilterPanelNone = "没有可用的筛选器",
             FilterReset = "重置",
             OperatorContains = "包含",

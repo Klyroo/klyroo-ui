@@ -10,6 +10,12 @@ internal sealed class FilterDraftScope
 {
     private readonly List<KeyValuePair<string, FilterRule?>> _pending = [];
 
+    /// <summary>The editors hand their changes to <see cref="Stage"/> instead of applying them (the Submit apply mode).</summary>
+    public bool Deferred { get; set; }
+
+    /// <summary>The editors are in a form of the panel (static rendering): they leave out their own form and fill it with a field per filter.</summary>
+    public bool Embedded { get; set; }
+
     /// <summary>Raised when something was staged or dropped.</summary>
     public event Action? Changed;
 
@@ -22,6 +28,14 @@ internal sealed class FilterDraftScope
         if (index >= 0) _pending[index] = new(key, rule);
         else _pending.Add(new(key, rule));
         Changed?.Invoke();
+    }
+
+    /// <summary>The rule staged for a filter (<see langword="null"/> when the staged change takes the filter off), if one is staged.</summary>
+    public bool TryGetStaged(string key, out FilterRule? rule)
+    {
+        var index = _pending.FindIndex(p => p.Key == key);
+        rule = index >= 0 ? _pending[index].Value : null;
+        return index >= 0;
     }
 
     /// <summary>Drops what was staged for a filter: the editor shows the list again, or the staged rule is what the list already has.</summary>

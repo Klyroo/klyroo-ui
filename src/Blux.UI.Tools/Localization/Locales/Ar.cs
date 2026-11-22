@@ -55,6 +55,7 @@ public static partial class BxToolsLocales
             FilterMore = "+{0}",
             FilterPanelTitle = "عوامل التصفية",
             FilterPanelActive = "{0} نشط",
+            FilterPanelResults = "النتائج: {0}",
             FilterPanelNone = "لا توجد عوامل تصفية متاحة",
             FilterReset = "إعادة تعيين",
             OperatorContains = "يحتوي على",
