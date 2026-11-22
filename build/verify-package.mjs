@@ -171,12 +171,18 @@ try {
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
     writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Blux.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><BluxToolsOwnTailwind>true</BluxToolsOwnTailwind></PropertyGroup>\n</Project>`));
   }
-  // Two more projects that only reach Blux.UI.Tools through Site.Client: a host with no Tailwind (it must not be told about Tools) and one that compiles Tailwind with Node (it must).
-  for (const [name, node] of [["Site.Plain", false], ["Site.Node", true]]) {
+  // More projects that only reach Blux.UI.Tools through Site.Client: a host with no Tailwind (it must not be told about Tools), one that compiles Tailwind with Node (it must),
+  // and one whose package.json only has a Tailwind plugin of Prettier (it must not: the dependency is not tailwindcss itself).
+  const extras = [
+    ["Site.Plain", null],
+    ["Site.Node", { description: "it's a host", devDependencies: { tailwindcss: "4.0.0" } }],
+    ["Site.Prettier", { devDependencies: { "prettier-plugin-tailwindcss": "0.6.0" } }],
+  ];
+  for (const [name, packageJson] of extras) {
     const dir = join(app, "Site", name);
     mkdirSync(dir);
-    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${node ? "<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
-    if (node) writeFileSync(join(dir, "package.json"), JSON.stringify({ devDependencies: { tailwindcss: "4.0.0" } }));
+    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${name === "Site.Node" ? "<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
+    if (packageJson) writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson));
     const added = run("dotnet", ["sln", join(app, "Site", "Site.sln"), "add", join(dir, `${name}.csproj`)], app, consumerEnv);
     check(added.code === 0, `${name} added to the consumer solution`);
   }
@@ -230,6 +236,7 @@ try {
     check(r.code === 0 && /warning BLUXTOOLS001[^\n]*BluxToolsOwnTailwind/.test(r.out), "tools: referencing Blux.UI.Tools without Tailwind and without BluxToolsOwnTailwind warns with BLUXTOOLS001");
     check(/Site\.Client uses Blux\.UI\.Tools/.test(r.out) && /Site uses Blux\.UI\.Tools/.test(r.out), "tools: the projects that reference Blux.UI.Tools are warned");
     check(!/Site\.Plain uses Blux\.UI\.Tools/.test(r.out), "tools: a project that only reaches Blux.UI.Tools through another one, with no Tailwind, is not warned");
+    check(!/Site\.Prettier uses Blux\.UI\.Tools/.test(r.out), "tools: a package.json with only prettier-plugin-tailwindcss is not Tailwind");
     check(/Site\.Node uses Blux\.UI\.Tools/.test(r.out), "tools: a project that compiles Tailwind with Node (package.json) is warned even without a reference of its own");
     build("own tailwind declared");
   }

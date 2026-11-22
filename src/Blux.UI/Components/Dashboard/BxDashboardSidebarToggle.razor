@@ -2,9 +2,9 @@
 @inherits BxComponentBase
 
 @*
-    Opens the off-canvas sidebar panel; visible below the lg breakpoint, where the sidebar is not a column. The panel
-    is a native modal dialog handled in the browser (js/layout.js), which keeps aria-expanded and aria-controls up to
-    date, so it works in static rendering.
+    Opens the off-canvas sidebar panel; visible below the lg breakpoint, where the sidebar is not a column. The panel is the
+    aside of the sidebar, a popover that the browser makes modal while it is open (js/layout.js), which also points this
+    button at it and keeps aria-expanded and aria-controls up to date, so it works in static rendering.
 *@
 <BxButton Square Variant="Variant" Color="Color" Size="Size" Class="@_slots["root"]"
           LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"

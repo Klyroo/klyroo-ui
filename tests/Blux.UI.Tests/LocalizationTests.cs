@@ -600,6 +600,22 @@ public partial class LocalizationTests : BluxTestContext
     }
 
     [Fact]
+    public void BxDates_follows_the_option_locale_like_the_components_do_and_the_parameterless_one_only_the_built_in_match()
+    {
+        using var _ = new CultureScope("en-US");
+        using var ctx = new Ctx(o => o.Locale = BxLocales.Fr);
+        var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
+
+        var post = ctx.Render<BxBlogPost>(p => p.Add(c => c.Date, date));
+
+        Assert.Equal("4 mars 2026", post.Find("time").TextContent);
+        Assert.Equal("4 mars 2026", BxDates.Format(date, BxLocales.Fr));
+        Assert.Equal("fr", BxDates.FormatCulture(ctx.Services.GetRequiredService<BluxOptions>()).TwoLetterISOLanguageName);
+        // No services: the English culture of the request.
+        Assert.Equal("March 4, 2026", BxDates.Format(date));
+    }
+
+    [Fact]
     public void BxDates_iso_is_the_same_in_every_culture()
     {
         var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);

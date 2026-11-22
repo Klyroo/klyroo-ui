@@ -14,8 +14,12 @@ public sealed record SidebarUi : ISlotOverrides
     public string? Content { get; init; }
     public string? Footer { get; init; }
     public string? Handle { get; init; }
+    /// <summary>The wrapper of the button that opens the panel (below lg).</summary>
     public string? Mobile { get; init; }
-    public string? MobileBody { get; init; }
+    /// <summary>The title row of the panel, below lg.</summary>
+    public string? MobileHeader { get; init; }
+    public string? MobileTitle { get; init; }
+    public string? MobileClose { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -29,7 +33,9 @@ public sealed record SidebarUi : ISlotOverrides
         "footer" => Footer,
         "handle" => Handle,
         "mobile" => Mobile,
-        "mobileBody" => MobileBody,
+        "mobileHeader" => MobileHeader,
+        "mobileTitle" => MobileTitle,
+        "mobileClose" => MobileClose,
         _ => null,
     };
 }
