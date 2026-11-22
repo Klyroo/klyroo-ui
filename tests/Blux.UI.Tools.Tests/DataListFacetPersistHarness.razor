@@ -1,0 +1,15 @@
+@using Blux.UI.Tools.Query
+
+@* A ticket list that hands its prerendered result (counts included) to the interactive render, with the filter tags (their editors list the counts) and the pagination. *@
+<BxDataList TItem="Ticket" Schema="FilterData.Schema" Provider="Provider" UrlSync="false" State="State" UrlKey="f" ResultJson="TicketJson.Default.DataListResultTicket">
+    <BxDataListFilterTags TItem="Ticket" data-testid="tags" />
+    <BxDataListTable TItem="Ticket" Caption="Tickets">
+        <BxDataListColumn TItem="Ticket" Field="title" Title="Title" />
+    </BxDataListTable>
+    <BxDataListPagination TItem="Ticket" data-testid="pagination" />
+</BxDataList>
+
+@code {
+    [Parameter] public DataListProvider<Ticket>? Provider { get; set; }
+    [Parameter] public DataListState? State { get; set; }
+}

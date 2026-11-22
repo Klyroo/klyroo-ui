@@ -59,34 +59,122 @@ public sealed partial class DataListContext<TItem>
         return column?.EffectiveTitle ?? DataListText.Humanize(key);
     }
 
+    /// <summary>The counts the list loaded for a filter (<see cref="DataListFilter.WithFacets"/>), or <see langword="null"/> when it has none (yet).</summary>
+    internal DataListFacetResult? FacetOf(string key) => Result?.Facets?.FirstOrDefault(f => f.Key == key);
+
+    /// <summary>
+    /// How many rows have <paramref name="value"/> in the facet of <paramref name="key"/>, or <see langword="null"/> when there is no count for it: the filter has no facet, or the facet holds only
+    /// the most counted values (<see cref="DataListFacetResult.Truncated"/>) and this one is not among them. A value a complete facet lacks has no rows: 0.
+    /// </summary>
+    internal int? CountOf(string key, string value)
+    {
+        if (FacetOf(key) is not { } facet) return null;
+        foreach (var option in facet.Options)
+        {
+            if (string.Equals(option.Value, value, StringComparison.Ordinal)) return option.Count;
+        }
+        return facet.Truncated ? null : 0;
+    }
+
+    /// <summary>The number of rows where the field of an option filter is empty, when the list counted them.</summary>
+    internal int? MissingCountOf(string key) => FacetOf(key)?.Missing;
+
+    // The labels that remote options gave to values: what an editor loaded, picked or resolved, so a tag can write "Owner is Ann Lee" and not "Owner is 7".
+    private readonly Dictionary<string, Dictionary<string, string>> _remoteLabels = new(StringComparer.Ordinal);
+    private readonly HashSet<(string Key, string Value)> _labelAttempts = [];
+
+    /// <summary>The label of an option value: the one the filter declares, else the one its remote source gave, else the value itself.</summary>
+    internal string OptionLabelOf(string key, string value)
+    {
+        if (FilterOf(key) is { Options.Count: > 0 } filter && filter.Options.FirstOrDefault(o => o.Value == value) is { } declared) return declared.Label;
+        return _remoteLabels.TryGetValue(key, out var labels) && labels.TryGetValue(value, out var label) ? label : value;
+    }
+
+    /// <summary>Remembers labels that a remote option source gave. Returns whether one is new.</summary>
+    internal bool LearnLabels(string key, IEnumerable<DataListFilterOption> options)
+    {
+        var changed = false;
+        foreach (var option in options)
+        {
+            if (!_remoteLabels.TryGetValue(key, out var labels)) _remoteLabels[key] = labels = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (labels.TryGetValue(option.Value, out var known) && known == option.Label) continue;
+            labels[option.Value] = option.Label;
+            changed = true;
+        }
+        return changed;
+    }
+
+    internal bool KnowsLabel(string key, string value) => _remoteLabels.TryGetValue(key, out var labels) && labels.ContainsKey(value);
+
+    /// <summary>
+    /// Asks the resolver of each remote option filter for the labels of the values that nobody labelled: the values of its rule in the state (restored from the address) and, for a filter with counts,
+    /// the most counted values that its statically rendered editor lists. A value is asked once; a resolver that throws leaves the raw values, and they are asked again at the next load.
+    /// </summary>
+    internal async Task ResolveLabelsAsync(CancellationToken cancellationToken)
+    {
+        if (Schema is null) return;
+        var changed = false;
+        foreach (var key in Schema.FilterKeys)
+        {
+            if (FilterOf(key) is not { RemoteOptions: { Resolver: { } resolver } remote }) continue;
+            var wanted = new List<string>();
+            if (RuleFor(key) is { Value: { } value }) wanted.AddRange(value is FilterValue.Text t ? [t.Value] : value is FilterValue.List list ? list.Values : []);
+            if (!IsInteractive && FacetOf(key) is { } facet) wanted.AddRange(facet.Options.Take(remote.PageSize).Select(o => o.Value));
+            var missing = wanted.Distinct(StringComparer.Ordinal).Where(v => !KnowsLabel(key, v) && _labelAttempts.Add((key, v))).ToList();
+            if (missing.Count == 0) continue;
+            try
+            {
+                var found = await resolver(missing, cancellationToken).ConfigureAwait(true);
+                changed |= LearnLabels(key, found.Where(o => missing.Contains(o.Value)));
+            }
+            catch (Exception) when (!cancellationToken.IsCancellationRequested)
+            {
+                // The raw values stay; the next load asks again.
+                foreach (var v in missing) _labelAttempts.Remove((key, v));
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+        }
+        if (changed) NotifyChanged();
+    }
+
     /// <summary>
     /// The options an option filter lists: the ones its definition declares and, when the list asked for counts, their counts; without declared options the
-    /// values of the counts. A selected value that is in neither stays in the list so that it can be taken off.
+    /// values of the counts (labelled by the remote source when it has given labels). A selected value that is in neither stays in the list so that it can be taken off.
+    /// The filter's <see cref="DataListFilter.OptionSort"/> orders the lists that come from the definition or the counts.
     /// </summary>
-    internal IReadOnlyList<FilterChoice> FilterChoices(string key, IEnumerable<string> selected)
+    internal IReadOnlyList<FilterChoice> FilterChoices(string key, IEnumerable<string> selected, CultureInfo? culture = null)
     {
         var filter = FilterOf(key);
-        var facet = Result?.Facets?.FirstOrDefault(f => f.Key == key);
-        var counts = facet?.Options.ToDictionary(o => o.Value, o => o.Count, StringComparer.Ordinal);
+        var facet = FacetOf(key);
         var choices = new List<FilterChoice>();
         var seen = new HashSet<string>(StringComparer.Ordinal);
         if (filter is { Options.Count: > 0 })
         {
             foreach (var option in filter.Options)
             {
-                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, option.Label, counts is null ? null : counts.GetValueOrDefault(option.Value)));
+                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, option.Label, CountOf(key, option.Value)));
             }
         }
         else if (facet is not null)
         {
             foreach (var option in facet.Options)
             {
-                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, option.Value, option.Count));
+                if (seen.Add(option.Value)) choices.Add(new FilterChoice(option.Value, OptionLabelOf(key, option.Value), option.Count));
             }
+        }
+        if (filter?.OptionSort is { } sort)
+        {
+            var comparer = StringComparer.Create(culture ?? CultureInfo.CurrentCulture, ignoreCase: true);
+            choices = sort == DataListOptionSort.Count
+                ? [.. choices.OrderByDescending(c => c.Count ?? -1).ThenBy(c => c.Label, comparer)]
+                : [.. choices.OrderBy(c => c.Label, comparer)];
         }
         foreach (var value in selected)
         {
-            if (seen.Add(value)) choices.Add(new FilterChoice(value, value, counts?.GetValueOrDefault(value)));
+            if (seen.Add(value)) choices.Add(new FilterChoice(value, OptionLabelOf(key, value), CountOf(key, value)));
         }
         return choices;
     }
@@ -151,7 +239,7 @@ public sealed partial class DataListContext<TItem>
         var op = messages.OperatorLabel(rule.Operator, forTag: true);
         if (rule.Operator is FilterOperator.IsEmpty or FilterOperator.IsNotEmpty) return (op, "");
 
-        string ValueLabel(string value) => filter is { Options.Count: > 0 } && filter.Options.FirstOrDefault(o => o.Value == value) is { } option ? option.Label : value;
+        string ValueLabel(string value) => OptionLabelOf(rule.Key, value);
 
         var granularity = filter?.Granularity ?? DateGranularity.Day;
         var zone = Zone;

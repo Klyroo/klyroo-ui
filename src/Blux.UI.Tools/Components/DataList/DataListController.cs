@@ -120,18 +120,29 @@ public sealed class DataListController<TItem> : IDisposable
         return request.Sort.Count == 0 && Schema.DefaultSort.Count > 0 ? request with { Sort = Schema.DefaultSort } : request;
     }
 
-    // The option filters that ask for their counts (WithFacets): one facet request each, without the filter's own rule so the other options stay visible.
+    // The option and boolean filters that ask for their counts (WithFacets): one facet request each, in the mode of the filter (without its own rule by default, so the other options stay visible).
+    // Only an option filter counts the rows where the field is empty: its editor has an "include empty values" choice, a yes / no / any one has none.
     private IReadOnlyList<DataListFacetRequest>? FacetRequests()
     {
         List<DataListFacetRequest>? facets = null;
         foreach (var key in Schema.FilterKeys)
         {
-            if (Schema.TryGetFilter(key, out var filter) && filter is { Kind: FilterKind.Option, Facets: true } && !Schema.IsQueryFilter(key))
+            if (Schema.TryGetFilter(key, out var filter) && filter is { Kind: FilterKind.Option or FilterKind.Boolean, Facets: true } && !Schema.IsQueryFilter(key))
             {
-                (facets ??= []).Add(new DataListFacetRequest(key, IncludeMissing: true));
+                (facets ??= []).Add(new DataListFacetRequest(key, filter.FacetMode, IncludeMissing: filter.Kind == FilterKind.Option));
             }
         }
         return facets;
+    }
+
+    // The facets of the result on screen when they still hold for a request: same filters, same search, same zone and the same facets asked for (a page or a sort does not change what a facet counts),
+    // and the request is not a refresh. The provider is then not asked for them, so a database or an API does not count again on every page.
+    private IReadOnlyList<DataListFacetResult>? ReusableFacets(DataListRequest request, bool refresh)
+    {
+        if (refresh || request.Facets.Count == 0 || Result?.Facets is not { } facets || LoadedRequest is not { } loaded) return null;
+        return loaded.Filter == request.Filter && loaded.Search == request.Search && loaded.TimeZone == request.TimeZone && SequenceEquality.Equal(loaded.Facets, request.Facets)
+            ? facets
+            : null;
     }
 
     /// <summary>
@@ -190,7 +201,8 @@ public sealed class DataListController<TItem> : IDisposable
         {
             var normalized = Normalize(state);
             var request = BuildRequest(normalized);
-            var result = await Provider(request, cts.Token).ConfigureAwait(true);
+            var cached = ReusableFacets(request, refresh);
+            var result = await Fetch(request, cached, cts.Token).ConfigureAwait(true);
             if (version != Volatile.Read(ref _version)) return;
 
             if (request.Paging is DataListPaging.Offset { Skip: > 0 } offset && result.TotalCount is { } total && offset.Skip >= total)
@@ -198,7 +210,7 @@ public sealed class DataListController<TItem> : IDisposable
                 // A page past the end (a typed URL, rows deleted since): the last page, in the same load.
                 normalized = normalized with { Page = Math.Max(1, (total + offset.Take - 1) / offset.Take) };
                 request = BuildRequest(normalized);
-                result = await Provider(request, cts.Token).ConfigureAwait(true);
+                result = await Fetch(request, cached, cts.Token).ConfigureAwait(true);
                 if (version != Volatile.Read(ref _version)) return;
             }
 
@@ -221,6 +233,13 @@ public sealed class DataListController<TItem> : IDisposable
         IsLoading = false;
         _refreshing = false;
         Changed?.Invoke();
+    }
+
+    // Asks the provider, without the facets when the ones on screen still hold (<paramref name="cached"/>), and gives them to the result.
+    private async Task<DataListResult<TItem>> Fetch(DataListRequest request, IReadOnlyList<DataListFacetResult>? cached, CancellationToken cancellationToken)
+    {
+        var result = await Provider(cached is null ? request : request with { Facets = [] }, cancellationToken).ConfigureAwait(true);
+        return cached is not null && result.Facets is null ? result with { Facets = cached } : result;
     }
 
     /// <summary>Sets the time zone of the request an adopted result stands for, once the browser told it (the prerender ran in UTC).</summary>

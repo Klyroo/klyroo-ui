@@ -32,7 +32,7 @@
                                     </button>
                                 </ChildContent>
                                 <Content>
-                                    <BxDataListFilterEditor TItem="TItem" Key="@key" ApplyMode="ApplyMode" ResetToken="Token(key)" OnDone="@(() => Close(key))" />
+                                    <BxDataListFilterEditor TItem="TItem" Key="@key" ApplyMode="ApplyMode" ResetToken="Token(key)" Visible="@IsOpen(key)" OnDone="@(() => Close(key))" />
                                 </Content>
                             </BxPopover>
                         }

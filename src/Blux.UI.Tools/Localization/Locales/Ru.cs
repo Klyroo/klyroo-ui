@@ -44,6 +44,8 @@ public static partial class BxToolsLocales
             FilterOptionsSearch = "Поиск по вариантам",
             FilterNoOptions = "Нет вариантов",
             FilterNoOptionsMatch = "Нет вариантов, подходящих под поиск",
+            FilterOptionsMore = "Показать ещё {0}",
+            FilterOptionsNeedScript = "Для поиска по остальным вариантам нужен JavaScript.",
             FilterIncludeEmpty = "Включать пустые значения",
             FilterEmpty = "пусто",
             FilterOrEmpty = "или пусто",

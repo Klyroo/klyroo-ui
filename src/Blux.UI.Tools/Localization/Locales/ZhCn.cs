@@ -44,6 +44,8 @@ public static partial class BxToolsLocales
             FilterOptionsSearch = "搜索选项",
             FilterNoOptions = "没有选项",
             FilterNoOptionsMatch = "没有与搜索匹配的选项",
+            FilterOptionsMore = "再显示 {0} 项",
+            FilterOptionsNeedScript = "搜索其他选项需要 JavaScript。",
             FilterIncludeEmpty = "包含空值",
             FilterEmpty = "空",
             FilterOrEmpty = "或为空",

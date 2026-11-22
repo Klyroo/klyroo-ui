@@ -1,6 +1,7 @@
 @namespace Blux.UI.Tools
 @typeparam TItem
 @inherits DataListPartBase<TItem>
+@using Blux.UI.Internal
 @using Blux.UI.Tools.Query
 @using Microsoft.AspNetCore.Components.Web
 
@@ -88,6 +89,7 @@
     {
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "filterEditor");
         SyncDraft();
+        SyncRemote();
     }
 
     // The list changed (Back, a link, a reset, the echo of what this editor sent): the draft follows the rule unless it is the echo.
@@ -146,6 +148,8 @@
         _includeEmpty = rule?.IncludeEmpty ?? false;
         _bool = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : null;
         _search = "";
+        _showAll = false;
+        _remoteSearchAgain = true;
         LoadNumber(rule);
         LoadDate(rule);
     }
@@ -185,6 +189,7 @@
     // The text of the field follows a rule that changed without it; what the user typed stays when it is the editor that wrote the rule.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await StartRemoteAsync();
         if (!_syncInput || !Context.IsInteractive) return;
         _syncInput = false;
         if (_input is not null) await _input.SetValueAsync(_text);
@@ -482,10 +487,17 @@
 
     private IReadOnlyList<BxToggleItem> BoolItems =>
     [
-        new BxToggleItem("true", ToolsMessages.FilterYes),
-        new BxToggleItem("false", ToolsMessages.FilterNo),
+        new BxToggleItem("true", BoolLabel(true)),
+        new BxToggleItem("false", BoolLabel(false)),
         new BxToggleItem("any", ToolsMessages.FilterAny),
     ];
+
+    // Yes and No, with how many rows have each when the filter has counts: "Yes (12)".
+    private string BoolLabel(bool value)
+    {
+        var label = value ? ToolsMessages.FilterYes : ToolsMessages.FilterNo;
+        return Context.CountOf(Key, value ? "true" : "false") is { } count ? $"{label} ({count.ToString("N0", FormatCulture)})" : label;
+    }
 
     private IReadOnlyList<string> BoolValue => [_bool is { } value ? (value ? "true" : "false") : "any"];
 
@@ -596,9 +608,34 @@
 
     private RenderFragment OptionList =>
         @<text>
+            @if (IsRemote && _remote is not null)
+            {
+                @RemoteOptionList
+            }
+            else
+            {
+                @LocalOptionList
+            }
+            @IncludeEmptySwitch
+        </text>;
+
+    // One option of the interactive list: its checkbox and, when the list has counts, how many rows have it.
+    private RenderFragment OptionRow(FilterChoice choice, bool remote) =>
+        @<li class="@_slots["filterOption"]" data-value="@choice.Value">
+            <BxCheckbox Value="@_selected.Contains(choice.Value)" ValueChanged="@(on => { if (remote) OnRemoteToggle(choice, on); else OnToggle(choice.Value, on); })" Label="@choice.Label" />
+            @if (choice.Count is { } count)
+            {
+                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+            }
+        </li>;
+
+    private RenderFragment LocalOptionList =>
+        @<text>
             @{
-                var choices = Context.FilterChoices(Key, _selected);
+                var choices = Context.FilterChoices(Key, _selected, FormatCulture);
                 var visible = choices.Where(Matches).ToList();
+                // A search shows every match; the limit only shortens the list that nobody narrowed.
+                var (shown, hidden) = _search.Length > 0 ? ((IReadOnlyList<FilterChoice>)visible, 0) : Limit(visible);
             }
             @if (choices.Count > 8 || _search.Length > 0)
             {
@@ -609,25 +646,88 @@
             }
             <div role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)">
             <ul class="@_slots["filterOptions"]" data-slot="filter-options">
-                @foreach (var choice in visible)
+                @foreach (var choice in shown)
                 {
-                    var value = choice.Value;
-                    <li class="@_slots["filterOption"]" data-value="@value">
-                        <BxCheckbox Value="@_selected.Contains(value)" ValueChanged="@(on => OnToggle(value, on))" Label="@choice.Label" />
-                        @if (choice.Count is { } count)
-                        {
-                            <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
-                        }
-                    </li>
+                    @OptionRow(choice, remote: false)
                 }
             </ul>
             </div>
+            @if (hidden > 0)
+            {
+                <BxButton Label="@string.Format(FormatCulture, ToolsMessages.FilterOptionsMore, hidden.ToString("N0", FormatCulture))" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm"
+                          OnClick="ShowAllOptions" data-slot="filter-options-more" />
+            }
             @if (visible.Count == 0)
             {
                 <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@(choices.Count == 0 ? ToolsMessages.FilterNoOptions : ToolsMessages.FilterNoOptionsMatch)</p>
             }
-            <BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />
         </text>;
+
+    // The options of a remote source: a search field that asks the source (after a pause), the pages loaded so far, the next one when the list scrolls (or by a button), and the states of the load.
+    private RenderFragment RemoteOptionList =>
+        @<text>
+            @{
+                var remote = _remote!;
+                var status = remote.Status;
+                var choices = RemoteChoices();
+            }
+            <div class="@_slots["filterField"]">
+                <BxInput Value="@_search" ValueChanged="@OnRemoteSearch" Debounce="@RemoteDebounce" ClearOnEscape="true" Type="search" Placeholder="@ToolsMessages.FilterOptionsSearch"
+                         aria-label="@ToolsMessages.FilterOptionsSearch" autocomplete="off" LeadingIcon="@RenderIcon(Options.Icons.Search, "size-4")" data-slot="filter-options-search" />
+            </div>
+            <div role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" aria-busy="@(remote.Busy ? "true" : null)" data-slot="filter-remote">
+                <ul id="@ScrollerId" class="@_slots["filterOptions"]" data-slot="filter-options">
+                    @foreach (var choice in choices)
+                    {
+                        @OptionRow(choice, remote: true)
+                    }
+                    @if (remote.Items.Count > 0 && status is RemoteStatus.Loaded or RemoteStatus.LoadingMore)
+                    {
+                        @* Starts the next page one list height before the end; the button inside is the same action by hand. *@
+                        <li>
+                            <BxInfiniteScroll HasMore="remote.HasMore" Loading="@(status == RemoteStatus.LoadingMore)" OnLoadMore="@(() => remote.LoadMoreAsync())" Root="@("#" + ScrollerId)" RootMargin="0px 0px 100% 0px" />
+                        </li>
+                    }
+                </ul>
+                <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">@RemoteAnnouncement(remote, remote.Items.Count)</div>
+                @if (status == RemoteStatus.Loading && remote.Items.Count == 0)
+                {
+                    <p class="@_slots["filterEmpty"]" data-slot="filter-options-loading" aria-hidden="true">@Messages.RemoteOptionsLoading</p>
+                }
+                else if (status == RemoteStatus.TooShort)
+                {
+                    <p class="@_slots["filterEmpty"]" data-slot="filter-options-hint">@string.Format(FormatCulture, Messages.RemoteOptionsMinLength, remote.MinLength)</p>
+                }
+                else if (status == RemoteStatus.Loaded && remote.Items.Count == 0)
+                {
+                    <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@(_search.Length > 0 ? ToolsMessages.FilterNoOptionsMatch : ToolsMessages.FilterNoOptions)</p>
+                }
+                else if (status == RemoteStatus.Error)
+                {
+                    <div role="alert" class="@_slots["filterOption"]" data-slot="filter-options-error">
+                        <span>@Messages.RemoteOptionsError</span>
+                        <BxButton Variant="ButtonVariant.Outline" Size="BxSize.Xs" Label="@Messages.RemoteOptionsRetry" OnClick="@(() => remote.RetryAsync())" data-slot="filter-options-retry" />
+                    </div>
+                }
+            </div>
+        </text>;
+
+    private string RemoteAnnouncement(RemoteOptions remote, int count) => remote.Status switch
+    {
+        RemoteStatus.Loading => Messages.RemoteOptionsLoading,
+        RemoteStatus.TooShort => string.Format(FormatCulture, Messages.RemoteOptionsMinLength, remote.MinLength),
+        RemoteStatus.Loaded when count == 0 => _search.Length > 0 ? ToolsMessages.FilterNoOptionsMatch : ToolsMessages.FilterNoOptions,
+        _ => "",
+    };
+
+    // The switch of the rows where the field is empty; with counts, how many rows those are, next to it.
+    private RenderFragment IncludeEmptySwitch =>
+        Context.MissingCountOf(Key) is { } missing
+            ? @<div class="@_slots["filterOption"]" data-slot="filter-include-empty-row">
+                <BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />
+                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@missing.ToString("N0", FormatCulture)</span>
+            </div>
+            : @<BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />;
 
     // ---- the static editor: links and a GET form
 
@@ -668,7 +768,7 @@
                     break;
                 case FilterKind.Option:
                     var selected = ValuesOf(rule);
-                    var choices = Context.FilterChoices(Key, selected);
+                    var choices = Context.FilterChoices(Key, selected, FormatCulture);
                     if (Embedded)
                     {
                         @EmbeddedOptions(rule, op, selected, choices)
@@ -686,14 +786,18 @@
                                     </span>
                                     @if (choice.Count is { } count)
                                     {
-                                        <span class="@_slots["filterOptionCount"]"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                                        <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
                                     }
                                 </a>
                             </li>
                         }
-                        @if (choices.Count == 0)
+                        @if (choices.Count == 0 && !IsRemote)
                         {
                             <li class="@_slots["filterEmpty"]">@ToolsMessages.FilterNoOptions</li>
+                        }
+                        @if (IsRemote)
+                        {
+                            <li class="@_slots["filterEmpty"]" data-slot="filter-options-script">@ToolsMessages.FilterOptionsNeedScript</li>
                         }
                         <li>
                             <a href="@Href(OptionRule(Key, op, selected, !(rule?.IncludeEmpty ?? false)))" class="@_slots["filterOptionLink"]" aria-current="@((rule?.IncludeEmpty ?? false) ? "true" : null)" data-slot="filter-include-empty">
@@ -701,6 +805,10 @@
                                     <span class="@((rule?.IncludeEmpty ?? false) ? "" : "invisible")" aria-hidden="true">@RenderIcon(Options.Icons.Check, _slots["filterOptionCheck"])</span>
                                     <span class="truncate">@ToolsMessages.FilterIncludeEmpty</span>
                                 </span>
+                                @if (Context.MissingCountOf(Key) is { } missing)
+                                {
+                                    <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@missing.ToString("N0", FormatCulture)</span>
+                                }
                             </a>
                         </li>
                     </ul>
@@ -715,8 +823,8 @@
                         @{
                             var current = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : (bool?)null;
                         }
-                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(true))), ToolsMessages.FilterYes, current == true)
-                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(false))), ToolsMessages.FilterNo, current == false)
+                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(true))), BoolLabel(true), current == true)
+                        @Link(Href(new FilterRule(Key, FilterOperator.Is, new FilterValue.Boolean(false))), BoolLabel(false), current == false)
                         @Link(Href(null), ToolsMessages.FilterAny, current is null)
                     </div>
                     break;
@@ -771,19 +879,27 @@
                         </label>
                         @if (choice.Count is { } count)
                         {
-                            <span class="@_slots["filterOptionCount"]"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                            <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
                         }
                     </li>
                 }
-                @if (choices.Count == 0)
+                @if (choices.Count == 0 && !IsRemote)
                 {
                     <li class="@_slots["filterEmpty"]">@ToolsMessages.FilterNoOptions</li>
+                }
+                @if (IsRemote)
+                {
+                    <li class="@_slots["filterEmpty"]" data-slot="filter-options-script">@ToolsMessages.FilterOptionsNeedScript</li>
                 }
                 <li class="@_slots["filterOption"]">
                     <label class="@_slots["filterNativeLabel"]">
                         <input type="checkbox" name="@name" value="@FilterRuleText.IncludeEmptyToken" checked="@includeEmpty" class="@_slots["filterNativeInput"]" data-slot="filter-include-empty" />
                         <span class="truncate">@ToolsMessages.FilterIncludeEmpty</span>
                     </label>
+                    @if (Context.MissingCountOf(Key) is { } missing)
+                    {
+                        <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@missing.ToString("N0", FormatCulture)</span>
+                    }
                 </li>
             </ul>
         </text>;
@@ -795,8 +911,8 @@
         var name = Context.FilterFieldName(Key, FilterOperator.Is);
         var current = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : (bool?)null;
         return @<div class="@_slots["filterChoices"]" role="radiogroup" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean">
-            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="true" checked="@(current == true)" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterYes</label>
-            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="false" checked="@(current == false)" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterNo</label>
+            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="true" checked="@(current == true)" class="@_slots["filterNativeInput"]" />@BoolLabel(true)</label>
+            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="false" checked="@(current == false)" class="@_slots["filterNativeInput"]" />@BoolLabel(false)</label>
             <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="" checked="@(current is null)" data-bx-prune="@Prune" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterAny</label>
         </div>;
     }
