@@ -11,7 +11,7 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
     public static readonly string[] Components =
     [
         "button", "badge", "avatar", "card", "alert", "input", "textarea", "checkbox", "switch", "radio-group", "select", "form-field",
-        "modal", "popover", "tooltip", "dropdown-menu", "toast", "tabs", "accordion", "table", "data-list", "data-list-empty",
+        "modal", "popover", "tooltip", "dropdown-menu", "toast", "tabs", "accordion", "table", "data-list", "data-list-filters", "data-list-filter-panel", "data-list-facets", "data-list-selection", "data-list-empty",
         "infinite-scroll", "select-menu", "input-menu", "listbox", "command-palette",
     ];
 
