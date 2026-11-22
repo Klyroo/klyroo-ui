@@ -16,7 +16,7 @@
             <article data-testid="article" class="mt-8">
                 <header class="flex flex-col gap-4">
                     <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-(--blux-text-muted)">
-                        <time datetime="@SiteDates.Iso(_post.Date)">@SiteDates.Format(_post.Date)</time>
+                        <time datetime="@BxDates.Iso(_post.Date)">@BxDates.Format(_post.Date)</time>
                         <span aria-hidden="true">&middot;</span>
                         <span>@_post.ReadingMinutes min read</span>
                         @foreach (var tag in _post.Tags)

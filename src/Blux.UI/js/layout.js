@@ -53,14 +53,24 @@ function write(name, value) {
  *   <aside data-slot="root" data-state="expanded">
  *     <button data-bx-sidebar-toggle aria-pressed="false">…</button> … <div role="separator" data-slot="handle"></div>
  *   </aside>
- *   <div>…the mobile panel…</div>
+ *   <div>…the button that opens the panel…</div>
  * </bx-sidebar>
  *
  * Owns the collapsed state (data-state on the aside, aria-pressed on the toggles) and the width (the --bx-sidebar-width
  * variable on this element). Both are remembered in cookies under the id, except that a bound collapsed state
  * (data-bx-seq) is never read from storage: .NET owns it. A change of the collapsed state is reported with "bx-toggle",
  * where open means expanded.
+ *
+ * Below the lg breakpoint the aside is the off-canvas panel: a popover="auto" element that a button with popovertarget opens.
+ * The popover alone is not a modal, so while it is open this element makes it one: role dialog and aria-modal on the inner panel element
+ * (an aside may not be a dialog), the rest of the page inert, Tab kept inside, the focus moved in and, on close, back to where it was.
+ * A form submitted inside the panel, or a navigation to another path, closes it; a modal opened from inside it whose dialog is outside the
+ * aside closes it (the browser does, as for any popover; and the focus goes back to the button when that modal closes); a modal declared inside the aside works as it is. Escape and a click outside
+ * (or on the backdrop) close it natively; a screen that grows past lg closes it, and the collapsed state only applies from lg.
  */
+const WIDE = '(min-width: 64rem)';
+const TABBABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [contenteditable=""], [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+
 export class BxSidebarElement extends HTMLElement {
   static observedAttributes = ['data-bx-seq', 'collapsed'];
 
@@ -70,12 +80,18 @@ export class BxSidebarElement extends HTMLElement {
   #ready = false;
   #drag = null;
   #settling = null;
+  #wide = matchMedia(WIDE);
+  #opener = null;
+  #inerted = [];
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
     this.addEventListener('pointerdown', this.#onPointerDown);
     this.addEventListener('keydown', this.#onKeyDown);
-    this.addEventListener('bx-toggle', this.#onPanelToggle);
+    // beforetoggle and toggle do not bubble, but a capture listener on an ancestor still sees them.
+    this.addEventListener('beforetoggle', this.#onBeforeToggle, true);
+    this.addEventListener('toggle', this.#onToggle, true);
+    this.#wide.addEventListener('change', this.#onWideChange);
     // Blazor inserts the element before its attributes and children: read them once the whole batch is applied.
     queueMicrotask(() => this.#init());
   }
@@ -84,7 +100,10 @@ export class BxSidebarElement extends HTMLElement {
     this.removeEventListener('click', this.#onClick);
     this.removeEventListener('pointerdown', this.#onPointerDown);
     this.removeEventListener('keydown', this.#onKeyDown);
-    this.removeEventListener('bx-toggle', this.#onPanelToggle);
+    this.removeEventListener('beforetoggle', this.#onBeforeToggle, true);
+    this.removeEventListener('toggle', this.#onToggle, true);
+    this.#wide.removeEventListener('change', this.#onWideChange);
+    this.#release();
     this.#ready = false;
   }
 
@@ -101,6 +120,12 @@ export class BxSidebarElement extends HTMLElement {
     this.#reporter.adopt();
     this.#reporter.take('collapsed', true);
     this.#settle();
+    // An enhanced navigation merge resets the attributes this element set while the panel was open: put the modal state back, or close a panel that should not stay.
+    const aside = this.#aside;
+    if (aside?.matches(':popover-open')) {
+      if (this.#wide.matches) aside.hidePopover();
+      else this.#makeModal(aside);
+    }
   }
 
   get #key() {
@@ -169,7 +194,8 @@ export class BxSidebarElement extends HTMLElement {
   }
 
   #render() {
-    const state = this.#collapsed ? 'collapsed' : 'expanded';
+    // Collapsed is a state of the column: the panel below lg is always expanded.
+    const state = this.#collapsed && this.#wide.matches ? 'collapsed' : 'expanded';
     const aside = this.#aside;
     if (aside && aside.dataset.state !== state) aside.dataset.state = state;
     for (const toggle of this.querySelectorAll('[data-bx-sidebar-toggle]')) {
@@ -186,16 +212,20 @@ export class BxSidebarElement extends HTMLElement {
   syncControls() {
     if (!this.#ready) return;
     const aside = this.#aside;
-    const dialog = this.querySelector('dialog');
     for (const button of document.querySelectorAll('[data-bx-sidebar-collapse]')) {
       if (sidebarFor(button) !== this || !aside) continue;
       button.setAttribute('aria-controls', ensureId(aside, 'sidebar'));
       button.setAttribute('aria-expanded', String(!this.#collapsed));
     }
     for (const button of document.querySelectorAll('[data-bx-sidebar-open]')) {
-      if (sidebarFor(button) !== this || !dialog) continue;
-      button.setAttribute('aria-controls', ensureId(dialog, 'sidebar-panel'));
-      button.setAttribute('aria-expanded', String(dialog.open));
+      if (sidebarFor(button) !== this || !aside) continue;
+      // The native invoker: the browser toggles the popover, with no script in the way.
+      if (button.popoverTargetElement !== aside) {
+        button.popoverTargetElement = aside;
+        button.popoverTargetAction = 'toggle';
+      }
+      button.setAttribute('aria-controls', ensureId(aside, 'sidebar'));
+      button.setAttribute('aria-expanded', String(aside.matches(':popover-open')));
     }
   }
 
@@ -203,16 +233,123 @@ export class BxSidebarElement extends HTMLElement {
     if (this.#ready) this.#setCollapsed(!this.#collapsed);
   }
 
-  /** Opens the off-canvas panel, as its own button would. */
+  /** Opens the off-canvas panel, as its own button would. Does nothing from lg up, where the sidebar is a column. */
   openPanel() {
-    this.querySelector('bx-modal > [data-slot="trigger"] button')?.click();
+    const aside = this.#aside;
+    if (aside && !this.#wide.matches && !aside.matches(':popover-open')) aside.showPopover();
   }
 
-  // The panel is a bx-modal inside: its toggles bubble up here; the sidebar's own report has this element as target.
-  #onPanelToggle = (event) => {
-    if (event.target === this) return;
-    queueMicrotask(() => this.syncControls());
+  /** Opens the panel or closes it. */
+  togglePanel() {
+    const aside = this.#aside;
+    if (!aside) return;
+    if (aside.matches(':popover-open')) aside.hidePopover();
+    else this.openPanel();
+  }
+
+  #onBeforeToggle = (event) => {
+    const aside = this.#aside;
+    if (!aside || event.target !== aside) return;
+    if (event.newState === 'open') {
+      // A column has nothing to open.
+      if (this.#wide.matches) {
+        event.preventDefault();
+        return;
+      }
+      this.#opener = document.activeElement;
+      this.#makeModal(aside);
+    } else {
+      // Before the popover goes: its invoker must be able to take the focus back.
+      this.#release();
+    }
   };
+
+  #onToggle = (event) => {
+    const aside = this.#aside;
+    if (!aside || event.target !== aside) return;
+    if (event.newState === 'open') {
+      const first = this.#tabbables(aside)[0];
+      (first ?? aside).focus({ preventScroll: true });
+    } else {
+      const opener = this.#opener;
+      this.#opener = null;
+      const active = document.activeElement;
+      const modal = [...document.querySelectorAll('dialog:modal')].find((dialog) => !aside.contains(dialog));
+      if (modal) this.#handOver(modal, opener);
+      else if (opener?.isConnected && (!active || active === document.body || aside.contains(active))) opener.focus({ preventScroll: true });
+    }
+    this.syncControls();
+  };
+
+  // The panel closes for what leaves the page it belongs to: a form submitted in it, or a navigation to another path (a change of the query alone stays).
+  #onNavigate = (event) => {
+    const aside = this.#aside;
+    if (!aside?.matches(':popover-open')) return;
+    let path = null;
+    try {
+      path = new URL(event.destination.url).pathname;
+    } catch {
+      return;
+    }
+    if (path !== location.pathname) aside.hidePopover();
+  };
+
+  // A modal dialog opened outside the aside while the panel is open (a modal of the layout, opened from a menu of the panel, or Ctrl+K): showModal closes
+  // the popovers that are not its ancestors, so the panel is already closed and its inert is gone. What is left is the focus: the dialog may have failed to take it,
+  // and when it closes the focus goes back to the button that opened the panel.
+  #handOver(dialog, opener) {
+    if (!dialog.contains(document.activeElement)) (this.#tabbables(dialog)[0] ?? dialog).focus({ preventScroll: true });
+    dialog.addEventListener('close', () => {
+      // After the browser's own focus fix-up: the focus is still in the closed dialog or nowhere, unless the modal sent it somewhere on purpose.
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (opener?.isConnected && (!active || active === document.body || dialog.contains(active))) opener.focus({ preventScroll: true });
+      });
+    }, { once: true });
+  }
+
+  #onWideChange = () => {
+    const aside = this.#aside;
+    if (this.#wide.matches && aside?.matches(':popover-open')) aside.hidePopover();
+    if (this.#ready) this.#render();
+  };
+
+  #tabbables(root) {
+    return [...root.querySelectorAll(TABBABLE)].filter((el) => !el.closest('[inert]') && el.getClientRects().length > 0 && getComputedStyle(el).visibility !== 'hidden');
+  }
+
+  /** A popover is not modal: name the aside a modal dialog and make everything around it inert until it closes. */
+  #makeModal(aside) {
+    this.#release();
+    // The dialog semantics go on the inner panel: an aside has no dialog role, and it stays the complementary landmark.
+    const panel = aside.querySelector(':scope > [data-slot="panel"]');
+    const title = panel?.querySelector(':scope > [data-slot="mobile-header"] > h2');
+    if (panel) {
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-modal', 'true');
+      if (title?.id) panel.setAttribute('aria-labelledby', title.id);
+    }
+    window.navigation?.addEventListener('navigate', this.#onNavigate);
+    for (let node = aside; node.parentElement; node = node.parentElement) {
+      for (const sibling of node.parentElement.children) {
+        if (sibling === node || sibling.inert || sibling.localName === 'head') continue;
+        sibling.inert = true;
+        this.#inerted.push(sibling);
+      }
+    }
+  }
+
+  #release() {
+    for (const element of this.#inerted) element.inert = false;
+    this.#inerted = [];
+    window.navigation?.removeEventListener('navigate', this.#onNavigate);
+    const panel = this.#aside?.querySelector(':scope > [data-slot="panel"]');
+    if (panel?.getAttribute('role') === 'dialog') {
+      panel.removeAttribute('role');
+      panel.removeAttribute('aria-modal');
+      panel.removeAttribute('aria-labelledby');
+    }
+  }
 
   #renderWidth() {
     const width = this.#width ?? this.#default;
@@ -239,6 +376,13 @@ export class BxSidebarElement extends HTMLElement {
   }
 
   #onClick = (event) => {
+    // A click on the backdrop reaches the aside itself, from outside its box.
+    const aside = this.#aside;
+    if (aside && event.target === aside && aside.matches(':popover-open')) {
+      const box = aside.getBoundingClientRect();
+      if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) aside.hidePopover();
+      return;
+    }
     const toggle = event.target instanceof Element ? event.target.closest('[data-bx-sidebar-toggle]') : null;
     if (!toggle || toggle.closest('bx-sidebar') !== this) return;
     this.#setCollapsed(!this.#collapsed);
@@ -280,6 +424,22 @@ export class BxSidebarElement extends HTMLElement {
   };
 
   #onKeyDown = (event) => {
+    const panel = this.#aside;
+    // A modal dialog declared inside the panel keeps Tab to itself (the rest of the panel is inert while it is open).
+    if (event.key === 'Tab' && panel?.matches(':popover-open') && event.target instanceof Element && panel.contains(event.target) && !event.target.closest('dialog:modal')) {
+      // Keep Tab inside the open panel.
+      const items = this.#tabbables(panel);
+      if (items.length === 0) {
+        event.preventDefault();
+      } else if (event.shiftKey && (event.target === items[0] || event.target === panel)) {
+        event.preventDefault();
+        items.at(-1).focus();
+      } else if (!event.shiftKey && event.target === items.at(-1)) {
+        event.preventDefault();
+        items[0].focus();
+      }
+      return;
+    }
     const handle = event.target instanceof Element ? event.target.closest('[data-slot="handle"]') : null;
     if (!handle || handle !== this.#handle) return;
     const current = this.#width ?? this.#default;
@@ -298,6 +458,8 @@ if (!customElements.get('bx-sidebar')) customElements.define('bx-sidebar', BxSid
 
 /** The sidebar a control outside it belongs to: data-bx-sidebar-for names it, else the one of the same dashboard. */
 function sidebarFor(button) {
+  const own = button.closest('bx-sidebar');
+  if (own) return own;
   const id = button.getAttribute('data-bx-sidebar-for');
   const selector = id ? `bx-sidebar[data-bx-sidebar-id="${CSS.escape(id)}"]` : 'bx-sidebar';
   return button.closest('bx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
@@ -308,9 +470,26 @@ document.addEventListener('click', (event) => {
   if (!button || button.disabled) return;
   const sidebar = sidebarFor(button);
   if (!sidebar) return;
-  if (button.hasAttribute('data-bx-sidebar-collapse')) sidebar.toggleCollapsed();
-  else sidebar.openPanel();
+  if (button.hasAttribute('data-bx-sidebar-collapse')) {
+    sidebar.toggleCollapsed();
+  } else if (!button.popoverTargetElement) {
+    // A button rendered after the sidebar was set up: not wired yet, so do what the native invoker would. It is wired once the panel toggles.
+    sidebar.togglePanel();
+  }
 });
+
+// Following a link closes the sidebar panel: the page may stay (enhanced navigation) and the panel would keep it inert.
+document.addEventListener('click', (event) => {
+  const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+  const panel = link?.closest('bx-sidebar > [popover]:popover-open');
+  if (panel) panel.hidePopover();
+});
+
+// So does a form submitted in it: the page behind is about to change (an enhanced submit would leave the panel open over it).
+document.addEventListener('submit', (event) => {
+  const panel = event.target instanceof Element ? event.target.closest('bx-sidebar > [popover]:popover-open') : null;
+  if (panel) panel.hidePopover();
+}, true);
 
 // ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-bx-layout-menu.
 const MENU = 'dialog[data-bx-layout-menu]';
