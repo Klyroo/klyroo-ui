@@ -1,0 +1,72 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits BxToolsComponentBase
+@implements IDisposable
+
+@* The box of a row. It listens to the selection only, not to every change of the list: a table of hundreds of rows must not render all of them when one box is ticked. *@
+<BxCheckbox Value="_selected" ValueChanged="OnChange" Disabled="Context.SelectionDisabled" Size="BxSize.Sm"
+            aria-label="@_label" data-select="row" data-key="@_key" @onclick="OnClick" />
+
+@code {
+    private DataListContext<TItem>? _subscribed;
+    private bool _selected;
+    private bool _shift;
+    private string _key = "";
+    private string _label = "";
+
+    [CascadingParameter] private DataListContext<TItem> Context { get; set; } = default!;
+
+    /// <summary>The row.</summary>
+    [Parameter, EditorRequired] public TItem Item { get; set; } = default!;
+
+    /// <summary>The place of the row on the page, from 1: the name of its box when the schema gives no <c>RowLabel</c>.</summary>
+    [Parameter] public int Position { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_subscribed, Context))
+        {
+            if (_subscribed is not null) _subscribed.SelectionChanged -= OnSelectionChanged;
+            _subscribed = Context;
+            Context.SelectionChanged += OnSelectionChanged;
+        }
+        _key = Context.RowKey(Item);
+        _selected = Context.IsKeySelected(_key);
+        var label = Context.Schema?.GetRowLabel(Item);
+        _label = string.IsNullOrWhiteSpace(label)
+            ? string.Format(FormatCulture, ToolsMessages.SelectRowAt, Position)
+            : string.Format(FormatCulture, ToolsMessages.SelectRow, label);
+    }
+
+    private void OnSelectionChanged()
+    {
+        if (Context.IsKeySelected(_key) == _selected) return;
+        try
+        {
+            _ = InvokeAsync(() =>
+            {
+                _selected = Context.IsKeySelected(_key);
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+            // The renderer went away with the page.
+        }
+    }
+
+    // The click comes before the change: it tells whether Shift was held, which the change event does not carry.
+    private void OnClick(MouseEventArgs e) => _shift = e.ShiftKey;
+
+    private void OnChange(bool value)
+    {
+        var range = _shift;
+        _shift = false;
+        Context.SetSelected(Item, value, range);
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed is not null) _subscribed.SelectionChanged -= OnSelectionChanged;
+    }
+}
