@@ -43,7 +43,7 @@ public class ToolsPackageTests
         var list = TestSupport.Service.FindComponent("data-list")!;
 
         Assert.Equal("Blux.UI.Tools", list.Package);
-        Assert.Equal(["BxDataList<TItem>", "BxDataListTable<TItem>", "BxDataListColumn<TItem>", "BxDataListPagination<TItem>", "BxDataListResultCount<TItem>", "BxDataListRefresh<TItem>", "BxDataListErrorState<TItem>", "BxDataListSearch<TItem>", "BxDataListFilterTags<TItem>", "BxDataListAddFilter<TItem>", "BxDataListClearFilters<TItem>", "BxDataListFilterEditor<TItem>"], list.Api.Select(a => a.Name));
+        Assert.Equal(["BxDataList<TItem>", "BxDataListTable<TItem>", "BxDataListColumn<TItem>", "BxDataListPagination<TItem>", "BxDataListResultCount<TItem>", "BxDataListRefresh<TItem>", "BxDataListErrorState<TItem>", "BxDataListSearch<TItem>", "BxDataListFilterTags<TItem>", "BxDataListAddFilter<TItem>", "BxDataListClearFilters<TItem>", "BxDataListFilterEditor<TItem>", "BxDataListFilterPanel<TItem>"], list.Api.Select(a => a.Name));
         var root = list.Api[0];
         Assert.Contains(root.Parameters, p => p.Name == "UrlSync" && p.Description is not null);
         Assert.Contains(root.Parameters, p => p.Name == "ResultJson" && p.Description is not null);

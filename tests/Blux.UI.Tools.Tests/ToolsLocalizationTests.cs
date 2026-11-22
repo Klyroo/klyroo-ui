@@ -17,7 +17,7 @@ public partial class ToolsLocalizationTests
     // Words that are the same in English and in a language: "No" in Spanish, Italian and Portuguese, "is" in Dutch, and the "+{0}" of a count that is more.
     private static readonly HashSet<(string Code, string Name)> SharedWords =
     [
-        ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"),
+        ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"), ("nl", "FilterPanelTitle"),
         .. new[] { "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru" }.Select(code => (code, "FilterMore")),
     ];
 
