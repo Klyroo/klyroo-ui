@@ -14,7 +14,7 @@
                 <div class="@_slots["meta"]">
                     @if (Date is { } date)
                     {
-                        <time datetime="@DateText.Iso(date)" class="@_slots["date"]">@DateText.Format(date, DateFormat, Culture ?? FormatCulture)</time>
+                        <time datetime="@BxDates.Iso(date)" class="@_slots["date"]">@BxDates.Format(date, DateFormat, Culture ?? FormatCulture)</time>
                     }
                     @if (Badge is not null)
                     {

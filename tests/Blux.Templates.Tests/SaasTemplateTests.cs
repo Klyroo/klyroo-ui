@@ -1,4 +1,3 @@
-using System.Globalization;
 using Blux.Templates.Content;
 using SaaS.Web.Site;
 
@@ -379,59 +378,5 @@ public class SaasTemplateTests
         Assert.Equal(2, warnings.Count);
         Assert.Contains(warnings, w => w.Contains("'blog/missing'") && w.Contains("img/gone.svg"));
         Assert.Contains(warnings, w => w.Contains("'blog/escape'"));
-    }
-
-    // ---- Dates
-
-    [Theory]
-    [InlineData("en-US", "March 4, 2026")]
-    [InlineData("fr-FR", "4 mars 2026")]
-    [InlineData("de-DE", "4. März 2026")]
-    public void The_visible_date_is_the_long_date_of_the_culture_without_the_day_name(string culture, string expected)
-    {
-        Assert.Equal(expected, SiteDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), CultureInfo.GetCultureInfo(culture)));
-    }
-
-    [Fact]
-    public void The_date_in_russian_is_not_the_english_pattern_with_russian_month_names()
-    {
-        var text = SiteDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), CultureInfo.GetCultureInfo("ru-RU"));
-
-        // "4 марта 2026 г.": the day first, as the culture writes it, not "марта 4, 2026".
-        Assert.StartsWith("4 марта 2026", text);
-    }
-
-    [Fact]
-    public void The_datetime_attribute_is_the_same_in_every_culture()
-    {
-        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar-SA");
-            Assert.Equal("2026-03-04", SiteDates.Iso(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
-        }
-        finally
-        {
-            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
-        }
-    }
-
-    [Theory]
-    [InlineData("en-GB", "en", "en-GB")]
-    [InlineData("en-US", "fr", "fr")]
-    [InlineData("fr-CA", "fr", "fr-CA")]
-    public void The_culture_of_the_date_is_the_regional_one_when_it_has_the_language_of_the_locale_otherwise_the_one_of_the_locale(string current, string ui, string expected)
-    {
-        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(current);
-            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(ui);
-            Assert.Equal(expected, SiteDates.Culture().Name);
-        }
-        finally
-        {
-            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
-        }
     }
 }

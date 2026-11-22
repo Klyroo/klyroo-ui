@@ -31,7 +31,7 @@ var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     "Application", "Window", "Color", "Colors", "Page", "ContentPage", "Preferences", "Platform", "Router", "Component", "ComponentBase", "Services", "Logging", "Configuration",
     // Folders, namespaces and files of the template.
     "App", "Program", "Web", "Layout", "Pages", "Components", "Sections", "Content", "Site", "SiteInfo", "Routes", "Styles", "Properties", "Home", "NotFound", "Error",
-    "Pricing", "PricingInfo", "Plan", "Question", "Step", "Testimonial", "Library", "SiteDates", "Post", "Release", "PlainPage", "ForgotPassword", "Blog", "BlogIndex", "BlogArticle", "Docs", "DocsHome", "DocsArticle",
+    "Pricing", "PricingInfo", "Plan", "Question", "Step", "Testimonial", "Library", "Post", "Release", "PlainPage", "ForgotPassword", "Blog", "BlogIndex", "BlogArticle", "Docs", "DocsHome", "DocsArticle",
     "Changelog", "ChangelogPage", "ReleasePage", "Login", "Signup", "Markdown", "MarkdownPage", "MarkdownSite", "MarkdownStore", "MarkdownRenderer", "MainLayout",
     "HeroSection", "FeaturesSection", "HowItWorksSection", "TestimonialsSection", "LatestPostsSection", "CtaSection", "Src", "Test", "Tests",
 };
