@@ -96,6 +96,7 @@ public static partial class Catalog
         ("/docs/render-modes", "Render modes", "Getting started"),
         ("/docs/maui", "MAUI and Blazor Hybrid", "Getting started"),
         ("/docs/url-state", "URL state", "Data"),
+        ("/docs/data-list", "Data list sources and counts", "Data"),
         ("/docs/mcp", "MCP server", "AI"),
         ("/docs/llms-txt", "llms.txt", "AI"),
         ("/docs/skills", "Agent skill", "AI"),

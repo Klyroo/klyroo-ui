@@ -13,6 +13,16 @@ public enum DataListNumberDisplay
     InputAndSlider,
 }
 
+/// <summary>How an option filter orders the options it lists.</summary>
+public enum DataListOptionSort
+{
+    /// <summary>By count, the most counted first, then by label. Needs the counts (<see cref="DataListFilter.WithFacets"/>); an option without a count comes last.</summary>
+    Count,
+
+    /// <summary>By label, ignoring case and accents.</summary>
+    Alpha,
+}
+
 /// <summary>
 /// The definition of a filter: its kind, the operators it allows, its default operator and default value, and the limits an editor shows.
 /// Immutable; the <c>With...</c> methods return a changed copy. Create one with <see cref="Text"/>, <see cref="Option()"/>, <see cref="Boolean"/>,
@@ -85,8 +95,20 @@ public sealed class DataListFilter
     /// <summary>The options an option filter offers, in order; empty for the other kinds. Without them the editor lists the values of the facet counts (<see cref="Facets"/>) and the values already selected.</summary>
     public IReadOnlyList<DataListFilterOption> Options { get; private set; } = [];
 
-    /// <summary>Whether the data list asks for the option counts of this filter with each load and shows them in the editor. Only for option filters.</summary>
+    /// <summary>Whether the data list asks for the counts of this filter (the rows that have each option, or each yes and no) and shows them in the editor. Only for option and boolean filters.</summary>
     public bool Facets { get; private set; }
+
+    /// <summary>Whether the counts leave out this filter's own rule (<see cref="FacetMode.ExcludeSelf"/>, the default: the other options stay visible) or keep it (<see cref="FacetMode.IncludeSelf"/>).</summary>
+    public FacetMode FacetMode { get; private set; }
+
+    /// <summary>How the editor orders the options. <see langword="null"/> keeps the declared options in their order and lists the options that come from counts by count (the order of the facet). Not used for remote options, which keep the order of their source.</summary>
+    public DataListOptionSort? OptionSort { get; private set; }
+
+    /// <summary>How many options the editor lists before a "show more" button, or <see langword="null"/> to list them all. The selected options always show. A statically rendered editor lists them all.</summary>
+    public int? OptionLimit { get; private set; }
+
+    /// <summary>Where the options come from when they are loaded from a remote source, page by page, with a search. <see langword="null"/> for declared options and for options taken from the counts.</summary>
+    public DataListRemoteOptions? RemoteOptions { get; private set; }
 
     /// <summary>A text filter: <c>contains</c> (default), <c>is</c>, <c>isNot</c>.</summary>
     public static DataListFilter Text() => new(FilterKind.Text, TextOperators, FilterOperator.Contains);
@@ -180,17 +202,68 @@ public sealed class DataListFilter
     {
         ArgumentNullException.ThrowIfNull(options);
         if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has options.");
+        if (RemoteOptions is not null && options.Length > 0) throw new InvalidOperationException("A filter takes declared options or remote ones, not both.");
         var distinct = options.DistinctBy(o => o.Value, StringComparer.Ordinal).ToArray();
         if (distinct.Length != options.Length) throw new ArgumentException("The values of the options must be distinct.", nameof(options));
         return Clone(Label, distinct, Facets);
     }
 
-    /// <summary>Asks the data list for the option counts of this filter with each load and shows them next to the options. The counts leave out this filter's own rule, so the other options stay visible.</summary>
+    /// <summary>
+    /// Asks the data list for the counts of this filter and shows them next to the options (or next to Yes and No). By default the counts leave out this filter's own rule, so the other options stay visible
+    /// (see <see cref="WithFacetMode"/>). The counts are asked for when the filters or the search change, and kept while the user pages or sorts.
+    /// </summary>
     /// <param name="facets">Whether to ask for the counts.</param>
     public DataListFilter WithFacets(bool facets = true)
     {
-        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has facets.");
+        if (Kind is not (FilterKind.Option or FilterKind.Boolean)) throw new InvalidOperationException("Only an option or a boolean filter has facets.");
         return Clone(Label, Options, facets);
+    }
+
+    /// <summary>Chooses whether the counts of this filter keep its own rule (<see cref="FacetMode.IncludeSelf"/>) or leave it out (<see cref="FacetMode.ExcludeSelf"/>, the default).</summary>
+    /// <param name="mode">The mode.</param>
+    public DataListFilter WithFacetMode(FacetMode mode)
+    {
+        if (Kind is not (FilterKind.Option or FilterKind.Boolean)) throw new InvalidOperationException("Only an option or a boolean filter has facets.");
+        return With(c => c.FacetMode = mode);
+    }
+
+    /// <summary>Orders the declared options and the counted options of an option filter by count or by label (<see cref="OptionSort"/>). Remote options keep the order of their source: the sort is ignored for them.</summary>
+    /// <param name="sort">The order.</param>
+    public DataListFilter WithOptionSort(DataListOptionSort sort)
+    {
+        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has options to order.");
+        return With(c => c.OptionSort = sort);
+    }
+
+    /// <summary>Lists only the first options of an option filter, with a "show more" button for the others. The selected options always show.</summary>
+    /// <param name="limit">How many options to list first; at least 1.</param>
+    public DataListFilter WithOptionLimit(int limit)
+    {
+        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has options to limit.");
+        ArgumentOutOfRangeException.ThrowIfLessThan(limit, 1);
+        return With(c => c.OptionLimit = limit);
+    }
+
+    /// <summary>
+    /// Loads the options from a remote source instead of declaring them: the editor asks for a page when it is shown (a tag's popover that opens, a panel section that opens, the add filter menu
+    /// when the filter is picked), searches while the user types (after a pause), and loads the next page as the list scrolls. The values of a rule that the loaded pages do not contain (restored from the
+    /// address) get their labels from <paramref name="resolveSelected"/>, asked for while the rows load. Only interactive renders load pages: a statically rendered editor lists the selected options and, when the
+    /// filter has counts (<see cref="WithFacets"/>), the most counted ones (at most <see cref="OptionLimit"/>, else the page size), all labelled in one call to the resolver; a counted option the resolver does not
+    /// know is left out. The counts of the options that are listed are asked for by value (<see cref="DataListFacetRequest.Values"/>), so every page has its counts whatever the number of distinct values.
+    /// <see cref="OptionSort"/> does not apply: the options keep the order of the source.
+    /// </summary>
+    /// <param name="provider">Loads one page of options for a search.</param>
+    /// <param name="resolveSelected">Returns the options of values that no loaded page holds; values it leaves out show as they are.</param>
+    /// <param name="pageSize">How many options to ask for per page.</param>
+    /// <param name="minLength">The shortest search that is sent; a shorter one (not empty) lists nothing.</param>
+    public DataListFilter WithRemoteOptions(DataListOptionsProvider provider, DataListOptionsResolver? resolveSelected = null, int pageSize = DataListRemoteOptions.DefaultPageSize, int minLength = 0)
+    {
+        ArgumentNullException.ThrowIfNull(provider);
+        if (Kind != FilterKind.Option) throw new InvalidOperationException("Only an option filter has options.");
+        if (Options.Count > 0) throw new InvalidOperationException("A filter takes declared options or remote ones, not both.");
+        ArgumentOutOfRangeException.ThrowIfLessThan(pageSize, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(minLength, 0);
+        return With(c => c.RemoteOptions = new DataListRemoteOptions(provider, resolveSelected, pageSize, minLength));
     }
 
     private DataListFilter Clone(string? label, IReadOnlyList<DataListFilterOption> options, bool facets) =>

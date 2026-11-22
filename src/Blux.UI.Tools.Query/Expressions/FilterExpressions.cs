@@ -185,6 +185,10 @@ internal static class FilterExpressions
         };
     }
 
+    /// <summary>"The value is one of these texts" for a facet restricted to some values: the same expression as an option rule with a list, so it translates the same way.</summary>
+    internal static Expression ValuesRule(Expression v, FieldAccessor accessor, IReadOnlyList<string> values, bool inMemory) =>
+        OptionRule(v, accessor, new FilterValue.List(values), inMemory);
+
     /// <summary>The decimal without trailing zeros, so that equal numbers format the same.</summary>
     internal static decimal Normalize(decimal value) => value / 1.000000000000000000000000000000000m;
 

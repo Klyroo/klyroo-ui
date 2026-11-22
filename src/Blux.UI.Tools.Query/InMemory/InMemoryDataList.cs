@@ -161,6 +161,16 @@ public static class InMemoryDataList
         var counts = new Dictionary<string, int>(StringComparer.Ordinal);
         var missing = 0;
         var seen = new HashSet<string>(StringComparer.Ordinal);
+        // Only some values: the texts a rule would match ("12.50" is the 12.5 of a number field), compared the way the options are written.
+        HashSet<string>? wanted = null;
+        if (facet.Values is { Count: > 0 })
+        {
+            wanted = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var text in facet.Values)
+            {
+                if (TextConvert.TryParse(text, field!.Accessor.UnderlyingType, out var converted) && TextConvert.Format(converted) is { } formatted) wanted.Add(formatted);
+            }
+        }
         foreach (var row in rows)
         {
             if (predicate is not null && !predicate(row)) continue;
@@ -169,7 +179,10 @@ public static class InMemoryDataList
             foreach (var value in field!.Values(row))
                 if (TextConvert.Format(value) is { } text) seen.Add(text);
             if (seen.Count == 0) missing++;
-            foreach (var text in seen) counts[text] = counts.GetValueOrDefault(text) + 1;
+            foreach (var text in seen)
+            {
+                if (wanted is null || wanted.Contains(text)) counts[text] = counts.GetValueOrDefault(text) + 1;
+            }
         }
 
         return FacetResults.Create(facet, counts, missing, schema.MaxFacetBuckets);
@@ -181,6 +194,8 @@ internal static class FacetResults
 {
     public static DataListFacetResult Create(DataListFacetRequest facet, IEnumerable<KeyValuePair<string, int>> counts, int missing, int maxBuckets)
     {
+        // a facet scoped to values counts all of them: the cap bounds an open facet, and the values are few and asked for
+        if (facet.Values is { Count: > 0 } values) maxBuckets = Math.Max(maxBuckets, values.Count);
         // the cap comes first: the options kept are the most counted ones, and the search and the window apply among them
         var ranked = counts.OrderByDescending(o => o.Value).ThenBy(o => o.Key, StringComparer.Ordinal).ToList();
         var truncated = ranked.Count > maxBuckets;

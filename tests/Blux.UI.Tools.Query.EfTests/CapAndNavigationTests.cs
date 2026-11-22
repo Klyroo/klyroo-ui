@@ -46,6 +46,43 @@ public class CapAndNavigationTests
         }
     }
 
+    [Theory]
+    [InlineData("status", 1)]
+    [InlineData("department.name", 1)]
+    [InlineData("tags.name", 2)]
+    public void A_facet_scoped_to_values_counts_them_in_the_database_even_beyond_the_cap_like_the_executor(string key, int cap)
+    {
+        using var db = Database.Binary();
+        var schema = Capped(cap);
+        var rows = Load(db);
+        // The least counted values of the whole facet: the cap leaves them out of a plain facet, and a facet scoped to them counts them.
+        var whole = schema.ExecuteInMemory(rows, Req(facets: [new DataListFacetRequest(key)])).Facets!.Single();
+        var all = Capped(1000).ExecuteInMemory(rows, Req(facets: [new DataListFacetRequest(key)])).Facets!.Single();
+        string[] values = [.. all.Options.TakeLast(2).Select(o => o.Value), "no such value"];
+        Assert.True(whole.Truncated || whole.Total == all.Total, "the cap leaves the least counted values out of the plain facet");
+
+        var request = Req(facets: [new DataListFacetRequest(key, Values: values)]);
+        var expected = schema.ExecuteInMemory(rows, request).Facets!.Single();
+        var actual = Facets(schema, db.Employees.AsNoTracking(), request).Single();
+
+        Assert.Equal(expected, actual);
+        Assert.Equal(all.Options.TakeLast(2).OrderByDescending(o => o.Count).ThenBy(o => o.Value, StringComparer.Ordinal), actual.Options);
+        Assert.False(actual.Truncated);
+    }
+
+    [Fact]
+    public void A_facet_scoped_to_values_is_one_group_by_with_an_in_list_and_no_client_evaluation()
+    {
+        using var db = Database.Binary();
+        var query = Schemas.Employees.FacetQueries(db.Employees.AsNoTracking(), Req(facets: [new DataListFacetRequest("status", Values: ["Active", "Pending"])]))[0];
+
+        var sql = query.Buckets.ToQueryString();
+
+        Assert.Contains("GROUP BY", sql);
+        Assert.Contains("IN (", sql);
+        Assert.NotEmpty(query.Buckets.ToList());
+    }
+
     [Fact]
     public void A_facet_over_more_values_than_the_cap_is_marked_truncated()
     {

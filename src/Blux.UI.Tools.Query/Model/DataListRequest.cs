@@ -59,13 +59,27 @@ public sealed record DataListSearch(string Term);
 /// <param name="Skip">Options to skip (for loading more).</param>
 /// <param name="Search">Keeps only the options whose value contains this text, ignoring case.</param>
 /// <param name="IncludeMissing">Also count the rows where the field is empty.</param>
+/// <param name="Values">
+/// Counts only these values (as text, the way a rule carries them), whatever <see cref="DataListSchema.MaxFacetBuckets"/> says: a remote option filter asks for the values of the pages it has
+/// loaded. A value that no row has is not in the result (a reader takes it as 0). <see langword="null"/> or empty counts every value.
+/// </param>
 public sealed record DataListFacetRequest(
     string Key,
     FacetMode Mode = FacetMode.ExcludeSelf,
     int? Limit = null,
     int Skip = 0,
     string? Search = null,
-    bool IncludeMissing = false);
+    bool IncludeMissing = false,
+    IReadOnlyList<string>? Values = null)
+{
+    /// <summary>Value equality: the values are compared one by one, like the other lists of the model.</summary>
+    public bool Equals(DataListFacetRequest? other) =>
+        other is not null && Key == other.Key && Mode == other.Mode && Limit == other.Limit && Skip == other.Skip && Search == other.Search && IncludeMissing == other.IncludeMissing
+        && (Values is null ? other.Values is null : other.Values is not null && SequenceEquality.Equal(Values, other.Values));
+
+    /// <inheritdoc />
+    public override int GetHashCode() => HashCode.Combine(Key, Mode, Limit, Skip, Search, IncludeMissing, Values is null ? 0 : SequenceEquality.Hash(Values));
+}
 
 /// <summary>What a data list asks a provider for: a page of rows under a sort, a filter tree and a search, plus facet counts.</summary>
 public sealed record DataListRequest

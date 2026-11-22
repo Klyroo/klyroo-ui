@@ -138,6 +138,13 @@
         _activeBefore = active;
     }
 
+    // Interactive, the open state of a section is the one the browser reported, so that the editors inside know when to load.
+    private void OnSection(string key, bool open)
+    {
+        if (open) _expanded.Add(key);
+        else _expanded.Remove(key);
+    }
+
     private void OnScopeChanged()
     {
         try
@@ -216,7 +223,7 @@
             {
                 var section = key;
                 var count = CountOf(section);
-                <BxCollapsible @key="section" Open="@_expanded.Contains(section)" Ui="_sectionUi" data-slot="filter-panel-section" data-filter="@section">
+                <BxCollapsible @key="section" Open="@_expanded.Contains(section)" OpenChanged="@(Context.IsInteractive ? EventCallback.Factory.Create<bool>(this, open => OnSection(section, open)) : default)" Ui="_sectionUi" data-slot="filter-panel-section" data-filter="@section">
                     <Trigger>
                         <span class="min-w-0 flex-1 truncate">@Context.FilterLabel(section)</span>@if (count > 0)
                         {
@@ -224,7 +231,10 @@
                         }
                     </Trigger>
                     <ChildContent>
-                        <BxDataListFilterEditor TItem="TItem" Key="@section" ShowTitle="false" ResetToken="_token" Ui="_editorUi" />
+                        @* A remote option filter loads its first page when its section opens, not when the panel renders. *@
+                        <CascadingValue TValue="FilterEditorShown" Value="@FilterEditorShown.Of(_expanded.Contains(section))">
+                            <BxDataListFilterEditor TItem="TItem" Key="@section" ShowTitle="false" ResetToken="_token" Ui="_editorUi" />
+                        </CascadingValue>
                     </ChildContent>
                 </BxCollapsible>
             }

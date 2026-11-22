@@ -44,6 +44,12 @@ public sealed partial record BxToolsMessages
     /// <summary>Said in the editor of an option filter when the search matches no option.</summary>
     public string FilterNoOptionsMatch { get; init; } = "No option matches your search";
 
+    /// <summary>Label of the button that lists the options an option filter kept back. {0} is how many more there are.</summary>
+    public string FilterOptionsMore { get; init; } = "Show {0} more";
+
+    /// <summary>Said in a statically rendered editor of an option filter whose options come from a remote source: the options that are listed are the selected ones and the counted ones, searching the rest runs in the browser.</summary>
+    public string FilterOptionsNeedScript { get; init; } = "Searching the other options needs JavaScript.";
+
     /// <summary>Label of the switch that also matches the rows where the field is empty.</summary>
     public string FilterIncludeEmpty { get; init; } = "Include empty values";
 
