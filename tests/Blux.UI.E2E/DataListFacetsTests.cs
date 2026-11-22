@@ -11,7 +11,7 @@ public class DataListFacetsTests(PlaygroundServer server) : PlaygroundTest(serve
 {
     private async Task OpenList(string mode, string query = "")
     {
-        await Page.GotoAsync($"/{mode}/components/data-list{query}");
+        await Page.GotoAsync($"/{mode}/components/data-list-facets{query}");
         await WaitForPage(mode);
     }
 
@@ -144,7 +144,7 @@ public class DataListFacetsTests(PlaygroundServer server) : PlaygroundTest(serve
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
         if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
-        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list?fct.f.reviewed=true");
+        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list-facets?fct.f.reviewed=true");
         await Page.EvaluateAsync("() => window.__enhanced");
         await Assertions.Expect(Facets).ToBeVisibleAsync(new() { Timeout = 30_000 });
         await WaitForPage(mode);
