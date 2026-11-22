@@ -70,6 +70,8 @@ Everything below `content/` is read when the site starts and is searchable. A pa
 | `content/about.md` | The text of the about page | `/about`, laid out by `About.razor` with the timeline and the skills |
 | Anywhere else, such as `content/uses.md` | A plain page | `/uses`, with the layout of the site and nothing else |
 
+A plain page cannot have the address of a page of the site: `contact`, `work`, `writing`, `speaking`, `about`, `error` and `not-found` are answered by their own page, so a file such as `content/contact.md` would never be shown. The site stops at startup, and a reload in Development keeps the previous content, with an error that names the file (`Library.FixedRoutes` lists the addresses; add the one of a page you create).
+
 The rule is that only the files directly in `work/` and `writing/` are projects and articles: a file in a folder below them (`writing/2026/post.md`) is a plain page at `/writing/2026/post`, not in the list. Link to a plain page from the Razor components (the footer links to `uses`) or from Markdown (`[uses](/uses)`).
 
 ### Projects
@@ -95,7 +97,7 @@ links:
 Start the body at `##`.
 ```
 
-`year` is required and has four digits: the site stops at startup and names the file when it is missing or invalid. `featured: true` puts the project on the home page (the three most recent featured ones). `role`, `client`, `stack`, `links`, `image` and `imageAlt` are optional; a link needs a `label` and a `url`, and an address with a scheme has to be `http`, `https` or `mailto`. Projects are listed with the most recent year first. A cover is a path below `wwwroot`, from the root of the site, with or without a leading slash (`img/work/harbor-atlas.svg` and `/img/work/harbor-atlas.svg` are the same: it is rewritten like the images of a body, so it works below a path base), or an `https://` address. A cover that has no file in `wwwroot` is a warning in the log, like an image of a body.
+`year` is required and has four digits: the site stops at startup and names the file when it is missing or invalid. `featured: true` puts the project on the home page (the three most recent featured ones). `role`, `client`, `stack`, `links`, `image` and `imageAlt` are optional; a link needs a `label` and a `url`, and an address with a scheme has to be `http`, `https` or `mailto`. Projects are listed with the most recent year first. A `links` address goes through the same rewrite as the links of a Markdown body: an address with a scheme (`https://`, `mailto:`) is kept as written, and an address of the site is turned into one relative to the base of the page, so it keeps working below a path base. It starts from the root of the site (`/uses`, `/writing/post`) or from the folder of the file (`kiln.md`, `../writing/post.md`), and `.md` is dropped. Any other scheme (`javascript:`, `data:`) stops the start with the name of the file. A cover is a path below `wwwroot`, from the root of the site, with or without a leading slash (`img/work/harbor-atlas.svg` and `/img/work/harbor-atlas.svg` are the same: it is rewritten like the images of a body, so it works below a path base), or an `https://` address. A cover that has no file in `wwwroot` is a warning in the log, like an image of a body.
 
 In Development, saving a file with such a mistake keeps the previous content and logs the error with the file name, instead of breaking the pages (`ContentOptions.Validate` in `Program.cs` runs at every read).
 
@@ -126,11 +128,11 @@ The search covers the projects, the articles, the about page and the plain pages
 
 ## The contact form is UI only
 
-`Components/Pages/Contact.razor` uses Blux's `BxForm`, posted to the server with a form name (`FormName="contact"` and a `[SupplyParameterFromForm]` model), so the page needs no circuit. The server checks the rules of `Site/ContactMessage.cs` on every post (name, a valid email, one of the topics, a message of 10 to 2000 characters) and shows the errors beside the fields. When everything is valid it calls `SendAsync`, which only remembers the name so that the page can say "the form is valid" and that nothing was sent. **No email is sent, nothing is stored and nothing is logged.** The page carries no other notice: this README is where it is written down.
+`Components/Pages/Contact.razor` uses Blux's `BxForm`, posted to the server with a form name (`FormName="contact"` and a `[SupplyParameterFromForm]` model), so the page needs no circuit. The server checks the rules of `Site/ContactMessage.cs` on every post (name, a valid email, one of the topics, a message of 10 to 2000 characters) and shows the errors beside the fields. The topic is a group of radio buttons, which the browser posts by itself: the form works with JavaScript off, like the rest of the site. When everything is valid it calls `SendAsync`, which redirects to `/contact?sent=1` (Post/Redirect/Get, so that reloading the page does not send the form again), where the page says "the form is valid" and that nothing was sent. **No email is sent, nothing is stored and nothing is logged.** The page carries no other notice: this README is where it is written down.
 
 To make it real you need somewhere to deliver the message, and these changes:
 
-- Send the message in `SendAsync`: with an SMTP client, an email API, or a form service. Put a message in `_error` when it fails, and keep what the visitor typed so that nothing is lost.
+- Send the message in `SendAsync` before the redirect: with an SMTP client, an email API, or a form service. Put a message in `_error` when it fails, and keep what the visitor typed so that nothing is lost.
 - Stop bots: a rate limit on the page, a hidden field that real visitors leave empty, or a check such as Cloudflare Turnstile. A public form that sends email is found within days.
 - Decide what you keep, and say so on the page. A message holds an email address, which is personal data.
 - Do not put a visitor's text in an email header: use the API of your mail library for the subject and the reply address, which rejects line breaks.

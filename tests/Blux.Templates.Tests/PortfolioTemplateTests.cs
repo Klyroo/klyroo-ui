@@ -59,8 +59,18 @@ public class PortfolioTemplateTests
             // Relative, so that it follows a path base.
             Assert.False(project.Image.StartsWith('/'));
             Assert.Equal($"work/{project.Name}", project.Href);
-            Assert.All(project.Links, link => Assert.Equal("example.com", new Uri(link.Url).Host));
+            Assert.All(project.Links.Where(l => ContentUrl.IsExternal(l.Url)), link => Assert.Equal("example.com", new Uri(link.Url).Host));
         });
+    }
+
+    [Fact]
+    public void A_link_of_a_sample_project_to_an_article_is_the_address_of_that_article()
+    {
+        var site = Sample();
+        var link = site.Projects().Single(p => p.Name == "quire").Links.Single(l => l.Label == "How I audit");
+
+        Assert.Equal("writing/the-audit-i-run-before-writing-a-token", link.Url);
+        Assert.NotNull(site.Find(link.Url));
     }
 
     [Fact]
@@ -213,6 +223,65 @@ public class PortfolioTemplateTests
             var error = Assert.Throws<ContentException>(() => bad.Load().Projects());
             Assert.Contains("work/a.md", error.Message);
         }
+    }
+
+    [Fact]
+    public void An_address_of_the_site_in_the_links_of_a_project_is_a_page_address_and_an_external_one_is_kept()
+    {
+        using var folder = new ContentFolder()
+            .Page("work/a.md", "A", extra: "year: 2024\nlinks:\n  - label: Absolute\n    url: /uses\n  - label: File\n    url: kiln.md\n  - label: Parent\n    url: ../writing/post.md#top\n  - label: Route\n    url: /contact\n  - label: Web\n    url: https://example.com/a?b=1#c\n  - label: Mail\n    url: mailto:a@example.com\n")
+            .Page("work/kiln.md", "Kiln", extra: "year: 2023\n");
+
+        var links = folder.Load().Projects().Single(p => p.Name == "a").Links;
+
+        // Relative to the <base href>, so that they follow a path base; the same rewrite as the links of a body.
+        Assert.Equal(["uses", "work/kiln", "writing/post#top", "contact", "https://example.com/a?b=1#c", "mailto:a@example.com"], links.Select(l => l.Url));
+    }
+
+    [Fact]
+    public void The_link_of_a_project_to_a_page_is_right_below_a_path_base_in_the_page_it_renders()
+    {
+        // Resolved the way the browser does with <base href="/site/">: nothing starts with a slash, so nothing leaves the prefix.
+        using var folder = new ContentFolder().Page("work/a.md", "A", extra: "year: 2024\nlinks:\n  - label: Uses\n    url: /uses\n  - label: Kiln\n    url: kiln.md\n").Page("work/kiln.md", "Kiln", extra: "year: 2023\n");
+        var baseUri = new Uri("https://example.com/site/");
+
+        Assert.All(folder.Load().Projects().Single(p => p.Name == "a").Links, link =>
+            Assert.StartsWith("https://example.com/site/", new Uri(baseUri, link.Url).ToString()));
+    }
+
+    [Theory]
+    [InlineData("contact.md")]
+    [InlineData("work.md")]
+    [InlineData("writing.md")]
+    [InlineData("speaking.md")]
+    [InlineData("error.md")]
+    [InlineData("not-found.md")]
+    [InlineData("Contact.md")]
+    public void A_plain_page_named_after_the_route_of_a_page_of_the_site_is_refused_with_the_file_and_the_route(string file)
+    {
+        using var folder = new ContentFolder().Page("uses.md", "Uses").Page(file, "Shadowed");
+
+        var error = Assert.Throws<ContentException>(() => Library.Validate(folder.Load(), null));
+
+        Assert.Contains(file, error.Message);
+        Assert.Contains("route of a page of the site", error.Message);
+        Assert.Contains(Path.GetFileNameWithoutExtension(file).ToLowerInvariant(), error.Message.ToLowerInvariant());
+    }
+
+    [Fact]
+    public void A_page_that_only_looks_like_a_route_is_fine_and_the_store_keeps_the_previous_content_when_a_reload_adds_one_that_is_not()
+    {
+        using var folder = new ContentFolder().Page("work/contact.md", "A project called contact", extra: "year: 2024\n").Page("contact/thanks.md", "Thanks").Page("uses.md", "Uses");
+        Assert.Empty(Library.Validate(folder.Load(), null));
+        using var store = new MarkdownStore(new ContentOptions { Root = folder.Root, Validate = site => Library.Validate(site, null) });
+        var before = store.Site;
+
+        folder.Page("contact.md", "Shadowed");
+
+        Assert.False(store.Reload());
+        Assert.Same(before, store.Site);
+        // It is not in the search of the site that is served.
+        Assert.DoesNotContain(store.Site.Search, page => page.Href == "contact");
     }
 
     [Fact]
