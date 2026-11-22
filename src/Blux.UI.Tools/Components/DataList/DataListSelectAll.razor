@@ -1,0 +1,17 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+
+@* The select-all box in the header of the table: it ticks the rows on screen and is mixed while only some of them are ticked. *@
+<BxCheckbox Value="_state == true" ValueChanged="OnChange" Indeterminate="_state is null" Disabled="@(Context.SelectionDisabled || Context.Rows.Count == 0)" Size="BxSize.Sm"
+            aria-label="@ToolsMessages.SelectAllRows" data-select="all" />
+
+@code {
+    private bool? _state;
+
+    protected override void OnParametersSet() => _state = Context.PageSelection;
+
+    protected override void OnContextUpdated() => _state = Context.PageSelection;
+
+    private void OnChange(bool selected) => Context.SetPageSelected(selected);
+}

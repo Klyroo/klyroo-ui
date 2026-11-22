@@ -21,7 +21,8 @@ internal static partial class ToolsThemes
                 "sortButton", "sortIcon", "sortIconActive", "tbody", "td", "tdStart", "tdCenter", "tdEnd",
                 "empty", "skeleton", "pagination", "pageSize", "pageSizeLabel", "pageSizeSelect", "pageSizeForm", "error",
                 "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide",
-                "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput")
+                "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput",
+                "selectCell", "rowSelected", "selectionActions", "selectionBar", "selectionCount", "selectionLive", "selectionScope", "selectionGroup", "actionsDropdown")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -112,6 +113,18 @@ internal static partial class ToolsThemes
             .Slot("filterNativeLabel", "inline-flex min-h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm text-(--blux-text)")
             .Slot("filterNativeInput", "size-4 shrink-0 accent-(--blux-primary-text)")
             .Slot("filterPanelEmpty", "px-3 py-3 text-sm text-(--blux-text-muted)")
+            .Slot("selectCell", "w-10 pe-0")
+            .Slot("rowSelected", "has-[input[data-select=row]:checked]:bg-(--blux-bg-muted)")
+            .Slot("selectionActions", "contents")
+            .Slot("selectionBar", "z-10 flex w-fit max-w-full flex-wrap items-center gap-2 rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg) px-3 py-2 text-sm text-(--blux-text) shadow-lg")
+            .Slot("selectionCount", "me-1 font-medium tabular-nums text-(--blux-text-highlighted)")
+            .Slot("selectionLive", "sr-only")
+            .Slot("selectionScope", "")
+            .Slot("selectionGroup", "flex flex-wrap items-center gap-2")
+            .Slot("actionsDropdown", "")
+            .Variant("position", "sticky", "selectionBar", "sticky bottom-4 mx-auto")
+            .Variant("position", "fixed", "selectionBar", "fixed bottom-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2")
+            .Default("position", "sticky")
             .Variant("density", "compact", "th", "px-3 py-2")
             .Variant("density", "default", "th", "px-4 py-3")
             .Variant("density", "comfortable", "th", "px-4 py-4")

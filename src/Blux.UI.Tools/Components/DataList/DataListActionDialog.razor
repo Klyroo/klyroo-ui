@@ -1,0 +1,26 @@
+@namespace Blux.UI.Tools
+@inherits BxToolsComponentBase
+
+@* The question an action asks before it runs. Cancel and the confirm button close the dialog without a round trip (data-bx-close); the confirm button also runs the action. *@
+<BxModal Open="Open" OpenChanged="OpenChanged" Title="@Title" Description="@Description" data-slot="action-dialog">
+    <Footer>
+        <BxButton Label="@ToolsMessages.ActionCancel" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close data-slot="action-cancel" />
+        <BxButton Label="@ConfirmLabel" Color="Color" OnClick="OnConfirm" data-bx-close data-slot="action-confirm" />
+    </Footer>
+</BxModal>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+
+    [Parameter] public string? Description { get; set; }
+
+    [Parameter, EditorRequired] public string ConfirmLabel { get; set; } = "";
+
+    [Parameter] public BxColor Color { get; set; }
+
+    [Parameter] public EventCallback OnConfirm { get; set; }
+}
