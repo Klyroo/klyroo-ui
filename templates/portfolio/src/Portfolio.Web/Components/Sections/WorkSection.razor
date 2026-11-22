@@ -1,0 +1,24 @@
+@inject MarkdownStore Store
+
+@* The projects marked featured: true in their front matter, the most recent first. *@
+<BxPageSection id="work"
+               Headline="@SiteInfo.WorkHeadline"
+               Title="@SiteInfo.WorkTitle"
+               Description="@SiteInfo.WorkDescription"
+               Orientation="BxOrientation.Vertical"
+               Links="_links">
+    <BxPageGrid Columns="3" Class="mt-10 gap-6">
+        @foreach (var project in _projects)
+        {
+            <ProjectCard Project="project" />
+        }
+    </BxPageGrid>
+</BxPageSection>
+
+@code {
+    private static readonly PageLinkItem[] _links = [new("All projects", SiteInfo.WorkHref) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+
+    private IReadOnlyList<Project> _projects = [];
+
+    protected override void OnInitialized() => _projects = [.. Store.Site.FeaturedProjects().Take(3)];
+}
