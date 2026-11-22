@@ -15,7 +15,7 @@ else
 @code {
     private SlotSet _slots = default!;
     private string _id = default!;
-    private RemoteOptions? _remote;
+    private BxRemoteOptions? _remote;
     private bool _iconsSeen;
     private IReadOnlyList<BxSelectItem>? _items;
     private bool _itemsPassed;
@@ -71,7 +71,7 @@ else
     [Parameter] public int MinLength { get; set; }
 
     /// <summary>With <see cref="OptionsProvider"/>: the number of options requested per page.</summary>
-    [Parameter] public int PageSize { get; set; } = RemoteOptions.DefaultPageSize;
+    [Parameter] public int PageSize { get; set; } = BxRemoteOptions.DefaultPageSize;
 
     /// <summary>Several values can be selected; each one posts under <c>Name</c>. Otherwise the list holds at most one value.</summary>
     [Parameter] public bool Multiple { get; set; }
@@ -124,7 +124,7 @@ else
         {
             if (_remote is null)
             {
-                _remote = new RemoteOptions(OptionsProvider, OnRemoteChanged);
+                _remote = new BxRemoteOptions(OptionsProvider, OnRemoteChanged);
                 _optionsKey = OptionsKey;
             }
             else if (!Equals(_optionsKey, OptionsKey))

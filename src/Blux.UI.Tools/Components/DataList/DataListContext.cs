@@ -47,6 +47,10 @@ public sealed partial class DataListContext<TItem>
 
     internal Task EnsureLoadedAsync() => _owner.EnsureLoadedAsync();
 
+    internal CancellationToken LifetimeToken => _owner.LifetimeToken;
+
+    internal Microsoft.Extensions.Logging.ILogger? Logger => _owner.Logger;
+
     private readonly List<BxDataListColumn<TItem>> _columns = [];
     private int _columnIndex;
 

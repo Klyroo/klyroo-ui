@@ -16,7 +16,7 @@ else
     private SlotSet _slots = default!;
     private int _sequence;
     private string _id = default!;
-    private RemoteOptions? _remote;
+    private BxRemoteOptions? _remote;
     private IReadOnlyList<BxSelectItem>? _items;
     private bool _itemsPassed;
     private object? _optionsKey;
@@ -70,7 +70,7 @@ else
     [Parameter] public int MinLength { get; set; }
 
     /// <summary>With <see cref="OptionsProvider"/>: the number of suggestions requested per page.</summary>
-    [Parameter] public int PageSize { get; set; } = RemoteOptions.DefaultPageSize;
+    [Parameter] public int PageSize { get; set; } = BxRemoteOptions.DefaultPageSize;
 
     /// <summary>
     /// Only a suggestion is a valid value: <c>Value</c> is the chosen item's value and the field shows its label.
@@ -119,7 +119,7 @@ else
         {
             if (_remote is null)
             {
-                _remote = new RemoteOptions(OptionsProvider, OnRemoteChanged);
+                _remote = new BxRemoteOptions(OptionsProvider, OnRemoteChanged);
                 _optionsKey = OptionsKey;
             }
             else if (!Equals(_optionsKey, OptionsKey))

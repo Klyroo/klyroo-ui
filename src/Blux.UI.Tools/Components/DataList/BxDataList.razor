@@ -61,6 +61,7 @@
     private bool _writeInitialState;
     private bool _stateFromUrl;
     private bool _disposed;
+    private readonly CancellationTokenSource _lifetime = new();
 
     public BxDataList() => _context = new DataListContext<TItem>(this);
 
@@ -70,7 +71,8 @@
     [Inject] private IServiceProvider Services { get; set; } = default!;
 
     /// <summary>
-    /// What a request may ask for: which fields sort, which filter, the default sort and page size. Optional for a list of rows in memory whose
+    /// What a request may ask for: which fields sort, which filter, the default sort and page size. The schema is fixed for the life of the list: a new instance given after the first render is ignored
+    /// (build it once, in a static field or a cached service; an inline <c>DataListSchema.For&lt;T&gt;(...)</c> in markup would create a new one on every render), and giving another schema means re-keying the list with <c>@@key</c>. Optional for a list of rows in memory whose
     /// <see cref="BxDataListColumn{TItem}"/>s name a <c>Property</c>: those columns then describe the schema (every one sortable unless it says otherwise).
     /// A provider or a queryable needs a schema, because it is the schema that drops what a request must not ask for.
     /// </summary>
@@ -139,6 +141,10 @@
     [Parameter] public DataListUi? Ui { get; set; }
 
     internal DataListController<TItem>? Controller { get; private set; }
+
+    internal CancellationToken LifetimeToken => _lifetime.Token;
+
+    internal ILogger? Logger => (Services.GetService(typeof(ILoggerFactory)) as ILoggerFactory)?.CreateLogger("Blux.UI.Tools.DataList");
 
     internal DataListSchema<TItem>? CurrentSchema => _schema;
 
@@ -249,6 +255,8 @@
             {
                 controller.Provider = DataListController<TItem>.CreateProvider(controller.Schema, Items, Provider, Queryable, _executor);
                 reload = sourceChanged;
+                // Other rows: the counts of the old ones do not hold.
+                if (sourceChanged) controller.DropFacets();
             }
         }
         if (State is not null && !State.Equals(_lastStateParam))
@@ -293,6 +301,9 @@
         }
         _state = controller.Normalize(InitialState());
         var taken = TakePersisted();
+        // The labels the prerender resolved are good whatever the state: shown at once, and not asked of the resolver again.
+        if (taken?.Labels is { } persistedLabels) _context.AdoptLabels(persistedLabels);
+
         // A result that does not depend on the zone shows at once, before the call to the browser: the render waits for that call, not for the rows.
         var adopted = taken is { } early && early.Requested.Equals(_state) && !NeedsTimeZone(early.Request.Filter) && Adopt(early);
         if (RendererInfo.IsInteractive)
@@ -312,6 +323,7 @@
         if (adopted)
         {
             AfterLoad(force: true);
+            await LabelRemoteValuesAsync(_state, includeCounted: true, retryFailed: true);
         }
         else
         {
@@ -374,8 +386,26 @@
 
     private async Task LoadAsync(DataListState state, bool refresh = false)
     {
+        // The labels of the values in the state do not wait for the rows.
+        var labelling = LabelRemoteValuesAsync(state, includeCounted: false, retryFailed: true);
         await Controller!.LoadAsync(state, refresh);
-        if (!_disposed) AfterLoad(force: false);
+        if (_disposed) return;
+        AfterLoad(force: false);
+        await LabelRemoteValuesAsync(state, includeCounted: true);
+        await labelling;
+    }
+
+    // The values of a remote option filter that the address restored have no label until the resolver gives one. A static render and a prerender wait for it (nothing renders again afterwards);
+    // an interactive list shows the raw values and swaps in the labels when they arrive. Counted options are labelled only for the static editor, which lists them.
+    private Task LabelRemoteValuesAsync(DataListState state, bool includeCounted, bool retryFailed = false)
+    {
+        if (_schema is null || _disposed) return Task.CompletedTask;
+        var interactive = RendererInfo.IsInteractive;
+        var resolving = _context.ResolveLabelsAsync(state, includeCounted && !interactive, _lifetime.Token, Logger, retryFailed);
+        if (!interactive) return resolving;
+        // ResolveLabelsAsync does not throw; the task is observed all the same.
+        _ = resolving.ContinueWith(static t => _ = t.Exception, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously);
+        return Task.CompletedTask;
     }
 
     // The rows on screen are for a state that may differ from the requested one (a page past the end): show that one, in the URL too.
@@ -507,7 +537,13 @@
             var stateText = JsonSerializer.Serialize(requested, DataListJsonContext.Default.DataListState);
             var loadedText = JsonSerializer.Serialize(loaded, DataListJsonContext.Default.DataListState);
             var resultText = JsonSerializer.Serialize(result, ResultJson);
-            var bytes = (long)System.Text.Encoding.UTF8.GetByteCount(stateText) + System.Text.Encoding.UTF8.GetByteCount(loadedText) + System.Text.Encoding.UTF8.GetByteCount(resultText);
+            // The labels remote options resolved (a tag writes them) travel with the result and count in its size.
+            // Nothing at all when no remote filter was labelled: every key persisted adds to what the client sends back to the server.
+            var labelsText = _context.RemoteLabels.Any(p => p.Value.Count > 0)
+                ? JsonSerializer.Serialize(_context.RemoteLabels.ToDictionary(p => p.Key, p => p.Value), DataListJsonContext.Default.DictionaryStringDictionaryStringString)
+                : "";
+            var bytes = (long)System.Text.Encoding.UTF8.GetByteCount(stateText) + System.Text.Encoding.UTF8.GetByteCount(loadedText) + System.Text.Encoding.UTF8.GetByteCount(resultText)
+                + System.Text.Encoding.UTF8.GetByteCount(labelsText);
             // The client sends the whole persisted state to the server when a circuit starts, and SignalR refuses a message past 32 KB: one list over its own limit, or lists that together pass the page budget, are not persisted.
             var allowed = DataListPersistBudget.Reserve(Services, bytes, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes);
             if (!allowed)
@@ -521,6 +557,7 @@
             _persistent.PersistAsJson(PersistedKey + ":result", resultText);
             // The zone the days of the result were cut in: the interactive render adopts the result only for the same zone.
             _persistent.PersistAsJson(PersistedKey + ":zone", _timeZone ?? "");
+            if (labelsText.Length > 0) _persistent.PersistAsJson(PersistedKey + ":labels", labelsText);
         }
         return Task.CompletedTask;
     }
@@ -533,7 +570,7 @@
     }
 
     // What the prerender handed over, with the state it was loaded for (it is used only when that is the state this render starts from); the keys are taken whether or not it is used.
-    private sealed record Persisted(DataListState Requested, DataListState Loaded, DataListRequest Request, DataListResult<TItem> Result, string? Zone);
+    private sealed record Persisted(DataListState Requested, DataListState Loaded, DataListRequest Request, DataListResult<TItem> Result, string? Zone, Dictionary<string, Dictionary<string, string>>? Labels);
 
     [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only strings go through the reflection-based serializer of PersistentComponentState, and string has a built-in converter; the result itself is read with the JsonTypeInfo of the app.")]
     private Persisted? TakePersisted()
@@ -543,6 +580,7 @@
         // Every key is taken (a bitwise and, not a short circuit): what is left unread would be offered to another list.
         var found = _persistent.TryTakeFromJson<string>(key + ":state", out var stateText) & _persistent.TryTakeFromJson<string>(key + ":loaded", out var loadedText)
                     & _persistent.TryTakeFromJson<string>(key + ":result", out var resultText) & _persistent.TryTakeFromJson<string>(key + ":zone", out var zone);
+        _persistent.TryTakeFromJson<string>(key + ":labels", out var labelsText);
         if (!found) return null;
         try
         {
@@ -550,7 +588,8 @@
             var loaded = JsonSerializer.Deserialize(loadedText!, DataListJsonContext.Default.DataListState);
             var result = JsonSerializer.Deserialize(resultText!, ResultJson);
             if (requested is null || loaded is null || result is null) return null;
-            return new Persisted(requested, loaded, Controller!.BuildRequest(loaded), result, string.IsNullOrEmpty(zone) ? null : zone);
+            var labels = labelsText is null ? null : JsonSerializer.Deserialize(labelsText, DataListJsonContext.Default.DictionaryStringDictionaryStringString);
+            return new Persisted(requested, loaded, Controller!.BuildRequest(loaded), result, string.IsNullOrEmpty(zone) ? null : zone, labels);
         }
         catch (JsonException)
         {
@@ -595,6 +634,8 @@
     public void Dispose()
     {
         _disposed = true;
+        _lifetime.Cancel();
+        _lifetime.Dispose();
         _subscription?.Dispose();
         _claim?.Dispose();
         _persistSubscription?.Dispose();

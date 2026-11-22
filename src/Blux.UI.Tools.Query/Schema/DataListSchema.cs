@@ -153,6 +153,7 @@ public abstract class DataListSchema
             {
                 Limit = facet.Limit is { } l ? Math.Clamp(l, 1, MaxFacetLimit) : null,
                 Skip = Math.Max(0, facet.Skip),
+                Values = facet.Values is null ? null : [.. facet.Values.Where(v => !string.IsNullOrEmpty(v)).Distinct(StringComparer.Ordinal).Take(MaxListValues)],
             });
         }
 
