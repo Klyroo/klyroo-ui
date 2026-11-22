@@ -21,7 +21,7 @@
                         <li class="flex flex-col gap-3 py-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6" data-testid="talk">
                             <div class="min-w-0">
                                 <p class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-(--blux-text-muted)">
-                                    <time datetime="@SiteDates.Iso(When(talk))">@SiteDates.Format(When(talk))</time>
+                                    <time datetime="@BxDates.Iso(When(talk))">@BxDates.Format(When(talk))</time>
                                     <BxBadge Label="@talk.Kind.ToString()" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
                                 </p>
                                 <h3 class="mt-1 text-lg font-semibold text-balance text-(--blux-text-highlighted)">@talk.Title</h3>
