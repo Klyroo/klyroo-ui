@@ -1,0 +1,125 @@
+@page "/docs/data-list"
+@page "/{Mode}/docs/data-list"
+@layout Layout.DocsLayout
+
+<PageTitle>Data list sources and counts · blux-ui</PageTitle>
+<div class="pg-prose">
+    <p class="pg-eyebrow">Data</p>
+    <h1>Data list sources and counts</h1>
+    <p class="pg-lead">
+        A <code>BxDataList</code> reads its rows from one source: a list in memory, a database query or a provider you write. All three answer the same
+        <code>DataListRequest</code> (paging, sort, filters, search, counts), so the filters and the counts next to their options work the same way on each.
+    </p>
+
+    <h2>Three sources</h2>
+    <p>
+        <code>Items</code> is run by the in-memory executor of <code>Blux.UI.Tools.Query</code>. <code>Queryable</code> is a database query: the list turns each request into queries
+        (<code>schema.Apply</code>) and an <code>IDataListQueryExecutor</code> runs them. The default executor blocks the thread while the database answers, so register the one of
+        <code>Blux.UI.Tools.EntityFrameworkCore</code> in the server <code>Program.cs</code>: it runs <code>CountAsync</code> and <code>ToListAsync</code> with the cancellation token of the request,
+        and a newer request cancels the query of the stale one in the database. <code>Provider</code> is a delegate that returns a <code>DataListResult&lt;T&gt;</code> from anything: an HTTP API, a search engine.
+    </p>
+    <CodeBlock Title="Program.cs" Code="@Setup" />
+
+    <h2>Counts next to the options</h2>
+    <p>
+        <code>WithFacets()</code> on an option or a boolean filter makes the list ask for how many rows have each option. The editors of the filter tags and of the filter panel write the count next to the option
+        (and next to Yes and No, and next to the include empty switch). A count leaves out the rule of its own filter by default, so ticking Paid does not hide Pending, while every other filter and the search
+        narrow the numbers; <code>WithFacetMode(FacetMode.IncludeSelf)</code> counts with the filter applied. A row counts once per distinct value, rows with no value are the empty count, and the options come
+        by count, then value; <code>WithOptionSort</code> orders them by count or by label and <code>WithOptionLimit</code> lists the first ones with a Show more button.
+    </p>
+    <CodeBlock Title="Schema.cs" Code="@Schema" />
+    <p>
+        The list asks for the counts when the filters or the search change, not when the user pages or sorts: it keeps the counts of the result on screen and sends the next request without them. A refresh asks again.
+        A prerendered result carries its counts to the interactive render, and they count in its size (<code>PersistMaxBytes</code>). A filter with counts reads at most
+        <code>MaxFacetBuckets</code> distinct values (1000 unless the schema sets it); a facet over more is cut to the most counted ones and marked <code>Truncated</code>.
+    </p>
+
+    <h2>Counts from a query</h2>
+    <p>
+        For a <code>Queryable</code> the list does it all. To run a request yourself (an API endpoint for a client-side list), <code>schema.FacetQueries(source, request)</code> returns one group-by query
+        per facet, and <code>ToResult</code> turns the rows into the <code>DataListFacetResult</code> the in-memory executor would give. The package has no EF dependency: you run the queries.
+        The empty count is a second, cheap query. The group-by is translated by the provider, so which values count as the same follows the collation of the column.
+    </p>
+    <CodeBlock Title="CustomersEndpoint.cs" Code="@Queries" />
+
+    <h2>Counts from a provider</h2>
+    <p>
+        A provider receives <code>request.Facets</code> (one entry per filter with counts, in its mode) and returns <code>Facets</code> in the result. The list sends them only when the filters or the search
+        changed since the result on screen, so a page or a sort costs the provider no counting. If the result has no <code>Facets</code>, the list shows no count and asks again on the next request.
+    </p>
+    <CodeBlock Title="Provider.cs" Code="@Provider" />
+
+    <h2>Options from a remote source</h2>
+    <p>
+        A filter with a long or private list of options loads them with <code>WithRemoteOptions</code>. The editor asks for a page when it opens (a tag's popover) or renders (the filter panel), searches after a
+        pause in the typing, loads the next page as the list scrolls, and shows an error with a Retry button. The paging, the search and the cancellation are those of the remote
+        <code>BxSelectMenu</code>. A value that the address restored is labelled by the resolver; without one it shows as it is. With <code>WithFacets()</code> the options that are listed carry the counts of
+        the facet, and zero when the facet holds every value.
+    </p>
+    <CodeBlock Title="Schema.cs" Code="@Remote" />
+    <p>
+        Statically rendered there is no .NET to search with: the editor lists the selected values, labelled by the resolver on the server, and the options of the counts, and says that searching the rest needs
+        JavaScript. When the list becomes interactive the labels are resolved again.
+    </p>
+</div>
+
+@code {
+    [Parameter] public string? Mode { get; set; }
+
+    private const string Setup = """
+        builder.Services.AddDbContextFactory<ShopContext>(o => o.UseSqlite("Data Source=shop.db"));
+        builder.Services.AddBluxUiToolsEntityFrameworkAdapter();   // also registers AddBluxUiTools()
+        """;
+
+    private const string Schema = """
+        public static readonly DataListSchema<Product> Schema = DataListSchema.For<Product>(s => s
+            .RowKey(p => p.Id)
+            .Field(p => p.Category, f => f.Filter(DataListFilter.Option()
+                .WithFacets()                                  // counts, without the rule of Category itself
+                .WithOptionSort(DataListOptionSort.Count)      // most counted first
+                .WithOptionLimit(8)))                          // then "Show N more"
+            .Field(p => p.Active, f => f.Filter(DataListFilter.Boolean().WithFacets())));
+        """;
+
+    private const string Queries = """
+        // An endpoint that answers a DataListRequest with the rows, the count and the counts of the facets.
+        app.MapPost("/api/products/query", async (DataListRequest request, ShopContext db, CancellationToken ct) =>
+        {
+            var source = db.Products.AsNoTracking();
+            var query = Schema.Apply(source, request);                       // sanitizes the request first
+            var rows = await query.Rows.ToListAsync(ct);                     // the page, with the sort values a cursor needs
+            int? total = query.WantsTotal ? await query.Matching.CountAsync(ct) : null;
+            var facets = new List<DataListFacetResult>();
+            foreach (var facet in Schema.FacetQueries(source, request))      // one group-by query per requested facet
+            {
+                var buckets = await facet.Buckets.ToListAsync(ct);
+                int? missing = facet.Missing is null ? null : await facet.Missing.CountAsync(ct);
+                facets.Add(facet.ToResult(buckets, missing));
+            }
+            return Schema.ToResult(request, rows, total, facets.Count == 0 ? null : facets);
+        });
+        """;
+
+    private const string Provider = """
+        <BxDataList TItem="Product" Schema="Schema" Provider="LoadAsync" ResultJson="AppJson.Default.DataListResultProduct" />
+
+        @code {
+            // request.Facets lists the filters that ask for counts, and is empty while the user pages or sorts.
+            private async ValueTask<DataListResult<Product>> LoadAsync(DataListRequest request, CancellationToken ct)
+            {
+                var response = await Http.PostAsJsonAsync("/api/products/query", request, DataListJsonContext.Default.DataListRequest, ct);
+                response.EnsureSuccessStatusCode();
+                return (await response.Content.ReadFromJsonAsync(AppJson.Default.DataListResultProduct, ct))!;   // Facets included
+            }
+        }
+        """;
+
+    private const string Remote = """
+        .Field(p => p.OwnerId, f => f.Filter(DataListFilter.Option().WithLabel("Owner")
+            .WithRemoteOptions(
+                provider: (request, ct) => Directory.SearchAsync(request.Search, request.Skip, request.Take, ct),   // DataListOptionsPage(items, hasMore)
+                resolveSelected: (ids, ct) => Directory.LabelsAsync(ids, ct),
+                pageSize: 25, minLength: 0)
+            .WithFacets()))
+        """;
+}
