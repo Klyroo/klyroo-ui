@@ -752,6 +752,16 @@
                 <input type="hidden" name="@name" value="" />
             }
             <ul class="@_slots["filterOptions"]" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-options">
+                @if (op == FilterOperator.Is)
+                {
+                    @* Radios cannot be unticked: "Any" is the way to take a single choice off. Its blank value leaves the address unless the filter has a default rule to remove. *@
+                    <li class="@_slots["filterOption"]">
+                        <label class="@_slots["filterNativeLabel"]">
+                            <input type="radio" name="@name" value="" checked="@(selected.Count == 0)" data-bx-prune="@Prune" class="@_slots["filterNativeInput"]" data-slot="filter-option-none" />
+                            <span class="truncate">@ToolsMessages.FilterAny</span>
+                        </label>
+                    </li>
+                }
                 @foreach (var choice in choices)
                 {
                     <li class="@_slots["filterOption"]" data-value="@choice.Value">
