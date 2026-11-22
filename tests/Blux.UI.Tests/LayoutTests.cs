@@ -289,14 +289,14 @@ public class LayoutTests : BluxTestContext
         var cut = Render<BxSidebar>(p => p.Add(s => s.Collapsed, true));
 
         Assert.Equal("collapsed", cut.Find("aside").GetAttribute("data-state"));
-        Assert.Equal("true", cut.Find("aside button").GetAttribute("aria-pressed"));
+        Assert.Equal("true", cut.Find("aside button[data-bx-sidebar-toggle]").GetAttribute("aria-pressed"));
     }
 
     [Fact]
     public void Sidebar_without_collapse_has_no_toggle_and_resizing_adds_a_separator()
     {
         var fixedWidth = Render<BxSidebar>(p => p.Add(s => s.Collapsible, false));
-        Assert.Empty(fixedWidth.FindAll("aside button"));
+        Assert.Empty(fixedWidth.FindAll("aside button[data-bx-sidebar-toggle]"));
         Assert.Empty(fixedWidth.FindAll("[role=separator]"));
 
         var resizable = Render<BxSidebar>(p => p.Add(s => s.Resizable, true).Add(s => s.MinWidth, 100).Add(s => s.MaxWidth, 400).Add(s => s.Width, 200));
@@ -309,17 +309,38 @@ public class LayoutTests : BluxTestContext
     }
 
     [Fact]
-    public void Sidebar_renders_the_content_again_in_an_off_canvas_panel_that_is_never_collapsed()
+    public void Sidebar_renders_its_content_once_and_the_aside_is_the_off_canvas_popover()
     {
         var cut = Render<BxSidebar>(p => p.Add(s => s.ChildContent, "<p class=\"nav\">Nav</p>").Add(s => s.Collapsed, true));
 
-        Assert.Equal(2, cut.FindAll("p.nav").Count);
-        var dialog = cut.Find("dialog[data-bx-layout-menu]");
-        Assert.Equal("left", dialog.GetAttribute("data-side"));
-        Assert.Equal("Sidebar", cut.Find($"#{dialog.GetAttribute("aria-labelledby")}").TextContent);
-        Assert.NotNull(cut.Find("button[aria-label='Open sidebar']"));
-        Assert.Empty(dialog.QuerySelectorAll("[data-state]"));
+        Assert.Single(cut.FindAll("p.nav"));
+        Assert.Empty(cut.FindAll("dialog"));
+        var aside = cut.Find("aside");
+        Assert.Equal("auto", aside.GetAttribute("popover"));
+        var id = aside.GetAttribute("id");
+        Assert.False(string.IsNullOrEmpty(id));
+        // The trigger and the close button are native popover invokers of the aside.
+        var trigger = cut.Find("button[aria-label='Open sidebar']");
+        Assert.Equal(id, trigger.GetAttribute("popovertarget"));
+        Assert.True(trigger.HasAttribute("data-bx-sidebar-open"));
+        var close = aside.QuerySelector("button[popovertargetaction=hide]")!;
+        Assert.Equal(id, close.GetAttribute("popovertarget"));
+        Assert.Equal("Close", close.GetAttribute("aria-label"));
+        // The title the dialog takes its name from, shown below lg only.
+        var title = aside.QuerySelector("[data-slot=mobile-header] h2")!;
+        Assert.Equal("Sidebar", title.TextContent);
+        Assert.Contains("lg:hidden", aside.QuerySelector("[data-slot=mobile-header]")!.ClassList);
         Assert.Contains("lg:hidden", cut.Find("bx-sidebar > div").ClassList);
+    }
+
+    [Fact]
+    public void Sidebar_without_a_trigger_renders_no_button_outside_the_aside_and_titles_the_panel()
+    {
+        var cut = Render<BxSidebar>(p => p.Add(s => s.MobileTrigger, false).Add(s => s.MobileTitle, "Workspace"));
+
+        Assert.Empty(cut.FindAll("bx-sidebar > div"));
+        Assert.Equal(cut.Find("aside").GetAttribute("id"), cut.Find("aside button[popovertargetaction=hide]").GetAttribute("popovertarget"));
+        Assert.Equal("Workspace", cut.Find("aside [data-slot=mobile-header] h2").TextContent);
     }
 
     [Fact]

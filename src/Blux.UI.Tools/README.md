@@ -36,8 +36,11 @@ responsive and dark variants of Blux.UI), so the app must compile Tailwind.
 
 - With `<BluxTailwind>true</BluxTailwind>` (Tailwind at build time, no Node) there is nothing to add: the build imports the classes of this package.
 - With your own Tailwind, import `obj/blux/blux-tools.theme.css` (copied by the package) after `obj/blux/blux.theme.css`, and set
-  `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>` in the project that references the package. Without either, the build warns with `BLUXTOOLS001` in that project (and in
-  one that compiles Tailwind with Node); a host that only reaches the package through another project gets no warning.
+  `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>` in the project that references the package. Without either, the build warns with `BLUXTOOLS001`
+  in a project that has a `PackageReference` to this package, and in a project with a `package.json` that lists `tailwindcss` or an `@tailwindcss/*` package as a dependency
+  (a plugin such as `prettier-plugin-tailwindcss` does not count). It does not warn in a host that only reaches the package through another project, so it misses
+  a host that compiles Tailwind some other way (a Tailwind CLI run outside Node, a `package.json` in another folder) and does not reference the package itself:
+  there, add the import and the property by hand.
 
 The package depends on exactly the version of Blux.UI (and of Blux.UI.Tools.Query) it was built with: keep them at the same version.
 

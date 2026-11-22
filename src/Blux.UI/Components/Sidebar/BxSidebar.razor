@@ -5,19 +5,13 @@
 @*
     An app sidebar. From the lg breakpoint up it is a column that can collapse to icons and, if asked, be resized; the
     browser owns both states (the <bx-sidebar> element in js/layout.js), keeps them in cookies named after Id, and tells
-    .NET about the collapsed state only when CollapsedChanged is bound. Below lg the column is replaced by a button that
-    opens the same content in a BxSlideover, so it works in static rendering too.
-    The aside carries data-state="expanded|collapsed" and is a Tailwind group named "sidebar".
-    Header, ChildContent and Footer are rendered twice: in the column and in the mobile panel. Only one is on screen
-    (the other is display:none or a closed dialog, so assistive technology does not see it twice), but both exist in the
-    DOM and in the component tree, so a form field or a stateful component inside them exists twice. Keep state outside.
-    The copy cannot be rendered on demand, and the one DOM cannot be moved between the column and the dialog: the panel
-    opens in the browser, a copy that appears after a round trip to .NET would open empty (Server) or not at all (static
-    rendering), and moving elements Blazor rendered makes it insert and remove siblings at the wrong place.
-    What the browser does instead (js/layout.js): the elements of the mobile copy (marked data-bx-sidebar-copy) get the
-    suffix "--panel" on their ids, with the references to them (for, aria-labelledby, aria-controls, popovertarget...) in the
-    copy following, and their data-testid moves to data-bx-copy-testid. So the document has each id and each test id once,
-    and the elements of the copy still find each other. It follows Blazor's renders and enhanced navigations.
+    .NET about the collapsed state only when CollapsedChanged is bound.
+    Below lg the same aside is the off-canvas panel: it is a popover (popover="auto"), so it is hidden until a button with
+    popovertarget opens it (the one rendered here, or BxDashboardSidebarToggle, which js/layout.js points at it). It slides in
+    from the start edge over a backdrop and shows a title and a close button that exist only below lg. Opening needs no
+    round trip, so it works in static rendering. The element makes the panel modal while it is open (the page behind is
+    inert, Tab stays inside, Escape and a click on the backdrop close it, the focus goes back to the button) and closes it
+    when the screen grows past lg. The content exists once: ids, form fields and stateful components are not duplicated.
 *@
 <bx-sidebar data-bx-seq="@(CollapsedChanged.HasDelegate ? _sequence : null)"
             class="@_slots["host"]"
@@ -31,27 +25,13 @@
             @onbxtoggle="ToggleHandler"
             @onbxtoggle:stopPropagation="true">
     @Root
-    <div class="@_slots["mobile"]">
-        <BxSlideover Side="SlideoverSide.Left" Title="@(MobileTitle ?? Messages.SidebarLabel)" Ui="_slideoverUi" data-bx-layout-menu>
-            <ChildContent>
-                <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"
-                          aria-label="@Messages.OpenSidebar" hidden="@(!MobileTrigger)" />
-            </ChildContent>
-            <Body>
-                <div class="@_slots["mobileBody"]" data-bx-sidebar-copy>
-                    @if (Header is not null)
-                    {
-                        <div class="@_slots["header"]"><div class="@_slots["headerContent"]">@Header</div></div>
-                    }
-                    <div class="@_slots["content"]">@ChildContent</div>
-                    @if (Footer is not null)
-                    {
-                        <div class="@_slots["footer"]">@Footer</div>
-                    }
-                </div>
-            </Body>
-        </BxSlideover>
-    </div>
+    @if (MobileTrigger)
+    {
+        <div class="@_slots["mobile"]">
+            <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"
+                      aria-label="@Messages.OpenSidebar" aria-haspopup="dialog" popovertarget="@_id" data-bx-sidebar-open="" />
+        </div>
+    }
 </bx-sidebar>
 @if (Id is not null && !CollapsedChanged.HasDelegate && !IsHybrid)
 {
@@ -63,10 +43,10 @@
 
 @code {
     private SlotSet _slots = default!;
-    private SlideoverUi _slideoverUi = new() { Body = "p-0 sm:p-0" };
+    private string? _id;
     private int _sequence;
 
-    /// <summary>The scrollable middle: navigation, search. Rendered twice (column and mobile panel): the ids and test ids of the mobile copy are renamed in the browser, but keep local state outside.</summary>
+    /// <summary>The scrollable middle: navigation, search. It is rendered once and serves both the column and the off-canvas panel.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Top of the sidebar: a logo and a title. Hidden while the sidebar is collapsed, next to the collapse button.</summary>
@@ -101,7 +81,7 @@
         "var g=function(n){var p=document.cookie.split('; ');for(var i=0;i<p.length;i++){var j=p[i].indexOf('=');" +
         "if(j>0&&p[i].slice(0,j)===n)return decodeURIComponent(p[i].slice(j+1));}return null;};" +
         "var c=g(k),a=h.querySelector(':scope>[data-slot=root]');" +
-        "if(c!==null&&a){a.setAttribute('data-state',c==='1'?'collapsed':'expanded');" +
+        "if(c!==null&&a&&matchMedia('(min-width: 64rem)').matches){a.setAttribute('data-state',c==='1'?'collapsed':'expanded');" +
         "a.querySelectorAll('[data-bx-sidebar-toggle]').forEach(function(b){b.setAttribute('aria-pressed',c==='1'?'true':'false');});}" +
         "if(h.hasAttribute('resizable')){var w=Number(g(k+'-width'));if(w>0)h.style.setProperty('--bx-sidebar-width',w+'px');}" +
         "}catch(e){}})();";
@@ -134,8 +114,8 @@
     [Parameter] public string? AriaLabel { get; set; }
 
     /// <summary>
-    /// Shows the button that opens the mobile panel. Turn it off when another button opens the panel instead, such as
-    /// <see cref="BxDashboardSidebarToggle"/>: the button stays in the page, hidden, so the panel keeps its trigger.
+    /// Shows the button that opens the off-canvas panel. Turn it off when another button opens the panel instead, such as
+    /// <see cref="BxDashboardSidebarToggle"/>, which finds the sidebar by itself.
     /// </summary>
     [Parameter] public bool MobileTrigger { get; set; } = true;
 
@@ -146,8 +126,12 @@
     private EventCallback<BxToggleEventArgs> ToggleHandler =>
         CollapsedChanged.HasDelegate ? EventCallback.Factory.Create<BxToggleEventArgs>(this, OnToggle) : default;
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        // The panel's id: the popover buttons name it, so it is rendered. (An "id" attribute is the storage Id of the sidebar, never the element's.)
+        _id ??= NewId("sidebar");
         _slots = ResolveSlots(Options.Sidebar, new Dictionary<string, string?>(), Ui, "root");
+    }
 
     // The event reports whether the sidebar is expanded ("open"), like every other toggle.
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
@@ -168,17 +152,25 @@
         builder.AddAttribute(1, "class", _slots["root"]);
         builder.AddAttribute(2, "data-slot", "root");
         builder.AddAttribute(3, "data-state", Collapsed ? "collapsed" : "expanded");
+        builder.AddAttribute(4, "id", _id);
+        builder.AddAttribute(5, "popover", "auto");
         if (As is "aside" or "nav")
         {
-            builder.AddAttribute(4, "aria-label", AriaLabel ?? Messages.SidebarLabel);
+            builder.AddAttribute(6, "aria-label", AriaLabel ?? Messages.SidebarLabel);
         }
-        builder.AddMultipleAttributes(5, AdditionalAttributes);
-        builder.AddContent(6, Panel);
+        builder.AddMultipleAttributes(7, AdditionalAttributes);
+        builder.AddContent(8, Panel);
         builder.CloseElement();
     };
 
     private RenderFragment Panel =>
         @<text>
+            <div class="@_slots["mobileHeader"]" data-slot="mobile-header">
+                <h2 id="@(_id + "-title")" class="@_slots["mobileTitle"]">@(MobileTitle ?? Messages.SidebarLabel)</h2>
+                <button type="button" class="@_slots["mobileClose"]" aria-label="@Messages.Close" popovertarget="@_id" popovertargetaction="hide">
+                    @RenderIcon(Options.Icons.Close, "size-5")
+                </button>
+            </div>
             @if (Header is not null || Collapsible)
             {
                 <div class="@_slots["header"]" data-slot="header">

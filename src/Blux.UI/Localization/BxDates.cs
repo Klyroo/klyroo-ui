@@ -13,7 +13,8 @@ public static partial class BxDates
     /// <summary>
     /// Formats <paramref name="date"/> with <paramref name="format"/>, or, without one, with the long date pattern of the culture minus the day name
     /// ("March 4, 2026" in en-US, "4 mars 2026" in fr-FR, "4 марта 2026 г." in ru-RU: the order of the culture, not the English one).
-    /// <paramref name="culture"/> defaults to <see cref="FormatCulture"/>.
+    /// Without <paramref name="culture"/> it uses <see cref="FormatCulture()"/>, which knows only the built-in locales: inside a component that
+    /// follows <c>BluxOptions.Locale</c> or a cascading <see cref="BxLocale"/>, pass the culture from <see cref="FormatCulture(BxLocale)"/> or use the overload with the locale.
     /// </summary>
     public static string Format(DateTimeOffset date, string? format = null, CultureInfo? culture = null)
     {
@@ -26,22 +27,35 @@ public static partial class BxDates
         return date.ToString(pattern.Length == 0 ? "D" : pattern, culture);
     }
 
+    /// <summary>Formats <paramref name="date"/> as the components do for <paramref name="locale"/>: with <see cref="FormatCulture(BxLocale)"/>.</summary>
+    public static string Format(DateTimeOffset date, BxLocale locale, string? format = null) => Format(date, format, FormatCulture(locale));
+
     /// <summary>The value of the <c>datetime</c> attribute of a <c>time</c> element: <c>yyyy-MM-dd</c>, the same in every culture.</summary>
     public static string Iso(DateTimeOffset date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 
     /// <summary>
-    /// The culture that formats dates for the current request: the regional <see cref="CultureInfo.CurrentCulture"/> when its language is the one of the
-    /// locale in effect (an "en-GB" visitor with the English locale keeps 4 March 2026), otherwise the culture of the locale. It is the rule the
-    /// components follow when they have no <c>Culture</c> parameter, resolved from <see cref="CultureInfo.CurrentUICulture"/> among the built-in locales.
+    /// The culture that formats dates for <paramref name="locale"/>: the regional <see cref="CultureInfo.CurrentCulture"/> when its language is the one
+    /// of the locale (an "en-GB" visitor with the English locale keeps 4 March 2026), otherwise the culture of the locale. This is the rule of every
+    /// component; they pass the locale in effect (the cascading one, then <c>BluxOptions.Locale</c>, then the one of the UI culture).
     /// </summary>
-    public static CultureInfo FormatCulture()
+    public static CultureInfo FormatCulture(BxLocale locale)
     {
-        var locale = BxLocales.Resolve(CultureInfo.CurrentUICulture).Culture;
+        var culture = locale.Culture;
         var current = CultureInfo.CurrentCulture;
-        return string.Equals(current.TwoLetterISOLanguageName, locale.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase) && current.Name.Length > 0
+        return string.Equals(current.TwoLetterISOLanguageName, culture.TwoLetterISOLanguageName, StringComparison.OrdinalIgnoreCase) && current.Name.Length > 0
             ? current
-            : locale;
+            : culture;
     }
+
+    /// <summary>The same as <see cref="FormatCulture(BxLocale)"/>, for the locale <paramref name="options"/> resolve from the current UI culture (<c>BluxOptions.Locale</c> and <c>Locales</c> included).</summary>
+    public static CultureInfo FormatCulture(BluxOptions options) => FormatCulture(options.ResolveLocale(CultureInfo.CurrentUICulture));
+
+    /// <summary>
+    /// The same as <see cref="FormatCulture(BxLocale)"/>, for the built-in locale that matches the current UI culture. It cannot see the options of the app
+    /// or a cascading locale (a static member has no services): where those are set, use the overload that takes them, or the dates differ from the
+    /// ones of the components.
+    /// </summary>
+    public static CultureInfo FormatCulture() => FormatCulture(BxLocales.Resolve(CultureInfo.CurrentUICulture));
 
     [GeneratedRegex(@"^\s*dddd[\s,.:/-]*|[\s,.:/-]*dddd\s*$")]
     private static partial Regex DayName();

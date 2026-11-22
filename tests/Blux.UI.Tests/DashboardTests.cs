@@ -178,18 +178,18 @@ public class DashboardTests : BluxTestContext
     // ---- DashboardSidebar
 
     [Fact]
-    public void Sidebar_has_no_buttons_of_its_own_and_keeps_its_panel_trigger_out_of_the_row()
+    public void Sidebar_has_no_collapse_button_and_no_trigger_of_its_own_and_renders_its_content_once()
     {
         var cut = Render<BxDashboardSidebar>(p => p.Add(s => s.ChildContent, "<p class=\"nav\">Nav</p>"));
 
         var aside = cut.Find("aside");
         Assert.Equal("Sidebar", aside.GetAttribute("aria-label"));
-        Assert.Empty(aside.QuerySelectorAll("button"));
-        // The panel still has its trigger, hidden: the dashboard's toggle clicks it.
-        var trigger = cut.Find("bx-modal [data-slot=trigger] button");
-        Assert.True(trigger.HasAttribute("hidden"));
-        Assert.Contains("contents", cut.Find("bx-sidebar > div").ClassList);
-        Assert.Equal(2, cut.FindAll("p.nav").Count);
+        Assert.Empty(aside.QuerySelectorAll("[data-bx-sidebar-toggle]"));
+        // The only button is the close button of the panel; the dashboard's toggle is the one that opens it.
+        Assert.Single(aside.QuerySelectorAll("button"));
+        Assert.Empty(cut.FindAll("[data-bx-sidebar-open]"));
+        Assert.Empty(cut.FindAll("bx-sidebar > div"));
+        Assert.Single(cut.FindAll("p.nav"));
     }
 
     [Fact]
@@ -362,6 +362,24 @@ public class DashboardTests : BluxTestContext
         Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
         Assert.Equal("Message", cut.Find("h2").TextContent);
         Assert.Single(cut.FindAll("[data-slot=right] button"));
+    }
+
+    [Fact]
+    public void Navbar_As_is_case_insensitive_and_rejects_other_elements()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.As, "DIV"));
+        Assert.Empty(cut.FindAll("header"));
+        Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+
+        var error = Assert.ThrowsAny<Exception>(() => Render<BxDashboardNavbar>(p => p.Add(n => n.As, "section")));
+        Assert.Contains("As must be", (error as ArgumentException ?? error.InnerException as ArgumentException ?? error.GetBaseException() as ArgumentException)!.Message);
+    }
+
+    [Fact]
+    public void PageAside_As_is_case_insensitive_and_rejects_other_elements()
+    {
+        Assert.Equal("div", Render<BxPageAside>(p => p.Add(a => a.As, "Div")).Find("[data-slot=body]").ParentElement!.LocalName);
+        Assert.ThrowsAny<Exception>(() => Render<BxPageAside>(p => p.Add(a => a.As, "nav")));
     }
 
     [Fact]

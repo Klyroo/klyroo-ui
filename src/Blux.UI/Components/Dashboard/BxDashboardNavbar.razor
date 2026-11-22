@@ -5,7 +5,7 @@
 @*
     The top bar of a panel: the sidebar toggle (below the lg breakpoint), a title, and left, center and right areas.
 *@
-@if (As == "header")
+@if (_tag == "header")
 {
     <header class="@_slots["root"]" @attributes="AdditionalAttributes">@Inner</header>
 }
@@ -16,6 +16,7 @@ else
 
 @code {
     private SlotSet _slots = default!;
+    private string _tag = "header";
 
     private RenderFragment Inner => @<text>
     <div class="@_slots["left"]" data-slot="left">
@@ -48,7 +49,7 @@ else
     [Parameter] public int HeadingLevel { get; set; } = 1;
 
     /// <summary>
-    /// The element to render: "header" (default) or "div". A header outside a sectioning element is the banner landmark and
+    /// The element to render: "header" (default) or "div", in any case; anything else throws an <see cref="ArgumentException"/>. A header outside a sectioning element is the banner landmark and
     /// a page has one: use "div" for the second navbar of a page, such as the one of a detail panel next to a list.
     /// </summary>
     [Parameter] public string As { get; set; } = "header";
@@ -72,6 +73,13 @@ else
     [Parameter] public RenderFragment? Right { get; set; }
     [Parameter] public DashboardNavbarUi? Ui { get; set; }
 
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _tag = As.ToLowerInvariant();
+        if (_tag is not ("header" or "div"))
+        {
+            throw new ArgumentException($"BxDashboardNavbar: As must be \"header\" or \"div\" (any case), not \"{As}\".", nameof(As));
+        }
         _slots = ResolveSlots(Options.DashboardNavbar, new Dictionary<string, string?>(), Ui, "root");
+    }
 }

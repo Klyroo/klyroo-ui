@@ -16,13 +16,12 @@
            Resizable="Resizable" Width="Width" MinWidth="MinWidth" MaxWidth="MaxWidth"
            As="@As" AriaLabel="@AriaLabel" MobileTitle="@MobileTitle"
            MobileTrigger="false"
-           Ui="_ui" Class="@Class"
+           Ui="Ui" Class="@Class"
            @attributes="AdditionalAttributes">
     @ChildContent
 </BxSidebar>
 
 @code {
-    private SidebarUi _ui = new();
     private int _slot;
     private DashboardContext? _registeredWith;
 
@@ -76,9 +75,6 @@
         // Only a sidebar named by the group takes a slot: one with its own Id leaves "key" to the next sidebar without one.
         if (Id is null && _slot == 0) _slot = _registeredWith?.RegisterSidebar() ?? 0;
         else if (Id is not null) ReleaseSlot();
-
-        // The panel keeps its trigger in the page, but the dashboard's toggle opens it: the wrapper must not take room in the row.
-        _ui = (Ui ?? new SidebarUi()) with { Mobile = Ui?.Mobile ?? "contents" };
     }
 
     private void ReleaseSlot()

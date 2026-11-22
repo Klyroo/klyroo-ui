@@ -1,0 +1,31 @@
+@* Real components in a sidebar: the content is rendered once, whether the sidebar is the column or the off-canvas panel, so the search keeps its focus (it is
+   focused by id), the radio group keeps its explicit Name and nothing is posted twice. Below the lg breakpoint the Open sidebar button opens the aside as a modal panel. *@
+<div class="w-full" data-testid="sidebar-content-demo">
+    <BxDataList TItem="Invoice" Label="Invoices next to a sidebar" Schema="InvoiceData.Schema" Items="InvoiceData.All" UrlKey="sbc">
+        <div class="flex h-[30rem] w-full flex-col overflow-hidden rounded-xl border border-(--blux-border) lg:flex-row">
+            <BxSidebar Id="playground-sidebar-content" As="div" Collapsible="false" Width="288" data-testid="sidebar-content">
+                <ChildContent>
+                    <BxDataListSearch Placeholder="Search invoices" AriaLabel="Search invoices" data-testid="sidebar-content-search" />
+                    <BxRadioGroup TValue="string" Name="sidebar-content-sort" Legend="Order" Value="@("recent")" Items="Orders" />
+                    <BxInput Name="sidebar-content-note" Placeholder="A note" aria-label="A note" data-testid="sidebar-content-note" />
+                </ChildContent>
+            </BxSidebar>
+            <div class="flex min-w-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
+                <BxDataListResultCount />
+                <BxDataListTable Caption="Invoices">
+                    <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+                    <BxDataListColumn Field="customer" />
+                    <BxDataListColumn Field="status" />
+                </BxDataListTable>
+            </div>
+        </div>
+    </BxDataList>
+</div>
+
+@code {
+    private static readonly BxRadioItem<string>[] Orders =
+    [
+        new("recent", "Most recent"),
+        new("amount", "Largest first"),
+    ];
+}
