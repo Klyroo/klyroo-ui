@@ -84,7 +84,7 @@
         {
             Key = "archive",
             Label = "Archive",
-            Confirm = new() { Title = "Archive invoices", Description = c => $"{c.MatchingCount ?? c.SelectedKeys.Count} invoices will be archived." },
+            Confirm = new() { Title = "Archive invoices", Description = c => $"{c.TargetCount} invoices will be archived." },   // ticked rows, or every result
             ClearSelection = DataListSelectionClear.Success,
             RefreshOnSuccess = true,
             OnExecute = async c =>

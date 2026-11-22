@@ -34,6 +34,19 @@ function focusId(id) {
   document.getElementById(id)?.focus();
 }
 
+// After an action emptied the selection its button is gone with the bar, and the focus fell to the page: it goes to the select-all box of the list (the start of its table).
+// Only when the focus is lost: a button the user moved to meanwhile keeps it.
+function focusSelectAll(part) {
+  // Later than the render that removed the bar and than the close event of a confirmation dialog, which gives the focus back to the button that opened it.
+  requestAnimationFrame(() => setTimeout(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected && active.getClientRects().length > 0) return;
+    const root = part?.closest('[data-slot=root]');
+    const box = root?.querySelector('input[data-select=all]:not(:disabled)');
+    (box ?? root?.querySelector('[data-slot=table-root]'))?.focus();
+  }, 0));
+}
+
 // Runs before the handler of Blazor (the capture phase of the document), so an enhanced submit and a plain one both leave the blank marked fields out. The fields come back on once the form data was taken.
 if (typeof document !== 'undefined') {
   document.addEventListener(
@@ -45,7 +58,7 @@ if (typeof document !== 'undefined') {
   );
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId };
+const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });

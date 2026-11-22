@@ -1,6 +1,7 @@
 @namespace Blux.UI.Tools
 @typeparam TItem
 @inherits DataListActionPartBase<TItem>
+@using Microsoft.JSInterop
 
 @* The bar of the actions on the selected rows: how many are ticked, a switch to "every result" when the source knows how many there are, the actions and a clear button.
    Interactive only: a statically rendered list has no selection, so nothing is drawn. The live region is always there while the list is interactive, empty when nothing is ticked:
@@ -14,7 +15,7 @@
     var inline = visible.Take(Math.Max(0, MaxVisible)).ToList();
     var overflow = visible.Skip(inline.Count).ToList();
     var text = CountText(count, scopeAll);
-    <div class="@_slots["selectionActions"]" data-slot="selection-actions" @attributes="AdditionalAttributes">
+    <div @ref="_root" class="@_slots["selectionActions"]" data-slot="selection-actions" @attributes="AdditionalAttributes">
         <p class="@_slots["selectionLive"]" role="status" aria-live="polite" aria-atomic="true" data-slot="selection-status">@(count > 0 ? text : "")</p>
         @if (count > 0)
         {
@@ -61,6 +62,22 @@
 
 @code {
     private SlotSet _slots = default!;
+    private ElementReference _root;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // The button that ran the action left with the bar: the focus goes to the select-all box of the list instead of the top of the page.
+    protected override async Task AfterSelectionClearedAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.focusSelectAll", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
+    }
 
     /// <summary>How many actions show as buttons; the others go into a "More actions" menu (3 by default).</summary>
     [Parameter] public int MaxVisible { get; set; } = 3;

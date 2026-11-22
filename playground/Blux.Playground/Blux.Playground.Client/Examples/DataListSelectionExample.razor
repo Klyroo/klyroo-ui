@@ -57,7 +57,7 @@
                 Confirm = new DataListActionConfirm<Invoice>
                 {
                     Title = "Delete invoices",
-                    Description = context => $"{context.SelectedItems.Count} selected invoices will be removed from the list.",
+                    Description = context => $"{context.TargetCount} invoices will be removed from the list.",
                     ConfirmLabel = "Delete",
                     Color = BxColor.Error,
                 },

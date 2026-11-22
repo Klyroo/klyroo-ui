@@ -104,7 +104,7 @@
                 Confirm = new DataListActionConfirm<Customer>
                 {
                     Title = "Delete customers",
-                    Description = context => $"{context.SelectedItems.Count} selected customers will be removed from the table.",
+                    Description = context => $"{context.TargetCount} customers will be removed from the table.",
                     ConfirmLabel = "Delete",
                     Color = BxColor.Error,
                 },

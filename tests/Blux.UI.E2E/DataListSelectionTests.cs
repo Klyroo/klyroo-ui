@@ -245,7 +245,7 @@ public class DataListSelectionTests(PlaygroundServer server) : PlaygroundTest(se
 
         var dialog = Page.Locator("[data-slot=action-dialog]");
         await Assertions.Expect(dialog).ToBeVisibleAsync();
-        await Assertions.Expect(dialog).ToContainTextAsync("3 selected invoices will be removed from the list.");
+        await Assertions.Expect(dialog).ToContainTextAsync("3 invoices will be removed from the list.");
         // Cancel closes it and deletes nothing.
         await dialog.GetByRole(AriaRole.Button, new() { Name = "Cancel" }).ClickAsync();
         await Assertions.Expect(dialog).ToBeHiddenAsync();
@@ -259,6 +259,8 @@ public class DataListSelectionTests(PlaygroundServer server) : PlaygroundTest(se
         await Assertions.Expect(Count(Memory)).ToHaveTextAsync("1–10 of 117", new() { Timeout = 15_000 });
         await Assertions.Expect(Bar(Memory)).ToHaveCountAsync(0);
         await Assertions.Expect(Status(Memory)).ToHaveTextAsync("");
+        // The Delete button left with the bar: the focus is on the select-all box, not lost to the page.
+        await Assertions.Expect(Header(Memory)).ToBeFocusedAsync(new() { Timeout = 15_000 });
         // The toolbar menu offers to bring them back, because some are gone.
         await Memory.GetByRole(AriaRole.Button, new() { Name = "Actions" }).ClickAsync();
         await Page.GetByRole(AriaRole.Menuitem, new() { Name = "Restore all invoices" }).ClickAsync();

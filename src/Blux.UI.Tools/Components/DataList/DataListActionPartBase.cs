@@ -84,6 +84,8 @@ public abstract class DataListActionPartBase<TItem> : DataListPartBase<TItem>
         // "Every result" of a list in memory is resolved now: the rows the query matches at the moment of the click.
         var context = Context.CreateActionContext(Context.BulkScope, resolveAll: true, Context.LifetimeToken);
         var failed = false;
+        // The rows the action targets are the ones ticked now: rows ticked while it runs are not its business and stay ticked.
+        var targeted = Context.SelectedKeys;
         try
         {
             if (action.ClearSelection == DataListSelectionClear.Trigger) Context.ClearSelection();
@@ -103,11 +105,18 @@ public abstract class DataListActionPartBase<TItem> : DataListPartBase<TItem>
         if (_disposed) return;
         if (!failed)
         {
-            if (action.ClearSelection == DataListSelectionClear.Success) Context.ClearSelection();
+            if (action.ClearSelection == DataListSelectionClear.Success) Context.ClearSelection(targeted);
             if (action.RefreshOnSuccess) await Context.RefreshAsync();
         }
-        if (!_disposed) await InvokeAsync(StateHasChanged);
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+            if (!failed && action.ClearSelection != DataListSelectionClear.Never) await AfterSelectionClearedAsync();
+        }
     }
+
+    /// <summary>Called once an action that clears the selection finished and the part rendered again: the part that had the focus gives it to a control that is still there.</summary>
+    protected virtual Task AfterSelectionClearedAsync() => Task.CompletedTask;
 
     /// <inheritdoc />
     public override void Dispose()

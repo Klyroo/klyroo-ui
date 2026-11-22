@@ -451,7 +451,7 @@ public class DataListSelectionTests : BluxToolsTestContext
             Key = "delete",
             Label = "Delete",
             Color = BxColor.Error,
-            Confirm = new DataListActionConfirm<Person> { Title = "Delete people", Description = c => $"{c.SelectedItems.Count} people will be removed.", ConfirmLabel = "Remove" },
+            Confirm = new DataListActionConfirm<Person> { Title = "Delete people", Description = c => $"{c.TargetCount} people will be removed.", ConfirmLabel = "Remove" },
             OnExecute = _ => { runs++; return Task.CompletedTask; },
         };
         var cut = RenderList(p => p.Add(c => c.Actions, [action]));
@@ -674,5 +674,76 @@ public class DataListSelectionTests : BluxToolsTestContext
         {
             System.Globalization.CultureInfo.CurrentUICulture = culture;
         }
+    }
+
+    [Fact]
+    public void TargetCount_is_the_ticked_rows_and_under_every_result_the_matching_count_in_the_confirmation_and_the_predicates()
+    {
+        var seen = new List<(DataListActionScope Scope, long Target, int Items)>();
+        var action = new DataListAction<Person>
+        {
+            Key = "delete",
+            Label = "Delete",
+            Confirm = new DataListActionConfirm<Person> { Title = "Delete", Description = c => $"{c.TargetCount} people will be removed." },
+            Visible = c => { seen.Add((c.Scope, c.TargetCount, c.SelectedItems.Count)); return true; },
+            Disabled = c => c.TargetCount > 40,
+            OnExecute = _ => Task.CompletedTask,
+        };
+        var cut = RenderList(p => p.Add(c => c.Actions, [action]));
+
+        Tick(cut, 1);
+        Tick(cut, 2);
+        cut.Find("[data-action=delete]").Click();
+        Assert.Contains("2 people will be removed.", cut.Find("[data-slot=action-dialog]").TextContent);
+        Assert.False(cut.Find("[data-action=delete]").HasAttribute("disabled"));
+
+        cut.Find("[data-slot=select-all-results]").Click();
+
+        // The predicates see the scope and 45, the confirmation says 45, whatever the two ticked rows are.
+        Assert.Contains((DataListActionScope.All, 45L, 2), seen);
+        Assert.True(cut.Find("[data-action=delete]").HasAttribute("disabled"));
+        Assert.Contains("45 people will be removed.", cut.Find("[data-slot=action-dialog]").TextContent);
+    }
+
+    [Fact]
+    public void TargetCount_under_every_result_over_a_provider_is_the_matching_count()
+    {
+        long target = -1;
+        var action = new DataListAction<Person>
+        {
+            Key = "purge",
+            Label = "Purge",
+            Confirm = new DataListActionConfirm<Person> { Title = "Purge", Description = c => $"{c.TargetCount} will go." },
+            Visible = c => { target = c.TargetCount; return true; },
+            OnExecute = _ => Task.CompletedTask,
+        };
+        var cut = RenderList(p => p.Add(c => c.Actions, [action]), remote: true);
+
+        Tick(cut, 1);
+        cut.Find("[data-slot=select-all-results]").Click();
+        cut.Find("[data-action=purge]").Click();
+
+        Assert.Equal(45, target);
+        Assert.Contains("45 will go.", cut.Find("[data-slot=action-dialog]").TextContent);
+    }
+
+    [Fact]
+    public async Task Clearing_on_success_unticks_only_the_rows_the_action_targeted()
+    {
+        var gate = new TaskCompletionSource();
+        var cut = RenderList(p => p.Add(c => c.Actions,
+            [new DataListAction<Person> { Key = "move", Label = "Move", ClearSelection = DataListSelectionClear.Success, OnExecute = _ => gate.Task }]));
+
+        Tick(cut, 1);
+        Tick(cut, 2);
+        cut.Find("[data-action=move]").Click();
+        // Ticked while the action runs: not part of it.
+        Tick(cut, 5);
+        gate.SetResult();
+
+        await cut.WaitForAssertionAsync(() => Assert.Equal("1 selected", Status(cut)));
+        Assert.True(Box(cut, 5).HasAttribute("checked"));
+        Assert.False(Box(cut, 1).HasAttribute("checked"));
+        Assert.False(Box(cut, 2).HasAttribute("checked"));
     }
 }

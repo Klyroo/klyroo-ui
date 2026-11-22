@@ -91,6 +91,11 @@ public sealed partial class DataListContext<TItem>
         if (IsInteractive) _owner.SetBulkScope(scope);
     }
 
+    internal void ClearSelection(IEnumerable<string> keys)
+    {
+        if (IsInteractive) _owner.ClearSelection(keys);
+    }
+
     internal void AddSelectionPart() => _owner.AddSelectionPart();
 
     internal void RemoveSelectionPart() => _owner.RemoveSelectionPart();
