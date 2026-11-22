@@ -39,7 +39,6 @@ src/SaaS.Web/
   Site/SiteInfo.cs           the name, the links and the words of the home page, as typed C#
   Site/PricingInfo.cs        the plans, the comparison table and the questions of the pricing page
   Site/Library.cs            reads the posts, the versions, the documentation and the plain pages out of the content folder, and checks them
-  Site/SiteDates.cs          writes a date the way the Blux cards do (the culture of the visitor, no day name)
   Content/                   the Markdown code, shared with the other content templates (see below)
   Components/Pages/          Home, Pricing, BlogIndex, BlogArticle, DocsHome, DocsArticle, ChangelogPage, ReleasePage, PlainPage, Login, Signup, ForgotPassword
   Components/Sections/       the sections of the home page; each reads SiteInfo and has no text of its own
