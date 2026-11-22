@@ -60,6 +60,7 @@ public sealed class RemoteCompletionProvider(HttpClient http) : ICompletionProvi
                 throw await Refused(response, cancellationToken);
             }
             await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var done = false;
             await foreach (var data in SseReader.ReadDataAsync(stream, cancellationToken: cancellationToken))
             {
                 var parsed = Wire.ReadEvent(data);
@@ -69,12 +70,18 @@ public sealed class RemoteCompletionProvider(HttpClient http) : ICompletionProvi
                 }
                 if (parsed.Done)
                 {
-                    yield break;
+                    done = true;
+                    break;
                 }
                 if (parsed.Chunk is { } chunk)
                 {
                     yield return chunk;
                 }
+            }
+            if (!done)
+            {
+                // The host always ends a complete answer with a done event: without one the connection was cut, and what arrived is not the answer.
+                throw new CompletionException("The connection to the assistant was interrupted.");
             }
         }
     }

@@ -45,6 +45,15 @@ var serviceClient = new HttpClient(new SocketsHttpHandler
     Timeout = Timeout.InfiniteTimeSpan,
 };
 builder.Services.AddAssistantProvider(assistant, serviceClient);
+// Who may use the assistant. Without Assistant:AuthorizationPolicy anybody who reaches the app can, within the limits of AssistantGuard.
+builder.Services.AddAuthorization();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<Microsoft.AspNetCore.Components.Server.Circuits.CircuitHandler, CallerCircuitHandler>();
+if (!string.IsNullOrWhiteSpace(assistant.AuthorizationPolicy))
+{
+    builder.Services.AddCascadingAuthenticationState();
+    builder.Services.AddScoped<IAssistantAuthorizer, PolicyAuthorizer>();
+}
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
@@ -56,6 +65,21 @@ foreach (var problem in assistant.Problems())
 {
     // The app starts anyway and says so in the page: the operator reads it here and in the page.
     app.Logger.LogWarning("Assistant is not usable: {Problem}", problem);
+}
+if (!string.IsNullOrWhiteSpace(assistant.AuthorizationPolicy))
+{
+    // A policy that does not exist would fail every request: say so now.
+    var policies = app.Services.GetRequiredService<Microsoft.AspNetCore.Authorization.IAuthorizationPolicyProvider>();
+    if (await policies.GetPolicyAsync(assistant.AuthorizationPolicy) is null)
+    {
+        throw new InvalidOperationException($"Assistant:AuthorizationPolicy is '{assistant.AuthorizationPolicy}', but no such policy is defined: add it with builder.Services.AddAuthorization(options => options.AddPolicy(...)).");
+    }
+}
+else if (assistant.IsOpenAi && !string.IsNullOrEmpty(assistant.ApiKey))
+{
+    app.Logger.LogWarning(
+        "A real Assistant:ApiKey is configured and Assistant:AuthorizationPolicy is not: anybody who can reach this app can spend the key, limited only by the per-caller and daily limits of the Assistant section " +
+        "(counted in memory, per process). Put the app behind authentication and name the policy in Assistant:AuthorizationPolicy before you expose it to the internet.");
 }
 app.Logger.LogInformation("Assistant provider: {Provider}", assistant.IsSimulated ? AssistantOptions.Simulated : AssistantOptions.OpenAi);
 
@@ -90,6 +114,7 @@ app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(cultures)
     .AddSupportedUICultures(cultures));
+app.UseAuthorization();
 app.UseAntiforgery();
 
 app.MapStaticAssets();

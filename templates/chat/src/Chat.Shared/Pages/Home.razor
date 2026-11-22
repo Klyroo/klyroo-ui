@@ -221,7 +221,8 @@
             return;
         }
         var conversation = _conversation ?? new Conversation();
-        if (conversation.Messages.Count >= ConversationLimits.MaxMessages || conversation.Characters + text.Length > ConversationLimits.MaxConversationCharacters)
+        // A question and its answer are two messages: the conversation must still fit its cap once the answer is in, and fit what the host accepts (the same constants).
+        if (conversation.Messages.Count + 2 > ConversationLimits.MaxMessages || conversation.Characters + text.Length > ConversationLimits.MaxConversationCharacters)
         {
             await Toasts.Add(new BxToast { Title = "This conversation is full", Description = "Start a new conversation to keep going.", Color = BxColor.Warning });
             return;
@@ -335,6 +336,11 @@
             if (_generation == generation) _generation = null;
         }
 
+        // An answer that an error cut is kept as far as it got, and marked: it is not a complete answer, and the user can ask for it again.
+        if (error is not null && answer is not null)
+        {
+            answer.Interrupted = true;
+        }
         // An answer with nothing in it (stopped at once, or cut by an error) is not kept.
         if (answer is not null && answer.Content.Length == 0 && string.IsNullOrEmpty(answer.Reasoning))
         {

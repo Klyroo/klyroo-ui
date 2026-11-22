@@ -26,6 +26,9 @@ public sealed class ConversationMessage
 
     public DateTimeOffset At { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>The answer ended by an error (the connection broke, the service timed out) and is not complete.</summary>
+    public bool Interrupted { get; set; }
+
     [JsonIgnore]
     public bool IsUser => Role == CompletionMessage.UserRole;
 
@@ -85,8 +88,11 @@ public static class ConversationLimits
     /// <summary>The characters of one question.</summary>
     public const int MaxPromptCharacters = 8_000;
 
-    /// <summary>The characters of all the messages of a conversation (about 250 KB): past it, the conversation is full and a new one starts.</summary>
-    public const int MaxConversationCharacters = 120_000;
+    /// <summary>
+    /// The characters of all the messages of a conversation: past it, the conversation is full and a new one starts. It is also the default of <c>Assistant:MaxInputCharacters</c>
+    /// (what the host accepts), so the page never builds a conversation the host refuses.
+    /// </summary>
+    public const int MaxConversationCharacters = 60_000;
 
     public const int MaxTitle = 80;
 
@@ -140,7 +146,7 @@ public static partial class ConversationJson
             UpdatedAt = Clamp(read.UpdatedAt),
         };
         long total = 0;
-        foreach (var message in (read.Messages ?? []).Take(ConversationLimits.MaxMessages))
+        foreach (var message in (read.Messages ?? []).TakeLast(ConversationLimits.MaxMessages))
         {
             if (message is null || message.Role is not (CompletionMessage.UserRole or CompletionMessage.AssistantRole) || !IsValidId(message.Id))
             {
@@ -150,7 +156,9 @@ public static partial class ConversationJson
             total += content.Length;
             if (total > ConversationLimits.MaxConversationCharacters * 2L)
             {
-                break;
+                // Over what the app ever stores: keep the most recent part.
+                conversation.Messages.Clear();
+                total = content.Length;
             }
             conversation.Messages.Add(new ConversationMessage
             {
@@ -160,6 +168,7 @@ public static partial class ConversationJson
                 Reasoning = message.Reasoning is null ? null : Truncate(message.Reasoning, ConversationLimits.MaxStoredReasoningCharacters),
                 ThinkingSeconds = message.ThinkingSeconds is >= 0 and <= 36_000 ? message.ThinkingSeconds : null,
                 Model = message.Model is null ? null : Truncate(message.Model, 100),
+                Interrupted = message.Interrupted,
                 At = Clamp(message.At),
             });
         }

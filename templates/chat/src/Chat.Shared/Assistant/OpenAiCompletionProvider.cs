@@ -2,6 +2,7 @@ using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace Chat.Shared.Assistant;
 
@@ -14,17 +15,53 @@ namespace Chat.Shared.Assistant;
 /// to another address). What the service answers with when it refuses is never shown: the status is mapped to a message that holds neither the body nor the key.
 /// </para>
 /// </summary>
-public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions options) : ICompletionProvider
+public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions options, ILogger<OpenAiCompletionProvider>? logger = null) : ICompletionProvider
 {
     public Task<IReadOnlyList<ModelInfo>> GetModelsAsync(CancellationToken cancellationToken = default) =>
         options.Problems() is { Count: > 0 } problems
             ? Task.FromException<IReadOnlyList<ModelInfo>>(NotConfigured(problems))
             : Task.FromResult(options.ModelList());
 
-    private static CompletionException NotConfigured(IReadOnlyList<string> problems) =>
-        new("The assistant is not configured. " + problems[0]) { Status = 503 };
+    // What the visitor reads is generic: the hint for the operator (which setting to fix) goes to the log.
+    private CompletionException NotConfigured(IReadOnlyList<string> problems)
+    {
+        logger?.LogWarning("The assistant is not configured: {Problem}", problems[0]);
+        return new CompletionException("The assistant is not available right now.") { Status = 503 };
+    }
 
+    /// <summary>
+    /// Streams the reply. A cancellation that the caller did not ask for (the time allowed ran out, in the middle of the stream too), a broken connection and a stream that ends
+    /// before the service said it was done are failures, <see cref="CompletionException"/>, not a shorter answer: the caller must not take half an answer for a whole one.
+    /// </summary>
     public async IAsyncEnumerable<CompletionChunk> StreamAsync(CompletionRequest request, [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        await using var pieces = Stream(request, cancellationToken).GetAsyncEnumerator(cancellationToken);
+        while (true)
+        {
+            bool more;
+            try
+            {
+                more = await pieces.MoveNextAsync();
+            }
+            catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+            {
+                logger?.LogWarning("The assistant did not finish within Assistant:TimeoutSeconds ({Seconds})", options.TimeoutSeconds);
+                throw new CompletionException("The assistant did not answer in time.") { Status = 504 };
+            }
+            catch (Exception error) when (error is HttpRequestException or IOException or JsonException)
+            {
+                logger?.LogWarning(error, "The stream of the assistant broke");
+                throw new CompletionException("The connection to the assistant was interrupted.", error) { Status = 502 };
+            }
+            if (!more)
+            {
+                yield break;
+            }
+            yield return pieces.Current;
+        }
+    }
+
+    private async IAsyncEnumerable<CompletionChunk> Stream(CompletionRequest request, [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (options.Problems() is { Count: > 0 } problems)
         {
@@ -53,11 +90,8 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
         }
         catch (HttpRequestException error)
         {
+            logger?.LogWarning(error, "The assistant could not be reached");
             throw new CompletionException("The assistant could not be reached.", error) { Status = 502 };
-        }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
-        {
-            throw new CompletionException("The assistant did not answer in time.") { Status = 504 };
         }
 
         using (response)
@@ -74,7 +108,9 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
             if (response.Content.Headers.ContentType?.MediaType is "application/json")
             {
                 // A service that ignored stream: true and answered with the whole reply at once.
-                using var whole = await JsonDocument.ParseAsync(stream, cancellationToken: token);
+                // Bounded: a reply of MaxOutputCharacters, in JSON, with room for the rest of the envelope. A service cannot make us read more.
+                var cap = (long)limit * 8 + 64 * 1024;
+                using var whole = JsonDocument.Parse(await ReadBoundedAsync(stream, cap, token));
                 foreach (var chunk in Whole(whole.RootElement))
                 {
                     var text = Cut(chunk.Text, ref emitted, limit);
@@ -86,12 +122,14 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
                 yield break;
             }
 
+            var finished = false;
             await foreach (var data in SseReader.ReadDataAsync(stream, cancellationToken: token))
             {
                 if (data.Trim() == "[DONE]")
                 {
                     yield break;
                 }
+                finished |= data.Contains("\"finish_reason\":\"", StringComparison.Ordinal) || data.Contains("\"finish_reason\": \"", StringComparison.Ordinal);
                 foreach (var chunk in Parse(data))
                 {
                     var text = Cut(chunk.Text, ref emitted, limit);
@@ -106,7 +144,29 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
                     }
                 }
             }
+            if (!finished)
+            {
+                // The stream ended with neither [DONE] nor a finish reason: the connection was cut, and what arrived is not the answer.
+                throw new CompletionException("The connection to the assistant was interrupted.") { Status = 502 };
+            }
         }
+    }
+
+    /// <summary>Reads the whole stream up to <paramref name="cap"/> bytes; more is refused.</summary>
+    private static async Task<byte[]> ReadBoundedAsync(Stream stream, long cap, CancellationToken cancellationToken)
+    {
+        using var buffer = new MemoryStream();
+        var chunk = new byte[16 * 1024];
+        int read;
+        while ((read = await stream.ReadAsync(chunk, cancellationToken)) > 0)
+        {
+            if (buffer.Length + read > cap)
+            {
+                throw new CompletionException("The assistant sent a reply that is too long.") { Status = 502 };
+            }
+            buffer.Write(chunk, 0, read);
+        }
+        return buffer.ToArray();
     }
 
     /// <summary>The request body: the model, the history (with the system prompt in front) and <c>stream: true</c>.</summary>
@@ -118,6 +178,10 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
             writer.WriteStartObject();
             writer.WriteString("model", request.Model);
             writer.WriteBoolean("stream", true);
+            if (options.MaxOutputTokens > 0)
+            {
+                writer.WriteNumber(options.MaxTokensField, options.MaxOutputTokens);
+            }
             writer.WriteStartArray("messages");
             if (!string.IsNullOrWhiteSpace(options.SystemPrompt))
             {
@@ -216,13 +280,21 @@ public sealed class OpenAiCompletionProvider(HttpClient http, AssistantOptions o
         return kept;
     }
 
-    private static CompletionException Refused(int status) => status switch
+    // The visitor reads a generic message; the status and the hint for the operator go to the log.
+    private CompletionException Refused(int status)
     {
-        401 or 403 => new CompletionException($"The assistant refused the request (HTTP {status}): check Assistant:ApiKey.") { Status = 502 },
-        404 => new CompletionException("The assistant answered HTTP 404: check Assistant:BaseUrl and the model id.") { Status = 502 },
-        429 => new CompletionException("The assistant is receiving too many requests (HTTP 429). Try again in a moment.") { Status = 429 },
-        400 or 422 => new CompletionException($"The assistant rejected the request (HTTP {status}): check the model id.") { Status = 502 },
-        >= 300 and < 400 => new CompletionException("The assistant answered with a redirect, which is not followed: check Assistant:BaseUrl.") { Status = 502 },
-        _ => new CompletionException($"The assistant answered with an error (HTTP {status}).") { Status = 502 },
-    };
+        var hint = status switch
+        {
+            401 or 403 => "the service refused the key: check Assistant:ApiKey",
+            404 => "the service answered 404: check Assistant:BaseUrl and the model id",
+            429 => "the service is rate limiting this key",
+            400 or 422 => "the service rejected the request: check the model id and Assistant:MaxTokensField",
+            >= 300 and < 400 => "the service answered with a redirect, which is not followed: check Assistant:BaseUrl",
+            _ => "the service answered with an error",
+        };
+        logger?.LogWarning("The assistant service answered HTTP {Status}: {Hint}", status, hint);
+        return status == 429
+            ? new CompletionException("The assistant is receiving too many requests. Try again in a moment.") { Status = 429 }
+            : new CompletionException("The assistant is not available right now.") { Status = 502 };
+    }
 }

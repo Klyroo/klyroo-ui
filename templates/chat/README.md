@@ -60,10 +60,13 @@ Or in the environment, which is how a deployment does it: `Assistant__ApiKey`, `
 | `Assistant:Models` | The models of the picker: `Id` (what the service knows it by) and `Name`. The first is the default. Nothing else is accepted from a browser. |
 | `Assistant:SystemPrompt` | A system message put in front of every conversation. |
 | `Assistant:TimeoutSeconds`, `MaxOutputCharacters` | How long one answer may take (120 s) and how long it may be (32,000 characters): past it the answer is cut and kept. |
-| `Assistant:MaxMessages`, `MaxInputCharacters` | The most a conversation sent to the service may hold (60 messages, 60,000 characters). |
-| `Assistant:RequestsPerMinute`, `MaxConcurrentStreams` | The answers one caller may start in a minute (20), and the answers streaming at once for everyone (16). |
+| `Assistant:MaxMessages`, `MaxInputCharacters` | The most a conversation sent to the service may hold (60 messages, 60,000 characters). They are also the limits the pages keep a conversation to (`ConversationLimits`), so keep the two in step if you change one. |
+| `Assistant:MaxOutputTokens`, `MaxTokensField` | Sent to the service as the cap on the length of an answer (1,024 tokens, `0` sends none), so the service stops it too. `MaxTokensField` is `max_tokens`, or `max_completion_tokens` for the models that want that name. |
+| `Assistant:RequestsPerMinute`, `MaxConcurrentPerCaller`, `MaxConcurrentStreams` | The answers one caller may start in a minute (20), one caller may have streaming at once (2), and everyone together may have streaming at once (16). |
+| `Assistant:DailyRequestsPerCaller`, `DailyOutputCharactersPerCaller`, `DailyRequestsGlobal`, `DailyOutputCharactersGlobal` | The budget of a UTC day, per caller (200 answers, 200,000 characters) and for the whole process (5,000 answers, 2,000,000 characters). A token is about four characters. Reaching the caller's budget answers 429, reaching the global one 503. |
+| `Assistant:AuthorizationPolicy` | The name of an ASP.NET Core authorization policy that you define (`AddAuthorization`). When set, both endpoints and the Server render mode require it, and the app refuses to start if the policy does not exist. |
 
-The app does not guess model names: list the ids your service offers. If something is wrong with the settings (no model, an address that is not a plain http or https address, a key sent over plain `http` to another machine) the app starts anyway, logs what is wrong and shows it above the prompt.
+The app does not guess model names: list the ids your service offers. If something is wrong with the settings (no model, an address that is not a plain http or https address, a key sent over plain `http` to another machine) the app starts anyway, logs what is wrong (the page only says the assistant is not available).
 
 The OpenAI provider is `HttpClient` and a small parser of the event stream (`Assistant/OpenAiCompletionProvider.cs`, `Assistant/SseReader.cs`), with no SDK: the part of the API the app uses is one request and one stream, and an SDK would add its dependencies to the WebAssembly download and to the native app. It also reads the thinking some services send (`reasoning_content`) and shows it above the answer. To talk to a service that is not OpenAI compatible, write a class that implements `ICompletionProvider` (two members) and register it where `Program.cs` calls `AddAssistantProvider`.
 
@@ -74,9 +77,18 @@ The browser never talks to the AI service.
 - In the **server** render mode the page calls the provider in the host process.
 - In the **WebAssembly** render mode the page calls `RemoteCompletionProvider`, which calls the endpoints of the host, `GET api/assistant/models` and `POST api/assistant/stream` (`Chat.Web/AssistantEndpoints.cs`), and the host calls the service.
 
-What a request can carry is a model id from the list and a conversation. The address, the key and the system prompt are settings of the host: nothing in a request changes them, so the endpoint cannot be made to call another address, and the model list it gives back holds ids and names only. The host refuses what the app would never send (a system message, a model that is not on offer, a conversation over the limits, a body over 512 KB, anything but `application/json`: a page of another site cannot post that without a preflight request, which the host does not answer). It counts requests per caller (the address of the request, or the session of a circuit) and caps the answers in flight, so a public deployment cannot be made to run up a bill or to exhaust itself. When the service refuses, the app shows a message that holds neither its answer, nor the key, nor its address: the details are in the logs of the host.
+What a request can carry is a model id from the list and a conversation. The address, the key and the system prompt are settings of the host: nothing in a request changes them, so the endpoint cannot be made to call another address, and the model list it gives back holds ids and names only. The host refuses what the app would never send (a system message, a model that is not on offer, a conversation over the limits, a body over 512 KB, anything but `application/json`: a page of another site cannot post that without a preflight request, which the host does not answer).
 
-Behind a reverse proxy, turn on `ForwardedHeaders:Enabled` (see below) so that the limit counts visitors and not the proxy.
+**What protects a real key.** The limits above bound what a caller can spend, but they do not make the key safe on their own:
+
+- `AssistantGuard` counts per caller (the address of the request, IPv6 grouped by /64; in the Server render mode the address of the connection that opened the circuit): answers per minute, answers in flight, and a daily budget of answers and of characters of output, plus the same daily budgets for the whole process. The service is also told the cap on the length of an answer (`MaxOutputTokens`).
+- The counters are in memory, in one process. They start again when the process restarts and are not shared between replicas, so each replica allows the full budgets. The table keeps 10,000 callers; when it is full of callers still within their day, new callers are refused (429) rather than sharing a bucket, so an attacker with many addresses can lock newcomers out for the day but cannot take the budget of a caller already counted.
+- Per address means an address can be shared (an office, a mobile network) and one person can have several. These limits slow abuse down and put a ceiling on a day; they are not an identity.
+- **A public deployment with a real key should add authentication** and name a policy in `Assistant:AuthorizationPolicy`. When a real `Assistant:ApiKey` is set and no policy is, the app logs a warning at startup.
+
+When the service refuses or fails, the visitor reads a generic message; which setting to fix (the key, the address, the model id) is in the log of the host.
+
+Behind a reverse proxy, turn on `ForwardedHeaders:Enabled` and list your proxies in `ForwardedHeaders:KnownProxies` (see below). Without it every visitor has the address of the proxy and shares one budget; with a proxy that is not listed, the headers are not believed, for the same reason.
 
 ## Where the conversations are kept
 

@@ -43,9 +43,37 @@ public sealed class AssistantOptions
     public int MaxOutputCharacters { get; set; } = 32_000;
 
     /// <summary>The most messages one request may carry, and the most characters in them. A bigger history is refused.</summary>
-    public int MaxMessages { get; set; } = 60;
+    public int MaxMessages { get; set; } = Data.ConversationLimits.MaxMessages;
 
-    public int MaxInputCharacters { get; set; } = 60_000;
+    /// <summary>The defaults are the limits the pages keep a conversation to (<see cref="Data.ConversationLimits"/>), so a conversation the page lets grow is one the host accepts. If you change one, change the other.</summary>
+    public int MaxInputCharacters { get; set; } = Data.ConversationLimits.MaxConversationCharacters;
+
+    /// <summary>
+    /// Sent to the service as the cap on the length of an answer, in tokens, so the service stops it too and does not bill more (<see cref="MaxTokensField"/> says under which
+    /// name). 0 sends none.
+    /// </summary>
+    public int MaxOutputTokens { get; set; } = 1_024;
+
+    /// <summary>The name of the field that carries <see cref="MaxOutputTokens"/>: <c>max_tokens</c>, or <c>max_completion_tokens</c> for the models that want that one.</summary>
+    public string MaxTokensField { get; set; } = "max_tokens";
+
+    /// <summary>The most replies one caller may have streaming at once.</summary>
+    public int MaxConcurrentPerCaller { get; set; } = 2;
+
+    /// <summary>The daily budgets (UTC day) of one caller and of the whole process: replies started, and characters of answer sent (a token is about four characters). Reaching one answers 429 (caller) or 503 (everyone).</summary>
+    public int DailyRequestsPerCaller { get; set; } = 200;
+
+    public long DailyOutputCharactersPerCaller { get; set; } = 200_000;
+
+    public int DailyRequestsGlobal { get; set; } = 5_000;
+
+    public long DailyOutputCharactersGlobal { get; set; } = 2_000_000;
+
+    /// <summary>
+    /// The name of an ASP.NET Core authorization policy (defined by your app: <c>AddAuthorization</c>). When set, both endpoints and the Server render mode require it. Without one,
+    /// anybody who can reach the app can use the key, within the limits above.
+    /// </summary>
+    public string? AuthorizationPolicy { get; set; }
 
     /// <summary>The most replies streamed at the same time by the host, whoever asks. More are refused with 503 until one ends.</summary>
     public int MaxConcurrentStreams { get; set; } = 16;
@@ -95,9 +123,14 @@ public sealed class AssistantOptions
         {
             problems.Add("Assistant:TimeoutSeconds must be between 1 and 600.");
         }
-        if (MaxOutputCharacters < 100 || MaxMessages < 1 || MaxInputCharacters < 100 || MaxConcurrentStreams < 1 || RequestsPerMinute < 1)
+        if (MaxOutputCharacters < 100 || MaxMessages < 1 || MaxInputCharacters < 100 || MaxConcurrentStreams < 1 || RequestsPerMinute < 1 || MaxConcurrentPerCaller < 1
+            || DailyRequestsPerCaller < 1 || DailyOutputCharactersPerCaller < 1 || DailyRequestsGlobal < 1 || DailyOutputCharactersGlobal < 1 || MaxOutputTokens < 0)
         {
-            problems.Add("The limits of the Assistant section (MaxOutputCharacters, MaxMessages, MaxInputCharacters, MaxConcurrentStreams, RequestsPerMinute) must be positive.");
+            problems.Add("The limits of the Assistant section (MaxOutputCharacters, MaxMessages, MaxInputCharacters, the concurrency and daily budgets, RequestsPerMinute) must be positive.");
+        }
+        if (MaxTokensField is not ("max_tokens" or "max_completion_tokens"))
+        {
+            problems.Add("Assistant:MaxTokensField must be max_tokens or max_completion_tokens.");
         }
         return problems;
     }

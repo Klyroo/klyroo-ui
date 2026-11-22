@@ -18,8 +18,15 @@ public static class AssistantEndpoints
 {
     public static IEndpointRouteBuilder MapAssistantEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/assistant/models", Models);
-        app.MapPost("/api/assistant/stream", Stream);
+        var policy = app.ServiceProvider.GetRequiredService<AssistantOptions>().AuthorizationPolicy;
+        var models = app.MapGet("/api/assistant/models", Models);
+        var stream = app.MapPost("/api/assistant/stream", Stream);
+        if (!string.IsNullOrWhiteSpace(policy))
+        {
+            // Both endpoints need the policy of the operator (Assistant:AuthorizationPolicy). Nothing else changes: the limits still apply to whoever passes it.
+            models.RequireAuthorization(policy);
+            stream.RequireAuthorization(policy);
+        }
         return app;
     }
 
@@ -43,7 +50,9 @@ public static class AssistantEndpoints
         var logger = loggers.CreateLogger("Chat.Web.Assistant");
         context.Response.Headers.CacheControl = "no-store, no-transform";
         // The address of the request, as the host sees it: behind a trusted proxy (ForwardedHeaders:Enabled) it is the visitor's, not the proxy's.
-        caller.Value = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        // IPv6 callers are grouped by /64, see CallerKey.From. The endpoint is only reached when the policy (if there is one) passed.
+        caller.Value = CallerKey.From(context.Connection.RemoteIpAddress);
+        caller.PreAuthorized = true;
 
         if (!context.Request.HasJsonContentType())
         {
