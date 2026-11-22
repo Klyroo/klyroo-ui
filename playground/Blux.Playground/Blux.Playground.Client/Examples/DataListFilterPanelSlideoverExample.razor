@@ -1,0 +1,33 @@
+@* The recommended responsive pattern: the panel is a sidebar from the md breakpoint up, and on a phone a Filters button opens the same panel in a slideover. Both panels read the one list state, so a filter applied
+   in either shows in the other; CSS hides the one that does not fit (hidden md:block, md:hidden), so only one is ever on screen. The panel is in the Submit apply mode with CloseOnApply: the changes of all
+   sections wait for Apply (one history entry), Reset drops them, and Apply closes the slideover so the result shows. Statically rendered the panel is one GET form, and Apply closes the slideover as it submits. *@
+<div class="w-full" data-testid="list-panel-slideover">
+    <BxDataList TItem="Invoice" Label="Invoices with a filter drawer" Schema="InvoicePanelData.Schema" Items="InvoiceData.All" UrlKey="pns">
+        <div class="grid items-start gap-4 md:grid-cols-[18rem_minmax(0,1fr)]">
+            <div class="hidden md:block" data-testid="panel-sidebar">
+                <BxDataListFilterPanel ApplyMode="DataListApplyMode.Submit" />
+            </div>
+            <div class="flex min-w-0 flex-col gap-3">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <BxSlideover Title="Filters" Side="SlideoverSide.Left">
+                        <ChildContent>
+                            <BxButton Label="Filters" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Class="md:hidden" data-testid="open-filters" />
+                        </ChildContent>
+                        <Body>
+                            <BxDataListFilterPanel ApplyMode="DataListApplyMode.Submit" CloseOnApply="true" />
+                        </Body>
+                    </BxSlideover>
+                    <BxDataListResultCount />
+                </div>
+                <BxDataListErrorState />
+                <BxDataListTable Caption="Invoices with a filter drawer">
+                    <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+                    <BxDataListColumn Field="customer" />
+                    <BxDataListColumn Field="status" />
+                    <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+                </BxDataListTable>
+                <BxDataListPagination />
+            </div>
+        </div>
+    </BxDataList>
+</div>

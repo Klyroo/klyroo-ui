@@ -68,6 +68,18 @@ public sealed partial record BxToolsMessages
     /// <summary>Button of a filter editor that drops the changes (the Submit apply mode).</summary>
     public string FilterCancel { get; init; } = "Cancel";
 
+    /// <summary>Title of the filter panel, and its accessible name.</summary>
+    public string FilterPanelTitle { get; init; } = "Filters";
+
+    /// <summary>Said to screen readers after the name of a filter panel section (or of the panel) that has filters on. {0} is how many are active.</summary>
+    public string FilterPanelActive { get; init; } = "{0} active";
+
+    /// <summary>Said in the filter panel when the list has no filter to edit.</summary>
+    public string FilterPanelNone { get; init; } = "No filters available";
+
+    /// <summary>Button of the filter panel (the Submit apply mode) that drops the changes that were not applied.</summary>
+    public string FilterReset { get; init; } = "Reset";
+
     /// <summary>Said after the values a filter tag shows when it has more. {0} is how many more.</summary>
     public string FilterMore { get; init; } = "+{0}";
 

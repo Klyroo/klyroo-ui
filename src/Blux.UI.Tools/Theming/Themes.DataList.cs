@@ -20,7 +20,8 @@ internal static partial class ToolsThemes
                 "tableRoot", "table", "caption", "thead", "tr", "th", "thStart", "thCenter", "thEnd",
                 "sortButton", "sortIcon", "sortIconActive", "tbody", "td", "tdStart", "tdCenter", "tdEnd",
                 "empty", "skeleton", "pagination", "pageSize", "pageSizeLabel", "pageSizeSelect", "pageSizeForm", "error",
-                "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide")
+                "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide",
+                "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -97,6 +98,17 @@ internal static partial class ToolsThemes
             .Slot("filterPresets", "flex flex-wrap items-center gap-1.5")
             .Slot("filterHint", "text-xs text-(--blux-text-muted)")
             .Slot("filterPopoverWide", "w-80 max-w-[calc(100vw-1rem)]")
+            .Slot("filterPanel", "flex w-full min-w-0 flex-col rounded-(--blux-radius) border border-(--blux-border)")
+            .Slot("filterPanelHeader", "flex flex-wrap items-center justify-between gap-2 border-b border-(--blux-border) px-3 py-2")
+            .Slot("filterPanelTitle", "inline-flex items-center gap-2 text-sm font-semibold text-(--blux-text-highlighted)")
+            .Slot("filterPanelCount", "inline-flex min-w-5 items-center justify-center rounded-full border border-(--blux-border-accented) px-1.5 text-xs font-normal tabular-nums text-(--blux-text)")
+            .Slot("filterPanelDescription", "px-3 pt-2 text-sm text-(--blux-text-muted)")
+            .Slot("filterPanelSection", "border-b border-(--blux-border) last:border-b-0")
+            .Slot("filterPanelTrigger", "min-h-11 px-3 py-2 hover:bg-(--blux-bg-muted)")
+            .Slot("filterPanelContent", "px-3 pb-3")
+            .Slot("filterPanelEditor", "max-h-none overflow-visible p-0")
+            .Slot("filterPanelFooter", "flex flex-wrap items-center justify-end gap-2 border-t border-(--blux-border) px-3 py-2")
+            .Slot("filterPanelEmpty", "px-3 py-3 text-sm text-(--blux-text-muted)")
             .Variant("density", "compact", "th", "px-3 py-2")
             .Variant("density", "default", "th", "px-4 py-3")
             .Variant("density", "comfortable", "th", "px-4 py-4")

@@ -5,6 +5,7 @@
 // A helper of Blux.UI can be imported from source and is bundled here, for example:
 //   import { Reporter, ensureId } from '../../Blux.UI/js/shared.js';
 import { timeZone, storeTimeZone } from './time-zone-cookie.js';
+import { pruneBlank } from './prune-blank.js';
 
 // The time zone of the browser goes to the server in a cookie, which the next static or prerendered render reads (the first visit has none and cuts days in UTC).
 function rememberTimeZone() {
@@ -31,6 +32,17 @@ function focusPage(root) {
 // Puts the focus in the control with this id (the search field after its "clear" action removed the button that had it).
 function focusId(id) {
   document.getElementById(id)?.focus();
+}
+
+// Runs before the handler of Blazor (the capture phase of the document), so an enhanced submit and a plain one both leave the blank marked fields out. The fields come back on once the form data was taken.
+if (typeof document !== 'undefined') {
+  document.addEventListener(
+    'submit',
+    (event) => {
+      if (event.target instanceof HTMLFormElement && event.target.method === 'get') setTimeout(pruneBlank(event.target), 0);
+    },
+    true,
+  );
 }
 
 const tools = { version: 1, timeZone, focusPage, focusId };
