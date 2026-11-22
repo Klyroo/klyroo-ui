@@ -1,0 +1,403 @@
+@page "/"
+@page "/c/{Id}"
+@implements IAsyncDisposable
+@inject ConversationState Conversations
+@inject ICompletionProvider Provider
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject IToastService Toasts
+@inject ILogger<Home> Logger
+
+<PageTitle>@(_conversation is null ? "Chat" : $"{_conversation.Title} · Chat")</PageTitle>
+
+@* The conversation: the navbar with its title, the messages (or the greeting of a new conversation) and the prompt. The address says which conversation is open: / is a new
+   one, /c/{id} one from the list. Leaving a conversation while an answer arrives stops the answer and keeps what arrived. *@
+<BxDashboardPanel data-testid="conversation-panel">
+    <ChildContent>
+        <BxDashboardNavbar Title="@Title">
+            <Leading>
+                <BxDashboardSidebarCollapse />
+            </Leading>
+            <Right>
+                @if (_conversation is not null && Conversations.Items.Contains(_conversation))
+                {
+                    <BxDropdownMenu Items="_menu" OnSelect="OnMenu" Placement="bottom-end">
+                        <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Conversation options" data-testid="conversation-options">
+                            <LeadingIcon>@BxIcons.Named("lucide:ellipsis")</LeadingIcon>
+                        </BxButton>
+                    </BxDropdownMenu>
+                }
+                <BxColorModeButton />
+            </Right>
+        </BxDashboardNavbar>
+
+        @if (!_ready && Id is not null)
+        {
+            <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-6" aria-hidden="true">
+                <BxSkeleton Class="h-10 w-2/3 self-end" />
+                <BxSkeleton Class="h-24 w-full" />
+            </div>
+        }
+        else if (_conversation is null || _conversation.Messages.Count == 0)
+        {
+            <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
+                <EmptyConversation OnPick="SendAsync" Disabled="@(_model is null || Busy)" />
+            </div>
+        }
+        else
+        {
+            <BxChatMessages Status="_status" Ui="_messagesUi" Label="Conversation" data-testid="messages">
+                <ChildContent>
+                    @foreach (var message in _conversation.Messages)
+                    {
+                        <MessageView @key="message.Id" Message="message" Streaming="@(message == _streaming)" PageHref="@PageHref"
+                                     CanRegenerate="@(!Busy && message == _lastAnswer)" OnRegenerate="RegenerateAsync" />
+                    }
+                </ChildContent>
+                <Error>@_error</Error>
+            </BxChatMessages>
+        }
+
+        <div class="shrink-0 px-3 pb-3 sm:px-6 sm:pb-4">
+            <div class="mx-auto flex w-full max-w-3xl flex-col gap-2">
+                @if (_notice is not null)
+                {
+                    <BxAlert Color="BxColor.Warning" Variant="BxVariant.Soft" Title="The assistant is not available" Description="@_notice" data-testid="notice" />
+                }
+                <BxChatPrompt Status="_status" OnSubmit="SendAsync" OnStop="StopAsync" OnReload="RegenerateAsync" Disabled="@(_model is null)"
+                              Placeholder="Ask anything" Autofocus data-testid="prompt">
+                    <Footer>
+                        @if (_modelItems.Count > 0)
+                        {
+                            <BxSelect Items="_modelItems" Value="@_model" ValueChanged="OnModel" Size="BxSize.Xs" Variant="FieldVariant.Ghost" aria-label="Model" data-testid="model" />
+                        }
+                    </Footer>
+                </BxChatPrompt>
+                <p class="text-center text-xs text-(--blux-text-muted)">Answers can be wrong: check what matters.</p>
+            </div>
+        </div>
+    </ChildContent>
+</BxDashboardPanel>
+
+@code {
+    private static readonly BxMenuItem[] _menu =
+    [
+        new() { Label = "Rename", Value = "rename", Icon = BxIcons.Named("lucide:pencil", "size-4") },
+        new() { Label = "Delete", Value = "delete", Icon = BxIcons.Named("lucide:trash-2", "size-4"), Color = BxColor.Error },
+    ];
+
+    // The messages are centered in a column that reads well: the viewport scrolls across the whole width, the text does not.
+    private static readonly ChatMessagesUi _messagesUi = new() { Content = "mx-auto w-full max-w-3xl gap-6 p-4 sm:p-6" };
+
+    private Conversation? _conversation;
+    private ChatStatus _status;
+    private string? _error;
+    private string? _notice;
+    private IReadOnlyList<BxSelectItem> _modelItems = [];
+    private HashSet<string> _modelIds = [];
+    private string? _model;
+    private bool _ready;
+    private bool _refocus;
+    private bool _creating;
+    private bool _disposed;
+    private bool _warnedStorage;
+    private CancellationTokenSource? _generation;
+    private ConversationMessage? _streaming;
+
+    /// <summary>The id of the conversation (the address c/{id}), or null for a new one.</summary>
+    [Parameter] public string? Id { get; set; }
+
+    private bool Busy => _status is ChatStatus.Submitted or ChatStatus.Streaming;
+
+    private string Title => _conversation?.Title ?? (Id is not null && !_ready ? "Conversation" : "New conversation");
+
+    private string PageHref => _conversation is null ? "" : $"c/{_conversation.Id}";
+
+    // Only the last answer can be written again, and only when nothing is arriving.
+    private ConversationMessage? _lastAnswer => _conversation?.Messages is { Count: > 0 } messages && !messages[^1].IsUser ? messages[^1] : null;
+
+    protected override void OnInitialized()
+    {
+        Conversations.Deleted += OnDeleted;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_ready) Select();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Conversations.LoadAsync();
+            await LoadModelsAsync();
+            _ready = true;
+            Select();
+            StateHasChanged();
+        }
+        if (_refocus)
+        {
+            _refocus = false;
+            await FocusPromptAsync();
+        }
+    }
+
+    private async Task LoadModelsAsync()
+    {
+        try
+        {
+            var models = await Provider.GetModelsAsync();
+            _modelItems = [.. models.Select(m => new BxSelectItem(m.Id, m.Name))];
+            _modelIds = [.. models.Select(m => m.Id)];
+            _notice = null;
+        }
+        catch (CompletionException error)
+        {
+            // Written to be shown: not configured, the host is not reachable.
+            _notice = error.Message;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            Logger.LogWarning(error, "The models of the assistant could not be read");
+            _notice = "The assistant could not be reached.";
+        }
+        _model = ChooseModel(Conversations.Model);
+    }
+
+    private string? ChooseModel(string? preferred) =>
+        preferred is not null && _modelIds.Contains(preferred) ? preferred : _modelItems.FirstOrDefault()?.Value;
+
+    // The address decides which conversation is open. Moving to another one stops the answer that is arriving.
+    private void Select()
+    {
+        if (Id is null)
+        {
+            // The new conversation. One that was just started is still on its way to its own address: it stays.
+            if (_conversation is not null && !_creating) Leave();
+            return;
+        }
+        if (_conversation?.Id == Id)
+        {
+            _creating = false;
+            return;
+        }
+        Leave();
+        var found = Conversations.Find(Id);
+        if (found is null)
+        {
+            _ = Toasts.Add(new BxToast { Title = "Not found", Description = "That conversation is not in this browser.", Color = BxColor.Info });
+            Navigation.NavigateTo("./", replace: true);
+            return;
+        }
+        _conversation = found;
+        _model = ChooseModel(found.Model.Length > 0 ? found.Model : Conversations.Model);
+    }
+
+    // Stops what is arriving and clears the conversation that was open.
+    private void Leave()
+    {
+        _generation?.Cancel();
+        _conversation = null;
+        _streaming = null;
+        _error = null;
+        _status = ChatStatus.Idle;
+        _model = ChooseModel(Conversations.Model);
+    }
+
+    private async Task SendAsync(string text)
+    {
+        text = text.Trim();
+        if (text.Length == 0 || Busy || _model is null) return;
+        if (text.Length > ConversationLimits.MaxPromptCharacters)
+        {
+            await Toasts.Add(new BxToast { Title = "Message too long", Description = $"A message holds at most {ConversationLimits.MaxPromptCharacters:N0} characters.", Color = BxColor.Warning });
+            return;
+        }
+        var conversation = _conversation ?? new Conversation();
+        if (conversation.Messages.Count >= ConversationLimits.MaxMessages || conversation.Characters + text.Length > ConversationLimits.MaxConversationCharacters)
+        {
+            await Toasts.Add(new BxToast { Title = "This conversation is full", Description = "Start a new conversation to keep going.", Color = BxColor.Warning });
+            return;
+        }
+
+        var isNew = _conversation is null;
+        conversation.Model = _model;
+        if (conversation.Messages.Count == 0) conversation.Title = Conversation.TitleFrom(text);
+        conversation.Messages.Add(new ConversationMessage { Role = CompletionMessage.UserRole, Content = text });
+        _conversation = conversation;
+        _creating = isNew;
+        _error = null;
+        _status = ChatStatus.Submitted;
+        await KeepAsync(conversation);
+        if (isNew)
+        {
+            // The address now names the conversation. The page stays the same component, so the answer that starts below goes on across the navigation.
+            _refocus = true;
+            Navigation.NavigateTo($"c/{conversation.Id}", replace: true);
+        }
+        await GenerateAsync(conversation);
+    }
+
+    // Asks for the answer to the last question again, after an error or on request: the answer that was there is dropped.
+    private async Task RegenerateAsync()
+    {
+        if (Busy || _conversation is not { } conversation) return;
+        while (conversation.Messages.Count > 0 && !conversation.Messages[^1].IsUser)
+        {
+            conversation.Messages.RemoveAt(conversation.Messages.Count - 1);
+        }
+        if (conversation.Messages.Count == 0) return;
+        _error = null;
+        _status = ChatStatus.Submitted;
+        await GenerateAsync(conversation);
+    }
+
+    private Task StopAsync()
+    {
+        _generation?.Cancel();
+        return Task.CompletedTask;
+    }
+
+    private async Task GenerateAsync(Conversation conversation)
+    {
+        using var generation = new CancellationTokenSource();
+        _generation = generation;
+        var token = generation.Token;
+        ConversationMessage? answer = null;
+        long? thinkingStarted = null;
+        var flush = System.Diagnostics.Stopwatch.StartNew();
+        string? error = null;
+        _status = ChatStatus.Submitted;
+        await InvokeAsync(StateHasChanged);
+
+        try
+        {
+            var request = new CompletionRequest(conversation.Model, conversation.History());
+            await foreach (var chunk in Provider.StreamAsync(request, token))
+            {
+                if (answer is null)
+                {
+                    answer = new ConversationMessage { Role = CompletionMessage.AssistantRole, Model = conversation.Model };
+                    conversation.Messages.Add(answer);
+                    if (_conversation == conversation)
+                    {
+                        _streaming = answer;
+                        _status = ChatStatus.Streaming;
+                    }
+                }
+                if (chunk.Part == CompletionPart.Reasoning)
+                {
+                    thinkingStarted ??= Environment.TickCount64;
+                    answer.Reasoning = Limit(answer.Reasoning + chunk.Text, ConversationLimits.MaxStoredReasoningCharacters);
+                }
+                else
+                {
+                    if (thinkingStarted is { } started && answer.ThinkingSeconds is null)
+                    {
+                        answer.ThinkingSeconds = (int)Math.Max(1, (Environment.TickCount64 - started) / 1000);
+                    }
+                    answer.Content = Limit(answer.Content + chunk.Text, ConversationLimits.MaxStoredMessageCharacters);
+                }
+                // At most one render every 40 ms: a model can send a token every few milliseconds.
+                if (flush.ElapsedMilliseconds >= 40)
+                {
+                    flush.Restart();
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            if (answer is null)
+            {
+                error = "The assistant sent an empty answer.";
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Stop was pressed, or the conversation was left: what arrived stays.
+        }
+        catch (CompletionException exception)
+        {
+            error = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            Logger.LogWarning(exception, "The answer was interrupted");
+            error = "The connection to the assistant was interrupted.";
+        }
+        finally
+        {
+            if (_generation == generation) _generation = null;
+        }
+
+        // An answer with nothing in it (stopped at once, or cut by an error) is not kept.
+        if (answer is not null && answer.Content.Length == 0 && string.IsNullOrEmpty(answer.Reasoning))
+        {
+            conversation.Messages.Remove(answer);
+        }
+        await KeepAsync(conversation);
+        if (_disposed || _conversation != conversation) return;
+        _streaming = null;
+        _error = error;
+        _status = error is null ? ChatStatus.Idle : ChatStatus.Error;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string Limit(string text, int max) => text.Length <= max ? text : text[..max];
+
+    // Writes the conversation; the first time the browser refuses, the user is told it is kept for this visit only.
+    private async Task KeepAsync(Conversation conversation)
+    {
+        if (!await Conversations.SaveAsync(conversation) && !_warnedStorage)
+        {
+            _warnedStorage = true;
+            await Toasts.Add(new BxToast { Title = "Not saved", Description = "This browser did not keep the conversation (its storage is full or blocked): it stays for this visit only.", Color = BxColor.Warning });
+        }
+    }
+
+    private async Task OnModel(string? id)
+    {
+        if (id is null || id == _model || !_modelIds.Contains(id)) return;
+        _model = id;
+        await Conversations.SetModelAsync(id);
+        if (_conversation is { } conversation)
+        {
+            conversation.Model = id;
+            if (Conversations.Items.Contains(conversation) && !Busy) await KeepAsync(conversation);
+        }
+    }
+
+    private void OnMenu(BxMenuItem item)
+    {
+        if (_conversation is null) return;
+        if (item.Value == "rename") Conversations.RequestRename(_conversation);
+        else if (item.Value == "delete") Conversations.RequestDelete(_conversation);
+    }
+
+    private void OnDeleted(string id) => _ = InvokeAsync(() =>
+    {
+        if (_conversation?.Id != id) return;
+        Leave();
+        Navigation.NavigateTo("./", replace: true);
+        StateHasChanged();
+    });
+
+    private async Task FocusPromptAsync()
+    {
+        try
+        {
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Chat.Shared/host.js");
+            await module.InvokeVoidAsync("focusPrompt");
+        }
+        catch (Exception error) when (error is JSException or JSDisconnectedException or InvalidOperationException)
+        {
+        }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        Conversations.Deleted -= OnDeleted;
+        _generation?.Cancel();
+        return ValueTask.CompletedTask;
+    }
+}

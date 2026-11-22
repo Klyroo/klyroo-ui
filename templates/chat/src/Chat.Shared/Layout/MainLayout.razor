@@ -1,0 +1,74 @@
+@inherits LayoutComponentBase
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+   It renders nothing on the web, where App.razor places them. *@
+<BxHead />
+<SystemBars />
+
+<BxApp>
+    <BxSkipLink />
+
+    @* The group fills its parent, so the parent needs a height: the page itself. It is the main landmark, so the sidebar and the conversation are both inside it
+       (the sidebar is a div: its navigation is a landmark of its own, and a complementary one may not sit in main). *@
+    <BxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
+        <BxDashboardGroup StorageKey="chat">
+            @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
+            <BxDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Conversations" MobileTitle="Conversations" data-testid="sidebar">
+                <Header>
+                    <a href="./" class="flex items-center gap-2 rounded-(--blux-radius) p-1.5 font-semibold text-(--blux-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)" data-testid="brand">
+                        <span class="flex size-7 items-center justify-center rounded-(--blux-radius) bg-(--blux-primary) text-(--blux-primary-contrast)" aria-hidden="true">
+                            @BxIcons.Named("lucide:sparkles", "size-4")
+                        </span>
+                        <span>Chat</span>
+                    </a>
+                </Header>
+                <ChildContent>
+                    <ConversationList />
+                </ChildContent>
+                <Footer>
+                    <p class="flex items-start gap-2 p-1.5 text-xs text-(--blux-text-muted)" data-testid="storage-note">
+                        @BxIcons.Named("lucide:hard-drive", "mt-0.5 size-3.5 shrink-0")
+                        <span>Conversations are kept in this browser, on this device only.</span>
+                    </p>
+                </Footer>
+            </BxDashboardSidebar>
+
+            @Body
+        </BxDashboardGroup>
+    </BxMain>
+
+    @* Says how the page renders (Static until it is interactive, then Server or WebAssembly): what the browser tests wait for before they click. *@
+    <span class="sr-only" aria-hidden="true" data-testid="renderer">@RendererInfo.Name</span>
+
+    @* One rename dialog and one delete dialog for every row of the list: they are outside the sidebar, which closes its panel on a phone before they open. *@
+    <ConversationDialogs />
+</BxApp>
+
+<div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
+    An unhandled error has occurred.
+    <a href="." class="reload underline">Reload</a>
+    <span class="dismiss ms-4 cursor-pointer">x</span>
+</div>
+
+@code {
+    private IJSObjectReference? _module;
+
+    // The Copy button of the code blocks of an answer is one listener on the page: it is installed once, when the browser is there.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Chat.Shared/host.js");
+        await _module.InvokeVoidAsync("installCodeCopy");
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null) await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException) { }
+    }
+}

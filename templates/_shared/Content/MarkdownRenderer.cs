@@ -43,7 +43,8 @@ public sealed record RenderedMarkdown(string Html, IReadOnlyList<MarkdownHeading
 /// <param name="MentionUrlFormat">The address of a user, with <c>{0}</c> for the name (<c>https://github.com/{0}</c>); null leaves <c>@user</c> as text.</param>
 /// <param name="IssueUrlFormat">The address of an issue or pull request, with <c>{0}</c> for the number; null leaves <c>#123</c> as text.</param>
 /// <param name="MinHeadingLevel">The level of the highest heading of the body (2 to 6): a body shown under an <c>h2</c> passes 3, so a <c>#</c> in it does not outrank the page's own headings. Lower headings are not moved up.</param>
-public sealed record UntrustedMarkdown(string IdPrefix, string? MentionUrlFormat = null, string? IssueUrlFormat = null, int MinHeadingLevel = 1);
+/// <param name="AllowImages">False drops every image and keeps its alternative text: a picture loaded from an address that someone else chose tells that someone when and where the page was read, and can carry data out in its address.</param>
+public sealed record UntrustedMarkdown(string IdPrefix, string? MentionUrlFormat = null, string? IssueUrlFormat = null, int MinHeadingLevel = 1, bool AllowImages = true);
 
 /// <summary>
 /// Renders Markdown to HTML with Markdig, for content that is shown to visitors.
@@ -144,7 +145,7 @@ public sealed partial class MarkdownRenderer
 
         foreach (var link in document.Descendants<LinkInline>().ToList())
         {
-            if (!ContentUrl.IsAllowed(link.Url) || (untrusted is not null && !IsRemote(link)))
+            if (!ContentUrl.IsAllowed(link.Url) || (untrusted is not null && !IsRemote(link, untrusted)))
             {
                 // Keep what the reader would have seen: the text of a link, the alt text of an image. The address is gone.
                 link.ReplaceBy(new ContainerInline(), copyChildren: true);
@@ -214,12 +215,12 @@ public sealed partial class MarkdownRenderer
     private static partial Regex Reference();
 
     // Whether a link or an image may stay in a body from outside: an absolute address, a #fragment of the body, an https image.
-    private static bool IsRemote(LinkInline link)
+    private static bool IsRemote(LinkInline link, UntrustedMarkdown untrusted)
     {
         var url = link.Url;
         if (link.IsImage)
         {
-            return ContentUrl.HasScheme(url, "https");
+            return untrusted.AllowImages && ContentUrl.HasScheme(url, "https");
         }
         return !string.IsNullOrEmpty(url) && (ContentUrl.HasScheme(url, "http", "https", "mailto") || url.TrimStart().StartsWith('#'));
     }

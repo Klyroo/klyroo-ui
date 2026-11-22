@@ -320,4 +320,16 @@ public class MarkdownRendererTests
 
         Assert.Equal("Title Some bold text with code and a link. tern sync", rendered.Text);
     }
+
+    [Fact]
+    public void Images_of_untrusted_markdown_are_kept_when_https_and_dropped_when_not_allowed()
+    {
+        const string markdown = "![alt text](https://example.test/a.png)";
+        var kept = Renderer.Render(markdown, "", "p", new UntrustedMarkdown("x-"));
+        var dropped = Renderer.Render(markdown, "", "p", new UntrustedMarkdown("x-", AllowImages: false));
+
+        Assert.Contains("<img", kept.Html);
+        Assert.DoesNotContain("<img", dropped.Html);
+        Assert.Contains("alt text", dropped.Html);
+    }
 }
