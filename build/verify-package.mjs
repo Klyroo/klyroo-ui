@@ -171,6 +171,15 @@ try {
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Blux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Blux.UI.Images"]]) {
     writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Blux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Blux.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><BluxToolsOwnTailwind>true</BluxToolsOwnTailwind></PropertyGroup>\n</Project>`));
   }
+  // Two more projects that only reach Blux.UI.Tools through Site.Client: a host with no Tailwind (it must not be told about Tools) and one that compiles Tailwind with Node (it must).
+  for (const [name, node] of [["Site.Plain", false], ["Site.Node", true]]) {
+    const dir = join(app, "Site", name);
+    mkdirSync(dir);
+    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${node ? "<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
+    if (node) writeFileSync(join(dir, "package.json"), JSON.stringify({ devDependencies: { tailwindcss: "4.0.0" } }));
+    const added = run("dotnet", ["sln", join(app, "Site", "Site.sln"), "add", join(dir, `${name}.csproj`)], app, consumerEnv);
+    check(added.code === 0, `${name} added to the consumer solution`);
+  }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
   copyFileSync(join(root, "build", "test-assets", "fonts", "PackageCheck-400.woff2"), join(server, "Fonts", "PackageCheck-400.woff2"));
@@ -219,6 +228,9 @@ try {
     // Without BluxTailwind and without BluxToolsOwnTailwind the build tells the app that Tools needs Tailwind.
     const r = run("dotnet", ["build", "-c", "Release", "-p:BluxToolsOwnTailwind=false", join(app, "Site", "Site.sln")], app, consumerEnv);
     check(r.code === 0 && /warning BLUXTOOLS001[^\n]*BluxToolsOwnTailwind/.test(r.out), "tools: referencing Blux.UI.Tools without Tailwind and without BluxToolsOwnTailwind warns with BLUXTOOLS001");
+    check(/Site\.Client uses Blux\.UI\.Tools/.test(r.out) && /Site uses Blux\.UI\.Tools/.test(r.out), "tools: the projects that reference Blux.UI.Tools are warned");
+    check(!/Site\.Plain uses Blux\.UI\.Tools/.test(r.out), "tools: a project that only reaches Blux.UI.Tools through another one, with no Tailwind, is not warned");
+    check(/Site\.Node uses Blux\.UI\.Tools/.test(r.out), "tools: a project that compiles Tailwind with Node (package.json) is warned even without a reference of its own");
     build("own tailwind declared");
   }
 

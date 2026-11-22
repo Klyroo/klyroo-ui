@@ -5,9 +5,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
-    <!-- Blux.UI.Tools reaches every project of the app and warns (BLUXTOOLS001) where nothing compiles Tailwind. Dashboard.Shared compiles it, for this host too (it links
-         _content/Dashboard.Shared/app.css), so the check has nothing to say here. -->
-    <BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>
   </PropertyGroup>
 
   <ItemGroup>

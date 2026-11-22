@@ -13,9 +13,6 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Disable MAUI CSS handling so Blazor can handle it -->
     <EnableDefaultCssItems>false</EnableDefaultCssItems>
-    <!-- Blux.UI.Tools reaches every project of the app and warns (BLUXTOOLS001) where nothing compiles Tailwind. Dashboard.Shared compiles it, for this host too (it links
-         _content/Dashboard.Shared/app.css), so the check has nothing to say here. -->
-    <BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>
 
     <ApplicationTitle>Dashboard</ApplicationTitle>
     <ApplicationId>com.companyname.dashboard</ApplicationId>
