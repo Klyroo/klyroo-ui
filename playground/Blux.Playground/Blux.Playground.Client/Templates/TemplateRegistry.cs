@@ -69,7 +69,7 @@ public static class TemplateRegistry
             TemplateStatus.Available, WebProject: "src/Changelog.Web", WebAssembly: "Changelog.Web"),
         new("chat", "Chat",
             "An AI assistant app with a conversation history, streamed Markdown replies with code blocks, a model picker and suggestions.",
-            ["Any service that speaks the OpenAI chat completions API; the key stays on the server", "Conversations kept in the browser: new, search, rename and delete, grouped by day", "A live demo that answers from canned replies, with nothing sent anywhere"],
+            ["Any service that speaks the OpenAI chat completions API; the key stays on the server", "Conversations kept in the browser: new, search, rename and delete, grouped by day", "Answers from canned replies when no service is set, with nothing sent anywhere"],
             TemplateStatus.Available, WebProject: "src/Chat.Web", WebAssembly: "Chat.Web"),
         Planned("editor", "Editor",
             "A rich text editor with a toolbar, a document list and autosave.",

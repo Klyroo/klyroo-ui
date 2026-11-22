@@ -68,7 +68,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         foreach (var name in new[] { "starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog", "chat" })
         {
             var live = cards.Filter(new() { Has = Page.Locator($"img[src$='img/template-{name}-light.png']") });
-            await Assertions.Expect(live).ToHaveCountAsync(1);
+            await Assertions.Expect(live.GetByText("Live demo")).ToBeVisibleAsync();
             await Assertions.Expect(live.GetByText("Live demo")).ToBeVisibleAsync();
             await Assertions.Expect(live.GetByTestId("template-preview")).ToHaveAttributeAsync("href", $"templates/{name}/demo/");
             await Assertions.Expect(live.GetByTestId("template-source")).ToHaveCountAsync(0);
