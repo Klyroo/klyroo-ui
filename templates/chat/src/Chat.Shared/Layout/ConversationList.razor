@@ -1,0 +1,127 @@
+@implements IDisposable
+@inject ConversationState Conversations
+@inject NavigationManager Navigation
+
+@* The content of the sidebar: a button for a new conversation, a search, and the conversations grouped by the day they were last used. The list is read from
+   the browser after the first render, so until then (and while the page is prerendered) it shows placeholders. *@
+<div class="flex min-h-0 flex-1 flex-col gap-3" data-testid="conversation-list">
+    <BxButton Label="New conversation" Href="./" Variant="ButtonVariant.Soft" Block data-testid="new-conversation">
+        <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
+    </BxButton>
+
+    @if (!Conversations.Loaded)
+    {
+        <div class="flex flex-col gap-2" aria-hidden="true">
+            <BxSkeleton Class="h-8 w-full" />
+            <BxSkeleton Class="h-8 w-5/6" />
+            <BxSkeleton Class="h-8 w-2/3" />
+        </div>
+    }
+    else if (Conversations.Items.Count == 0)
+    {
+        <p class="px-1.5 text-sm text-(--blux-text-muted)" data-testid="conversations-empty">No conversations yet. The ones you start appear here.</p>
+    }
+    else
+    {
+        <BxInput Value="@_query" ValueChanged="OnQuery" Placeholder="Search conversations" Debounce="200" ClearOnEscape aria-label="Search conversations" data-testid="conversation-search">
+            <LeadingIcon>@BxIcons.Named("search")</LeadingIcon>
+        </BxInput>
+
+        @if (_groups.Count == 0)
+        {
+            <p class="px-1.5 text-sm text-(--blux-text-muted)" role="status" data-testid="conversations-none">No conversation matches "@_query".</p>
+        }
+        else
+        {
+            <nav aria-label="Conversation history" class="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
+                @foreach (var group in _groups)
+                {
+                    var labelId = $"group-{group.Label.Replace(' ', '-').ToLowerInvariant()}";
+                    <div class="mb-3" data-testid="conversation-group">
+                        <p id="@labelId" class="px-2.5 pb-1 pt-1 text-xs font-medium text-(--blux-text-muted)">@group.Label</p>
+                        <ul aria-labelledby="@labelId" class="flex flex-col gap-0.5">
+                            @foreach (var conversation in group.Items)
+                            {
+                                var current = conversation;
+                                var active = current.Id == _activeId;
+                                <li class="group relative" @key="current.Id">
+                                    <a href="@($"c/{current.Id}")" aria-current="@(active ? "page" : null)" data-testid="conversation-item"
+                                       class="@($"block truncate rounded-(--blux-radius) py-2 ps-2.5 pe-10 text-sm transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--blux-primary-text) {(active ? "bg-(--blux-bg-elevated) font-medium text-(--blux-text-highlighted)" : "text-(--blux-text)")}")">
+                                        @current.Title
+                                    </a>
+                                    <div class="absolute end-1 top-1/2 -translate-y-1/2 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100 lg:has-[[aria-expanded=true]]:opacity-100">
+                                        <BxDropdownMenu Items="_menu" OnSelect="@(item => OnMenu(item, current))" Placement="bottom-end">
+                                            <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="@($"Options for {current.Title}")" data-testid="conversation-menu">
+                                                <LeadingIcon>@BxIcons.Named("lucide:ellipsis")</LeadingIcon>
+                                            </BxButton>
+                                        </BxDropdownMenu>
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </nav>
+        }
+    }
+</div>
+
+@code {
+    private static readonly BxMenuItem[] _menu =
+    [
+        new() { Label = "Rename", Value = "rename", Icon = BxIcons.Named("lucide:pencil", "size-4") },
+        new() { Label = "Delete", Value = "delete", Icon = BxIcons.Named("lucide:trash-2", "size-4"), Color = BxColor.Error },
+    ];
+
+    private string _query = "";
+    private string? _activeId;
+    private IReadOnlyList<ConversationGroup> _groups = [];
+
+    protected override void OnInitialized()
+    {
+        Conversations.Changed += OnChanged;
+        Navigation.LocationChanged += OnLocation;
+        _activeId = ActiveId();
+        Refresh();
+    }
+
+    // The conversation the address names (c/{id}), or null on the new conversation.
+    private string? ActiveId()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        return path.StartsWith("c/", StringComparison.Ordinal) ? path[2..].TrimEnd('/') : null;
+    }
+
+    private void Refresh() =>
+        _groups = ConversationGroups.Of(Conversations.Search(_query), DateTimeOffset.UtcNow, Conversations.UtcOffset);
+
+    private void OnQuery(string? value)
+    {
+        _query = value ?? "";
+        Refresh();
+    }
+
+    private void OnMenu(BxMenuItem item, Conversation conversation)
+    {
+        if (item.Value == "rename") Conversations.RequestRename(conversation);
+        else if (item.Value == "delete") Conversations.RequestDelete(conversation);
+    }
+
+    private void OnChanged() => _ = InvokeAsync(() =>
+    {
+        Refresh();
+        StateHasChanged();
+    });
+
+    private void OnLocation(object? sender, LocationChangedEventArgs e) => _ = InvokeAsync(() =>
+    {
+        _activeId = ActiveId();
+        StateHasChanged();
+    });
+
+    public void Dispose()
+    {
+        Conversations.Changed -= OnChanged;
+        Navigation.LocationChanged -= OnLocation;
+    }
+}
