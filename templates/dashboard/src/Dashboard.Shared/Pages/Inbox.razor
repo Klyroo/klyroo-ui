@@ -62,7 +62,7 @@
 
 <BxDashboardPanel Class="@(_selected is null ? "max-lg:hidden" : "")" data-testid="mail-detail">
     <Header>
-        <BxDashboardNavbar>
+        <BxDashboardNavbar As="div">
             <Leading>
                 <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Href="inbox" aria-label="Back to the inbox" Class="lg:hidden" data-testid="mail-back">
                     <LeadingIcon>@BxIcons.Named("arrow-left")</LeadingIcon>

@@ -1110,7 +1110,7 @@
 `/components/dashboard-navbar`. The top bar of a panel: sidebar toggle, title, and left, center and right areas.
 
 - `<BxDashboardNavbar>`
-  - Parameters: `Class`, `Title`, `Toggle`, `Ui`
+  - Parameters: `As`, `Class`, `HeadingLevel`, `Title`, `Toggle`, `Ui`
   - Slots: `Leading`, `Left`, `Right`, `Trailing`, `ChildContent`
   - `Ui` (`DashboardNavbarUi`): `Root`, `Left`, `Title`, `Center`, `Right`
 

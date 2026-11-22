@@ -70,6 +70,7 @@ export class BxSidebarElement extends HTMLElement {
   #ready = false;
   #drag = null;
   #settling = null;
+  #copyObserver = null;
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
@@ -85,6 +86,8 @@ export class BxSidebarElement extends HTMLElement {
     this.removeEventListener('pointerdown', this.#onPointerDown);
     this.removeEventListener('keydown', this.#onKeyDown);
     this.removeEventListener('bx-toggle', this.#onPanelToggle);
+    this.#copyObserver?.disconnect();
+    this.#copyObserver = null;
     this.#ready = false;
   }
 
@@ -101,6 +104,7 @@ export class BxSidebarElement extends HTMLElement {
     this.#reporter.adopt();
     this.#reporter.take('collapsed', true);
     this.#settle();
+    this.#watchCopy();
   }
 
   get #key() {
@@ -146,6 +150,29 @@ export class BxSidebarElement extends HTMLElement {
     this.#width = width > 0 ? this.#clamp(width) : null;
     this.#ready = true;
     this.#settle();
+    this.#watchCopy();
+  }
+
+  /**
+   * The mobile panel holds a second copy of the sidebar content (data-bx-sidebar-copy). The copy cannot be left out or moved
+   * (see BxSidebar), so it gets its own ids and no test ids: the document then has each once. Blazor renders into the copy as
+   * it does into the column, so the pass runs again whenever something in it changes.
+   */
+  #watchCopy() {
+    const copy = this.querySelector('[data-bx-sidebar-copy]');
+    if (!copy) return;
+    if (this.#copyObserver) this.#copyObserver.disconnect();
+    else this.#copyObserver = new MutationObserver(() => this.#separateCopy());
+    this.#copyObserver.observe(copy, { childList: true, subtree: true, attributes: true, attributeFilter: COPY_ATTRIBUTES });
+    this.#separateCopy();
+  }
+
+  #separateCopy() {
+    const copy = this.querySelector('[data-bx-sidebar-copy]');
+    if (!copy) return;
+    separateCopy(copy);
+    // The changes above are ours: do not run the pass again for them.
+    this.#copyObserver?.takeRecords();
   }
 
   /**
@@ -295,6 +322,46 @@ export class BxSidebarElement extends HTMLElement {
 }
 
 if (!customElements.get('bx-sidebar')) customElements.define('bx-sidebar', BxSidebarElement);
+
+// Attributes that name an element by its id, and the ones a copy of the markup must not repeat.
+const ID_REFERENCES = ['for', 'aria-labelledby', 'aria-describedby', 'aria-controls', 'aria-owns', 'aria-activedescendant', 'aria-details', 'aria-errormessage', 'popovertarget', 'list', 'form'];
+const COPY_ATTRIBUTES = ['id', 'data-testid', 'href', ...ID_REFERENCES];
+const COPY_ID_SUFFIX = '--panel';
+
+/**
+ * Gives the elements of a rendered copy of some markup their own ids (the original plus "--panel"), points the references inside the copy
+ * at them, and moves data-testid to data-bx-copy-testid. Idempotent: an element already renamed is left alone, and an id Blazor
+ * rendered again is renamed again.
+ */
+export function separateCopy(copy) {
+  for (const el of copy.querySelectorAll('[id]')) {
+    const marker = el.getAttribute('data-bx-copy-id');
+    if (marker !== null && el.id === marker) continue;
+    el.setAttribute('data-bx-copy-id', el.id + COPY_ID_SUFFIX);
+    el.id = el.id + COPY_ID_SUFFIX;
+  }
+  const renamed = new Map();
+  for (const el of copy.querySelectorAll('[data-bx-copy-id]')) {
+    if (el.id === el.getAttribute('data-bx-copy-id')) renamed.set(el.id.slice(0, -COPY_ID_SUFFIX.length), el.id);
+  }
+  if (renamed.size > 0) {
+    const selector = [...ID_REFERENCES.map((name) => `[${name}]`), 'a[href^="#"]'].join(',');
+    for (const el of copy.querySelectorAll(selector)) {
+      for (const name of ID_REFERENCES) {
+        const value = el.getAttribute(name);
+        if (value === null) continue;
+        const next = value.split(/\s+/).map((token) => renamed.get(token) ?? token).join(' ');
+        if (next !== value) el.setAttribute(name, next);
+      }
+      const href = el.localName === 'a' ? el.getAttribute('href') : null;
+      if (href?.startsWith('#') && renamed.has(href.slice(1))) el.setAttribute('href', '#' + renamed.get(href.slice(1)));
+    }
+  }
+  for (const el of copy.querySelectorAll('[data-testid]')) {
+    el.setAttribute('data-bx-copy-testid', el.getAttribute('data-testid'));
+    el.removeAttribute('data-testid');
+  }
+}
 
 /** The sidebar a control outside it belongs to: data-bx-sidebar-for names it, else the one of the same dashboard. */
 function sidebarFor(button) {

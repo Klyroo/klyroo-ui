@@ -295,6 +295,33 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Sidebar_copy_in_the_panel_has_its_own_ids_and_no_test_ids(string mode)
+    {
+        await Open(mode, "sidebar");
+        var host = Page.Locator("bx-sidebar").First;
+        await Assertions.Expect(host.Locator("[data-bx-sidebar-copy]")).ToBeAttachedAsync();
+        // The sidebar of the example has no ids: put the same field in the column and in the copy, the way a render would.
+        await host.EvaluateAsync("""
+            h => {
+                const field = '<label for="probe-field" id="probe-label">Name</label><input id="probe-field" aria-labelledby="probe-label" data-testid="probe">';
+                h.querySelector('[data-slot=content]').insertAdjacentHTML('beforeend', field);
+                h.querySelector('[data-bx-sidebar-copy]').insertAdjacentHTML('beforeend', field);
+            }
+            """);
+
+        var copyInput = host.Locator("[data-bx-sidebar-copy] input");
+        await Assertions.Expect(copyInput).ToHaveAttributeAsync("id", "probe-field--panel");
+        await Assertions.Expect(copyInput).ToHaveAttributeAsync("aria-labelledby", "probe-label--panel");
+        await Assertions.Expect(host.Locator("[data-bx-sidebar-copy] label")).ToHaveAttributeAsync("for", "probe-field--panel");
+        await Assertions.Expect(copyInput).ToHaveAttributeAsync("data-bx-copy-testid", "probe");
+        Assert.Equal(1, await Page.GetByTestId("probe").CountAsync());
+        var duplicates = await Page.EvaluateAsync<string[]>(
+            "() => { const seen = new Set(), dup = new Set(); for (const e of document.querySelectorAll('[id]')) { if (seen.has(e.id)) dup.add(e.id); seen.add(e.id); } return [...dup]; }");
+        Assert.Empty(duplicates);
+    }
+
     // ---- LocaleSelect
 
     [Theory]

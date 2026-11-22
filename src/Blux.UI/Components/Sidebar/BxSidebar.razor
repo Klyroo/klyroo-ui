@@ -10,9 +10,14 @@
     The aside carries data-state="expanded|collapsed" and is a Tailwind group named "sidebar".
     Header, ChildContent and Footer are rendered twice: in the column and in the mobile panel. Only one is on screen
     (the other is display:none or a closed dialog, so assistive technology does not see it twice), but both exist in the
-    DOM and in the component tree, so an id, a form field or a stateful component inside them is duplicated. Prefer
-    classes to ids there, and keep state outside. The copy cannot be rendered on demand: the panel opens in the browser,
-    and a copy that appears after a round trip to .NET would open empty (Server) or not at all (static rendering).
+    DOM and in the component tree, so a form field or a stateful component inside them exists twice. Keep state outside.
+    The copy cannot be rendered on demand, and the one DOM cannot be moved between the column and the dialog: the panel
+    opens in the browser, a copy that appears after a round trip to .NET would open empty (Server) or not at all (static
+    rendering), and moving elements Blazor rendered makes it insert and remove siblings at the wrong place.
+    What the browser does instead (js/layout.js): the elements of the mobile copy (marked data-bx-sidebar-copy) get the
+    suffix "--panel" on their ids, with the references to them (for, aria-labelledby, aria-controls, popovertarget...) in the
+    copy following, and their data-testid moves to data-bx-copy-testid. So the document has each id and each test id once,
+    and the elements of the copy still find each other. It follows Blazor's renders and enhanced navigations.
 *@
 <bx-sidebar data-bx-seq="@(CollapsedChanged.HasDelegate ? _sequence : null)"
             class="@_slots["host"]"
@@ -33,7 +38,7 @@
                           aria-label="@Messages.OpenSidebar" hidden="@(!MobileTrigger)" />
             </ChildContent>
             <Body>
-                <div class="@_slots["mobileBody"]">
+                <div class="@_slots["mobileBody"]" data-bx-sidebar-copy>
                     @if (Header is not null)
                     {
                         <div class="@_slots["header"]"><div class="@_slots["headerContent"]">@Header</div></div>
@@ -61,7 +66,7 @@
     private SlideoverUi _slideoverUi = new() { Body = "p-0 sm:p-0" };
     private int _sequence;
 
-    /// <summary>The scrollable middle: navigation, search. Rendered twice (column and mobile panel): avoid ids and local state in it.</summary>
+    /// <summary>The scrollable middle: navigation, search. Rendered twice (column and mobile panel): the ids and test ids of the mobile copy are renamed in the browser, but keep local state outside.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Top of the sidebar: a logo and a title. Hidden while the sidebar is collapsed, next to the collapse button.</summary>
