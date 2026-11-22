@@ -17,6 +17,7 @@ public sealed class DataListController<TItem> : IDisposable
     private CancellationTokenSource? _cts;
     private long _version;
     private bool _refreshing;
+    private bool _dropFacets;
     private bool _disposed;
 
     /// <summary>Creates a controller.</summary>
@@ -139,7 +140,7 @@ public sealed class DataListController<TItem> : IDisposable
     // and the request is not a refresh. The provider is then not asked for them, so a database or an API does not count again on every page.
     private IReadOnlyList<DataListFacetResult>? ReusableFacets(DataListRequest request, bool refresh)
     {
-        if (refresh || request.Facets.Count == 0 || Result?.Facets is not { } facets || LoadedRequest is not { } loaded) return null;
+        if (refresh || _dropFacets || request.Facets.Count == 0 || Result?.Facets is not { } facets || LoadedRequest is not { } loaded) return null;
         return loaded.Filter == request.Filter && loaded.Search == request.Search && loaded.TimeZone == request.TimeZone && SequenceEquality.Equal(loaded.Facets, request.Facets)
             ? facets
             : null;
@@ -160,6 +161,7 @@ public sealed class DataListController<TItem> : IDisposable
         LoadedState = loaded;
         LoadedRequest = request;
         RequestedState = state;
+        _dropFacets = false;
         Error = null;
         IsLoading = false;
         _refreshing = false;
@@ -218,6 +220,7 @@ public sealed class DataListController<TItem> : IDisposable
             ResultVersion++;
             LoadedState = normalized;
             LoadedRequest = request;
+            _dropFacets = false;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested || version != Volatile.Read(ref _version))
         {
@@ -241,6 +244,9 @@ public sealed class DataListController<TItem> : IDisposable
         var result = await Provider(cached is null ? request : request with { Facets = [] }, cancellationToken).ConfigureAwait(true);
         return cached is not null && result.Facets is null ? result with { Facets = cached } : result;
     }
+
+    /// <summary>Forgets the counts of the result on screen, so the next load asks for them again: the rows the list reads changed (new items, a new query), and the counts of the old ones no longer hold.</summary>
+    internal void DropFacets() => _dropFacets = true;
 
     /// <summary>Sets the time zone of the request an adopted result stands for, once the browser told it (the prerender ran in UTC).</summary>
     public void SetLoadedTimeZone(string? timeZone)

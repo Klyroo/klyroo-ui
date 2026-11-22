@@ -100,6 +100,22 @@ public class DataListFacetControllerTests
     }
 
     [Fact]
+    public async Task Counts_are_asked_for_again_after_the_rows_of_the_list_changed()
+    {
+        var recorder = new Recorder();
+        using var controller = new DataListController<Ticket>(Schema, recorder.Provider);
+        await controller.LoadAsync(State);
+
+        // What BxDataList does when it is given other items or another query.
+        controller.DropFacets();
+        await controller.LoadAsync(State);
+        await controller.LoadAsync(State with { Page = 2 });
+
+        Assert.Equal(2, recorder.Requests[1].Facets.Count);
+        Assert.Empty(recorder.Requests[2].Facets);
+    }
+
+    [Fact]
     public async Task A_page_past_the_end_goes_back_to_the_last_page_with_the_counts_it_needs()
     {
         var recorder = new Recorder();
@@ -149,7 +165,7 @@ public class DataListFacetControllerTests
     }
 
     [Fact]
-    public async Task A_failed_load_keeps_the_counts_on_screen_and_the_retry_asks_for_them_if_the_filters_changed()
+    public async Task A_failed_load_keeps_the_counts_on_screen()
     {
         var calls = 0;
         var inner = DataListController<Ticket>.CreateProvider(Schema, FilterData.All, null);
