@@ -343,6 +343,28 @@ public class DashboardTests : BluxTestContext
     }
 
     [Fact]
+    public void Navbar_renders_a_header_and_an_h1_by_default()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Title, "Inbox"));
+
+        Assert.Equal("header", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("h1", cut.Find("[data-slot=left] > :nth-child(2)").LocalName);
+    }
+
+    [Fact]
+    public void Navbar_can_be_a_div_with_a_lower_heading_so_a_second_navbar_adds_no_banner_or_h1()
+    {
+        var cut = Render<BxDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, "div").Add(n => n.HeadingLevel, 2)
+            .Add(n => n.Right, "<button>Act</button>"));
+
+        Assert.Empty(cut.FindAll("header"));
+        Assert.Empty(cut.FindAll("h1"));
+        Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("Message", cut.Find("h2").TextContent);
+        Assert.Single(cut.FindAll("[data-slot=right] button"));
+    }
+
+    [Fact]
     public void Toolbar_renders_only_the_areas_it_was_given()
     {
         var cut = Render<BxDashboardToolbar>(p => p.Add(t => t.Left, "<b>L</b>").Add(t => t.Right, "<b>R</b>"));
