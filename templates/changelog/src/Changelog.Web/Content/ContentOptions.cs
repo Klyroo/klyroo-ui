@@ -25,6 +25,14 @@ public sealed class ContentOptions
     /// </summary>
     public string? WebRoot { get; init; }
 
+    /// <summary>
+    /// A check that a site makes of the content it just read, for what only the site knows (a blog post needs a date). It gets the new
+    /// <see cref="MarkdownSite"/> and returns warnings, which the store logs, or throws <see cref="ContentException"/> for content that cannot be used.
+    /// It runs at every read, so a reload that fails it keeps the previous content and logs the error, exactly as a page that does not parse does,
+    /// and the first read stops the start with the message.
+    /// </summary>
+    public Func<MarkdownSite, IEnumerable<string>>? Validate { get; init; }
+
     /// <summary>How many characters of a page's text go into the search index, after its title and headings. The index is a JSON file the browser fetches when the search opens.</summary>
     public int SearchTextLimit { get; init; } = 2000;
 }

@@ -1,0 +1,75 @@
+@page "/blog"
+@inject MarkdownStore Store
+
+<PageTitle>Blog - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@SiteInfo.BlogDescription" />
+</HeadContent>
+
+<BxContainer Class="py-10 sm:py-14">
+    <BxPageHeader Title="@SiteInfo.BlogTitle" Description="@SiteInfo.BlogDescription" />
+
+    @* A tag is a link with a query string, so the filter works without a script and a filtered list can be shared. *@
+    <nav aria-label="Tags" class="mt-8">
+        <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
+            <li>
+                <BxButton Label="All" Href="@SiteInfo.BlogHref" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="@(_tag is null ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                          aria-current="@(_tag is null ? "page" : null)" data-testid="tag" />
+            </li>
+            @foreach (var (tag, count) in _tags)
+            {
+                var selected = string.Equals(tag, _tag, StringComparison.OrdinalIgnoreCase);
+                <li>
+                    <BxButton Label="@($"{tag} ({count})")" Href="@($"{SiteInfo.BlogHref}?tag={Uri.EscapeDataString(tag)}")" Size="BxSize.Sm" Color="BxColor.Neutral"
+                              Variant="@(selected ? ButtonVariant.Solid : ButtonVariant.Outline)" aria-current="@(selected ? "page" : null)" data-testid="tag" />
+                </li>
+            }
+        </ul>
+    </nav>
+
+    @if (_posts.Count == 0)
+    {
+        <BxEmpty Title="No posts with this tag" Description="Pick another tag, or show all the posts." class="mt-10" />
+    }
+    else
+    {
+        @if (_featured is not null)
+        {
+            <div class="mt-10">
+                <BxBlogPost Title="@_featured.Title" Description="@_featured.Description" Date="@_featured.Date" Image="@_featured.Image" ImageAlt="@_featured.ImageAlt"
+                            Href="@_featured.Href" Authors="_featured.Authors" Orientation="BxOrientation.Horizontal" HeadingLevel="2"
+                            Badge="@_featured.Tags.FirstOrDefault()" data-testid="post" />
+            </div>
+        }
+        <BxBlogPosts Class="mt-8">
+            @foreach (var post in _rest)
+            {
+                <BxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
+                            Href="@post.Href" Authors="post.Authors" HeadingLevel="2" Badge="@post.Tags.FirstOrDefault()" data-testid="post" />
+            }
+        </BxBlogPosts>
+    }
+</BxContainer>
+
+@code {
+    [SupplyParameterFromQuery(Name = "tag")] public string? Tag { get; set; }
+
+    private IReadOnlyList<(string Tag, int Count)> _tags = [];
+    private IReadOnlyList<Post> _posts = [];
+    private Post? _featured;
+    private IReadOnlyList<Post> _rest = [];
+    private string? _tag;
+
+    protected override void OnParametersSet()
+    {
+        var site = Store.Site;
+        _tags = site.Tags();
+        // A tag that no post has shows an empty list, not every post: the address says what the visitor asked for.
+        _tag = string.IsNullOrWhiteSpace(Tag) ? null : Tag.Trim();
+        _posts = [.. site.Posts().Where(p => _tag is null || p.Tags.Contains(_tag, StringComparer.OrdinalIgnoreCase))];
+        // The most recent post is shown large on the list of all the posts; a filtered list is a grid of equal cards.
+        _featured = _tag is null ? _posts.FirstOrDefault() : null;
+        _rest = [.. _posts.Skip(_featured is null ? 0 : 1)];
+    }
+}

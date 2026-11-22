@@ -1,0 +1,26 @@
+@* Blux has no testimonial component: a quote is a BxCard with a figure in it, and the cards are laid out by BxPageGrid. The avatar shows the
+   initials and is hidden from assistive technology, the name next to it says the same. *@
+<BxPageSection id="customers"
+               Headline="@SiteInfo.TestimonialsHeadline"
+               Title="@SiteInfo.TestimonialsTitle"
+               Orientation="BxOrientation.Vertical">
+    <BxPageGrid Columns="3" Class="mt-10 gap-6">
+        @foreach (var testimonial in SiteInfo.Testimonials)
+        {
+            <BxCard Class="h-full" data-testid="testimonial">
+                <figure class="m-0 flex h-full flex-col gap-6">
+                    <blockquote class="m-0 text-base text-pretty text-(--blux-text)">
+                        <p>&ldquo;@testimonial.Quote&rdquo;</p>
+                    </blockquote>
+                    <figcaption class="mt-auto flex items-center gap-3">
+                        <BxAvatar Alt="@testimonial.Name" Size="BxSize.Lg" aria-hidden="true" />
+                        <div class="min-w-0">
+                            <p class="text-sm font-medium text-(--blux-text-highlighted)">@testimonial.Name</p>
+                            <p class="text-sm text-(--blux-text-muted)">@testimonial.Role</p>
+                        </div>
+                    </figcaption>
+                </figure>
+            </BxCard>
+        }
+    </BxPageGrid>
+</BxPageSection>

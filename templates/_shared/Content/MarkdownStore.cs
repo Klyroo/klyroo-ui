@@ -75,6 +75,10 @@ public sealed class MarkdownStore : IDisposable
         {
             _logger?.LogWarning("The page '{Page}' links to '{Target}', which is not a page.", link.FromSlug, link.Target);
         }
+        foreach (var warning in _options.Validate?.Invoke(site) ?? [])
+        {
+            _logger?.LogWarning("{Warning}", warning);
+        }
         foreach (var image in site.MissingImages)
         {
             _logger?.LogWarning("The page '{Page}' shows the image '{Image}', which is not in the web root. Images are served from the web root, not from the content folder: put the file there and write its path from the root, for example /img/chart.png.", image.FromSlug, image.Path);

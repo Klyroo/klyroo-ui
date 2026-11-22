@@ -42,6 +42,7 @@
     <Project Path="templates/dashboard/src/Dashboard.Web.Client/Dashboard.Web.Client.csproj" />
     <Project Path="templates/landing/src/Landing.Web/Landing.Web.csproj" />
     <Project Path="templates/docs/src/Docs.Web/Docs.Web.csproj" />
+    <Project Path="templates/saas/src/SaaS.Web/SaaS.Web.csproj" />
     <Project Path="templates/changelog/src/Changelog.Web/Changelog.Web.csproj" />
   </Folder>
   <Folder Name="/build/">

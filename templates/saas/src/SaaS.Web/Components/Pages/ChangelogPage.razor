@@ -1,0 +1,31 @@
+@page "/changelog"
+@inject MarkdownStore Store
+
+<PageTitle>Changelog - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@SiteInfo.ChangelogDescription" />
+</HeadContent>
+
+<BxContainer Class="py-10 sm:py-14">
+    <div class="mx-auto max-w-3xl">
+        <BxPageHeader Title="@SiteInfo.ChangelogTitle" Description="@SiteInfo.ChangelogDescription" />
+
+        @* Each version is a file of content/changelog: the title of the page is the version, the text is the notes. *@
+        <BxChangelogVersions Class="mt-10" data-testid="releases">
+            @foreach (var release in _releases)
+            {
+                <BxChangelogVersion Title="@release.Version" Description="@release.Page.Description" Date="@release.Date" Badge="@release.Badge"
+                                    Href="@release.Href" HeadingLevel="2" data-testid="release">
+                    <BxPageBody Class="markdown-body">@((MarkupString)release.Page.Html)</BxPageBody>
+                </BxChangelogVersion>
+            }
+        </BxChangelogVersions>
+    </div>
+</BxContainer>
+
+@code {
+    private IReadOnlyList<Release> _releases = [];
+
+    protected override void OnInitialized() => _releases = Store.Site.Releases();
+}

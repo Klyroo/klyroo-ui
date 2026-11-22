@@ -53,6 +53,26 @@ public class FrontMatterTests
     }
 
     [Fact]
+    public void Every_key_is_kept_as_written_in_Meta_for_the_data_a_site_adds_of_its_own()
+    {
+        var (data, _) = FrontMatterParser.Parse("---\ntitle: A\ndate: 2026-03-04\nauthor: Maya\ntags: [news, product]\nfeatured: true\n---\n", "a.md");
+
+        Assert.Equal("A", data.Meta["title"]);
+        Assert.Equal("2026-03-04", data.Meta["date"]);
+        Assert.Equal("Maya", data.Meta["author"]);
+        Assert.Equal(["news", "product"], ((IEnumerable<object>)data.Meta["tags"]!).Select(t => t.ToString()));
+        Assert.Equal("true", data.Meta["featured"]);
+    }
+
+    [Fact]
+    public void A_file_without_front_matter_has_an_empty_Meta()
+    {
+        var (data, _) = FrontMatterParser.Parse("Text", "a.md");
+
+        Assert.Empty(data.Meta);
+    }
+
+    [Fact]
     public void A_block_that_is_never_closed_names_the_file()
     {
         var error = Assert.Throws<ContentException>(() => FrontMatterParser.Parse("---\ntitle: A\n", "guides/a.md"));
@@ -83,6 +103,17 @@ public class FrontMatterTests
 public class MarkdownSiteTests
 {
     private static string[] Titles(IEnumerable<BxContentNavigationItem> items) => [.. items.Select(i => i.Title)];
+
+    [Fact]
+    public void A_page_carries_the_front_matter_keys_the_site_added_and_a_page_built_by_hand_has_none()
+    {
+        using var folder = new ContentFolder().Page("blog/post.md", "Post", extra: "date: 2026-03-04\ntags: [news]\n");
+        var page = folder.Load().Find("blog/post")!;
+
+        Assert.Equal("2026-03-04", page.Data["date"]);
+        Assert.Equal("Post", page.Data["title"]);
+        Assert.Empty(new MarkdownPage("p", "", false, "P", null, null, null, null, false, "", [], "", "p.md").Data);
+    }
 
     [Fact]
     public void The_navigation_is_folders_as_groups_and_pages_as_links()

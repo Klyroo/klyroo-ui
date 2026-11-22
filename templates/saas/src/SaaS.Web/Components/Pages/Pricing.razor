@@ -1,0 +1,93 @@
+@page "/pricing"
+
+<PageTitle>Pricing - @SiteInfo.Name</PageTitle>
+
+<HeadContent>
+    <meta name="description" content="@PricingInfo.Description" />
+</HeadContent>
+
+@* The monthly and yearly switch needs no script and no circuit. Two radio buttons (a real, keyboard operable control that the browser
+   remembers) pick which of two copies of the plans is shown, with the :has() selector on the wrapper below. A .NET toggle would make the whole page
+   interactive for the sake of one label, and would not work until the circuit or WebAssembly had started. The cost is that the plans are rendered
+   twice: the copy that is not shown is display:none, so it is out of the accessibility tree and out of the layout.
+   In Windows High Contrast the fill of the checked label is dropped, so forced-colors paints it with the system Highlight colors. *@
+<BxPageSection id="pricing"
+               Headline="@PricingInfo.Headline"
+               Title="@PricingInfo.Title"
+               Description="@PricingInfo.Description"
+               Orientation="BxOrientation.Vertical"
+               HeadingLevel="1">
+    <div class="group/pricing mt-10 flex flex-col items-start gap-8" data-testid="pricing">
+        <fieldset class="m-0 inline-flex rounded-full bg-(--blux-bg-elevated)/50 p-1 ring ring-(--blux-border)">
+            <legend class="sr-only">@PricingInfo.BillingLabel</legend>
+            <input type="radio" id="billing-monthly" name="billing" value="monthly" class="peer/monthly sr-only" checked />
+            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--blux-bg-inverted) peer-checked/monthly:text-(--blux-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--blux-text)">@PricingInfo.MonthlyLabel</label>
+            <input type="radio" id="billing-yearly" name="billing" value="yearly" class="peer/yearly sr-only" />
+            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--blux-bg-inverted) peer-checked/yearly:text-(--blux-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--blux-text)">@PricingInfo.YearlyLabel</label>
+        </fieldset>
+
+        <div class="w-full group-has-[#billing-yearly:checked]/pricing:hidden" data-billing="monthly">
+            @Plans(false)
+        </div>
+        <div class="hidden w-full group-has-[#billing-yearly:checked]/pricing:block" data-billing="yearly">
+            @Plans(true)
+        </div>
+    </div>
+</BxPageSection>
+
+@* The sticky table header sits under the sticky site header: --bx-sticky-offset is the distance from the top of the viewport. *@
+<BxPageSection id="compare"
+               Headline="@PricingInfo.CompareHeadline"
+               Title="@PricingInfo.CompareTitle"
+               Orientation="BxOrientation.Vertical">
+    <BxPricingTable Tiers="PricingInfo.Tiers" Sections="PricingInfo.Sections" Caption="@PricingInfo.CompareCaption"
+                    Class="mt-10 [--bx-sticky-offset:var(--blux-header-height)]" data-testid="compare" />
+</BxPageSection>
+
+<BxPageSection id="faq"
+               Headline="@PricingInfo.FaqHeadline"
+               Title="@PricingInfo.FaqTitle"
+               Orientation="BxOrientation.Vertical">
+    <BxAccordion Items="_questions" Class="mt-10 max-w-3xl" />
+</BxPageSection>
+
+<BxPageCta Variant="BxVariant.Outline"
+           Title="@PricingInfo.CtaTitle"
+           Description="@PricingInfo.CtaDescription"
+           Links="PricingInfo.CtaLinks"
+           Class="mb-8" />
+
+@code {
+    private const string _label = "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-(--blux-text-muted)";
+
+    // BxAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them.
+    private static readonly BxAccordionItem[] _questions = [.. PricingInfo.Questions.Select((q, index) => new BxAccordionItem(q.Ask)
+    {
+        Value = $"q{index + 1}",
+        Content = builder =>
+        {
+            builder.OpenElement(0, "p");
+            builder.AddContent(1, q.Answer);
+            builder.CloseElement();
+        },
+    })];
+
+    private static RenderFragment Plans(bool yearly) =>
+        @<BxPricingPlans>
+            @foreach (var plan in PricingInfo.Plans)
+            {
+                <BxPricingPlan Title="@plan.Name" HeadingLevel="2"
+                               Description="@plan.Description"
+                               Badge="@plan.Badge"
+                               Highlight="@plan.Highlight"
+                               Price="@plan.Price(yearly)"
+                               BillingCycle="@PricingInfo.PerMonth"
+                               Terms="@plan.Terms(yearly)"
+                               Features="@(plan.Features.Select(f => new BxPricingFeature(f)).ToArray())"
+                               ButtonLabel="@plan.ButtonLabel"
+                               ButtonHref="@plan.ButtonHref"
+                               ButtonVariant="@(plan.Highlight ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                               ButtonColor="@(plan.Highlight ? BxColor.Primary : BxColor.Neutral)" />
+            }
+        </BxPricingPlans>;
+}
