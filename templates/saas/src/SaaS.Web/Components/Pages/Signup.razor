@@ -1,0 +1,57 @@
+@page "/signup"
+
+<PageTitle>Create an account - @SiteInfo.Name</PageTitle>
+
+@* UI only. Like the sign-in page: BxAuthForm posts to the server, checks the fields (the password rule below is the one of Validate), and calls
+   SignUpAsync, which creates nothing. To make it real, create the account in SignUpAsync and answer an email that is already taken with
+   FieldErrors, for example new Dictionary<string, string> { ["email"] = "This email is already registered." }. *@
+<BxContainer Class="flex justify-center py-12 sm:py-20">
+    <div class="flex w-full max-w-sm flex-col gap-6">
+        <BxAuthForm FormName="signup" Title="Create your account" Description="Five monitors, free, with no payment details." HeadingLevel="1"
+                    Fields="_fields" Providers="_providers" SubmitLabel="Create account" Validate="CheckPassword" OnValidSubmit="SignUpAsync">
+            <Icon>
+                <BxIcon Name="ph:rocket-launch" Class="size-8" />
+            </Icon>
+            <Footer>
+                Already have an account? <a href="@SiteInfo.LoginHref" class="font-medium text-(--blux-primary-text) underline underline-offset-4">Sign in</a>
+            </Footer>
+        </BxAuthForm>
+
+        @if (_email is not null)
+        {
+            <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Title="The form is valid" role="status" data-testid="auth-result"
+                     Description="@($"An account would be created for {_email} now. This template has no authentication: nothing was created and nothing was sent.")" />
+        }
+    </div>
+</BxContainer>
+
+@code {
+    private const int MinimumPasswordLength = 8;
+
+    private string? _email;
+
+    private static readonly BxAuthField[] _fields =
+    [
+        new("name", "text") { Label = "Full name", Required = true, Autocomplete = "name" },
+        new("email", "email") { Label = "Work email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
+        new("password", "password") { Label = "Password", Required = true, Autocomplete = "new-password", Help = "At least 8 characters." },
+        new("terms", "checkbox") { Label = "I agree to the terms of service", Required = true },
+    ];
+
+    private static readonly BxAuthProvider[] _providers =
+    [
+        new("Sign up with GitHub (demo)", SiteInfo.GitHubSignInUrl) { Icon = "code" },
+        new("Sign up with Google (demo)", SiteInfo.GoogleSignInUrl) { Icon = "globe" },
+    ];
+
+    private static IReadOnlyDictionary<string, string>? CheckPassword(IReadOnlyDictionary<string, string?> values) =>
+        values.GetValueOrDefault("password") is { Length: < MinimumPasswordLength }
+            ? new Dictionary<string, string> { ["password"] = $"Use at least {MinimumPasswordLength} characters." }
+            : null;
+
+    private Task SignUpAsync(IReadOnlyDictionary<string, string?> values)
+    {
+        _email = values["email"]?.Trim();
+        return Task.CompletedTask;
+    }
+}

@@ -1,0 +1,34 @@
+@* The steps on the left, a snippet on the right. The snippet goes through the renderer of the documentation: highlighted, with a copy button. *@
+<BxPageSection id="how-it-works"
+               Headline="@SiteInfo.HowHeadline"
+               Title="@SiteInfo.HowTitle"
+               Description="@SiteInfo.HowDescription"
+               Ui="_ui">
+    <ChildContent>
+        <ol class="m-0 mt-8 flex list-none flex-col gap-6 p-0">
+            @foreach (var (step, index) in SiteInfo.Steps.Select((s, i) => (s, i + 1)))
+            {
+                <li class="flex gap-4" data-testid="step">
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-elevated) ring ring-(--blux-border)">
+                        <BxIcon Name="@step.Icon" Class="size-5 text-(--blux-text-highlighted)" />
+                    </span>
+                    <div>
+                        <h3 class="text-base font-semibold text-(--blux-text-highlighted)">@index. @step.Title</h3>
+                        <p class="mt-1 text-(--blux-text-muted)">@step.Text</p>
+                    </div>
+                </li>
+            }
+        </ol>
+    </ChildContent>
+    <Media>
+        <div data-testid="how-snippet" class="w-full min-w-0">@((MarkupString)_snippet)</div>
+    </Media>
+</BxPageSection>
+
+@code {
+    // A long line of code scrolls inside its block: the media column may shrink below the width of its content.
+    private static readonly PageSectionUi _ui = new() { Media = "min-w-0" };
+
+    // Rendered once: it never changes with the content.
+    private static readonly string _snippet = new MarkdownRenderer().Render(SiteInfo.HowSnippet, "", "./").Html;
+}

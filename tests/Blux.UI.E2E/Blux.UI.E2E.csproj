@@ -25,6 +25,7 @@
     <ProjectReference Include="..\..\templates\dashboard\src\Dashboard.Web\Dashboard.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\landing\src\Landing.Web\Landing.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\docs\src\Docs.Web\Docs.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\saas\src\SaaS.Web\SaaS.Web.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\..\templates\changelog\src\Changelog.Web\Changelog.Web.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 

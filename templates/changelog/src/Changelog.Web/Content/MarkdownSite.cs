@@ -5,6 +5,7 @@ namespace Blux.Templates.Content;
 /// <summary>A page of the content folder, rendered.</summary>
 /// <param name="Slug">The address of the page below the site, without a leading slash: <c>guides/setup</c> for <c>guides/setup.md</c>, the folder for an <c>index.md</c>.</param>
 /// <param name="Directory">The folder of the file, as slugs ("" for the root of the content folder).</param>
+/// <param name="Meta">Every key of the front matter as written (see <see cref="FrontMatter.Meta"/>), for the data a site adds of its own. Empty when there is none.</param>
 public sealed record MarkdownPage(
     string Slug,
     string Directory,
@@ -18,10 +19,16 @@ public sealed record MarkdownPage(
     string Html,
     IReadOnlyList<MarkdownHeading> Headings,
     string Text,
-    string SourcePath)
+    string SourcePath,
+    IReadOnlyDictionary<string, object?>? Meta = null)
 {
     /// <summary>The address to link to: relative to the <c>&lt;base href&gt;</c> of the site, so it is right below a path base too.</summary>
     public string Href => Slug;
+
+    /// <summary>The front matter keys as written; never null.</summary>
+    public IReadOnlyDictionary<string, object?> Data => Meta ?? EmptyMeta;
+
+    private static readonly IReadOnlyDictionary<string, object?> EmptyMeta = new Dictionary<string, object?>();
 
     /// <summary>The text of the link in the navigation.</summary>
     public string LinkTitle => NavigationTitle ?? Title;
@@ -148,7 +155,7 @@ public sealed class MarkdownSite
                 slug, directory, isIndex,
                 Clean(data.Title) ?? Humanize(isIndex ? directory.Split('/')[^1] : name),
                 Clean(data.Description), data.Order, Clean(data.NavigationTitle), Clean(data.Icon), data.Draft,
-                rendered.Html, rendered.Headings, rendered.Text, relative);
+                rendered.Html, rendered.Headings, rendered.Text, relative, data.Meta);
             pages.Add(page);
             internalLinks.AddRange(rendered.Links.Select(target => (slug, target)));
             images.AddRange(rendered.Images.Select(path => (slug, path)));
@@ -165,8 +172,8 @@ public sealed class MarkdownSite
         return new MarkdownSite(ordered, navigation, ToSearch(ordered, folders, options.SearchTextLimit), broken, missing);
     }
 
-    // The file must be inside the web root: a path that climbs out of it never counts, whatever is there.
-    private static bool ImageExists(string webRoot, string path)
+    /// <summary>True when <paramref name="path"/> (relative to the web root, with or without a leading slash) is a file inside <paramref name="webRoot"/>: a path that climbs out of it never counts.</summary>
+    public static bool ImageExists(string webRoot, string path)
     {
         string decoded;
         try

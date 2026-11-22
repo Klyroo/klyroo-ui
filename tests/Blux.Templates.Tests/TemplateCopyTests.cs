@@ -7,8 +7,8 @@ namespace Blux.Templates.Tests;
 /// </summary>
 public class TemplateCopyTests
 {
-    /// <summary>The templates that use the shared Markdown code, and so must carry the whole reference. Add SaaS and Portfolio when they exist.</summary>
-    private static readonly string[] ContentTemplates = ["docs", "changelog"];
+    /// <summary>The templates that use the shared Markdown code, and so must carry the whole reference. Add Portfolio when it exists.</summary>
+    private static readonly string[] ContentTemplates = ["docs", "changelog", "saas"];
 
     private static readonly string Root = RepositoryRoot();
     private static readonly string Templates = Path.Combine(Root, "templates");
