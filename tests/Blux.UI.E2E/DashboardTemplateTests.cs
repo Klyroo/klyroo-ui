@@ -227,20 +227,20 @@ internal static class DashboardChecks
         await page.GetByRole(AriaRole.Button, new() { Name = "Clear filters" }).ClickAsync();
         await Assertions.Expect(page.GetByText("of 240")).ToBeVisibleAsync();
 
-        // Selection: one row, then the page. The mixed state of the header box says "some".
-        await page.GetByTestId("select-page").ClickAsync();
-        await Assertions.Expect(page.GetByTestId("selection-count")).ToHaveTextAsync("10 selected");
+        // Selection: the page, then one row less. The mixed state of the header box says "some".
+        await page.Locator("input[data-select=all]").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("10 selected");
         await rows.First.GetByRole(AriaRole.Checkbox).UncheckAsync();
-        await Assertions.Expect(page.GetByTestId("selection-count")).ToHaveTextAsync("9 selected");
-        await Assertions.Expect(page.GetByTestId("select-page")).ToHaveAttributeAsync("data-indeterminate", new Regex(".*"));
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("9 selected");
+        await Assertions.Expect(page.Locator("input[data-select=all]")).ToHaveAttributeAsync("data-indeterminate", new Regex(".*"));
         // The selection survives the next page.
         await page.GetByLabel("Page 2", new() { Exact = true }).ClickAsync();
-        await Assertions.Expect(page.GetByTestId("selection-count")).ToHaveTextAsync("9 selected");
+        await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("9 selected");
         // Delete the selection, after a confirmation.
-        await page.GetByTestId("delete-selected").ClickAsync();
-        await page.GetByTestId("confirm-delete-button").ClickAsync();
+        await page.Locator("[data-slot=selection-bar] [data-action=delete]").ClickAsync();
+        await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(page.GetByText("of 231")).ToBeVisibleAsync();
-        await Assertions.Expect(page.GetByTestId("selection-bar")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
 
         // Row action: delete one customer.
         await rows.First.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Actions for") }).ClickAsync();
@@ -323,12 +323,12 @@ internal static class DashboardChecks
         await Assertions.Expect(rows).ToHaveCountAsync(10);
 
         // Nothing selected: the live region is there, with no text.
-        var live = page.GetByTestId("selection-count");
+        var live = page.Locator("[data-slot=selection-status]");
         await Assertions.Expect(live).ToHaveAttributeAsync("role", "status");
         await Assertions.Expect(live).ToHaveTextAsync("");
-        await Assertions.Expect(page.GetByTestId("selection-bar")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
 
-        await page.GetByTestId("select-page").ClickAsync();
+        await page.Locator("input[data-select=all]").ClickAsync();
         await Assertions.Expect(live).ToHaveTextAsync("10 selected");
         var companies = (await rows.Locator("td:nth-child(3)").AllTextContentsAsync()).Select(t => t.Trim()).ToArray();
         var company = companies[0];
@@ -341,21 +341,21 @@ internal static class DashboardChecks
         Assert.All(await rows.AllTextContentsAsync(), text => Assert.Contains(company, text));
 
         // The confirmation counts the pruned selection, and the deletion reaches only those rows.
-        await page.GetByTestId("delete-selected").ClickAsync();
-        await Assertions.Expect(page.GetByTestId("confirm-delete")).ToContainTextAsync($"{expected} selected customers");
-        await page.GetByTestId("confirm-delete-button").ClickAsync();
+        await page.Locator("[data-slot=selection-bar] [data-action=delete]").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-slot=action-dialog]")).ToContainTextAsync($"{expected} selected customers");
+        await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(live).ToHaveTextAsync("");
         await page.GetByRole(AriaRole.Searchbox).FillAsync("");
         await Assertions.Expect(page.GetByText($"of {240 - expected}")).ToBeVisibleAsync(new() { Timeout = 15_000 });
 
         // A filter prunes too, and a page change does not.
-        await page.GetByTestId("select-page").ClickAsync();
+        await page.Locator("input[data-select=all]").ClickAsync();
         await Assertions.Expect(live).ToHaveTextAsync("10 selected");
         await page.GetByLabel("Page 2", new() { Exact = true }).ClickAsync();
         await Assertions.Expect(live).ToHaveTextAsync("10 selected");
         await page.GetByRole(AriaRole.Searchbox).FillAsync("zzzzqq");
         await Assertions.Expect(live).ToHaveTextAsync("", new() { Timeout = 15_000 });
-        await Assertions.Expect(page.GetByTestId("selection-bar")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
     }
 
     /// <summary>

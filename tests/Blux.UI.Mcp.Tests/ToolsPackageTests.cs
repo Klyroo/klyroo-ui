@@ -27,7 +27,7 @@ public class ToolsPackageTests
     [Fact]
     public void Components_of_Blux_UI_have_no_package()
     {
-        Assert.All(TestSupport.Bundle.Components.Where(c => c.Slug is not ("data-list-empty" or "data-list")), c => Assert.Null(c.Package));
+        Assert.All(TestSupport.Bundle.Components.Where(c => !c.Slug.StartsWith("data-list", StringComparison.Ordinal)), c => Assert.Null(c.Package));
     }
 
     [Fact]
@@ -43,13 +43,36 @@ public class ToolsPackageTests
         var list = TestSupport.Service.FindComponent("data-list")!;
 
         Assert.Equal("Blux.UI.Tools", list.Package);
-        Assert.Equal(["BxDataList<TItem>", "BxDataListTable<TItem>", "BxDataListColumn<TItem>", "BxDataListPagination<TItem>", "BxDataListResultCount<TItem>", "BxDataListRefresh<TItem>", "BxDataListErrorState<TItem>", "BxDataListSearch<TItem>", "BxDataListFilterTags<TItem>", "BxDataListAddFilter<TItem>", "BxDataListClearFilters<TItem>", "BxDataListFilterEditor<TItem>", "BxDataListFilterPanel<TItem>"], list.Api.Select(a => a.Name));
+        Assert.Equal(["BxDataList<TItem>", "BxDataListTable<TItem>", "BxDataListColumn<TItem>", "BxDataListPagination<TItem>", "BxDataListResultCount<TItem>", "BxDataListRefresh<TItem>", "BxDataListErrorState<TItem>", "BxDataListSearch<TItem>"], list.Api.Select(a => a.Name));
         var root = list.Api[0];
         Assert.Contains(root.Parameters, p => p.Name == "UrlSync" && p.Description is not null);
         Assert.Contains(root.Parameters, p => p.Name == "ResultJson" && p.Description is not null);
         Assert.Equal("DataList", root.Theme!.Property);
         Assert.Contains("tableRoot", root.Theme.Slots.Keys);
         Assert.Contains("### DataList", File.ReadAllText(Path.Combine(TestSupport.RepoRoot, SkillReference.RelativePath)));
+    }
+
+    [Fact]
+    public void The_data_list_pages_are_in_the_bundle_each_with_its_parts_and_the_package()
+    {
+        var pages = new Dictionary<string, string[]>
+        {
+            ["data-list-filters"] = ["BxDataListFilterTags<TItem>", "BxDataListAddFilter<TItem>", "BxDataListClearFilters<TItem>"],
+            ["data-list-filter-panel"] = ["BxDataListFilterPanel<TItem>"],
+            ["data-list-facets"] = ["BxDataListFilterEditor<TItem>"],
+            ["data-list-selection"] = ["BxDataListSelectionActions<TItem>", "BxDataListActionsDropdown<TItem>"],
+        };
+        foreach (var (slug, api) in pages)
+        {
+            var page = TestSupport.Service.FindComponent(slug)!;
+            Assert.Equal("Blux.UI.Tools", page.Package);
+            Assert.Equal(api, page.Api.Select(a => a.Name));
+            Assert.NotEmpty(page.Examples);
+        }
+        var selection = TestSupport.Service.FindComponent("data-list-selection")!;
+        Assert.Contains(selection.Api[0].Parameters, p => p.Name == "MaxVisible" && p.Description is not null);
+        Assert.Contains(TestSupport.Service.FindComponent("data-list")!.Api[0].Parameters, p => p.Name == "SelectedKeys" && p.Description is not null);
+        Assert.Contains("### DataListSelection", File.ReadAllText(Path.Combine(TestSupport.RepoRoot, SkillReference.RelativePath)));
     }
 
     [Fact]

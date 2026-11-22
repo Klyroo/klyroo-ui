@@ -11,7 +11,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
 {
     private async Task OpenList(string mode, string query = "")
     {
-        await Page.GotoAsync($"/{mode}/components/data-list{query}");
+        await Page.GotoAsync($"/{mode}/components/data-list-filter-panel{query}");
         await WaitForList(Page, mode);
     }
 
@@ -77,7 +77,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
         if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
-        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list{query}");
+        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list-filter-panel{query}");
         await Page.EvaluateAsync("() => window.__enhanced");
         await Assertions.Expect(List).ToBeVisibleAsync(new() { Timeout = 30_000 });
         await WaitForList(Page, mode);
@@ -291,7 +291,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await OpenList(mode, "?pnl.f.status=Paid");
         await Assertions.Expect(Trigger(Panel, "customer")).ToHaveAttributeAsync("aria-expanded", "false");
 
-        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list?pnl.f.status=Paid&pnl.f.customer=acme");
+        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list-filter-panel?pnl.f.status=Paid&pnl.f.customer=acme");
 
         await WaitForQuery("?pnl.f.status=Paid&pnl.f.customer=acme");
         await Assertions.Expect(Tag("Customer contains acme")).ToBeVisibleAsync();
@@ -454,7 +454,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Assertions.Expect(results).ToHaveAttributeAsync("role", "status");
         await Assertions.Expect(results).ToHaveAttributeAsync("aria-live", "polite");
 
-        await Page.GotoAsync($"/{mode}/components/data-list?pnl.f.status=Paid");
+        await Page.GotoAsync($"/{mode}/components/data-list-filter-panel?pnl.f.status=Paid");
         await WaitForList(Page, mode);
 
         await Assertions.Expect(results).ToHaveTextAsync("Results: 30");
@@ -735,7 +735,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
     public async Task Texts_follow_the_language_of_the_user(string mode)
     {
         var page = await NewPage("fr", "fr");
-        await page.GotoAsync($"/{mode}/components/data-list?pnl.f.reviewed=true&pnl.f.status=Paid,Pending");
+        await page.GotoAsync($"/{mode}/components/data-list-filter-panel?pnl.f.reviewed=true&pnl.f.status=Paid,Pending");
         await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         var panel = page.GetByTestId("list-panel").Locator("[data-slot=filter-panel]");
 

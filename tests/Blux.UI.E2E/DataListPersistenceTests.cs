@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Blux.UI.E2E;
 
 /// <summary>
@@ -31,6 +33,28 @@ public class DataListPersistenceTests(PlaygroundServer server) : PlaygroundTest(
             await large.GetByRole(AriaRole.Button, new() { Name = "Sort by No., descending" }).ClickAsync();
             await Assertions.Expect(large.Locator("tbody tr[data-slot=row]").First.Locator("td").First).ToHaveTextAsync("600");
             await Assertions.Expect(Page.GetByTestId("url-calls")).ToHaveTextAsync("0");
+        }
+    }
+
+    public static TheoryData<string> DataListPages => new("data-list", "data-list-filters", "data-list-filter-panel", "data-list-facets", "data-list-selection");
+
+    /// <summary>
+    /// The state a prerendered page persists is what the client sends back to the server when a Server or Auto circuit starts, and SignalR refuses a message past 32 KB. The data list docs are split
+    /// over several pages so that none of them comes near it: each state comment of a page (the text between the markers, encrypted and encoded) stays under 24 KB, three quarters of the limit.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(DataListPages))]
+    public async Task The_state_a_data_list_page_persists_stays_well_under_what_the_client_can_send_back(string slug)
+    {
+        foreach (var mode in new[] { "server", "auto" })
+        {
+            var response = await Page.APIRequest.GetAsync($"/{mode}/components/{slug}");
+            Assert.Equal(200, response.Status);
+            var html = await response.TextAsync();
+            var comments = Regex.Matches(html, @"<!--Blazor-[A-Za-z-]*Component-State:([^>]*?)-->").Select(m => m.Groups[1].Length).ToList();
+
+            Assert.NotEmpty(comments);
+            Assert.True(comments.Max() < 24 * 1024, $"/{mode}/components/{slug} persists {string.Join(" and ", comments)} characters of state");
         }
     }
 }
