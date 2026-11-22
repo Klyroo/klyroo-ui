@@ -197,7 +197,7 @@ public static class QueryableDataList
                 var p = Expression.Parameter(typeof(T), "e");
                 missing = rows.Where(Expression.Lambda<Func<T, bool>>(FilterExpressions.EmptyOf(field!.Source, p, inMemory: false), p));
             }
-            queries.Add(new DataListFacetQuery<T>(facet, QueryableBuilder.Buckets(schema, field!, rows), missing, schema.MaxFacetBuckets));
+            queries.Add(new DataListFacetQuery<T>(facet, QueryableBuilder.Buckets(schema, field!, rows, facet.Values), missing, schema.MaxFacetBuckets));
         }
         return queries;
     }
@@ -533,19 +533,24 @@ internal static class QueryableBuilder
     [UnconditionalSuppressMessage("Trimming", "IL2060", Justification = Justification)]
     [UnconditionalSuppressMessage("Trimming", "IL2055", Justification = Justification)]
     [UnconditionalSuppressMessage("Trimming", "IL2070", Justification = Justification)]
-    public static IQueryable<DataListFacetBucket> Buckets<T>(DataListSchema<T> schema, DataListField<T> field, IQueryable<T> rows)
+    public static IQueryable<DataListFacetBucket> Buckets<T>(DataListSchema<T> schema, DataListField<T> field, IQueryable<T> rows, IReadOnlyList<string>? values = null)
     {
         var accessor = field.Accessor;
         var p = Expression.Parameter(typeof(T), "e");
         var bucketType = typeof(DataListFacetBucket);
+        // a facet scoped to values counts all of them, whatever the cap of an open facet
+        var cap = values is { Count: > 0 } ? Math.Max(schema.MaxFacetBuckets, values.Count) : schema.MaxFacetBuckets;
 
         if (!field.IsCollection)
         {
             var value = accessor.Bind(p, nullSafe: false);
             var keyType = value.Type;
-            var filtered = rows.Where(Expression.Lambda<Func<T, bool>>(Expression.Not(FilterExpressions.IsEmpty(value, accessor)), p));
+            Expression keep = Expression.Not(FilterExpressions.IsEmpty(value, accessor));
+            // Only some values: in the query, so the cap of buckets applies to them alone.
+            if (values is { Count: > 0 }) keep = Expression.AndAlso(keep, FilterExpressions.ValuesRule(value, accessor, values, inMemory: false));
+            var filtered = rows.Where(Expression.Lambda<Func<T, bool>>(keep, p));
             var grouped = CallAny(filtered, GroupByDef, [typeof(T), keyType], Expression.Quote(QueryableBuilder.Lambda(value, p)));
-            return Project(grouped, typeof(IGrouping<,>).MakeGenericType(keyType, typeof(T)), typeof(T), countOf: null, schema.MaxFacetBuckets);
+            return Project(grouped, typeof(IGrouping<,>).MakeGenericType(keyType, typeof(T)), typeof(T), countOf: null, cap);
         }
 
         // A collection: one (row key, value) pair per element, then the distinct rows per value. A row is counted once per value. The result-selector form
@@ -569,11 +574,13 @@ internal static class QueryableBuilder
 
         var q = Expression.Parameter(pairType, "q");
         var pairValue = Member(q, nameof(FacetPair<int, int>.Value));
-        var nonEmpty = QueryableBuilder.Lambda(Expression.Not(FilterExpressions.IsEmpty(pairValue, accessor)), q);
+        Expression keepPair = Expression.Not(FilterExpressions.IsEmpty(pairValue, accessor));
+        if (values is { Count: > 0 }) keepPair = Expression.AndAlso(keepPair, FilterExpressions.ValuesRule(pairValue, accessor, values, inMemory: false));
+        var nonEmpty = QueryableBuilder.Lambda(keepPair, q);
         var whereMethod = ((Func<IQueryable<int>, Expression<Func<int, bool>>, IQueryable<int>>)Queryable.Where).Method.GetGenericMethodDefinition();
         var nonEmptyPairs = CallAny(pairs, whereMethod, [pairType], Expression.Quote(nonEmpty));
         var groupedPairs = CallAny(nonEmptyPairs, GroupByDef, [pairType, accessor.LiftedType], Expression.Quote(QueryableBuilder.Lambda(pairValue, q)));
-        return Project(groupedPairs, typeof(IGrouping<,>).MakeGenericType(accessor.LiftedType, pairType), pairType, countOf: nameof(FacetPair<int, int>.Row), schema.MaxFacetBuckets);
+        return Project(groupedPairs, typeof(IGrouping<,>).MakeGenericType(accessor.LiftedType, pairType), pairType, countOf: nameof(FacetPair<int, int>.Row), cap);
     }
 
     [UnconditionalSuppressMessage("Trimming", "IL2075", Justification = Justification)]

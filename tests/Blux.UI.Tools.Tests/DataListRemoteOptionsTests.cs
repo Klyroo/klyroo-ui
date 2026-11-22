@@ -21,7 +21,7 @@ public partial class DataListRemoteOptionsTests : BluxToolsTestContext
     private static string Text(IElement element) => Spaces().Replace(element.TextContent, " ").Trim();
 
     /// <summary>Five people the remote source knows. Tickets belong to ann, bob and cyd only.</summary>
-    private sealed class Source
+    internal sealed class Source
     {
         private static readonly (string Value, string Label)[] People =
             [("ann", "Ann Lee"), ("bob", "Bob Ray"), ("cyd", "Cyd Moss"), ("dee", "Dee Fox"), ("eve", "Eve Park")];
@@ -32,6 +32,10 @@ public partial class DataListRemoteOptionsTests : BluxToolsTestContext
 
         public bool Fail { get; set; }
 
+        public bool FailResolve { get; set; }
+
+        public Func<IReadOnlyList<string>, Task>? BeforeResolve { get; set; }
+
         public DataListOptionsProvider Provider => (request, _) =>
         {
             lock (Requests) Requests.Add(request);
@@ -41,17 +45,20 @@ public partial class DataListRemoteOptionsTests : BluxToolsTestContext
             return ValueTask.FromResult(new DataListOptionsPage(page, HasMore: request.Skip + request.Take < matching.Count));
         };
 
-        public DataListOptionsResolver Resolver => (values, _) =>
+        public DataListOptionsResolver Resolver => async (values, _) =>
         {
             lock (Resolved) Resolved.Add([.. values]);
+            if (BeforeResolve is not null) await BeforeResolve(values);
+            if (FailResolve) throw new InvalidOperationException("the resolver is down");
             IReadOnlyList<DataListFilterOption> found = [.. People.Where(p => values.Contains(p.Value)).Select(p => new DataListFilterOption(p.Value, p.Label))];
-            return ValueTask.FromResult(found);
+            return found;
         };
     }
 
-    private static DataListSchema<Ticket> Schema(Source source, bool facets = false, int pageSize = 2, int minLength = 0)
+    internal static DataListSchema<Ticket> Schema(Source source, bool facets = false, int pageSize = 2, int minLength = 0, Func<DataListFilter, DataListFilter>? more = null)
     {
         var owner = DataListFilter.Option().WithRemoteOptions(source.Provider, source.Resolver, pageSize, minLength);
+        if (more is not null) owner = more(owner);
         return DataListFacetTests.Build(DataListFilter.Option(DataListFacetTests.StatusOptions), facets ? owner.WithFacets() : owner, DataListFilter.Boolean());
     }
 
@@ -243,14 +250,46 @@ public partial class DataListRemoteOptionsTests : BluxToolsTestContext
     // ---- other places an editor shows
 
     [Fact]
-    public void The_editor_of_the_filter_panel_loads_when_it_renders()
+    public async Task The_editor_of_a_filter_panel_section_loads_when_the_section_opens_and_not_when_the_panel_renders()
     {
         var source = new Source();
         Navigation.NavigateTo("/t");
 
         var cut = Render<DataListPanelHarness>(p => p.Add(h => h.Schema, Schema(source)));
 
+        // Closed sections: nothing was asked of the source.
+        Assert.Empty(source.Requests);
+        await cut.Find("bx-collapsible[data-filter=owner]").TriggerEventAsync("onbxtoggle", new BxToggleEventArgs { Open = true, Sequence = 1 });
+
         cut.WaitForAssertion(() => Assert.Equal(["Ann Lee", "Bob Ray"], Options(cut.Find("[data-filter=owner] [data-slot=filter-editor]"))));
+        Assert.Single(source.Requests);
+    }
+
+    [Fact]
+    public void A_panel_section_that_starts_open_because_its_filter_is_on_loads_at_once()
+    {
+        var source = new Source();
+        Navigation.NavigateTo("/t?f.owner=ann");
+
+        var cut = Render<DataListPanelHarness>(p => p.Add(h => h.Schema, Schema(source)));
+
+        cut.WaitForAssertion(() => Assert.Equal(["Ann Lee", "Bob Ray"], Options(cut.Find("[data-filter=owner] [data-slot=filter-editor]"))));
+        Assert.Single(source.Requests);
+    }
+
+    [Fact]
+    public async Task The_editor_of_the_add_filter_menu_loads_when_its_filter_is_picked()
+    {
+        var source = new Source();
+        Navigation.NavigateTo("/t");
+        var cut = Render<DataListFilterHarness>(p => p.Add(h => h.Schema, Schema(source)).Add(h => h.ShowAdd, true));
+        Assert.Empty(source.Requests);
+
+        await cut.Find("[data-slot=add-filter-popover]").TriggerEventAsync("onbxtoggle", new BxToggleEventArgs { Open = true, Sequence = 1 });
+        Assert.Empty(source.Requests);
+        cut.FindAll("[data-slot=filter-menu] button").First(b => Text(b) == "Owner").Click();
+
+        cut.WaitForAssertion(() => Assert.Equal(["Ann Lee", "Bob Ray"], Options(cut.Find("[data-slot=filter-editor][data-filter=owner]"))));
         Assert.Single(source.Requests);
     }
 
@@ -294,6 +333,78 @@ public partial class DataListRemoteOptionsTests : BluxToolsTestContext
         Assert.Equal(["Bob Ray", "Ann Lee", "Cyd Moss", "Dee Fox"], editor.QuerySelectorAll("a[data-slot=filter-option] span.truncate").Select(Text));
         Assert.Equal(["14", "13", "13", "0"], editor.QuerySelectorAll("a[data-slot=filter-option] [data-slot=filter-option-count]").Select(c => Text(c).TrimStart(',').Trim()));
         Assert.Empty(source.Requests);
+    }
+
+    private static Ticket[] WithAnUnknownOwner() => [.. FilterData.All, new Ticket(100, "Ticket 100 zed", null, false, "zed")];
+
+    [Fact]
+    public void Static_rendering_lists_at_most_the_option_limit_of_counted_options_and_labels_all_it_lists_in_one_resolver_call()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.owner=cyd");
+        var source = new Source();
+
+        var cut = context.Render<DataListFilterHarness>(p => p.Add(h => h.Schema, Schema(source, facets: true, pageSize: 25, more: f => f.WithOptionLimit(2))).Add(h => h.Items, WithAnUnknownOwner()));
+
+        var editor = cut.Find("li[data-filter=owner] [data-slot=filter-editor]");
+        // The two most counted (bob 14, ann 13), then the selected one that is not among them.
+        Assert.Equal(["Bob Ray", "Ann Lee", "Cyd Moss"], editor.QuerySelectorAll("a[data-slot=filter-option] span.truncate").Select(Text));
+        Assert.Single(source.Resolved);
+        Assert.Equal(["ann", "bob", "cyd"], source.Resolved[0].Order());
+        Assert.Empty(source.Requests);
+    }
+
+    [Fact]
+    public void Static_rendering_lists_the_page_size_without_a_limit_and_leaves_out_an_option_the_resolver_does_not_know()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.owner=ann");
+        var source = new Source();
+
+        var cut = context.Render<DataListFilterHarness>(p => p.Add(h => h.Schema, Schema(source, facets: true, pageSize: 4)).Add(h => h.Items, WithAnUnknownOwner()));
+
+        // The four most counted are bob, ann, cyd and zed; the resolver does not know zed, so it is not listed.
+        var editor = cut.Find("li[data-filter=owner] [data-slot=filter-editor]");
+        Assert.Equal(["Bob Ray", "Ann Lee", "Cyd Moss"], editor.QuerySelectorAll("a[data-slot=filter-option] span.truncate").Select(Text));
+        Assert.Single(source.Resolved);
+        Assert.Contains("zed", source.Resolved[0]);
+    }
+
+    [Fact]
+    public void A_selected_value_the_resolver_does_not_know_is_still_listed_as_it_is_so_it_can_be_taken_off()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.owner=zed");
+
+        var cut = context.Render<DataListFilterHarness>(p => p.Add(h => h.Schema, Schema(new Source(), facets: true, pageSize: 25)).Add(h => h.Items, WithAnUnknownOwner()));
+
+        var labels = cut.Find("li[data-filter=owner] [data-slot=filter-editor]").QuerySelectorAll("a[data-slot=filter-option] span.truncate").Select(Text).ToList();
+        Assert.Contains("zed", labels);
+        Assert.Equal("Owner is zed", Text(cut.Find("li[data-slot=filter-tag] [data-slot=filter-tag-button]")));
+    }
+
+    [Fact]
+    public void The_option_sort_does_not_apply_to_remote_options_static_ones_keep_the_count_order_of_the_facet()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t?f.owner=ann");
+
+        var cut = context.Render<DataListFilterHarness>(p => p.Add(h => h.Schema, Schema(new Source(), facets: true, pageSize: 25, more: f => f.WithOptionSort(DataListOptionSort.Alpha))));
+
+        // Alpha would put Ann first; the facet order is bob 14, ann 13, cyd 13.
+        Assert.Equal(["Bob Ray", "Ann Lee", "Cyd Moss"], cut.Find("li[data-filter=owner] [data-slot=filter-editor]").QuerySelectorAll("a[data-slot=filter-option] span.truncate").Select(Text));
+    }
+
+    [Fact]
+    public async Task The_option_sort_does_not_apply_to_the_interactive_remote_list_either()
+    {
+        var source = new Source();
+        var cut = RenderList("/t?f.owner=ann", Schema(source, facets: true, pageSize: 5, more: f => f.WithOptionSort(DataListOptionSort.Count)));
+
+        await Open(cut, "owner");
+
+        // Counts would put bob (14) first; the list keeps the order of the source.
+        cut.WaitForAssertion(() => Assert.Equal(["Ann Lee", "Bob Ray", "Cyd Moss", "Dee Fox", "Eve Park"], Options(Editor(cut, "owner"))));
     }
 
     [Fact]

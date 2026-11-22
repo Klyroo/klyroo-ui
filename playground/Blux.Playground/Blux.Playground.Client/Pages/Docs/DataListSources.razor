@@ -44,8 +44,9 @@
 
     <h2>Counts from a provider</h2>
     <p>
-        A provider receives <code>request.Facets</code> (one entry per filter with counts, in its mode) and returns <code>Facets</code> in the result. The list sends them only when the filters or the search
-        changed since the result on screen, so a page or a sort costs the provider no counting. If the result has no <code>Facets</code>, the list shows no count and asks again on the next request.
+        A provider receives <code>request.Facets</code> (one entry per filter with counts, in its mode) and returns <code>Facets</code> in the result: one result per entry. The list sends them only when the filters or the search
+        changed since the result on screen, so a page or a sort costs the provider no counting. A request that carries no facets is answered with no <code>Facets</code>: whatever the provider puts there is ignored and the counts on screen stay. If a result that was asked to count has no <code>Facets</code>, the list shows no count and asks again on the next request.
+        A remote option filter also sends a request for one row whose facet carries <code>Values</code>, the values of the options it has loaded: count only those (a value no row has is left out of the answer, the list reads it as 0), however many distinct values the field has.
     </p>
     <CodeBlock Title="Provider.cs" Code="@Provider" />
 
@@ -53,13 +54,14 @@
     <p>
         A filter with a long or private list of options loads them with <code>WithRemoteOptions</code>. The editor asks for a page when it opens (a tag's popover) or renders (the filter panel), searches after a
         pause in the typing, loads the next page as the list scrolls, and shows an error with a Retry button. The paging, the search and the cancellation are those of the remote
-        <code>BxSelectMenu</code>. A value that the address restored is labelled by the resolver; without one it shows as it is. With <code>WithFacets()</code> the options that are listed carry the counts of
-        the facet, and zero when the facet holds every value.
+        <code>BxSelectMenu</code>. A value that the address restored is labelled by the resolver (asked for while the rows load); without one it shows as it is. With <code>WithFacets()</code> the options that are listed carry their counts, asked for by value
+        (<code>DataListFacetRequest.Values</code>) as pages load, so a page has its counts whatever the number of distinct values. A tag's popover loads when it opens, a filter panel section when it opens, and the add filter menu when the filter is picked.
     </p>
     <CodeBlock Title="Schema.cs" Code="@Remote" />
     <p>
-        Statically rendered there is no .NET to search with: the editor lists the selected values, labelled by the resolver on the server, and the options of the counts, and says that searching the rest needs
-        JavaScript. When the list becomes interactive the labels are resolved again.
+        Statically rendered there is no .NET to search with: the editor lists the selected values and the most counted options (at most <code>WithOptionLimit</code>, else the page size), all labelled by the resolver in one call on the
+        server, and says that searching the rest needs JavaScript. A counted option the resolver does not know is not listed. The labels travel with the prerendered result (and count in its size), so the interactive render shows them at once.
+        The remote engine behind the editors, <code>BxRemoteOptions</code>, is public API of <code>Blux.UI</code>.
     </p>
 </div>
 
