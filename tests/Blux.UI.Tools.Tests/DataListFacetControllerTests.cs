@@ -131,19 +131,60 @@ public class DataListFacetControllerTests
     }
 
     [Fact]
-    public async Task A_page_past_the_end_after_a_filter_change_counts_in_both_calls()
+    public async Task A_page_past_the_end_after_a_filter_change_counts_once_and_reuses_the_first_answer()
     {
         var recorder = new Recorder();
         using var controller = new DataListController<Ticket>(Schema, recorder.Provider);
         await controller.LoadAsync(State);
 
-        // Page 4 exists without the filter and not with it: the filter changes the counts, so the second call (the one whose result stays) asks for them too.
+        // Page 4 exists without the filter and not with it: the first call counts for the new filter, and the call that replaces it (the same filters and search) reuses those counts.
         await controller.LoadAsync(State with { Page = 4, Filters = [new FilterRule("status", FilterOperator.IsAnyOf, new FilterValue.List(["open"]))] });
 
         Assert.Equal(1, controller.LoadedState!.Page);
         Assert.Equal(3, recorder.Requests.Count);
-        Assert.All(recorder.Requests.Skip(1), r => Assert.Equal(2, r.Facets.Count));
+        Assert.Equal(2, recorder.Requests[1].Facets.Count);
+        Assert.Empty(recorder.Requests[2].Facets);
         Assert.Equal(8, controller.Result!.Facets!.Single(f => f.Key == "active").Options.Sum(o => o.Count));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_provider_that_answers_a_request_without_counts_with_an_empty_or_null_list_keeps_the_counts_on_screen(bool empty)
+    {
+        var inner = DataListController<Ticket>.CreateProvider(Schema, FilterData.All, null);
+        DataListProvider<Ticket> provider = async (request, token) =>
+        {
+            var result = await inner(request, token);
+            // The contract: Facets answer request.Facets. A provider that always puts a list there answers [] when it was asked for nothing.
+            return request.Facets.Count == 0 ? result with { Facets = empty ? [] : null } : result;
+        };
+        using var controller = new DataListController<Ticket>(Schema, provider);
+        await controller.LoadAsync(State);
+        var counted = controller.Result!.Facets;
+
+        await controller.LoadAsync(State with { Page = 2 });
+
+        Assert.NotNull(counted);
+        Assert.Same(counted, controller.Result!.Facets);
+    }
+
+    [Fact]
+    public async Task The_counts_of_some_values_are_asked_with_a_one_row_page_of_the_state_on_screen()
+    {
+        var recorder = new Recorder();
+        using var controller = new DataListController<Ticket>(Schema, recorder.Provider);
+        var state = State with { Filters = [new FilterRule("active", FilterOperator.Is, new FilterValue.Boolean(true))], Page = 2 };
+        await controller.LoadAsync(state);
+
+        var facet = await controller.LoadFacetValuesAsync("status", ["open", "closed", "nope"], CancellationToken.None);
+
+        var request = recorder.Requests.Last();
+        Assert.Equal(new DataListPaging.Offset(0, 1), request.Paging);
+        Assert.Equal([new DataListFacetRequest("status", FacetMode.ExcludeSelf, Values: ["open", "closed", "nope"])], request.Facets);
+        Assert.Single(request.Filter.Children);
+        // Ids that are multiples of three have an active ticket: of those, the open ones are 15 and 30, the closed ones 12 and 27, and nothing is "nope".
+        Assert.Equal(["closed:2", "open:2"], facet!.Options.Select(o => $"{o.Value}:{o.Count}").Order());
     }
 
     [Fact]

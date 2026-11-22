@@ -227,7 +227,7 @@ public sealed class DataListFilter
         return With(c => c.FacetMode = mode);
     }
 
-    /// <summary>Orders the options of an option filter by count or by label (<see cref="OptionSort"/>).</summary>
+    /// <summary>Orders the declared options and the counted options of an option filter by count or by label (<see cref="OptionSort"/>). Remote options keep the order of their source: the sort is ignored for them.</summary>
     /// <param name="sort">The order.</param>
     public DataListFilter WithOptionSort(DataListOptionSort sort)
     {
@@ -245,10 +245,12 @@ public sealed class DataListFilter
     }
 
     /// <summary>
-    /// Loads the options from a remote source instead of declaring them: the editor asks for a page when it opens, searches while the user types (after a pause), and loads the next page as the list scrolls.
-    /// The values of a rule that the loaded pages do not contain (restored from the address) get their labels from <paramref name="resolveSelected"/>. Only interactive renders load pages: a statically rendered
-    /// editor lists the selected options (labelled by the resolver, which runs on the server) and the options of the counts, when the filter has them (<see cref="WithFacets"/>).
-    /// The counts of the options that are listed come from the facet of the filter, which holds at most <see cref="DataListSchema.MaxFacetBuckets"/> values.
+    /// Loads the options from a remote source instead of declaring them: the editor asks for a page when it is shown (a tag's popover that opens, a panel section that opens, the add filter menu
+    /// when the filter is picked), searches while the user types (after a pause), and loads the next page as the list scrolls. The values of a rule that the loaded pages do not contain (restored from the
+    /// address) get their labels from <paramref name="resolveSelected"/>, asked for while the rows load. Only interactive renders load pages: a statically rendered editor lists the selected options and, when the
+    /// filter has counts (<see cref="WithFacets"/>), the most counted ones (at most <see cref="OptionLimit"/>, else the page size), all labelled in one call to the resolver; a counted option the resolver does not
+    /// know is left out. The counts of the options that are listed are asked for by value (<see cref="DataListFacetRequest.Values"/>), so every page has its counts whatever the number of distinct values.
+    /// <see cref="OptionSort"/> does not apply: the options keep the order of the source.
     /// </summary>
     /// <param name="provider">Loads one page of options for a search.</param>
     /// <param name="resolveSelected">Returns the options of values that no loaded page holds; values it leaves out show as they are.</param>

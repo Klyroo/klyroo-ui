@@ -130,7 +130,9 @@ public sealed class DataListController<TItem> : IDisposable
         {
             if (Schema.TryGetFilter(key, out var filter) && filter is { Kind: FilterKind.Option or FilterKind.Boolean, Facets: true } && !Schema.IsQueryFilter(key))
             {
-                (facets ??= []).Add(new DataListFacetRequest(key, filter.FacetMode, IncludeMissing: filter.Kind == FilterKind.Option));
+                // A remote option filter lists a few counted options in a static render (and counts the values of the pages it loads through LoadFacetValuesAsync): not the whole facet.
+                int? limit = filter.RemoteOptions is { } remote ? filter.OptionLimit ?? remote.PageSize : null;
+                (facets ??= []).Add(new DataListFacetRequest(key, filter.FacetMode, limit, IncludeMissing: filter.Kind == FilterKind.Option));
             }
         }
         return facets;
@@ -211,8 +213,10 @@ public sealed class DataListController<TItem> : IDisposable
             {
                 // A page past the end (a typed URL, rows deleted since): the last page, in the same load.
                 normalized = normalized with { Page = Math.Max(1, (total + offset.Take - 1) / offset.Take) };
+                // The same filters and search: the counts of the first answer hold for the page that replaces it.
+                var first = cached ?? (result.Facets is { Count: > 0 } && request.Facets.Count > 0 ? result.Facets : null);
                 request = BuildRequest(normalized);
-                result = await Fetch(request, cached, cts.Token).ConfigureAwait(true);
+                result = await Fetch(request, first, cts.Token).ConfigureAwait(true);
                 if (version != Volatile.Read(ref _version)) return;
             }
 
@@ -238,11 +242,27 @@ public sealed class DataListController<TItem> : IDisposable
         Changed?.Invoke();
     }
 
-    // Asks the provider, without the facets when the ones on screen still hold (<paramref name="cached"/>), and gives them to the result.
+    // Asks the provider, without the facets when the ones on screen still hold (<paramref name="cached"/>), and gives them to the result. A request that went out without facets has
+    // the cached ones in its result whatever the provider put in Facets (nothing, or an empty list: it was not asked to count).
     private async Task<DataListResult<TItem>> Fetch(DataListRequest request, IReadOnlyList<DataListFacetResult>? cached, CancellationToken cancellationToken)
     {
         var result = await Provider(cached is null ? request : request with { Facets = [] }, cancellationToken).ConfigureAwait(true);
-        return cached is not null && result.Facets is null ? result with { Facets = cached } : result;
+        return cached is not null ? result with { Facets = cached } : result;
+    }
+
+    /// <summary>
+    /// The counts of some values of one filter under the filters and search of the result on screen, for the options a remote editor has loaded. It asks the source for a one-row page of the
+    /// current state with a facet scoped to <paramref name="values"/> (<see cref="DataListFacetRequest.Values"/>), and returns that facet; <see langword="null"/> when nothing loaded yet or the
+    /// source returned no facet for the key.
+    /// </summary>
+    internal async Task<DataListFacetResult?> LoadFacetValuesAsync(string key, IReadOnlyList<string> values, CancellationToken cancellationToken)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (LoadedRequest is null || LoadedState is not { } state || !Schema.TryGetFilter(key, out var filter)) return null;
+        var mode = filter.FacetMode;
+        var request = BuildRequest(state) with { Paging = new DataListPaging.Offset(0, 1), Facets = [new DataListFacetRequest(key, mode, Values: values)] };
+        var result = await Provider(request, cancellationToken).ConfigureAwait(true);
+        return result.Facets?.FirstOrDefault(f => f.Key == key);
     }
 
     /// <summary>Forgets the counts of the result on screen, so the next load asks for them again: the rows the list reads changed (new items, a new query), and the counts of the old ones no longer hold.</summary>

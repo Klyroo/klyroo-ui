@@ -1,7 +1,6 @@
 @namespace Blux.UI.Tools
 @typeparam TItem
 @inherits DataListPartBase<TItem>
-@using Blux.UI.Internal
 @using Blux.UI.Tools.Query
 @using Microsoft.AspNetCore.Components.Web
 
@@ -93,7 +92,11 @@
     }
 
     // The list changed (Back, a link, a reset, the echo of what this editor sent): the draft follows the rule unless it is the echo.
-    protected override void OnContextUpdated() => SyncDraft();
+    protected override void OnContextUpdated()
+    {
+        SyncDraft();
+        RequestCounts();
+    }
 
     private void SyncDraft()
     {
@@ -622,10 +625,12 @@
     // One option of the interactive list: its checkbox and, when the list has counts, how many rows have it.
     private RenderFragment OptionRow(FilterChoice choice, bool remote) =>
         @<li class="@_slots["filterOption"]" data-value="@choice.Value">
-            <BxCheckbox Value="@_selected.Contains(choice.Value)" ValueChanged="@(on => { if (remote) OnRemoteToggle(choice, on); else OnToggle(choice.Value, on); })" Label="@choice.Label" />
+            @* The count is the description of the checkbox, read after its label; the visible number at the end of the row is hidden from the accessibility tree so that it is not read twice. *@
+            <BxCheckbox Value="@_selected.Contains(choice.Value)" ValueChanged="@(on => { if (remote) OnRemoteToggle(choice, on); else OnToggle(choice.Value, on); })" Label="@choice.Label"
+                        Description="@CountText(choice.Count)" Ui="_countUi" />
             @if (choice.Count is { } count)
             {
-                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count" aria-hidden="true">@count.ToString("N0", FormatCulture)</span>
             }
         </li>;
 
@@ -681,28 +686,28 @@
                     {
                         @OptionRow(choice, remote: true)
                     }
-                    @if (remote.Items.Count > 0 && status is RemoteStatus.Loaded or RemoteStatus.LoadingMore)
+                    @if (remote.Items.Count > 0 && status is BxRemoteStatus.Loaded or BxRemoteStatus.LoadingMore)
                     {
                         @* Starts the next page one list height before the end; the button inside is the same action by hand. *@
                         <li>
-                            <BxInfiniteScroll HasMore="remote.HasMore" Loading="@(status == RemoteStatus.LoadingMore)" OnLoadMore="@(() => remote.LoadMoreAsync())" Root="@("#" + ScrollerId)" RootMargin="0px 0px 100% 0px" />
+                            <BxInfiniteScroll HasMore="remote.HasMore" Loading="@(status == BxRemoteStatus.LoadingMore)" OnLoadMore="@(() => remote.LoadMoreAsync())" Root="@("#" + ScrollerId)" RootMargin="0px 0px 100% 0px" />
                         </li>
                     }
                 </ul>
                 <div role="status" aria-live="polite" aria-atomic="true" class="sr-only">@RemoteAnnouncement(remote, remote.Items.Count)</div>
-                @if (status == RemoteStatus.Loading && remote.Items.Count == 0)
+                @if (status == BxRemoteStatus.Loading && remote.Items.Count == 0)
                 {
                     <p class="@_slots["filterEmpty"]" data-slot="filter-options-loading" aria-hidden="true">@Messages.RemoteOptionsLoading</p>
                 }
-                else if (status == RemoteStatus.TooShort)
+                else if (status == BxRemoteStatus.TooShort)
                 {
                     <p class="@_slots["filterEmpty"]" data-slot="filter-options-hint">@string.Format(FormatCulture, Messages.RemoteOptionsMinLength, remote.MinLength)</p>
                 }
-                else if (status == RemoteStatus.Loaded && remote.Items.Count == 0)
+                else if (status == BxRemoteStatus.Loaded && remote.Items.Count == 0)
                 {
                     <p class="@_slots["filterEmpty"]" data-slot="filter-empty">@(_search.Length > 0 ? ToolsMessages.FilterNoOptionsMatch : ToolsMessages.FilterNoOptions)</p>
                 }
-                else if (status == RemoteStatus.Error)
+                else if (status == BxRemoteStatus.Error)
                 {
                     <div role="alert" class="@_slots["filterOption"]" data-slot="filter-options-error">
                         <span>@Messages.RemoteOptionsError</span>
@@ -712,11 +717,11 @@
             </div>
         </text>;
 
-    private string RemoteAnnouncement(RemoteOptions remote, int count) => remote.Status switch
+    private string RemoteAnnouncement(BxRemoteOptions remote, int count) => remote.Status switch
     {
-        RemoteStatus.Loading => Messages.RemoteOptionsLoading,
-        RemoteStatus.TooShort => string.Format(FormatCulture, Messages.RemoteOptionsMinLength, remote.MinLength),
-        RemoteStatus.Loaded when count == 0 => _search.Length > 0 ? ToolsMessages.FilterNoOptionsMatch : ToolsMessages.FilterNoOptions,
+        BxRemoteStatus.Loading => Messages.RemoteOptionsLoading,
+        BxRemoteStatus.TooShort => string.Format(FormatCulture, Messages.RemoteOptionsMinLength, remote.MinLength),
+        BxRemoteStatus.Loaded when count == 0 => _search.Length > 0 ? ToolsMessages.FilterNoOptionsMatch : ToolsMessages.FilterNoOptions,
         _ => "",
     };
 
@@ -724,8 +729,8 @@
     private RenderFragment IncludeEmptySwitch =>
         Context.MissingCountOf(Key) is { } missing
             ? @<div class="@_slots["filterOption"]" data-slot="filter-include-empty-row">
-                <BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />
-                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@missing.ToString("N0", FormatCulture)</span>
+                <BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" Description="@CountText(missing)" Ui="_switchCountUi" data-slot="filter-include-empty" />
+                <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count" aria-hidden="true">@missing.ToString("N0", FormatCulture)</span>
             </div>
             : @<BxSwitch Value="@_includeEmpty" ValueChanged="@OnIncludeEmpty" Label="@ToolsMessages.FilterIncludeEmpty" data-slot="filter-include-empty" />;
 
@@ -870,16 +875,16 @@
                         </label>
                     </li>
                 }
-                @foreach (var choice in choices)
+                @foreach (var (choice, index) in choices.Select((c, i) => (c, i)))
                 {
                     <li class="@_slots["filterOption"]" data-value="@choice.Value">
                         <label class="@_slots["filterNativeLabel"]">
-                            <input type="@type" name="@name" value="@FilterRuleText.Escape(choice.Value)" checked="@selected.Contains(choice.Value)" class="@_slots["filterNativeInput"]" data-slot="filter-option-input" />
+                            <input type="@type" name="@name" value="@FilterRuleText.Escape(choice.Value)" checked="@selected.Contains(choice.Value)" aria-describedby="@(choice.Count is null ? null : CountId(index))" class="@_slots["filterNativeInput"]" data-slot="filter-option-input" />
                             <span class="truncate">@choice.Label</span>
                         </label>
                         @if (choice.Count is { } count)
                         {
-                            <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                            <span id="@CountId(index)" class="@_slots["filterOptionCount"]" data-slot="filter-option-count" aria-hidden="true">@count.ToString("N0", FormatCulture)</span>
                         }
                     </li>
                 }
@@ -893,12 +898,12 @@
                 }
                 <li class="@_slots["filterOption"]">
                     <label class="@_slots["filterNativeLabel"]">
-                        <input type="checkbox" name="@name" value="@FilterRuleText.IncludeEmptyToken" checked="@includeEmpty" class="@_slots["filterNativeInput"]" data-slot="filter-include-empty" />
+                        <input type="checkbox" name="@name" value="@FilterRuleText.IncludeEmptyToken" checked="@includeEmpty" aria-describedby="@(Context.MissingCountOf(Key) is null ? null : CountId(-1))" class="@_slots["filterNativeInput"]" data-slot="filter-include-empty" />
                         <span class="truncate">@ToolsMessages.FilterIncludeEmpty</span>
                     </label>
                     @if (Context.MissingCountOf(Key) is { } missing)
                     {
-                        <span class="@_slots["filterOptionCount"]" data-slot="filter-option-count"><span class="sr-only">, </span>@missing.ToString("N0", FormatCulture)</span>
+                        <span id="@CountId(-1)" class="@_slots["filterOptionCount"]" data-slot="filter-option-count" aria-hidden="true">@missing.ToString("N0", FormatCulture)</span>
                     }
                 </li>
             </ul>

@@ -1,26 +1,36 @@
-namespace Blux.UI.Internal;
+namespace Blux.UI;
 
-internal enum RemoteStatus
+/// <summary>Where a <see cref="BxRemoteOptions"/> stands: nothing asked yet, a request on its way, a page listed, or a failure.</summary>
+public enum BxRemoteStatus
 {
     /// <summary>Nothing was asked yet (the list has never been opened).</summary>
     Idle,
+
     /// <summary>The first page of a search is on its way; the options of the previous search, if any, are still listed.</summary>
     Loading,
+
+    /// <summary>A page is listed. <see cref="BxRemoteOptions.HasMore"/> says whether another one exists.</summary>
     Loaded,
+
     /// <summary>The next page is on its way.</summary>
     LoadingMore,
+
+    /// <summary>The last request failed; <see cref="BxRemoteOptions.RetryAsync"/> repeats it.</summary>
     Error,
-    /// <summary>The term is shorter than <c>MinLength</c>: nothing is asked and nothing is listed.</summary>
+
+    /// <summary>The term is shorter than <see cref="BxRemoteOptions.MinLength"/>: nothing is asked and nothing is listed.</summary>
     TooShort,
 }
 
 /// <summary>
-/// The loading logic shared by <see cref="BxSelectMenu"/> and <see cref="BxInputMenu"/> when their options come from a
-/// <see cref="BxOptionsProvider"/>: the pages loaded so far, the term, cancellation of stale requests, the error state, and the labels
-/// of selected values. A plain class (no Blazor) so it is tested without rendering; <c>changed</c> is called after every transition.
+/// Loads options from a <see cref="BxOptionsProvider"/> one page at a time: the pages listed so far, the search term, the cancellation of stale requests and the error state.
+/// It is the engine behind <see cref="BxSelectMenu"/> and <see cref="BxInputMenu"/> when they have an <c>OptionsProvider</c>, public so that other components (the filter editors of
+/// <c>Blux.UI.Tools</c>) list remote options the same way. A plain class with no rendering: <c>changed</c> is called after every transition, possibly on another thread, so a component calls
+/// <c>InvokeAsync(StateHasChanged)</c>. Dispose it with the component: it cancels the request in flight.
 /// </summary>
-internal sealed class RemoteOptions : IDisposable
+public sealed class BxRemoteOptions : IDisposable
 {
+    /// <summary>The page size when none is set: 25 options.</summary>
     public const int DefaultPageSize = 25;
 
     private readonly Action _changed;
@@ -40,7 +50,10 @@ internal sealed class RemoteOptions : IDisposable
     private bool _failedMore;
     private bool _disposed;
 
-    public RemoteOptions(BxOptionsProvider provider, Action changed)
+    /// <summary>Creates the engine.</summary>
+    /// <param name="provider">Loads one page of options for a search.</param>
+    /// <param name="changed">Called after every transition (a request starts, a page arrives, a failure); it may run on any thread.</param>
+    public BxRemoteOptions(BxOptionsProvider provider, Action changed)
     {
         Provider = provider;
         _changed = changed;
@@ -61,36 +74,41 @@ internal sealed class RemoteOptions : IDisposable
     public int MinLength { get; set; }
 
     /// <summary>Options given to the component as <c>Items</c>: not listed, but their labels are known.</summary>
-    public IReadOnlyList<BxSelectItem> StaticItems { get; set; } = [];
+    internal IReadOnlyList<BxSelectItem> StaticItems { get; set; } = [];
 
+    /// <summary>The options of the pages loaded so far, in the order of the source. The list is live: read it on the thread that renders, and copy it to keep it.</summary>
     public IReadOnlyList<BxSelectItem> Items => _items;
-    public RemoteStatus Status { get; private set; }
+
+    /// <summary>Where the engine stands.</summary>
+    public BxRemoteStatus Status { get; private set; }
 
     /// <summary>The trimmed term of the current (or last) search.</summary>
     public string Term { get; private set; } = "";
 
+    /// <summary>Whether the source has another page after the last one listed (<see cref="LoadMoreAsync"/> asks for it).</summary>
     public bool HasMore { get; private set; }
 
     /// <summary>Changes each time the listed options are replaced (not when a page is added): the browser goes back to the top and re-highlights.</summary>
-    public int Generation { get; private set; }
+    internal int Generation { get; private set; }
 
     /// <summary>Changes each time <see cref="Reset"/> starts the source over: the browser forgets what it kept (labels, the term it reported).</summary>
-    public int Epoch { get; private set; }
+    internal int Epoch { get; private set; }
 
-    public bool Busy => Status is RemoteStatus.Loading or RemoteStatus.LoadingMore;
+    /// <summary>A page is on its way: <see cref="Status"/> is <see cref="BxRemoteStatus.Loading"/> or <see cref="BxRemoteStatus.LoadingMore"/>.</summary>
+    public bool Busy => Status is BxRemoteStatus.Loading or BxRemoteStatus.LoadingMore;
 
     /// <summary>Searches for a term (what the field reports). The same term again changes nothing, except after an error, where it asks again.</summary>
     public Task SearchAsync(string? raw)
     {
         if (_disposed) return Task.CompletedTask;
         var term = (raw ?? "").Trim();
-        if (Status is not (RemoteStatus.Idle or RemoteStatus.Error) && term == Term) return Task.CompletedTask;
+        if (Status is not (BxRemoteStatus.Idle or BxRemoteStatus.Error) && term == Term) return Task.CompletedTask;
         Term = term;
         if (term.Length > 0 && term.Length < MinLength)
         {
             StopRequest();
             Replace();
-            Status = RemoteStatus.TooShort;
+            Status = BxRemoteStatus.TooShort;
             _changed();
             return Task.CompletedTask;
         }
@@ -101,7 +119,7 @@ internal sealed class RemoteOptions : IDisposable
     /// Starts over, as when the source changed (a new <c>OptionsKey</c>): the request in flight is dropped, the pages, the term, the cursor and the resolved
     /// labels are forgotten, and the next search (the next opening of the list) loads the first page again.
     /// </summary>
-    public void Reset()
+    internal void Reset()
     {
         if (_disposed) return;
         StopRequest();
@@ -111,7 +129,7 @@ internal sealed class RemoteOptions : IDisposable
         _failedResolve.Clear();
         Term = "";
         _failedMore = false;
-        Status = RemoteStatus.Idle;
+        Status = BxRemoteStatus.Idle;
         Epoch++;
         // The resolve of the old source in flight is cancelled; its answer, if it comes, is dropped (it checks the epoch).
         var old = _resolving;
@@ -122,10 +140,10 @@ internal sealed class RemoteOptions : IDisposable
     }
 
     /// <summary>Loads the next page. Nothing happens while a request runs, after an error (use <see cref="RetryAsync"/>) or at the end.</summary>
-    public Task LoadMoreAsync() => !_disposed && HasMore && Status == RemoteStatus.Loaded ? LoadAsync(more: true) : Task.CompletedTask;
+    public Task LoadMoreAsync() => !_disposed && HasMore && Status == BxRemoteStatus.Loaded ? LoadAsync(more: true) : Task.CompletedTask;
 
     /// <summary>Repeats the request that failed.</summary>
-    public Task RetryAsync() => !_disposed && Status == RemoteStatus.Error ? LoadAsync(_failedMore) : Task.CompletedTask;
+    public Task RetryAsync() => !_disposed && Status == BxRemoteStatus.Error ? LoadAsync(_failedMore) : Task.CompletedTask;
 
     private void StopRequest()
     {
@@ -154,7 +172,7 @@ internal sealed class RemoteOptions : IDisposable
         var request = more
             ? new BxOptionsRequest(Term, _received, PageSize, _cursor)
             : new BxOptionsRequest(Term, 0, PageSize, null);
-        Status = more ? RemoteStatus.LoadingMore : RemoteStatus.Loading;
+        Status = more ? BxRemoteStatus.LoadingMore : BxRemoteStatus.Loading;
         _changed();
 
         BxOptionsResult? result;
@@ -172,7 +190,7 @@ internal sealed class RemoteOptions : IDisposable
             if (version != _version || _disposed) return;
             if (!more) Replace();
             _failedMore = more;
-            Status = RemoteStatus.Error;
+            Status = BxRemoteStatus.Error;
             _changed();
             return;
         }
@@ -187,23 +205,23 @@ internal sealed class RemoteOptions : IDisposable
         _cursor = result?.NextCursor;
         HasMore = result is not null && (result.HasMore || result.NextCursor is not null);
         _failedMore = false;
-        Status = RemoteStatus.Loaded;
+        Status = BxRemoteStatus.Loaded;
         _changed();
     }
 
     /// <summary>Whether the label of a value is known: listed now, remembered, given as an item, or resolved.</summary>
-    public bool Knows(string value) =>
+    internal bool Knows(string value) =>
         _known.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => i.Value == value);
 
     /// <summary>The label of a value, or the value itself when nothing knows it (the raw value is what an unresolved value shows).</summary>
-    public string LabelOf(string value) =>
+    internal string LabelOf(string value) =>
         _known.TryGetValue(value, out var known) ? known.Label
         : _items.FirstOrDefault(i => i.Value == value)?.Label
         ?? StaticItems.FirstOrDefault(i => i.Value == value)?.Label
         ?? value;
 
     /// <summary>Keeps the options of the selected values that are listed now, so their labels survive the next search replacing the list.</summary>
-    public void RememberSelected(IEnumerable<string>? values)
+    internal void RememberSelected(IEnumerable<string>? values)
     {
         if (values is null) return;
         foreach (var value in values)
@@ -215,7 +233,7 @@ internal sealed class RemoteOptions : IDisposable
     }
 
     /// <summary>The labels of the selected values that are remembered or given, as value, label, value, label... for the browser.</summary>
-    public IEnumerable<string> KnownLabels(IEnumerable<string>? values)
+    internal IEnumerable<string> KnownLabels(IEnumerable<string>? values)
     {
         foreach (var value in values ?? [])
         {
@@ -233,7 +251,7 @@ internal sealed class RemoteOptions : IDisposable
     }
 
     /// <summary>Asks the resolver once for each selected value nobody knows. A failure leaves the raw values; they are asked again when <paramref name="retryFailed"/> is set (the list opened).</summary>
-    public async Task ResolveAsync(IReadOnlyList<string>? values, BxSelectedOptionsResolver resolver, bool retryFailed = false)
+    internal async Task ResolveAsync(IReadOnlyList<string>? values, BxSelectedOptionsResolver resolver, bool retryFailed = false)
     {
         if (_disposed || values is not { Count: > 0 }) return;
         if (retryFailed)
@@ -266,6 +284,7 @@ internal sealed class RemoteOptions : IDisposable
         _changed();
     }
 
+    /// <summary>Cancels the request in flight and the resolutions, and ignores any answer that still arrives. The engine does nothing afterwards.</summary>
     public void Dispose()
     {
         if (_disposed) return;

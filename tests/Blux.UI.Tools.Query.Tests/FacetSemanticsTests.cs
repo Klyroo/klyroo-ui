@@ -55,6 +55,13 @@ public class FacetSemanticsTests
         { "the search of the list narrows the counts", null, new DataListSearch("re"), new("color"), "red:2;Red:1;green:1", null, 3 },
         { "include-self on a collection keeps rows with the element", Where(Rule("tags.name", Op.IsAnyOf, List("c"))), null, new("tags.name", FacetMode.IncludeSelf), "c:2;b:1", null, 2 },
         { "exclude-self on a collection counts every element", Where(Rule("tags.name", Op.IsAnyOf, List("c"))), null, new("tags.name"), "b:3;a:2;c:2", null, 3 },
+        { "values restrict the counts to the listed ones", null, null, new("color", Values: ["Red", "blue", "nope"]), "Red:1;blue:1", null, 2 },
+        { "values count under the other filters and leave out the own rule by default", Where(Rule("color", Op.IsAnyOf, List("green"))), null, new("color", Values: ["red", "green"]), "red:2;green:1", null, 2 },
+        { "values in include-self mode keep the own rule", Where(Rule("color", Op.IsAnyOf, List("green"))), null, new("color", FacetMode.IncludeSelf, Values: ["red", "green"]), "green:1", null, 1 },
+        { "values of a collection count each row once", null, null, new("tags.name", Values: ["a", "c"]), "a:2;c:2", null, 2 },
+        { "values of a boolean field", null, null, new("flag", Values: ["false"]), "false:2", null, 1 },
+        { "values are read the way a rule reads them (the search of the facet applies after)", null, null, new("color", Values: ["red", "Red", "green"], Search: "RE"), "red:2;Red:1;green:1", null, 3 },
+        { "empty values count everything", null, null, new("color", Values: []), "red:2;Red:1;blue:1;green:1", null, 4 },
         { "a facet counts nothing when no row matches", Where(Rule("flag", Op.Is, new FilterValue.Boolean(false)), Rule("tags.name", Op.IsAnyOf, List("zz"))), null, new("color", IncludeMissing: true), "", 0, 0 },
     };
 
@@ -70,6 +77,20 @@ public class FacetSemanticsTests
         Assert.Equal(missing, result.Missing);
         Assert.Equal(total, result.Total);
         Assert.False(result.Truncated);
+    }
+
+    [Fact]
+    public void Facet_requests_are_equal_by_value_including_their_values_and_sanitize_cleans_them()
+    {
+        var a = new DataListFacetRequest("color", Values: ["x", "y"]);
+        Assert.Equal(a, new DataListFacetRequest("color", Values: ["x", "y"]));
+        Assert.NotEqual(a, new DataListFacetRequest("color", Values: ["y", "x"]));
+        Assert.NotEqual(a, new DataListFacetRequest("color"));
+        Assert.Equal(a.GetHashCode(), new DataListFacetRequest("color", Values: ["x", "y"]).GetHashCode());
+
+        var clean = Schema.Sanitize(new DataListRequest(DataListPaging.None.Instance, [], DataListFilterGroup.Empty, null, [new DataListFacetRequest("color", Values: ["x", "", "x", "y"])]));
+
+        Assert.Equal(["x", "y"], clean.Facets.Single().Values);
     }
 
     [Fact]

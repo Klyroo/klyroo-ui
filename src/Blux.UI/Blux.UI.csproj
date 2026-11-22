@@ -59,8 +59,6 @@
     <InternalsVisibleTo Include="Blux.UI.Tests" />
     <InternalsVisibleTo Include="Blux.UI.ClassExtractor" />
     <InternalsVisibleTo Include="Blux.UI.DocsBundle" />
-    <!-- The remote option lists of the data list filters reuse the paging, search and cancellation of RemoteOptions; the packages are versioned together (exact dependency). -->
-    <InternalsVisibleTo Include="Blux.UI.Tools" />
   </ItemGroup>
 
   <ItemGroup>

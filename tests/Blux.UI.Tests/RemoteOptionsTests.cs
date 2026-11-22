@@ -38,10 +38,10 @@ public class RemoteOptionsTests
         }
     }
 
-    private static (RemoteOptions Options, Func<int> Changes) Create(Source source, int pageSize = 25)
+    private static (BxRemoteOptions Options, Func<int> Changes) Create(Source source, int pageSize = 25)
     {
         var changes = 0;
-        var options = new RemoteOptions(source.Load, () => changes++) { PageSize = pageSize };
+        var options = new BxRemoteOptions(source.Load, () => changes++) { PageSize = pageSize };
         return (options, () => changes);
     }
 
@@ -50,11 +50,11 @@ public class RemoteOptionsTests
     {
         var source = new Source();
         var (options, _) = Create(source);
-        Assert.Equal(RemoteStatus.Idle, options.Status);
+        Assert.Equal(BxRemoteStatus.Idle, options.Status);
 
         await options.SearchAsync("");
 
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
         Assert.Equal(25, options.Items.Count);
         Assert.True(options.HasMore);
         Assert.Equal(new BxOptionsRequest("", 0, 25, null), source.Requests[0]);
@@ -124,7 +124,7 @@ public class RemoteOptionsTests
 
         await first;
         Assert.Equal(listed, options.Items.Select(i => i.Label));
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
         Assert.Equal("2", options.Term);
     }
 
@@ -132,7 +132,7 @@ public class RemoteOptionsTests
     public async Task A_late_answer_that_the_provider_did_not_stop_is_ignored_too()
     {
         var gates = new List<TaskCompletionSource<BxOptionsResult>>();
-        var options = new RemoteOptions((_, _) =>
+        var options = new BxRemoteOptions((_, _) =>
         {
             var gate = new TaskCompletionSource<BxOptionsResult>();
             gates.Add(gate);
@@ -158,14 +158,14 @@ public class RemoteOptionsTests
         source.Hold = true;
 
         var more = options.LoadMoreAsync();
-        Assert.Equal(RemoteStatus.LoadingMore, options.Status);
+        Assert.Equal(BxRemoteStatus.LoadingMore, options.Status);
         var search = options.SearchAsync("Item 5");
         source.Gates[1].SetResult();
         await search;
         await more;
 
         Assert.All(options.Items, i => Assert.Contains("Item 5", i.Label));
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class RemoteOptionsTests
 
         source.Hold = true;
         var search = options.SearchAsync("Item 4");
-        Assert.Equal(RemoteStatus.Loading, options.Status);
+        Assert.Equal(BxRemoteStatus.Loading, options.Status);
         Assert.Equal(50, options.Items.Count);
         Assert.Equal(generation, options.Generation);
 
@@ -200,12 +200,12 @@ public class RemoteOptionsTests
         Assert.Equal(25, options.Items.Count);
 
         await options.SearchAsync("It");
-        Assert.Equal(RemoteStatus.TooShort, options.Status);
+        Assert.Equal(BxRemoteStatus.TooShort, options.Status);
         Assert.Empty(options.Items);
         Assert.Single(source.Requests);
 
         await options.SearchAsync("Ite");
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
         Assert.Equal(2, source.Requests.Count);
         Assert.Equal("Ite", source.Requests[1].Search);
     }
@@ -219,7 +219,7 @@ public class RemoteOptionsTests
 
         await options.SearchAsync(" ab ");
 
-        Assert.Equal(RemoteStatus.TooShort, options.Status);
+        Assert.Equal(BxRemoteStatus.TooShort, options.Status);
         Assert.Empty(source.Requests);
     }
 
@@ -231,13 +231,13 @@ public class RemoteOptionsTests
 
         await options.SearchAsync("");
 
-        Assert.Equal(RemoteStatus.Error, options.Status);
+        Assert.Equal(BxRemoteStatus.Error, options.Status);
         Assert.Empty(options.Items);
 
         source.Fail = false;
         await options.RetryAsync();
 
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
         Assert.Equal(25, options.Items.Count);
         Assert.Equal(source.Requests[0], source.Requests[1]);
     }
@@ -252,7 +252,7 @@ public class RemoteOptionsTests
 
         await options.LoadMoreAsync();
 
-        Assert.Equal(RemoteStatus.Error, options.Status);
+        Assert.Equal(BxRemoteStatus.Error, options.Status);
         Assert.Equal(25, options.Items.Count);
 
         // Nothing else loads while the error is shown.
@@ -276,7 +276,7 @@ public class RemoteOptionsTests
 
         await options.SearchAsync("x");
 
-        Assert.Equal(RemoteStatus.Loaded, options.Status);
+        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class RemoteOptionsTests
     {
         var calls = 0;
         var requests = new List<BxOptionsRequest>();
-        var options = new RemoteOptions((request, _) =>
+        var options = new BxRemoteOptions((request, _) =>
         {
             requests.Add(request);
             return new ValueTask<BxOptionsResult>(calls++ == 0
@@ -396,7 +396,7 @@ public class RemoteOptionsTests
 
         options.Reset();
 
-        Assert.Equal(RemoteStatus.Idle, options.Status);
+        Assert.Equal(BxRemoteStatus.Idle, options.Status);
         Assert.Empty(options.Items);
         Assert.Equal("", options.Term);
         Assert.False(options.HasMore);
@@ -421,7 +421,7 @@ public class RemoteOptionsTests
         await pending;
 
         Assert.Empty(options.Items);
-        Assert.Equal(RemoteStatus.Idle, options.Status);
+        Assert.Equal(BxRemoteStatus.Idle, options.Status);
     }
 
     /// <summary>A resolver whose calls complete when the test says so, in any order, and that ignores cancellation (a source that does not honour the token).</summary>

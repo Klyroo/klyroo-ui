@@ -1,4 +1,3 @@
-using Blux.UI.Internal;
 using Blux.UI.Tools.Query;
 using Microsoft.AspNetCore.Components;
 
@@ -11,17 +10,24 @@ public partial class BxDataListFilterEditor<TItem>
     // The pause of the typing before a search is sent to the remote source.
     private const int RemoteDebounce = 250;
 
-    private RemoteOptions? _remote;
+    private BxRemoteOptions? _remote;
     private bool _remoteStarted;
     private bool _remoteSearchAgain;
     private bool _showAll;
     private string? _scrollerId;
 
-    /// <summary>
-    /// Whether the editor is on screen. A filter with remote options loads its first page the first time this is true (a tag's popover passes whether it is open), so a page does not call
-    /// every remote source on load. True by default: the editor of the filter panel and of the add filter menu load when they render.
-    /// </summary>
-    [Parameter] public bool Visible { get; set; } = true;
+    // Whether the editor is on screen, told by the part that holds it (a tag's popover that is open, a panel section that is expanded; an editor that nobody wraps, such as the one of the add filter
+    // menu, which only exists while the menu is open, is always shown). A filter with remote options loads its first page the first time this is true, so a page does not call every remote source on load.
+    [CascadingParameter] private FilterEditorShown? Shown { get; set; }
+
+    private bool Visible => Shown?.Value ?? true;
+
+    private static readonly CheckboxUi _countUi = new() { Description = "sr-only" };
+    private static readonly SwitchUi _switchCountUi = new() { Description = "sr-only" };
+
+    private string? CountText(int? count) => count?.ToString("N0", FormatCulture);
+
+    private string CountId(int index) => index < 0 ? _id + "-n" : _id + "-n" + index;
 
     private bool IsRemote => _filter?.RemoteOptions is not null;
 
@@ -37,7 +43,11 @@ public partial class BxDataListFilterEditor<TItem>
             _remoteStarted = false;
             return;
         }
-        _remote ??= new RemoteOptions(Adapt(definition), () => _ = InvokeAsync(StateHasChanged));
+        _remote ??= new BxRemoteOptions(Adapt(definition), () => _ = InvokeAsync(() =>
+        {
+            RequestCounts();
+            StateHasChanged();
+        }));
         // A schema built again with equal delegates (a lambda that captures) keeps the pages and the search: only the provider that the next request calls changes.
         _remote.Provider = Adapt(definition);
         _remote.PageSize = definition.PageSize;
@@ -63,6 +73,15 @@ public partial class BxDataListFilterEditor<TItem>
         if (!_remoteSearchAgain) return Task.CompletedTask;
         _remoteSearchAgain = false;
         return _remote.SearchAsync(_search);
+    }
+
+    // The counts of the options that are listed (and of the selected ones): one call for those nobody counted yet, under the filters and search on screen.
+    private void RequestCounts()
+    {
+        // Only once a page is listed and the editor is on screen: the first request counts the options of that page together with the selected values.
+        if (_remote is null || _filter is not { Facets: true } || !Visible || _remote.Status is not (BxRemoteStatus.Loaded or BxRemoteStatus.LoadingMore)) return;
+        var values = _remote.Items.Select(i => i.Value).Concat(_selected).Distinct(StringComparer.Ordinal).ToList();
+        if (values.Count > 0) _ = Context.LoadCountsAsync(Key, values, Context.LifetimeToken, Context.Logger);
     }
 
     private async Task OnRemoteSearch(string? value)

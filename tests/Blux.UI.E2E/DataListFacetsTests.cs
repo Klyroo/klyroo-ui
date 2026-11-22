@@ -98,6 +98,26 @@ public class DataListFacetsTests(PlaygroundServer server) : PlaygroundTest(serve
 
     [Theory]
     [MemberData(nameof(AllModes))]
+    public async Task The_count_is_part_of_what_a_screen_reader_hears_for_an_option_and_for_the_empty_values(string mode)
+    {
+        await OpenList(mode, "?fct.f.status=Paid");
+        await OpenTag(Facets, "Status is Paid", "Edit filter Status");
+        var editor = Editor(Facets, "Edit filter Status");
+
+        if (mode == "ssr")
+        {
+            // A link holds its count: it is in its name.
+            await Assertions.Expect(editor.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("^Pending.*30") })).ToBeVisibleAsync();
+            await Assertions.Expect(editor.GetByRole(AriaRole.Link, new() { NameRegex = new Regex("^Include empty values.*0") })).ToBeVisibleAsync();
+            return;
+        }
+        // A checkbox and a switch are named by their label and described by their count.
+        await Assertions.Expect(editor.GetByRole(AriaRole.Checkbox, new() { Name = "Pending", Exact = true })).ToHaveAccessibleDescriptionAsync("30");
+        await Assertions.Expect(editor.GetByRole(AriaRole.Switch, new() { Name = "Include empty values" })).ToHaveAccessibleDescriptionAsync("0");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
     public async Task A_limit_lists_the_first_options_with_show_more_and_a_static_editor_lists_them_all(string mode)
     {
         await OpenList(mode, "?fct.f.customer=Globex");

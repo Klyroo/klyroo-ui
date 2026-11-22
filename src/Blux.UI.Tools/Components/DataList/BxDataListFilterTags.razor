@@ -32,7 +32,9 @@
                                     </button>
                                 </ChildContent>
                                 <Content>
-                                    <BxDataListFilterEditor TItem="TItem" Key="@key" ApplyMode="ApplyMode" ResetToken="Token(key)" Visible="@IsOpen(key)" OnDone="@(() => Close(key))" />
+                                    <CascadingValue TValue="FilterEditorShown" Value="@FilterEditorShown.Of(IsOpen(key))">
+                                        <BxDataListFilterEditor TItem="TItem" Key="@key" ApplyMode="ApplyMode" ResetToken="Token(key)" OnDone="@(() => Close(key))" />
+                                    </CascadingValue>
                                 </Content>
                             </BxPopover>
                         }

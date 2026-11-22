@@ -191,6 +191,39 @@ public partial class DataListFacetTests : BluxToolsTestContext
         Assert.Empty(Editor(cut, "owner").QuerySelectorAll("[data-slot=filter-options-more]"));
     }
 
+    // ---- the count is part of the accessible name
+
+    private static string DescribedBy(IRenderedComponent<Microsoft.AspNetCore.Components.IComponent> cut, IElement control)
+    {
+        var id = control.GetAttribute("aria-describedby");
+        Assert.False(string.IsNullOrEmpty(id), "the control has no description");
+        return Text(cut.Find("#" + id));
+    }
+
+    [Fact]
+    public void The_count_of_an_option_and_of_the_empty_values_is_the_description_of_their_checkbox_and_switch()
+    {
+        var schema = Build(DataListFilter.Option(StatusOptions).WithFacets(), DataListFilter.Option(), DataListFilter.Boolean());
+        var cut = RenderList("/t?f.status=open", schema);
+        var editor = Editor(cut, "status");
+
+        var first = editor.QuerySelector("[data-slot=filter-options] > li[data-value=open]")!;
+        Assert.Equal("8", DescribedBy(cut, first.QuerySelector("input[type=checkbox]")!));
+        var empty = editor.QuerySelector("[data-slot=filter-include-empty-row]")!;
+        Assert.Equal("8", DescribedBy(cut, empty.QuerySelector("input[role=switch]")!));
+        // The number at the end of the row is not read a second time.
+        Assert.All(editor.QuerySelectorAll("[data-slot=filter-option-count]"), c => Assert.Equal("true", c.GetAttribute("aria-hidden")));
+    }
+
+    [Fact]
+    public void Without_counts_a_checkbox_has_no_description()
+    {
+        var schema = Build(DataListFilter.Option(StatusOptions), DataListFilter.Option(), DataListFilter.Boolean());
+        var cut = RenderList("/t?f.status=open", schema);
+
+        Assert.Null(Editor(cut, "status").QuerySelector("[data-slot=filter-options] > li[data-value=open] input[type=checkbox]")!.GetAttribute("aria-describedby"));
+    }
+
     // ---- static rendering
 
     private sealed class StaticContext : BluxToolsTestContext
@@ -217,6 +250,21 @@ public partial class DataListFacetTests : BluxToolsTestContext
         var active = cut.Find("li[data-filter=active] [data-slot=filter-editor]");
         // The rule on status (8 tickets, 2 of them active) narrows the counts of active, not its own.
         Assert.Equal(["Yes (2)", "No (6)", "Any"], active.QuerySelectorAll("[data-slot=filter-choice]").Select(Text));
+    }
+
+    [Fact]
+    public void Static_rendering_of_the_panel_describes_each_checkbox_by_its_count()
+    {
+        using var context = new StaticContext();
+        context.Navigation.NavigateTo("/t");
+        var schema = Build(DataListFilter.Option(StatusOptions).WithFacets(), DataListFilter.Option(), DataListFilter.Boolean());
+
+        var cut = context.Render<DataListPanelHarness>(p => p.Add(h => h.Schema, schema));
+
+        var section = cut.Find("[data-filter=status] [data-slot=filter-options]");
+        foreach (var input in section.QuerySelectorAll("[data-slot=filter-option-input], [data-slot=filter-include-empty]")) Assert.Equal("8", DescribedBy(cut, input));
+        // Statically rendered links hold their count inside the link, so it is part of their name.
+        Assert.Contains("8", Text(cut.Find("[data-filter=status] [data-slot=filter-options]")));
     }
 
     [Fact]
