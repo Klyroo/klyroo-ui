@@ -151,7 +151,7 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await Assertions.Expect(toggle).ToHaveAttributeAsync("aria-expanded", "true");
-        Assert.Equal(await dialog.GetAttributeAsync("id"), await toggle.GetAttributeAsync("aria-controls"));
+        Assert.Equal(await Page.GetByTestId("dashboard-sidebar-only").GetAttributeAsync("id"), await toggle.GetAttributeAsync("aria-controls"));
         // Never collapsed: the labels are visible in the panel.
         await Assertions.Expect(dialog.GetByText("Messages")).ToBeVisibleAsync();
 

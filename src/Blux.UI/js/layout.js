@@ -62,8 +62,10 @@ function write(name, value) {
  * where open means expanded.
  *
  * Below the lg breakpoint the aside is the off-canvas panel: a popover="auto" element that a button with popovertarget opens.
- * The popover alone is not a modal, so while it is open this element makes it one: role dialog and aria-modal on the aside, the
- * rest of the page inert, Tab kept inside, the focus moved in and, on close, back to where it was. Escape and a click outside
+ * The popover alone is not a modal, so while it is open this element makes it one: role dialog and aria-modal on the inner panel element
+ * (an aside may not be a dialog), the rest of the page inert, Tab kept inside, the focus moved in and, on close, back to where it was.
+ * A form submitted inside the panel, or a navigation to another path, closes it; a modal opened from inside it whose dialog is outside the
+ * aside closes it (the browser does, as for any popover; and the focus goes back to the button when that modal closes); a modal declared inside the aside works as it is. Escape and a click outside
  * (or on the backdrop) close it natively; a screen that grows past lg closes it, and the collapsed state only applies from lg.
  */
 const WIDE = '(min-width: 64rem)';
@@ -118,6 +120,12 @@ export class BxSidebarElement extends HTMLElement {
     this.#reporter.adopt();
     this.#reporter.take('collapsed', true);
     this.#settle();
+    // An enhanced navigation merge resets the attributes this element set while the panel was open: put the modal state back, or close a panel that should not stay.
+    const aside = this.#aside;
+    if (aside?.matches(':popover-open')) {
+      if (this.#wide.matches) aside.hidePopover();
+      else this.#makeModal(aside);
+    }
   }
 
   get #key() {
@@ -266,10 +274,39 @@ export class BxSidebarElement extends HTMLElement {
       const opener = this.#opener;
       this.#opener = null;
       const active = document.activeElement;
-      if (opener?.isConnected && (!active || active === document.body || aside.contains(active))) opener.focus({ preventScroll: true });
+      const modal = [...document.querySelectorAll('dialog:modal')].find((dialog) => !aside.contains(dialog));
+      if (modal) this.#handOver(modal, opener);
+      else if (opener?.isConnected && (!active || active === document.body || aside.contains(active))) opener.focus({ preventScroll: true });
     }
     this.syncControls();
   };
+
+  // The panel closes for what leaves the page it belongs to: a form submitted in it, or a navigation to another path (a change of the query alone stays).
+  #onNavigate = (event) => {
+    const aside = this.#aside;
+    if (!aside?.matches(':popover-open')) return;
+    let path = null;
+    try {
+      path = new URL(event.destination.url).pathname;
+    } catch {
+      return;
+    }
+    if (path !== location.pathname) aside.hidePopover();
+  };
+
+  // A modal dialog opened outside the aside while the panel is open (a modal of the layout, opened from a menu of the panel, or Ctrl+K): showModal closes
+  // the popovers that are not its ancestors, so the panel is already closed and its inert is gone. What is left is the focus: the dialog may have failed to take it,
+  // and when it closes the focus goes back to the button that opened the panel.
+  #handOver(dialog, opener) {
+    if (!dialog.contains(document.activeElement)) (this.#tabbables(dialog)[0] ?? dialog).focus({ preventScroll: true });
+    dialog.addEventListener('close', () => {
+      // After the browser's own focus fix-up: the focus is still in the closed dialog or nowhere, unless the modal sent it somewhere on purpose.
+      setTimeout(() => {
+        const active = document.activeElement;
+        if (opener?.isConnected && (!active || active === document.body || dialog.contains(active))) opener.focus({ preventScroll: true });
+      });
+    }, { once: true });
+  }
 
   #onWideChange = () => {
     const aside = this.#aside;
@@ -284,10 +321,15 @@ export class BxSidebarElement extends HTMLElement {
   /** A popover is not modal: name the aside a modal dialog and make everything around it inert until it closes. */
   #makeModal(aside) {
     this.#release();
-    const title = aside.querySelector(':scope > [data-slot="mobile-header"] > h2');
-    aside.setAttribute('role', 'dialog');
-    aside.setAttribute('aria-modal', 'true');
-    if (title?.id) aside.setAttribute('aria-labelledby', title.id);
+    // The dialog semantics go on the inner panel: an aside has no dialog role, and it stays the complementary landmark.
+    const panel = aside.querySelector(':scope > [data-slot="panel"]');
+    const title = panel?.querySelector(':scope > [data-slot="mobile-header"] > h2');
+    if (panel) {
+      panel.setAttribute('role', 'dialog');
+      panel.setAttribute('aria-modal', 'true');
+      if (title?.id) panel.setAttribute('aria-labelledby', title.id);
+    }
+    window.navigation?.addEventListener('navigate', this.#onNavigate);
     for (let node = aside; node.parentElement; node = node.parentElement) {
       for (const sibling of node.parentElement.children) {
         if (sibling === node || sibling.inert || sibling.localName === 'head') continue;
@@ -300,11 +342,12 @@ export class BxSidebarElement extends HTMLElement {
   #release() {
     for (const element of this.#inerted) element.inert = false;
     this.#inerted = [];
-    const aside = this.#aside;
-    if (aside?.getAttribute('role') === 'dialog') {
-      aside.removeAttribute('role');
-      aside.removeAttribute('aria-modal');
-      aside.removeAttribute('aria-labelledby');
+    window.navigation?.removeEventListener('navigate', this.#onNavigate);
+    const panel = this.#aside?.querySelector(':scope > [data-slot="panel"]');
+    if (panel?.getAttribute('role') === 'dialog') {
+      panel.removeAttribute('role');
+      panel.removeAttribute('aria-modal');
+      panel.removeAttribute('aria-labelledby');
     }
   }
 
@@ -382,7 +425,8 @@ export class BxSidebarElement extends HTMLElement {
 
   #onKeyDown = (event) => {
     const panel = this.#aside;
-    if (event.key === 'Tab' && panel?.matches(':popover-open') && event.target instanceof Node && panel.contains(event.target)) {
+    // A modal dialog declared inside the panel keeps Tab to itself (the rest of the panel is inert while it is open).
+    if (event.key === 'Tab' && panel?.matches(':popover-open') && event.target instanceof Element && panel.contains(event.target) && !event.target.closest('dialog:modal')) {
       // Keep Tab inside the open panel.
       const items = this.#tabbables(panel);
       if (items.length === 0) {
@@ -440,6 +484,12 @@ document.addEventListener('click', (event) => {
   const panel = link?.closest('bx-sidebar > [popover]:popover-open');
   if (panel) panel.hidePopover();
 });
+
+// So does a form submitted in it: the page behind is about to change (an enhanced submit would leave the panel open over it).
+document.addEventListener('submit', (event) => {
+  const panel = event.target instanceof Element ? event.target.closest('bx-sidebar > [popover]:popover-open') : null;
+  if (panel) panel.hidePopover();
+}, true);
 
 // ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-bx-layout-menu.
 const MENU = 'dialog[data-bx-layout-menu]';

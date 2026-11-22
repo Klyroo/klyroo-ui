@@ -70,28 +70,29 @@ internal static partial class Themes
     /// hidden until it is open and then a fixed panel on the start edge, with a backdrop and a slide-in.
     /// </summary>
     public static ComponentTheme Sidebar() =>
-        new ComponentTheme("sidebar", "root", "host", "header", "headerContent", "toggle", "toggleIcon", "content", "footer", "handle", "mobile", "mobileHeader", "mobileTitle", "mobileClose")
+        new ComponentTheme("sidebar", "root", "host", "panel", "header", "headerContent", "toggle", "toggleIcon", "content", "footer", "handle", "mobile", "mobileHeader", "mobileTitle", "mobileClose")
             .Slot("root", "group/sidebar relative m-0 flex-col border-0 border-e border-(--blux-border) bg-(--blux-bg) p-0 text-(--blux-text) " +
                           // From lg: the column.
                           "lg:flex lg:h-auto lg:w-(--bx-sidebar-width) lg:shrink-0 lg:overflow-visible lg:data-[state=collapsed]:w-16 " +
-                          "data-ready:transition-[width] data-ready:duration-200 data-ready:motion-reduce:transition-none data-ready:data-dragging:transition-none " +
+                          "lg:data-ready:transition-[width] lg:data-ready:duration-200 lg:data-ready:motion-reduce:transition-none lg:data-ready:data-dragging:transition-none " +
                           // Below lg: the panel, once it is open.
                           "max-lg:open:fixed max-lg:open:inset-y-0 max-lg:open:start-0 max-lg:open:end-auto max-lg:open:flex max-lg:open:h-dvh max-lg:open:w-80 " +
                           "max-lg:open:max-w-[85vw] max-lg:open:overflow-hidden max-lg:open:shadow-xl max-lg:open:translate-x-0 " +
-                          "max-lg:open:starting:-translate-x-full max-lg:open:starting:rtl:translate-x-full max-lg:open:transition-[translate]! " +
-                          "max-lg:open:duration-200 max-lg:open:motion-reduce:transition-none backdrop:bg-zinc-950/60")
+                          "max-lg:open:starting:-translate-x-full max-lg:open:starting:rtl:translate-x-full max-lg:open:transition-[translate] " +
+                          "max-lg:open:duration-200 motion-reduce:max-lg:open:transition-none backdrop:bg-zinc-950/60")
             .Slot("host", "contents")
+            .Slot("panel", "flex min-h-0 flex-1 flex-col")
             .Slot("header", "flex h-16 shrink-0 items-center gap-2 border-b border-(--blux-border) px-4 " +
-                            "group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-2")
-            .Slot("headerContent", "min-w-0 flex-1 group-data-[state=collapsed]/sidebar:hidden")
+                            "lg:group-data-[state=collapsed]/sidebar:justify-center lg:group-data-[state=collapsed]/sidebar:px-2")
+            .Slot("headerContent", "min-w-0 flex-1 lg:group-data-[state=collapsed]/sidebar:hidden")
             .Slot("toggle", LayoutIconButton + " max-lg:hidden")
-            .Slot("toggleIcon", "size-5 rtl:-scale-x-100 group-data-[state=collapsed]/sidebar:rotate-180")
-            .Slot("content", "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 group-data-[state=collapsed]/sidebar:px-2")
+            .Slot("toggleIcon", "size-5 rtl:-scale-x-100 lg:group-data-[state=collapsed]/sidebar:rotate-180")
+            .Slot("content", "flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-4 lg:group-data-[state=collapsed]/sidebar:px-2")
             .Slot("footer", "flex shrink-0 items-center gap-1.5 border-t border-(--blux-border) p-4 " +
-                            "group-data-[state=collapsed]/sidebar:justify-center group-data-[state=collapsed]/sidebar:px-2")
+                            "lg:group-data-[state=collapsed]/sidebar:justify-center lg:group-data-[state=collapsed]/sidebar:px-2")
             .Slot("handle", "absolute inset-y-0 end-0 z-10 w-1.5 translate-x-1/2 cursor-col-resize touch-none rounded-full transition-colors rtl:-translate-x-1/2 " +
                             "hover:bg-(--blux-border-accented) data-dragging:bg-(--blux-border-accented) " + LayoutFocus + " " +
-                            "group-data-[state=collapsed]/sidebar:hidden max-lg:hidden")
+                            "max-lg:hidden lg:group-data-[state=collapsed]/sidebar:hidden")
             .Slot("mobile", "p-2 lg:hidden")
             .Slot("mobileHeader", "flex h-16 shrink-0 items-center justify-between gap-2 border-b border-(--blux-border) px-4 lg:hidden")
             .Slot("mobileTitle", "min-w-0 flex-1 truncate text-base font-semibold text-(--blux-text-highlighted)")

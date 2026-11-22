@@ -75,7 +75,7 @@ else
 
     protected override void OnParametersSet()
     {
-        _tag = As.ToLowerInvariant();
+        _tag = string.IsNullOrWhiteSpace(As) ? "header" : As.Trim().ToLowerInvariant();
         if (_tag is not ("header" or "div"))
         {
             throw new ArgumentException($"BxDashboardNavbar: As must be \"header\" or \"div\" (any case), not \"{As}\".", nameof(As));

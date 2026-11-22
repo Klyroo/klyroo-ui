@@ -254,6 +254,27 @@ public class DashboardTests : BluxTestContext
         Assert.False(button.HasAttribute("data-bx-sidebar-for"));
     }
 
+    [Fact]
+    public void Toggle_names_the_panel_of_its_sidebar_from_the_server_so_it_needs_no_script()
+    {
+        // Without a group or a target there is nothing to name; the browser side wires it.
+        Assert.False(Render<BxDashboardSidebarToggle>().Find("button").HasAttribute("popovertarget"));
+        Assert.Equal("bx-sidebar-nav", Render<BxDashboardSidebarToggle>(p => p.Add(c => c.For, "nav")).Find("button").GetAttribute("popovertarget"));
+
+        var cut = Render<BxDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent((Microsoft.AspNetCore.Components.RenderFragment)(b =>
+        {
+            b.OpenComponent<BxDashboardSidebar>(0);
+            b.AddAttribute(1, nameof(BxDashboardSidebar.As), "div");
+            b.CloseComponent();
+            b.OpenComponent<BxDashboardSidebarToggle>(2);
+            b.CloseComponent();
+        })));
+
+        var panel = cut.Find("bx-sidebar > [data-slot=root]");
+        Assert.Equal("bx-sidebar-app", panel.GetAttribute("id"));
+        Assert.Equal("bx-sidebar-app", cut.Find("button[data-bx-sidebar-open]").GetAttribute("popovertarget"));
+    }
+
     // ---- DashboardPanel and DashboardResizeHandle
 
     [Fact]
@@ -373,6 +394,13 @@ public class DashboardTests : BluxTestContext
 
         var error = Assert.ThrowsAny<Exception>(() => Render<BxDashboardNavbar>(p => p.Add(n => n.As, "section")));
         Assert.Contains("As must be", (error as ArgumentException ?? error.InnerException as ArgumentException ?? error.GetBaseException() as ArgumentException)!.Message);
+    }
+
+    [Fact]
+    public void Navbar_and_PageAside_take_a_missing_As_for_their_default_element()
+    {
+        Assert.Equal("header", Render<BxDashboardNavbar>(p => p.Add(n => n.As, null!)).Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("aside", Render<BxPageAside>(p => p.Add(a => a.As, null!)).Find("[data-slot=body]").ParentElement!.LocalName);
     }
 
     [Fact]

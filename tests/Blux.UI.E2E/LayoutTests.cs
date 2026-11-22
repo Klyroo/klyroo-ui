@@ -422,6 +422,187 @@ public class LayoutTests(PlaygroundServer server) : PlaygroundTest(server)
         await AssertNoAccessibilityViolations();
     }
 
+    private async Task OpenPanel()
+    {
+        await ContentDemo.GetByRole(AriaRole.Button, new() { Name = "Open sidebar" }).ClickAsync();
+        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog, new() { Name = "Sidebar" })).ToBeVisibleAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Sidebar_panel_keeps_the_landmark_and_puts_the_dialog_role_on_its_inner_panel(string mode)
+    {
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        var aside = ContentDemo.Locator("[data-testid=sidebar-content]");
+        var panel = aside.Locator("> [data-slot=panel]");
+        Assert.Null(await panel.GetAttributeAsync("role"));
+
+        await OpenPanel();
+
+        // The aside is never given a dialog role (it is not allowed on it); the inner element is the dialog, named by the title.
+        Assert.Null(await aside.GetAttributeAsync("role"));
+        Assert.Equal("dialog", await panel.GetAttributeAsync("role"));
+        Assert.Equal("true", await panel.GetAttributeAsync("aria-modal"));
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(aside).ToBeHiddenAsync();
+        Assert.Null(await panel.GetAttributeAsync("role"));
+        Assert.Null(await panel.GetAttributeAsync("aria-modal"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Sidebar_panel_does_not_slide_under_reduced_motion(string mode)
+    {
+        await Page.EmulateMediaAsync(new() { ReducedMotion = ReducedMotion.Reduce });
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+
+        var aside = ContentDemo.Locator("[data-testid=sidebar-content]");
+        Assert.Equal("none", await aside.EvaluateAsync<string>("e => getComputedStyle(e).transitionProperty"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Sidebar_panel_slides_in_without_reduced_motion(string mode)
+    {
+        await Page.EmulateMediaAsync(new() { ReducedMotion = ReducedMotion.NoPreference });
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+
+        var aside = ContentDemo.Locator("[data-testid=sidebar-content]");
+        Assert.Equal("translate", await aside.EvaluateAsync<string>("e => getComputedStyle(e).transitionProperty"));
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_modal_declared_inside_the_panel_keeps_Tab_and_the_panel_open(string mode)
+    {
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+        var inner = Page.GetByRole(AriaRole.Dialog, new() { Name = "Inside the sidebar" });
+
+        await Page.GetByTestId("sidebar-inner-open").ClickAsync();
+
+        await Assertions.Expect(inner).ToBeVisibleAsync();
+        // A native modal dialog lets Tab leave the document at its ends (the browser's own controls): what matters is that Tab moves through the dialog's controls
+        // and never lands on the panel behind it, whose close button is inert.
+        var visited = new HashSet<string>();
+        foreach (var key in new[] { "Tab", "Tab", "Tab", "Tab", "Shift+Tab", "Shift+Tab", "Shift+Tab", "Shift+Tab" })
+        {
+            await Page.Keyboard.PressAsync(key);
+            var where = await inner.EvaluateAsync<string>("e => document.activeElement === document.body ? 'body' : e.contains(document.activeElement) ? 'dialog:' + (document.activeElement.getAttribute('data-testid') ?? document.activeElement.getAttribute('aria-label') ?? document.activeElement.localName) : 'outside:' + document.activeElement.outerHTML.slice(0, 60)");
+            Assert.False(where.StartsWith("outside:", StringComparison.Ordinal), $"{key} landed outside the modal: {where}");
+            visited.Add(where);
+        }
+        Assert.True(visited.Count(v => v.StartsWith("dialog:", StringComparison.Ordinal)) >= 2, "Tab reached the controls of the modal: " + string.Join(", ", visited));
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(inner).ToBeHiddenAsync();
+        Assert.True(await IsPanelOpen());
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_modal_declared_outside_the_panel_closes_it_first_and_gives_the_focus_back_to_the_button(string mode)
+    {
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+        var outer = Page.GetByRole(AriaRole.Dialog, new() { Name = "Outside the sidebar" });
+
+        await Page.GetByTestId("sidebar-outer-open").ClickAsync();
+
+        await Assertions.Expect(outer).ToBeVisibleAsync();
+        Assert.False(await IsPanelOpen());
+        // The modal is usable (the page was inert while the panel was open).
+        await outer.GetByRole(AriaRole.Textbox, new() { Name = "Outer field" }).FillAsync("hello");
+        await Assertions.Expect(outer.GetByRole(AriaRole.Textbox, new() { Name = "Outer field" })).ToHaveValueAsync("hello");
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(outer).ToBeHiddenAsync();
+        await Assertions.Expect(ContentDemo.GetByRole(AriaRole.Button, new() { Name = "Open sidebar" })).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_form_submitted_in_the_panel_closes_it(string mode)
+    {
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+        // Keep the page where it is, so what closes the panel is the submit itself.
+        await Page.EvaluateAsync("() => document.querySelector('[data-testid=sidebar-content-form]').addEventListener('submit', (e) => e.preventDefault())");
+
+        await Page.GetByTestId("sidebar-content-form-submit").ClickAsync();
+
+        Assert.False(await IsPanelOpen());
+        Assert.Equal(0, await ContentDemo.Locator("[inert]").CountAsync());
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task The_panel_closes_on_a_navigation_to_another_path_and_stays_for_a_change_of_the_query(string mode)
+    {
+        Assert.SkipUnless(BrowserName == "chromium", "The Navigation API is not in every engine.");
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+        var path = new Uri(Page.Url).AbsolutePath;
+
+        await Page.EvaluateAsync("p => history.replaceState({}, '', p + '?same=1')", path);
+        await Page.EvaluateAsync("p => history.pushState({}, '', p + '?other=1')", path);
+        Assert.True(await IsPanelOpen());
+
+        await Page.EvaluateAsync("() => history.pushState({}, '', '/elsewhere-in-the-site')");
+        Assert.False(await IsPanelOpen());
+        Assert.Equal(0, await ContentDemo.Locator("[inert]").CountAsync());
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_merge_that_strips_the_modal_state_is_repaired_by_refresh(string mode)
+    {
+        await Page.SetViewportSizeAsync(390, 800);
+        await OpenContentDemo(mode);
+        await OpenPanel();
+        var panel = ContentDemo.Locator("[data-testid=sidebar-content] > [data-slot=panel]");
+        // What an enhanced navigation does to a page it merges: the attributes the browser side set are gone, the open popover is not.
+        await Page.EvaluateAsync("""
+            () => {
+                document.querySelectorAll('[inert]').forEach((e) => e.removeAttribute('inert'));
+                const panel = document.querySelector('[data-testid=sidebar-content] > [data-slot=panel]');
+                ['role', 'aria-modal', 'aria-labelledby'].forEach((a) => panel.removeAttribute(a));
+            }
+            """);
+        Assert.Null(await panel.GetAttributeAsync("role"));
+
+        await Page.EvaluateAsync("() => document.querySelector('[data-testid=sidebar-content-demo] bx-sidebar').refresh()");
+
+        Assert.Equal("dialog", await panel.GetAttributeAsync("role"));
+        Assert.True(await ContentDemo.Locator("bx-sidebar > div:not([data-slot])").EvaluateAsync<bool>("e => e.inert"));
+    }
+
+    [Fact]
+    public async Task The_dashboard_toggle_opens_the_panel_with_no_script_at_all()
+    {
+        var context = await NewContext(new() { JavaScriptEnabled = false, ViewportSize = new() { Width = 390, Height = 800 } });
+        var page = await context.NewPageAsync();
+        await page.GotoAsync("/ssr/components/dashboard-sidebar");
+        var toggle = page.Locator("button[data-bx-sidebar-open]").First;
+        var target = await toggle.GetAttributeAsync("popovertarget");
+        Assert.False(string.IsNullOrEmpty(target));
+        var aside = page.Locator($"[id='{target}']");
+        Assert.Equal(1, await aside.CountAsync());
+        Assert.False(await aside.EvaluateAsync<bool>("e => e.matches(':popover-open')"));
+
+        await toggle.ClickAsync();
+
+        Assert.True(await aside.EvaluateAsync<bool>("e => e.matches(':popover-open')"));
+        await Assertions.Expect(aside).ToBeVisibleAsync();
+    }
+
     // ---- LocaleSelect
 
     [Theory]

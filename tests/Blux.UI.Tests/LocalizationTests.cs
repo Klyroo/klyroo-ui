@@ -609,10 +609,95 @@ public partial class LocalizationTests : BluxTestContext
         var post = ctx.Render<BxBlogPost>(p => p.Add(c => c.Date, date));
 
         Assert.Equal("4 mars 2026", post.Find("time").TextContent);
-        Assert.Equal("4 mars 2026", BxDates.Format(date, BxLocales.Fr));
+        Assert.Equal("4 mars 2026", BxDates.FormatFor(date, BxLocales.Fr));
         Assert.Equal("fr", BxDates.FormatCulture(ctx.Services.GetRequiredService<BluxOptions>()).TwoLetterISOLanguageName);
         // No services: the English culture of the request.
         Assert.Equal("March 4, 2026", BxDates.Format(date));
+    }
+
+    [Fact]
+    public void BxDates_has_no_ambiguous_common_call()
+    {
+        // A call site for each shape: this compiles only while none of them is ambiguous.
+        var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
+        var fr = CultureInfo.GetCultureInfo("fr-FR");
+        using var _ = new CultureScope("fr-FR");
+
+        Assert.Equal("4 mars 2026", BxDates.Format(date));
+        Assert.Equal("4 mars 2026", BxDates.Format(date, null));
+        Assert.Equal("4 mars 2026", BxDates.Format(date, null, null));
+        Assert.Equal("4 mars 2026", BxDates.Format(date, culture: fr));
+        Assert.Equal("04/03/2026", BxDates.Format(date, "dd/MM/yyyy"));
+        Assert.Equal("4 mars 2026", BxDates.FormatFor(date, BxLocales.Fr));
+        Assert.Equal("04/03/2026", BxDates.FormatFor(date, BxLocales.Fr, "dd/MM/yyyy"));
+    }
+
+    [Fact]
+    public void BxDates_iso_is_the_same_in_every_culture()
+    {
+        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar-SA");
+            Assert.Equal("2026-03-04", BxDates.Iso(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
+        }
+    }
+
+    [Theory]
+    [InlineData("en-GB", "en", "en-GB")]
+    [InlineData("en-US", "fr", "fr")]
+    [InlineData("fr-CA", "fr", "fr-CA")]
+    public void BxDates_format_culture_is_the_regional_one_when_it_has_the_language_of_the_locale_otherwise_the_one_of_the_locale(string current, string ui, string expected)
+    {
+        var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(current);
+            CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(ui);
+            Assert.Equal(expected, BxDates.FormatCulture().Name);
+            Assert.Equal(BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), null, CultureInfo.GetCultureInfo(expected)),
+                BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
+        }
+        finally
+        {
+            (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture) = original;
+        }
+    }
+
+    // ---- BxDates
+
+    [Theory]
+    [InlineData("en-US", "March 4, 2026")]
+    [InlineData("fr-FR", "4 mars 2026")]
+    [InlineData("de-DE", "4. März 2026")]
+    public void BxDates_writes_the_long_date_of_the_culture_without_the_day_name(string culture, string expected)
+    {
+        Assert.Equal(expected, BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo(culture)));
+    }
+
+    [Fact]
+    public void BxDates_keeps_the_order_of_the_culture_in_russian()
+    {
+        var text = BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo("ru-RU"));
+
+        // "4 марта 2026 г.": the day first, as the culture writes it, not "марта 4, 2026".
+        Assert.StartsWith("4 марта 2026", text);
+    }
+
+    [Fact]
+    public void BxDates_uses_an_explicit_format_and_the_blog_post_agrees_with_it()
+    {
+        var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
+        var fr = CultureInfo.GetCultureInfo("fr-FR");
+
+        Assert.Equal("04/03/2026", BxDates.Format(date, "dd/MM/yyyy", fr));
+        var post = Render<BxBlogPost>(p => p.AddCascadingValue(BxLocales.Fr).Add(c => c.Date, date));
+        Assert.Equal(BxDates.Format(date, null, BxLocales.Fr.Culture), post.Find("time").TextContent);
+        Assert.Equal(BxDates.Iso(date), post.Find("time").GetAttribute("datetime"));
     }
 
     [Fact]

@@ -92,7 +92,7 @@ internal static class DashboardChecks
     /// <summary>The sidebar, the command palette, the notifications and the appearance dialog: the parts of the shell.</summary>
     public static async Task AssertShell(IPage page)
     {
-        // The sidebar is in the page twice: the one of the wide layout and the off-canvas one of the narrow layout, hidden from the other.
+        // The sidebar is in the page once: the column of the wide layout, the off-canvas panel of the narrow one.
         var nav = page.GetByTestId("sidebar").GetByRole(AriaRole.Navigation, new() { Name = "Pages" });
         await Assertions.Expect(nav.GetByRole(AriaRole.Link)).ToHaveCountAsync(4);
 
@@ -139,6 +139,54 @@ internal static class DashboardChecks
         var dark = (await page.Locator("html").GetAttributeAsync("class") ?? "").Contains("dark");
         await page.Locator("[data-bx-color-mode=toggle]").First.ClickAsync();
         await Assertions.Expect(page.Locator("html")).ToHaveClassAsync(dark ? new Regex("^((?!dark).)*$") : new Regex("dark"));
+    }
+
+    private static async Task<List<string>> AxeViolations(IPage page)
+    {
+        var result = await page.RunAxe();
+        return result.Violations
+            .SelectMany(v => v.Nodes.Select(n => $"{v.Id}: {n.Html} -> {string.Join("; ", n.Any.Select(c => c.Message))}"))
+            .ToList();
+    }
+
+    /// <summary>
+    /// The sidebar as the off-canvas panel of a phone: it opens from the navbar button, passes axe open (in the current color mode and the other one), and a modal that lives
+    /// outside it (the appearance dialog of the layout, opened from the user menu of the panel) closes it first, works, and gives the focus back to the button when it closes.
+    /// </summary>
+    public static async Task AssertMobilePanel(IPage page)
+    {
+        await page.SetViewportSizeAsync(390, 800);
+        await page.GotoAsync("");
+        await WaitInteractive(page);
+        var toggle = page.GetByRole(AriaRole.Button, new() { Name = "Open sidebar" });
+        var panel = page.GetByRole(AriaRole.Dialog, new() { Name = "Menu" });
+        await Assertions.Expect(panel).ToBeHiddenAsync();
+
+        await toggle.ClickAsync();
+
+        await Assertions.Expect(panel).ToBeVisibleAsync();
+        await page.WaitForFunctionAsync("() => document.getAnimations().length === 0");
+        var light = await AxeViolations(page);
+        Assert.True(light.Count == 0, "Panel open:\n" + string.Join("\n", light));
+        var dark = (await page.Locator("html").GetAttributeAsync("class") ?? "").Contains("dark");
+        await page.EvaluateAsync("d => document.documentElement.classList.toggle('dark', !d)", dark);
+        await page.WaitForFunctionAsync("() => document.getAnimations().length === 0");
+        var other = await AxeViolations(page);
+        Assert.True(other.Count == 0, "Panel open, other color mode:\n" + string.Join("\n", other));
+        await page.EvaluateAsync("d => document.documentElement.classList.toggle('dark', d)", dark);
+
+        await page.GetByTestId("user-menu").ClickAsync();
+        await page.GetByRole(AriaRole.Menuitem, new() { Name = "Appearance" }).ClickAsync();
+
+        var appearance = page.GetByRole(AriaRole.Dialog, new() { Name = "Appearance" });
+        await Assertions.Expect(appearance).ToBeVisibleAsync();
+        await Assertions.Expect(panel).ToBeHiddenAsync();
+        await appearance.GetByTestId("palette-emerald").ClickAsync();
+        await Assertions.Expect(page.GetByTestId("palette-emerald")).ToHaveAttributeAsync("aria-pressed", "true");
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(appearance).ToBeHiddenAsync();
+        await Assertions.Expect(toggle).ToBeFocusedAsync();
+        await page.SetViewportSizeAsync(1280, 800);
     }
 
     /// <summary>The customers table: search, sort, a filter, pagination, selection, row actions and the new customer form with its remote country select.</summary>
@@ -566,6 +614,7 @@ public class DashboardTemplateTests(PlaygroundServer server)
             await page.GotoAsync("");
             await DashboardChecks.WaitInteractive(page);
             await DashboardChecks.AssertShell(page);
+            await DashboardChecks.AssertMobilePanel(page);
             await DashboardChecks.AssertColorsInThePrerender(page, server.Browser, baseUrl, pathBase);
 
             lock (failures) Assert.True(failures.Count == 0, "Failed requests:\n" + string.Join("\n", failures));
