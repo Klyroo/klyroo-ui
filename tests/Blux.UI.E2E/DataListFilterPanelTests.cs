@@ -335,8 +335,6 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Expand(Panel, "status");
 
         await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
-        // Interactive, each box applies by itself: the second one is ticked once the first has reached the address, as a person does.
-        if (mode != "ssr") await WaitForQuery("?pnl.f.status=Paid");
         await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Pending" }).CheckAsync();
         if (mode == "ssr") await Apply(Panel);
 
@@ -346,6 +344,78 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 60");
         await Assertions.Expect(Panel.GetByRole(AriaRole.Button, new() { Name = "Status 2 active" })).ToBeVisibleAsync();
         await Assertions.Expect(Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Pending" })).ToBeCheckedAsync();
+    }
+
+    // Every message the circuit sends reaches the server late, in order: the way a slow connection makes a quick user outrun the address.
+    private const string SlowCircuit = "(() => { const send = WebSocket.prototype.send; WebSocket.prototype.send = function (data) { setTimeout(() => send.call(this, data), 400); }; })();";
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Options_ticked_back_to_back_are_all_applied_in_one_coherent_address_even_on_a_slow_circuit(string mode)
+    {
+        await Page.AddInitScriptAsync(SlowCircuit);
+        await OpenList(mode);
+        await Expand(Panel, "status");
+        var status = Section(Panel, "status");
+
+        await status.GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).CheckAsync();
+        await status.GetByRole(AriaRole.Checkbox, new() { Name = "Pending" }).CheckAsync();
+        await status.GetByRole(AriaRole.Checkbox, new() { Name = "Draft" }).CheckAsync();
+
+        await WaitForQuery("?pnl.f.status=Paid,Pending,Draft");
+        await Assertions.Expect(Tag("Status is Paid, Pending +1")).ToBeVisibleAsync();
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 90");
+        foreach (var name in new[] { "Paid", "Pending", "Draft" }) await Assertions.Expect(status.GetByRole(AriaRole.Checkbox, new() { Name = name })).ToBeCheckedAsync();
+        await Assertions.Expect(status.GetByRole(AriaRole.Checkbox, new() { Name = "Overdue" })).Not.ToBeCheckedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Options_ticked_back_to_back_in_the_popover_of_a_tag_are_all_applied_even_on_a_slow_circuit(string mode)
+    {
+        await Page.AddInitScriptAsync(SlowCircuit);
+        await OpenList(mode, "?pnl.f.status=Paid");
+        await Tag("Status is Paid").ClickAsync();
+        var editor = List.GetByRole(AriaRole.Dialog, new() { Name = "Edit filter Status" });
+        await Assertions.Expect(editor).ToBeVisibleAsync();
+
+        await editor.GetByRole(AriaRole.Checkbox, new() { Name = "Pending" }).CheckAsync();
+        await editor.GetByRole(AriaRole.Checkbox, new() { Name = "Draft" }).CheckAsync();
+        await editor.GetByRole(AriaRole.Checkbox, new() { Name = "Paid" }).UncheckAsync();
+
+        await WaitForQuery("?pnl.f.status=Pending,Draft");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 60");
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task An_option_ticked_and_unticked_back_to_back_ends_unticked_in_the_address_and_in_the_box_even_on_a_slow_circuit(string mode)
+    {
+        await Page.AddInitScriptAsync(SlowCircuit);
+        await OpenList(mode);
+        await Expand(Panel, "status");
+        var paid = Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Paid" });
+
+        await paid.CheckAsync();
+        await paid.UncheckAsync();
+        await Section(Panel, "status").GetByRole(AriaRole.Checkbox, new() { Name = "Draft" }).CheckAsync();
+
+        await WaitForQuery("?pnl.f.status=Draft");
+        await Assertions.Expect(paid).Not.ToBeCheckedAsync();
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 30");
+    }
+
+    [Fact]
+    public async Task Statically_the_any_radio_of_a_single_choice_option_takes_the_filter_off()
+    {
+        await OpenList("ssr", "?pnl.f.status.is=Paid");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 30");
+
+        await Section(Panel, "status").GetByRole(AriaRole.Radio, new() { Name = "Any" }).CheckAsync();
+        await Apply(Panel);
+
+        await WaitForQuery("");
+        await Assertions.Expect(Count).ToHaveTextAsync("1–10 of 120");
     }
 
     [Fact]
