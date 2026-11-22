@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Chat.Shared.Assistant;
 
@@ -14,14 +15,15 @@ public static class AssistantServices
     /// <param name="http">The client for the service. Required for <c>OpenAi</c>; give it one that does not follow redirects and has no timeout of its own (the provider sets it).</param>
     public static IServiceCollection AddAssistantProvider(this IServiceCollection services, AssistantOptions options, HttpClient? http = null)
     {
-        ICompletionProvider inner = options.IsSimulated
-            ? new SimulatedCompletionProvider(options)
-            : new OpenAiCompletionProvider(http ?? throw new ArgumentNullException(nameof(http), "The OpenAi provider needs an HttpClient."), options);
         var guard = new AssistantGuard(options);
         services.AddSingleton(options);
         services.AddSingleton(guard);
         services.AddScoped<CallerKey>();
-        services.AddScoped<ICompletionProvider>(sp => new GuardedCompletionProvider(inner, guard, sp.GetRequiredService<CallerKey>()));
+        // The real provider is made once, with the logger of the host: what the visitor reads is generic, and the hint for the operator goes to the log.
+        services.AddSingleton(sp => new Inner(options.IsSimulated
+            ? new SimulatedCompletionProvider(options)
+            : new OpenAiCompletionProvider(http ?? throw new ArgumentNullException(nameof(http), "The OpenAi provider needs an HttpClient."), options, sp.GetService<ILoggerFactory>()?.CreateLogger<OpenAiCompletionProvider>())));
+        services.AddScoped<ICompletionProvider>(sp => new GuardedCompletionProvider(sp.GetRequiredService<Inner>().Provider, guard, sp.GetRequiredService<CallerKey>(), sp.GetService<IAssistantAuthorizer>()));
         return services;
     }
 
@@ -32,4 +34,6 @@ public static class AssistantServices
         services.AddSingleton<ICompletionProvider>(provider);
         return services;
     }
+
+    private sealed record Inner(ICompletionProvider Provider);
 }

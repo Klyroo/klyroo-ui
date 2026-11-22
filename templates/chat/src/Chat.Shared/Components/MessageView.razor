@@ -22,9 +22,13 @@ else
             {
                 <MarkdownView Text="@Message.Content" MessageId="@Message.Id" PageHref="@PageHref" />
             }
+            @if (Message.Interrupted && !Streaming)
+            {
+                <p class="mt-2 text-sm text-(--blux-warning-text)" data-testid="message-interrupted">This answer was interrupted and is incomplete.</p>
+            }
         </ChildContent>
         <Actions>
-            @if (!Streaming && Message.Content.Length > 0)
+            @if (!Streaming && (Message.Content.Length > 0 || Message.Interrupted))
             {
                 <div class="-ms-1.5 flex items-center gap-0.5">
                     <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">

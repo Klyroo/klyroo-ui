@@ -140,7 +140,8 @@ public class ChatTemplateTests
         Assert.DoesNotContain(Secret, error.Message);
         Assert.DoesNotContain("llm.example.test", error.Message);
         Assert.DoesNotContain("Incorrect", error.Message);
-        Assert.Contains(status.ToString(), error.Message);
+        // The visitor reads a generic message: the hint (which setting to check) is for the log.
+        Assert.DoesNotContain("Assistant:", error.Message);
     }
 
     [Fact]
@@ -307,6 +308,8 @@ public class ChatTemplateTests
 
         public override long GetTimestamp() => Interlocked.Read(ref _ticks);
 
+        public override DateTimeOffset GetUtcNow() => new DateTimeOffset(2026, 11, 22, 10, 0, 0, TimeSpan.Zero) + TimeSpan.FromMilliseconds(Interlocked.Read(ref _ticks));
+
         public void Advance(TimeSpan by) => Interlocked.Add(ref _ticks, (long)by.TotalMilliseconds);
     }
 
@@ -358,12 +361,225 @@ public class ChatTemplateTests
     }
 
     [Fact]
-    public void The_guard_keeps_a_bounded_number_of_callers_even_when_each_request_has_a_new_name()
+    public void A_full_table_refuses_new_callers_instead_of_pushing_out_or_sharing_with_the_ones_it_has()
     {
-        var guard = new AssistantGuard(new AssistantOptions { RequestsPerMinute = 100_000, MaxConcurrentStreams = 1_000_000 });
-        for (var i = 0; i < AssistantGuard.MaxCallers + 500; i++) guard.Enter("caller-" + i).Dispose();
-        Assert.True(guard.Callers <= AssistantGuard.MaxCallers + 1);
-        Assert.NotNull(guard.Enter(new string('z', 500)));
+        var clock = new Clock();
+        var guard = new AssistantGuard(new AssistantOptions { RequestsPerMinute = 100_000, MaxConcurrentStreams = 1_000_000, DailyRequestsPerCaller = 100_000, DailyRequestsGlobal = int.MaxValue }, clock);
+        for (var i = 0; i < AssistantGuard.MaxCallers; i++) guard.Enter("caller-" + i).Dispose();
+        Assert.Equal(AssistantGuard.MaxCallers, guard.Callers);
+        // A newcomer is refused, and an attacker's addresses cannot drain a shared bucket: the callers already known are untouched.
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("newcomer")).Status);
+        guard.Enter("caller-0").Dispose();
+        guard.Enter("caller-" + (AssistantGuard.MaxCallers - 1)).Dispose();
+        // The next day nobody has anything left to remember, and the table makes room.
+        clock.Advance(TimeSpan.FromDays(1));
+        guard.Enter("newcomer").Dispose();
+        Assert.True(guard.Callers < AssistantGuard.MaxCallers);
+    }
+
+    [Fact]
+    public void One_caller_cannot_hold_more_than_its_share_of_the_replies_in_flight()
+    {
+        var guard = new AssistantGuard(new AssistantOptions { MaxConcurrentStreams = 16, MaxConcurrentPerCaller = 2, RequestsPerMinute = 100 });
+        var first = guard.Enter("a");
+        var second = guard.Enter("a");
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("a")).Status);
+        // Somebody else still gets in, and a slot given back is usable again.
+        guard.Enter("b").Dispose();
+        first.Dispose();
+        guard.Enter("a").Dispose();
+        second.Dispose();
+    }
+
+    [Fact]
+    public void The_daily_budgets_of_a_caller_and_of_everyone_are_spent_by_requests_and_by_output_and_come_back_the_next_day()
+    {
+        var clock = new Clock();
+        var guard = new AssistantGuard(new AssistantOptions { DailyRequestsPerCaller = 3, DailyOutputCharactersPerCaller = 1_000, DailyRequestsGlobal = 100, DailyOutputCharactersGlobal = 2_500, RequestsPerMinute = 100, MaxConcurrentStreams = 100 }, clock);
+        for (var i = 0; i < 3; i++) guard.Enter("a").Dispose();
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("a")).Status);
+
+        using (var slot = guard.Enter("b")) slot.AddOutput(1_000);
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("b")).Status);
+        using (var slot = guard.Enter("c")) slot.AddOutput(900);
+        using (var slot = guard.Enter("d")) slot.AddOutput(900);
+        // 1000 + 900 + 900 is past the 2500 of the process: everybody has spent the day.
+        Assert.Equal(503, Assert.Throws<CompletionException>(() => guard.Enter("e")).Status);
+
+        clock.Advance(TimeSpan.FromDays(1));
+        guard.Enter("a").Dispose();
+        guard.Enter("e").Dispose();
+    }
+
+    [Fact]
+    public void Ipv6_callers_are_grouped_by_their_64_prefix_and_mapped_ipv4_is_ipv4()
+    {
+        Assert.Equal(CallerKey.From(IPAddress.Parse("2001:db8:1:2:aaaa:bbbb:cccc:dddd")), CallerKey.From(IPAddress.Parse("2001:db8:1:2::1")));
+        Assert.NotEqual(CallerKey.From(IPAddress.Parse("2001:db8:1:2::1")), CallerKey.From(IPAddress.Parse("2001:db8:1:3::1")));
+        Assert.Equal("203.0.113.9", CallerKey.From(IPAddress.Parse("::ffff:203.0.113.9")));
+        Assert.Equal("203.0.113.9", CallerKey.From(IPAddress.Parse("203.0.113.9")));
+        Assert.Equal("unknown", CallerKey.From(null));
+    }
+
+    // ---------------------------------------------------------------- a failure in the middle of an answer
+
+    private sealed class Hanging : HttpContent
+    {
+        protected override async Task SerializeToStreamAsync(Stream stream, TransportContext? context)
+        {
+            await stream.WriteAsync("data: {\"choices\":[{\"delta\":{\"content\":\"half \"}}]}\n\n"u8.ToArray());
+            await stream.FlushAsync();
+            await Task.Delay(Timeout.Infinite);
+        }
+
+        protected override bool TryComputeLength(out long length)
+        {
+            length = -1;
+            return false;
+        }
+    }
+
+    [Fact]
+    public async Task A_timeout_in_the_middle_of_the_stream_is_a_504_not_a_shorter_answer()
+    {
+        var options = OpenAiOptions();
+        options.TimeoutSeconds = 1;
+        // A real pipe: the first piece arrives, then nothing, until the time allowed runs out.
+        var pipe = new System.IO.Pipelines.Pipe();
+        await pipe.Writer.WriteAsync("data: {\"choices\":[{\"delta\":{\"content\":\"half \"}}]}\n\n"u8.ToArray(), TestContext.Current.CancellationToken);
+        var stub = new Stub(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StreamContent(pipe.Reader.AsStream()) { Headers = { ContentType = new("text/event-stream") } } });
+        var provider = new OpenAiCompletionProvider(new HttpClient(stub), options);
+        var received = new List<string>();
+
+        var error = await Assert.ThrowsAsync<CompletionException>(async () =>
+        {
+            await foreach (var chunk in provider.StreamAsync(Ask(), TestContext.Current.CancellationToken)) received.Add(chunk.Text);
+        });
+
+        Assert.Equal(["half "], received);
+        Assert.Equal(504, error.Status);
+    }
+
+    [Fact]
+    public async Task A_stream_that_ends_without_done_or_a_finish_reason_is_an_interrupted_answer()
+    {
+        var stub = new Stub(_ => Sse("data: {\"choices\":[{\"delta\":{\"content\":\"half\"}}]}\n\n"));
+        var error = await Assert.ThrowsAsync<CompletionException>(() => Collect(new OpenAiCompletionProvider(new HttpClient(stub), OpenAiOptions()), Ask()));
+        Assert.Equal(502, error.Status);
+
+        // A service that sends a finish reason and no [DONE] is complete.
+        var finished = new Stub(_ => Sse("data: {\"choices\":[{\"delta\":{\"content\":\"all\"},\"finish_reason\":null}]}\n\ndata: {\"choices\":[{\"delta\":{},\"finish_reason\":\"stop\"}]}\n\n"));
+        Assert.Equal([new CompletionChunk(CompletionPart.Text, "all")], await Collect(new OpenAiCompletionProvider(new HttpClient(finished), OpenAiOptions()), Ask()));
+    }
+
+    [Fact]
+    public async Task The_endpoint_ends_a_failed_answer_with_an_error_event_and_the_remote_provider_throws_for_it_and_for_a_missing_done()
+    {
+        var options = OpenAiOptions();
+        var cut = new Stub(_ => Sse("data: {\"choices\":[{\"delta\":{\"content\":\"half \"}}]}\n\n"));
+        var (app, client) = await Host(options, new HttpClient(cut));
+        await using var _ = app;
+
+        var response = await client.PostAsync("/api/assistant/stream", Json("hi", "m-1"), TestContext.Current.CancellationToken);
+        var text = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Contains("\"p\":\"t\"", text);
+        Assert.Contains("\"error\"", text);
+        Assert.DoesNotContain("\"done\"", text);
+        var failure = await Assert.ThrowsAsync<CompletionException>(() => Collect(new RemoteCompletionProvider(client), Ask("hi", "m-1")));
+        Assert.DoesNotContain(Secret, failure.Message);
+
+        // A host whose answer just stops (a proxy cut it): no done event.
+        var truncated = new HttpClient(new Stub(_ => Sse("data: {\"p\":\"t\",\"d\":\"half\"}\n\n"))) { BaseAddress = new Uri("http://host.test/") };
+        var cutShort = await Assert.ThrowsAsync<CompletionException>(() => Collect(new RemoteCompletionProvider(truncated), Ask()));
+        Assert.Contains("interrupted", cutShort.Message);
+    }
+
+    [Fact]
+    public async Task A_json_answer_longer_than_the_limit_is_refused_while_it_is_read()
+    {
+        var options = OpenAiOptions();
+        options.MaxOutputCharacters = 200;
+        var big = "{\"choices\":[{\"message\":{\"content\":\"" + new string('a', 100_000) + "\"}}]}";
+        var stub = new Stub(_ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(big, Encoding.UTF8, "application/json") });
+        await Assert.ThrowsAsync<CompletionException>(() => Collect(new OpenAiCompletionProvider(new HttpClient(stub), options), Ask()));
+    }
+
+    [Fact]
+    public async Task The_cap_on_the_length_of_an_answer_goes_to_the_service_under_the_configured_name()
+    {
+        var stub = new Stub(_ => Sse("data: [DONE]\n\n"));
+        var options = OpenAiOptions();
+        options.MaxOutputTokens = 321;
+        await Collect(new OpenAiCompletionProvider(new HttpClient(stub), options), Ask());
+        using (var body = System.Text.Json.JsonDocument.Parse(stub.Body!)) Assert.Equal(321, body.RootElement.GetProperty("max_tokens").GetInt32());
+
+        options.MaxTokensField = "max_completion_tokens";
+        await Collect(new OpenAiCompletionProvider(new HttpClient(stub), options), Ask());
+        using (var body = System.Text.Json.JsonDocument.Parse(stub.Body!))
+        {
+            Assert.Equal(321, body.RootElement.GetProperty("max_completion_tokens").GetInt32());
+            Assert.False(body.RootElement.TryGetProperty("max_tokens", out _));
+        }
+        options.MaxOutputTokens = 0;
+        await Collect(new OpenAiCompletionProvider(new HttpClient(stub), options), Ask());
+        Assert.DoesNotContain("max_", stub.Body!);
+    }
+
+    // ---------------------------------------------------------------- who may ask
+
+    private sealed class HeaderAuthentication(Microsoft.Extensions.Options.IOptionsMonitor<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions> options, ILoggerFactory logger, System.Text.Encodings.Web.UrlEncoder encoder)
+        : Microsoft.AspNetCore.Authentication.AuthenticationHandler<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions>(options, logger, encoder)
+    {
+        protected override Task<Microsoft.AspNetCore.Authentication.AuthenticateResult> HandleAuthenticateAsync() =>
+            Task.FromResult(Request.Headers.ContainsKey("X-User")
+                ? Microsoft.AspNetCore.Authentication.AuthenticateResult.Success(new Microsoft.AspNetCore.Authentication.AuthenticationTicket(
+                    new System.Security.Claims.ClaimsPrincipal(new System.Security.Claims.ClaimsIdentity([new System.Security.Claims.Claim("name", "ada")], "test")), "test"))
+                : Microsoft.AspNetCore.Authentication.AuthenticateResult.NoResult());
+    }
+
+    [Fact]
+    public async Task With_an_authorization_policy_both_endpoints_refuse_anonymous_callers_and_let_the_signed_in_ones_through()
+    {
+        var options = Fast();
+        options.AuthorizationPolicy = "assistant";
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Logging.ClearProviders();
+        builder.Services.AddAssistantProvider(options);
+        builder.Services.AddAuthentication("test").AddScheme<Microsoft.AspNetCore.Authentication.AuthenticationSchemeOptions, HeaderAuthentication>("test", _ => { });
+        builder.Services.AddAuthorization(o => o.AddPolicy("assistant", p => p.RequireAuthenticatedUser()));
+        var app = builder.Build();
+        app.UseAuthentication();
+        app.UseAuthorization();
+        app.MapAssistantEndpoints();
+        await app.StartAsync(TestContext.Current.CancellationToken);
+        await using var _ = app;
+        var client = app.GetTestClient();
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/api/assistant/models", TestContext.Current.CancellationToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await client.PostAsync("/api/assistant/stream", Json("hi"), TestContext.Current.CancellationToken)).StatusCode);
+
+        client.DefaultRequestHeaders.Add("X-User", "ada");
+        Assert.Equal(HttpStatusCode.OK, (await client.GetAsync("/api/assistant/models", TestContext.Current.CancellationToken)).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await client.PostAsync("/api/assistant/stream", Json("hi"), TestContext.Current.CancellationToken)).StatusCode);
+    }
+
+    private sealed class Deny : IAssistantAuthorizer
+    {
+        public Task<bool> IsAllowedAsync() => Task.FromResult(false);
+    }
+
+    [Fact]
+    public async Task The_circuit_path_asks_the_authorizer_and_the_endpoint_path_has_already_been_through_the_policy()
+    {
+        var guard = new AssistantGuard(Fast());
+        var provider = new GuardedCompletionProvider(new SimulatedCompletionProvider(Fast()), guard, new CallerKey(), new Deny());
+        var error = await Assert.ThrowsAsync<CompletionException>(() => Collect(provider, Ask("hi", "demo-quick")));
+        Assert.Equal(401, error.Status);
+        Assert.Equal(0, guard.InFlight);
+
+        var passed = new GuardedCompletionProvider(new SimulatedCompletionProvider(Fast()), guard, new CallerKey { PreAuthorized = true }, new Deny());
+        Assert.NotEmpty(await Collect(passed, Ask("hi", "demo-quick")));
     }
 
     [Fact]
@@ -613,6 +829,39 @@ public class ChatTemplateTests
         Assert.Null(conversation.Messages[0].ThinkingSeconds);
         Assert.InRange(conversation.CreatedAt.Year, 2000, 2100);
         Assert.InRange(conversation.UpdatedAt.Year, 2000, 2100);
+    }
+
+    [Fact]
+    public void A_conversation_the_page_lets_grow_is_one_the_host_accepts_and_the_cap_leaves_room_for_the_answer()
+    {
+        var options = new AssistantOptions();
+        Assert.Equal(ConversationLimits.MaxMessages, options.MaxMessages);
+        Assert.Equal(ConversationLimits.MaxConversationCharacters, options.MaxInputCharacters);
+        // The page sends only when a question and its answer both fit: the most a stored conversation holds is the cap, and reading it back keeps all of it.
+        var conversation = new Conversation { Model = "m" };
+        while (conversation.Messages.Count + 2 <= ConversationLimits.MaxMessages)
+        {
+            conversation.Messages.Add(new ConversationMessage { Role = CompletionMessage.UserRole, Content = "q" });
+            conversation.Messages.Add(new ConversationMessage { Role = CompletionMessage.AssistantRole, Content = "a" });
+        }
+        Assert.True(conversation.Messages.Count <= ConversationLimits.MaxMessages);
+        Assert.True(ConversationJson.TryRead(ConversationJson.Write(conversation), out var back));
+        Assert.Equal(conversation.Messages.Select(m => m.Id), back.Messages.Select(m => m.Id));
+    }
+
+    [Fact]
+    public void Reading_back_a_longer_conversation_keeps_the_most_recent_messages_and_the_interrupted_mark()
+    {
+        var conversation = new Conversation { Model = "m" };
+        for (var i = 0; i < ConversationLimits.MaxMessages + 10; i++)
+        {
+            conversation.Messages.Add(new ConversationMessage { Role = i % 2 == 0 ? CompletionMessage.UserRole : CompletionMessage.AssistantRole, Content = "m" + i, Interrupted = i == ConversationLimits.MaxMessages + 9 });
+        }
+        Assert.True(ConversationJson.TryRead(ConversationJson.Write(conversation), out var back));
+        Assert.Equal(ConversationLimits.MaxMessages, back.Messages.Count);
+        Assert.Equal("m" + (ConversationLimits.MaxMessages + 9), back.Messages[^1].Content);
+        Assert.True(back.Messages[^1].Interrupted);
+        Assert.Equal("m10", back.Messages[0].Content);
     }
 
     [Fact]
