@@ -41,7 +41,6 @@ src/Portfolio.Web/
   Site/Talks.cs              the talks of the speaking page
   Site/ContactMessage.cs     what the contact form posts, with its rules
   Site/Library.cs            reads the projects and articles out of the content folder, and checks them
-  Site/SiteDates.cs          writes a date the way the Blux cards do (the culture of the visitor, no day name)
   Content/                   the Markdown code, shared with the other content templates (see below)
   Components/Pages/          Home, WorkIndex, ProjectPage, About, WritingIndex, WritingArticle, Speaking, Contact, PlainPage
   Components/Sections/       the sections of the home page; each reads SiteInfo or the content and has no text of its own
