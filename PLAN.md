@@ -174,7 +174,7 @@ CI de build seule). Apps (Starter, Dashboard, Chat, Editor, Calendar) : RCL part
 Changelog) : Web, SSR statique. Contenu Markdig + YamlDotNet, copie de référence `templates/_shared/Content`. Page `/templates` du site avec démos en direct
 (processus enfants derrière YARP, chien de garde si l'hôte meurt). Prérequis livrés dans la librairie : Tailwind sans Node (`BluxTailwind`), apps sous un
 chemin de base, `BxSkipLink`, fond du `body`, index de recherche chargé à la demande.
-Faits : Starter, Landing, SaaS (auth en UI seule), Docs, Changelog, Dashboard (sur `BxDataList`, couleurs en cookie lues au rendu serveur). Restent : Portfolio, Chat, Editor,
+Faits : Starter, Landing, SaaS (auth en UI seule), Docs, Portfolio (formulaire de contact en UI seule), Changelog, Dashboard (sur `BxDataList`, couleurs en cookie lues au rendu serveur). Restent : Chat, Editor,
 Calendar (sur `BxScheduler`).
 
 **Port de nuxt-ui-tools (2026-11-21)** : les 11 domaines (spécifications dans `.claude/specs/nuxt-ui-tools/`, non versionnées). Paquets compagnons

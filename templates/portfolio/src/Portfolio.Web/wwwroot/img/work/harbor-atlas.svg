@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" width="1600" height="1000" role="img" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0d3b4f"/><stop offset="1" stop-color="#1f7a8c"/></linearGradient></defs>
+  <rect width="1600" height="1000" fill="url(#g)"/>
+  <path d="M0 120 C 300 80, 520 160, 800 120 S 1300 80, 1600 140" fill="none" stroke="#e8f4f2" stroke-opacity="0.15" stroke-width="5"/>
+  <path d="M0 178 C 300 124, 520 232, 800 178 S 1300 124, 1600 205" fill="none" stroke="#e8f4f2" stroke-opacity="0.20" stroke-width="3"/>
+  <path d="M0 236 C 300 168, 520 304, 800 236 S 1300 168, 1600 270" fill="none" stroke="#e8f4f2" stroke-opacity="0.24" stroke-width="3"/>
+  <path d="M0 294 C 300 212, 520 376, 800 294 S 1300 212, 1600 335" fill="none" stroke="#e8f4f2" stroke-opacity="0.29" stroke-width="3"/>
+  <path d="M0 352 C 300 256, 520 448, 800 352 S 1300 256, 1600 400" fill="none" stroke="#e8f4f2" stroke-opacity="0.33" stroke-width="5"/>
+  <path d="M0 410 C 300 370, 520 450, 800 410 S 1300 370, 1600 430" fill="none" stroke="#e8f4f2" stroke-opacity="0.38" stroke-width="3"/>
+  <path d="M0 468 C 300 414, 520 522, 800 468 S 1300 414, 1600 495" fill="none" stroke="#e8f4f2" stroke-opacity="0.42" stroke-width="3"/>
+  <path d="M0 526 C 300 458, 520 594, 800 526 S 1300 458, 1600 560" fill="none" stroke="#e8f4f2" stroke-opacity="0.46" stroke-width="3"/>
+  <path d="M0 584 C 300 502, 520 666, 800 584 S 1300 502, 1600 625" fill="none" stroke="#e8f4f2" stroke-opacity="0.51" stroke-width="5"/>
+  <path d="M0 642 C 300 546, 520 738, 800 642 S 1300 546, 1600 690" fill="none" stroke="#e8f4f2" stroke-opacity="0.55" stroke-width="3"/>
+  <path d="M0 700 C 300 660, 520 740, 800 700 S 1300 660, 1600 720" fill="none" stroke="#e8f4f2" stroke-opacity="0.60" stroke-width="3"/>
+  <path d="M0 758 C 300 704, 520 812, 800 758 S 1300 704, 1600 785" fill="none" stroke="#e8f4f2" stroke-opacity="0.65" stroke-width="3"/>
+  <path d="M0 816 C 300 748, 520 884, 800 816 S 1300 748, 1600 850" fill="none" stroke="#e8f4f2" stroke-opacity="0.69" stroke-width="5"/>
+  <path d="M0 874 C 300 792, 520 956, 800 874 S 1300 792, 1600 915" fill="none" stroke="#e8f4f2" stroke-opacity="0.73" stroke-width="3"/>
+  <circle cx="1080" cy="470" r="22" fill="#ffd23f"/><circle cx="1080" cy="470" r="52" fill="none" stroke="#ffd23f" stroke-width="4" stroke-opacity="0.6"/>
+  <circle cx="470" cy="620" r="14" fill="#e8f4f2"/><circle cx="640" cy="380" r="14" fill="#e8f4f2"/>
+</svg>
