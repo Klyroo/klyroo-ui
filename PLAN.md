@@ -181,10 +181,10 @@ Calendar (sur `BxScheduler`).
 `Blux.UI.Tools`, `Blux.UI.Tools.Query` (sans Blazor), `Blux.UI.Tools.EntityFrameworkCore`, plus tard `Blux.UI.Spreadsheet` : même version exacte que Blux.UI,
 compilation Tailwind obligatoire. API d'extension publique dans le cœur. Faits : état d'URL (`QueryState`), modèle de requête et moteur en mémoire, application
 sur `IQueryable` (tests différentiels EF Core/SQLite, NativeAOT), `BxDataList` (tri, pagination, URL, SSR, prérendu persisté sous budget de taille,
-recherche, filtres texte/option/booléen/nombre/date avec presets et plages, fuseau de l'utilisateur via cookie) ; paquet `Blux.UI.Server` (`AddBluxServer`,
+recherche, filtres texte/option/booléen/nombre/date avec presets et plages, panneau de filtres en barre latérale ou en tiroir, fuseau de l'utilisateur via cookie) ; paquet `Blux.UI.Server` (`AddBluxServer`,
 `IBxRequestCookies` dans le cœur, cookies lus au rendu serveur) ; dans le cœur : case indéterminée, `BxInput.Debounce`/`SetValueAsync`, classes
 `FieldCssClassProvider` partout, `BxInfiniteScroll`, options avec compteurs/icônes/groupes, options chargées à la demande (`OptionsProvider`, `OptionsKey`)
-pour `BxSelectMenu`/`BxInputMenu`. Restent : panneau de filtres, facettes et filtres d'options distants, sélection, actions, curseur, colonnes, grille,
+pour `BxSelectMenu`/`BxInputMenu`. Restent : facettes et filtres d'options distants, sélection, actions, curseur, colonnes, grille,
 groupes, arbre, totaux, puis Forms, Analytics, Display/Media/FilePreview, Spreadsheet (ordre alterné avec les templates).
 
 Reste à faire :

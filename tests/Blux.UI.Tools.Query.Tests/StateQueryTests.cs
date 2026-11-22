@@ -187,6 +187,71 @@ public class StateQueryTests
         Assert.Equal([new FilterRule("age", Op.Is, Num(30))], state.Filters.Where(r => r.Key == "age"));
     }
 
+    private static FilterValue Values(params string[] values) => new FilterValue.List([.. values]);
+
+    [Fact]
+    public void The_repeats_of_an_option_key_are_one_list_in_the_order_they_came()
+    {
+        var state = Parse(("f.status", "Active"), ("f.status", "Paused"), ("f.status", "Archived"));
+
+        Assert.Equal([new FilterRule("status", Op.IsAnyOf, Values("Active", "Paused", "Archived"))], state.Filters.Where(r => r.Key != "archived"));
+    }
+
+    [Fact]
+    public void A_blank_repeat_is_skipped_and_all_blank_repeats_clear_the_filter()
+    {
+        Assert.Equal([new FilterRule("status", Op.IsAnyOf, Values("Active"))], Parse(("f.status", ""), ("f.status", "Active")).Filters.Where(r => r.Key != "archived"));
+        Assert.DoesNotContain(Parse(("f.status", ""), ("f.status", "")).Filters, r => r.Key == "status");
+    }
+
+    [Fact]
+    public void An_include_empty_repeat_adds_empty_rows_to_the_options_and_alone_it_is_a_rule_that_only_matches_them()
+    {
+        Assert.Equal([new FilterRule("status", Op.IsAnyOf, Values("Active", "Paused"), true)], Parse(("f.status", "Active"), ("f.status", "~"), ("f.status", "Paused")).Filters.Where(r => r.Key != "archived"));
+        Assert.Equal([new FilterRule("status", Op.IsAnyOf, Values(), true)], Parse(("f.status", "~")).Filters.Where(r => r.Key != "archived"));
+    }
+
+    [Fact]
+    public void The_repeats_of_a_key_with_an_operator_merge_too_and_an_option_with_is_takes_one_value()
+    {
+        Assert.Equal([new FilterRule("status", Op.IsNot, Values("Active", "Paused"))], Parse(("f.status.isNot", "Active"), ("f.status.isNot", "Paused")).Filters.Where(r => r.Key != "archived"));
+        Assert.Equal([new FilterRule("status", Op.Is, new FilterValue.Text("Active"))], Parse(("f.status.is", "Active")).Filters.Where(r => r.Key != "archived"));
+    }
+
+    [Fact]
+    public void A_value_with_a_comma_in_a_repeat_stays_one_option_when_the_form_escapes_it()
+    {
+        var state = Parse(("f.status", "A%2CB"), ("f.status", "C"));
+
+        Assert.Equal([new FilterRule("status", Op.IsAnyOf, Values("A,B", "C"))], state.Filters.Where(r => r.Key != "archived"));
+    }
+
+    [Fact]
+    public void A_repeated_key_of_a_single_value_filter_keeps_the_first_value_and_a_tilde_repeat_adds_empty_rows()
+    {
+        Assert.Equal([new FilterRule("name", Op.Contains, new FilterValue.Text("ann"), true)], Parse(("f.name", "ann"), ("f.name", "~")).Filters.Where(r => r.Key != "archived"));
+        Assert.Equal([new FilterRule("age", Op.Is, Num(30), true)], Parse(("f.age", "30"), ("f.age", "~"), ("f.age", "31")).Filters.Where(r => r.Key != "archived"));
+        Assert.Equal([new FilterRule("name", Op.Contains, new FilterValue.Text("ann"))], Parse(("f.name", ""), ("f.name", "ann")).Filters.Where(r => r.Key != "archived"));
+    }
+
+    [Fact]
+    public void A_range_sent_as_two_fields_keeps_include_empty_from_a_companion_between_field()
+    {
+        var state = Parse(("f.age.from", "20"), ("f.age.to", "30"), ("f.age.between", "~"));
+
+        Assert.Equal([new FilterRule("age", Op.Between, new FilterValue.Range(Num(20), Num(30)), true)], state.Filters.Where(r => r.Key != "archived"));
+        Assert.DoesNotContain(Parse(("f.age.from", ""), ("f.age.to", ""), ("f.age.between", "~")).Filters, r => r.Key == "age");
+    }
+
+    [Fact]
+    public void A_value_less_operator_is_read_from_a_tilde_and_written_back_as_one()
+    {
+        var state = Parse(("f.email.isEmpty", "~"));
+
+        Assert.Equal([new FilterRule("email", Op.IsEmpty)], state.Filters.Where(r => r.Key != "archived"));
+        Assert.Equal("~", Write(state)["f.email.isEmpty"]);
+    }
+
     [Theory]
     [InlineData("-5", 1)]
     [InlineData("0", 1)]

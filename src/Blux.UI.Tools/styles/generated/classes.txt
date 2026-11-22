@@ -7,6 +7,7 @@
 [&_bx-popover]:flex
 [&_bx-popover]:min-w-0
 absolute
+accent-(--blux-primary-text)
 align-middle
 animate-spin
 aria-busy:opacity-60
@@ -17,8 +18,10 @@ border-(--blux-border)
 border-(--blux-border-accented)
 border-b
 border-s
+border-t
 break-words
 col-span-2
+cursor-pointer
 disabled:cursor-not-allowed
 end-1
 flex
@@ -29,6 +32,7 @@ focus-visible:outline-(--blux-primary-text)
 focus-visible:outline-2
 focus-visible:outline-offset-1
 font-medium
+font-normal
 font-semibold
 gap-0.5
 gap-1
@@ -59,18 +63,22 @@ m-0
 max-h-56
 max-h-72
 max-h-96
+max-h-none
 max-w-48
 max-w-[calc(100vw-1rem)]
 max-w-full
 max-w-sm
+min-h-11
 min-h-8
 min-h-9
 min-w-0
+min-w-5
 min-w-8
 min-w-full
 motion-reduce:animate-none
 mt-2
 my-auto
+overflow-visible
 overflow-x-auto
 overflow-y-auto
 p-0
@@ -80,7 +88,9 @@ p-3
 pb-3
 pe-9
 placeholder:text-(--blux-text-dimmed)
+pt-2
 px-1
+px-1.5
 px-2
 px-3
 px-4
@@ -95,6 +105,7 @@ py-5
 relative
 rounded-(--blux-radius)
 rounded-e-(--blux-radius)
+rounded-full
 rounded-s-(--blux-radius)
 self-start
 shrink-0
