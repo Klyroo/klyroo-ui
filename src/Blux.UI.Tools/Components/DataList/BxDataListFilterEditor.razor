@@ -70,6 +70,12 @@
     /// <summary>Change it to drop what was typed and show the filter as the list has it: the popover around the editor does it each time it closes.</summary>
     [Parameter] public int ResetToken { get; set; }
 
+    // Set by a filter panel: in the Submit apply mode the changes are staged there instead of applied, and statically rendered the editor lives in the one GET form of the panel.
+    [CascadingParameter] private FilterDraftScope? Scope { get; set; }
+
+    // Statically rendered inside the form of a filter panel: no form of its own, no Apply button; options are checkboxes and yes / no radios of that form.
+    private bool Embedded => Scope?.Embedded == true;
+
     private bool Live => ApplyMode == DataListApplyMode.Live;
 
     private FilterRule? Rule => Context.RuleFor(Key);
@@ -99,15 +105,18 @@
             _syncInput = _loaded;
             _token = ResetToken;
             _loaded = true;
-            Load(rule);
+            // A panel that staged a change for this filter (its Clear filters) shows the staged rule, and goes on staging it.
+            if (Scope is not null && Scope.TryGetStaged(Key, out var staged)) Load(staged, rule, unstage: false);
+            else Load(rule);
             return;
         }
         if (Equals(rule, _seen)) return;
         _seen = rule;
         if (Equals(rule, BuildRule()))
         {
-            // What this editor sent has come back.
+            // What this editor sent has come back (or the list now has what the panel staged for it): nothing is pending any more.
             _written.Clear();
+            Scope?.Unstage(Key);
             return;
         }
         // A rule that an older report of this editor wrote is on its way home: a later keystroke would be erased by it.
@@ -118,9 +127,14 @@
     }
 
     // The draft from the rule of the list (Back, a link, a reset, a typed address, or the first render).
-    private void Load(FilterRule? rule)
+    private void Load(FilterRule? rule) => Load(rule, rule, unstage: true);
+
+    // <paramref name="seen"/> is the rule of the list the draft starts from: it differs from the draft when the panel staged a change.
+    private void Load(FilterRule? rule, FilterRule? seen, bool unstage)
     {
-        _seen = rule;
+        // The draft is the list again: nothing of this filter stays staged.
+        if (unstage) Scope?.Unstage(Key);
+        _seen = seen;
         _op = rule?.Operator is { } op && _filter!.AllowedOperators.Contains(op) ? op : _filter!.DefaultOperator;
         _text = rule?.Value is FilterValue.Text text && _filter!.Kind == FilterKind.Text ? text.Value : "";
         _selected = rule?.Value switch
@@ -387,6 +401,13 @@
     private void Commit(bool text)
     {
         var rule = BuildRule();
+        if (Scope is { Deferred: true })
+        {
+            // Staged by a panel that applies everything at once: the list is untouched, and a draft that is what the list has needs no staging.
+            if (Equals(rule, Rule)) Scope.Unstage(Key);
+            else Scope.Stage(Key, rule);
+            return;
+        }
         var next = DataListContext<TItem>.WithFilter(Context.State, Key, rule);
         var history = text && _lastTextState is not null && Context.State.Equals(_lastTextState) ? QueryHistory.Replace : QueryHistory.Push;
         _lastTextState = text ? next : null;
@@ -616,7 +637,16 @@
         @<BxButton Href="@href" Label="@label" Variant="@(active ? ButtonVariant.Solid : ButtonVariant.Outline)" Color="@(active ? BxColor.Primary : BxColor.Neutral)" Size="BxSize.Sm"
                    aria-current="@(active ? "true" : null)" aria-label="@name" data-slot="filter-choice" />;
 
-    private RenderFragment Static =>
+    // In the form of a panel a rule without a value (is empty, is not empty) has no field: it goes back as it came (a tilde), so applying the form does not drop it.
+    private RenderFragment Static => Embedded && Rule is { Operator: FilterOperator.IsEmpty or FilterOperator.IsNotEmpty } ? StaticValueless : StaticFields;
+
+    private RenderFragment StaticValueless =>
+        @<text>
+            <p class="@_slots["filterHint"]" data-slot="filter-valueless">@ToolsMessages.OperatorLabel(Rule!.Operator)</p>
+            <input type="hidden" name="@Context.FilterFieldName(Key, Rule.Operator)" value="@FilterRuleText.IncludeEmptyToken" />
+        </text>;
+
+    private RenderFragment StaticFields =>
         @<text>
             @{
                 var rule = Rule;
@@ -634,21 +664,16 @@
             @switch (_filter.Kind)
             {
                 case FilterKind.Text:
-                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
-                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
-                        {
-                            <input type="hidden" name="@name" value="@value" />
-                        }
-                        <input type="text" name="@Context.FilterFieldName(Key, op)" value="@(rule?.Value is FilterValue.Text text ? text.Value : "")" class="@_slots["filterInput"]"
-                               placeholder="@ToolsMessages.FilterTextPlaceholder" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" autocomplete="off" data-slot="filter-input" />
-                        <div class="@_slots["filterActions"]">
-                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
-                        </div>
-                    </form>
+                    @Shell(StaticTextFields)
                     break;
                 case FilterKind.Option:
                     var selected = ValuesOf(rule);
                     var choices = Context.FilterChoices(Key, selected);
+                    if (Embedded)
+                    {
+                        @EmbeddedOptions(rule, op, selected, choices)
+                        break;
+                    }
                     <ul class="@_slots["filterOptions"]" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-options">
                         @foreach (var choice in choices)
                         {
@@ -681,6 +706,11 @@
                     </ul>
                     break;
                 case FilterKind.Boolean:
+                    if (Embedded)
+                    {
+                        @EmbeddedBoolean(rule)
+                        break;
+                    }
                     <div class="@_slots["filterChoices"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean">
                         @{
                             var current = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : (bool?)null;
@@ -691,36 +721,7 @@
                     </div>
                     break;
                 case FilterKind.Number:
-                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
-                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
-                        {
-                            <input type="hidden" name="@name" value="@value" />
-                        }
-                        @if (op == FilterOperator.Between)
-                        {
-                            var range = rule?.Value as FilterValue.Range;
-                            <div class="@_slots["filterRange"]">
-                                <div class="@_slots["filterField"]">
-                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
-                                    <input type="number" name="@Context.FieldName("f." + Key + ".from")" value="@NumberText(range?.From)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
-                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-slot="filter-input" />
-                                </div>
-                                <div class="@_slots["filterField"]">
-                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
-                                    <input type="number" name="@Context.FieldName("f." + Key + ".to")" value="@NumberText(range?.To)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
-                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-slot="filter-input" />
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <input type="number" name="@Context.FilterFieldName(Key, op)" value="@NumberText(rule?.Value)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
-                                   aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-input" />
-                        }
-                        <div class="@_slots["filterActions"]">
-                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
-                        </div>
-                    </form>
+                    @Shell(StaticNumberFields)
                     break;
                 case FilterKind.Date:
                     <div class="@_slots["filterChoices"]" role="group" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterPresetsFor, _label)" data-slot="filter-presets">
@@ -730,38 +731,146 @@
                             @Link(Href(presetRule), DataListDates.Label(preset, ToolsMessages), presetRule is not null && Equals(presetRule, rule))
                         }
                     </div>
-                    <form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
-                        @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
-                        {
-                            <input type="hidden" name="@name" value="@value" />
-                        }
-                        @if (op == FilterOperator.Between)
-                        {
-                            var range = rule?.Value as FilterValue.Range;
-                            <div class="@_slots["filterRange"]">
-                                <div class="@_slots["filterField"]">
-                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
-                                    <input type="@DateInputType(range?.From)" name="@Context.FieldName("f." + Key + ".from")" value="@DateText(range?.From)" step="@DateStep(range?.From)" class="@_slots["filterInput"]"
-                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-slot="filter-input" />
-                                </div>
-                                <div class="@_slots["filterField"]">
-                                    <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
-                                    <input type="@DateInputType(range?.To)" name="@Context.FieldName("f." + Key + ".to")" value="@DateText(range?.To)" step="@DateStep(range?.To)" class="@_slots["filterInput"]"
-                                           aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-slot="filter-input" />
-                                </div>
-                            </div>
-                        }
-                        else
-                        {
-                            <input type="@DateInputType(rule?.Value)" name="@Context.FilterFieldName(Key, op)" value="@DateText(rule?.Value)" step="@DateStep(rule?.Value)" class="@_slots["filterInput"]"
-                                   aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-input" />
-                        }
-                        <div class="@_slots["filterActions"]">
-                            <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
-                        </div>
-                    </form>
+                    @Shell(StaticDateFields)
                     break;
             }
+        </text>;
+
+    // Whether the filter has a default rule: the form then also sends a blank field for it, because an empty parameter is how the user removes the default.
+    private bool HasDefaultRule => Context.Schema?.DefaultState.Filters.Any(r => r.Key == Key) == true;
+
+    // Options in the form of a panel: a checkbox per option (a radio with <c>is</c>, which takes one value) and one for the empty rows, all under the one name of the filter, which the address reader merges.
+    // Values are escaped the way a list is in the address, so a comma in an option stays in it.
+    private RenderFragment EmbeddedOptions(FilterRule? rule, FilterOperator op, List<string> selected, IReadOnlyList<FilterChoice> choices)
+    {
+        var name = Context.FilterFieldName(Key, op);
+        var type = op == FilterOperator.Is ? "radio" : "checkbox";
+        var includeEmpty = rule?.IncludeEmpty ?? false;
+        return @<text>
+            @if (HasDefaultRule)
+            {
+                <input type="hidden" name="@name" value="" />
+            }
+            <ul class="@_slots["filterOptions"]" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-options">
+                @foreach (var choice in choices)
+                {
+                    <li class="@_slots["filterOption"]" data-value="@choice.Value">
+                        <label class="@_slots["filterNativeLabel"]">
+                            <input type="@type" name="@name" value="@FilterRuleText.Escape(choice.Value)" checked="@selected.Contains(choice.Value)" class="@_slots["filterNativeInput"]" data-slot="filter-option-input" />
+                            <span class="truncate">@choice.Label</span>
+                        </label>
+                        @if (choice.Count is { } count)
+                        {
+                            <span class="@_slots["filterOptionCount"]"><span class="sr-only">, </span>@count.ToString("N0", FormatCulture)</span>
+                        }
+                    </li>
+                }
+                @if (choices.Count == 0)
+                {
+                    <li class="@_slots["filterEmpty"]">@ToolsMessages.FilterNoOptions</li>
+                }
+                <li class="@_slots["filterOption"]">
+                    <label class="@_slots["filterNativeLabel"]">
+                        <input type="checkbox" name="@name" value="@FilterRuleText.IncludeEmptyToken" checked="@includeEmpty" class="@_slots["filterNativeInput"]" data-slot="filter-include-empty" />
+                        <span class="truncate">@ToolsMessages.FilterIncludeEmpty</span>
+                    </label>
+                </li>
+            </ul>
+        </text>;
+    }
+
+    // Yes, No and Any as radios of the form of a panel. Any sends a blank value, which the browser leaves out of the address unless the filter has a default rule to remove.
+    private RenderFragment EmbeddedBoolean(FilterRule? rule)
+    {
+        var name = Context.FilterFieldName(Key, FilterOperator.Is);
+        var current = rule?.Value is FilterValue.Boolean b ? (rule.Operator == FilterOperator.IsNot ? !b.Value : b.Value) : (bool?)null;
+        return @<div class="@_slots["filterChoices"]" role="radiogroup" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-slot="filter-boolean">
+            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="true" checked="@(current == true)" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterYes</label>
+            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="false" checked="@(current == false)" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterNo</label>
+            <label class="@_slots["filterNativeLabel"]"><input type="radio" name="@name" value="" checked="@(current is null)" data-bx-prune="@Prune" class="@_slots["filterNativeInput"]" />@ToolsMessages.FilterAny</label>
+        </div>;
+    }
+
+    // A tilde next to the field of a text, number or date rule that also matches empty rows (only an address can say so): the field holds the value, so the rule keeps its empty rows when the form is applied.
+    private RenderFragment IncludeEmptyField(string name) =>
+        Embedded && Rule?.IncludeEmpty == true ? @<input type="hidden" name="@name" value="@FilterRuleText.IncludeEmptyToken" /> : @<text></text>;
+
+    // The GET form around the fields of one editor: the other parameters of the address as hidden fields and an Apply button. Embedded in a form of its own, the fields are left bare.
+    private RenderFragment Shell(RenderFragment fields)
+    {
+        if (Embedded) return fields;
+        return @<form method="get" action="@Context.Path" data-enhance class="@_slots["filterField"]" data-slot="filter-form">
+            @foreach (var (name, value) in Context.FormFields(DataListContext<TItem>.WithFilter(Context.State, Key, null), Context.FilterKeyNames(Key)))
+            {
+                <input type="hidden" name="@name" value="@value" />
+            }
+            @fields
+            <div class="@_slots["filterActions"]">
+                <BxButton Type="submit" Label="@ToolsMessages.FilterApply" Size="BxSize.Sm" data-slot="filter-apply" />
+            </div>
+        </form>;
+    }
+
+    // Marks the fields of an embedded editor whose blank value the browser leaves out of the address (see prune-blank.js): only where the filter has no default rule, because there an empty parameter is how the user removes it.
+    private string? Prune => Embedded && Context.Schema?.DefaultState.Filters.Any(r => r.Key == Key) != true ? "" : null;
+
+    private FilterOperator StaticOperator => Rule?.Operator ?? _filter!.DefaultOperator;
+
+    private RenderFragment StaticTextFields =>
+        @<text><input type="text" name="@Context.FilterFieldName(Key, StaticOperator)" value="@(Rule?.Value is FilterValue.Text text ? text.Value : "")" class="@_slots["filterInput"]"
+                placeholder="@ToolsMessages.FilterTextPlaceholder" aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" autocomplete="off" data-bx-prune="@Prune" data-slot="filter-input" />
+        @IncludeEmptyField(Context.FilterFieldName(Key, StaticOperator))</text>;
+
+    private RenderFragment StaticNumberFields =>
+        @<text>
+            @if (StaticOperator == FilterOperator.Between)
+            {
+                var range = Rule?.Value as FilterValue.Range;
+                <div class="@_slots["filterRange"]">
+                    <div class="@_slots["filterField"]">
+                        <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                        <input type="number" name="@Context.FieldName("f." + Key + ".from")" value="@NumberText(range?.From)" min="@NumberText(_filter!.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                               aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+                    </div>
+                    <div class="@_slots["filterField"]">
+                        <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                        <input type="number" name="@Context.FieldName("f." + Key + ".to")" value="@NumberText(range?.To)" min="@NumberText(_filter.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                               aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <input type="number" name="@Context.FilterFieldName(Key, StaticOperator)" value="@NumberText(Rule?.Value)" min="@NumberText(_filter!.Min)" max="@NumberText(_filter.Max)" step="any" class="@_slots["filterInput"]"
+                       aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+            }
+            @IncludeEmptyField(StaticOperator == FilterOperator.Between ? Context.FieldName("f." + Key + ".between") : Context.FilterFieldName(Key, StaticOperator))
+        </text>;
+
+    private RenderFragment StaticDateFields =>
+        @<text>
+            @if (StaticOperator == FilterOperator.Between)
+            {
+                var range = Rule?.Value as FilterValue.Range;
+                <div class="@_slots["filterRange"]">
+                    <div class="@_slots["filterField"]">
+                        <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterFrom</span>
+                        <input type="@DateInputType(range?.From)" name="@Context.FieldName("f." + Key + ".from")" value="@DateText(range?.From)" step="@DateStep(range?.From)" class="@_slots["filterInput"]"
+                               aria-label="@string.Format(FormatCulture, ToolsMessages.FilterFromFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+                    </div>
+                    <div class="@_slots["filterField"]">
+                        <span class="@_slots["filterFieldLabel"]" aria-hidden="true">@ToolsMessages.FilterTo</span>
+                        <input type="@DateInputType(range?.To)" name="@Context.FieldName("f." + Key + ".to")" value="@DateText(range?.To)" step="@DateStep(range?.To)" class="@_slots["filterInput"]"
+                               aria-label="@string.Format(FormatCulture, ToolsMessages.FilterToFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <input type="@DateInputType(Rule?.Value)" name="@Context.FilterFieldName(Key, StaticOperator)" value="@DateText(Rule?.Value)" step="@DateStep(Rule?.Value)" class="@_slots["filterInput"]"
+                       aria-label="@string.Format(FormatCulture, ToolsMessages.FilterValueFor, _label)" data-bx-prune="@Prune" data-slot="filter-input" />
+            }
+            @IncludeEmptyField(StaticOperator == FilterOperator.Between ? Context.FieldName("f." + Key + ".between") : Context.FilterFieldName(Key, StaticOperator))
         </text>;
 
     private static string? NumberText(FilterValue? value) => value is FilterValue.Number n ? NumberText(n.Value) : null;

@@ -110,6 +110,26 @@ public static class InvoiceDateFilterData
         .DefaultPageSize(10));
 }
 
+/// <summary>The schema of the filter panel examples: one filter of each kind (customer text, status options with counts, amount number, issued date, reviewed yes / no).</summary>
+public static class InvoicePanelData
+{
+    /// <summary>The invoice schema with a text, an option, a number, a date and a boolean filter.</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .RowLabel(i => $"Invoice {i.Id}")
+        .Search(i => i.Customer, i => i.Status)
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable().Filter(DataListFilter.Text().WithLabel("Customer")))
+        .Field(i => i.Status, f => f.Sortable().Filter(DataListFilter.Option(
+            new DataListFilterOption("Paid", "Paid"), new DataListFilterOption("Pending", "Pending"),
+            new DataListFilterOption("Overdue", "Overdue"), new DataListFilterOption("Draft", "Draft")).WithLabel("Status").WithFacets()))
+        .Field(i => i.Amount, f => f.Sortable().Filter(DataListFilter.Number(0, 10, 700).WithLabel("Amount").WithNumberDisplay(DataListNumberDisplay.InputAndSlider).WithNumberFormat("N2")))
+        .Field(i => i.Issued, f => f.Sortable().Filter(DataListFilter.Date().WithLabel("Issued").WithMaxRangeDays(92)))
+        .Field(i => i.Reviewed, f => f.Filter(DataListFilter.Boolean().WithLabel("Reviewed")))
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(10));
+}
+
 /// <summary>
 /// The metadata that serializes the result of a prerender: a data list with <c>ResultJson</c> hands its first result to the interactive render, which shows it
 /// without loading it again. The attributes mirror the ones of <c>DataListJsonContext</c>.

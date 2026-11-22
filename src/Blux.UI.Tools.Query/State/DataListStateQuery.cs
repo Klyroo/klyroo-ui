@@ -18,7 +18,8 @@ namespace Blux.UI.Tools.Query;
 /// A filter value is a comma-separated list; <c>,</c> <c>~</c> and <c>%</c> in a value are escaped as <c>%2C</c> <c>%7E</c> <c>%25</c>; a bare
 /// <c>~</c> token means "include empty rows"; a range is <c>from..to</c>. Values equal to the schema's <see cref="DataListSchema.DefaultState"/> are
 /// omitted. A default filter rule that the user removed is written as its key with an empty value. The state keeps one rule per key; with two, the
-/// default rule of that key is not restored. A range may also be written as two keys, <c>f.&lt;key&gt;.from</c> and <c>f.&lt;key&gt;.to</c> (what a GET form can send): they read as <c>f.&lt;key&gt;.between</c>, and a state is always written back with the latter. Operators are matched ignoring case. A filter key may contain dots: the whole text after <c>f.</c> is tried
+/// default rule of that key is not restored. A filter key that is repeated (<c>f.status=Paid&amp;f.status=Draft</c>, what a form with a checkbox per option sends) is read as one value: an option filter takes all of them,
+/// another kind keeps the first one that is not blank, plus a repeat that is exactly <c>~</c> (include empty rows); the address the app writes is always one comma list. A range may also be written as two keys, <c>f.&lt;key&gt;.from</c> and <c>f.&lt;key&gt;.to</c> (what a GET form can send): they read as <c>f.&lt;key&gt;.between</c>, and a state is always written back with the latter. Operators are matched ignoring case. A filter key may contain dots: the whole text after <c>f.</c> is tried
 /// as a key first, then the part before the last dot as a key and the part after as an operator.
 /// </summary>
 public static class DataListStateQuery
@@ -62,7 +63,7 @@ public static class DataListStateQuery
     /// bad input: unknown filter keys, operators the filter does not allow, values that do not parse, unknown or repeated sort keys and an unknown layout
     /// are dropped (the default applies); the page is clamped to 1..<see cref="DataListState.MaxPage"/> and the page size to 1..<see cref="DataListSchema.MaxPageSize"/>.
     /// </summary>
-    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts. Null values are ignored.</param>
+    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts, except that the repeats of a filter key are merged (see the remarks). Null values are ignored.</param>
     /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
     /// <param name="prefix">The key prefix given to <see cref="ToQuery"/>.</param>
     public static DataListState FromQuery(IEnumerable<KeyValuePair<string, string?>> query, DataListSchema schema, string? prefix = null) =>
@@ -72,7 +73,7 @@ public static class DataListStateQuery
     /// <see cref="FromQuery(IEnumerable{KeyValuePair{string, string?}}, DataListSchema, string?)"/> for a request that has a time zone: a date-time in a filter value without an offset (<c>2026-11-05T14:00</c>, what the
     /// <c>datetime-local</c> field of a static form posts) is the wall clock of that zone, not UTC. A date (<c>2026-11-05</c>) and a value with an offset do not depend on it.
     /// </summary>
-    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts. Null values are ignored.</param>
+    /// <param name="query">The decoded key and value pairs; when a key repeats, the first one counts, except that the repeats of a filter key are merged (see the remarks). Null values are ignored.</param>
     /// <param name="schema">The schema giving the defaults, the filter kinds and the sortable keys.</param>
     /// <param name="prefix">The key prefix given to <see cref="ToQuery"/>.</param>
     /// <param name="timeZone">The IANA id of the zone of the user; null or an unknown id means UTC.</param>
@@ -82,8 +83,23 @@ public static class DataListStateQuery
         ArgumentNullException.ThrowIfNull(schema);
         var defaults = schema.DefaultState;
         var pairs = new Dictionary<string, string>(StringComparer.Ordinal);
+        var filterNames = Key(prefix, "f.");
+        Dictionary<string, List<string>>? repeated = null;
         foreach (var (key, value) in query)
-            if (key is not null && value is not null) pairs.TryAdd(key, value);
+        {
+            if (key is null || value is null) continue;
+            if (pairs.TryAdd(key, value)) continue;
+            // A GET form sends a checkbox per option under one name: the repeats of a filter key are read as one value.
+            if (!key.StartsWith(filterNames, StringComparison.Ordinal)) continue;
+            repeated ??= new(StringComparer.Ordinal);
+            if (!repeated.TryGetValue(key, out var all)) repeated[key] = all = [pairs[key]];
+            all.Add(value);
+        }
+        if (repeated is not null)
+        {
+            foreach (var (name, values) in repeated)
+                if (TryResolve(name[filterNames.Length..], schema, out _, out _, out var repeatedFilter)) pairs[name] = MergeRepeated(repeatedFilter.Kind, values);
+        }
 
         var search = pairs.GetValueOrDefault(Key(prefix, "q")) ?? defaults.Search;
 
@@ -111,6 +127,18 @@ public static class DataListStateQuery
 
         var cursor = pairs.GetValueOrDefault(Key(prefix, "c"));
         return new DataListState(search, filters, sort, page, size, layout, string.IsNullOrEmpty(cursor) ? null : cursor);
+    }
+
+    // The value of a filter key that appears several times. An option filter takes every value (the tokens of all of them, in order); another kind keeps the first value that is not blank (the first one counts, as before)
+    // plus the include-empty token if any repeat is exactly that token, which is how a form says "this rule also matches empty rows" next to the field that holds the value.
+    private static string MergeRepeated(FilterKind kind, List<string> values)
+    {
+        var filled = values.Where(v => v.Length > 0).ToList();
+        if (kind == FilterKind.Option) return string.Join(',', filled);
+        var payload = filled.FirstOrDefault(v => v != FilterRuleText.IncludeEmptyToken);
+        var includeEmpty = filled.Contains(FilterRuleText.IncludeEmptyToken);
+        if (payload is null) return includeEmpty ? FilterRuleText.IncludeEmptyToken : "";
+        return includeEmpty ? payload + "," + FilterRuleText.IncludeEmptyToken : payload;
     }
 
     private static string Key(string? prefix, string name) => string.IsNullOrEmpty(prefix) ? name : prefix + "." + name;
@@ -213,7 +241,9 @@ public static class DataListStateQuery
         {
             if (fromUrl.Any(r => r.Key == key && r.Operator == FilterOperator.Between)) continue;
             if (from.Length == 0 && to.Length == 0) { cleared.Add(key); continue; }
-            var rule = FilterRuleText.Parse(filter, key, FilterOperator.Between, from + ".." + to, zone);
+            // The include-empty token of a range travels in a companion field with the key a rule of the app uses (f.<key>.between=~): two ends cannot carry it.
+            var includeEmpty = pairs.TryGetValue(filterPrefix + key + ".between", out var companion) && companion.Split(',').Contains(FilterRuleText.IncludeEmptyToken);
+            var rule = FilterRuleText.Parse(filter, key, FilterOperator.Between, from + ".." + to + (includeEmpty ? "," + FilterRuleText.IncludeEmptyToken : ""), zone);
             if (rule is not null) fromUrl.Add(rule);
         }
     }

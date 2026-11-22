@@ -70,6 +70,20 @@ public sealed record DataListUi : ISlotOverrides
     public string? FilterPresets { get; init; }
     public string? FilterHint { get; init; }
     public string? FilterPopoverWide { get; init; }
+    public string? FilterPanel { get; init; }
+    public string? FilterPanelHeader { get; init; }
+    public string? FilterPanelTitle { get; init; }
+    public string? FilterPanelCount { get; init; }
+    public string? FilterPanelDescription { get; init; }
+    public string? FilterPanelSection { get; init; }
+    public string? FilterPanelTrigger { get; init; }
+    public string? FilterPanelContent { get; init; }
+    public string? FilterPanelEditor { get; init; }
+    public string? FilterPanelFooter { get; init; }
+    public string? FilterPanelEmpty { get; init; }
+    public string? FilterNativeInput { get; init; }
+    public string? FilterNativeLabel { get; init; }
+    public string? FilterPanelResults { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -138,6 +152,20 @@ public sealed record DataListUi : ISlotOverrides
         "filterPresets" => FilterPresets,
         "filterHint" => FilterHint,
         "filterPopoverWide" => FilterPopoverWide,
+        "filterPanel" => FilterPanel,
+        "filterPanelHeader" => FilterPanelHeader,
+        "filterPanelTitle" => FilterPanelTitle,
+        "filterPanelCount" => FilterPanelCount,
+        "filterPanelDescription" => FilterPanelDescription,
+        "filterPanelSection" => FilterPanelSection,
+        "filterPanelTrigger" => FilterPanelTrigger,
+        "filterPanelContent" => FilterPanelContent,
+        "filterPanelEditor" => FilterPanelEditor,
+        "filterPanelFooter" => FilterPanelFooter,
+        "filterPanelEmpty" => FilterPanelEmpty,
+        "filterNativeInput" => FilterNativeInput,
+        "filterNativeLabel" => FilterNativeLabel,
+        "filterPanelResults" => FilterPanelResults,
         _ => null,
     };
 }
