@@ -12,7 +12,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
 {
     private async Task OpenList(string mode, string query = "")
     {
-        await Page.GotoAsync($"/{mode}/components/data-list{query}");
+        await Page.GotoAsync($"/{mode}/components/data-list-filters{query}");
         await WaitForList(Page, mode);
     }
 
@@ -76,7 +76,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         // A navigation before the circuit or the runtime is up would be lost.
         if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
-        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list{query}");
+        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list-filters{query}");
         await Page.EvaluateAsync("() => window.__enhanced");
         // The page of the list is there (the address changes before the content, and the page left has no skeleton rows to wait for).
         await Assertions.Expect(Number).ToBeVisibleAsync(new() { Timeout = 30_000 });
@@ -464,7 +464,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         await context.AddCookiesAsync([new() { Name = "blux-timezone", Value = "Pacific/Kiritimati", Url = BaseUrl }]);
         var page = await context.NewPageAsync();
 
-        await page.GotoAsync($"/{mode}/components/data-list?dat.f.issued=2026-01-03");
+        await page.GotoAsync($"/{mode}/components/data-list-filters?dat.f.issued=2026-01-03");
         await WaitForList(page, mode);
 
         await Assertions.Expect(page.GetByTestId("list-date").Locator("[data-slot=result-count]")).ToHaveTextAsync("1–1 of 1");
@@ -486,7 +486,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
     public async Task Texts_and_dates_follow_the_language_of_the_user(string mode)
     {
         var page = await NewPage("fr", "fr");
-        await page.GotoAsync($"/{mode}/components/data-list?num.f.amount=86.25&dat.f.issued.between=2026-01-03..2026-01-09");
+        await page.GotoAsync($"/{mode}/components/data-list-filters?num.f.amount=86.25&dat.f.issued.between=2026-01-03..2026-01-09");
         await WaitForList(page, mode);
         var number = page.GetByTestId("list-number");
         var date = page.GetByTestId("list-date");

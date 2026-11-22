@@ -232,6 +232,7 @@
     {
         _claim?.ThrowIfConflicted();
         UpdateSlots();
+        ApplySelectedKeysParameter();
     }
 
     protected override Task OnParametersSetAsync() =>
@@ -256,7 +257,11 @@
                 controller.Provider = DataListController<TItem>.CreateProvider(controller.Schema, Items, Provider, Queryable, _executor);
                 reload = sourceChanged;
                 // Other rows: the counts of the old ones do not hold.
-                if (sourceChanged) controller.DropFacets();
+                if (sourceChanged)
+                {
+                    controller.DropFacets();
+                    MarkSelectionStale();
+                }
             }
         }
         if (State is not null && !State.Equals(_lastStateParam))
@@ -288,7 +293,7 @@
     {
         _schema ??= BuildImplicitSchema();
         var controller = Controller = new DataListController<TItem>(_schema, DataListController<TItem>.CreateProvider(_schema, Items, Provider, Queryable, _executor));
-        controller.Changed += _context.NotifyChanged;
+        controller.Changed += OnControllerChanged;
         _lastItems = Items;
         _lastQueryable = Queryable;
         _lastProvider = Provider;
@@ -420,6 +425,7 @@
             if (UrlSync && Query.Interactive == true) Query.SetMany(Changes(loaded), QueryHistory.Replace);
             _ = StateChanged.InvokeAsync(loaded);
         }
+        ReconcileSelection();
         // The controller announced the load; this announces what only the list knows.
         if (changed || force) _context.NotifyChanged();
     }
@@ -467,6 +473,7 @@
 
     internal Task RefreshAsync() => Controller is null ? Task.CompletedTask : InvokeAsync(async () =>
     {
+        MarkSelectionStale();
         await Controller.RefreshAsync();
         if (!_disposed) AfterLoad(force: false);
     });
@@ -645,7 +652,7 @@
         }
         if (Controller is { } controller)
         {
-            controller.Changed -= _context.NotifyChanged;
+            controller.Changed -= OnControllerChanged;
             controller.Dispose();
         }
     }

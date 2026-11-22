@@ -84,6 +84,15 @@ public sealed record DataListUi : ISlotOverrides
     public string? FilterNativeInput { get; init; }
     public string? FilterNativeLabel { get; init; }
     public string? FilterPanelResults { get; init; }
+    public string? SelectCell { get; init; }
+    public string? RowSelected { get; init; }
+    public string? SelectionActions { get; init; }
+    public string? SelectionBar { get; init; }
+    public string? SelectionCount { get; init; }
+    public string? SelectionLive { get; init; }
+    public string? SelectionScope { get; init; }
+    public string? SelectionGroup { get; init; }
+    public string? ActionsDropdown { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -166,6 +175,15 @@ public sealed record DataListUi : ISlotOverrides
         "filterNativeInput" => FilterNativeInput,
         "filterNativeLabel" => FilterNativeLabel,
         "filterPanelResults" => FilterPanelResults,
+        "selectCell" => SelectCell,
+        "rowSelected" => RowSelected,
+        "selectionActions" => SelectionActions,
+        "selectionBar" => SelectionBar,
+        "selectionCount" => SelectionCount,
+        "selectionLive" => SelectionLive,
+        "selectionScope" => SelectionScope,
+        "selectionGroup" => SelectionGroup,
+        "actionsDropdown" => ActionsDropdown,
         _ => null,
     };
 }

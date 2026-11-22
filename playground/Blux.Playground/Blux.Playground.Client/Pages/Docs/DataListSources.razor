@@ -63,10 +63,39 @@
         server, and says that searching the rest needs JavaScript. A counted option the resolver does not know is not listed. The labels travel with the prerendered result (and count in its size), so the interactive render shows them at once.
         The remote engine behind the editors, <code>BxRemoteOptions</code>, is public API of <code>Blux.UI</code>.
     </p>
+
+    <h2>Selection and bulk actions</h2>
+    <p>
+        A list with a <code>BxDataListSelectionActions</code> bar (or <code>Selectable</code>, or a bound <code>SelectedKeys</code>) shows a checkbox column and needs a <code>RowKey</code> in the schema.
+        A list in memory keeps the selected rows across pages while the search and the filters still match them; a list over a provider or a <code>Queryable</code> keeps the rows of the page on screen only.
+        When the source returns a <code>TotalCount</code> the bar offers "Select all N results", and an action then receives <code>Scope = DataListActionScope.All</code> with the
+        <code>DataListRequest</code> of the query on screen (search, filters and sort, no paging): the rows never reach the client, so send the request to your server and apply it there with
+        <code>schema.Apply</code>. For a list in memory the same action also gets every matching row in <code>SelectedItems</code>. Selection and actions are interactive only: a statically rendered list has
+        no checkbox column, no bar and no actions menu. See the <a href="/components/data-list-selection">DataListSelection</a> page for the examples.
+    </p>
+    <CodeBlock Title="BulkAction.cs" Code="@Bulk" />
 </div>
 
 @code {
     [Parameter] public string? Mode { get; set; }
+
+    private const string Bulk = """
+        new DataListAction<Invoice>
+        {
+            Key = "archive",
+            Label = "Archive",
+            Confirm = new() { Title = "Archive invoices", Description = c => $"{c.TargetCount} invoices will be archived." },   // ticked rows, or every result
+            ClearSelection = DataListSelectionClear.Success,
+            RefreshOnSuccess = true,
+            OnExecute = async c =>
+            {
+                if (c.Scope == DataListActionScope.All)
+                    await Http.PostAsJsonAsync("/api/invoices/archive", c.Request, c.CancellationToken);   // the server: schema.Apply(query, request)
+                else
+                    await Http.PostAsJsonAsync("/api/invoices/archive-keys", c.SelectedKeys, c.CancellationToken);
+            },
+        }
+        """;
 
     private const string Setup = """
         builder.Services.AddDbContextFactory<ShopContext>(o => o.UseSqlite("Data Source=shop.db"));
