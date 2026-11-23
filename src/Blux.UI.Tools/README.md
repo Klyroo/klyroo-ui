@@ -27,7 +27,16 @@ builder.Services.AddBluxUiTools(t => t.DataListEmpty.Slot("root", "p-8"));
 
 Row selection and actions: a list with a `BxDataListSelectionActions` bar (or `Selectable`, or a bound `SelectedKeys`) shows a checkbox column and needs a `RowKey` in its schema. The bar shows the count,
 "Select all N results" when the source knows the total (an action then gets the `DataListRequest` to send to your server), and the `DataListAction`s you give it, with an optional confirmation. `BxDataListActionsDropdown`
-holds toolbar actions. A list in memory keeps the selection across pages while the query still matches; a provider or a queryable keeps the rows of the page. Selection and actions are interactive only: a statically rendered list has none.
+holds toolbar actions, and `RowActions` on `BxDataListTable` or `BxDataListGrid` (or `BxDataListRowActions`) adds per-row actions (inline buttons, overflow menu with submenus, and a bottom sheet on phones). A list in memory keeps the selection across pages while the query still matches; a provider or a queryable keeps the rows of the page. Selection and actions are interactive only (except link row actions, which render as plain links in static SSR).
+
+Layouts, columns, groups, tree rows and summaries:
+- `BxDataListColumnPanel` lets users show/hide, reorder, pin (`DataListPin.Start`/`End`) and reset columns, while `BxDataListTable.Resizable` adds keyboard- and pointer-operable resize handles. Setting `PreferencesKey` on `BxDataList` persists column preferences, compact summary-row view choice and group fold state in the grouped `blux-dl-cols` cookie (read on the server on the first SSR/prerender paint when `AddBluxServer()` is registered).
+- `BxDataListGrid` renders cards alongside or instead of `BxDataListTable`, switched with `BxDataListLayoutSwitch` (`l=table|grid` in the URL) and sorted with `BxDataListSortMenu`.
+- `RowSummary` (`DataListRowSummary<TItem>`) renders compact summary rows automatically on phones or when toggled with `BxDataListViewToggle`.
+- `GroupBy` (`DataListGroupBy<TItem>`) partitions rows or cards under collapsible `BxDataListGroupHeader` bars with per-group tri-state selection checkboxes.
+- `Tree` (`DataListTree<TItem>`) renders hierarchical child rows with tree rail connectors and keyboard (`ArrowRight`/`ArrowLeft`) expansion.
+- `Summaries` (`DataListSummaries<TItem>`) and `BxDataListColumn.Summary` (`Sum`, `Average`, `Count`, `Min`, `Max`, or `ResolveAsync`) render `<tfoot>` totals across `Filtered`, `Page` and `Selection` scopes.
+- `PagingMode="DataListPagingMode.Cursor"` pairs with `BxDataListInfiniteLoader`, and `BxDataListTable.Virtualize` virtualizes large row sets.
 
 A list takes one source: `Items` (in memory), a `Provider`, or a `Queryable` (an EF Core query, with a schema). A queryable runs through an `IDataListQueryExecutor`; the default one blocks the thread,
 so add [Blux.UI.Tools.EntityFrameworkCore](https://www.nuget.org/packages/Blux.UI.Tools.EntityFrameworkCore) and `services.AddBluxUiToolsEntityFrameworkAdapter()` for `CountAsync` and `ToListAsync`.
