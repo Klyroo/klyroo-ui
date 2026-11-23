@@ -311,6 +311,11 @@
                     // The URL stays the one source of the state: the write notifies the subscription, which loads.
                     if (Query.Interactive == true) Query.SetMany(Changes(next), QueryHistory.Push);
                 }
+                else if (!reload && controller.TryAdoptLayout(next))
+                {
+                    _state = next;
+                    _context.NotifyChanged();
+                }
                 else
                 {
                     _state = next;
@@ -483,6 +488,11 @@
         }
         _state = next;
         _ = StateChanged.InvokeAsync(next);
+        if (controller.TryAdoptLayout(next))
+        {
+            _context.NotifyChanged();
+            return;
+        }
         _ = InvokeAsync(() => LoadAsync(next));
     }
 
@@ -560,6 +570,11 @@
         if (next.Equals(_state)) return;
         _state = next;
         await StateChanged.InvokeAsync(next);
+        if (controller.TryAdoptLayout(next))
+        {
+            _context.NotifyChanged();
+            return;
+        }
         await LoadAsync(next);
     }
 

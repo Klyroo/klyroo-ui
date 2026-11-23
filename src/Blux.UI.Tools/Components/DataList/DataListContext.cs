@@ -42,6 +42,11 @@ public enum DataListAlign
     End,
 }
 
+/// <summary>An option offered by <see cref="BxDataListSortMenu{TItem}"/>.</summary>
+/// <param name="Key">The key of the sortable field in the schema.</param>
+/// <param name="Label">The display label; when <see langword="null"/>, uses the title of the matching column or the humanized key.</param>
+public sealed record DataListSortOption(string Key, string? Label = null);
+
 /// <summary>
 /// What the parts of a <see cref="BxDataList{TItem}"/> (the table, the pagination, the result count...) read and change: the state of the list, its
 /// rows and its loading flags. The list cascades one for its whole life (the value is fixed), so a part subscribes to <see cref="Changed"/> once and renders
@@ -66,6 +71,44 @@ public sealed partial class DataListContext<TItem>
     internal Microsoft.Extensions.Logging.ILogger? Logger => _owner.Logger;
 
     private object? _footerOwner;
+    private int _tableCount;
+    private int _gridCount;
+
+    /// <summary>Whether the list contains a <see cref="BxDataListTable{TItem}"/>.</summary>
+    internal bool HasTable => _tableCount > 0;
+
+    /// <summary>Whether the list contains a <see cref="BxDataListGrid{TItem}"/>.</summary>
+    internal bool HasGrid => _gridCount > 0;
+
+    /// <summary>The layout currently shown: <see cref="DataListState.Layout"/> when both table and grid exist, otherwise the one that is present.</summary>
+    public DataListLayout EffectiveLayout =>
+        HasGrid && !HasTable ? DataListLayout.Grid
+        : HasTable && !HasGrid ? DataListLayout.Table
+        : State.Layout;
+
+    internal void AddTable()
+    {
+        _tableCount++;
+        NotifyChanged();
+    }
+
+    internal void RemoveTable()
+    {
+        if (_tableCount > 0) _tableCount--;
+        NotifyChanged();
+    }
+
+    internal void AddGrid()
+    {
+        _gridCount++;
+        NotifyChanged();
+    }
+
+    internal void RemoveGrid()
+    {
+        if (_gridCount > 0) _gridCount--;
+        NotifyChanged();
+    }
 
     /// <summary>Whether the table shows its rows in a scroll box of its own (<c>Virtualize</c> on an interactive table): a loader that watches the scroll position then lives inside that box.</summary>
     internal bool TableVirtualized { get; private set; }
@@ -264,5 +307,81 @@ public sealed partial class DataListContext<TItem>
             true => Schema?.DefaultSort ?? [],
         };
         return state with { Sort = next, Page = 1, Cursor = null };
+    }
+
+    /// <summary>The state with <paramref name="key"/> sorted in the given direction, on the first page.</summary>
+    public DataListState WithSort(DataListState state, string key, bool descending = false) =>
+        state with { Sort = [new DataListSort(key, descending)], Page = 1, Cursor = null };
+
+    /// <summary>The state with the sort restored to the schema's default sort (or no sort when the schema has none), on the first page.</summary>
+    public DataListState ClearSort(DataListState state) =>
+        state with { Sort = Schema?.DefaultSort ?? [], Page = 1, Cursor = null };
+
+    /// <summary>Whether the active sort of <paramref name="state"/> equals the schema's default sort.</summary>
+    public bool IsDefaultSort(DataListState state)
+    {
+        var active = state.Sort.Count > 0 ? state.Sort : Schema?.DefaultSort ?? [];
+        var defaults = Schema?.DefaultSort ?? [];
+        return active.SequenceEqual(defaults);
+    }
+
+    /// <summary>The state with <see cref="DataListState.Layout"/> set to <paramref name="layout"/>.</summary>
+    public DataListState WithLayout(DataListState state, DataListLayout layout) =>
+        state with { Layout = layout };
+
+    /// <summary>Switches the active layout (<see cref="DataListLayout.Table"/> or <see cref="DataListLayout.Grid"/>) as a history entry.</summary>
+    public void SetLayout(DataListLayout layout)
+    {
+        if (State.Layout != layout) SetState(s => WithLayout(s, layout), QueryHistory.Push);
+    }
+
+    /// <summary>
+    /// The sortable fields of the list for <see cref="BxDataListSortMenu{TItem}"/>: from <paramref name="explicitOptions"/> when given (filtered to the schema's sortable keys),
+    /// otherwise from the sortable <see cref="BxDataListColumn{TItem}"/>s in user order followed by any remaining sortable fields of the schema.
+    /// </summary>
+    public IReadOnlyList<DataListSortOption> SortOptions(IReadOnlyList<DataListSortOption>? explicitOptions = null)
+    {
+        var schema = Schema;
+        var allowed = schema?.SortKeys;
+        var columnsByKey = new Dictionary<string, BxDataListColumn<TItem>>(StringComparer.Ordinal);
+        foreach (var col in _owner.OrderedColumns())
+        {
+            if (col.ResolvedKey is { } k) columnsByKey.TryAdd(k, col);
+        }
+
+        var result = new List<DataListSortOption>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        if (explicitOptions is { Count: > 0 })
+        {
+            foreach (var opt in explicitOptions)
+            {
+                if (string.IsNullOrWhiteSpace(opt.Key) || !seen.Add(opt.Key)) continue;
+                if (allowed is not null && !allowed.Contains(opt.Key)) continue;
+                var label = !string.IsNullOrWhiteSpace(opt.Label)
+                    ? opt.Label
+                    : columnsByKey.TryGetValue(opt.Key, out var col) ? col.ResolvedTitle : DataListText.Humanize(opt.Key);
+                result.Add(new DataListSortOption(opt.Key, label));
+            }
+            return result;
+        }
+
+        foreach (var col in _owner.OrderedColumns())
+        {
+            if (col.ResolvedKey is not { } key || !seen.Add(key)) continue;
+            if (col.Sortable == false) continue;
+            if (allowed is not null && !allowed.Contains(key)) continue;
+            result.Add(new DataListSortOption(key, col.ResolvedTitle));
+        }
+
+        if (allowed is not null)
+        {
+            foreach (var key in allowed)
+            {
+                if (!seen.Add(key)) continue;
+                if (columnsByKey.TryGetValue(key, out var col) && col.Sortable == false) continue;
+                result.Add(new DataListSortOption(key, columnsByKey.TryGetValue(key, out var c) ? c.ResolvedTitle : DataListText.Humanize(key)));
+            }
+        }
+        return result;
     }
 }

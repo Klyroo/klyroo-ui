@@ -1,0 +1,83 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+
+@*
+    Layout switch: toggles the data list between Table view (l=table) and Grid view (l=grid), synced with the URL as a history entry.
+    In static rendering the options are links (?l=grid) so switching layouts works without JavaScript.
+*@
+<div class="@_slots["layoutSwitch"]" role="group" aria-label="@(AriaLabel ?? ToolsMessages.LayoutSwitch)" data-slot="layout-switch" @attributes="AdditionalAttributes">
+    @foreach (var layout in EffectiveOrder)
+    {
+        var item = layout;
+        var active = Context.EffectiveLayout == item;
+        var label = item == DataListLayout.Grid ? ToolsMessages.GridView : ToolsMessages.TableView;
+        var icon = item == DataListLayout.Grid ? GridIcon : TableIcon;
+        var key = item == DataListLayout.Grid ? "grid" : "table";
+        if (Context.IsInteractive)
+        {
+            <button type="button" class="@_slots["layoutOption"]" aria-pressed="@(active ? "true" : "false")"
+                    aria-label="@(ShowLabels ? null : label)" title="@(ShowLabels ? null : label)"
+                    data-slot="layout-option" data-layout="@key"
+                    @onclick="@(() => Context.SetLayout(item))">
+                @RenderIcon(icon, "size-4 shrink-0")
+                @if (ShowLabels)
+                {
+                    <span>@label</span>
+                }
+            </button>
+        }
+        else if (Context.CanLink && Context.HrefWith(s => Context.WithLayout(s, item)) is { } href)
+        {
+            <a href="@href" class="@_slots["layoutOption"]" aria-current="@(active ? "true" : null)"
+               aria-label="@(ShowLabels ? null : label)" title="@(ShowLabels ? null : label)"
+               data-slot="layout-option" data-layout="@key">
+                @RenderIcon(icon, "size-4 shrink-0")
+                @if (ShowLabels)
+                {
+                    <span>@label</span>
+                }
+            </a>
+        }
+        else
+        {
+            <span class="@_slots["layoutOption"]" aria-current="@(active ? "true" : null)"
+                  aria-label="@(ShowLabels ? null : label)" data-slot="layout-option" data-layout="@key">
+                @RenderIcon(icon, "size-4 shrink-0")
+                @if (ShowLabels)
+                {
+                    <span>@label</span>
+                }
+            </span>
+        }
+    }
+</div>
+
+@code {
+    private static readonly DataListLayout[] DefaultOrder = [DataListLayout.Table, DataListLayout.Grid];
+    private SlotSet _slots = default!;
+
+    /// <summary>Shows the localized text labels ("Table view", "Grid view") next to the icons (<see langword="false"/> by default).</summary>
+    [Parameter] public bool ShowLabels { get; set; }
+
+    /// <summary>Order of the layout options (<c>[Table, Grid]</c> by default).</summary>
+    [Parameter] public IReadOnlyList<DataListLayout>? Order { get; set; }
+
+    /// <summary>Icon name for the Table layout (<c>"table-2"</c> by default).</summary>
+    [Parameter] public string TableIcon { get; set; } = "table-2";
+
+    /// <summary>Icon name for the Grid layout (<c>"layout-grid"</c> by default).</summary>
+    [Parameter] public string GridIcon { get; set; } = "layout-grid";
+
+    /// <summary>Accessible name of the layout switch group. Defaults to the localized "View layout".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    private IReadOnlyList<DataListLayout> EffectiveOrder =>
+        Order is { Count: > 0 } ? Order.Distinct().ToArray() : DefaultOrder;
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "layoutSwitch");
+    }
+}

@@ -17,6 +17,30 @@ public sealed partial record BxToolsMessages
     /// <summary>Accessible name of a sort button that removes the sort of a column. {0} is the title of the column.</summary>
     public string SortClear { get; init; } = "Clear the sort by {0}";
 
+    /// <summary>Label of the sort menu trigger button when no sort is active, and heading of the sort popover.</summary>
+    public string Sort { get; init; } = "Sort";
+
+    /// <summary>Label of the sort menu trigger button when sorted by {0}, and accessible name of a sort field option.</summary>
+    public string SortBy { get; init; } = "Sort by {0}";
+
+    /// <summary>Ascending direction option in the sort menu.</summary>
+    public string SortDirectionAscending { get; init; } = "Ascending";
+
+    /// <summary>Descending direction option in the sort menu.</summary>
+    public string SortDirectionDescending { get; init; } = "Descending";
+
+    /// <summary>Button in the sort menu that restores the default sort order.</summary>
+    public string SortDefault { get; init; } = "Default order";
+
+    /// <summary>Accessible name of the layout switch group.</summary>
+    public string LayoutSwitch { get; init; } = "View layout";
+
+    /// <summary>Accessible name and label of the table layout option.</summary>
+    public string TableView { get; init; } = "Table view";
+
+    /// <summary>Accessible name and label of the grid layout option.</summary>
+    public string GridView { get; init; } = "Grid view";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 
