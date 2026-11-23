@@ -36,6 +36,7 @@ internal static class ServerTimeZone
 internal sealed class MissingServerWarning(Func<string?> environment)
 {
     private int _warned;
+    private int _warnedColumns;
 
     public MissingServerWarning() : this(() => Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"))
     {
@@ -47,5 +48,14 @@ internal sealed class MissingServerWarning(Func<string?> environment)
         if (Interlocked.Exchange(ref _warned, 1) != 0) return;
         services.GetService<ILoggerFactory>()?.CreateLogger("Blux.UI.Tools.DataList").LogWarning(
             "A data list rendered on the server (static rendering or prerendering) without access to the request, so it cuts the days of its date filters in UTC until the browser is interactive. Call services.AddBluxServer() from the package Blux.UI.Server in the server Program.cs to use the time zone cookie of the browser.");
+    }
+
+    /// <summary>The same warning for a list with a <c>PreferencesKey</c>: its static render and its prerender cannot read the column cookie and paint the default columns.</summary>
+    public void WarnColumns(IServiceProvider services)
+    {
+        if (!string.Equals(environment(), "Development", StringComparison.OrdinalIgnoreCase)) return;
+        if (Interlocked.Exchange(ref _warnedColumns, 1) != 0) return;
+        services.GetService<ILoggerFactory>()?.CreateLogger("Blux.UI.Tools.DataList").LogWarning(
+            "A data list with a PreferencesKey rendered on the server (static rendering or prerendering) without access to the request, so it paints its default columns until the browser is interactive. Call services.AddBluxServer() from the package Blux.UI.Server in the server Program.cs to read the column cookie on the first paint.");
     }
 }

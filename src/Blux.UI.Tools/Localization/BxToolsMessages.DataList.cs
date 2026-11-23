@@ -65,6 +65,51 @@ public sealed partial record BxToolsMessages
     /// <summary>Accessible name of the column resize handle. {0} is the column title.</summary>
     public string ColumnResize { get; init; } = "Resize {0}";
 
+    /// <summary>Button of the column panel that shows every column.</summary>
+    public string ColumnsShowAll { get; init; } = "Show all";
+
+    /// <summary>Button of the column panel that hides every column that is not required.</summary>
+    public string ColumnsHideAll { get; init; } = "Hide all";
+
+    /// <summary>Announced after Show all.</summary>
+    public string ColumnsAllShown { get; init; } = "All columns shown";
+
+    /// <summary>Announced after Hide all.</summary>
+    public string ColumnsAllHidden { get; init; } = "Optional columns hidden";
+
+    /// <summary>Hint of the column panel shown when only one column is left, which cannot be hidden.</summary>
+    public string ColumnsKeepOne { get; init; } = "At least one column stays visible.";
+
+    /// <summary>Announced after a column was shown. {0} is the column title.</summary>
+    public string ColumnShown { get; init; } = "{0} shown";
+
+    /// <summary>Announced after a column was hidden. {0} is the column title.</summary>
+    public string ColumnHidden { get; init; } = "{0} hidden";
+
+    /// <summary>Announced after a column moved. {0} is the column title, {1} its new position and {2} the number of columns.</summary>
+    public string ColumnMoved { get; init; } = "{0} moved to position {1} of {2}";
+
+    /// <summary>Announced after a column was pinned to the start edge. {0} is the column title.</summary>
+    public string ColumnPinnedToStart { get; init; } = "{0} pinned to the start";
+
+    /// <summary>Announced after a column was pinned to the end edge. {0} is the column title.</summary>
+    public string ColumnPinnedToEnd { get; init; } = "{0} pinned to the end";
+
+    /// <summary>Announced after a column was unpinned. {0} is the column title.</summary>
+    public string ColumnUnpinned { get; init; } = "{0} unpinned";
+
+    /// <summary>Announced after the columns went back to their defaults.</summary>
+    public string ColumnsWereReset { get; init; } = "Columns reset";
+
+    /// <summary>Value text of a column resize handle. {0} is the width in pixels.</summary>
+    public string ColumnWidthPixels { get; init; } = "{0} pixels";
+
+    /// <summary>Announced after a column was resized. {0} is the column title and {1} the width in pixels.</summary>
+    public string ColumnWidthChanged { get; init; } = "{0}: {1} pixels wide";
+
+    /// <summary>Announced after a column went back to its default width. {0} is the column title.</summary>
+    public string ColumnWidthReset { get; init; } = "{0}: default width";
+
     /// <summary>Said while the first rows of a data list load.</summary>
     public string Loading { get; init; } = "Loading…";
 
