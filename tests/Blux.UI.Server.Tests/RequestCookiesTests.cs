@@ -106,4 +106,63 @@ public class RequestCookiesTests
 
         Assert.Equal("Europe/Paris", cookies.Get(BxPathScope.CookieName("blux-timezone", cookies.PathBase)));
     }
+
+    [Fact]
+    public void Reading_a_cookie_marks_the_response_Cache_Control_private_and_Vary_Cookie_even_when_the_cookie_is_absent()
+    {
+        var (cookies, accessor) = Create();
+        var http = Request(null);
+        accessor.HttpContext = http;
+
+        Assert.Null(cookies.Get("blux-timezone"));
+        Assert.Equal("private", http.Response.Headers.CacheControl.ToString());
+        Assert.Equal("Cookie", http.Response.Headers.Vary.ToString());
+
+        // Reading another cookie on the same request does not duplicate the directives.
+        Assert.Null(cookies.Get("blux-dl-cols"));
+        Assert.Equal("private", http.Response.Headers.CacheControl.ToString());
+        Assert.Equal("Cookie", http.Response.Headers.Vary.ToString());
+    }
+
+    [Fact]
+    public void Existing_Cache_Control_and_Vary_headers_are_preserved_or_upgraded_to_private()
+    {
+        var (cookies, accessor) = Create();
+
+        var withMaxAge = Request("blux-timezone=UTC");
+        withMaxAge.Response.Headers.CacheControl = "max-age=60";
+        withMaxAge.Response.Headers.Vary = "Accept-Encoding";
+        accessor.HttpContext = withMaxAge;
+        cookies.Get("blux-timezone");
+        Assert.Equal("private, max-age=60", withMaxAge.Response.Headers.CacheControl.ToString());
+        Assert.Equal("Accept-Encoding, Cookie", withMaxAge.Response.Headers.Vary.ToString());
+
+        var withPublic = Request("blux-timezone=UTC");
+        withPublic.Response.Headers.CacheControl = "public, max-age=120";
+        accessor.HttpContext = withPublic;
+        cookies.Get("blux-timezone");
+        Assert.Equal("private, max-age=120", withPublic.Response.Headers.CacheControl.ToString());
+
+        var withNoStore = Request("blux-timezone=UTC");
+        withNoStore.Response.Headers.CacheControl = "no-store, no-cache";
+        withNoStore.Response.Headers.Vary = "*";
+        accessor.HttpContext = withNoStore;
+        cookies.Get("blux-timezone");
+        Assert.Equal("no-store, no-cache", withNoStore.Response.Headers.CacheControl.ToString());
+        Assert.Equal("*", withNoStore.Response.Headers.Vary.ToString());
+    }
+
+    [Fact]
+    public void SetCacheHeaders_false_leaves_response_headers_untouched()
+    {
+        var provider = new ServiceCollection().AddBluxServer(o => o.SetCacheHeaders = false).BuildServiceProvider();
+        var cookies = provider.GetRequiredService<IBxRequestCookies>();
+        var accessor = provider.GetRequiredService<IHttpContextAccessor>();
+        var http = Request("blux-timezone=UTC");
+        accessor.HttpContext = http;
+
+        Assert.Equal("UTC", cookies.Get("blux-timezone"));
+        Assert.Empty(http.Response.Headers.CacheControl.ToString());
+        Assert.Empty(http.Response.Headers.Vary.ToString());
+    }
 }

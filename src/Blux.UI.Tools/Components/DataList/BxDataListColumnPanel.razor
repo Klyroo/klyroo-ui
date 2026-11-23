@@ -62,7 +62,7 @@
                                 @foreach (var col in filtered)
                                 {
                                     var key = col.Key;
-                                    var pos = IndexOf(all, key);
+                                    var pos = IndexOf(configurable, key);
                                     var pinnedStart = col.Pinned == DataListPin.Start;
                                     var pinnedEnd = col.Pinned == DataListPin.End;
                                     <li @key="key" class="@_slots["columnsItem"]" data-slot="columns-item" data-col-key="@key">
@@ -83,7 +83,7 @@
                                                         data-col-up="@key" @onclick="@(() => Run(() => Context.MoveColumn(key, -1), Sel("col-up", key), Sel("col-down", key)))">
                                                     @RenderIcon("arrow-up", "size-3.5")
                                                 </button>
-                                                <button type="button" class="@_slots["columnsIconBtn"]" disabled="@(pos < 0 || pos >= all.Count - 1)"
+                                                <button type="button" class="@_slots["columnsIconBtn"]" disabled="@(pos < 0 || pos >= configurable.Count - 1)"
                                                         aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnMoveDown, col.Title)"
                                                         data-col-down="@key" @onclick="@(() => Run(() => Context.MoveColumn(key, 1), Sel("col-down", key), Sel("col-up", key)))">
                                                     @RenderIcon("arrow-down", "size-3.5")

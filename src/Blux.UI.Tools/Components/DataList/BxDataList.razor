@@ -690,7 +690,7 @@
         _subscription?.Dispose();
         _claim?.Dispose();
         _persistSubscription?.Dispose();
-        _columnsPersistSubscription?.Dispose();
+        DisposeColumnPreferences();
         if (_claimedKey is not null && PersistedKeys.TryGetValue(Services, out var keys))
         {
             lock (keys) keys.Remove(_claimedKey);

@@ -437,10 +437,11 @@
                 sum += widths[i] ?? 0;
             }
             sum = 0;
+            var actionsFallback = acting ? ActionsFallbackWidth() : 0;
             for (var i = raw.Count - 1; i >= 0; i--)
             {
                 if (pins[i] != DataListPin.End) continue;
-                offsets[i] = acting ? $"calc(var(--bx-actions-w, 0px) + {sum}px)" : $"{sum}px";
+                offsets[i] = acting ? $"calc(var(--bx-actions-w, {actionsFallback}px) + {sum}px)" : $"{sum}px";
                 sum += widths[i] ?? 0;
             }
             var views = new List<View>(raw.Count);
@@ -461,6 +462,17 @@
             .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null, DataListPin.None, null, null, DataListColumnPreferences.MinAllowedWidth, DataListColumnPreferences.MaxAllowedWidth, false, null))];
     }
 
+    // Deterministic fallback width in pixels for the row-actions column before ResizeObserver measures --bx-actions-w (or in static SSR where no script runs),
+    // so an end-pinned column never overlaps the actions column on first paint.
+    private int ActionsFallbackWidth()
+    {
+        if (RowActions is not { Count: > 0 }) return 0;
+        var maxInline = Math.Max(0, RowActionsMaxVisible);
+        var inlineCount = Math.Min(maxInline, RowActions.Count(a => a.Children is not { Count: > 0 }));
+        var hasOverflow = RowActions.Count > inlineCount;
+        return Math.Max(56, 24 + inlineCount * 68 + (hasOverflow ? 36 : 0));
+    }
+
     // The selection and actions columns are fixed: never hidden, never moved. They stick only to give way to the columns pinned on their side.
     private string ActionsClass(string kind, bool stuck) =>
         $"{_slots[kind]} {_slots[kind + "End"]} {_slots["rowActionsCell"]} {(stuck ? _slots[kind == "th" ? "thPinnedEnd" : "tdPinnedEnd"] : "")}".TrimEnd();
@@ -476,8 +488,8 @@
             DataListPin.End => _slots["thPinnedEnd"],
             _ => "",
         };
-        // The handle sits at the end edge of the cell: a pinned cell is already a positioned box.
-        var resize = Resizable && Context.IsInteractive && column.Resizable && column.Pinned == DataListPin.None ? "relative" : "";
+        // The handle sits at the end edge of the cell: from sm up a pinned cell is sticky (already a positioned box), below sm it is not sticky so it needs max-sm:relative.
+        var resize = Resizable && Context.IsInteractive && column.Resizable ? (column.Pinned == DataListPin.None ? "relative" : "max-sm:relative") : "";
         var sized = column.Width is not null ? _slots["colSized"] : "";
         return $"{_slots["th"]} {AlignClass(column.Align, "th")} {pin} {resize} {sized} {column.Class}".Trim();
     }

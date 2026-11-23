@@ -88,8 +88,17 @@ public class DataListColumnPanelTests : BluxToolsTestContext
         Assert.Null(prefs.Encode());
 
         // Only the first keys of a section count: a value of a thousand keys cannot cost more than a hundred.
-        var many = DataListColumnPreferences.Decode("v1!h" + string.Join('~', Enumerable.Range(0, 300).Select(i => "k" + i)));
-        Assert.True(many.Hidden.Count <= 100);
+        var many = DataListColumnPreferences.Decode("v1!h" + string.Join('~', Enumerable.Range(0, 120).Select(i => "k" + i)));
+        Assert.Equal(100, many.Hidden.Count);
+
+        // Symmetric on the way out: a key past 64 chars or a section past 100 entries refuses to encode.
+        var tooLongKey = new DataListColumnPreferences();
+        tooLongKey.Hidden.Add(new string('k', 65));
+        Assert.Null(tooLongKey.Encode());
+
+        var tooManyKeys = new DataListColumnPreferences();
+        for (var i = 0; i < 101; i++) tooManyKeys.Hidden.Add("k" + i);
+        Assert.Null(tooManyKeys.Encode());
     }
 
     [Fact]
@@ -380,9 +389,25 @@ public class DataListColumnPanelTests : BluxToolsTestContext
 
         Assert.Equal("Move Age up", cut.Find("[data-col-up=age]").GetAttribute("aria-label"));
         Assert.Equal("Move Age down", cut.Find("[data-col-down=age]").GetAttribute("aria-label"));
+        // Age is the first configurable column in the panel (Name is Required and unlisted), so Move Age up is disabled, and City is the last, so Move City down is disabled.
+        Assert.True(cut.Find("[data-col-up=age]").HasAttribute("disabled"));
         Assert.True(cut.Find("[data-col-down=city]").HasAttribute("disabled"));
         // The grip is a shortcut for the pointer, hidden from assistive technology and out of the tab order.
         Assert.Equal("true", cut.Find("[data-col-grip=age]").GetAttribute("aria-hidden"));
+    }
+
+    [Fact]
+    public async Task Two_lists_on_the_same_page_cannot_share_a_PreferencesKey()
+    {
+        Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "shared-cols"));
+        var ex = Assert.Throws<InvalidOperationException>(() =>
+            Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "shared-cols")));
+        Assert.Contains("shared-cols", ex.Message);
+
+        await DisposeComponentsAsync();
+        // Once the first list is disposed, the key can be claimed again.
+        var afterDispose = Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "shared-cols"));
+        Assert.Equal(3, afterDispose.FindAll("thead th[data-key]").Count);
     }
 
     [Fact]
@@ -431,9 +456,10 @@ public class DataListColumnPanelTests : BluxToolsTestContext
         Assert.Empty(cut.FindAll("thead th[data-key=select] [data-slot=col-resize]"));
         Assert.Empty(cut.FindAll("thead th[data-key=actions] [data-slot=col-resize]"));
 
-        // An end pin leaves room for the actions column, whose width the browser measures.
+        // An end pin leaves room for the actions column, with a deterministic non-zero CSS fallback width before the browser measures it, and max-sm:relative for its resize handle on a phone.
         cut.Find("[data-col-pin-end=name]").Click();
-        Assert.Contains("var(--bx-actions-w, 0px)", cut.Find("thead th[data-key=name]").GetAttribute("style"));
+        Assert.Contains("var(--bx-actions-w, 92px)", cut.Find("thead th[data-key=name]").GetAttribute("style"));
+        Assert.Contains("max-sm:relative", cut.Find("thead th[data-key=name]").GetAttribute("class"));
         Assert.Equal("end", cut.Find("thead th[data-key=actions]").GetAttribute("data-pinned"));
         Assert.Single(JSInterop.Invocations["Blux.tools.watchActionsWidth"]);
     }
@@ -493,11 +519,11 @@ public class DataListColumnPanelStaticTests : BluxToolsTestContext
     private sealed class FakeCookies(string? value, string pathBase = "") : IBxRequestCookies
     {
         public string PathBase => pathBase;
-        public string? Get(string name) => name == BxPathScope.CookieName("blux-dl-cols-people", pathBase) ? value : null;
+        public string? Get(string name) => name == BxPathScope.CookieName("blux-dl-cols", pathBase) ? value : null;
     }
 
     public DataListColumnPanelStaticTests()
-        : base(interactive: false, configureServices: s => s.AddSingleton<IBxRequestCookies>(new FakeCookies("v1!ocity~name~age!hage!wcity*220!sname")))
+        : base(interactive: false, configureServices: s => s.AddSingleton<IBxRequestCookies>(new FakeCookies("other.v1!hname!!people.v1!ocity~name~age!hage!wcity*220!sname")))
     {
     }
 
@@ -536,7 +562,7 @@ public class DataListColumnPanelStaticTests : BluxToolsTestContext
         var cut = Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "people"));
         Assert.Equal(["name", "city"], cut.FindAll("thead th").Select(th => th.GetAttribute("data-key")));
 
-        using var hostile = new HostileContext("v1!hname~'3cscript'3e~city!wname*99999~'22'3e'3cimg*100!ocity~'3cb'3e");
+        using var hostile = new HostileContext("people.v1!hname~'3cscript'3e~city!wname*99999~'22'3e'3cimg*100!ocity~'3cb'3e");
         var shown = hostile.Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "people"));
         // name is required; city is hidden; the keys that are no column go nowhere; the width is clamped to the limit of the column.
         Assert.Equal(["name", "age"], shown.FindAll("thead th").Select(th => th.GetAttribute("data-key")));
@@ -564,7 +590,7 @@ public class DataListColumnPanelPathBaseTests : BluxToolsTestContext
         public string? Get(string name)
         {
             Asked.Add(name);
-            return name == "blux-dl-cols-people.app~~" ? "v1!hcity" : null;
+            return name == "blux-dl-cols.app~~" ? "people.v1!hcity" : null;
         }
     }
 
@@ -580,8 +606,8 @@ public class DataListColumnPanelPathBaseTests : BluxToolsTestContext
     {
         var cut = Render<DataListColumnPanelHarness>(p => p.Add(x => x.PreferencesKey, "people"));
 
-        Assert.Contains("blux-dl-cols-people.app~~", Cookies.Asked);
-        Assert.DoesNotContain("blux-dl-cols-people", Cookies.Asked);
+        Assert.Contains("blux-dl-cols.app~~", Cookies.Asked);
+        Assert.DoesNotContain("blux-dl-cols", Cookies.Asked);
         Assert.Equal(["name", "age"], cut.FindAll("thead th").Select(th => th.GetAttribute("data-key")));
     }
 }
@@ -621,7 +647,7 @@ public class DataListColumnPanelPrerenderTests : BluxToolsTestContext
     private sealed class FakeCookies(string? value) : IBxRequestCookies
     {
         public string? PathBase => null;
-        public string? Get(string name) => name == "blux-dl-cols-people" ? value : null;
+        public string? Get(string name) => name == "blux-dl-cols" && value is not null ? "people." + value : null;
     }
 
     private static IRenderedComponent<DataListColumnPanelHarness> Prerender(BluxToolsTestContext context) =>
