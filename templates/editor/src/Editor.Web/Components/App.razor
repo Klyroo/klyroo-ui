@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="@_locale.Code" dir="@_locale.DirAttribute">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* The app can be served below a path base (see Program.cs): every relative URL, the stylesheet and the framework included, follows this. *@
+    <base href="@_baseHref" />
+    <BxColorModeScript />
+    <BxCultureMeta />
+    <BxThemeStyle />
+    @* Self-hosted at build time from the BluxFont items of Editor.Web.csproj: no third-party request. *@
+    <BxFonts />
+    <ResourcePreloader />
+    @* Compiled by the build from Editor.Shared/Styles/app.css (Tailwind, with the Blux theme). *@
+    <link rel="stylesheet" href="@Assets["_content/Editor.Shared/app.css"]" />
+    <link rel="icon" type="image/svg+xml" href="@Assets["_content/Editor.Shared/favicon.svg"]" />
+    <ImportMap />
+    <HeadOutlet @rendermode="InteractiveAuto" />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveAuto" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>
+
+@code {
+    [Inject] private IConfiguration Configuration { get; set; } = default!;
+
+    // The PathBase setting as configured, normalized to "/x/": the root when there is none.
+    private string _baseHref => Configuration["PathBase"] is { Length: > 0 } pathBase ? "/" + pathBase.Trim('/') + "/" : "/";
+
+    private BxLocale _locale = BxLocales.En;
+
+    // lang and dir of the page follow the culture of the request, like the components do.
+    protected override void OnParametersSet() =>
+        _locale = BxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
+}

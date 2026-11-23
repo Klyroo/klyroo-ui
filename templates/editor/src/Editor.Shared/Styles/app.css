@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "../obj/blux/blux.theme.css";
+
+/* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result at _content/Chat.Shared/app.css. */
+
+@layer base {
+  body {
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/*
+  The page around the text of a document. The text itself is drawn by BxEditor; these rules only size the column and give the HTML of the read-only view
+  (what the server shows before the editor is ready) and the editor the same look for the elements Blux does not style: task items and images are styled by the library.
+*/
+
+.document-column { margin-inline: auto; width: 100%; max-width: 46rem; }
