@@ -395,23 +395,21 @@ public partial class BxDataList<TItem>
         var (min, max) = WidthLimits(col);
         int? clamped = width is { } px ? Math.Clamp(px, min, max) : null;
         int? defaultWidth = col.Width is { } dw ? Math.Clamp(dw, min, max) : null;
-        if (clamped == defaultWidth)
+        var changed = false;
+        if (clamped is null || clamped == defaultWidth)
         {
-            if (!_columnPrefs.Widths.Remove(key)) return;
+            changed = _columnPrefs.Widths.Remove(key);
         }
-        else if (clamped is { } value)
+        else if (!_columnPrefs.Widths.TryGetValue(key, out var existing) || existing != clamped)
         {
-            if (_columnPrefs.Widths.TryGetValue(key, out var existing) && existing == value) return;
-            _columnPrefs.Widths[key] = value;
+            _columnPrefs.Widths[key] = clamped.Value;
+            changed = true;
         }
-        else
-        {
-            if (!_columnPrefs.Widths.Remove(key)) return;
-        }
-        WidthAnnouncement = clamped is { } now
+        // Said even when nothing was stored: the browser already showed the new width, and a reset to a width that was never stored is still a reset.
+        WidthAnnouncement = clamped is { } now && clamped != defaultWidth
             ? Format(ToolsMessages.ColumnWidthChanged, col.ResolvedTitle, now)
             : Format(ToolsMessages.ColumnWidthReset, col.ResolvedTitle);
-        PersistColumnPreferences();
+        if (changed) PersistColumnPreferences();
         _context.NotifyChanged();
     }
 

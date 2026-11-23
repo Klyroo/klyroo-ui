@@ -31,7 +31,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
 
     private ILocator List => Page.GetByTestId("list-columns");
     private ILocator Fixed => Page.GetByTestId("list-columns-fixed");
-    private ILocator Content => Page.Locator("[data-slot=columns-content]");
+    // Both lists have a panel in the page: the one that is open is the visible one.
+    private ILocator Content => Page.Locator("[data-slot=columns-content]:visible");
     private ILocator Headers(ILocator list) => list.Locator("thead th[data-key]");
 
     private static Task<string[]> Keys(ILocator list) => list.Locator("thead th[data-key]").EvaluateAllAsync<string[]>("els => els.map(e => e.getAttribute('data-key'))");
@@ -119,7 +120,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Content.Locator("input[data-col-toggle=status]").UncheckAsync();
         await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCountAsync(0);
         await Assertions.Expect(Content.Locator("[data-slot=columns-count]")).ToHaveTextAsync("4 of 5 visible");
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status hidden");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status hidden");
 
         await Content.Locator("[data-col-pin-end=amount]").ClickAsync();
         await Assertions.Expect(List.Locator("thead th[data-key=amount]")).ToHaveAttributeAsync("data-pinned", "end");
@@ -157,19 +158,20 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Content.Locator("[data-slot=columns-reset]").ClickAsync();
         await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCountAsync(1);
         await Assertions.Expect(List.Locator("colgroup col[data-col-key=amount]")).ToHaveAttributeAsync("style", "width:150px");
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Columns reset");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Columns reset");
         await Page.WaitForFunctionAsync("name => !document.cookie.split('; ').some(c => c.startsWith(name + '='))", Cookie, new() { Timeout = 10_000 });
     }
 
     [Theory]
     [MemberData(nameof(InteractiveModes))]
-    public async Task Show_all_and_hide_all_keep_the_required_column_and_the_last_visible_column_cannot_be_hidden(string mode)
+    public async Task Show_all_and_hide_all_keep_the_required_column(string mode)
     {
         await OpenPage(mode);
         await OpenPanel(List);
 
         await Content.Locator("[data-slot=columns-hide-all]").ClickAsync();
         // Only the required column stays.
+        await Assertions.Expect(Headers(List)).ToHaveCountAsync(1);
         Assert.Equal(["customer"], await Keys(List));
         await Assertions.Expect(Content.Locator("[data-slot=columns-count]")).ToHaveTextAsync("1 of 5 visible");
         await Assertions.Expect(Content.Locator("[data-slot=columns-hide-all]")).ToBeDisabledAsync();
@@ -214,7 +216,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Content.Locator("input[data-col-toggle=status]").FocusAsync();
         await Page.Keyboard.PressAsync("Space");
         await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCountAsync(0);
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status hidden");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status hidden");
         await Page.Keyboard.PressAsync("Space");
         await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCountAsync(1);
 
@@ -222,7 +224,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         var down = Content.GetByRole(AriaRole.Button, new() { Name = "Move Status down" });
         await down.FocusAsync();
         await Page.Keyboard.PressAsync("Enter");
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status moved to position 4 of 5");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status moved to position 4 of 5");
         Assert.Equal(["id", "customer", "amount", "status", "issued"], await Keys(List));
         Assert.Equal("Move Status down", await Page.EvaluateAsync<string>("() => document.activeElement.getAttribute('aria-label')"));
         // Status and Amount keep their controls in order: the panel lists id, amount, status, issued.
@@ -232,7 +234,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Page.Keyboard.PressAsync("Shift+Tab");
         await Assertions.Expect(Content.GetByRole(AriaRole.Button, new() { Name = "Move Status up" })).ToBeFocusedAsync();
         await Page.Keyboard.PressAsync("Enter");
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status moved to position 3 of 5");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status moved to position 3 of 5");
         Assert.Equal(["id", "customer", "status", "amount", "issued"], await Keys(List));
         await Assertions.Expect(Content.GetByRole(AriaRole.Button, new() { Name = "Move Status up" })).ToBeFocusedAsync();
 
@@ -240,7 +242,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await pin.FocusAsync();
         await Page.Keyboard.PressAsync("Enter");
         await Assertions.Expect(pin).ToHaveAttributeAsync("aria-pressed", "true");
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status pinned to the start");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Status pinned to the start");
         await Assertions.Expect(pin).ToBeFocusedAsync();
 
         // The panel closes with Escape and the focus goes back to its button.
@@ -263,7 +265,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuenow", "900");
         await Page.Keyboard.PressAsync("Delete");
         await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuenow", "140", new() { Timeout = 10_000 });
-        await Assertions.Expect(List.Locator("colgroup col[data-col-key=status]")).ToHaveAttributeAsync("style", "width:140px", new() { Timeout = 10_000 });
+        // The browser put the width back at once; whether .NET re-rendered the attribute or not, the column is 140 px.
+        await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCSSAsync("width", "140px", new() { Timeout = 10_000 });
         await Assertions.Expect(List.Locator("[data-slot=col-live]")).ToHaveTextAsync("Status: default width", new() { Timeout = 10_000 });
     }
 
@@ -276,6 +279,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await OpenPage(mode);
 
         var handle = List.Locator("[data-slot=col-resize][data-col-key=status]");
+        await handle.ScrollIntoViewIfNeededAsync();
         var box = (await handle.BoundingBoxAsync())!;
         var th = List.Locator("thead th[data-key=status]");
         var start = await th.EvaluateAsync<double>("el => el.getBoundingClientRect().width");
@@ -292,7 +296,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
 
         // Double click: back to the declared width.
         await handle.DblClickAsync();
-        await Assertions.Expect(List.Locator("colgroup col[data-col-key=status]")).ToHaveAttributeAsync("style", "width:140px", new() { Timeout = 10_000 });
+        await Assertions.Expect(List.Locator("thead th[data-key=status]")).ToHaveCSSAsync("width", "140px", new() { Timeout = 10_000 });
+        await Assertions.Expect(List.Locator("colgroup col[data-col-key=status]")).ToHaveAttributeAsync("style", new Regex(@"^width: ?140px;?$"), new() { Timeout = 10_000 });
 
         await OpenPanel(List);
         var grip = Content.Locator("[data-col-grip=amount]");
@@ -304,7 +309,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Page.Mouse.MoveAsync(from.X + from.Width / 2, to.Y + 3, new() { Steps = 6 });
         await Assertions.Expect(target).ToHaveAttributeAsync("data-drop", "before");
         await Page.Mouse.UpAsync();
-        await Assertions.Expect(Page.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Amount moved to position 3 of 5");
+        await Assertions.Expect(List.Locator("[data-slot=columns-live]")).ToHaveTextAsync("Amount moved to position 3 of 5");
         Assert.Equal(["id", "customer", "amount", "status", "issued"], await Keys(List));
         await Assertions.Expect(Content.Locator("[data-slot=columns-item]").Nth(1)).ToHaveAttributeAsync("data-col-key", "amount");
     }
@@ -344,12 +349,18 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Assertions.Expect(Headers(Fixed)).ToHaveCountAsync(6);
 
         await Content.Locator("[data-slot=columns-hide-all]").ClickAsync();
+        await Assertions.Expect(Headers(Fixed)).ToHaveCountAsync(3);
         Assert.Equal(["select", "id", "actions"], await Keys(Fixed));
+        // Nothing is required here: the first column stays, the last visible one cannot be hidden, and the panel says why.
+        await Assertions.Expect(Content.Locator("input[data-col-toggle=id]")).ToBeDisabledAsync();
+        await Assertions.Expect(Content.Locator("[data-slot=columns-hint]")).ToHaveTextAsync("At least one column stays visible.");
         await Assertions.Expect(Fixed.Locator("thead th[data-key=select] input[type=checkbox]")).ToBeVisibleAsync();
         await Content.Locator("[data-slot=columns-show-all]").ClickAsync();
+        await Assertions.Expect(Headers(Fixed)).ToHaveCountAsync(6);
 
         await Content.Locator("[data-col-pin-start=customer]").ClickAsync();
         await Content.Locator("[data-col-pin-end=amount]").ClickAsync();
+        await Assertions.Expect(Fixed.Locator("thead th[data-key=amount]")).ToHaveAttributeAsync("data-pinned", "end");
         Assert.Equal(["select", "customer", "id", "status", "amount", "actions"], await Keys(Fixed));
         await Page.Keyboard.PressAsync("Escape");
 
@@ -361,7 +372,38 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         // Ticking a row still works, the row action is still there, and a hidden column took none of them with it.
         await Fixed.Locator("tbody tr[data-slot=row]").First.Locator("input[type=checkbox]").CheckAsync();
         await Assertions.Expect(Fixed.Locator("tbody tr[data-slot=row]").First.GetByRole(AriaRole.Link, new() { Name = "Open" })).ToBeVisibleAsync();
-        await WaitForCookie(FixedCookie, @"^v1!ocustomer~id~status~amount!eamount!scustomer$");
+        await WaitForCookie(FixedCookie, @"^v1!scustomer!eamount$");
+    }
+
+    // ---- a web view (MAUI)
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("wasm")]
+    public async Task In_a_web_view_the_preferences_are_kept_in_localStorage_and_no_cookie_is_written(string mode)
+    {
+        // The message bridge of blazor.webview.js, which is how Blux tells a web view from a browser (see HybridTests).
+        var context = await NewContext(new());
+        await context.AddInitScriptAsync("Object.defineProperty(window, 'external', { value: { sendMessage() {}, receiveMessage() {} }, configurable: true });");
+        var page = await context.NewPageAsync();
+        await page.GotoAsync($"/{mode}/components/data-list-columns");
+        await page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        var list = page.GetByTestId("list-columns");
+        await Assertions.Expect(list.Locator("[data-slot=skeleton-row]")).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+
+        await list.Locator("[data-slot=columns-trigger]").ClickAsync();
+        await page.Locator("[data-slot=columns-content]:visible input[data-col-toggle=status]").UncheckAsync();
+        await Assertions.Expect(list.Locator("thead th[data-key=status]")).ToHaveCountAsync(0);
+
+        await page.WaitForFunctionAsync("() => localStorage.getItem('blux-dl-cols-demo-cols') === 'v1!hstatus'");
+        Assert.DoesNotContain(await page.Context.CookiesAsync(), c => c.Name.StartsWith("blux-dl-cols-", StringComparison.Ordinal));
+
+        // No server reads a cookie in a web view: the list asks the browser, and shows the columns of the user once it did.
+        await page.ReloadAsync();
+        await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        await Assertions.Expect(page.GetByTestId("list-columns").Locator("thead th[data-key=status]")).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+        await Assertions.Expect(page.GetByTestId("list-columns").Locator("thead th[data-key=amount]")).ToHaveCountAsync(1);
     }
 
     // ---- after an enhanced navigation
@@ -420,7 +462,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         var panel = (await Content.BoundingBoxAsync())!;
         Assert.True(panel.X >= 0 && panel.X + panel.Width <= 375.5, $"the panel is {panel.Width}px wide at x={panel.X}");
         Assert.True(panel.Y + panel.Height <= 800.5, "the panel is taller than the screen");
-        foreach (var selector in new[] { "input[data-col-toggle=status]", "[data-col-up=status]", "[data-col-down=status]", "[data-col-grip=status]" })
+        // The box is 16 px, its label is the target.
+        foreach (var selector in new[] { "[data-slot=columns-item][data-col-key=status] label", "[data-col-up=status]", "[data-col-down=status]", "[data-col-grip=status]" })
         {
             var target = (await Content.Locator(selector).First.BoundingBoxAsync())!;
             Assert.True(target.Width >= 24 && target.Height >= 24, $"{selector} is {target.Width}x{target.Height}");
