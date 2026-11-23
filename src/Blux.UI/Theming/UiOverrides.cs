@@ -271,6 +271,9 @@ public sealed record DropdownMenuUi : ISlotOverrides
     public string? ItemLabel { get; init; }
     public string? ItemShortcut { get; init; }
 
+    /// <summary>The arrow at the end of an item that opens a submenu.</summary>
+    public string? ItemChevron { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "content" => Content,
@@ -281,6 +284,7 @@ public sealed record DropdownMenuUi : ISlotOverrides
         "itemIcon" => ItemIcon,
         "itemLabel" => ItemLabel,
         "itemShortcut" => ItemShortcut,
+        "itemChevron" => ItemChevron,
         _ => null,
     };
 }

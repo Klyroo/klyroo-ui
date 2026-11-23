@@ -66,7 +66,9 @@ public static partial class Catalog
         new("tooltip", "Tooltip", "Overlay", "A short hint shown on hover and keyboard focus.",
             [new("Tooltip", typeof(Examples.TooltipExample))], [typeof(BxTooltip)]),
         new("dropdown-menu", "DropdownMenu", "Overlay", "A menu of actions and links, navigable with the keyboard.",
-            [new("Dropdown menu", typeof(Examples.DropdownMenuExample))], [typeof(BxDropdownMenu)]),
+            [new("Dropdown menu", typeof(Examples.DropdownMenuExample)),
+             new("Submenus", typeof(Examples.DropdownMenuSubmenuExample), "An item with Children opens a nested menu: right arrow, Enter, a click or a pause of the pointer opens it, left arrow or Escape closes it.")],
+            [typeof(BxDropdownMenu)]),
         new("toast", "Toast", "Overlay", "Brief notifications, raised from .NET through IToastService.",
             [new("Toasts", typeof(Examples.ToastExample))], [typeof(BxToaster)]),
 
