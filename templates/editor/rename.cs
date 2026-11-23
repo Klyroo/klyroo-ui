@@ -73,6 +73,7 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
 // name and is left alone: the components (BxEditor, BxEditorToolbar...), their types (EditorAction, EditorToolbarItem, EditorUi...) and the elements they render
 // (bx-editor, bx-editor-toolbar).
 const string BluxEditor = "(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)";
+// (The "Add" before Editor is the setup method of this app, AddEditorUi, which does get the new name: only a bare EditorUi is the type of Blux.)
 var spellings = new Dictionary<string, string>
 {
     [Template] = name,
@@ -80,7 +81,7 @@ var spellings = new Dictionary<string, string>
     [Template.ToUpperInvariant()] = name.ToUpperInvariant(),
 };
 var spellingPattern = new Regex(string.Join("|", spellings.Keys.Select(key =>
-    key == Template ? "(?<!Bx)" + Regex.Escape(key) + $"(?!{BluxEditor}(?:[A-Z]|\\b))"
+    key == Template ? "(?<!Bx)(?<!Sanitize)(?:(?<=Add)" + Regex.Escape(key) + "|" + Regex.Escape(key) + $"(?!{BluxEditor}(?:[A-Z]|\\b)))"
     : key == Template.ToLowerInvariant() ? "(?<!bx-)" + Regex.Escape(key)
     : Regex.Escape(key))));
 string Replace(string text) => spellingPattern.Replace(text, match => spellings[match.Value]);
