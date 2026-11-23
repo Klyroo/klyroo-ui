@@ -8,10 +8,10 @@
     <BxDataListLayoutSwitch ShowLabels="ShowLayoutLabels" Order="LayoutOrder" />
     @if (IncludeTable)
     {
-        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary" GroupBy="GroupBy" Tree="Tree">
-            <BxDataListColumn Field="name" Title="Full name" />
-            <BxDataListColumn Field="age" Align="DataListAlign.End" />
-            <BxDataListColumn Field="city" Sortable="false" />
+        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary" GroupBy="GroupBy" Tree="Tree" Summaries="Summaries">
+            <BxDataListColumn Field="name" Title="Full name" Summary="NameSummary" />
+            <BxDataListColumn Field="age" Align="DataListAlign.End" Summary="AgeSummary" SummaryFormat="@AgeSummaryFormat" />
+            <BxDataListColumn Field="city" Sortable="false" Summary="CitySummary" />
         </BxDataListTable>
     }
     @if (IncludeGrid)
@@ -41,6 +41,11 @@
     [Parameter] public DataListRowSummary<Person>? RowSummary { get; set; }
     [Parameter] public DataListGroupBy<Person>? GroupBy { get; set; }
     [Parameter] public DataListTree<Person>? Tree { get; set; }
+    [Parameter] public DataListSummaries<Person>? Summaries { get; set; }
+    [Parameter] public DataListSummaryKind NameSummary { get; set; }
+    [Parameter] public DataListSummaryKind AgeSummary { get; set; }
+    [Parameter] public string? AgeSummaryFormat { get; set; }
+    [Parameter] public DataListSummaryKind CitySummary { get; set; }
     [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
     [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
     [Parameter] public bool IncludeTable { get; set; } = true;

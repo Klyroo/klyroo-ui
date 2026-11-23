@@ -65,6 +65,24 @@ public sealed partial record BxToolsMessages
     /// <summary>Label of an action that collapses every branch row of a tree table.</summary>
     public string TreeCollapseAll { get; init; } = "Collapse all";
 
+    /// <summary>Default label of the summary footer row (<c>&lt;tfoot&gt;</c>) of a table.</summary>
+    public string SummaryTotal { get; init; } = "Total";
+
+    /// <summary>Label of a summary footer row scoped to all filtered rows.</summary>
+    public string SummaryFiltered { get; init; } = "Filtered";
+
+    /// <summary>Label of a summary footer row scoped to the current page.</summary>
+    public string SummaryPage { get; init; } = "Page";
+
+    /// <summary>Label of a summary footer row scoped to the selected rows.</summary>
+    public string SummarySelection { get; init; } = "Selected";
+
+    /// <summary>Formatted count of a single row in a summary footer cell. {0} is 1.</summary>
+    public string SummaryRowOne { get; init; } = "{0} row";
+
+    /// <summary>Formatted count of multiple rows in a summary footer cell. {0} is the row count.</summary>
+    public string SummaryRowOther { get; init; } = "{0} rows";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 
