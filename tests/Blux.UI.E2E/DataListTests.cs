@@ -38,9 +38,8 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
     private ILocator Sort(string mode, string name, string direction) =>
         Url.GetByRole(SortRole(mode), new() { Name = $"Sort by {name}, {direction}" });
 
-    private Task WaitForQuery(string expected) =>
-        // The address bar, not the text of the page: this is what a user shares.
-        Page.WaitForURLAsync(url => new Uri(url).Query == expected, new() { Timeout = 15_000 });
+    // The address bar, not the text of the page: this is what a user shares, as written.
+    private Task WaitForQuery(string expected) => WaitForRawQuery(expected);
 
     [Theory]
     [MemberData(nameof(AllModes))]
@@ -131,7 +130,7 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.GetByTestId("url-pagination").GetByLabel("Rows per page").SelectOptionAsync("50");
         await Page.GetByTestId("url-pagination").GetByRole(AriaRole.Button, new() { Name = "Apply" }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("ps=50"));
+        await WaitForQueryContaining("ps=50");
         var query = new Uri(Page.Url).Query;
         Assert.Contains("s=-amount", query);
         Assert.Contains("utm_source=mail", query);
@@ -349,8 +348,9 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Assertions.Expect(Cell(Url, 0, 0)).ToHaveTextAsync("111");
         await Assertions.Expect(pagination.GetByLabel("Next page")).ToBeDisabledAsync();
-        Assert.True(await pagination.EvaluateAsync<bool>("el => el.contains(document.activeElement)"), "focus left the pagination on the last page");
+        // The focus is put back by a call after the render that disabled the button (a round trip later than the rows), so it is waited for, not read once.
         await Assertions.Expect(pagination.GetByLabel("Page 12", new() { Exact = true })).ToBeFocusedAsync();
+        Assert.True(await pagination.EvaluateAsync<bool>("el => el.contains(document.activeElement)"), "focus left the pagination on the last page");
     }
 
     [Theory]
@@ -629,7 +629,7 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
         await UrlSearch.FillAsync("initech");
         await Url.GetByRole(AriaRole.Button, new() { Name = "Search", Exact = true }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("q=initech"), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("q=initech");
         var query = System.Web.HttpUtility.ParseQueryString(new Uri(Page.Url).Query);
         Assert.Equal("initech", query["q"]);
         Assert.Equal("-amount", query["s"]);
@@ -642,7 +642,7 @@ public class DataListTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Page.GoBackAsync();
 
-        await Page.WaitForURLAsync(url => !new Uri(url).Query.Contains("q=initech"), new() { Timeout = 15_000 });
+        await WaitForUrl("!decodeURIComponent(url.search).includes('q=initech')");
         await Assertions.Expect(UrlSearch).ToHaveValueAsync("");
         await Assertions.Expect(Count).ToHaveTextAsync("21–30 of 120");
     }

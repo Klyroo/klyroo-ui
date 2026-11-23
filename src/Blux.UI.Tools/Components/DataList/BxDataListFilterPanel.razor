@@ -126,7 +126,7 @@
 
     protected override void OnContextUpdated() => ExpandActive();
 
-    // A section with a filter on is open from the start, and opens when a filter turns on by other means (a tag, the address). The sections that the user opens or closes stay as they are: the browser keeps them.
+    // A section with a filter on is open from the start, and opens when a filter turns on by other means (a tag, the address). The sections that the user opens or closes stay as they are: statically, bx-collapsible keeps the state across the merge of an enhanced navigation (the server markup would reset it); interactively, OnSection holds it.
     private void ExpandActive()
     {
         if (Context.Schema is null) return;

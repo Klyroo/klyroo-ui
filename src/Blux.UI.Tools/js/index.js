@@ -37,13 +37,36 @@ function focusId(id) {
 // After an action emptied the selection its button is gone with the bar, and the focus fell to the page: it goes to the select-all box of the list (the start of its table).
 // Only when the focus is lost: a button the user moved to meanwhile keeps it.
 function focusSelectAll(part) {
+  const root = part?.closest('[data-slot=root]');
+  const lost = () => {
+    const active = document.activeElement;
+    return !active || active === document.body || !active.isConnected || active.getClientRects().length === 0;
+  };
+  const give = () => (root?.querySelector('input[data-select=all]:not(:disabled)') ?? root?.querySelector('[data-slot=table-root]'))?.focus();
+
   // Later than the render that removed the bar and than the close event of a confirmation dialog, which gives the focus back to the button that opened it.
   requestAnimationFrame(() => setTimeout(() => {
-    const active = document.activeElement;
-    if (active && active !== document.body && active.isConnected && active.getClientRects().length > 0) return;
-    const root = part?.closest('[data-slot=root]');
-    const box = root?.querySelector('input[data-select=all]:not(:disabled)');
-    (box ?? root?.querySelector('[data-slot=table-root]'))?.focus();
+    if (lost()) return give();
+    if (!root) return;
+    // The focus is still on a control, usually the button of the bar: the render that removes it can reach the browser after this call (a render batch waits for the
+    // one before it to be acknowledged, a call does not). The control going away is what to wait for, unless the user moves the focus or acts first.
+    const from = document.activeElement;
+    const stop = () => {
+      observer.disconnect();
+      document.removeEventListener('pointerdown', stop, true);
+      document.removeEventListener('keydown', stop, true);
+    };
+    const observer = new MutationObserver(() => {
+      if (!from.isConnected) {
+        stop();
+        if (lost()) give();
+      } else if (document.activeElement !== from) {
+        stop();
+      }
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    document.addEventListener('pointerdown', stop, true);
+    document.addEventListener('keydown', stop, true);
   }, 0));
 }
 

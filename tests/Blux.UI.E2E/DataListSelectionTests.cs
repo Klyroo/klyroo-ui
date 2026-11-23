@@ -231,6 +231,24 @@ public class DataListSelectionTests(PlaygroundServer server) : PlaygroundTest(se
         await Assertions.Expect(Status(Provider)).ToHaveTextAsync("2 selected");
     }
 
+    // The call that moves the focus is made right after the render that removes the bar, but a batch waits for the browser to acknowledge the one before it, so on a busy circuit
+    // the call arrives first. The bar, and the Delete button the focus went back to when the dialog closed, are still on the page when it runs.
+    [Fact]
+    public async Task The_focus_goes_to_the_select_all_box_when_the_render_that_removes_the_bar_arrives_after_the_call()
+    {
+        await DelayRenderBatches(Page, 150);
+        await OpenList("server");
+        await Assertions.Expect(Count(Memory)).ToHaveTextAsync("1–10 of 120", new() { Timeout = 15_000 });
+
+        await Box(Memory, 1).CheckAsync();
+        await Bar(Memory).GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+        await Page.Locator("[data-slot=action-dialog]").GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+
+        await Assertions.Expect(Count(Memory)).ToHaveTextAsync("1–10 of 119", new() { Timeout = 15_000 });
+        await Assertions.Expect(Bar(Memory)).ToHaveCountAsync(0);
+        await Assertions.Expect(Header(Memory)).ToBeFocusedAsync();
+    }
+
     [Theory]
     [MemberData(nameof(InteractiveModes))]
     public async Task A_confirmation_asks_before_deleting_and_the_selection_is_cleared_on_success(string mode)

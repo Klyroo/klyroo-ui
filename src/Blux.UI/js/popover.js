@@ -25,6 +25,7 @@ export class BxPopoverElement extends HTMLElement {
   connectedCallback() {
     // "toggle" does not bubble: listen in the capture phase so a replaced panel needs no re-binding.
     this.addEventListener('toggle', this.#onToggle, true);
+    this.addEventListener('beforetoggle', this.#onBeforeToggle, true);
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('click', this.#onClick);
     this.#observer = observeChildren(this, () => this.#sync());
@@ -32,6 +33,7 @@ export class BxPopoverElement extends HTMLElement {
 
   disconnectedCallback() {
     this.removeEventListener('toggle', this.#onToggle, true);
+    this.removeEventListener('beforetoggle', this.#onBeforeToggle, true);
     this.removeEventListener('keydown', this.#onKeyDown);
     this.removeEventListener('click', this.#onClick);
     this.#observer?.disconnect();
@@ -150,6 +152,12 @@ export class BxPopoverElement extends HTMLElement {
     if (!item || !this.#content.contains(item) || item.getAttribute('aria-disabled') === 'true') return;
     // The click keeps propagating, so a .NET handler on the item still runs.
     this.#hide();
+  };
+
+  // The native state changes now (Escape, light dismiss, the trigger) and "toggle" follows in a later task: a render made before the change, that lands in between,
+  // must not put the old state back, so the change counts from here.
+  #onBeforeToggle = (event) => {
+    if (event.target === this.#content) this.#reporter.reserve();
   };
 
   #onToggle = (event) => {
