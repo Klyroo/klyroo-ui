@@ -68,13 +68,20 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// </summary>
     [Parameter] public bool Visible { get; set; } = true;
 
-    /// <summary>When <see langword="true"/>, the column cannot be hidden by <see cref="BxDataListColumnPanel{TItem}"/> or <see cref="DataListContext{TItem}.SetColumnVisible"/>.</summary>
+    /// <summary>When <see langword="true"/>, the column cannot be hidden: <see cref="BxDataListColumnPanel{TItem}"/> does not list it and <see cref="DataListContext{TItem}.SetColumnVisible"/> ignores it. It cannot be reordered or pinned from the panel either.</summary>
     [Parameter] public bool Required { get; set; }
 
-    /// <summary>Default horizontal pin edge (<see cref="DataListPin.Start"/> or <see cref="DataListPin.End"/>). Users can override it through the column panel.</summary>
+    /// <summary>
+    /// Default horizontal pin edge (<see cref="DataListPin.Start"/> or <see cref="DataListPin.End"/>). Users can override it through the column panel. A pinned column sticks from the <c>sm</c> breakpoint up (below it
+    /// pinned columns scroll with the table but keep their place in the order), after the selection column and before the row actions column, and needs a width: without <see cref="Width"/> it gets 150 px.
+    /// </summary>
     [Parameter] public DataListPin Pinned { get; set; }
 
-    /// <summary>Default width in pixels, clamped to [<see cref="MinWidth"/>, <see cref="MaxWidth"/>]. <see langword="null"/> lets the browser size the column.</summary>
+    /// <summary>
+    /// Default width in pixels, clamped to [<see cref="MinWidth"/>, <see cref="MaxWidth"/>]. <see langword="null"/> lets the browser size the column to its content. A column with a width keeps it whatever its content
+    /// (a longer text is cut with an ellipsis); when every column has one the table is as wide as their sum, otherwise the columns without a width share the room that is left. Rendered on the <c>&lt;col&gt;</c> and on every cell,
+    /// so a static render has the width at the first paint. The user's width (the column resize, kept in the preferences) wins.
+    /// </summary>
     [Parameter] public int? Width { get; set; }
 
     /// <summary>Minimum width in pixels when resized (64 by default).</summary>
@@ -83,7 +90,7 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// <summary>Maximum width in pixels when resized (900 by default).</summary>
     [Parameter] public int MaxWidth { get; set; } = DataListColumnPreferences.MaxAllowedWidth;
 
-    /// <summary>Whether the user can resize the column by dragging its header handle or using the keyboard (true by default).</summary>
+    /// <summary>Whether the user can resize the column by dragging its header handle or using the keyboard (true by default). Only when <see cref="BxDataListTable{TItem}.Resizable"/> is on.</summary>
     [Parameter] public bool Resizable { get; set; } = true;
 
     /// <summary>The key of the column: <see cref="Key"/>, <see cref="Field"/> or the member path of <see cref="Property"/> in camel case.</summary>

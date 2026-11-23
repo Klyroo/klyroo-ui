@@ -2,7 +2,7 @@ namespace Blux.UI;
 
 /// <summary>
 /// The HTTP request a component is rendering for, as far as Blux needs it: the cookies and the path base. It exists for the renders that have a request and no browser, a
-/// static render and a prerender, where a component can read what the browser left in a cookie (the time zone of a data list, later the columns a user chose). Blux.UI is
+/// static render and a prerender, where a component can read what the browser left in a cookie (the time zone of a data list, and the columns a user chose). Blux.UI is
 /// also loaded by WebAssembly and MAUI apps, where there is no ASP.NET Core request, so the library only knows this abstraction: the package <c>Blux.UI.Server</c> implements
 /// it over <c>IHttpContextAccessor</c> and <c>AddBluxServer()</c> registers it.
 /// </summary>

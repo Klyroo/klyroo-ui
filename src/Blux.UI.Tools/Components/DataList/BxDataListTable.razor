@@ -195,7 +195,12 @@
     /// <summary>Extra rows rendered above and below the viewport when <see cref="Virtualize"/> is on (3 by default).</summary>
     [Parameter] public int OverscanCount { get; set; } = 3;
 
-    /// <summary>Enables pointer-drag and keyboard column resizing on headers of resizable columns (false by default). Interactive only.</summary>
+    /// <summary>
+    /// Puts a resize handle (a vertical separator) on the end edge of the header of each <see cref="BxDataListColumn{TItem}.Resizable"/> column (false by default): drag it, or focus it and press ArrowLeft and ArrowRight
+    /// (16 px, 64 with Shift; in right-to-left text the arrow that points away from the start edge grows the column), Home and End for the limits, Delete or a double click for the declared width.
+    /// The browser changes the width while the gesture runs and reports it once; the list keeps it in its column preferences (<see cref="BxDataList{TItem}.PreferencesKey"/>). Interactive only: a static render has no handle
+    /// but still applies a saved width.
+    /// </summary>
     [Parameter] public bool Resizable { get; set; }
 
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
