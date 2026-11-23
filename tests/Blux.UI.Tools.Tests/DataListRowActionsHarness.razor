@@ -1,0 +1,18 @@
+@using Blux.UI.Tools.Query
+
+@* A table with row actions on the people of the controller tests. *@
+<BxDataList TItem="Person" Schema="Schema" Items="Provider is null ? Items : null" Provider="Provider" UrlSync="false">
+    <BxDataListTable Caption="People" RowActions="Actions" RowActionsMaxVisible="MaxVisible" OnRowActionError="OnError">
+        <BxDataListColumn Field="name" />
+        <BxDataListColumn Field="age" Align="DataListAlign.End" />
+    </BxDataListTable>
+</BxDataList>
+
+@code {
+    [Parameter] public DataListSchema<Person>? Schema { get; set; } = DataListControllerTests.Schema;
+    [Parameter] public IEnumerable<Person>? Items { get; set; } = DataListControllerTests.People;
+    [Parameter] public DataListProvider<Person>? Provider { get; set; }
+    [Parameter] public IReadOnlyList<DataListRowAction<Person>> Actions { get; set; } = [];
+    [Parameter] public int MaxVisible { get; set; } = 3;
+    [Parameter] public EventCallback<DataListRowActionFailure<Person>> OnError { get; set; }
+}
