@@ -1,0 +1,45 @@
+@* What a new conversation shows before the first question: a greeting and four questions to start from. A suggestion is a button: pressing it sends the question. *@
+<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-8 p-4 sm:p-6" data-testid="empty-conversation">
+    <div class="flex flex-col items-center gap-3 text-center">
+        <span class="flex size-12 items-center justify-center rounded-full bg-(--blux-primary) text-(--blux-primary-contrast)" aria-hidden="true">
+            @BxIcons.Named("lucide:sparkles", "size-6")
+        </span>
+        <p class="text-2xl font-semibold text-(--blux-text-highlighted)">How can I help today?</p>
+        <p class="max-w-[34rem] text-sm text-(--blux-text-muted)">Ask a question below, or start from one of these. Your conversations stay in this browser.</p>
+    </div>
+    <ul class="grid gap-3 sm:grid-cols-2" aria-label="Suggestions">
+        @foreach (var suggestion in Suggestions)
+        {
+            var current = suggestion;
+            <li>
+                <button type="button" disabled="@Disabled" @onclick="@(() => OnPick.InvokeAsync(current.Text))" data-testid="suggestion"
+                        class="flex h-full w-full items-start gap-3 rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg) p-3.5 text-start transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text) disabled:cursor-not-allowed disabled:opacity-60">
+                    <span class="mt-0.5 shrink-0 text-(--blux-primary-text)" aria-hidden="true">@BxIcons.Named(current.Icon, "size-5")</span>
+                    <span class="flex min-w-0 flex-col gap-0.5">
+                        <span class="text-sm font-medium text-(--blux-text-highlighted)">@current.Title</span>
+                        <span class="text-xs text-(--blux-text-muted)">@current.Text</span>
+                    </span>
+                </button>
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    private sealed record Suggestion(string Title, string Text, string Icon);
+
+    // The suggestions are questions the simulated provider has a reply for (Assistant/SimulatedCompletionProvider.cs); with a real model any question works.
+    private static readonly Suggestion[] Suggestions =
+    [
+        new("Explain a concept", "Explain the difference between a mutex and a semaphore", "lucide:cpu"),
+        new("Write some code", "Write a C# method that debounces calls", "lucide:code-xml"),
+        new("Draft a message", "Draft a polite email asking for a deadline extension", "lucide:mail"),
+        new("Compare options", "Compare SQLite and PostgreSQL for a small app", "lucide:database"),
+    ];
+
+    /// <summary>Called with the text of the suggestion the user pressed.</summary>
+    [Parameter] public EventCallback<string> OnPick { get; set; }
+
+    /// <summary>The suggestions cannot be used (no model, a reply is arriving).</summary>
+    [Parameter] public bool Disabled { get; set; }
+}

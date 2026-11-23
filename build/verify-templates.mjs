@@ -103,6 +103,20 @@ const templates = [
     keep: /Bx(?:Changelog)Version(?:s)?/g,
     browserClass: "Blux.UI.E2E.ChangelogTemplateTests",
   },
+  {
+    name: "chat",
+    web: "src/Chat.Web",
+    name_in_files: "Chat",
+    renames: ["Acme", "chatApp"],
+    probe: { utility: "max-w-[34rem]", css: "max-width:34rem" },
+    pages: ["/", "/c/0123456789abcdef0123456789abcdef"],
+    services: true,
+    // The simulated provider: no key, no network. (The template itself defaults to a real service that needs a key.)
+    env: { Assistant__Provider: "Simulated" },
+    // Blux's own chat components, types and element attributes (BxChatMessages, ChatRole, ChatMessagesUi, data-bx-chat-input) are not the template name: rename.cs leaves them alone.
+    keep: /chat\/completions|(?:Bx)?Chat(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)[A-Za-z]*|bx-chat-[a-z-]*|data-bx-chat[a-z-]*/g,
+    browserClass: "Blux.UI.E2E.ChatTemplateTests",
+  },
 ];
 
 // templates/_shared holds what the templates copy (the Markdown content code); it is not a template. Every other folder is, and must be listed above.

@@ -248,7 +248,7 @@ public class TemplateLaunchTests
             Assert.False(string.IsNullOrEmpty(t.WebAssembly));
         });
         Assert.All(TemplateRegistry.All.Where(t => !t.HasDemo), t => Assert.Null(t.WebAssembly));
-        Assert.Equal(["starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
+        Assert.Equal(["starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog", "chat"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
     }
 
     [Fact]

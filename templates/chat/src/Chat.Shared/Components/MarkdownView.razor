@@ -1,0 +1,27 @@
+@* The text of an answer as HTML. The Markdown goes through MessageMarkdown, which treats it as hostile (no raw HTML, no script, no images, links limited
+   to http, https and mailto), so the markup it returns is safe to write into the page. It is rendered again only when the text changes. *@
+<div class="markdown" data-testid="message-markdown">@((MarkupString)_html)</div>
+
+@code {
+    private string _html = "";
+    private string? _text;
+    private string? _idPrefix;
+    private string? _pageHref;
+
+    /// <summary>The Markdown of the answer.</summary>
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+
+    /// <summary>The id of the message: the ids of the headings of the answer start with it.</summary>
+    [Parameter, EditorRequired] public string MessageId { get; set; } = "";
+
+    /// <summary>The address of the page, relative to the base: where a <c>#fragment</c> link of the answer points.</summary>
+    [Parameter] public string PageHref { get; set; } = "";
+
+    protected override void OnParametersSet()
+    {
+        var prefix = $"m-{MessageId}-";
+        if (Text == _text && prefix == _idPrefix && PageHref == _pageHref) return;
+        _html = MessageMarkdown.Render(Text, prefix, PageHref);
+        (_text, _idPrefix, _pageHref) = (Text, prefix, PageHref);
+    }
+}

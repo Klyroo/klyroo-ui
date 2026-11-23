@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <!-- A speech bubble with a spark, the logo of the template. Replace it with your own. -->
+    <path d="M132 150a30 30 0 0 1 30-30h132a30 30 0 0 1 30 30v96a30 30 0 0 1-30 30h-96l-54 46v-46h-12a30 30 0 0 1-30-30Z" fill="#ffd23f" />
+    <path d="M228 168v60M198 198h60" fill="none" stroke="#0a0b0c" stroke-width="20" stroke-linecap="round" />
+</svg>

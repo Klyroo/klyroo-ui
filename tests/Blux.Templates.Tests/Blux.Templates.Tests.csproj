@@ -39,6 +39,12 @@
     <Compile Include="..\..\templates\saas\src\SaaS.Web\Site\*.cs" LinkBase="SaaS" />
     <!-- The data code of the Portfolio template (the library that reads the projects and articles, the resume, the talks, the contact message): plain C#, no Razor, so it is tested as it is, with its sample content. -->
     <Compile Include="..\..\templates\portfolio\src\Portfolio.Web\Site\*.cs" LinkBase="Portfolio" />
+    <!-- The plain C# of the Chat template: the providers of replies and their limits, the conversations, the Markdown of an answer and the endpoint of the web host. The renderer it uses is the reference compiled above (its copies are checked by TemplateCopyTests). -->
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Assistant\*.cs" LinkBase="Chat\Assistant" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Data\*.cs" LinkBase="Chat\Data" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Services\ConversationState.cs;..\..\templates\chat\src\Chat.Shared\Services\ConversationStore.cs" LinkBase="Chat\Services" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Markdown\MessageMarkdown.cs" LinkBase="Chat\Markdown" />
+    <Compile Include="..\..\templates\chat\src\Chat.Web\AssistantEndpoints.cs;..\..\templates\chat\src\Chat.Web\CallerAccess.cs" LinkBase="Chat" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
     <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
   </ItemGroup>

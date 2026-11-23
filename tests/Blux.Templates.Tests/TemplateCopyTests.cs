@@ -96,6 +96,20 @@ public class TemplateCopyTests
     }
 
     [Fact]
+    public void The_chat_template_carries_the_renderer_files_it_needs_equal_to_the_reference()
+    {
+        // The Chat template renders Markdown but has no content folder (no files, no front matter): it carries only the renderer, its URL rules and the highlighter,
+        // in src/Chat.Shared/Markdown, next to its own code. They are copies like the others.
+        var folder = Path.Combine(Templates, "chat", "src", "Chat.Shared", "Markdown");
+        foreach (var file in new[] { "MarkdownRenderer.cs", "ContentUrl.cs", "SyntaxHighlighter.cs" })
+        {
+            Assert.True(File.Exists(Path.Combine(folder, file)), $"templates/chat/src/Chat.Shared/Markdown/{file} is missing");
+            Assert.True(Text(Path.Combine(Reference, file)) == Text(Path.Combine(folder, file)),
+                $"templates/chat/src/Chat.Shared/Markdown/{file} differs from templates/_shared/Content/{file}. Copy the reference over it.");
+        }
+    }
+
+    [Fact]
     public void The_reference_does_not_name_a_template_because_a_rename_would_rewrite_the_copies()
     {
         // rename.cs replaces the name of its template in every file, so a copy that mentioned another template, or its own, would stop being equal to the reference.
