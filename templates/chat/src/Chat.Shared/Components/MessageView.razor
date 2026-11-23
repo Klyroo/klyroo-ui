@@ -1,0 +1,84 @@
+@inject IJSRuntime JS
+@inject IToastService Toasts
+
+@* One message of the conversation. A question is plain text in a bubble. An answer is Markdown, with the thinking of the model above it when it sent some, and a row of
+   actions under it once it is complete. *@
+@if (Message.IsUser)
+{
+    <BxChatMessage Role="ChatRole.User" Text="@Message.Content" data-testid="message-user" />
+}
+else
+{
+    <BxChatMessage Role="ChatRole.Assistant" Streaming="Streaming" data-testid="message-assistant">
+        <Icon>@BxIcons.Named("lucide:sparkles", "size-4")</Icon>
+        <ChildContent>
+            @if (!string.IsNullOrEmpty(Message.Reasoning))
+            {
+                <BxChatReasoning Streaming="@(Streaming && Message.Content.Length == 0)" Duration="Message.ThinkingSeconds" Class="mb-2" data-testid="message-reasoning">
+                    <span class="whitespace-pre-wrap">@Message.Reasoning</span>
+                </BxChatReasoning>
+            }
+            @if (Message.Content.Length > 0)
+            {
+                <MarkdownView Text="@Message.Content" MessageId="@Message.Id" PageHref="@PageHref" />
+            }
+            @if (Message.Interrupted && !Streaming)
+            {
+                <p class="mt-2 text-sm text-(--blux-warning-text)" data-testid="message-interrupted">This answer was interrupted and is incomplete.</p>
+            }
+        </ChildContent>
+        <Actions>
+            @if (!Streaming && (Message.Content.Length > 0 || Message.Interrupted))
+            {
+                <div class="-ms-1.5 flex items-center gap-0.5">
+                    @if (Message.Content.Length > 0)
+                    {
+                        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">
+                            <LeadingIcon>@BxIcons.Named(_copied ? "lucide:check" : "lucide:copy")</LeadingIcon>
+                        </BxButton>
+                    }
+                    @if (CanRegenerate)
+                    {
+                        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Write the answer again" OnClick="OnRegenerate" data-testid="message-regenerate">
+                            <LeadingIcon>@BxIcons.Named("lucide:refresh-cw")</LeadingIcon>
+                        </BxButton>
+                    }
+                </div>
+            }
+        </Actions>
+    </BxChatMessage>
+}
+
+@code {
+    private bool _copied;
+
+    [Parameter, EditorRequired] public ConversationMessage Message { get; set; } = default!;
+
+    /// <summary>The answer is still arriving.</summary>
+    [Parameter] public bool Streaming { get; set; }
+
+    /// <summary>Shows the button that asks for the answer again: only the last answer has it.</summary>
+    [Parameter] public bool CanRegenerate { get; set; }
+
+    [Parameter] public EventCallback OnRegenerate { get; set; }
+
+    /// <summary>The address of the page, relative to the base, for the links of the answer to its own headings.</summary>
+    [Parameter] public string PageHref { get; set; } = "";
+
+    private async Task CopyAsync()
+    {
+        try
+        {
+            await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Chat.Shared/host.js");
+            await module.InvokeVoidAsync("copyText", Message.Content);
+            _copied = true;
+            await Toasts.Add(new BxToast { Title = "Copied", Description = "The answer is on the clipboard.", Color = BxColor.Success });
+            await Task.Delay(1800);
+            _copied = false;
+        }
+        catch (JSException)
+        {
+            await Toasts.Add(new BxToast { Title = "Not copied", Description = "The browser did not allow access to the clipboard.", Color = BxColor.Warning });
+        }
+    }
+}

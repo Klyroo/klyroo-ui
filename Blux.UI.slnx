@@ -45,6 +45,9 @@
     <Project Path="templates/saas/src/SaaS.Web/SaaS.Web.csproj" />
     <Project Path="templates/portfolio/src/Portfolio.Web/Portfolio.Web.csproj" />
     <Project Path="templates/changelog/src/Changelog.Web/Changelog.Web.csproj" />
+    <Project Path="templates/chat/src/Chat.Shared/Chat.Shared.csproj" />
+    <Project Path="templates/chat/src/Chat.Web/Chat.Web.csproj" />
+    <Project Path="templates/chat/src/Chat.Web.Client/Chat.Web.Client.csproj" />
   </Folder>
   <Folder Name="/build/">
     <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />

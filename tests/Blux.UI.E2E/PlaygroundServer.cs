@@ -93,6 +93,8 @@ public sealed class PlaygroundServer : IAsyncLifetime
         }
         // The Changelog demo reads the sample releases of the template, never GitHub: the E2E run needs no network (the production setting is in
         // the appsettings.json of the docs host: Blux:Templates:Demos:changelog).
+        // The Chat demo answers from canned replies, never from a service (also the production setting, in the appsettings.json of the docs host).
+        start.Environment["Blux__Templates__Demos__chat__Assistant__Provider"] = "Simulated";
         start.Environment["Blux__Templates__Demos__changelog__Changelog__Source"] = "File";
         start.Environment["Blux__Templates__Demos__changelog__Changelog__Repository"] = "tern-cli/tern";
         // BLUX_TEMPLATES_PUBLISHED: a folder with one "dotnet publish" output per template ({name}/), run in Production instead of the build output.
