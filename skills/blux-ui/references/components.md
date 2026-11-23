@@ -1273,7 +1273,8 @@
 `/components/editor`. A rich text editor built on TipTap. The value is an HTML string; it loads from a separate file only on pages that have an editor, and static pages show the HTML read-only until it is ready.
 
 - `<BxEditor>`
-  - Parameters: `Class`, `Color`, `Disabled`, `Id`, `Label`, `Name`, `Placeholder`, `ReadOnly`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Parameters: `Class`, `Color`, `Disabled`, `Id`, `ImageSchemes`, `Label`, `LinkSchemes`, `MaxLength`, `Name`, `Placeholder`, `ReadOnly`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Variant`
+  - Events: `OnLimit`
   - Slots: `ChildContent`
   - `Ui` (`EditorUi`): `Root`, `Content`, `Base`, `Fallback`
 
@@ -1283,7 +1284,7 @@
 
 - `<BxEditorToolbar>`
   - Parameters: `Class`, `Color`, `Items`, `Label`, `Layout`, `Size`, `Ui`
-  - `Ui` (`EditorToolbarUi`): `Root`, `Button`, `Icon`, `Separator`, `LinkForm`, `LinkInput`, `LinkButton`
+  - `Ui` (`EditorToolbarUi`): `Root`, `Button`, `Icon`, `Separator`, `LinkForm`, `LinkInput`, `LinkButton`, `LinkMessage`
 - `<EditorToolbarItem>`
 - `<EditorAction>`
 - `<EditorToolbarLayout>`

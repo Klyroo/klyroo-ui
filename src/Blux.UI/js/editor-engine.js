@@ -9,6 +9,7 @@ import Image from '@tiptap/extension-image';
 import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Suggestion from '@tiptap/suggestion';
 import { NodeSelection, PluginKey, TextSelection } from '@tiptap/pm/state';
+import { isImageAddress, isLinkAddress } from './editor-address.js';
 
 // The mention node without TipTap's own suggestion plugin: menus are registered from the DOM (registerSuggestion).
 const MentionNode = Mention.extend({
@@ -17,14 +18,14 @@ const MentionNode = Mention.extend({
   },
 });
 
-// Images are block nodes taken from an http or https address only: a data: or javascript: source in pasted or stored content is not an image of the editor.
-const IMAGE_SOURCE = /^https?:\/\/[^\s]+$/i;
-
-const ImageNode = Image.extend({
-  parseHTML() {
-    return [{ tag: 'img[src]', getAttrs: (element) => (IMAGE_SOURCE.test(element.getAttribute('src') ?? '') ? null : false) }];
-  },
-});
+// Images are block nodes taken from an address of the allowed schemes (http and https unless the page narrows it): a data: or javascript: source in pasted or stored
+// content is not an image of the editor.
+const imageNode = (accepts) =>
+  Image.extend({
+    parseHTML() {
+      return [{ tag: 'img[src]', getAttrs: (element) => (accepts(element.getAttribute('src') ?? '') ? null : false) }];
+    },
+  });
 
 /** The alt text of an inserted image: the selected text, or else the name of the file in the address ("team-photo.jpg" gives "team photo"). */
 const altFor = (src, selected) => {
@@ -50,12 +51,18 @@ export const isToggle = (action) => TOGGLES.has(action);
  * @param {boolean} options.editable
  * @param {() => string} options.placeholder
  * @param {(text: string) => string} [options.taskLabel] Accessible name of the checkbox of a task item, from the text of the item.
+ * @param {() => string[] | null} [options.imageSchemes] Schemes an image address may have (http and https only); null for both.
+ * @param {() => string[] | null} [options.linkSchemes] Schemes a link may have, as absolute addresses; null for the engine's default (which also takes relative addresses and tel:).
  * @param {Record<string, string>} options.attributes Attributes of the editable element (role, aria-*).
  * @param {() => void} options.onUpdate Content changed.
  * @param {() => void} options.onState Selection, focus or content changed: toolbars repaint.
  * @param {() => void} options.onBlur
  */
-export function createEngine({ element, html, editable, placeholder, attributes, taskLabel, onUpdate, onState, onBlur }) {
+export function createEngine({ element, html, editable, placeholder, attributes, taskLabel, imageSchemes, linkSchemes, onUpdate, onState, onBlur }) {
+  const acceptsImage = (address) => isImageAddress(address, imageSchemes?.());
+  // The engine's own check (relative addresses, tel:, ftp: ...) applies unless the page lists the schemes it takes.
+  const acceptsLink = (address, defaultValidate) => isLinkAddress(address, linkSchemes?.()) ?? defaultValidate(address);
+
   let bump = 0;
   const notify = () => {
     cancelAnimationFrame(bump);
@@ -68,13 +75,19 @@ export function createEngine({ element, html, editable, placeholder, attributes,
     editable,
     extensions: [
       StarterKit.configure({
-        link: { openOnClick: false, autolink: true, defaultProtocol: 'https', HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: null } },
+        link: {
+          openOnClick: false,
+          autolink: true,
+          defaultProtocol: 'https',
+          isAllowedUri: (address, context) => acceptsLink(address, context.defaultValidate),
+          HTMLAttributes: { rel: 'noopener noreferrer nofollow', target: null },
+        },
       }),
       Placeholder.configure({ placeholder: () => placeholder(), showOnlyCurrent: true }),
       MentionNode.configure({ HTMLAttributes: { class: 'bx-mention' } }),
       TaskList,
       TaskItem.configure({ nested: true, a11y: { checkboxLabel: (node) => (taskLabel ? taskLabel(node.textContent) : `Task: ${node.textContent}`) } }),
-      ImageNode.configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy', referrerpolicy: 'no-referrer' } }),
+      imageNode(acceptsImage).configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy', referrerpolicy: 'no-referrer' } }),
       Extension.create({
         name: 'bxMoveBlock',
         addKeyboardShortcuts: () => ({
@@ -173,7 +186,7 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       case 'moveDown': return moveSelection(1);
       case 'image': {
         const src = String(arg ?? '').trim();
-        if (!IMAGE_SOURCE.test(src)) return false;
+        if (!acceptsImage(src)) return false;
         const { from, to } = editor.state.selection;
         return chain().setImage({ src, alt: altFor(src, editor.state.doc.textBetween(from, to, ' ')) }).run();
       }

@@ -33,8 +33,22 @@ public sealed class BxSearchEventArgs : EventArgs
     public int Sequence { get; set; }
 }
 
+/// <summary>Payload of the <c>bx-limit</c> browser event raised by <see cref="BxEditor"/> when its text goes past <see cref="BxEditor.MaxLength"/> or comes back within it.</summary>
+public sealed class BxLimitEventArgs : EventArgs
+{
+    /// <summary>True while the text is longer than <see cref="Max"/>.</summary>
+    public bool Exceeded { get; set; }
+
+    /// <summary>The characters of HTML the editor holds now.</summary>
+    public int Length { get; set; }
+
+    /// <summary>The limit, <see cref="BxEditor.MaxLength"/>.</summary>
+    public int Max { get; set; }
+}
+
 /// <summary>Custom events, registered on the browser side by <c>Blux.UI.lib.module.js</c>.</summary>
 [EventHandler("onbxtoggle", typeof(BxToggleEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onbxchange", typeof(BxChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onbxsearch", typeof(BxSearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onbxlimit", typeof(BxLimitEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 public static class EventHandlers;

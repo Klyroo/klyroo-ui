@@ -179,8 +179,20 @@ internal static class EditorChecks
         await address.FillAsync("javascript:window.__xss = 1");
         await address.PressAsync("Enter");
         await Assertions.Expect(Surface(page).Locator("a[href^=javascript]")).ToHaveCountAsync(0);
+        // What the allow-list would not keep is refused where it is typed, with the reason, and not accepted to vanish after a reload: relative addresses, bare domains, tel: and ftp:.
+        var linkMessage = toolbar.Locator("[data-slot=link-form] [data-slot=form-message]");
+        foreach (var refused in new[] { "javascript:window.__xss = 1", "/relative/page", "example.com", "tel:+123456", "ftp://example.com/file", "https://exa mple.com/a b", "https://user:secret@example.com/" })
+        {
+            await address.FillAsync(refused);
+            await address.PressAsync("Enter");
+            await Assertions.Expect(address).ToHaveAttributeAsync("aria-invalid", "true");
+            await Assertions.Expect(linkMessage).ToHaveTextAsync("Only http, https, mailto addresses are accepted.");
+            await Assertions.Expect(Surface(page).Locator("a")).ToHaveCountAsync(1);
+        }
+        await address.PressAsync("Escape");
+        await Assertions.Expect(address).ToBeHiddenAsync();
 
-        // An image by address: https is inserted with its alt text taken from the file name, http is kept out of what is stored.
+        // An image by address: https is inserted with its alt text taken from the file name; http is refused here, because it is not what is stored.
         await Surface(page).ClickAsync();
         await page.Keyboard.PressAsync("Control+End");
         await page.Keyboard.PressAsync("Enter");
@@ -202,7 +214,15 @@ internal static class EditorChecks
         await toolbar.GetByRole(AriaRole.Button, new() { Name = "Image" }).ClickAsync();
         await image.FillAsync("http://images.example.test/insecure.png");
         await image.PressAsync("Enter");
-        await Assertions.Expect(Surface(page).Locator("img")).ToHaveCountAsync(2);
+        // The image field is invalid, described by a message that says which addresses are accepted, and the form stays open; nothing was inserted.
+        await Assertions.Expect(image).ToHaveAttributeAsync("aria-invalid", "true");
+        var imageMessage = toolbar.Locator("[data-slot=image-form] [data-slot=form-message]");
+        await Assertions.Expect(imageMessage).ToHaveTextAsync("Only https addresses are accepted.");
+        Assert.Equal("status", await imageMessage.GetAttributeAsync("role"));
+        await Assertions.Expect(image).ToHaveAttributeAsync("aria-describedby", (await imageMessage.GetAttributeAsync("id"))!);
+        await Assertions.Expect(Surface(page).Locator("img")).ToHaveCountAsync(1);
+        await image.PressAsync("Escape");
+        await Assertions.Expect(image).ToBeHiddenAsync();
         await Surface(page).ClickAsync();
         await page.Keyboard.PressAsync("Control+End");
         await page.Keyboard.PressAsync("Enter");
@@ -419,6 +439,196 @@ internal static class EditorChecks
         await page.SetViewportSizeAsync(1280, 800);
     }
 
+    /// <summary>A browser that never gets the WebAssembly runtime: the page stays on the Server renderer, the one whose circuit refuses messages past its bound.</summary>
+    private static async Task<IBrowserContext> ServerOnlyContext(IBrowser browser, string baseUrl)
+    {
+        var context = await browser.NewContextAsync(new() { BaseURL = baseUrl, ViewportSize = new() { Width = 1280, Height = 800 } });
+        await context.RouteAsync(new Regex(@"\.wasm(\?|$)"), route => route.AbortAsync());
+        return context;
+    }
+
+    private static Task WaitServer(IPage page) =>
+        Assertions.Expect(page.GetByTestId("renderer")).ToHaveTextAsync("Server", new() { Timeout = 60_000 });
+
+    /// <summary>Puts documents of about <paramref name="characters"/> characters straight into the storage, the way an older visit would have left them. The newest is number 0.</summary>
+    private static Task Seed(IPage page, string? pathBase, int count, int characters, string? junkKey = null) =>
+        page.EvaluateAsync(@"([prefix, count, characters, junkKey]) => {
+            const hex = () => Array.from(crypto.getRandomValues(new Uint8Array(16)), (b) => b.toString(16).padStart(2, '0')).join('');
+            const now = Date.now();
+            for (let i = 0; i < count; i++) {
+                const id = hex();
+                const unit = 'seedword' + i + ' lorem ipsum ';
+                const html = '<h1>Seed ' + i + '</h1><p>' + unit.repeat(Math.ceil(characters / unit.length)) + '</p>';
+                const when = new Date(now - i * 60000).toISOString();
+                localStorage.setItem(prefix + ':d:' + id, JSON.stringify({ id, title: 'Seed ' + i, autoTitle: false, html, createdAt: when, updatedAt: when }));
+            }
+            if (junkKey) localStorage.setItem(prefix + ':d:' + junkKey, 'garbage');
+        }", new object?[] { Prefix(pathBase), count, characters, junkKey });
+
+    /// <summary>
+    /// What the circuit of the Server renderer carries. It refuses a message over a bound that the host raises to the one the limits of a document call for: a document of 100,000 characters
+    /// (far past the 32 KB default) is typed, saved and read again after a reload; a library of ninety documents is listed without being sent whole; one past the limit of characters is never sent.
+    /// </summary>
+    public static async Task AssertServerCircuitCarriesLargeDocuments(IBrowser browser, string baseUrl, string? pathBase)
+    {
+        await using var context = await ServerOnlyContext(browser, baseUrl);
+        var page = await context.NewPageAsync();
+        var frames = new List<int>();
+        page.WebSocket += (_, socket) => socket.FrameSent += (_, frame) => { lock (frames) frames.Add(frame.Binary?.Length ?? frame.Text?.Length ?? 0); };
+        await page.GotoAsync("");
+        await WaitServer(page);
+
+        // Many documents: ninety of 9,000 characters each (about 800 KB together) are listed, searched in the browser and opened one at a time.
+        await Seed(page, pathBase, 90, 9000);
+        await page.ReloadAsync();
+        await WaitServer(page);
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(90, new() { Timeout = 20_000 });
+        await Assertions.Expect(page.GetByTestId("storage-warning")).ToContainTextAsync("Almost full: 90 of 100 documents");
+        var search = page.GetByRole(AriaRole.Textbox, new() { Name = "Search documents" });
+        await search.FillAsync("seedword42 lorem");
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(1);
+        await Assertions.Expect(Items(page).First).ToContainTextAsync("Seed 42");
+        await Items(page).First.ClickAsync();
+        await WaitForDocumentUrl(page);
+        await WaitEditor(page);
+        await Assertions.Expect(Surface(page)).ToContainTextAsync("seedword42 lorem ipsum");
+        await Assertions.Expect(NavTitle(page)).ToHaveTextAsync("Seed 42");
+        await search.FillAsync("");
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(90);
+
+        // A large document: typed (inserted at once, like a paste) in a new document, saved, and back after a reload.
+        await NewDocument(page);
+        var text = string.Concat(Enumerable.Repeat("Zażółć gęślą \"jaźń\" 日本語 — ", 4000));
+        Assert.InRange(text.Length, 100_000, 120_000);
+        await Surface(page).ClickAsync();
+        await page.Keyboard.InsertTextAsync(text);
+        await WaitStored(page, pathBase, "jaźń");
+        await WaitSaved(page);
+        await WaitServer(page);
+        var stored = (await StoredValues(page, pathBase ?? "")).Single(value => value.Contains("Zażółć", StringComparison.Ordinal));
+        Assert.True(stored.Length > 100_000, $"the stored document is {stored.Length} characters");
+        var url = page.Url;
+        await page.ReloadAsync();
+        await WaitServer(page);
+        await WaitEditor(page);
+        Assert.Equal(url, page.Url);
+        await Assertions.Expect(Surface(page)).ToContainTextAsync("日本語");
+        Assert.True((await Surface(page).InnerTextAsync()).Length > 100_000);
+        await Assertions.Expect(page.GetByTestId("save-state")).ToHaveTextAsync("Saved");
+
+        // Past the limit of characters the editor sends nothing, says so, and the stored text is the last one that fitted.
+        await Surface(page).ClickAsync();
+        await page.Keyboard.PressAsync("Control+End");
+        lock (frames) frames.Clear();
+        await page.Keyboard.InsertTextAsync(string.Concat(Enumerable.Repeat("OVERLIMIT ", 6000)));
+        await Assertions.Expect(page.GetByTestId("save-state")).ToContainTextAsync("Not saved: this document is too long", new() { Timeout = 15_000 });
+        await Assertions.Expect(page.GetByTestId("save-state")).ToContainTextAsync("of 150,000 characters");
+        await Assertions.Expect(page.GetByTestId("editor")).ToHaveAttributeAsync("data-over-limit", "");
+        await page.WaitForTimeoutAsync(1000);
+        int largest;
+        lock (frames) largest = frames.Count == 0 ? 0 : frames.Max();
+        Assert.True(largest < 50_000, $"a message of {largest} bytes was sent while the text was over the limit");
+        Assert.DoesNotContain(await StoredValues(page, pathBase ?? ""), value => value.Contains("OVERLIMIT", StringComparison.Ordinal));
+        await WaitServer(page);
+        // Undo takes it back within the limit: the status follows.
+        await page.Keyboard.PressAsync("Control+z");
+        await Assertions.Expect(page.GetByTestId("save-state")).ToHaveTextAsync("Saved", new() { Timeout = 15_000 });
+        await Assertions.Expect(page.GetByTestId("editor")).Not.ToHaveAttributeAsync("data-over-limit", new Regex(".*"));
+    }
+
+    /// <summary>What the app does when the bounds are past, and tells: the repair at load, the warning near them, the removal when a new document is made.</summary>
+    public static async Task AssertRemovalsAreAnnounced(IBrowser browser, string baseUrl, string? pathBase)
+    {
+        await using var context = await ServerOnlyContext(browser, baseUrl);
+        var page = await context.NewPageAsync();
+        await page.GotoAsync("");
+        await WaitServer(page);
+
+        // The storage holds 103 documents and something that is not one: reading it removes the 3 least recently used and the junk, and says so.
+        await Seed(page, pathBase, 103, 600, junkKey: "not-a-document");
+        await page.ReloadAsync();
+        await WaitServer(page);
+        var repaired = page.GetByText("Storage cleaned up", new() { Exact = true });
+        await Assertions.Expect(repaired).ToBeVisibleAsync(new() { Timeout = 20_000 });
+        await Assertions.Expect(page.GetByText("3 least recently used documents were removed because the storage held more than the limits allow")).ToBeVisibleAsync();
+        await Assertions.Expect(page.GetByText("1 stored entry that was not a readable document was removed")).ToBeVisibleAsync();
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(100);
+        var keys = await page.EvaluateAsync<string[]>("(prefix) => Object.keys(localStorage).filter((k) => k.startsWith(prefix + ':d:'))", Prefix(pathBase));
+        Assert.Equal(100, keys.Length);
+
+        // At the bound the sidebar warns before anything else goes; one more document pushes the oldest out, and a notice says how many.
+        await Assertions.Expect(page.GetByTestId("storage-warning")).ToContainTextAsync("Almost full: 100 of 100 documents");
+        await page.GetByTestId("new-document").ClickAsync();
+        await WaitForDocumentUrl(page);
+        await Assertions.Expect(page.GetByText("Older documents were removed", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 20_000 });
+        await Assertions.Expect(page.GetByText("1 least recently used document was removed: this browser keeps at most 100 documents and 1,000,000 characters in all")).ToBeVisibleAsync();
+        await Assertions.Expect(Items(page)).ToHaveCountAsync(100);
+        Assert.DoesNotContain(await page.EvaluateAsync<string[]>("(prefix) => Object.keys(localStorage).filter((k) => k.startsWith(prefix + ':d:'))", Prefix(pathBase)), key => key.EndsWith("not-a-document", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Two tabs of one browser: a change in one reaches the list and the open document of the other, a document being typed in is never replaced under the cursor, and a document deleted
+    /// elsewhere is left with a notice.
+    /// </summary>
+    public static async Task AssertTwoTabs(IBrowser browser, string baseUrl, string? pathBase)
+    {
+        await using var context = await ServerOnlyContext(browser, baseUrl);
+        var a = await context.NewPageAsync();
+        await a.GotoAsync("");
+        await WaitServer(a);
+        await NewDocument(a);
+        await Surface(a).ClickAsync();
+        await a.Keyboard.TypeAsync("From A");
+        await WaitStored(a, pathBase, "From A");
+        await WaitSaved(a);
+        var url = a.Url;
+
+        var b = await context.NewPageAsync();
+        await b.GotoAsync(url);
+        await WaitInteractive(b);
+        await WaitEditor(b);
+        await Assertions.Expect(Surface(b)).ToContainTextAsync("From A");
+
+        // B writes while A has the cursor in the text: A keeps what is on its screen, says so, and offers the other version.
+        await Surface(b).ClickAsync();
+        await b.Keyboard.PressAsync("Control+End");
+        await b.Keyboard.TypeAsync(" and B");
+        await WaitStored(b, pathBase, "and B");
+        await Assertions.Expect(a.GetByTestId("external-conflict")).ToBeVisibleAsync(new() { Timeout = 15_000 });
+        await Assertions.Expect(a.GetByTestId("external-conflict")).ToContainTextAsync("Another tab changed this document");
+        await Assertions.Expect(Surface(a)).ToHaveTextAsync("From A");
+        await a.GetByTestId("external-reload").ClickAsync();
+        await Assertions.Expect(Surface(a)).ToHaveTextAsync("From A and B");
+        await Assertions.Expect(a.GetByTestId("external-change")).ToBeVisibleAsync();
+        await Assertions.Expect(a.GetByTestId("external-conflict")).ToHaveCountAsync(0);
+
+        // With the cursor out of the text, A takes the change as it comes.
+        await a.GetByTestId("word-count").ClickAsync();
+        await Surface(b).ClickAsync();
+        await b.Keyboard.PressAsync("Control+End");
+        await b.Keyboard.TypeAsync(" again");
+        await WaitStored(b, pathBase, "and B again");
+        await Assertions.Expect(Surface(a)).ToHaveTextAsync("From A and B again", new() { Timeout = 15_000 });
+        await Assertions.Expect(a.GetByTestId("external-change")).ToBeVisibleAsync();
+
+        // A document made in B is in the list of A.
+        var before = await Items(a).CountAsync();
+        await b.GetByTestId("new-document").ClickAsync();
+        await WaitForDocumentUrl(b);
+        await Assertions.Expect(Items(a)).ToHaveCountAsync(before + 1, new() { Timeout = 15_000 });
+
+        // A document deleted in B is gone from A, which leaves it and says why.
+        await b.GotoAsync(url);
+        await WaitInteractive(b);
+        await WaitEditor(b);
+        await b.GetByRole(AriaRole.Button, new() { Name = "Delete document" }).ClickAsync();
+        await b.GetByRole(AriaRole.Dialog, new() { Name = "Delete document?" }).GetByRole(AriaRole.Button, new() { Name = "Delete" }).ClickAsync();
+        await WaitForUrl(a, "!/\\/d\\//.test(url.pathname)");
+        await Assertions.Expect(a.GetByText("Deleted in another tab", new() { Exact = true })).ToBeVisibleAsync(new() { Timeout = 15_000 });
+        await Assertions.Expect(a.GetByText("1 document was deleted in another tab of this browser")).ToBeVisibleAsync();
+        await Assertions.Expect(Items(a)).ToHaveCountAsync(before);
+    }
+
     /// <summary>The whole tour, in the order the documents it makes are needed.</summary>
     public static async Task Tour(IPage page, IBrowser browser, string baseUrl, string? pathBase)
     {
@@ -494,6 +704,10 @@ public class EditorTemplateTests(PlaygroundServer server)
             await page.GotoAsync("");
             await Assertions.Expect(page.Locator("base")).ToHaveAttributeAsync("href", (pathBase ?? "").TrimEnd('/') + "/");
             await EditorChecks.Tour(page, server.Browser, baseUrl, pathBase);
+            // The Server renderer carries large documents and many of them, the removals are announced and two tabs follow each other (each in a browser that never gets the WebAssembly runtime).
+            await EditorChecks.AssertServerCircuitCarriesLargeDocuments(server.Browser, baseUrl, pathBase);
+            await EditorChecks.AssertRemovalsAreAnnounced(server.Browser, baseUrl, pathBase);
+            await EditorChecks.AssertTwoTabs(server.Browser, baseUrl, pathBase);
 
             // The WebAssembly runtime downloads in the background. Once it has, the page comes back as WebAssembly and the documents are still there.
             var deadline = DateTime.UtcNow.AddSeconds(90);
@@ -517,6 +731,18 @@ public class EditorTemplateTests(PlaygroundServer server)
             await Assertions.Expect(page.GetByTestId("renderer")).ToHaveTextAsync(new Regex("^(Server|WebAssembly)$"), new() { Timeout = 60_000 });
             await EditorChecks.WaitEditor(page);
             await Assertions.Expect(EditorChecks.Surface(page)).ToContainTextAsync("Written by WebAssembly");
+
+            // Another tab of the same browser, with the runtime already downloaded (so WebAssembly too): what it writes reaches this one, which is not being typed in.
+            var second = await context.NewPageAsync();
+            await second.GotoAsync(page.Url);
+            await Assertions.Expect(second.GetByTestId("renderer")).ToHaveTextAsync("WebAssembly", new() { Timeout = 60_000 });
+            await EditorChecks.WaitEditor(second);
+            await EditorChecks.Surface(second).ClickAsync();
+            await second.Keyboard.PressAsync("Control+End");
+            await second.Keyboard.TypeAsync(" and a second tab");
+            await Assertions.Expect(EditorChecks.Surface(page)).ToContainTextAsync("and a second tab", new() { Timeout = 15_000 });
+            await Assertions.Expect(page.GetByTestId("external-change")).ToBeVisibleAsync();
+            await second.CloseAsync();
 
             await EditorChecks.AssertNoHorizontalScroll(page);
             await EditorChecks.AssertMobilePanel(page);

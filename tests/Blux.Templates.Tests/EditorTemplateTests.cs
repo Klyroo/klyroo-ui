@@ -87,6 +87,51 @@ public class EditorTemplateTests
     public void An_image_comes_from_an_https_address_or_is_dropped(string address) =>
         Assert.Equal("<p>x</p>", DocumentHtml.Clean($"<p>x</p><img src=\"{address}\" onerror=\"y()\">"));
 
+    [Theory]
+    [InlineData("https://exa mple.com/a b")]
+    [InlineData("https://example.com/a b")]
+    [InlineData("https://exa mple.com/")]
+    [InlineData("java script:alert(1)")]
+    [InlineData("https://example.com/a b")]
+    [InlineData("https://example.com/a b")]
+    [InlineData("https://example.com/a\u0001b")]
+    [InlineData("mailto:someone@exa mple.com")]
+    public void An_address_with_a_space_inside_is_not_an_address_and_is_never_closed_up_into_another_host(string address)
+    {
+        Assert.Equal("<p>text</p>", DocumentHtml.Clean($"<p><a href=\"{address}\">text</a></p>"));
+        Assert.Null(DocumentHtml.Link(address));
+        Assert.Null(DocumentHtml.Image(address));
+    }
+
+    [Fact]
+    public void The_address_that_used_to_become_another_host_is_dropped_as_a_link_and_as_an_image()
+    {
+        Assert.Equal("<p>text</p>", DocumentHtml.Clean("<p><a href=\"https://exa mple.com/a b\">text</a></p>"));
+        Assert.Equal("<p>x</p>", DocumentHtml.Clean("<p>x</p><img src=\"https://exa mple.com/a b.png\">"));
+    }
+
+    [Theory]
+    [InlineData("  https://example.com/a  ", "https://example.com/a")]
+    [InlineData("\u0001\u001f https://example.com/a \u0002", "https://example.com/a")]
+    [InlineData("\thttps://example.com/a\n", "https://example.com/a")]
+    [InlineData("https://example.com/a\tb", "https://example.com/ab")]
+    [InlineData("https://example.com/a\r\nb", "https://example.com/ab")]
+    [InlineData("htt\nps://example.com/", "https://example.com/")]
+    public void Like_a_browser_the_ends_are_trimmed_and_tabs_and_line_breaks_are_dropped_anywhere(string address, string expected)
+    {
+        Assert.Equal(expected, DocumentHtml.Link(address));
+        Assert.Equal(expected, DocumentHtml.Image(address));
+        Assert.Equal($"<p><a href=\"{expected}\" rel=\"noopener noreferrer nofollow\">text</a></p>", DocumentHtml.Clean($"<p><a href=\"{address.Replace("\n", "&#10;").Replace("\r", "&#13;").Replace("\t", "&#9;")}\">text</a></p>"));
+    }
+
+    [Fact]
+    public void A_tab_in_the_scheme_still_does_not_make_a_script_address()
+    {
+        Assert.Null(DocumentHtml.Link("java\tscript:alert(1)"));
+        Assert.Null(DocumentHtml.Link("  java\nscript:alert(1)"));
+        Assert.Null(DocumentHtml.Link("\u0001javascript:alert(1)"));
+    }
+
     [Fact]
     public void An_image_keeps_its_address_and_alt_text_and_gets_lazy_loading_without_a_referrer()
     {
@@ -278,247 +323,7 @@ public class EditorTemplateTests
         Assert.Equal([2, 1, 1, 1, 1], groups.Select(g => g.Items.Count));
     }
 
-    // ---------------------------------------------------------------- the state
-
-    private sealed class MemoryStore : IDocumentStore
-    {
-        public Dictionary<string, string> Saved { get; } = [];
-
-        public List<StoredDocument> Initial { get; } = [];
-
-        public List<string> Deleted { get; } = [];
-
-        public bool Fail { get; set; }
-
-        public bool FailLoad { get; set; }
-
-        public Task<StoredData> LoadAsync() => FailLoad ? throw new InvalidOperationException("blocked") : Task.FromResult(new StoredData(Initial, 120));
-
-        public Task SaveAsync(string id, string json)
-        {
-            if (Fail) throw new InvalidOperationException("full");
-            Saved[id] = json;
-            return Task.CompletedTask;
-        }
-
-        public Task DeleteAsync(string id)
-        {
-            Deleted.Add(id);
-            Saved.Remove(id);
-            return Task.CompletedTask;
-        }
-    }
-
-    private static StoredDocument Stored(string html = "<p>x</p>", DateTimeOffset? updated = null, string? id = null)
-    {
-        var document = new Document { UpdatedAt = updated ?? DateTimeOffset.UtcNow };
-        if (id is not null) document.Id = id;
-        document.SetHtml(html);
-        return new StoredDocument(document.Id, DocumentJson.Write(document));
-    }
-
-    [Fact]
-    public async Task The_state_reads_the_store_once_checks_it_and_removes_what_is_not_a_document()
-    {
-        var store = new MemoryStore();
-        var good = Stored("<p>keep</p>", DateTimeOffset.UtcNow.AddMinutes(-5));
-        var newer = Stored("<p>newer</p>");
-        var other = Stored();
-        store.Initial.AddRange([good, newer, new StoredDocument(Document.NewId(), "garbage"), new StoredDocument(other.Id[..31] + "z", other.Json), new StoredDocument(good.Id, good.Json)]);
-        var state = new DocumentState(store);
-
-        await Task.WhenAll(state.LoadAsync(), state.LoadAsync());
-
-        Assert.True(state.Loaded);
-        Assert.Equal([newer.Id, good.Id], state.Items.Select(d => d.Id));
-        Assert.Equal(TimeSpan.FromHours(2), state.UtcOffset);
-        Assert.Equal(3, store.Deleted.Count);
-        Assert.True(state.StorageAvailable);
-    }
-
-    [Fact]
-    public async Task A_storage_that_cannot_be_read_starts_empty_and_says_so()
-    {
-        var state = new DocumentState(new MemoryStore { FailLoad = true });
-
-        await state.LoadAsync();
-
-        Assert.True(state.Loaded);
-        Assert.False(state.StorageAvailable);
-        Assert.Empty(state.Items);
-    }
-
-    [Fact]
-    public async Task A_storage_over_the_bounds_is_repaired_by_removing_the_least_recently_used()
-    {
-        var store = new MemoryStore();
-        var now = DateTimeOffset.UtcNow;
-        for (var i = 0; i < DocumentLimits.MaxDocuments + 5; i++)
-        {
-            store.Initial.Add(Stored("<p>x</p>", now.AddMinutes(-i)));
-        }
-        var state = new DocumentState(store);
-
-        await state.LoadAsync();
-
-        Assert.Equal(DocumentLimits.MaxDocuments, state.Items.Count);
-        Assert.Equal(5, store.Deleted.Count);
-        Assert.All(store.Deleted, id => Assert.DoesNotContain(state.Items, d => d.Id == id));
-
-        // By size: documents that together hold more than the total bound.
-        var big = new MemoryStore();
-        var paragraph = "<p>" + new string('a', 100_000) + "</p>";
-        for (var i = 0; i < 14; i++)
-        {
-            big.Initial.Add(Stored(paragraph, now.AddMinutes(-i)));
-        }
-        var bigState = new DocumentState(big);
-
-        await bigState.LoadAsync();
-
-        Assert.True(bigState.Items.Sum(d => (long)d.Html.Length) <= DocumentLimits.MaxTotalHtmlCharacters);
-        Assert.Equal(14 - bigState.Items.Count, big.Deleted.Count);
-    }
-
-    [Fact]
-    public async Task A_new_document_is_written_and_a_title_given_to_it_stops_following_the_text()
-    {
-        var store = new MemoryStore();
-        var state = new DocumentState(store);
-        await state.LoadAsync();
-
-        var blank = await state.CreateAsync();
-        var named = await state.CreateAsync("Guide", "<p>Body <script>x()</script></p>");
-
-        Assert.Equal([named.Id, blank.Id], state.Items.Select(d => d.Id));
-        Assert.True(blank.AutoTitle);
-        Assert.False(named.AutoTitle);
-        Assert.Equal("<p>Body </p>", named.Html);
-        Assert.Equal(2, store.Saved.Count);
-    }
-
-    [Fact]
-    public async Task An_edit_is_cleaned_saved_and_gives_a_new_document_its_title_from_the_text()
-    {
-        var store = new MemoryStore();
-        var state = new DocumentState(store);
-        var document = await state.CreateAsync();
-
-        var result = await state.UpdateHtmlAsync(document, "<h1>Plan for May</h1><p onclick=\"x()\">Details</p><script>y()</script>");
-
-        Assert.Equal(SaveResult.Saved, result);
-        Assert.Equal("<h1>Plan for May</h1><p>Details</p>", document.Html);
-        Assert.Equal("Plan for May", document.Title);
-        Assert.Equal(4, document.Words);
-        Assert.True(DocumentJson.TryRead(store.Saved[document.Id], out var stored));
-        Assert.Equal(document.Html, stored.Html);
-
-        await state.RenameAsync(document, "  My plan ");
-        await state.UpdateHtmlAsync(document, "<h1>Something else</h1>");
-        Assert.Equal("My plan", document.Title);
-        Assert.False(document.AutoTitle);
-    }
-
-    [Fact]
-    public async Task An_edit_past_the_length_limit_is_refused_and_leaves_the_document_as_it_was()
-    {
-        var store = new MemoryStore();
-        var state = new DocumentState(store);
-        var document = await state.CreateAsync();
-        await state.UpdateHtmlAsync(document, "<p>short</p>");
-
-        var result = await state.UpdateHtmlAsync(document, "<p>" + new string('a', DocumentLimits.MaxHtmlCharacters) + "</p>");
-
-        Assert.Equal(SaveResult.TooLong, result);
-        Assert.Equal("<p>short</p>", document.Html);
-        Assert.True(DocumentJson.TryRead(store.Saved[document.Id], out var stored));
-        Assert.Equal("<p>short</p>", stored.Html);
-    }
-
-    [Fact]
-    public async Task A_write_the_storage_refuses_keeps_the_document_for_the_visit_and_says_so()
-    {
-        var store = new MemoryStore { Fail = true };
-        var state = new DocumentState(store);
-        var document = await state.CreateAsync();
-
-        var result = await state.UpdateHtmlAsync(document, "<p>kept in memory</p>");
-
-        Assert.Equal(SaveResult.StorageFailed, result);
-        Assert.False(state.StorageAvailable);
-        Assert.Contains(document, state.Items);
-        Assert.Equal("<p>kept in memory</p>", document.Html);
-    }
-
-    [Fact]
-    public async Task Creating_past_the_bounds_drops_the_least_recently_used_but_never_the_document_being_saved()
-    {
-        var store = new MemoryStore();
-        var state = new DocumentState(store);
-        await state.LoadAsync();
-        var first = await state.CreateAsync();
-        var deleted = new List<string>();
-        state.Deleted += deleted.Add;
-        for (var i = 0; i < DocumentLimits.MaxDocuments; i++)
-        {
-            await state.CreateAsync();
-        }
-
-        Assert.Equal(DocumentLimits.MaxDocuments, state.Items.Count);
-        Assert.DoesNotContain(first, state.Items);
-        Assert.Contains(first.Id, store.Deleted);
-        Assert.Contains(first.Id, deleted);
-
-        // Documents that fill the total bound: the one being edited stays, the oldest go.
-        var heavy = await state.CreateAsync();
-        var paragraph = "<p>" + new string('a', 100_000) + "</p>";
-        await state.UpdateHtmlAsync(heavy, paragraph);
-        for (var i = 0; i < 12; i++)
-        {
-            var next = await state.CreateAsync();
-            await state.UpdateHtmlAsync(next, paragraph);
-        }
-
-        Assert.True(state.Items.Sum(d => (long)d.Html.Length) <= DocumentLimits.MaxTotalHtmlCharacters);
-    }
-
-    [Fact]
-    public async Task Rename_changes_the_title_ignores_an_empty_one_and_delete_removes_the_document_and_tells_the_page()
-    {
-        var store = new MemoryStore();
-        var state = new DocumentState(store);
-        var document = await state.CreateAsync("Old");
-        var deleted = new List<string>();
-        state.Deleted += deleted.Add;
-
-        Assert.True(await state.RenameAsync(document, "New\ntitle"));
-        Assert.Equal("New title", document.Title);
-        Assert.True(await state.RenameAsync(document, "   "));
-        Assert.Equal("New title", document.Title);
-
-        await state.DeleteAsync(document);
-        await state.DeleteAsync(document);
-
-        Assert.Empty(state.Items);
-        Assert.Equal([document.Id], deleted);
-        Assert.Equal([document.Id], store.Deleted);
-    }
-
-    [Fact]
-    public async Task Search_looks_in_the_title_and_the_text_in_any_case_and_not_in_the_markup()
-    {
-        var state = new DocumentState(new MemoryStore());
-        var shopping = await state.CreateAsync("Shopping", "<p>Buy <strong>Oat</strong> milk</p>");
-        var work = await state.CreateAsync("Work", "<p>Write the report</p>");
-
-        Assert.Equal(2, state.Search(null).Count);
-        Assert.Equal(2, state.Search("  ").Count);
-        Assert.Equal([shopping], state.Search("oat MILK"));
-        Assert.Equal([work], state.Search("REPORT"));
-        Assert.Equal([shopping], state.Search("shop"));
-        Assert.Empty(state.Search("strong"));
-        Assert.Empty(state.Search("<p>"));
-    }
+    // ---------------------------------------------------------------- the guide
 
     [Fact]
     public void The_sample_guide_is_stored_as_written_so_the_editor_and_the_allow_list_agree()

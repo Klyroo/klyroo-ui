@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "../obj/blux/blux.theme.css";
 
-/* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result at _content/Chat.Shared/app.css. */
+/* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result at _content/Editor.Shared/app.css. */
 
 @layer base {
   body {
