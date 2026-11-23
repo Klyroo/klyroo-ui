@@ -31,7 +31,8 @@ internal static partial class ToolsThemes
                 "layoutSwitch", "layoutOption",
                 "gridRoot", "gridHeader", "grid", "gridCard", "gridCardTop", "gridCardBody", "gridCardFields", "gridCardField", "gridCardFieldLabel", "gridCardFieldValue", "gridEmpty",
                 "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions",
-                "groupRow", "groupCell", "summaryGroupRow", "gridGroup", "gridGroupHeader", "groupHeader", "groupToggle", "groupChevron", "groupChevronExpanded", "groupLabel", "groupSummary")
+                "groupRow", "groupCell", "summaryGroupRow", "gridGroup", "gridGroupHeader", "groupHeader", "groupToggle", "groupChevron", "groupChevronExpanded", "groupLabel", "groupSummary",
+                "treeCell", "treeRailBlank", "treeRailPass", "treeRailBranch", "treeRailLast", "treeToggle", "treeChevron", "treeChevronExpanded", "treeSpacer", "treeContent")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -220,6 +221,16 @@ internal static partial class ToolsThemes
             .Slot("groupChevronExpanded", "size-4 shrink-0 rotate-90 text-(--blux-text-muted) transition-transform motion-reduce:transition-none")
             .Slot("groupLabel", "min-w-0 truncate")
             .Slot("groupSummary", "inline-flex min-w-5 shrink-0 items-center justify-center rounded-full border border-(--blux-border-accented) bg-(--blux-bg) px-1.5 py-0.5 text-xs font-medium tabular-nums text-(--blux-text-muted)")
+            .Slot("treeCell", "inline-flex min-w-0 items-center gap-1")
+            .Slot("treeRailBlank", "inline-block h-5 w-4 shrink-0")
+            .Slot("treeRailPass", "relative inline-block h-5 w-4 shrink-0 before:absolute before:inset-y-0 before:start-2 before:w-px before:bg-(--blux-border-accented)")
+            .Slot("treeRailBranch", "relative inline-block h-5 w-4 shrink-0 before:absolute before:inset-y-0 before:start-2 before:w-px before:bg-(--blux-border-accented) after:absolute after:start-2 after:top-1/2 after:h-px after:w-2 after:bg-(--blux-border-accented)")
+            .Slot("treeRailLast", "relative inline-block h-5 w-4 shrink-0 before:absolute before:top-0 before:h-1/2 before:start-2 before:w-px before:bg-(--blux-border-accented) after:absolute after:start-2 after:top-1/2 after:h-px after:w-2 after:bg-(--blux-border-accented)")
+            .Slot("treeToggle", "inline-flex size-6 shrink-0 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text) disabled:cursor-default focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) max-sm:size-9")
+            .Slot("treeChevron", "size-4 shrink-0 transition-transform motion-reduce:transition-none")
+            .Slot("treeChevronExpanded", "size-4 shrink-0 rotate-90 transition-transform motion-reduce:transition-none")
+            .Slot("treeSpacer", "inline-block size-6 shrink-0")
+            .Slot("treeContent", "min-w-0 truncate")
             .Variant("gridColumns", "1", "grid", "grid-cols-1")
             .Variant("gridColumns", "2", "grid", "grid-cols-1 sm:grid-cols-2")
             .Variant("gridColumns", "3", "grid", "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")

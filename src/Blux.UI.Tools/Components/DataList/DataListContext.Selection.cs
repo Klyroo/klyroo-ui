@@ -48,7 +48,7 @@ public sealed partial class DataListContext<TItem>
     {
         get
         {
-            var rows = Rows;
+            var rows = _owner.SelectablePageRows();
             if (rows.Count == 0) return false;
             var ticked = 0;
             foreach (var row in rows)

@@ -23,6 +23,7 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
     private ILocator SwitchList => Page.GetByTestId("list-grid-switch");
     private ILocator GridOnlyList => Page.GetByTestId("list-grid-only");
     private ILocator GroupedList => Page.GetByTestId("list-grouped");
+    private ILocator TreeList => Page.GetByTestId("list-tree");
     private ILocator SortPopover => Page.Locator("[data-slot=sort-content]:visible");
 
     private async Task DarkMode()
@@ -124,6 +125,26 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
         await GroupedList.Locator("button[data-slot=layout-option][data-layout=grid]").ClickAsync();
         await Assertions.Expect(GroupedList.Locator("[data-slot=grid-group]")).ToHaveCountAsync(5);
         await Assertions.Expect(GroupedList.Locator("button[data-slot=group-toggle][data-group-key=Paid]")).ToHaveAttributeAsync("aria-expanded", "false");
+
+        // Tree list: starts with DefaultExpandedDepth = 1 (6 visible rows: eng, eng-platform, eng-ui, ops, ops-sec, legal).
+        await Assertions.Expect(TreeList.Locator("[data-slot=tree-cell]")).ToHaveCountAsync(6);
+        var platformToggle = TreeList.Locator("button[data-slot=tree-toggle][data-key=eng-platform]");
+        await Assertions.Expect(platformToggle).ToHaveAttributeAsync("aria-expanded", "false");
+
+        // Keyboard ArrowRight expands Platform -> reveals Runtime and Infrastructure (8 visible rows); ArrowLeft collapses it back to 6.
+        await platformToggle.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(platformToggle).ToHaveAttributeAsync("aria-expanded", "true");
+        await Assertions.Expect(TreeList.Locator("[data-slot=tree-cell]")).ToHaveCountAsync(8);
+        await Page.Keyboard.PressAsync("ArrowLeft");
+        await Assertions.Expect(platformToggle).ToHaveAttributeAsync("aria-expanded", "false");
+        await Assertions.Expect(TreeList.Locator("[data-slot=tree-cell]")).ToHaveCountAsync(6);
+
+        // Expand all and Collapse all buttons.
+        await TreeList.Locator("[data-slot=tree-expand-all]").ClickAsync();
+        await Assertions.Expect(TreeList.Locator("[data-slot=tree-cell]")).ToHaveCountAsync(8);
+        await TreeList.Locator("[data-slot=tree-collapse-all]").ClickAsync();
+        await Assertions.Expect(TreeList.Locator("[data-slot=tree-cell]")).ToHaveCountAsync(3);
     }
 
     [Theory]

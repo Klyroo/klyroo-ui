@@ -10,6 +10,12 @@
 absolute
 accent-(--blux-primary-text)
 active:cursor-grabbing
+after:absolute
+after:bg-(--blux-border-accented)
+after:h-px
+after:start-2
+after:top-1/2
+after:w-2
 align-middle
 animate-spin
 aria-[current=true]:bg-(--blux-bg)
@@ -25,6 +31,13 @@ aria-pressed:bg-(--blux-bg-muted)
 aria-pressed:border-(--blux-primary-text)
 aria-pressed:shadow-xs
 aria-pressed:text-(--blux-text-highlighted)
+before:absolute
+before:bg-(--blux-border-accented)
+before:h-1/2
+before:inset-y-0
+before:start-2
+before:top-0
+before:w-px
 bg-(--blux-bg)
 bg-(--blux-bg-elevated)
 bg-(--blux-bg-muted)
@@ -91,6 +104,7 @@ group/search
 h-11
 h-15
 h-4
+h-5
 h-8
 h-9
 has-[input[data-select=row]:checked]:[&>td[data-pinned]]:bg-(--blux-bg-muted)
@@ -103,6 +117,7 @@ hover:bg-(--blux-primary)/50
 hover:text-(--blux-text)
 hover:text-(--blux-text-muted)
 hover:underline
+inline-block
 inline-flex
 inset-y-0
 inset-y-1
@@ -126,6 +141,7 @@ max-h-none
 max-sm:hidden
 max-sm:min-h-11
 max-sm:relative
+max-sm:size-9
 max-w-48
 max-w-[calc(100vw-1rem)]
 max-w-full
@@ -204,6 +220,7 @@ size-10
 size-3.5
 size-4
 size-5
+size-6
 size-7
 size-8
 sm:border-(--blux-border)
@@ -244,6 +261,7 @@ truncate
 w-10
 w-2
 w-3/4
+w-4
 w-64
 w-72
 w-80

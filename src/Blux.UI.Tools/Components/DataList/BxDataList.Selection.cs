@@ -95,9 +95,21 @@ public partial class BxDataList<TItem>
         AfterUserChange(changed);
     }
 
+    internal IReadOnlyList<TItem> SelectablePageRows()
+    {
+        if (_tableTree is not null && _context.EffectiveLayout == DataListLayout.Table)
+        {
+            var visibleNodes = VisibleTreeNodes();
+            return _tableTree.Selectable == DataListTreeSelectionMode.Roots
+                ? [.. visibleNodes.Where(n => n.Depth == 0).Select(n => n.Item)]
+                : [.. visibleNodes.Select(n => n.Item)];
+        }
+        return Controller?.Rows ?? [];
+    }
+
     internal void SetPageSelected(bool selected)
     {
-        var rows = Controller?.Rows ?? [];
+        var rows = SelectablePageRows();
         var changed = _selection.SetMany(rows.Select(row => new KeyValuePair<string, TItem>(KeyOf(row), row)), selected);
         _anchorKey = null;
         AfterUserChange(changed);
@@ -164,6 +176,10 @@ public partial class BxDataList<TItem>
     {
         var rows = Controller?.Rows;
         if (rows is null || rows.Count == 0) return rows;
+        if (_tableTree is not null && _context.EffectiveLayout == DataListLayout.Table)
+        {
+            return SelectablePageRows();
+        }
         if (ActiveGroupBy is null) return rows;
         var groups = BuildActiveGroups();
         var visible = new List<TItem>(rows.Count);
@@ -254,7 +270,7 @@ public partial class BxDataList<TItem>
         else
         {
             var onPage = new Dictionary<string, TItem>(StringComparer.Ordinal);
-            foreach (var row in result.Items) onPage[KeyOf(row)] = row;
+            AddSelectableRowsToMap(result.Items, onPage);
             removed = _selection.Retain(onPage);
         }
         _reconciledRequest = request;
@@ -282,8 +298,23 @@ public partial class BxDataList<TItem>
     {
         var all = _schema!.ExecuteInMemory(Items!, request with { Paging = DataListPaging.None.Instance, Facets = [] });
         var map = new Dictionary<string, TItem>(StringComparer.Ordinal);
-        foreach (var row in all.Items) map[KeyOf(row)] = row;
+        AddSelectableRowsToMap(all.Items, map);
         return map;
+    }
+
+    private void AddSelectableRowsToMap(IReadOnlyList<TItem> rootRows, Dictionary<string, TItem> map)
+    {
+        if (_tableTree is not null)
+        {
+            var (_, allNodes) = _tableTree.BuildTree(rootRows, _schema);
+            foreach (var node in allNodes)
+            {
+                if (_tableTree.Selectable == DataListTreeSelectionMode.Roots && node.Depth > 0) continue;
+                map[node.Key] = node.Item;
+            }
+            return;
+        }
+        foreach (var row in rootRows) map[KeyOf(row)] = row;
     }
 
     /// <summary>The request for every row the list matches: the one on screen without paging and facets.</summary>
