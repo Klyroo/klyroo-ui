@@ -242,11 +242,14 @@ internal static class DashboardChecks
         await Assertions.Expect(page.GetByText("of 231")).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
 
-        // Row action: delete one customer.
+        // Row action: delete one customer. The row leaves the table (the page renders its rows again while the action is still running), and the focus goes to the actions of the next row.
+        var nextRowActions = await rows.Nth(1).GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Actions for") }).GetAttributeAsync("aria-label");
         await rows.First.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Actions for") }).ClickAsync();
         await page.GetByRole(AriaRole.Menuitem, new() { Name = "Delete customer" }).ClickAsync();
         await page.Locator("dialog[open][data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(page.GetByText("of 230")).ToBeVisibleAsync();
+        Assert.False(string.IsNullOrEmpty(nextRowActions));
+        await Assertions.Expect(page.GetByRole(AriaRole.Button, new() { Name = nextRowActions, Exact = true })).ToBeFocusedAsync();
 
         // New customer: the form validates, the country is searched in a remote source, and the customer is in the table.
         await page.GetByTestId("new-customer-button").ClickAsync();
