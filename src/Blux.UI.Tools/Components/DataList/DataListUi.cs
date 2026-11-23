@@ -93,6 +93,18 @@ public sealed record DataListUi : ISlotOverrides
     public string? SelectionScope { get; init; }
     public string? SelectionGroup { get; init; }
     public string? ActionsDropdown { get; init; }
+    public string? RowActionsCell { get; init; }
+    public string? RowActions { get; init; }
+    public string? RowActionsInline { get; init; }
+    public string? RowActionsMenu { get; init; }
+    public string? RowActionsPhone { get; init; }
+    public string? SheetList { get; init; }
+    public string? SheetDivider { get; init; }
+    public string? SheetEntry { get; init; }
+    public string? SheetHeading { get; init; }
+    public string? SheetItem { get; init; }
+    public string? SheetReason { get; init; }
+    public string? SheetIcon { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -184,6 +196,18 @@ public sealed record DataListUi : ISlotOverrides
         "selectionScope" => SelectionScope,
         "selectionGroup" => SelectionGroup,
         "actionsDropdown" => ActionsDropdown,
+        "rowActionsCell" => RowActionsCell,
+        "rowActions" => RowActions,
+        "rowActionsInline" => RowActionsInline,
+        "rowActionsMenu" => RowActionsMenu,
+        "rowActionsPhone" => RowActionsPhone,
+        "sheetList" => SheetList,
+        "sheetDivider" => SheetDivider,
+        "sheetEntry" => SheetEntry,
+        "sheetHeading" => SheetHeading,
+        "sheetItem" => SheetItem,
+        "sheetReason" => SheetReason,
+        "sheetIcon" => SheetIcon,
         _ => null,
     };
 }

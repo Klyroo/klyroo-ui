@@ -60,7 +60,7 @@ public class ToolsPackageTests
             ["data-list-filters"] = ["BxDataListFilterTags<TItem>", "BxDataListAddFilter<TItem>", "BxDataListClearFilters<TItem>"],
             ["data-list-filter-panel"] = ["BxDataListFilterPanel<TItem>"],
             ["data-list-facets"] = ["BxDataListFilterEditor<TItem>"],
-            ["data-list-selection"] = ["BxDataListSelectionActions<TItem>", "BxDataListActionsDropdown<TItem>"],
+            ["data-list-selection"] = ["BxDataListSelectionActions<TItem>", "BxDataListActionsDropdown<TItem>", "BxDataListRowActions<TItem>"],
         };
         foreach (var (slug, api) in pages)
         {

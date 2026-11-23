@@ -76,6 +76,49 @@ public class OverlayTests : BluxTestContext
     }
 
     [Fact]
+    public void DropdownMenu_renders_a_submenu_next_to_the_menu_and_names_it_after_its_item()
+    {
+        BxMenuItem? selected = null;
+        BxMenuItem[] items =
+        [
+            new() { Label = "Copy" },
+            new()
+            {
+                Label = "Send to",
+                Children = [new() { Label = "Email" }, new() { Label = "Team", Children = [new() { Label = "Design" }] }, new() { Label = "Hidden", Disabled = true }],
+            },
+            new() { Label = "Export", Disabled = true, Children = [new() { Label = "PDF" }] },
+        ];
+        var cut = Render<BxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.OnSelect, (BxMenuItem i) => selected = i)
+            .Add(d => d.ChildContent, "<button>Menu</button>"));
+
+        var menus = cut.FindAll("[popover]");
+        Assert.Equal(3, menus.Count);
+        Assert.Equal("content", menus[0].GetAttribute("data-slot"));
+        Assert.All(menus.Skip(1), m => Assert.Equal("submenu", m.GetAttribute("data-slot")));
+        // The submenus are siblings of the menu: a role="menu" only owns items.
+        Assert.All(menus, m => Assert.Equal("bx-popover", m.ParentElement!.TagName.ToLowerInvariant()));
+
+        var send = cut.Find("button[aria-haspopup=menu][popovertarget]:not([aria-disabled])");
+        Assert.Contains("Send to", send.TextContent);
+        var sub = cut.Find("#" + send.GetAttribute("popovertarget"));
+        Assert.Equal("menu", sub.GetAttribute("role"));
+        Assert.Equal(send.Id, sub.GetAttribute("aria-labelledby"));
+        Assert.Equal("show", send.GetAttribute("popovertargetaction"));
+        Assert.Equal(["Email", "Team", "Hidden"], sub.QuerySelectorAll(":scope > [role=menuitem]").Select(i => i.TextContent.Trim()));
+
+        // A disabled item with children does not open anything; an item with children is never selected.
+        var export = cut.Find("button[aria-haspopup=menu][aria-disabled=true]");
+        Assert.Equal("true", export.GetAttribute("aria-disabled"));
+        Assert.Null(export.GetAttribute("popovertarget"));
+        Assert.Throws<MissingEventHandlerException>(() => send.Click());
+        Assert.Null(selected);
+
+        cut.FindAll("[role=menuitem]").First(i => i.TextContent.Contains("Design")).Click();
+        Assert.Equal("Design", selected?.Label);
+    }
+
+    [Fact]
     public void Toaster_exposes_its_theme_to_the_browser()
     {
         var cut = Render<BxToaster>();

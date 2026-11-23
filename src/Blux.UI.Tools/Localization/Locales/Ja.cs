@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "その他の操作",
             ActionConfirm = "確認",
             ActionCancel = "キャンセル",
+            RowActionsLabel = "{0} の操作",
+            RowActionsLabelAt = "{0} 行目の操作",
             ErrorTitle = "データを読み込めませんでした",
             ErrorDescription = "データの読み込み中にエラーが発生しました。もう一度お試しください。",
             Retry = "再試行",

@@ -70,6 +70,44 @@ function focusSelectAll(part) {
   }, 0));
 }
 
+// After a row action succeeded its row may be gone, and the control that had the focus with it: the focus goes to the actions of the next row, else to the table.
+// Only when the focus is lost, and only once the row really leaves the table (the render that removes it can reach the browser after this call, so the row going away is
+// what to wait for), unless the user moves the focus or acts first.
+function focusAfterRowRemoval(part) {
+  const row = part?.closest('tr');
+  const region = part?.closest('[data-slot=table-root]');
+  if (!row || !region) return;
+  const visible = (el) => el.getClientRects().length > 0 && !el.disabled;
+  // The button that opens the actions of the row (the menu on a wide screen, the sheet on a phone), else the first control of its actions.
+  const anchor = (from) => [...(from?.querySelectorAll('[data-slot=row-actions-trigger], [data-slot=row-actions-phone]') ?? [])].find(visible)
+    ?? [...(from?.querySelectorAll('[data-row-action-anchor]') ?? [])].find(visible);
+  const next = anchor(row.nextElementSibling);
+  const lost = () => {
+    const active = document.activeElement;
+    return !active || active === document.body || !active.isConnected || active.getClientRects().length === 0;
+  };
+  const give = () => (next?.isConnected && next.getClientRects().length > 0 ? next : region).focus();
+  const gone = () => {
+    if (lost()) give();
+  };
+  requestAnimationFrame(() => setTimeout(() => {
+    if (!row.isConnected) return gone();
+    const stop = () => {
+      observer.disconnect();
+      document.removeEventListener('pointerdown', stop, true);
+      document.removeEventListener('keydown', stop, true);
+    };
+    const observer = new MutationObserver(() => {
+      if (row.isConnected) return;
+      stop();
+      gone();
+    });
+    observer.observe(region, { childList: true, subtree: true });
+    document.addEventListener('pointerdown', stop, true);
+    document.addEventListener('keydown', stop, true);
+  }, 0));
+}
+
 // Runs before the handler of Blazor (the capture phase of the document), so an enhanced submit and a plain one both leave the blank marked fields out. The fields come back on once the form data was taken.
 if (typeof document !== 'undefined') {
   document.addEventListener(
@@ -81,7 +119,7 @@ if (typeof document !== 'undefined') {
   );
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll };
+const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, focusAfterRowRemoval };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });
