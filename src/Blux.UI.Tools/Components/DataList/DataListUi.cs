@@ -128,6 +128,13 @@ public sealed record DataListUi : ISlotOverrides
     public string? ColumnsActions { get; init; }
     public string? ColumnsIconBtn { get; init; }
     public string? ColumnsIconBtnActive { get; init; }
+    public string? ColSized { get; init; }
+    public string? ColumnsAll { get; init; }
+    public string? ColumnsHint { get; init; }
+    public string? ColumnsGrip { get; init; }
+    public string? ColumnsLive { get; init; }
+    public string? ColumnsPinGroup { get; init; }
+    public string? ColumnsSearch { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -254,6 +261,13 @@ public sealed record DataListUi : ISlotOverrides
         "columnsActions" => ColumnsActions,
         "columnsIconBtn" => ColumnsIconBtn,
         "columnsIconBtnActive" => ColumnsIconBtnActive,
+        "colSized" => ColSized,
+        "columnsAll" => ColumnsAll,
+        "columnsHint" => ColumnsHint,
+        "columnsGrip" => ColumnsGrip,
+        "columnsLive" => ColumnsLive,
+        "columnsPinGroup" => ColumnsPinGroup,
+        "columnsSearch" => ColumnsSearch,
         _ => null,
     };
 }
