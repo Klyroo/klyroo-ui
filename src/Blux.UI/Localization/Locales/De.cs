@@ -80,6 +80,9 @@ public static partial class BxLocales
             EditorTaskList = "Aufgabenliste",
             EditorImage = "Bild",
             EditorImageUrl = "Bildadresse",
+            // Draft translations of the messages that explain a refused address, marked for review by a native speaker before a stable release.
+            EditorSchemesOnly = "Nur Adressen mit {0} werden akzeptiert.",
+            EditorAddressRefused = "Diese Adresse wird nicht akzeptiert.",
             EditorTaskItem = "Aufgabe: {0}",
             EditorDragHandle = "Ziehen, um den Block zu verschieben",
             EditorNoResults = "Keine Ergebnisse",

@@ -1,4 +1,5 @@
 import { Reporter, ensureId, float, observeChildren } from './shared.js';
+import { DEFAULT_IMAGE_SCHEMES, describeSchemes, parseSchemes } from './editor-address.js';
 
 // The editing engine (TipTap) is a separate file, fetched the first time an editor element connects: a page without
 // an editor never requests it. It sits next to this file in the package's static assets.
@@ -9,7 +10,8 @@ const IDLE_MS = 400;
 const PARTS = 'bx-editor-toolbar, bx-editor-drag-handle, bx-editor-menu';
 
 /**
- * <bx-editor data-value="<p>…</p>" data-placeholder data-readonly disabled data-label data-labelledby data-describedby data-invalid>
+ * <bx-editor data-value="<p>…</p>" data-placeholder data-readonly disabled data-label data-labelledby data-describedby data-invalid
+ *            data-max-length="N" data-image-schemes="https" data-link-schemes="https http mailto">
  *   <input type="hidden" data-slot="value" name="…">          the posted HTML, kept in sync
  *   <bx-editor-toolbar>, <bx-editor-drag-handle>, <bx-editor-menu> …   parts, wired when the engine is ready
  *   <div data-slot="fallback">…</div>                          server-rendered HTML, shown until the engine is ready
@@ -17,6 +19,8 @@ const PARTS = 'bx-editor-toolbar, bx-editor-drag-handle, bx-editor-menu';
  * </bx-editor>
  *
  * The value is HTML. Changes are reported as bx-change after IDLE_MS without typing and on blur, only when bound.
+ * With data-max-length, a value longer than that many characters is never reported: the element carries data-over-limit, marks the text invalid and reports
+ * bx-limit ({ exceeded, length, max }) when it goes over, while it keeps changing over the limit, and when it is back within it.
  * The engine's dom is created by TipTap, so the surface carries data-permanent: an enhanced navigation leaves it alone.
  */
 export class BxEditorElement extends HTMLElement {
@@ -32,6 +36,7 @@ export class BxEditorElement extends HTMLElement {
   #timer = 0;
   #lastReported = '';
   #wired = new Map();
+  #overLength = 0;
 
   connectedCallback() {
     this.#lastReported = this.getAttribute('data-value') ?? '';
@@ -85,6 +90,27 @@ export class BxEditorElement extends HTMLElement {
     return !this.hasAttribute('disabled') && !this.hasAttribute('data-readonly');
   }
 
+  /** Schemes an image address may have: those the page lists, else http and https. */
+  get imageSchemes() {
+    return parseSchemes(this.getAttribute('data-image-schemes')) ?? DEFAULT_IMAGE_SCHEMES;
+  }
+
+  /** Schemes a link may have, or null when the page lists none (the engine's own default then applies). */
+  get linkSchemes() {
+    return parseSchemes(this.getAttribute('data-link-schemes'));
+  }
+
+  /** The most characters of HTML the element reports, or 0 for no limit. */
+  get maxLength() {
+    const value = Number.parseInt(this.getAttribute('data-max-length') ?? '', 10);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+  }
+
+  /** True while the HTML is longer than data-max-length: it is not reported then. */
+  get overLimit() {
+    return this.#overLength > 0;
+  }
+
   get #surface() {
     return this.querySelector(':scope [data-slot="editor"]');
   }
@@ -124,7 +150,10 @@ export class BxEditorElement extends HTMLElement {
         html,
         editable: this.editable,
         placeholder: () => this.getAttribute('data-placeholder') ?? '',
-        taskLabel: (text) => (this.getAttribute('data-task-label') ?? 'Task: {0}').replace('{0}', text).trim(),
+        // A function as the replacement: a string would read "$&" or "$'" in the text of the item as a pattern.
+        taskLabel: (text) => (this.getAttribute('data-task-label') ?? 'Task: {0}').replace('{0}', () => text).trim(),
+        imageSchemes: () => this.imageSchemes,
+        linkSchemes: () => this.linkSchemes,
         attributes: { role: 'textbox', 'aria-multiline': 'true', ...(this.dataset.editorId ? { id: this.dataset.editorId } : {}) },
         onUpdate: () => this.#onUpdate(),
         onState: () => this.#notify(),
@@ -160,7 +189,7 @@ export class BxEditorElement extends HTMLElement {
     set('aria-label', this.getAttribute('data-labelledby') ? null : this.getAttribute('data-label'));
     set('aria-labelledby', this.getAttribute('data-labelledby'));
     set('aria-describedby', this.getAttribute('data-describedby'));
-    set('aria-invalid', this.getAttribute('data-invalid'));
+    set('aria-invalid', this.getAttribute('data-invalid') ?? (this.overLimit ? 'true' : null));
     set('aria-required', this.getAttribute('data-required'));
     set('aria-readonly', this.hasAttribute('data-readonly') ? 'true' : null);
     set('aria-disabled', this.hasAttribute('disabled') ? 'true' : null);
@@ -180,23 +209,42 @@ export class BxEditorElement extends HTMLElement {
     clearTimeout(this.#timer);
     this.#lastReported = value;
     if (value !== this.engine.getHTML()) this.engine.setHTML(value);
+    this.#checkLimit(value);
   }
 
   #onUpdate() {
     this.#syncInput();
-    if (!this.#reporter.bound) return;
+    // An unbound editor reports nothing, but one with a limit still says when it is over it.
+    if (!this.#reporter.bound && !this.maxLength) return;
     clearTimeout(this.#timer);
     this.#timer = setTimeout(() => this.#flush(), IDLE_MS);
   }
 
   #flush() {
     clearTimeout(this.#timer);
-    if (!this.engine || !this.#reporter.bound) return;
+    if (!this.engine) return;
     const html = this.engine.getHTML();
+    if (!this.#checkLimit(html) || !this.#reporter.bound) return;
     if (html === this.#lastReported) return;
     this.#lastReported = html;
     this.dispatchEvent(new Event('change', { bubbles: true }));
     this.#reporter.report('bx-change', { value: html });
+  }
+
+  /**
+   * Compares the HTML with data-max-length and says so when the answer changes. False while it is longer: the caller does not report it, so a text that
+   * can never be kept never travels, and the value last reported stays the value.
+   */
+  #checkLimit(html) {
+    const max = this.maxLength;
+    const length = max > 0 && html.length > max ? html.length : 0;
+    if (length === this.#overLength) return length === 0;
+    const wasOver = this.#overLength > 0;
+    this.#overLength = length;
+    this.toggleAttribute('data-over-limit', length > 0);
+    this.#applyAria();
+    if (wasOver || length > 0) this.dispatchEvent(new CustomEvent('bx-limit', { bubbles: true, detail: { exceeded: length > 0, length: length || html.length, max } }));
+    return length === 0;
   }
 
   #syncInput() {
@@ -265,6 +313,7 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.addEventListener('click', this.#onClick);
     this.addEventListener('keydown', this.#onKeyDown);
     this.addEventListener('focusout', this.#onFocusOut);
+    this.addEventListener('input', this.#onInput);
     this.#observer = observeChildren(this, () => this.update());
     // Blazor patches a button in place when Items changes the action at that position: data-action, the label and the icon
     // change but the pressed and disabled state it rendered stays the same, so show the state of the action it now stands for.
@@ -277,6 +326,7 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.removeEventListener('click', this.#onClick);
     this.removeEventListener('keydown', this.#onKeyDown);
     this.removeEventListener('focusout', this.#onFocusOut);
+    this.removeEventListener('input', this.#onInput);
     this.#observer?.disconnect();
     this.#attributes?.disconnect();
     this.#attributes = null;
@@ -433,11 +483,18 @@ export class BxEditorToolbarElement extends HTMLElement {
     if (this.#bubble && !this.contains(event.relatedTarget)) setTimeout(() => this.update(), 0);
   };
 
+  // Typing a new address takes back the explanation of the last one.
+  #onInput = (event) => {
+    const form = event.target.closest?.('[data-slot="link-form"], [data-slot="image-form"]');
+    if (form && event.target.matches('input')) this.#problem(form, null);
+  };
+
   #openLink() {
     const form = this.#linkForm;
     const input = form?.querySelector('[data-slot="link-input"]');
     if (!form || !input) return;
     this.#closeImage(false);
+    this.#problem(form, null);
     form.hidden = false;
     input.value = this.#host.engine.linkHref();
     input.focus();
@@ -449,6 +506,7 @@ export class BxEditorToolbarElement extends HTMLElement {
     const input = form?.querySelector('[data-slot="image-input"]');
     if (!form || !input) return;
     this.#closeLink(false);
+    this.#problem(form, null);
     form.hidden = false;
     input.value = '';
     input.focus();
@@ -461,13 +519,14 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.update();
   }
 
-  /** Inserts the image at the address of the field. An address the engine refuses (not http or https) keeps the form open and marks the field invalid. */
+  /** Inserts the image at the address of the field. An address the editor does not accept keeps the form open, marks the field invalid and says which addresses are accepted. */
   #submitImage() {
-    const input = this.#imageForm?.querySelector('[data-slot="image-input"]');
+    const form = this.#imageForm;
+    const input = form?.querySelector('[data-slot="image-input"]');
     const engine = this.#host?.engine;
     if (!input || !engine) return;
     const done = engine.run('image', input.value.trim());
-    input.setAttribute('aria-invalid', done ? 'false' : 'true');
+    this.#problem(form, done ? null : this.#refusal(this.#host.imageSchemes));
     if (done) this.#closeImage();
     else input.focus();
   }
@@ -479,13 +538,41 @@ export class BxEditorToolbarElement extends HTMLElement {
     this.update();
   }
 
+  /** Applies the address of the field as the link. One the editor does not accept keeps the form open and says which addresses are accepted. */
   #submitLink(remove) {
-    const input = this.#linkForm?.querySelector('[data-slot="link-input"]');
+    const form = this.#linkForm;
+    const input = form?.querySelector('[data-slot="link-input"]');
     const engine = this.#host?.engine;
     if (!input || !engine) return;
     const href = remove ? '' : input.value.trim();
-    engine.run('link', href);
+    const done = engine.run('link', href);
+    if (!done && href) {
+      this.#problem(form, this.#refusal(this.#host.linkSchemes));
+      input.focus();
+      return;
+    }
+    this.#problem(form, null);
     this.#closeLink();
+  }
+
+  /** Why an address was refused: the schemes it may have when the page limits them, else a plain sentence. */
+  #refusal(schemes) {
+    const text = schemes?.length ? this.dataset.schemesMessage : this.dataset.refusedMessage;
+    return (text ?? '').replace('{0}', () => describeSchemes(schemes ?? []));
+  }
+
+  /**
+   * Shows (or clears) the explanation of a form: the field is invalid and described by the message, which sits in a live region so a screen reader
+   * says it when it appears.
+   */
+  #problem(form, text) {
+    const input = form?.querySelector('input');
+    const message = form?.querySelector('[data-slot="form-message"]');
+    if (!input || !message) return;
+    input.setAttribute('aria-invalid', text ? 'true' : 'false');
+    if (text) input.setAttribute('aria-describedby', ensureId(message, 'editor-form-message'));
+    else input.removeAttribute('aria-describedby');
+    message.textContent = text ?? '';
   }
 }
 

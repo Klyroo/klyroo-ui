@@ -328,23 +328,34 @@ public static partial class DocumentHtml
 
     private static string Cut(string text, int max) => text.Length <= max ? text : text[..max];
 
-    // Browsers ignore tabs, line breaks and the spaces around an address when they read its scheme ("java\nscript:"), so the check reads the address the same way.
+    // The address as a browser reads it (the URL standard): leading and trailing control characters and spaces go, and a tab or a line break is dropped wherever it is
+    // ("java\nscript:" is "javascript:"). Any other space or control character inside what is left means the text is not an address: it is refused, never closed up, because
+    // "https://exa mple.com/a b" must not become "https://example.com/ab", an address of another host. Empty when it is not one.
     private static string Normalised(string? address)
     {
         if (address is null)
         {
             return "";
         }
-        var builder = new StringBuilder(address.Length);
-        foreach (var c in address)
+        var trimmed = address.AsSpan().Trim(TrimmedAroundAddress);
+        var builder = new StringBuilder(trimmed.Length);
+        foreach (var c in trimmed)
         {
-            if (!char.IsControl(c) && !char.IsWhiteSpace(c))
+            if (c is '\t' or '\n' or '\r')
             {
-                builder.Append(c);
+                continue;
             }
+            if (char.IsControl(c) || char.IsWhiteSpace(c))
+            {
+                return "";
+            }
+            builder.Append(c);
         }
         return builder.ToString();
     }
+
+    // The C0 control characters and the space: what the URL standard strips from both ends of an address.
+    private static readonly char[] TrimmedAroundAddress = [.. Enumerable.Range(0, 0x21).Select(i => (char)i)];
 
     /// <summary>The address of a link when it is allowed (http, https or mailto), else null.</summary>
     public static string? Link(string? address)

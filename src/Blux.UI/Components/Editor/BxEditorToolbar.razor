@@ -9,6 +9,8 @@
                    class="@_slots["root"]"
                    data-color="@Color.Value"
                    data-bx-tight
+                   data-schemes-message="@Messages.EditorSchemesOnly"
+                   data-refused-message="@Messages.EditorAddressRefused"
                    @attributes="AdditionalAttributes">
     @{
         var first = true;
@@ -41,6 +43,7 @@
             <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="link-input" aria-label="@Messages.EditorLinkUrl" placeholder="https://" />
             <button type="button" class="@_slots["linkButton"]" data-link="apply">@Messages.EditorLinkApply</button>
             <button type="button" class="@_slots["linkButton"]" data-link="remove">@Messages.EditorLinkRemove</button>
+            <p class="@_slots["linkMessage"]" data-slot="form-message" role="status"></p>
         </div>
     }
     @if (HasImage)
@@ -48,6 +51,7 @@
         <div class="@_slots["linkForm"]" data-slot="image-form" role="group" aria-label="@Messages.EditorImage" hidden>
             <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="image-input" aria-label="@Messages.EditorImageUrl" placeholder="https://" />
             <button type="button" class="@_slots["linkButton"]" data-image="apply">@Messages.EditorLinkApply</button>
+            <p class="@_slots["linkMessage"]" data-slot="form-message" role="status"></p>
         </div>
     }
 </bx-editor-toolbar>
