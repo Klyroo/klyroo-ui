@@ -81,7 +81,7 @@
                         if (HasChildren(item))
                         {
                             <button type="button" role="menuitem" tabindex="-1" id="@TriggerId(path)" class="@_slots["item"]" data-color="@color"
-                                    aria-haspopup="menu"
+                                    aria-haspopup="menu" title="@item.Description" aria-description="@item.Description"
                                     popovertarget="@(item.Disabled ? null : SubmenuId(path))" popovertargetaction="@(item.Disabled ? null : "show")"
                                     aria-disabled="@(item.Disabled ? "true" : null)">
                                 @ItemContent(item)
@@ -90,11 +90,11 @@
                         }
                         else if (item.Href is not null && !item.Disabled)
                         {
-                            <a role="menuitem" tabindex="-1" href="@item.Href" class="@_slots["item"]" data-color="@color">@ItemContent(item)</a>
+                            <a role="menuitem" tabindex="-1" href="@item.Href" class="@_slots["item"]" data-color="@color" title="@item.Description" aria-description="@item.Description">@ItemContent(item)</a>
                         }
                         else
                         {
-                            <button type="button" role="menuitem" tabindex="-1" class="@_slots["item"]" data-color="@color"
+                            <button type="button" role="menuitem" tabindex="-1" class="@_slots["item"]" data-color="@color" title="@item.Description" aria-description="@item.Description"
                                     aria-disabled="@(item.Disabled ? "true" : null)"
                                     @onclick="(item.Disabled || !OnSelect.HasDelegate ? default : EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item)))">
                                 @ItemContent(item)

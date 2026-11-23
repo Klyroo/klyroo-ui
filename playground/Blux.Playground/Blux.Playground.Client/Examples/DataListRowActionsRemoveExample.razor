@@ -1,0 +1,49 @@
+@using Blux.UI.Tools.Query
+
+@* Row actions that remove their row after the page has already moved on: "Remove" leaves it to RefreshOnSuccess (the list loads again from its provider and the row is gone), "Remove after a pause" waits, removes the
+   row and refreshes the list itself. In both the row, with the action that is still running, leaves the table before the action returns, and the focus still moves to the actions of the next row. *@
+<div class="w-full" data-testid="list-rowactions-remove">
+    <BxDataList TItem="Invoice" Label="Invoices removed by row actions" Schema="InvoiceData.Schema" Provider="LoadAsync" UrlKey="rm">
+        <BxDataListTable RowActions="_actions" RowActionsMaxVisible="0">
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+            <BxDataListColumn Field="customer" />
+            <BxDataListColumn Field="status" />
+        </BxDataListTable>
+        <BxDataListPagination />
+    </BxDataList>
+</div>
+
+@code {
+    private readonly List<Invoice> _store = [.. InvoiceData.All[..30]];
+    private DataListRowAction<Invoice>[] _actions = [];
+
+    private ValueTask<DataListResult<Invoice>> LoadAsync(DataListRequest request, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(InvoiceData.Schema.ExecuteInMemory(_store, request));
+
+    protected override void OnInitialized() =>
+        _actions =
+        [
+            new DataListRowAction<Invoice>
+            {
+                Key = "remove",
+                Label = "Remove",
+                RefreshOnSuccess = true,
+                OnExecute = c =>
+                {
+                    _store.RemoveAll(i => i.Id == c.Item.Id);
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "remove-later",
+                Label = "Remove after a pause",
+                OnExecute = async c =>
+                {
+                    await Task.Delay(40);
+                    _store.RemoveAll(i => i.Id == c.Item.Id);
+                    await c.List.RefreshAsync();
+                },
+            },
+        ];
+}

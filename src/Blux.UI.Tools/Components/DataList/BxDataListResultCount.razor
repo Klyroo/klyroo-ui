@@ -27,7 +27,7 @@
             var loaded = Context.LoadedState ?? Context.State;
             // Numbers are written with the group separator of the culture.
             string Number(long value) => value.ToString("N0", FormatCulture);
-            if (!string.IsNullOrEmpty(loaded.Cursor))
+            if (Context.PagingMode == DataListPagingMode.Cursor && !string.IsNullOrEmpty(loaded.Cursor))
             {
                 // A cursor page loaded directly from the address (static SSR): the 1-based start offset is unknown.
                 return result.TotalCount is { } cursorTotal

@@ -94,13 +94,16 @@ public sealed class DataListRowAction<TItem>
     /// </summary>
     public Func<DataListRowActionContext<TItem>, string?>? Href { get; init; }
 
-    /// <summary>Hides the action when it returns <see langword="false"/> (an action that does not apply to this row). It runs on every render: keep it cheap.</summary>
+    /// <summary>Hides the action when it returns <see langword="false"/> (an action that does not apply to this row); the children of a hidden action are hidden with it. It runs on every render: keep it cheap.</summary>
     public Func<DataListRowActionContext<TItem>, bool>? Visible { get; init; }
 
-    /// <summary>Disables the action when it returns <see langword="true"/>. It runs on every render: keep it cheap.</summary>
+    /// <summary>Disables the action when it returns <see langword="true"/>; the children of a disabled action cannot run either. It runs on every render: keep it cheap.</summary>
     public Func<DataListRowActionContext<TItem>, bool>? Disabled { get; init; }
 
-    /// <summary>Why the action is disabled, shown under its label in the sheet of a phone (and as the title of the entry).</summary>
+    /// <summary>
+    /// Why the action is disabled: shown under its label in the sheet of a phone, and on a wide screen as the title (the tooltip) and the accessible description of its button or menu entry.
+    /// The reason of an action with <see cref="Children"/> is the one its children show while it is disabled.
+    /// </summary>
     public Func<DataListRowActionContext<TItem>, string?>? DisabledReason { get; init; }
 
     /// <summary>Shows a spinner and blocks the action while it returns <see langword="true"/> (work started elsewhere). The action also shows one while it runs.</summary>
@@ -148,27 +151,68 @@ internal sealed class DataListRowActionRunner<TItem>
 
     public bool IsRunning(string row, string action) => _running.Contains((row, action));
 
-    public RowActionState StateOf(string row, DataListRowAction<TItem> action, DataListRowActionContext<TItem> context)
+    /// <summary>
+    /// What an action shows for a row. <paramref name="ancestors"/> are the actions it sits under, outermost first: a hidden ancestor hides it and a disabled one disables it (with the reason of the ancestor),
+    /// so a child of a disabled or hidden action never runs and is never offered as runnable.
+    /// </summary>
+    public RowActionState StateOf(string row, DataListRowAction<TItem> action, DataListRowActionContext<TItem> context, IReadOnlyList<DataListRowAction<TItem>>? ancestors = null)
     {
+        var inheritedDisabled = false;
+        string? inheritedReason = null;
+        if (ancestors is not null)
+        {
+            foreach (var ancestor in ancestors)
+            {
+                if (ancestor.Visible?.Invoke(context) == false) return default;
+                if (inheritedDisabled || ancestor.Disabled?.Invoke(context) != true) continue;
+                inheritedDisabled = true;
+                inheritedReason = ancestor.DisabledReason?.Invoke(context);
+            }
+        }
         if (action.Visible?.Invoke(context) == false) return default;
         var children = action.Children;
         if (children is { Count: > 0 })
         {
-            var visible = children.Any(c => StateOf(row, c, context).Visible);
-            return new RowActionState(visible, action.Disabled?.Invoke(context) ?? false, action.DisabledReason?.Invoke(context), false, null);
+            var below = ancestors is null ? [action] : (IReadOnlyList<DataListRowAction<TItem>>)[.. ancestors, action];
+            var visible = children.Any(c => StateOf(row, c, context, below).Visible);
+            var ownDisabled = action.Disabled?.Invoke(context) ?? false;
+            var disabled = inheritedDisabled || ownDisabled;
+            return new RowActionState(visible, disabled, disabled ? inheritedReason ?? action.DisabledReason?.Invoke(context) : null, false, null);
         }
         var href = action.Href?.Invoke(context);
         if (action.Href is not null && href is null) return default;
         var running = IsRunning(row, action.Key);
-        var disabled = running || (action.Disabled?.Invoke(context) ?? false);
+        var blocked = inheritedDisabled || running || (action.Disabled?.Invoke(context) ?? false);
         var loading = running || (action.Loading?.Invoke(context) ?? false);
-        return new RowActionState(true, disabled, disabled ? action.DisabledReason?.Invoke(context) : null, loading, href);
+        return new RowActionState(true, blocked, blocked ? inheritedReason ?? action.DisabledReason?.Invoke(context) : null, loading, href);
+    }
+
+    /// <summary>The action with this key among <paramref name="roots"/> and the actions it sits under (outermost first), or <see langword="null"/>.</summary>
+    public static (DataListRowAction<TItem> Action, IReadOnlyList<DataListRowAction<TItem>> Ancestors)? Locate(IEnumerable<DataListRowAction<TItem>> roots, string? key)
+    {
+        if (key is null) return null;
+        return Search(roots, key, []);
+    }
+
+    private static (DataListRowAction<TItem>, IReadOnlyList<DataListRowAction<TItem>>)? Search(IEnumerable<DataListRowAction<TItem>> actions, string key, List<DataListRowAction<TItem>> path)
+    {
+        foreach (var action in actions)
+        {
+            if (action.Key == key) return (action, [.. path]);
+            if (action.Children is not { Count: > 0 }) continue;
+            path.Add(action);
+            var found = Search(action.Children, key, path);
+            path.RemoveAt(path.Count - 1);
+            if (found is not null) return found;
+        }
+        return null;
     }
 
     /// <summary>Runs an action. <paramref name="changed"/> is called when it starts and when it ends, so that the row shows its spinner.</summary>
-    public async Task<RowActionOutcome> RunAsync(string row, DataListRowAction<TItem> action, DataListRowActionContext<TItem> context, Action changed, Func<Exception?, string?, Task> onFailure, CancellationToken lifetime)
+    public async Task<RowActionOutcome> RunAsync(string row, DataListRowAction<TItem> action, DataListRowActionContext<TItem> context, Action changed, Func<Exception?, string?, Task> onFailure, CancellationToken lifetime,
+        IReadOnlyList<DataListRowAction<TItem>>? ancestors = null)
     {
-        var state = StateOf(row, action, context);
+        var state = StateOf(row, action, context, ancestors);
         if (!state.Visible || state.Disabled || state.Loading || state.Href is not null || action.Children is { Count: > 0 }) return RowActionOutcome.Ignored;
         if (!_running.Add((row, action.Key))) return RowActionOutcome.Ignored;
         Exception? thrown = null;

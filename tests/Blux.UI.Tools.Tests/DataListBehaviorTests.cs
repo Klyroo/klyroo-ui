@@ -266,6 +266,25 @@ public class DataListBehaviorTests : BluxToolsTestContext
     }
 
     [Fact]
+    public async Task Removing_a_row_keeps_the_elements_of_the_rows_after_it()
+    {
+        var cut = Render<DataListHarness>(p => p.Add(c => c.Items, People.ToList()).Add(c => c.UrlSync, false));
+        await cut.WaitForAssertionAsync(() => Assert.Equal(10, cut.FindAll("tbody tr[data-slot=row]").Count));
+        var components = cut.FindComponents<DataListRowView<Person>>().ToDictionary(r => r.Instance.Item.Id, r => r.Instance);
+
+        // Row 2 goes away: the rows after it are the same components (a component keeps its element), and the one beyond the page takes the end.
+        cut.Render(p => p.Add(c => c.Items, People.Where(x => x.Id != 2).ToList()).Add(c => c.UrlSync, false));
+        await cut.WaitForAssertionAsync(() => Assert.DoesNotContain(cut.FindComponents<DataListRowView<Person>>(), r => r.Instance.Item.Id == 2));
+
+        var after = cut.FindComponents<DataListRowView<Person>>();
+        Assert.Equal(10, after.Count);
+        foreach (var row in after.Where(r => components.ContainsKey(r.Instance.Item.Id)))
+        {
+            Assert.Same(components[row.Instance.Item.Id], row.Instance);
+        }
+    }
+
+    [Fact]
     public async Task One_page_change_renders_each_part_a_small_fixed_number_of_times()
     {
         var cut = Render<DataListHarness>(p => p.Add(c => c.Items, People).Add(c => c.UrlSync, false));

@@ -2,6 +2,7 @@
 
 <BxDataList TItem="Person" Schema="Schema" Items="Provider is null ? Items : null" Provider="Provider"
             PagingMode="PagingMode" Density="Density" UrlSync="UrlSync" UrlKey="@UrlKey"
+            State="State" StateChanged="StateChanged"
             Selectable="Selectable" @bind-SelectedKeys="SelectedKeys">
     <BxDataListSearch />
     <BxDataListResultCount />
@@ -37,6 +38,8 @@
     [Parameter] public bool IncludeLoader { get; set; } = true;
     [Parameter] public bool IncludePagination { get; set; }
     [Parameter] public bool? Selectable { get; set; }
+    [Parameter] public DataListState? State { get; set; }
+    [Parameter] public EventCallback<DataListState> StateChanged { get; set; }
     [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
     [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
 }

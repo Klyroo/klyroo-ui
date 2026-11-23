@@ -22,6 +22,7 @@ public class DataListCursorTests(PlaygroundServer server) : PlaygroundTest(serve
     private ILocator ManualList => Page.GetByTestId("list-cursor");
     private ILocator AutoList => Page.GetByTestId("list-cursor-auto");
     private ILocator VirtualList => Page.GetByTestId("list-virtualized");
+    private ILocator VirtualCursorList => Page.GetByTestId("list-virtual-cursor");
 
     private async Task DarkMode()
     {
@@ -56,6 +57,8 @@ public class DataListCursorTests(PlaygroundServer server) : PlaygroundTest(serve
         // Virtualized table never virtualizes in static SSR: all 200 rows are rendered directly.
         await Assertions.Expect(VirtualList.Locator("[data-slot=table-root]")).Not.ToHaveAttributeAsync("data-virtualized", "true");
         await Assertions.Expect(VirtualList.Locator("tbody tr[data-slot=row]")).ToHaveCountAsync(200);
+        await Assertions.Expect(VirtualCursorList.Locator("[data-slot=table-root]")).Not.ToHaveAttributeAsync("data-virtualized", "true");
+        await Assertions.Expect(VirtualCursorList.Locator("tbody tr[data-slot=row]")).ToHaveCountAsync(20);
     }
 
     [Theory]
@@ -143,6 +146,63 @@ public class DataListCursorTests(PlaygroundServer server) : PlaygroundTest(serve
 
         var scrolledCount = await rows.CountAsync();
         Assert.InRange(scrolledCount, 5, 49);
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task Virtualized_cursor_table_loads_more_on_scroll_refreshes_loaded_pages_restores_virtual_focus_and_resets_from_mid_way_cursor(string mode)
+    {
+        await OpenPage(mode);
+
+        var root = VirtualCursorList.Locator("[data-slot=table-root]");
+        var table = VirtualCursorList.Locator("table");
+        var count = VirtualCursorList.Locator("[data-slot=result-count]");
+
+        await Assertions.Expect(root).ToHaveAttributeAsync("data-virtualized", "true");
+        await Assertions.Expect(root.Locator("[data-slot=infinite-loader]")).ToHaveCountAsync(1);
+        await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "21");
+        await Assertions.Expect(count).ToHaveTextAsync("1–20 of 600");
+
+        // Focus row 1's selection checkbox before scrolling it out of the virtualized window.
+        var firstRowCheckbox = VirtualCursorList.Locator("tbody tr[data-slot=row][aria-rowindex='2'] input[data-select=row]");
+        await firstRowCheckbox.FocusAsync();
+        await Assertions.Expect(firstRowCheckbox).ToBeFocusedAsync();
+
+        // Scroll to the bottom of the virtualized table's scroll box: appends page 2 (rows 21..40) and unmounts row 1.
+        await root.EvaluateAsync("el => el.scrollTop = el.scrollHeight");
+        await Assertions.Expect(count).ToHaveTextAsync("1–40 of 600", new() { Timeout = 15_000 });
+        await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "41");
+
+        // Scroll further into page 2 so row 1 (aria-rowindex=2) is outside the virtualized overscan window.
+        await root.EvaluateAsync("el => el.scrollTop = el.scrollHeight");
+        await Assertions.Expect(VirtualCursorList.Locator("tbody tr[data-slot=row][aria-rowindex='2']")).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+
+        // Scroll back to the top: when row 1 re-enters the virtualized window, its checkbox receives focus back.
+        await root.EvaluateAsync("el => el.scrollTop = 0");
+        await Assertions.Expect(firstRowCheckbox).ToBeFocusedAsync(new() { Timeout = 15_000 });
+
+        // Refresh re-fetches both loaded cursor pages (keeping 1–40 of 600 on screen).
+        await VirtualCursorList.GetByRole(AriaRole.Button, new() { Name = "Refresh" }).ClickAsync();
+        await Assertions.Expect(count).ToHaveTextAsync("1–40 of 600", new() { Timeout = 15_000 });
+        await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "41");
+
+        // Entering the page mid-way at a cursor in interactive mode shows the Back to start button, which resets to page 1 and focuses the table.
+        await OpenPage("ssr");
+        var midHref = await VirtualCursorList.Locator("[data-slot=infinite-loader] a[data-slot=load-more-trigger]").GetAttributeAsync("href");
+        Assert.NotNull(midHref);
+        var queryIndex = midHref.IndexOf('?');
+        Assert.True(queryIndex >= 0);
+
+        await OpenPage(mode, midHref[queryIndex..]);
+        await Assertions.Expect(count).ToHaveTextAsync("20 of 600");
+        var resetButton = VirtualCursorList.Locator("button[data-slot=cursor-reset]");
+        await Assertions.Expect(resetButton).ToBeVisibleAsync();
+
+        await resetButton.ClickAsync();
+        await Page.WaitForUrlAsync("!url.searchParams.has('vc.c')");
+        await Assertions.Expect(count).ToHaveTextAsync("1–20 of 600", new() { Timeout = 15_000 });
+        await Assertions.Expect(resetButton).ToHaveCountAsync(0);
+        await Assertions.Expect(root).ToBeFocusedAsync();
     }
 
     [Theory]
