@@ -8,16 +8,14 @@ namespace Chat.Web;
 /// <summary>
 /// Gives the circuit of a visitor the same caller key the endpoint would give the same machine: the address of the connection that opened the circuit (grouped by /64
 /// for IPv6; behind a proxy the address from <c>ForwardedHeaders</c>, which is why <c>ForwardedHeaders:KnownProxies</c> matters). When the host cannot tell (no
-/// HttpContext at that point) the circuit keeps its random key and is limited as its own caller.
+/// HttpContext at that point) the circuit gets the shared "unknown" key.
 /// </summary>
 public sealed class CallerCircuitHandler(IHttpContextAccessor accessor, CallerKey caller) : CircuitHandler
 {
     public override Task OnCircuitOpenedAsync(Circuit circuit, CancellationToken cancellationToken)
     {
-        if (accessor.HttpContext?.Connection.RemoteIpAddress is { } address)
-        {
-            caller.Value = CallerKey.From(address);
-        }
+        // Fail closed: a circuit whose address cannot be read shares the "unknown" key with every other one, instead of getting limits of its own.
+        caller.Value = CallerKey.From(accessor.HttpContext?.Connection.RemoteIpAddress);
         return Task.CompletedTask;
     }
 }

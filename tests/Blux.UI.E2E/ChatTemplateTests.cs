@@ -16,6 +16,12 @@ internal static class ChatChecks
     public static Task WaitInteractive(IPage page) =>
         Assertions.Expect(page.GetByTestId("renderer")).ToHaveTextAsync(Interactive, new() { Timeout = 60_000 });
 
+    /// <summary>Polls the address in the page (see PlaygroundTest.WaitForUrl): WaitForURLAsync can miss a navigation of the interactive router.</summary>
+    public static Task WaitForUrl(IPage page, string expression) =>
+        page.WaitForFunctionAsync($"() => {{ const url = new URL(location.href); return {expression}; }}", null, new() { Timeout = 15_000 });
+
+    public static Task WaitForConversationUrl(IPage page) => WaitForUrl(page, "/\\/c\\/[0-9a-f]{32}$/.test(url.pathname)");
+
     private static ILocator Prompt(IPage page) => page.GetByRole(AriaRole.Textbox, new() { Name = "Message" });
 
     /// <summary>Types a message and sends it with Enter.</summary>
@@ -59,7 +65,7 @@ internal static class ChatChecks
     public static async Task AssertFirstConversation(IPage page, string? pathBase)
     {
         await page.GetByTestId("suggestion").First.ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/c/[0-9a-f]{32}$"));
+        await WaitForConversationUrl(page);
         await Assertions.Expect(page.GetByTestId("message-user")).ToContainTextAsync("mutex and a semaphore");
         // While it arrives: marked as streaming, and the prompt offers Stop.
         await Assertions.Expect(page.Locator("[data-testid=message-assistant]")).ToBeVisibleAsync();
@@ -200,14 +206,14 @@ internal static class ChatChecks
         await Assertions.Expect(confirm).ToBeHiddenAsync();
         await Assertions.Expect(Items(page)).ToHaveCountAsync(1);
         await Assertions.Expect(page.GetByTestId("empty-conversation")).ToBeVisibleAsync();
-        await page.WaitForURLAsync(url => !url.Contains("/c/"));
+        await WaitForUrl(page, "!/\\/c\\//.test(url.pathname)");
     }
 
     /// <summary>The conversations are in the storage of the browser: they survive a reload, and another visitor (another browser context) sees none of them.</summary>
     public static async Task AssertPersistenceAndIsolation(IPage page, IBrowser browser, string baseUrl)
     {
         await Items(page).Filter(new() { HasText = "mutex" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/c/[0-9a-f]{32}$"));
+        await WaitForConversationUrl(page);
         var url = page.Url;
         await page.ReloadAsync();
         await WaitInteractive(page);
@@ -282,7 +288,7 @@ internal static class ChatChecks
         var violations = await AxeViolations(page);
         Assert.True(violations.Count == 0, "Panel open:\n" + string.Join("\n", violations));
         await Items(page).First.ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/c/[0-9a-f]{32}$"));
+        await WaitForConversationUrl(page);
         await Assertions.Expect(panel).ToBeHiddenAsync();
         await Assertions.Expect(page.GetByTestId("message-user").First).ToBeVisibleAsync();
 
@@ -452,6 +458,54 @@ public class ChatTemplateTests(PlaygroundServer server)
                 // The styles of an answer are in the stylesheet the build compiled.
                 Assert.Contains(".code-block", css);
             }
+        }
+        finally
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+                await process.WaitForExitAsync(TestContext.Current.CancellationToken);
+            }
+        }
+    }
+
+    /// <summary>
+    /// In the Server render mode the provider runs in the circuit, which has no request of its own: it is limited as the address of the connection that opened it. Three
+    /// visitors from this machine share a budget of two answers a minute, whatever their circuits, and the third is refused.
+    /// </summary>
+    [Fact]
+    public async Task Circuits_of_one_address_share_their_limits()
+    {
+        Assert.SkipWhen(string.IsNullOrEmpty(Published) || string.IsNullOrEmpty(AssemblyName), "BLUX_TEMPLATE_PUBLISHED and BLUX_TEMPLATE_ASSEMBLY are not set.");
+        var host = $"http://127.0.0.1:{FreePort()}";
+        var directory = Path.GetFullPath(Published!);
+        var start = new ProcessStartInfo("dotnet", [Path.Combine(directory, AssemblyName!), "--urls", host]) { WorkingDirectory = directory, RedirectStandardOutput = true, RedirectStandardError = true };
+        start.Environment["ASPNETCORE_ENVIRONMENT"] = "Production";
+        start.Environment["Assistant__Provider"] = "Simulated";
+        start.Environment["Assistant__RequestsPerMinute"] = "2";
+        using var process = Process.Start(start) ?? throw new InvalidOperationException("Could not start the template.");
+        var log = new List<string>();
+        process.OutputDataReceived += (_, e) => { if (e.Data is not null) lock (log) log.Add(e.Data); };
+        process.ErrorDataReceived += (_, e) => { if (e.Data is not null) lock (log) log.Add(e.Data); };
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+        try
+        {
+            await WaitUntilReady(process, host + "/", log);
+            var answered = new List<bool>();
+            for (var visitor = 0; visitor < 3; visitor++)
+            {
+                await using var context = await server.Browser.NewContextAsync(new() { BaseURL = host + "/" });
+                var page = await context.NewPageAsync();
+                await page.GotoAsync("");
+                await ChatChecks.WaitInteractive(page);
+                await ChatChecks.Send(page, "hello " + visitor);
+                var refused = page.GetByRole(AriaRole.Alert).Filter(new() { HasText = "Too many requests" });
+                var reply = page.GetByTestId("message-assistant");
+                await Assertions.Expect(reply.Or(refused).First).ToBeVisibleAsync(new() { Timeout = 15_000 });
+                answered.Add(await reply.CountAsync() > 0);
+            }
+            Assert.Equal([true, true, false], answered);
         }
         finally
         {

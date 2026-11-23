@@ -1,7 +1,10 @@
 namespace Chat.Shared.Services;
 
-/// <summary>What a store gives back: the stored conversations as JSON texts (unchecked), the model last chosen, and the UTC offset of the user in minutes.</summary>
-public sealed record StoredData(IReadOnlyList<string> Conversations, string? Model, int UtcOffsetMinutes);
+/// <summary>A stored conversation as the store holds it: the id it is kept under and its JSON text, unchecked.</summary>
+public sealed record StoredConversation(string Id, string Json);
+
+/// <summary>What a store gives back: the stored conversations, the model last chosen, and the UTC offset of the user in minutes.</summary>
+public sealed record StoredData(IReadOnlyList<StoredConversation> Conversations, string? Model, int UtcOffsetMinutes);
 
 /// <summary>
 /// Where conversations are kept between visits. The web app and the MAUI app keep them in the local storage of the browser (or web view) of the user, which

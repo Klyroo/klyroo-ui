@@ -10,7 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Behind a reverse proxy the request the app sees is the proxy's: its own address, plain HTTP. With ForwardedHeaders:Enabled the app reads X-Forwarded-For,
 // -Proto and -Host from the proxies it trusts, so the scheme and host of generated addresses are the visitor's. Loopback is trusted; list other proxies in
-// ForwardedHeaders:KnownProxies (addresses). Off by default: a header from a client that is not a trusted proxy must not be believed.
+// ForwardedHeaders:KnownProxies (addresses) or ForwardedHeaders:KnownNetworks (CIDR ranges). Off by default: a header from a client that is not a trusted proxy must not be believed.
 var forwardedHeaders = builder.Configuration.GetValue<bool>("ForwardedHeaders:Enabled");
 if (forwardedHeaders)
 {
@@ -22,6 +22,13 @@ if (forwardedHeaders)
             options.KnownProxies.Add(IPAddress.TryParse(proxy, out var address)
                 ? address
                 : throw new InvalidOperationException($"ForwardedHeaders:KnownProxies: '{proxy}' is not an IP address."));
+        }
+        // Whole networks, as CIDR ("10.0.0.0/8"): for proxies that come and go in a range (a load balancer, a cluster).
+        foreach (var network in builder.Configuration.GetSection("ForwardedHeaders:KnownNetworks").Get<string[]>() ?? [])
+        {
+            options.KnownIPNetworks.Add(System.Net.IPNetwork.TryParse(network, out var parsed)
+                ? parsed
+                : throw new InvalidOperationException($"ForwardedHeaders:KnownNetworks: '{network}' is not a network in CIDR notation (10.0.0.0/8)."));
         }
     });
 }

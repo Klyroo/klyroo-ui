@@ -110,8 +110,17 @@ public static partial class ConversationJson
 
     public static bool IsValidId(string? id) => id is not null && IdPattern().IsMatch(id);
 
+    // Storage-only JSON: it never goes into HTML, so non-ASCII text is written as it is (the default encoder would write each CJK character as six).
+    private static readonly ConversationContext Context = new(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping, PropertyNamingPolicy = JsonNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull });
+
+    /// <summary>
+    /// The most characters a stored conversation can be written with: what <see cref="Write"/> can produce (the text of the messages, the thinking of every answer and a little
+    /// metadata), at the worst six characters for each one (a quote or a control character is escaped). Longer is not ours.
+    /// </summary>
+    public const int MaxJsonCharacters = 6 * (2 * ConversationLimits.MaxConversationCharacters + ConversationLimits.MaxMessages * ConversationLimits.MaxStoredReasoningCharacters) + 64 * 1024;
+
     public static string Write(Conversation conversation) =>
-        JsonSerializer.Serialize(conversation, ConversationContext.Default.Conversation);
+        JsonSerializer.Serialize(conversation, Context.Conversation);
 
     /// <summary>
     /// Reads a conversation. False when the text is not one. A role that is not user or assistant, a field of the wrong type or a message past the
@@ -120,14 +129,14 @@ public static partial class ConversationJson
     public static bool TryRead(string? json, out Conversation conversation)
     {
         conversation = new Conversation();
-        if (string.IsNullOrWhiteSpace(json) || json.Length > 4 * ConversationLimits.MaxConversationCharacters)
+        if (string.IsNullOrWhiteSpace(json) || json.Length > MaxJsonCharacters)
         {
             return false;
         }
         Conversation? read;
         try
         {
-            read = JsonSerializer.Deserialize(json, ConversationContext.Default.Conversation);
+            read = JsonSerializer.Deserialize(json, Context.Conversation);
         }
         catch (JsonException)
         {
@@ -145,22 +154,22 @@ public static partial class ConversationJson
             CreatedAt = Clamp(read.CreatedAt),
             UpdatedAt = Clamp(read.UpdatedAt),
         };
+        // From the newest back: the longest recent stretch that fits what the app ever stores, never fewer than the last message.
         long total = 0;
-        foreach (var message in (read.Messages ?? []).TakeLast(ConversationLimits.MaxMessages))
+        var kept = new List<ConversationMessage>();
+        foreach (var message in (read.Messages ?? []).TakeLast(ConversationLimits.MaxMessages).Reverse())
         {
             if (message is null || message.Role is not (CompletionMessage.UserRole or CompletionMessage.AssistantRole) || !IsValidId(message.Id))
             {
                 continue;
             }
             var content = Truncate(message.Content ?? "", ConversationLimits.MaxStoredMessageCharacters);
-            total += content.Length;
-            if (total > ConversationLimits.MaxConversationCharacters * 2L)
+            if (kept.Count > 0 && total + content.Length > ConversationLimits.MaxConversationCharacters * 2L)
             {
-                // Over what the app ever stores: keep the most recent part.
-                conversation.Messages.Clear();
-                total = content.Length;
+                break;
             }
-            conversation.Messages.Add(new ConversationMessage
+            total += content.Length;
+            kept.Add(new ConversationMessage
             {
                 Id = message.Id,
                 Role = message.Role,
@@ -172,6 +181,8 @@ public static partial class ConversationJson
                 At = Clamp(message.At),
             });
         }
+        kept.Reverse();
+        conversation.Messages.AddRange(kept);
         return true;
     }
 

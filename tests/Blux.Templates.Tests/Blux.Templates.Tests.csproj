@@ -44,7 +44,7 @@
     <Compile Include="..\..\templates\chat\src\Chat.Shared\Data\*.cs" LinkBase="Chat\Data" />
     <Compile Include="..\..\templates\chat\src\Chat.Shared\Services\ConversationState.cs;..\..\templates\chat\src\Chat.Shared\Services\ConversationStore.cs" LinkBase="Chat\Services" />
     <Compile Include="..\..\templates\chat\src\Chat.Shared\Markdown\MessageMarkdown.cs" LinkBase="Chat\Markdown" />
-    <Compile Include="..\..\templates\chat\src\Chat.Web\AssistantEndpoints.cs" LinkBase="Chat" />
+    <Compile Include="..\..\templates\chat\src\Chat.Web\AssistantEndpoints.cs;..\..\templates\chat\src\Chat.Web\CallerAccess.cs" LinkBase="Chat" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
     <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
   </ItemGroup>

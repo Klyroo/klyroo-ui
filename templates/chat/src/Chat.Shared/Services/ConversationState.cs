@@ -55,11 +55,29 @@ public sealed class ConversationState(IConversationStore store)
             UtcOffset = TimeSpan.FromMinutes(Math.Clamp(data.UtcOffsetMinutes, -14 * 60, 14 * 60));
             Model = string.IsNullOrWhiteSpace(data.Model) || data.Model.Length > 100 ? null : data.Model;
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var json in data.Conversations)
+            var unusable = new List<string>();
+            foreach (var stored in data.Conversations)
             {
-                if (ConversationJson.TryRead(json, out var conversation) && conversation.Messages.Count > 0 && seen.Add(conversation.Id))
+                // Kept under its own id and readable: a conversation. Anything else under our prefix is not ours to keep: it is removed, so it does not fill the storage or the
+                // cap on what is read (a conversation that was never written, only a key, has no messages and goes too).
+                if (ConversationJson.TryRead(stored.Json, out var conversation) && conversation.Id == stored.Id && conversation.Messages.Count > 0 && seen.Add(conversation.Id))
                 {
                     _items.Add(conversation);
+                }
+                else
+                {
+                    unusable.Add(stored.Id);
+                }
+            }
+            foreach (var id in unusable)
+            {
+                try
+                {
+                    await store.DeleteAsync(id);
+                }
+                catch (Exception)
+                {
+                    break;
                 }
             }
             _items.Sort((a, b) => b.UpdatedAt.CompareTo(a.UpdatedAt));

@@ -53,8 +53,12 @@ public interface IAssistantAuthorizer
 /// <item>requests per minute (<see cref="AssistantOptions.RequestsPerMinute"/>) and replies in flight (<see cref="AssistantOptions.MaxConcurrentPerCaller"/>, <see cref="AssistantOptions.MaxConcurrentStreams"/>);</item>
 /// <item>a daily budget of requests and of characters of output (<see cref="AssistantOptions.DailyRequestsPerCaller"/> and the others), per UTC day. A character of output is about a quarter of a token.</item>
 /// </list>
-/// At most <see cref="MaxCallers"/> callers are remembered. A caller that is not remembered yet is refused with 429 while the table is full of callers that are still within their
-/// day: the callers already in it keep their limits, and an attacker with many addresses cannot push a legitimate visitor out or drain a shared bucket.
+/// At most <see cref="MaxCallers"/> callers are remembered. When the table is full, the caller whose last request is the oldest, among those with no reply in flight, is forgotten
+/// to make room (a forgotten caller starts again with empty counters, which is the price of a bounded table). The table is a dictionary and a list ordered by last request, so neither
+/// looking a caller up nor making room scans it.
+/// The daily budgets are the ones of a real service that costs money: they do not apply to the simulated provider, which keeps only the per-minute and in-flight limits.
+/// The budgets count the output of replies and are checked when a reply starts, so a caller can overshoot by what its replies in flight still send
+/// (<see cref="AssistantOptions.MaxConcurrentPerCaller"/> times <see cref="AssistantOptions.MaxOutputCharacters"/>, and for the whole process <see cref="AssistantOptions.MaxConcurrentStreams"/> times it). Input is not budgeted.
 /// </summary>
 public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time = null)
 {
@@ -66,6 +70,8 @@ public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time 
     private readonly int _capacity = Math.Max(1, options.MaxConcurrentStreams);
     private readonly object _gate = new();
     private readonly Dictionary<string, Bucket> _callers = new(StringComparer.Ordinal);
+    // Ordered by last request, oldest first.
+    private readonly LinkedList<Bucket> _order = new();
     private int _inFlight;
     private int _globalDay;
     private long _globalRequests;
@@ -117,18 +123,9 @@ public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time 
             {
                 (_globalDay, _globalRequests, _globalCharacters) = (day, 0, 0);
             }
-            if (!_callers.TryGetValue(key, out var bucket))
-            {
-                if (_callers.Count >= MaxCallers)
-                {
-                    Purge(now, day);
-                }
-                if (_callers.Count >= MaxCallers)
-                {
-                    throw new CompletionException("The assistant is very busy: try again later.") { Status = 429 };
-                }
-                bucket = _callers[key] = new Bucket { Day = day };
-            }
+            var known = _callers.TryGetValue(key, out var bucket);
+            // A caller the table does not know yet is a bucket that is only added once the request passed every check.
+            bucket ??= new Bucket { Key = key, Day = day };
             if (bucket.Day != day)
             {
                 (bucket.Day, bucket.Requests, bucket.Characters) = (day, 0, 0);
@@ -145,18 +142,33 @@ public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time 
             {
                 throw new CompletionException("An answer is already arriving: wait for it to end.") { Status = 429 };
             }
-            if (bucket.Requests >= options.DailyRequestsPerCaller || bucket.Characters >= options.DailyOutputCharactersPerCaller)
+            if (!options.IsSimulated)
             {
-                throw new CompletionException("The daily limit of this browser is reached: try again tomorrow.") { Status = 429 };
-            }
-            if (_globalRequests >= options.DailyRequestsGlobal || _globalCharacters >= options.DailyOutputCharactersGlobal)
-            {
-                throw new CompletionException("The assistant has reached its limit for today: try again tomorrow.") { Status = 503 };
+                if (bucket.Requests >= options.DailyRequestsPerCaller || bucket.Characters >= options.DailyOutputCharactersPerCaller)
+                {
+                    throw new CompletionException("The daily limit of this browser is reached: try again tomorrow.") { Status = 429 };
+                }
+                if (_globalRequests >= options.DailyRequestsGlobal || _globalCharacters >= options.DailyOutputCharactersGlobal)
+                {
+                    throw new CompletionException("The assistant has reached its limit for today: try again tomorrow.") { Status = 503 };
+                }
             }
             // A counter, not a semaphore: nothing waits, a reply beyond the capacity is refused at once.
             if (_inFlight >= _capacity)
             {
                 throw new CompletionException("The assistant is busy: try again in a moment.") { Status = 503 };
+            }
+            if (!known)
+            {
+                MakeRoom();
+                _callers[key] = bucket;
+                bucket.Node = _order.AddLast(bucket);
+            }
+            else
+            {
+                // The most recent caller goes to the end.
+                _order.Remove(bucket.Node!);
+                _order.AddLast(bucket.Node!);
             }
             bucket.Hits.Enqueue(now);
             bucket.Last = now;
@@ -170,15 +182,18 @@ public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time 
 
     private int DayNumber() => (int)(_time.GetUtcNow().UtcDateTime.Date - DateTime.UnixEpoch).TotalDays;
 
-    // Forgets the callers that are idle and whose day is over: they have nothing left to remember.
-    private void Purge(long now, int day)
+    // Forgets the oldest callers that have no reply in flight until there is room for one more. At most MaxConcurrentStreams callers are in flight, so the walk is short.
+    private void MakeRoom()
     {
-        foreach (var (key, bucket) in _callers.ToArray())
+        for (var node = _order.First; _callers.Count >= MaxCallers && node is not null;)
         {
-            if (bucket.InFlight == 0 && bucket.Day != day && _time.GetElapsedTime(bucket.Last, now) >= Window)
+            var next = node.Next;
+            if (node.Value.InFlight == 0)
             {
-                _callers.Remove(key);
+                _callers.Remove(node.Value.Key);
+                _order.Remove(node);
             }
+            node = next;
         }
     }
 
@@ -226,6 +241,10 @@ public sealed class AssistantGuard(AssistantOptions options, TimeProvider? time 
 
     internal sealed class Bucket
     {
+        public string Key { get; init; } = "";
+
+        public LinkedListNode<Bucket>? Node { get; set; }
+
         public Queue<long> Hits { get; } = new();
 
         public long Last { get; set; }
