@@ -28,11 +28,11 @@ internal static class PortfolioChecks
 
         // Work, from the header.
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "Work" }).First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/work$"));
+        await page.WaitForUrlMatchingAsync("/work$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Work");
         await Assertions.Expect(page.GetByTestId("project")).ToHaveCountAsync(5);
         await page.GetByRole(AriaRole.Link, new() { Name = "Quire", Exact = true }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/work/quire$"));
+        await page.WaitForUrlMatchingAsync("/work/quire$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Quire");
         await Assertions.Expect(page).ToHaveTitleAsync("Quire - Ines Calloway");
         var facts = page.GetByTestId("project-facts");
@@ -48,11 +48,11 @@ internal static class PortfolioChecks
         await Assertions.Expect(project.Locator(".code-block[data-language=json]")).ToHaveCountAsync(1);
         await Assertions.Expect(page.GetByTestId("project")).ToHaveCountAsync(2);
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Breadcrumb" }).GetByRole(AriaRole.Link, new() { Name = "Work" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/work$"));
+        await page.WaitForUrlMatchingAsync("/work$");
 
         // About: the text, the timeline, the skills.
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "About" }).First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/about$"));
+        await page.WaitForUrlMatchingAsync("/about$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("About");
         await Assertions.Expect(page.GetByTestId("about-text")).ToContainTextAsync("I am Ines, a design engineer.");
         var timeline = page.GetByTestId("experience");
@@ -65,14 +65,14 @@ internal static class PortfolioChecks
         await Go(page, "writing");
         await Assertions.Expect(page.GetByTestId("article-card")).ToHaveCountAsync(5);
         await page.GetByRole(AriaRole.Link, new() { Name = "css (2)" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/writing\?tag=css$"));
+        await page.WaitForUrlMatchingAsync(@"/writing\?tag=css$");
         await Assertions.Expect(page.GetByTestId("article-card")).ToHaveCountAsync(2);
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "css (2)" })).ToHaveAttributeAsync("aria-current", "page");
         await Go(page, "writing?tag=nothing");
         await Assertions.Expect(page.GetByText("No articles with this tag")).ToBeVisibleAsync();
         await Go(page, "writing");
         await page.GetByRole(AriaRole.Link, new() { Name = "Spacing scales with fewer steps" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/writing/spacing-scales-with-fewer-steps$"));
+        await page.WaitForUrlMatchingAsync("/writing/spacing-scales-with-fewer-steps$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Spacing scales with fewer steps");
         await Assertions.Expect(page).ToHaveTitleAsync("Spacing scales with fewer steps - Ines Calloway");
         var article = page.GetByTestId("article");
@@ -85,12 +85,12 @@ internal static class PortfolioChecks
         // The link in the text of an article reaches a project.
         await Go(page, "writing/what-an-offline-first-app-owes-its-users");
         await page.GetByTestId("article").GetByRole(AriaRole.Link, new() { Name = "Fieldnote" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/work/fieldnote$"));
+        await page.WaitForUrlMatchingAsync("/work/fieldnote$");
 
         // Speaking: the years, the talks, the materials.
         await Go(page, "");
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "Speaking" }).First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/speaking$"));
+        await page.WaitForUrlMatchingAsync("/speaking$");
         await Assertions.Expect(page.GetByTestId("talk-year")).ToHaveCountAsync(2);
         await Assertions.Expect(page.GetByTestId("talk")).ToHaveCountAsync(5);
         await Assertions.Expect(page.GetByTestId("talk").First).ToContainTextAsync("Focus you can see on every background");
@@ -101,7 +101,7 @@ internal static class PortfolioChecks
         // Plain pages: a Markdown page outside work and writing, reached from the footer.
         await Go(page, "");
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Footer" }).GetByRole(AriaRole.Link, new() { Name = "Uses" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/uses$"));
+        await page.WaitForUrlMatchingAsync("/uses$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Uses");
         await Assertions.Expect(page).ToHaveTitleAsync("Uses - Ines Calloway");
         await Assertions.Expect(page.GetByTestId("plain-page").GetByRole(AriaRole.Table)).ToBeVisibleAsync();
@@ -116,7 +116,7 @@ internal static class PortfolioChecks
         var hit = search.GetByRole(AriaRole.Option).Filter(new() { HasText = "What an offline-first app owes" });
         await Assertions.Expect(hit.First).ToBeVisibleAsync();
         await hit.First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/writing/what-an-offline-first-app-owes-its-users$"));
+        await page.WaitForUrlMatchingAsync("/writing/what-an-offline-first-app-owes-its-users$");
     }
 
     /// <summary>
@@ -151,7 +151,7 @@ internal static class PortfolioChecks
         await form.GetByRole(AriaRole.Radio, new() { Name = "A project" }).CheckAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Send the message" }).ClickAsync();
         // Post/Redirect/Get: the answer to the post is a redirect to a page that a reload loads again without posting.
-        await page.WaitForURLAsync(new Regex(@"/contact\?sent=1$"));
+        await page.WaitForUrlMatchingAsync(@"/contact\?sent=1$");
         var result = page.GetByTestId("contact-result");
         await Assertions.Expect(result).ToContainTextAsync("nothing was sent and nothing was stored");
         // Nothing was stored: no cookie but the antiforgery one, the form is empty and the message is not in the page.
@@ -188,7 +188,7 @@ internal static class PortfolioChecks
         await form.GetByRole(AriaRole.Radio, new() { Name = "A talk or a workshop" }).CheckAsync();
         await page.GetByRole(AriaRole.Button, new() { Name = "Send the message" }).ClickAsync();
 
-        await page.WaitForURLAsync(new Regex(@"/contact\?sent=1$"));
+        await page.WaitForUrlMatchingAsync(@"/contact\?sent=1$");
         await Assertions.Expect(page.GetByTestId("contact-result")).ToContainTextAsync("nothing was sent and nothing was stored");
     }
 

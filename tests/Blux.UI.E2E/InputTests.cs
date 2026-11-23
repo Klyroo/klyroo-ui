@@ -331,4 +331,38 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
         Assert.Equal(["ab"], seen);
         await Assertions.Expect(State).ToHaveTextAsync("Value: ab", new() { Timeout = 10_000 });
     }
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("auto")]
+    public async Task The_router_moves_the_focus_to_the_heading_after_the_page_turns_interactive(string mode)
+    {
+        // Why Open also waits for the heading to hold the focus: with the render batches (and the focus call that follows the first one)
+        // held back, a field focused as soon as the page reports itself interactive loses the focus when the call arrives.
+        var settled = await DelayRenderBatches(Page, 400);
+        await Page.GotoAsync($"/{mode}/components/input-menu");
+        await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        var field = Page.GetByRole(AriaRole.Combobox, new() { Name = "Assign to" });
+        await field.FocusAsync();
+        await settled();
+
+        await Page.WaitForFunctionAsync("() => document.activeElement === document.querySelector('h1')");
+    }
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("auto")]
+    public async Task Text_typed_right_after_Open_survives_late_renders(string mode)
+    {
+        var settled = await DelayRenderBatches(Page, 400);
+        await Open(mode, "input-menu");
+        var field = Page.GetByRole(AriaRole.Combobox, new() { Name = "Assign to" });
+
+        await field.FocusAsync();
+        await Page.Keyboard.TypeAsync("docs");
+        await settled();
+
+        await Assertions.Expect(field).ToHaveValueAsync("docs");
+        await Assertions.Expect(field).ToBeFocusedAsync();
+    }
 }

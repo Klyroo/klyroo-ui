@@ -22,7 +22,7 @@ internal static class DocsChecks
 
         // A page of the content, by its link on the home page.
         await page.GetByTestId("sections").GetByRole(AriaRole.Link, new() { Name = "Installation", Exact = true }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/getting-started/installation$"));
+        await page.WaitForUrlMatchingAsync("/getting-started/installation$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Installation");
         await Assertions.Expect(page).ToHaveTitleAsync("Installation - Tern");
 
@@ -40,7 +40,7 @@ internal static class DocsChecks
         var href = await link.GetAttributeAsync("href");
         Assert.EndsWith("getting-started/installation#download-the-archive", href);
         await link.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/getting-started/installation#download-the-archive$"));
+        await page.WaitForUrlMatchingAsync("/getting-started/installation#download-the-archive$");
         var heading = page.Locator("h2#download-the-archive");
         await Assertions.Expect(heading).ToBeInViewportAsync();
         await Assertions.Expect(link).ToHaveAttributeAsync("aria-current", "location");
@@ -94,7 +94,7 @@ internal static class DocsChecks
         var result = search.GetByRole(AriaRole.Option).Filter(new() { HasText = "Scheduling" });
         await Assertions.Expect(result.First).ToBeVisibleAsync();
         await result.First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/guides/scheduling$"));
+        await page.WaitForUrlMatchingAsync("/guides/scheduling$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Scheduling");
         page.Request -= OnRequest;
         lock (indexRequests) Assert.Single(indexRequests);
