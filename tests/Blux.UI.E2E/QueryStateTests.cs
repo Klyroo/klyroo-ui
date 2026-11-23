@@ -30,11 +30,8 @@ public class QueryStateTests(PlaygroundServer server) : PlaygroundTest(server)
 
     private Task ExpectQuery(string pattern) => Assertions.Expect(Page.GetByTestId("url-query")).ToHaveTextAsync(new Regex(pattern));
 
-    private async Task WaitForQuery(string expected)
-    {
-        // The address bar, not the text of the page: this is what a user shares.
-        await Page.WaitForURLAsync(url => new Uri(url).Query == expected, new() { Timeout = 15_000 });
-    }
+    // The address bar, not the text of the page: this is what a user shares, as written.
+    private Task WaitForQuery(string expected) => WaitForRawQuery(expected);
 
     [Theory]
     [MemberData(nameof(AllModes))]
@@ -101,7 +98,7 @@ public class QueryStateTests(PlaygroundServer server) : PlaygroundTest(server)
         await Search.FillAsync("plan");
         await Page.GetByTestId("url-form").GetByRole(AriaRole.Button, new() { Name = "Search", Exact = true }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("q=plan"));
+        await WaitForQueryContaining("q=plan");
         Assert.Contains("status=open", Query);
         await Assertions.Expect(Items).ToHaveCountAsync(1);
         await Assertions.Expect(Items.First).ToContainTextAsync("Plan the next sprint");
@@ -288,7 +285,7 @@ public class QueryStateTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Page.GetByTestId("url-leave").ClickAsync();
 
-        await Page.WaitForURLAsync(url => new Uri(url).AbsolutePath.EndsWith("/docs"), new() { Timeout = 15_000 });
+        await WaitForUrl("url.pathname.endsWith('/docs')");
         // The write was meant for the page being left: after a while the address is still the other page's, with no state of ours.
         await Page.WaitForTimeoutAsync(1500);
         Assert.EndsWith("/docs", new Uri(Page.Url).AbsolutePath);

@@ -48,9 +48,6 @@ public class DataListFacetsTests(PlaygroundServer server) : PlaygroundTest(serve
         await Assertions.Expect(Editor(list, dialog)).ToBeVisibleAsync();
     }
 
-    private Task WaitForQuery(string expected) =>
-        Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query) == expected, new() { Timeout = 15_000 });
-
     private async Task DarkMode()
     {
         // A click on the theme button would close the popover (light dismiss): the theme changes first, then the editor opens again.
@@ -165,7 +162,7 @@ public class DataListFacetsTests(PlaygroundServer server) : PlaygroundTest(serve
         await Page.Keyboard.PressAsync("Escape");
 
         await Facets.GetByRole(AriaRole.Button, new() { Name = "Page 2" }).ClickAsync();
-        await Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query).Contains("fct.p=2", StringComparison.Ordinal), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("fct.p=2");
         await OpenTag(Facets, "Status is Paid", "Edit filter Status");
         await Assertions.Expect(Options(Editor(Facets, "Edit filter Status"))).ToContainTextAsync([new Regex("Draft.*30"), new Regex("Overdue.*30"), new Regex("Paid.*30"), new Regex("Pending.*30")]);
         await Page.Keyboard.PressAsync("Escape");

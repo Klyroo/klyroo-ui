@@ -89,7 +89,10 @@ export class BxModalElement extends HTMLElement {
   }
 
   #close() {
-    if (this.#dialog.open) this.#dialog.close();
+    if (!this.#dialog.open) return;
+    // The dialog closes now and its "close" event, the report to .NET, comes a task later: a render made before that lands in between must not reopen it.
+    this.#reporter.reserve();
+    this.#dialog.close();
   }
 
   #changed(open) {
@@ -128,6 +131,7 @@ export class BxModalElement extends HTMLElement {
 
   #onCancel = (event) => {
     if (!this.hasAttribute('dismissible')) event.preventDefault();
+    else this.#reporter.reserve();
   };
 
   #onClose = () => {
