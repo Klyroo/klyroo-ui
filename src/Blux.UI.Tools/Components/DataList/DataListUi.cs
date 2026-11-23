@@ -197,6 +197,11 @@ public sealed record DataListUi : ISlotOverrides
     public string? TfootCellPinnedStart { get; init; }
     public string? TfootCellPinnedEnd { get; init; }
     public string? TfootLabel { get; init; }
+    public string? ProgressLine { get; init; }
+    public string? ProgressLineBar { get; init; }
+    public string? HeaderCell { get; init; }
+    public string? HeaderMenu { get; init; }
+    public string? HeaderMenuTrigger { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -392,6 +397,11 @@ public sealed record DataListUi : ISlotOverrides
         "tfootCellPinnedStart" => TfootCellPinnedStart,
         "tfootCellPinnedEnd" => TfootCellPinnedEnd,
         "tfootLabel" => TfootLabel,
+        "progressLine" => ProgressLine,
+        "progressLineBar" => ProgressLineBar,
+        "headerCell" => HeaderCell,
+        "headerMenu" => HeaderMenu,
+        "headerMenuTrigger" => HeaderMenuTrigger,
         _ => null,
     };
 }

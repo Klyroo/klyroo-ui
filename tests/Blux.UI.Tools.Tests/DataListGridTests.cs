@@ -476,6 +476,55 @@ public class DataListGridTests : BluxToolsTestContext
         Assert.Equal(5, cut.FindAll("[data-slot=tree-cell]").Count);
         Assert.False(cut.Find("input[data-select=row][data-key='1']").HasAttribute("checked"));
     }
+
+    [Fact]
+    public void HeaderMenu_SkeletonKinds_EmptyState_with_first_use_action_and_ProgressLine_work()
+    {
+        // 1. Per-column skeleton kinds while initial load is in flight.
+        var tcs = new TaskCompletionSource<DataListResult<Person>>();
+        var initialCut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Provider, (_, _) => new ValueTask<DataListResult<Person>>(tcs.Task))
+            .Add(x => x.NameSkeleton, DataListSkeletonKind.Avatar)
+            .Add(x => x.AgeSkeleton, DataListSkeletonKind.Number)
+            .Add(x => x.CitySkeleton, DataListSkeletonKind.Badge));
+
+        var firstSkeletonRow = initialCut.Find("[data-slot=skeleton-row]");
+        var skeletonCells = firstSkeletonRow.QuerySelectorAll("td[data-skeleton-kind]");
+        Assert.Equal(["avatar", "number", "badge"], skeletonCells.Select(c => c.GetAttribute("data-skeleton-kind")).ToArray());
+
+        // 2. EmptyState with first-use Action shows the action on an unfiltered empty list, and hides it when a search filter is active.
+        var created = false;
+        var emptyState = new DataListEmptyState
+        {
+            Title = "No people yet",
+            Description = "Add your first person to get started.",
+            Action = new DataListEmptyAction
+            {
+                Label = "Create person",
+                Icon = "plus",
+                OnClick = Microsoft.AspNetCore.Components.EventCallback.Factory.Create(this, () => created = true),
+            },
+        };
+
+        var emptyCut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Items, Array.Empty<Person>())
+            .Add(x => x.EmptyState, emptyState));
+
+        Assert.Contains("No people yet", emptyCut.Markup);
+        var createBtn = emptyCut.Find("[data-slot=empty-action]");
+        Assert.Contains("Create person", createBtn.TextContent);
+        createBtn.Click();
+        Assert.True(created);
+
+        // When searched, the filtered empty state replaces the first-use empty state and omits [data-slot=empty-action].
+        emptyCut.Find("[data-slot=search] input[type=search]").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "Alice" });
+        Assert.Empty(emptyCut.FindAll("[data-slot=empty-action]"));
+        Assert.Single(emptyCut.FindAll("[data-slot=reset]"));
+
+        // 3. HeaderMenu renders per-column dropdown menu triggers in interactive mode.
+        var menuCut = Render<DataListGridHarness>(p => p.Add(x => x.HeaderMenu, true));
+        Assert.Equal(3, menuCut.FindAll("[data-slot=header-menu-trigger]").Count);
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>

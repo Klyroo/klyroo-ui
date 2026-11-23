@@ -105,6 +105,12 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// <summary>Custom template for rendering the summary footer cell (<c>&lt;tfoot&gt;</c>) of this column.</summary>
     [Parameter] public RenderFragment<DataListSummaryCellContext<TItem>>? SummaryTemplate { get; set; }
 
+    /// <summary>Placeholder shape rendered inside this column's cells while the initial rows load (<see cref="DataListSkeletonKind.Text"/> by default).</summary>
+    [Parameter] public DataListSkeletonKind Skeleton { get; set; } = DataListSkeletonKind.Text;
+
+    /// <summary>Overrides <see cref="BxDataListTable{TItem}.HeaderMenu"/> for this column: <see langword="true"/> shows the header actions menu (sort, pin, hide), <see langword="false"/> omits it.</summary>
+    [Parameter] public bool? HeaderMenu { get; set; }
+
     internal bool HasSummary => Summary != DataListSummaryKind.None || SummaryValue is not null || SummaryTemplate is not null;
 
     /// <summary>The key of the column: <see cref="Key"/>, <see cref="Field"/> or the member path of <see cref="Property"/> in camel case.</summary>

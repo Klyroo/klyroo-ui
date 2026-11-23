@@ -33,6 +33,12 @@
             @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
             <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-summary="@(summaryActive ? "true" : null)" data-virtualized="@(IsVirtualized && !summaryActive ? "true" : null)" data-bx-scroll-root="@(IsVirtualized && !summaryActive ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
                  @attributes="AdditionalAttributes">
+                @if (ShowProgressLine && (Context.IsRefreshing || Context.IsReplacing))
+                {
+                    <div class="@_slots["progressLine"]" data-slot="progress-line" aria-hidden="true">
+                        <div class="@_slots["progressLineBar"]"></div>
+                    </div>
+                }
                 @if (summaryActive)
                 {
                     @if (Context.IsInitial)
@@ -53,20 +59,7 @@
                     else if (empty)
                     {
                         <div class="@_slots["empty"]" data-slot="empty-row">
-                            @if (Empty is not null)
-                            {
-                                @Empty(Context)
-                            }
-                            else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
-                            {
-                                <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
-                                    <Actions>@FilteredAction</Actions>
-                                </BxDataListEmpty>
-                            }
-                            else
-                            {
-                                <BxDataListEmpty />
-                            }
+                            @RenderEmptyState()
                         </div>
                     }
                     else
@@ -145,11 +138,29 @@
                             }
                             @foreach (var column in columns)
                             {
-                                <th scope="col" class="@HeaderClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">
-                                    @Header(column)
-                                    @if (resizing && column.Resizable && column.Key is not null)
+                                var col = column;
+                                var menuItems = (col.Source?.HeaderMenu ?? HeaderMenu) && Context.IsInteractive ? BuildHeaderMenuItems(col) : null;
+                                <th scope="col" class="@HeaderClass(col)" style="@CellStyle(col)" data-pinned="@PinAttr(col)" aria-sort="@AriaSort(col)" data-key="@col.Key">
+                                    @if (menuItems is { Count: > 0 })
                                     {
-                                        var col = column;
+                                        <div class="@_slots["headerCell"]" data-slot="header-cell">
+                                            @Header(col)
+                                            <div class="@_slots["headerMenu"]" data-slot="header-menu" data-col-key="@col.Key">
+                                                <BxDropdownMenu Items="menuItems" OnSelect="@(item => OnHeaderMenuSelect(col, item))" Placement="bottom-end">
+                                                    <button type="button" class="@_slots["headerMenuTrigger"]" data-slot="header-menu-trigger" data-col-key="@col.Key"
+                                                            aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnMenuOpen, col.Title)">
+                                                        @RenderIcon("ellipsis", "size-3.5 shrink-0")
+                                                    </button>
+                                                </BxDropdownMenu>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        @Header(col)
+                                    }
+                                    @if (resizing && col.Resizable && col.Key is not null)
+                                    {
                                         @* A separator the keyboard and the pointer both move (js/column-resize.js): the width is changed in the browser and reported once, as the value of bx-change. *@
                                         <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnResize, col.Title)"
                                              aria-valuemin="@col.MinWidth" aria-valuemax="@col.MaxWidth" aria-valuenow="@(col.Width ?? col.DeclaredWidth)"
@@ -180,7 +191,7 @@
                                     }
                                     @foreach (var column in columns)
                                     {
-                                        <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
+                                        <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" data-skeleton-kind="@SkeletonKindAttr(column)">@RenderSkeletonCell(column)</td>
                                     }
                                     @if (acting)
                                     {
@@ -193,21 +204,7 @@
                         {
                             <tr class="@_slots["tr"]" data-slot="empty-row">
                                 <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0))" class="@_slots["empty"]">
-                                    @if (Empty is not null)
-                                    {
-                                        @Empty(Context)
-                                    }
-                                    else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
-                                    {
-                                        @* A search or filters are on: nothing matches, which is not the same as nothing existing. *@
-                                        <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
-                                            <Actions>@FilteredAction</Actions>
-                                        </BxDataListEmpty>
-                                    }
-                                    else
-                                    {
-                                        <BxDataListEmpty />
-                                    }
+                                    @RenderEmptyState()
                                 </td>
                             </tr>
                         }
@@ -345,8 +342,25 @@
     /// <summary>The accessible name of the table when there is no <see cref="Caption"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
 
-    /// <summary>Shown when the list has no rows. It receives the list, whose <see cref="DataListContext{TItem}.IsFiltered"/> tells "nothing matches" from "nothing exists". Without it, <see cref="BxDataListEmpty"/>.</summary>
+    /// <summary>Shown when the list has no rows. It receives the list, whose <see cref="DataListContext{TItem}.IsFiltered"/> tells "nothing matches" from "nothing exists". Without it, <see cref="EmptyState"/> or <see cref="BxDataListEmpty"/>.</summary>
     [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
+
+    /// <summary>
+    /// Declarative configuration for the unfiltered empty state (icon, title, description, and an optional first-use <see cref="DataListEmptyState.Action"/>).
+    /// When search or filters are active, the filtered empty state is still displayed instead and the first-use action is omitted.
+    /// </summary>
+    [Parameter] public DataListEmptyState? EmptyState { get; set; }
+
+    /// <summary>
+    /// Adds a dropdown menu button to each column header in interactive mode with quick actions to sort ascending/descending, stop sorting, pin/unpin, or hide the column.
+    /// Individual columns can override this via <see cref="BxDataListColumn{TItem}.HeaderMenu"/>.
+    /// </summary>
+    [Parameter] public bool HeaderMenu { get; set; }
+
+    /// <summary>
+    /// Draws a subtle top progress indicator while the rows on screen are being refreshed or replaced (<see langword="true"/> by default).
+    /// </summary>
+    [Parameter] public bool ShowProgressLine { get; set; } = true;
 
     /// <summary>
     /// Renders only the rows around the scroll viewport with Blazor's <c>Virtualize</c>, using <c>tr</c> spacers, a sticky header and fixed single-line row heights matching
@@ -572,6 +586,187 @@
             builder.CloseComponent();
         }
     };
+
+    private RenderFragment RenderEmptyState() => builder =>
+    {
+        if (Empty is not null)
+        {
+            builder.AddContent(0, Empty(Context));
+            return;
+        }
+        if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+        {
+            builder.OpenComponent<BxDataListEmpty>(1);
+            builder.AddAttribute(2, nameof(BxDataListEmpty.Title), FilteredTitle);
+            builder.AddAttribute(3, nameof(BxDataListEmpty.Description), FilteredDescription);
+            builder.AddAttribute(4, nameof(BxDataListEmpty.Actions), FilteredAction);
+            builder.AddAttribute(5, "data-filtered", "true");
+            builder.CloseComponent();
+            return;
+        }
+        builder.OpenComponent<BxDataListEmpty>(6);
+        if (EmptyState is { } es)
+        {
+            if (es.Icon is not null) builder.AddAttribute(7, nameof(BxDataListEmpty.Icon), es.Icon);
+            if (es.Title is not null) builder.AddAttribute(8, nameof(BxDataListEmpty.Title), es.Title);
+            if (es.HideDescription) builder.AddAttribute(9, nameof(BxDataListEmpty.Description), "");
+            else if (es.Description is not null) builder.AddAttribute(10, nameof(BxDataListEmpty.Description), es.Description);
+            if (es.Action is { } act && (!string.IsNullOrEmpty(act.Href) || Context.IsInteractive))
+            {
+                builder.AddAttribute(11, nameof(BxDataListEmpty.Actions), (RenderFragment)(b =>
+                {
+                    b.OpenComponent<BxButton>(0);
+                    b.AddAttribute(1, nameof(BxButton.Label), act.Label);
+                    b.AddAttribute(2, nameof(BxButton.Color), act.Color);
+                    b.AddAttribute(3, nameof(BxButton.Variant), act.Variant);
+                    if (!string.IsNullOrEmpty(act.Icon)) b.AddAttribute(4, nameof(BxButton.LeadingIcon), RenderIcon(act.Icon, "size-4"));
+                    if (!string.IsNullOrEmpty(act.Href)) b.AddAttribute(5, nameof(BxButton.Href), act.Href);
+                    if (Context.IsInteractive && act.OnClick.HasDelegate)
+                        b.AddAttribute(6, nameof(BxButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => act.OnClick.InvokeAsync()));
+                    b.AddAttribute(7, "data-slot", "empty-action");
+                    b.CloseComponent();
+                }));
+            }
+        }
+        builder.CloseComponent();
+    };
+
+    private static string SkeletonKindAttr(View column) => (column.Source?.Skeleton ?? DataListSkeletonKind.Text) switch
+    {
+        DataListSkeletonKind.Avatar => "avatar",
+        DataListSkeletonKind.Icon => "icon",
+        DataListSkeletonKind.Dot => "dot",
+        DataListSkeletonKind.Check => "check",
+        DataListSkeletonKind.Badge => "badge",
+        DataListSkeletonKind.Number => "number",
+        DataListSkeletonKind.Progress => "progress",
+        DataListSkeletonKind.None => "none",
+        _ => "text",
+    };
+
+    private RenderFragment RenderSkeletonCell(View column) => (column.Source?.Skeleton ?? DataListSkeletonKind.Text) switch
+    {
+        DataListSkeletonKind.None => _ => { },
+        DataListSkeletonKind.Avatar => @<div class="inline-flex items-center gap-2.5"><BxSkeleton Class="size-7 shrink-0 rounded-full" /><BxSkeleton Class="h-4 w-24" /></div>,
+        DataListSkeletonKind.Icon => @<BxSkeleton Class="size-5 rounded-(--blux-radius)" />,
+        DataListSkeletonKind.Dot => @<div class="inline-flex items-center gap-2"><BxSkeleton Class="size-2.5 shrink-0 rounded-full" /><BxSkeleton Class="h-4 w-16" /></div>,
+        DataListSkeletonKind.Check => @<BxSkeleton Class="size-4 rounded-[4px]" />,
+        DataListSkeletonKind.Badge => @<BxSkeleton Class="h-5 w-16 rounded-full" />,
+        DataListSkeletonKind.Number => @<BxSkeleton Class="ms-auto h-4 w-14" />,
+        DataListSkeletonKind.Progress => @<BxSkeleton Class="h-2 w-24 rounded-full" />,
+        _ => @<BxSkeleton Class="@_slots["skeleton"]" />,
+    };
+
+    private IReadOnlyList<BxMenuItem> BuildHeaderMenuItems(View column)
+    {
+        var items = new List<BxMenuItem>();
+        var key = column.Key;
+        if (column.Sortable && key is not null)
+        {
+            var dir = Context.SortDescending(key);
+            items.Add(new BxMenuItem
+            {
+                Label = ToolsMessages.ColumnMenuSortAsc,
+                Value = "sort-asc",
+                Icon = RenderIcon(Options.Icons.ArrowUp, "size-4"),
+                Disabled = dir == false,
+            });
+            items.Add(new BxMenuItem
+            {
+                Label = ToolsMessages.ColumnMenuSortDesc,
+                Value = "sort-desc",
+                Icon = RenderIcon(Options.Icons.ArrowDown, "size-4"),
+                Disabled = dir == true,
+            });
+            if (dir is not null)
+            {
+                items.Add(new BxMenuItem
+                {
+                    Label = ToolsMessages.ColumnMenuClearSort,
+                    Value = "sort-clear",
+                    Icon = RenderIcon(Options.Icons.Close, "size-4"),
+                });
+            }
+        }
+        if (key is not null && column.Source is { } src)
+        {
+            var pinAndHide = new List<BxMenuItem>();
+            if (!src.Required)
+            {
+                if (column.Pinned != DataListPin.Start)
+                {
+                    pinAndHide.Add(new BxMenuItem
+                    {
+                        Label = string.Format(FormatCulture, ToolsMessages.ColumnPinStart, column.Title),
+                        Value = "pin-start",
+                        Icon = RenderIcon("pin", "size-4"),
+                    });
+                }
+                if (column.Pinned != DataListPin.End)
+                {
+                    pinAndHide.Add(new BxMenuItem
+                    {
+                        Label = string.Format(FormatCulture, ToolsMessages.ColumnPinEnd, column.Title),
+                        Value = "pin-end",
+                        Icon = RenderIcon("pin", "size-4"),
+                    });
+                }
+                if (column.Pinned != DataListPin.None)
+                {
+                    pinAndHide.Add(new BxMenuItem
+                    {
+                        Label = string.Format(FormatCulture, ToolsMessages.ColumnUnpin, column.Title),
+                        Value = "unpin",
+                        Icon = RenderIcon("pin-off", "size-4"),
+                    });
+                }
+                if (Context.CanHideColumn(src))
+                {
+                    pinAndHide.Add(new BxMenuItem
+                    {
+                        Label = ToolsMessages.ColumnMenuHide,
+                        Value = "hide",
+                        Icon = RenderIcon("eye-off", "size-4"),
+                    });
+                }
+            }
+            if (pinAndHide.Count > 0)
+            {
+                if (items.Count > 0) items.Add(BxMenuItem.Separator());
+                items.AddRange(pinAndHide);
+            }
+        }
+        return items;
+    }
+
+    private void OnHeaderMenuSelect(View column, BxMenuItem item)
+    {
+        if (column.Key is not { } key) return;
+        switch (item.Value)
+        {
+            case "sort-asc":
+                Context.SetState(s => Context.WithSort(s, key, descending: false), QueryHistory.Push);
+                break;
+            case "sort-desc":
+                Context.SetState(s => Context.WithSort(s, key, descending: true), QueryHistory.Push);
+                break;
+            case "sort-clear":
+                Context.SetState(Context.ClearSort, QueryHistory.Push);
+                break;
+            case "pin-start":
+                Context.SetColumnPinned(key, DataListPin.Start);
+                break;
+            case "pin-end":
+                Context.SetColumnPinned(key, DataListPin.End);
+                break;
+            case "unpin":
+                Context.SetColumnPinned(key, DataListPin.None);
+                break;
+            case "hide":
+                Context.SetColumnVisible(key, false);
+                break;
+        }
+    }
 
     private sealed record RowEntry(object Key, TItem Item, int Position, DataListTreeNode<TItem>? TreeNode = null);
     private sealed record GroupedRowEntries(DataListGroup<TItem> Group, List<RowEntry> Entries);

@@ -83,6 +83,21 @@ public sealed partial record BxToolsMessages
     /// <summary>Formatted count of multiple rows in a summary footer cell. {0} is the row count.</summary>
     public string SummaryRowOther { get; init; } = "{0} rows";
 
+    /// <summary>Accessible name of the column header menu button. {0} is the column title.</summary>
+    public string ColumnMenuOpen { get; init; } = "Column options for {0}";
+
+    /// <summary>Item in the column header menu that sorts ascending.</summary>
+    public string ColumnMenuSortAsc { get; init; } = "Sort A → Z";
+
+    /// <summary>Item in the column header menu that sorts descending.</summary>
+    public string ColumnMenuSortDesc { get; init; } = "Sort Z → A";
+
+    /// <summary>Item in the column header menu that clears sorting on the column.</summary>
+    public string ColumnMenuClearSort { get; init; } = "Stop sorting";
+
+    /// <summary>Item in the column header menu that hides the column.</summary>
+    public string ColumnMenuHide { get; init; } = "Hide column";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 
