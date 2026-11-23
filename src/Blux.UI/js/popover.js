@@ -214,6 +214,11 @@ export class BxPopoverElement extends HTMLElement {
     this.#hovering = byPointer;
     item.click();
     this.#hovering = false;
+    // The invoker has opened the submenu by now (its "toggle" event comes later): the keyboard moves into it at once, so the next key is for its items.
+    if (!byPointer && sub.matches(':popover-open')) {
+      this.#focusSub = null;
+      (this.#menuItems(sub)[0] ?? sub).focus({ preventScroll: true });
+    }
   }
 
   #onPointerOver = (event) => {

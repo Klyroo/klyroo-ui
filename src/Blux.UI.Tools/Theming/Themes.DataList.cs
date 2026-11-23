@@ -23,7 +23,7 @@ internal static partial class ToolsThemes
                 "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide",
                 "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput",
                 "selectCell", "rowSelected", "selectionActions", "selectionBar", "selectionCount", "selectionLive", "selectionScope", "selectionGroup", "actionsDropdown",
-                "rowActionsCell", "rowActions", "rowActionsInline", "rowActionsMenu", "rowActionsPhone", "sheetList", "sheetSeparator", "sheetEntry", "sheetHeading", "sheetItem", "sheetReason", "sheetIcon")
+                "rowActionsCell", "rowActions", "rowActionsInline", "rowActionsMenu", "rowActionsPhone", "sheetList", "sheetDivider", "sheetEntry", "sheetHeading", "sheetItem", "sheetReason", "sheetIcon")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -129,7 +129,7 @@ internal static partial class ToolsThemes
             .Slot("rowActionsMenu", "hidden md:block")
             .Slot("rowActionsPhone", "md:hidden")
             .Slot("sheetList", "flex flex-col")
-            .Slot("sheetSeparator", "my-1 h-px bg-(--blux-border)")
+            .Slot("sheetDivider", "mt-1 border-t border-(--blux-border) pt-1")
             .Slot("sheetEntry", "flex flex-col")
             .Slot("sheetHeading", "px-3 pb-1 pt-2 text-xs font-semibold text-(--blux-text-muted)")
             .Slot("sheetItem", "flex min-h-11 w-full items-center gap-3 rounded-[calc(var(--blux-radius)_-_2px)] px-3 text-start text-base text-(--blux-text) outline-none hover:bg-(--blux-bg-elevated) focus-visible:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 data-[color=error]:text-(--blux-error-text)")

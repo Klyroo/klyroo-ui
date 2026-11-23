@@ -21,8 +21,15 @@
     private string? _message;
     private DataListRowAction<Invoice>[] _actions = [];
 
+    // The parts render themselves: the page renders again to show its own text (and to hand the list its new rows).
+    private void Say(string message)
+    {
+        _message = message;
+        StateHasChanged();
+    }
+
     private void OnError(DataListRowActionFailure<Invoice> failure) =>
-        _message = $"{failure.Action.Label} failed for invoice {failure.Item.Id}: {failure.Message ?? failure.Exception?.Message}";
+        Say($"{failure.Action.Label} failed for invoice {failure.Item.Id}: {failure.Message ?? failure.Exception?.Message}");
 
     protected override void OnInitialized() =>
         _actions =
@@ -43,7 +50,7 @@
                 Group = "View",
                 OnExecute = c =>
                 {
-                    _message = $"Copied the number of invoice {c.Item.Id}.";
+                    Say($"Copied the number of invoice {c.Item.Id}.");
                     return Task.CompletedTask;
                 },
             },
@@ -62,7 +69,7 @@
                         DisabledReason = _ => "A draft cannot be sent.",
                         OnExecute = c =>
                         {
-                            _message = $"Invoice {c.Item.Id} sent by email.";
+                            Say($"Invoice {c.Item.Id} sent by email.");
                             return Task.CompletedTask;
                         },
                     },
@@ -72,7 +79,7 @@
                         Label = "Message",
                         OnExecute = c =>
                         {
-                            _message = $"Invoice {c.Item.Id} sent as a message.";
+                            Say($"Invoice {c.Item.Id} sent as a message.");
                             return Task.CompletedTask;
                         },
                     },
@@ -89,7 +96,7 @@
                 {
                     var id = c.Item.Id;
                     _items = [.. _items.Select(i => i.Id == id ? i with { Status = "Paid" } : i)];
-                    _message = $"Invoice {id} is paid.";
+                    Say($"Invoice {id} is paid.");
                     return Task.CompletedTask;
                 },
             },
@@ -124,7 +131,7 @@
                 {
                     var id = c.Item.Id;
                     _items = [.. _items.Where(i => i.Id != id)];
-                    _message = $"Deleted invoice {id}.";
+                    Say($"Deleted invoice {id}.");
                     return Task.CompletedTask;
                 },
             },

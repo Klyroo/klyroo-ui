@@ -16,7 +16,6 @@ aria-disabled:cursor-not-allowed
 aria-disabled:opacity-60
 bg-(--blux-bg)
 bg-(--blux-bg-muted)
-bg-(--blux-border)
 border
 border-(--blux-border)
 border-(--blux-border-accented)
@@ -55,7 +54,6 @@ group/search
 h-4
 h-8
 h-9
-h-px
 has-[input[data-select=row]:checked]:bg-(--blux-bg-muted)
 hidden
 hover:bg-(--blux-bg-elevated)
@@ -93,9 +91,9 @@ min-w-5
 min-w-8
 min-w-full
 motion-reduce:animate-none
+mt-1
 mt-2
 mx-auto
-my-1
 my-auto
 outline-none
 overflow-visible
@@ -111,6 +109,7 @@ pb-3
 pe-0
 pe-9
 placeholder:text-(--blux-text-dimmed)
+pt-1
 pt-2
 px-1
 px-1.5

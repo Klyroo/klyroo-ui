@@ -66,13 +66,9 @@
                         @{ var groups = DataListRowActionRunner<TItem>.Group(ordered); }
                         @for (var g = 0; g < groups.Count; g++)
                         {
-                            @if (g > 0)
-                            {
-                                <li role="separator" class="@_slots["sheetSeparator"]"></li>
-                            }
                             @foreach (var action in groups[g])
                             {
-                                @SheetEntry(action, context, 0)
+                                @SheetEntry(action, context, g > 0 && action == groups[g][0])
                             }
                         }
                     </ul>
@@ -204,8 +200,8 @@
     private Task OnMenuSelect(BxMenuItem item) => Find(item.Value) is { } action ? RequestAsync(action) : Task.CompletedTask;
 
     // An entry of the sheet: a button or a link; an action with children is a heading over its own list.
-    private RenderFragment SheetEntry(DataListRowAction<TItem> action, DataListRowActionContext<TItem> context, int depth) =>
-        @<li class="@_slots["sheetEntry"]" data-slot="row-actions-sheet-entry">
+    private RenderFragment SheetEntry(DataListRowAction<TItem> action, DataListRowActionContext<TItem> context, bool divider) =>
+        @<li class="@(divider ? _slots["sheetEntry"] + " " + _slots["sheetDivider"] : _slots["sheetEntry"])" data-divider="@(divider ? "true" : null)" data-slot="row-actions-sheet-entry">
             @{
                 var state = _runner.StateOf(_key, action, context);
                 var blocked = state.Disabled || state.Loading;
@@ -220,7 +216,7 @@
                     {
                         @foreach (var child in group)
                         {
-                            @SheetEntry(child, context, depth + 1)
+                            @SheetEntry(child, context, false)
                         }
                     }
                 </ul>
