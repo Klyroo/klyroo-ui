@@ -19,6 +19,7 @@
     private SlotSet _slots = default!;
     private ElementReference _root;
     private RenderFragment? _content;
+    private int _epoch;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -79,6 +80,7 @@
 
     private async Task OnBackToStartAsync()
     {
+        _epoch++;
         Context.SetState(s => s with { Cursor = null, Page = 1 }, QueryHistory.Push);
         // The control goes away with the cursor: the focus goes to the table, which now starts from its first page.
         try
@@ -142,7 +144,7 @@
                     <div @ref="_root" class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
                         @if (Auto)
                         {
-                            <BxInfiniteScroll HasMore="Context.HasMore" Loading="Context.IsLoadingMore" OnLoadMore="OnLoadMoreAsync"
+                            <BxInfiniteScroll @key="_epoch" HasMore="Context.HasMore" Loading="Context.IsLoadingMore" OnLoadMore="OnLoadMoreAsync"
                                               Root="@(Root ?? Context.TableScrollSelector)" RootMargin="@RootMargin" Href="@NextHref" Label="@Label" ShowEnd="ShowEnd" />
                         }
                         else

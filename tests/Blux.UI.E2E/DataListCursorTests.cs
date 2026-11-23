@@ -173,22 +173,23 @@ public class DataListCursorTests(PlaygroundServer server) : PlaygroundTest(serve
         await Assertions.Expect(count).ToHaveTextAsync("1–40 of 600", new() { Timeout = 15_000 });
         await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "41");
 
-        // Scroll further into page 2 so row 1 (aria-rowindex=2) is outside the virtualized overscan window.
+        // Scroll further into page 2 so row 1 (aria-rowindex=2) is outside the virtualized overscan window (which also reaches the sentinel and loads page 3).
         await root.EvaluateAsync("el => el.scrollTop = el.scrollHeight");
         await Assertions.Expect(VirtualCursorList.Locator("tbody tr[data-slot=row][aria-rowindex='2']")).ToHaveCountAsync(0, new() { Timeout = 15_000 });
+        await Assertions.Expect(count).ToHaveTextAsync("1–60 of 600", new() { Timeout = 15_000 });
 
         // Scroll back to the top: when row 1 re-enters the virtualized window, its checkbox receives focus back.
         await root.EvaluateAsync("el => el.scrollTop = 0");
         await Assertions.Expect(firstRowCheckbox).ToBeFocusedAsync(new() { Timeout = 15_000 });
 
-        // Refresh re-fetches both loaded cursor pages (keeping 1–40 of 600 on screen).
+        // Refresh re-fetches all three loaded cursor pages (keeping 1–60 of 600 on screen).
         await VirtualCursorList.GetByRole(AriaRole.Button, new() { Name = "Refresh" }).ClickAsync();
-        await Assertions.Expect(count).ToHaveTextAsync("1–40 of 600", new() { Timeout = 15_000 });
-        await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "41");
+        await Assertions.Expect(count).ToHaveTextAsync("1–60 of 600", new() { Timeout = 15_000 });
+        await Assertions.Expect(table).ToHaveAttributeAsync("aria-rowcount", "61");
 
         // Entering the page mid-way at a cursor in interactive mode shows the Back to start button, which resets to page 1 and focuses the table.
         await OpenPage("ssr");
-        var midHref = await VirtualCursorList.Locator("[data-slot=infinite-loader] a[data-slot=load-more-trigger]").GetAttributeAsync("href");
+        var midHref = await VirtualCursorList.Locator("[data-slot=infinite-loader] a").GetAttributeAsync("href");
         Assert.NotNull(midHref);
         var queryIndex = midHref.IndexOf('?');
         Assert.True(queryIndex >= 0);

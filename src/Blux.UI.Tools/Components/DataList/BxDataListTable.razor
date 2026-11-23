@@ -29,7 +29,7 @@
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
         <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
              @attributes="AdditionalAttributes">
-            <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
+            <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" style="@(virtualizing ? $"min-height:{(int)Math.Ceiling(entries!.Count * EffectiveItemSize)}px" : null)" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>

@@ -33,9 +33,12 @@ function focusPage(root) {
   root.querySelector('[aria-current="page"]')?.focus();
 }
 
-// The control that was pressed is going away (the "back to start" of a list that was entered mid-way): the focus goes to the table region of the list, which starts again from its first page.
+// The control that was pressed is going away (the "back to start" of a list that was entered mid-way): the table scrolls back to its top and takes the focus as it starts again from its first page.
 function focusTable(part) {
-  part?.closest('[data-slot=root]')?.querySelector('[data-slot=table-root]')?.focus();
+  const table = part?.closest('[data-slot=root]')?.querySelector('[data-slot=table-root]');
+  if (!table) return;
+  table.scrollTop = 0;
+  table.focus();
 }
 
 // Puts the focus in the control with this id (the search field after its "clear" action removed the button that had it).
