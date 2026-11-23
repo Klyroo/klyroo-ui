@@ -22,10 +22,10 @@ public static class MauiProgram
             });
 
         builder.Services.AddMauiBlazorWebView();
-        // The system bars are the host's: registered before AddEditorUi, which would otherwise add the one that does nothing.
+        // The system bars are the host's: registered before AddEditorApp, which would otherwise add the one that does nothing.
         builder.Services.AddSingleton<ISystemBars, SystemBars>();
-        // The documents are kept in the local storage of the web view, on the device (LocalStorageConversationStore, the default of AddEditorUi).
-        builder.Services.AddEditorUi();
+        // The documents are kept in the local storage of the web view, on the device (LocalStorageConversationStore, the default of AddEditorApp).
+        builder.Services.AddEditorApp();
         // Where BxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
         builder.Services.AddSingleton<IBxCultureStore, PreferencesCultureStore>();

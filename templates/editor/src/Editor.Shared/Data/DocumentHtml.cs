@@ -24,7 +24,7 @@ public static partial class DocumentHtml
     // Elements dropped with everything inside them: their content is code or markup for something else, never text to show.
     private static readonly HashSet<string> Raw = new(StringComparer.Ordinal)
     {
-        "script", "style", "iframe", "object", "embed", "noscript", "template", "textarea", "title", "xmp", "noembed", "noframes", "svg", "math", "head", "select", "audio", "video",
+        "script", "style", "iframe", "object", "noscript", "template", "textarea", "title", "xmp", "noembed", "noframes", "svg", "math", "head", "select", "audio", "video",
     };
 
     // Elements that end a line of text, for the plain text of a document.
@@ -168,15 +168,14 @@ public static partial class DocumentHtml
                 }
                 break;
         }
+        if (!Void.Contains(name) && open.Count >= MaxDepth)
+        {
+            // Too deep to be anything the editor wrote: no element opens any deeper, its text stays.
+            return;
+        }
         output.Append('<').Append(name).Append(attributes).Append('>');
         if (!Void.Contains(name))
         {
-            if (open.Count >= MaxDepth)
-            {
-                // Too deep to be anything the editor wrote: the element is closed at once, so nothing nests any deeper.
-                output.Append("</").Append(name).Append('>');
-                return;
-            }
             open.Add(name);
         }
     }

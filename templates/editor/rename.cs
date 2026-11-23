@@ -12,7 +12,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 
-const string Template = "Chat";
+const string Template = "Editor";
 const string StateFile = ".rename-state";
 
 var skippedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".git", ".vs", "bin", "obj", "node_modules" };
@@ -33,7 +33,7 @@ var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     "App", "Program", "Web", "Client", "Shared", "Layout", "Pages", "Components", "Routes", "Styles", "Platforms", "Resources", "Properties", "Home", "About", "NotFound", "Error",
     "MainLayout", "MainPage", "MauiProgram", "SystemBars", "Src", "Test", "Tests",
     // Pages, folders and types of this app: a name that equals one would make a namespace and a type of the same name ambiguous.
-    "Conversation", "Conversations", "Message", "Messages", "Assistant", "Completion", "Markdown", "Markdig", "Simulated", "OpenAi", "Wire", "Model", "Models", "Data", "Search", "Navigation", "Suggestion",
+    "Document", "Documents", "Sample", "Html", "Data", "Search", "Navigation", "Image", "Link", "Toolbar",
 };
 var csharpKeywords = new HashSet<string>(StringComparer.Ordinal)
 {
@@ -69,10 +69,10 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
     return Fail($"Run this from the root of the repository, the folder that holds rename.cs and {Template}.slnx (it was already renamed if the solution has another name).");
 }
 
-// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Blux UI names with "Chat" is not the template
-// name and is left alone: the components (BxChatMessages, BxChatPrompt...), their types (ChatRole, ChatStatus, ChatMessagesUi...) and the attributes of their
-// elements (data-bx-chat-input, bx-chat-messages).
-const string BluxChat = "(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)";
+// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Blux UI names with "Editor" is not the template
+// name and is left alone: the components (BxEditor, BxEditorToolbar...), their types (EditorAction, EditorToolbarItem, EditorUi...) and the elements they render
+// (bx-editor, bx-editor-toolbar).
+const string BluxEditor = "(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)";
 var spellings = new Dictionary<string, string>
 {
     [Template] = name,
@@ -80,8 +80,8 @@ var spellings = new Dictionary<string, string>
     [Template.ToUpperInvariant()] = name.ToUpperInvariant(),
 };
 var spellingPattern = new Regex(string.Join("|", spellings.Keys.Select(key =>
-    key == Template ? "(?<!Bx)" + Regex.Escape(key) + $"(?!{BluxChat}(?:[A-Z]|\\b))"
-    : key == Template.ToLowerInvariant() ? "(?<!bx-)" + Regex.Escape(key) + "(?!/completions)"
+    key == Template ? "(?<!Bx)" + Regex.Escape(key) + $"(?!{BluxEditor}(?:[A-Z]|\\b))"
+    : key == Template.ToLowerInvariant() ? "(?<!bx-)" + Regex.Escape(key)
     : Regex.Escape(key))));
 string Replace(string text) => spellingPattern.Replace(text, match => spellings[match.Value]);
 
