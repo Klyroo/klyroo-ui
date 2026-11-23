@@ -18,11 +18,12 @@
             var acting = RowActions is { Count: > 0 };
             var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
             var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
-            var entries = Context.IsInitial || empty ? null : RowEntries();
-            var summaryActive = Context.SummaryViewActive && RowSummary is not null;
-            var grouping = GroupBy is not null && !Context.IsInitial && !empty;
+            var treeActive = Tree is not null && !Context.IsInitial && !empty;
+            var summaryActive = !treeActive && Context.SummaryViewActive && RowSummary is not null;
+            var grouping = !treeActive && GroupBy is not null && !Context.IsInitial && !empty;
+            var entries = Context.IsInitial || empty ? null : (treeActive ? TreeRowEntries() : RowEntries());
             var groups = grouping ? GroupRowEntries() : null;
-            var virtualizing = IsVirtualized && !summaryActive && !grouping && entries is { Count: > 0 };
+            var virtualizing = IsVirtualized && !summaryActive && !grouping && !treeActive && entries is { Count: > 0 };
             var resizing = Resizable && !summaryActive && Context.IsInteractive;
             var showColgroup = !summaryActive && (resizing || columns.Any(c => c.Width is not null));
             var pinStart = !summaryActive && columns.Any(c => c.Pinned == DataListPin.Start);
@@ -333,8 +334,15 @@
 
     /// <summary>
     /// Optional visual grouping of the loaded rows under collapsible <see cref="BxDataListGroupHeader{TItem}"/> headers with per-group selection checkboxes.
+    /// Ignored when <see cref="Tree"/> is set.
     /// </summary>
     [Parameter] public DataListGroupBy<TItem>? GroupBy { get; set; }
+
+    /// <summary>
+    /// Optional hierarchical tree configuration: expands and collapses nested child rows with a chevron button (click, Enter/Space, or ArrowRight/ArrowLeft)
+    /// and visual tree rail connectors. Disables <see cref="RowSummary"/> and <see cref="GroupBy"/> when set.
+    /// </summary>
+    [Parameter] public DataListTree<TItem>? Tree { get; set; }
 
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
@@ -429,9 +437,10 @@
                 _ => "default",
             },
         };
+        Context.SetTableTree(Tree);
         Context.SetRowSummary(RowSummary is not null, RowSummary?.DefaultActive ?? false, RowSummary?.AutoPhone ?? true);
         Context.SetTableGroupBy(GroupBy);
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null;
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null && Tree is null;
         if (activeVirtualized) variants["virtualize"] = "true";
         Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
@@ -440,7 +449,7 @@
 
     protected override void OnContextUpdated()
     {
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null;
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null && Tree is null;
         if (activeVirtualized != Context.TableVirtualized)
         {
             _keepingFocus = false;
@@ -451,6 +460,7 @@
 
     public override void Dispose()
     {
+        Context.SetTableTree(null);
         Context.SetTableGroupBy(null);
         Context.SetRowSummary(false, false, false);
         Context.RemoveTable();
@@ -499,7 +509,7 @@
         }
     };
 
-    private sealed record RowEntry(object Key, TItem Item, int Position);
+    private sealed record RowEntry(object Key, TItem Item, int Position, DataListTreeNode<TItem>? TreeNode = null);
     private sealed record GroupedRowEntries(DataListGroup<TItem> Group, List<RowEntry> Entries);
 
     private string RowClass(bool selecting) => selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"];
@@ -567,11 +577,52 @@
         @<text>
             @if (selecting)
             {
-                <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"><DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" /></td>
+                var showCheckbox = row.TreeNode is null || Tree is not { Selectable: DataListTreeSelectionMode.Roots } || row.TreeNode.Depth == 0;
+                <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)">
+                    @if (showCheckbox)
+                    {
+                        <DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" />
+                    }
+                </td>
             }
-            @foreach (var column in columns)
+            @for (var i = 0; i < columns.Count; i++)
             {
-                <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)">@Cell(column, row.Item)</td>
+                var column = columns[i];
+                if (i == 0 && row.TreeNode is { } treeNode)
+                {
+                    var expanded = treeNode.HasChildren && Context.IsNodeExpanded(treeNode);
+                    <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" data-tree-depth="@treeNode.Depth">
+                        <div class="@_slots["treeCell"]" data-slot="tree-cell" data-depth="@treeNode.Depth">
+                            @foreach (var cont in treeNode.AncestorContinuations)
+                            {
+                                <span class="@(cont ? _slots["treeRailPass"] : _slots["treeRailBlank"])" data-slot="tree-rail-indent" data-continue="@(cont ? "true" : null)" aria-hidden="true"></span>
+                            }
+                            @if (treeNode.Depth > 0)
+                            {
+                                <span class="@(treeNode.IsLast ? _slots["treeRailLast"] : _slots["treeRailBranch"])" data-slot="tree-rail" data-last="@(treeNode.IsLast ? "true" : null)" aria-hidden="true"></span>
+                            }
+                            @if (treeNode.HasChildren)
+                            {
+                                <button type="button" class="@_slots["treeToggle"]" data-slot="tree-toggle" data-key="@treeNode.Key"
+                                        aria-expanded="@(expanded ? "true" : "false")" aria-label="@TreeToggleLabel(treeNode, row.Position, expanded)"
+                                        disabled="@(!Context.IsInteractive)"
+                                        @onclick="@(() => Context.ToggleNodeExpanded(treeNode))"
+                                        @onkeydown="@(e => OnTreeKeyDown(e, treeNode, expanded))">
+                                    @RenderIcon(Options.Icons.ChevronRight, expanded ? _slots["treeChevronExpanded"] : _slots["treeChevron"])
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="@_slots["treeSpacer"]" data-slot="tree-spacer" aria-hidden="true"></span>
+                            }
+                            <span class="@_slots["treeContent"]" data-slot="tree-content">@Cell(column, row.Item)</span>
+                        </div>
+                    </td>
+                }
+                else
+                {
+                    <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)">@Cell(column, row.Item)</td>
+                }
             }
             @if (acting)
             {
@@ -581,8 +632,40 @@
             }
         </text>;
 
+    private string TreeToggleLabel(DataListTreeNode<TItem> node, int position, bool expanded)
+    {
+        var label = Context.Schema?.GetRowLabel(node.Item);
+        var name = !string.IsNullOrWhiteSpace(label) ? label : "#" + position;
+        return string.Format(FormatCulture, expanded ? ToolsMessages.TreeCollapse : ToolsMessages.TreeExpand, name);
+    }
+
+    private void OnTreeKeyDown(KeyboardEventArgs e, DataListTreeNode<TItem> node, bool expanded)
+    {
+        if (!Context.IsInteractive) return;
+        if (e.Key == "ArrowRight" && !expanded)
+        {
+            Context.SetNodeExpanded(node, true);
+        }
+        else if (e.Key == "ArrowLeft" && expanded)
+        {
+            Context.SetNodeExpanded(node, false);
+        }
+    }
+
     // The rows with a key each: the row key of the schema, else the identity of the row (the reference). A schema whose keys repeat (a data error) falls back to the identity of the rows, and a row that is itself listed twice to its position.
     private List<RowEntry> RowEntries() => BuildRowEntries(Context.Rows);
+
+    private List<RowEntry> TreeRowEntries()
+    {
+        var nodes = Context.VisibleTreeNodes();
+        var entries = new List<RowEntry>(nodes.Count);
+        for (var i = 0; i < nodes.Count; i++)
+        {
+            var node = nodes[i];
+            entries.Add(new RowEntry(node.Key, node.Item, i + 1, node));
+        }
+        return entries;
+    }
 
     private List<GroupedRowEntries> GroupRowEntries()
     {

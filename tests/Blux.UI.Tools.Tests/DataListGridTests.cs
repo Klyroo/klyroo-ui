@@ -283,6 +283,87 @@ public class DataListGridTests : BluxToolsTestContext
         Assert.Equal(4, cut.FindAll("[data-slot=grid-group]").Count);
         Assert.Equal(5, cut.FindAll("[data-slot=grid-card]").Count);
     }
+
+    [Fact]
+    public void Tree_expands_and_collapses_via_click_and_arrow_keys_draws_rails_deduplicates_ids_supports_roots_selection_and_disables_summary_and_groups()
+    {
+        var roots = new List<Person>
+        {
+            new(1, "Engineering", 40, "Paris"),
+            new(2, "Operations", 35, "Lyon"),
+        };
+        var childrenByParent = new Dictionary<int, IReadOnlyList<Person>>
+        {
+            [1] =
+            [
+                new(11, "Platform", 28, "Paris"),
+                new(12, "Frontend", 30, "Paris"),
+                new(1, "DuplicateIdShouldBeDropped", 99, "Paris"),
+            ],
+            [11] =
+            [
+                new(111, "Runtime", 26, "Paris"),
+            ],
+        };
+
+        var tree = new DataListTree<Person>
+        {
+            Children = p => childrenByParent.TryGetValue(p.Id, out var c) ? c : null,
+            DefaultExpandedDepth = 1,
+            Selectable = DataListTreeSelectionMode.All,
+        };
+        var summary = new DataListRowSummary<Person> { Title = p => p.Name, DefaultActive = true };
+        var groupBy = new DataListGroupBy<Person> { Field = "city" };
+
+        var cut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Items, roots)
+            .Add(x => x.Tree, tree)
+            .Add(x => x.RowSummary, summary)
+            .Add(x => x.GroupBy, groupBy)
+            .Add(x => x.Selectable, true));
+
+        // Tree wins over RowSummary and GroupBy: no ViewToggle, no summary-list, no group-header.
+        Assert.Empty(cut.FindAll("[data-slot=view-toggle]"));
+        Assert.Empty(cut.FindAll("[data-slot=summary-list]"));
+        Assert.Empty(cut.FindAll("[data-slot=group-header]"));
+
+        // DefaultExpandedDepth = 1 expands Engineering (depth 0), showing Platform (11) and Frontend (12), while duplicate id 1 is dropped and Runtime (111, depth 2) is collapsed.
+        var treeCells = cut.FindAll("[data-slot=tree-cell]");
+        Assert.Equal(4, treeCells.Count);
+        Assert.Equal(["0", "1", "1", "0"], treeCells.Select(c => c.GetAttribute("data-depth")).ToArray());
+
+        // Platform (11) has a chevron button with aria-expanded="false"; pressing ArrowRight expands it to reveal Runtime (111).
+        var platformToggle = cut.Find("button[data-slot=tree-toggle][data-key='11']");
+        Assert.Equal("false", platformToggle.GetAttribute("aria-expanded"));
+        platformToggle.KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "ArrowRight" });
+        Assert.Equal("true", cut.Find("button[data-slot=tree-toggle][data-key='11']").GetAttribute("aria-expanded"));
+        Assert.Equal(5, cut.FindAll("[data-slot=tree-cell]").Count);
+
+        // Runtime (111) at depth 2 has 1 ancestor continuation rail (since Platform has sibling Frontend below it) and a last-child rail.
+        var runtimeCell = cut.FindAll("[data-slot=tree-cell]")[2];
+        Assert.Equal("2", runtimeCell.GetAttribute("data-depth"));
+        Assert.Equal("true", runtimeCell.QuerySelector("[data-slot=tree-rail-indent]")?.GetAttribute("data-continue"));
+        Assert.Equal("true", runtimeCell.QuerySelector("[data-slot=tree-rail]")?.GetAttribute("data-last"));
+
+        // Pressing ArrowLeft on Platform (11) collapses it again -> Runtime (111) is hidden.
+        cut.Find("button[data-slot=tree-toggle][data-key='11']").KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "ArrowLeft" });
+        Assert.Equal(4, cut.FindAll("[data-slot=tree-cell]").Count);
+
+        // Shift-click range from Platform (11) to Frontend (12) does NOT select hidden child Runtime (111).
+        var platformBox = cut.Find("input[data-select=row][data-key='11']");
+        platformBox.Click(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { ShiftKey = false });
+        platformBox.Change(true);
+
+        var frontendBox = cut.Find("input[data-select=row][data-key='12']");
+        frontendBox.Click(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { ShiftKey = true });
+        frontendBox.Change(true);
+
+        // Expand Platform (11) by clicking its chevron -> Runtime (111) is unselected.
+        cut.Find("button[data-slot=tree-toggle][data-key='11']").Click();
+        Assert.True(cut.Find("input[data-select=row][data-key='11']").HasAttribute("checked"));
+        Assert.True(cut.Find("input[data-select=row][data-key='12']").HasAttribute("checked"));
+        Assert.False(cut.Find("input[data-select=row][data-key='111']").HasAttribute("checked"));
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>

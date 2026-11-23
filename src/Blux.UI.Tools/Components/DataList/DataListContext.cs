@@ -118,6 +118,50 @@ public sealed partial class DataListContext<TItem>
 
     internal void SetGridGroupBy(DataListGroupBy<TItem>? groupBy) => _owner.SetGridGroupBy(groupBy);
 
+    /// <summary>The active hierarchical tree configuration on <see cref="BxDataListTable{TItem}"/>, or <see langword="null"/>.</summary>
+    public DataListTree<TItem>? Tree => _owner.TableTree;
+
+    /// <summary>Whether the table has a <see cref="DataListTree{TItem}"/> configured.</summary>
+    public bool HasTree => _owner.HasTree;
+
+    /// <summary>The visible (unfolded) tree nodes in display order when <see cref="Tree"/> is configured; empty otherwise.</summary>
+    public IReadOnlyList<DataListTreeNode<TItem>> VisibleTreeNodes() => _owner.VisibleTreeNodes();
+
+    /// <summary>Whether <paramref name="node"/> is currently expanded.</summary>
+    public bool IsNodeExpanded(DataListTreeNode<TItem> node) => _owner.IsTreeNodeExpanded(node.Key, node.Depth);
+
+    /// <summary>Whether the tree row with <paramref name="key"/> at <paramref name="depth"/> is currently expanded.</summary>
+    public bool IsRowExpanded(string key, int depth = 0) => _owner.IsTreeNodeExpanded(key, depth);
+
+    /// <summary>Expands or collapses <paramref name="node"/>.</summary>
+    public void ToggleNodeExpanded(DataListTreeNode<TItem> node) => _owner.ToggleTreeNodeExpanded(node.Key, node.Depth);
+
+    /// <summary>Sets whether <paramref name="node"/> is expanded.</summary>
+    public void SetNodeExpanded(DataListTreeNode<TItem> node, bool expanded) => _owner.SetTreeNodeExpanded(node.Key, node.Depth, expanded);
+
+    /// <summary>Sets whether the tree row with <paramref name="key"/> is expanded.</summary>
+    public void SetRowExpanded(string key, bool expanded, int depth = 0) => _owner.SetTreeNodeExpanded(key, depth, expanded);
+
+    /// <summary>Expands every branch node in the tree.</summary>
+    public void ExpandAll() => _owner.ExpandAllTreeNodes();
+
+    /// <summary>Collapses every branch node in the tree.</summary>
+    public void CollapseAll() => _owner.CollapseAllTreeNodes();
+
+    /// <summary>Resets tree expansion back to the <see cref="DataListTree{TItem}"/> defaults.</summary>
+    public void ResetExpansion() => _owner.ResetTreeExpansion();
+
+    /// <summary>Keys of all currently expanded branch nodes in the loaded tree.</summary>
+    public IReadOnlySet<string> ExpandedKeys => _owner.ExpandedTreeKeys();
+
+    /// <summary>Total number of branch nodes (nodes with children) in the loaded tree.</summary>
+    public int TreeBranchCount => _owner.TreeBranchCount();
+
+    /// <summary>Whether every branch node in the loaded tree is currently expanded.</summary>
+    public bool AllExpanded => _owner.AllTreeNodesExpanded();
+
+    internal void SetTableTree(DataListTree<TItem>? tree) => _owner.SetTableTree(tree);
+
     internal void AddTable()
     {
         _tableCount++;

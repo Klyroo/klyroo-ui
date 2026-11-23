@@ -25,6 +25,9 @@ public partial class BxDataList<TItem>
     private bool? _phoneSummaryDetected;
     private DataListGroupBy<TItem>? _tableGroupBy;
     private DataListGroupBy<TItem>? _gridGroupBy;
+    private DataListTree<TItem>? _tableTree;
+    private bool? _treeBaselineOverride;
+    private readonly Dictionary<string, bool> _treeExpandedOverrides = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Name under which column visibility, order, pinning and widths are saved in the grouped cookie <c>blux-dl-cols</c> (scoped to the path base of the app like the other Blux cookies, SameSite=Lax, a year,
@@ -88,8 +91,133 @@ public partial class BxDataList<TItem>
 
     internal bool HasCustomColumnPreferences => PrunedPreferences().HasColumnOverrides;
 
+    internal DataListTree<TItem>? TableTree => _tableTree;
+
+    internal bool HasTree => _tableTree is not null;
+
+    internal void SetTableTree(DataListTree<TItem>? tree)
+    {
+        if (ReferenceEquals(_tableTree, tree)) return;
+        _tableTree = tree;
+        if (tree is null)
+        {
+            _treeBaselineOverride = null;
+            _treeExpandedOverrides.Clear();
+        }
+        _context.NotifyChanged();
+    }
+
+    internal bool IsTreeNodeExpanded(string key, int depth)
+    {
+        if (_tableTree is null || string.IsNullOrEmpty(key)) return false;
+        if (_treeExpandedOverrides.TryGetValue(key, out var overridden)) return overridden;
+        if (_treeBaselineOverride is { } baseline) return baseline;
+        return _tableTree.IsDefaultExpanded(depth);
+    }
+
+    internal void ToggleTreeNodeExpanded(string key, int depth)
+    {
+        if (_tableTree is null || string.IsNullOrEmpty(key)) return;
+        var current = IsTreeNodeExpanded(key, depth);
+        _treeExpandedOverrides[key] = !current;
+        _columnsVersion++;
+        _context.NotifyChanged();
+    }
+
+    internal void SetTreeNodeExpanded(string key, int depth, bool expanded)
+    {
+        if (_tableTree is null || string.IsNullOrEmpty(key)) return;
+        if (IsTreeNodeExpanded(key, depth) == expanded && _treeExpandedOverrides.TryGetValue(key, out var existing) && existing == expanded) return;
+        _treeExpandedOverrides[key] = expanded;
+        _columnsVersion++;
+        _context.NotifyChanged();
+    }
+
+    internal void ExpandAllTreeNodes()
+    {
+        if (_tableTree is null) return;
+        _treeBaselineOverride = true;
+        _treeExpandedOverrides.Clear();
+        _columnsVersion++;
+        _context.NotifyChanged();
+    }
+
+    internal void CollapseAllTreeNodes()
+    {
+        if (_tableTree is null) return;
+        _treeBaselineOverride = false;
+        _treeExpandedOverrides.Clear();
+        _columnsVersion++;
+        _context.NotifyChanged();
+    }
+
+    internal void ResetTreeExpansion()
+    {
+        if (_tableTree is null) return;
+        _treeBaselineOverride = null;
+        _treeExpandedOverrides.Clear();
+        _columnsVersion++;
+        _context.NotifyChanged();
+    }
+
+    /// <summary>Expands every branch node in the table's hierarchical tree (<see cref="BxDataListTable{TItem}.Tree"/>).</summary>
+    public void ExpandAll() => ExpandAllTreeNodes();
+
+    /// <summary>Collapses every branch node in the table's hierarchical tree (<see cref="BxDataListTable{TItem}.Tree"/>).</summary>
+    public void CollapseAll() => CollapseAllTreeNodes();
+
+    /// <summary>Resets tree expansion back to the defaults declared on <see cref="BxDataListTable{TItem}.Tree"/>.</summary>
+    public void ResetExpansion() => ResetTreeExpansion();
+
+    internal (IReadOnlyList<DataListTreeNode<TItem>> Roots, IReadOnlyList<DataListTreeNode<TItem>> AllNodes) BuildTableTree()
+    {
+        if (_tableTree is null) return ([], []);
+        var rows = Controller?.Rows ?? [];
+        return _tableTree.BuildTree(rows, _schema);
+    }
+
+    internal IReadOnlyList<DataListTreeNode<TItem>> VisibleTreeNodes()
+    {
+        if (_tableTree is null) return [];
+        var (roots, _) = BuildTableTree();
+        return DataListTree<TItem>.FlattenVisible(roots, n => IsTreeNodeExpanded(n.Key, n.Depth));
+    }
+
+    internal IReadOnlySet<string> ExpandedTreeKeys()
+    {
+        if (_tableTree is null) return new HashSet<string>(StringComparer.Ordinal);
+        var (_, allNodes) = BuildTableTree();
+        var set = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var node in allNodes)
+        {
+            if (node.HasChildren && IsTreeNodeExpanded(node.Key, node.Depth)) set.Add(node.Key);
+        }
+        return set;
+    }
+
+    internal int TreeBranchCount()
+    {
+        if (_tableTree is null) return 0;
+        var (_, allNodes) = BuildTableTree();
+        return allNodes.Count(n => n.HasChildren);
+    }
+
+    internal bool AllTreeNodesExpanded()
+    {
+        if (_tableTree is null) return false;
+        var (_, allNodes) = BuildTableTree();
+        var branches = 0;
+        foreach (var node in allNodes)
+        {
+            if (!node.HasChildren) continue;
+            branches++;
+            if (!IsTreeNodeExpanded(node.Key, node.Depth)) return false;
+        }
+        return branches > 0;
+    }
+
     internal DataListGroupBy<TItem>? ActiveGroupBy =>
-        _context.EffectiveLayout == DataListLayout.Grid ? _gridGroupBy : _tableGroupBy;
+        _context.EffectiveLayout == DataListLayout.Grid ? _gridGroupBy : (_tableTree is null ? _tableGroupBy : null);
 
     internal void SetTableGroupBy(DataListGroupBy<TItem>? groupBy)
     {
@@ -141,7 +269,7 @@ public partial class BxDataList<TItem>
         _context.NotifyChanged();
     }
 
-    internal bool HasRowSummary => _hasRowSummary;
+    internal bool HasRowSummary => _hasRowSummary && _tableTree is null;
 
     internal bool SummaryViewActive =>
         _hasRowSummary && (_columnPrefs.SummaryView ?? (_rowSummaryAutoPhone && _phoneSummaryDetected is { } detected ? detected : _rowSummaryDefaultActive));

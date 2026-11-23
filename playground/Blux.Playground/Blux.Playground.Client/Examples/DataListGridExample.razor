@@ -70,9 +70,28 @@
             <BxDataListGrid Columns="3" GroupBy="_groupBy" />
         </BxDataList>
     </div>
+
+    <div class="w-full" data-testid="list-tree">
+        <BxDataList @ref="_treeList" TItem="DepartmentNode" Label="Departments tree" Schema="_treeSchema" Items="_treeItems" PagingMode="DataListPagingMode.None" UrlSync="false" Selectable="true">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <BxDataListResultCount />
+                <div class="flex flex-wrap items-center gap-2">
+                    <BxButton Label="Expand all" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" data-slot="tree-expand-all" OnClick="@(() => _treeList?.ExpandAll())" />
+                    <BxButton Label="Collapse all" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" data-slot="tree-collapse-all" OnClick="@(() => _treeList?.CollapseAll())" />
+                </div>
+            </div>
+            <BxDataListSelectionActions Actions="_treeActions" />
+            <BxDataListTable Caption="Departments tree" Tree="_tree">
+                <BxDataListColumn Field="name" Title="Department" />
+                <BxDataListColumn Field="head" Title="Lead" />
+                <BxDataListColumn Field="headcount" Title="Headcount" Align="DataListAlign.End" />
+            </BxDataListTable>
+        </BxDataList>
+    </div>
 </div>
 
 @code {
+    private BxDataList<DepartmentNode>? _treeList;
     private static readonly Invoice[] _items = InvoiceData.All[..25];
     private List<Invoice> _removable = [.. InvoiceData.All[..6]];
     private static readonly Invoice[] _groupedItems =
@@ -86,6 +105,44 @@
         Field = "status",
         Order = ["Paid", "Pending", "Overdue"],
     };
+
+    private sealed record DepartmentNode(string Id, string Name, string Head, int Headcount, IReadOnlyList<DepartmentNode>? Subteams = null);
+
+    private static readonly DataListSchema<DepartmentNode> _treeSchema = DataListSchema.For<DepartmentNode>(s => s
+        .RowKey(d => d.Id)
+        .RowLabel(d => d.Name)
+        .Field(d => d.Name, f => f.Sortable())
+        .Field(d => d.Head, f => f.Sortable())
+        .Field(d => d.Headcount, f => f.Sortable()));
+
+    private static readonly DepartmentNode[] _treeItems =
+    [
+        new("eng", "Engineering", "Ada Lovelace", 42,
+        [
+            new("eng-platform", "Platform", "Grace Hopper", 18,
+            [
+                new("eng-runtime", "Runtime", "Alan Turing", 8),
+                new("eng-infra", "Infrastructure", "Margaret Hamilton", 10),
+            ]),
+            new("eng-ui", "Design Systems", "Håkon Wium Lie", 24),
+        ]),
+        new("ops", "Operations", "Katherine Johnson", 15,
+        [
+            new("ops-sec", "Security", "Whitfield Diffie", 7),
+        ]),
+        new("legal", "Legal", "Ruth Bader", 5),
+    ];
+
+    private static readonly DataListTree<DepartmentNode> _tree = new()
+    {
+        Children = d => d.Subteams,
+        DefaultExpandedDepth = 1,
+    };
+
+    private static readonly DataListAction<DepartmentNode>[] _treeActions =
+    [
+        new() { Key = "export-teams", Label = "Export teams", Icon = "download", OnExecute = _ => Task.CompletedTask },
+    ];
 
     private static readonly DataListSchema<Invoice> _gridOnlySchema = DataListSchema.For<Invoice>(s => s
         .RowKey(i => i.Id)

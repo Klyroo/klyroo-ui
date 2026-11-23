@@ -53,6 +53,18 @@ public sealed partial record BxToolsMessages
     /// <summary>Accessible name of the button in a group header that folds or unfolds the group. {0} is the group label.</summary>
     public string GroupToggle { get; init; } = "Expand or collapse {0}";
 
+    /// <summary>Accessible name of the chevron button that expands a collapsed tree row. {0} is the row label or position.</summary>
+    public string TreeExpand { get; init; } = "Expand {0}";
+
+    /// <summary>Accessible name of the chevron button that collapses an expanded tree row. {0} is the row label or position.</summary>
+    public string TreeCollapse { get; init; } = "Collapse {0}";
+
+    /// <summary>Label of an action that expands every branch row of a tree table.</summary>
+    public string TreeExpandAll { get; init; } = "Expand all";
+
+    /// <summary>Label of an action that collapses every branch row of a tree table.</summary>
+    public string TreeCollapseAll { get; init; } = "Collapse all";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 
