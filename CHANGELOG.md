@@ -6,6 +6,10 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Task lists and images in `BxEditor`.** `EditorAction.TaskList` (a toggle, nested items, a checkbox named by `BxMessages.EditorTaskItem`) and `EditorAction.Image` (the toolbar asks for an address in a small form, like the link). Images are block nodes taken from `http` and `https` addresses only (a `data:` or `javascript:` source in pasted or loaded content is dropped), lazy and without referrer. Four new messages in the twelve locales, drafts marked for review.
+
 ### Changed
 
 - **The data list docs are five pages.** `/components/data-list` keeps the basics (memory, provider, URL, search, large first page, error); `data-list-filters`, `data-list-filter-panel`, `data-list-facets` and `data-list-selection` hold the rest, so no page hands a state close to the 32 KB the client can send back to the server when a Server or Auto circuit starts. The old anchors of the moved examples no longer exist on `/components/data-list`.

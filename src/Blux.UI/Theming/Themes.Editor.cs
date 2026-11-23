@@ -16,6 +16,9 @@ internal static partial class Themes
         "[&_pre_code]:bg-transparent [&_pre_code]:p-0 [&_hr]:my-4 [&_hr]:border-(--blux-border) " +
         "[&_a]:text-(--blux-primary-text) [&_a]:underline [&_a]:underline-offset-2 " +
         "[&_.bx-mention]:rounded-sm [&_.bx-mention]:bg-(--bx-color)/10 [&_.bx-mention]:px-1 [&_.bx-mention]:font-medium [&_.bx-mention]:text-(--bx-color-text) " +
+        "[&_ul[data-type=taskList]]:list-none [&_ul[data-type=taskList]]:ps-0 [&_li[data-type=taskItem]]:flex [&_li[data-type=taskItem]]:items-start [&_li[data-type=taskItem]]:gap-2 " +
+        "[&_li[data-type=taskItem]>label]:mt-1 [&_li[data-type=taskItem]>div]:min-w-0 [&_li[data-type=taskItem]>div]:flex-1 [&_li[data-checked=true]>div]:text-(--blux-text-muted) [&_li[data-checked=true]>div]:line-through " +
+        "[&_img]:my-3 [&_img]:h-auto [&_img]:max-w-full [&_img]:rounded-(--blux-radius) " +
         "[&_.ProseMirror-selectednode]:outline-2 [&_.ProseMirror-selectednode]:outline-(--bx-color-text) " +
         "[&_.is-empty]:before:pointer-events-none [&_.is-empty]:before:float-left [&_.is-empty]:before:h-0 [&_.is-empty]:before:text-(--blux-text-dimmed) " +
         "[&_.is-empty]:before:content-[attr(data-placeholder)]";

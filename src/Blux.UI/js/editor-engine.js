@@ -5,6 +5,8 @@ import { Editor, Extension } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extension-placeholder';
 import Mention from '@tiptap/extension-mention';
+import Image from '@tiptap/extension-image';
+import { TaskItem, TaskList } from '@tiptap/extension-list';
 import Suggestion from '@tiptap/suggestion';
 import { NodeSelection, PluginKey, TextSelection } from '@tiptap/pm/state';
 
@@ -15,7 +17,28 @@ const MentionNode = Mention.extend({
   },
 });
 
-const TOGGLES = new Set(['bold', 'italic', 'strike', 'underline', 'code', 'heading', 'bulletList', 'orderedList', 'blockquote', 'codeBlock', 'link']);
+// Images are block nodes taken from an http or https address only: a data: or javascript: source in pasted or stored content is not an image of the editor.
+const IMAGE_SOURCE = /^https?:\/\/[^\s]+$/i;
+
+const ImageNode = Image.extend({
+  parseHTML() {
+    return [{ tag: 'img[src]', getAttrs: (element) => (IMAGE_SOURCE.test(element.getAttribute('src') ?? '') ? null : false) }];
+  },
+});
+
+/** The alt text of an inserted image: the selected text, or else the name of the file in the address ("team-photo.jpg" gives "team photo"). */
+const altFor = (src, selected) => {
+  const text = (selected ?? '').trim();
+  if (text) return text.slice(0, 200);
+  try {
+    const name = decodeURIComponent(new URL(src).pathname.split('/').filter(Boolean).pop() ?? '');
+    return name.replace(/\.[A-Za-z0-9]{1,5}$/, '').replace(/[-_+]+/g, ' ').trim().slice(0, 200);
+  } catch {
+    return '';
+  }
+};
+
+const TOGGLES = new Set(['bold', 'italic', 'strike', 'underline', 'code', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'link']);
 
 /** Whether an action is a toggle, so its button shows aria-pressed. */
 export const isToggle = (action) => TOGGLES.has(action);
@@ -26,12 +49,13 @@ export const isToggle = (action) => TOGGLES.has(action);
  * @param {string} options.html Initial content.
  * @param {boolean} options.editable
  * @param {() => string} options.placeholder
+ * @param {(text: string) => string} [options.taskLabel] Accessible name of the checkbox of a task item, from the text of the item.
  * @param {Record<string, string>} options.attributes Attributes of the editable element (role, aria-*).
  * @param {() => void} options.onUpdate Content changed.
  * @param {() => void} options.onState Selection, focus or content changed: toolbars repaint.
  * @param {() => void} options.onBlur
  */
-export function createEngine({ element, html, editable, placeholder, attributes, onUpdate, onState, onBlur }) {
+export function createEngine({ element, html, editable, placeholder, attributes, taskLabel, onUpdate, onState, onBlur }) {
   let bump = 0;
   const notify = () => {
     cancelAnimationFrame(bump);
@@ -48,6 +72,9 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       }),
       Placeholder.configure({ placeholder: () => placeholder(), showOnlyCurrent: true }),
       MentionNode.configure({ HTMLAttributes: { class: 'bx-mention' } }),
+      TaskList,
+      TaskItem.configure({ nested: true, a11y: { checkboxLabel: (node) => (taskLabel ? taskLabel(node.textContent) : `Task: ${node.textContent}`) } }),
+      ImageNode.configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy', referrerpolicy: 'no-referrer' } }),
       Extension.create({
         name: 'bxMoveBlock',
         addKeyboardShortcuts: () => ({
@@ -135,6 +162,7 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       case 'heading': return chain().toggleHeading({ level: Number(arg) || 1 }).run();
       case 'bulletList': return chain().toggleBulletList().run();
       case 'orderedList': return chain().toggleOrderedList().run();
+      case 'taskList': return chain().toggleTaskList().run();
       case 'blockquote': return chain().toggleBlockquote().run();
       case 'codeBlock': return chain().toggleCodeBlock().run();
       case 'horizontalRule': return chain().setHorizontalRule().run();
@@ -143,6 +171,12 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       case 'redo': return chain().redo().run();
       case 'moveUp': return moveSelection(-1);
       case 'moveDown': return moveSelection(1);
+      case 'image': {
+        const src = String(arg ?? '').trim();
+        if (!IMAGE_SOURCE.test(src)) return false;
+        const { from, to } = editor.state.selection;
+        return chain().setImage({ src, alt: altFor(src, editor.state.doc.textBetween(from, to, ' ')) }).run();
+      }
       case 'link':
         return arg
           ? chain().extendMarkRange('link').setLink({ href: arg }).run()

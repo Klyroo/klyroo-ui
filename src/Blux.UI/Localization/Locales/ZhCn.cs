@@ -76,6 +76,11 @@ public static partial class BxLocales
             EditorLinkUrl = "链接地址",
             EditorLinkApply = "应用",
             EditorLinkRemove = "移除链接",
+            // Draft translations of the task list and image messages, marked for review by a native speaker before a stable release.
+            EditorTaskList = "任务列表",
+            EditorImage = "图片",
+            EditorImageUrl = "图片地址",
+            EditorTaskItem = "任务：{0}",
             EditorDragHandle = "拖动以移动块",
             EditorNoResults = "无结果",
             EditorSuggestionMenu = "命令",

@@ -124,6 +124,7 @@ export class BxEditorElement extends HTMLElement {
         html,
         editable: this.editable,
         placeholder: () => this.getAttribute('data-placeholder') ?? '',
+        taskLabel: (text) => (this.getAttribute('data-task-label') ?? 'Task: {0}').replace('{0}', text).trim(),
         attributes: { role: 'textbox', 'aria-multiline': 'true', ...(this.dataset.editorId ? { id: this.dataset.editorId } : {}) },
         onUpdate: () => this.#onUpdate(),
         onState: () => this.#notify(),
@@ -309,6 +310,10 @@ export class BxEditorToolbarElement extends HTMLElement {
     return this.querySelector('[data-slot="link-form"]');
   }
 
+  get #imageForm() {
+    return this.querySelector('[data-slot="image-form"]');
+  }
+
   focusTool() {
     this.update();
     (this.#tools.find((t) => t.tabIndex === 0 && !t.disabled) ?? this.#tools.find((t) => !t.disabled))?.focus();
@@ -336,7 +341,7 @@ export class BxEditorToolbarElement extends HTMLElement {
   #placeBubble() {
     const engine = this.#host?.engine;
     const inside = this.matches(':focus-within');
-    const show = !!engine && engine.editable && ((engine.focused && engine.hasSelection) || (inside && (engine.hasSelection || !this.#linkForm?.hidden)));
+    const show = !!engine && engine.editable && ((engine.focused && engine.hasSelection) || (inside && (engine.hasSelection || !this.#linkForm?.hidden || !this.#imageForm?.hidden)));
     if (!show) {
       this.#stop?.();
       this.#stop = null;
@@ -352,7 +357,7 @@ export class BxEditorToolbarElement extends HTMLElement {
 
   // Pressing a button must not take focus (and the selection) from the editor.
   #onMouseDown = (event) => {
-    if (event.target.closest('[data-action]') || event.target.closest('[data-link]')) event.preventDefault();
+    if (event.target.closest('[data-action]') || event.target.closest('[data-link]') || event.target.closest('[data-image]')) event.preventDefault();
   };
 
   #onClick = (event) => {
@@ -361,11 +366,16 @@ export class BxEditorToolbarElement extends HTMLElement {
       this.#submitLink(link.dataset.link === 'remove');
       return;
     }
+    if (event.target.closest('[data-image]')) {
+      this.#submitImage();
+      return;
+    }
     const tool = event.target.closest('[data-action]');
     const engine = this.#host?.engine;
     if (!tool || !engine || tool.disabled) return;
     this.#tool = tool;
     if (tool.dataset.action === 'link') this.#openLink();
+    else if (tool.dataset.action === 'image') this.#openImage();
     else {
       engine.run(tool.dataset.action, tool.dataset.level);
       if (this.#bubble && !this.matches(':focus-within')) engine.focus();
@@ -382,6 +392,17 @@ export class BxEditorToolbarElement extends HTMLElement {
         event.preventDefault();
         event.stopPropagation();
         this.#closeLink();
+      }
+      return;
+    }
+    if (event.target.closest('[data-slot="image-input"]')) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        this.#submitImage();
+      } else if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        this.#closeImage();
       }
       return;
     }
@@ -416,16 +437,45 @@ export class BxEditorToolbarElement extends HTMLElement {
     const form = this.#linkForm;
     const input = form?.querySelector('[data-slot="link-input"]');
     if (!form || !input) return;
+    this.#closeImage(false);
     form.hidden = false;
     input.value = this.#host.engine.linkHref();
     input.focus();
     input.select();
   }
 
-  #closeLink() {
+  #openImage() {
+    const form = this.#imageForm;
+    const input = form?.querySelector('[data-slot="image-input"]');
+    if (!form || !input) return;
+    this.#closeLink(false);
+    form.hidden = false;
+    input.value = '';
+    input.focus();
+  }
+
+  #closeImage(refocus = true) {
+    const form = this.#imageForm;
+    if (form) form.hidden = true;
+    if (refocus) this.#host?.engine?.focus();
+    this.update();
+  }
+
+  /** Inserts the image at the address of the field. An address the engine refuses (not http or https) keeps the form open and marks the field invalid. */
+  #submitImage() {
+    const input = this.#imageForm?.querySelector('[data-slot="image-input"]');
+    const engine = this.#host?.engine;
+    if (!input || !engine) return;
+    const done = engine.run('image', input.value.trim());
+    input.setAttribute('aria-invalid', done ? 'false' : 'true');
+    if (done) this.#closeImage();
+    else input.focus();
+  }
+
+  #closeLink(refocus = true) {
     const form = this.#linkForm;
     if (form) form.hidden = true;
-    this.#host?.engine?.focus();
+    if (refocus) this.#host?.engine?.focus();
     this.update();
   }
 
