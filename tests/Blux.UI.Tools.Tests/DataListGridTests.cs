@@ -430,6 +430,52 @@ public class DataListGridTests : BluxToolsTestContext
         Assert.Equal("9999", asyncRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
         Assert.Equal("42 rows", asyncRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
     }
+
+    [Fact]
+    public async Task UpdateRow_UpdateRows_and_ResetAll_update_loaded_rows_in_place_and_reset_query_selection_and_expansion()
+    {
+        var calls = 0;
+        DataListProvider<Person> provider = (req, _) =>
+        {
+            calls++;
+            return ValueTask.FromResult(DataListGridHarness.DefaultSchema.ExecuteInMemory(DataListControllerTests.People[..5], req));
+        };
+
+        var childrenByParent = new Dictionary<int, IReadOnlyList<Person>>
+        {
+            [1] = [new(11, "Child 11", 20, "Paris")],
+        };
+        var tree = new DataListTree<Person>
+        {
+            Children = p => childrenByParent.TryGetValue(p.Id, out var c) ? c : null,
+            DefaultExpanded = false,
+        };
+
+        var cut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Provider, provider)
+            .Add(x => x.Tree, tree)
+            .Add(x => x.Selectable, true));
+
+        Assert.Equal(1, calls);
+        var list = cut.FindComponent<BxDataList<Person>>().Instance;
+
+        // Tick row 1 and expand it.
+        cut.Find("input[data-select=row][data-key='1']").Change(true);
+        cut.Find("button[data-slot=tree-toggle][data-key='1']").Click();
+        Assert.Equal(6, cut.FindAll("[data-slot=tree-cell]").Count);
+
+        // UpdateRow replaces Person 1 in place without calling the provider again.
+        await cut.InvokeAsync(() => Assert.True(list.UpdateRow(new Person(1, "Person 01 Updated", 99, "Nice"))));
+        cut.Render();
+        Assert.Equal(1, calls);
+        Assert.Contains("Person 01 Updated", cut.Markup);
+
+        // ResetAll clears selection, collapses tree back to DefaultExpanded = false, and resets query state.
+        await cut.InvokeAsync(() => list.ResetAll());
+        cut.Render();
+        Assert.Equal(5, cut.FindAll("[data-slot=tree-cell]").Count);
+        Assert.False(cut.Find("input[data-select=row][data-key='1']").HasAttribute("checked"));
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>

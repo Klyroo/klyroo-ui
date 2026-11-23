@@ -338,6 +338,21 @@ public sealed partial class DataListContext<TItem>
     /// </summary>
     public void Reset(QueryHistory history = QueryHistory.Push) => SetState(_owner.ResetState, history);
 
+    /// <summary>
+    /// Resets the search and filters to the schema defaults (on page 1), clears the row selection, and resets tree expansion to its defaults.
+    /// </summary>
+    public void ResetAll(QueryHistory history = QueryHistory.Push) => _owner.ResetAll(history);
+
+    /// <summary>
+    /// Replaces a single row in the loaded result in place by its schema <c>RowKey</c>, without querying the source again.
+    /// </summary>
+    public bool UpdateRow(TItem item) => _owner.UpdateRow(item);
+
+    /// <summary>
+    /// Replaces matching rows in the loaded result in place by their schema <c>RowKey</c>, without querying the source again.
+    /// </summary>
+    public int UpdateRows(IEnumerable<TItem> items) => _owner.UpdateRows(items);
+
     /// <summary><paramref name="state"/> without its search and its filters (those of the schema's default state), on the first page: what <see cref="Reset"/> sets.</summary>
     public DataListState ResetState(DataListState state) => _owner.ResetState(state);
 

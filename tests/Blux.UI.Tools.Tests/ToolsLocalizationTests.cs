@@ -18,6 +18,7 @@ public partial class ToolsLocalizationTests
     private static readonly HashSet<(string Code, string Name)> SharedWords =
     [
         ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"), ("nl", "FilterPanelTitle"), ("fr", "ActionsMenu"), ("fr", "ColumnWidthPixels"), ("nl", "ColumnWidthPixels"), ("pt-BR", "ColumnWidthPixels"),
+        ("fr", "SummaryTotal"), ("fr", "SummaryPage"), ("es", "SummaryTotal"), ("pt", "SummaryTotal"), ("pt-BR", "SummaryTotal"),
         .. new[] { "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru" }.Select(code => (code, "FilterMore")),
     ];
 

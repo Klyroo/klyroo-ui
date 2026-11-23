@@ -411,6 +411,54 @@ public sealed class DataListController<TItem> : IDisposable
         RequestedState is { } state ? LoadAsync(state, refresh: Result is not null) : Task.CompletedTask;
 
     /// <summary>
+    /// Replaces a single row in the loaded <see cref="Result"/> in place by matching its schema <c>RowKey</c>, without querying the provider again.
+    /// Returns <see langword="true"/> when a matching row was found and replaced.
+    /// </summary>
+    public bool UpdateRow(TItem item) => item is not null && UpdateRows([item]) > 0;
+
+    /// <summary>
+    /// Replaces matching rows in the loaded <see cref="Result"/> in place by their schema <c>RowKey</c>, without querying the provider again.
+    /// Returns the number of rows replaced.
+    /// </summary>
+    public int UpdateRows(IEnumerable<TItem> items)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        if (!Schema.HasRowKey)
+            throw new InvalidOperationException($"{nameof(UpdateRows)} requires a RowKey in the schema.");
+        if (Result is not { Items.Count: > 0 } current) return 0;
+
+        var replacements = new Dictionary<string, TItem>(StringComparer.Ordinal);
+        foreach (var item in items)
+        {
+            if (item is null) continue;
+            var key = Schema.GetRowKey(item);
+            if (!string.IsNullOrEmpty(key)) replacements[key] = item;
+        }
+        if (replacements.Count == 0) return 0;
+
+        var copy = new List<TItem>(current.Items.Count);
+        var updated = 0;
+        foreach (var existing in current.Items)
+        {
+            var key = Schema.GetRowKey(existing);
+            if (replacements.TryGetValue(key, out var replacement))
+            {
+                copy.Add(replacement);
+                updated++;
+            }
+            else
+            {
+                copy.Add(existing);
+            }
+        }
+        if (updated == 0) return 0;
+        Result = current with { Items = copy };
+        ResultVersion++;
+        Changed?.Invoke();
+        return updated;
+    }
+
+    /// <summary>
     /// Appends the next page of a cursor-paged list using <see cref="NextCursor"/>. Does nothing outside <see cref="DataListPagingMode.Cursor"/>, while a load is running or when there
     /// is no next cursor. A newer <see cref="LoadAsync"/> cancels this load and ignores its result; a failure keeps the rows loaded so far and <see cref="NextCursor"/>, sets
     /// <see cref="LoadMoreError"/> and lets the caller retry.
