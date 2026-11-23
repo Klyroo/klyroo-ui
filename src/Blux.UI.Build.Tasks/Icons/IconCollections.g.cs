@@ -347,6 +347,7 @@ namespace Blux.UI.Internal
             "link",
             "list",
             "list-ordered",
+            "list-todo",
             "loader",
             "loader-circle",
             "lock",

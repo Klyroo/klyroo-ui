@@ -19,6 +19,7 @@ public sealed partial record BxMessages
     public string EditorHeading { get; init; } = "Heading {0}";
     public string EditorBulletList { get; init; } = "Bulleted list";
     public string EditorOrderedList { get; init; } = "Numbered list";
+    public string EditorTaskList { get; init; } = "Task list";
     public string EditorBlockquote { get; init; } = "Quote";
     public string EditorCodeBlock { get; init; } = "Code block";
     public string EditorHorizontalRule { get; init; } = "Divider";
@@ -33,6 +34,14 @@ public sealed partial record BxMessages
     public string EditorLinkUrl { get; init; } = "Link address";
     public string EditorLinkApply { get; init; } = "Apply";
     public string EditorLinkRemove { get; init; } = "Remove link";
+
+    public string EditorImage { get; init; } = "Image";
+
+    /// <summary>Accessible name of the field that takes the address of an image (the button is <see cref="EditorLinkApply"/>).</summary>
+    public string EditorImageUrl { get; init; } = "Image address";
+
+    /// <summary>Accessible name of the checkbox of a task item; <c>{0}</c> is the text of the item.</summary>
+    public string EditorTaskItem { get; init; } = "Task: {0}";
 
     /// <summary>Accessible name of the button that drags a block (it also moves with Alt and the arrow keys).</summary>
     public string EditorDragHandle { get; init; } = "Drag to move block";

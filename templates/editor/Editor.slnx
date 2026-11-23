@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Editor.Shared/Editor.Shared.csproj" />
+    <Project Path="src/Editor.Web/Editor.Web.csproj" />
+    <Project Path="src/Editor.Web.Client/Editor.Web.Client.csproj" />
+    <Project Path="src/Editor.Maui/Editor.Maui.csproj" />
+  </Folder>
+</Solution>

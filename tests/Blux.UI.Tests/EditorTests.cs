@@ -204,6 +204,36 @@ public class EditorTests : BluxTestContext
     }
 
     [Fact]
+    public void Toolbar_task_list_is_a_toggle_and_the_image_form_only_comes_with_an_image_button()
+    {
+        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.TaskList), new EditorToolbarItem(EditorAction.Image)]));
+
+        var task = cut.Find("button[data-action=taskList]");
+        Assert.Equal("Task list", task.GetAttribute("aria-label"));
+        Assert.True(task.HasAttribute("data-toggle"));
+        Assert.Equal("false", task.GetAttribute("aria-pressed"));
+        var image = cut.Find("button[data-action=image]");
+        Assert.Equal("Image", image.GetAttribute("aria-label"));
+        Assert.False(image.HasAttribute("data-toggle"));
+        var form = cut.Find("[data-slot=image-form]");
+        Assert.True(form.HasAttribute("hidden"));
+        Assert.Equal("Image address", cut.Find("[data-slot=image-input]").GetAttribute("aria-label"));
+        Assert.Single(form.QuerySelectorAll("button[data-image=apply]"));
+        Assert.Empty(cut.FindAll("[data-slot=link-form]"));
+
+        var without = Render<BxEditorToolbar>();
+        Assert.Empty(without.FindAll("[data-slot=image-form]"));
+    }
+
+    [Fact]
+    public void Editor_gives_the_browser_the_name_pattern_of_the_checkbox_of_a_task_item()
+    {
+        var cut = Render<BxEditor>();
+
+        Assert.Equal("Task: {0}", cut.Find("bx-editor").GetAttribute("data-task-label"));
+    }
+
+    [Fact]
     public void Toolbar_uses_size_color_and_label()
     {
         var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Size, BxSize.Lg).Add(t => t.Color, BxColor.Info).Add(t => t.Label, "Format"));
