@@ -55,7 +55,7 @@ internal static partial class Themes
     public static ComponentTheme ContextMenu()
     {
         var menu = DropdownMenu();
-        var t = new ComponentTheme("contextMenu", "root", "trigger", "content", "group", "label", "separator", "item", "itemIcon", "itemLabel", "itemShortcut")
+        var t = new ComponentTheme("contextMenu", "root", "trigger", "content", "group", "label", "separator", "item", "itemIcon", "itemLabel", "itemShortcut", "itemChevron")
             .Slot("root", "block")
             .Slot("trigger", "[-webkit-touch-callout:none] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)");
         foreach (var (slot, classes) in menu.Slots) t.Slot(slot, classes);

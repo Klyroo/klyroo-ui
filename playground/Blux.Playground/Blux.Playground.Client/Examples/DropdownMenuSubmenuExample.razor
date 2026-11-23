@@ -1,0 +1,35 @@
+<div class="flex flex-col items-center gap-3">
+    <BxDropdownMenu Items="Items" OnSelect="item => _last = item.Label">
+        <BxButton Label="Share" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="submenu-trigger">
+            <TrailingIcon>@BxIcons.Named("chevron-down")</TrailingIcon>
+        </BxButton>
+    </BxDropdownMenu>
+    <p class="text-sm text-(--blux-text-muted)" data-testid="submenu-state">Last action: @(_last ?? "none")</p>
+</div>
+
+@code {
+    private string? _last;
+
+    private static readonly BxMenuItem[] Items =
+    [
+        BxMenuItem.Heading("Share"),
+        new() { Label = "Copy link" },
+        new()
+        {
+            Label = "Send to",
+            Children =
+            [
+                new() { Label = "Email" },
+                new() { Label = "Message" },
+                new()
+                {
+                    Label = "Team",
+                    Children = [new() { Label = "Design" }, new() { Label = "Engineering" }],
+                },
+            ],
+        },
+        new() { Label = "Export", Disabled = true, Children = [new() { Label = "PDF" }] },
+        BxMenuItem.Separator(),
+        new() { Label = "Delete", Color = BxColor.Error },
+    ];
+}
