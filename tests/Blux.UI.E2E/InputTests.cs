@@ -216,7 +216,11 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
     public async Task SetValueAsync_replaces_pending_text_keeps_focus_and_reports_nothing_stale(string mode)
     {
         await Open(mode, "input");
+        // The pause is held open (the script reads the attribute when a key is typed), so "d" is still waiting when the reset is clicked
+        // however slowly the click is made; the report of "abc" is made by Enter.
+        await Debounced.EvaluateAsync("e => e.setAttribute('data-bx-debounce', '600000')");
         await Debounced.PressSequentiallyAsync("abc", new() { Delay = 20 });
+        await Debounced.PressAsync("Enter");
         await Assertions.Expect(State).ToHaveTextAsync("Value: abc");
         await Debounced.PressSequentiallyAsync("d", new() { Delay = 20 });
 
@@ -233,6 +237,7 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 2");
 
         // Typing goes on from the new sequence.
+        await Debounced.EvaluateAsync("e => e.setAttribute('data-bx-debounce', '400')");
         await Debounced.PressSequentiallyAsync("z", new() { Delay = 20 });
         await Assertions.Expect(State).ToHaveTextAsync("Value: z");
         await Assertions.Expect(Reports).ToHaveTextAsync("Reports: 3");
@@ -287,8 +292,13 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
         await Open(mode, "input");
         var email = Page.GetByTestId("email");
 
+        // The pause is held open while the absence of a report is checked (a check made within 400 ms is a race on a loaded machine), then the field is left.
+        await email.EvaluateAsync("e => e.setAttribute('data-bx-debounce', '600000')");
         await email.PressSequentiallyAsync("nope", new() { Delay = 30 });
         await Assertions.Expect(email).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Assertions.Expect(Page.Locator("form .validation-message")).ToBeHiddenAsync();
+        await email.PressAsync("Tab");
+        await email.EvaluateAsync("e => e.setAttribute('data-bx-debounce', '400')");
         await Assertions.Expect(Page.Locator("form .validation-message")).ToHaveTextAsync("Not an email address.");
         await Assertions.Expect(email).ToHaveAttributeAsync("aria-invalid", "true");
         await Assertions.Expect(email).ToHaveClassAsync(new System.Text.RegularExpressions.Regex(@"\bmodified\b.*\binvalid\b"));
@@ -330,5 +340,39 @@ public class InputTests(PlaygroundServer server) : PlaygroundTest(server)
 
         Assert.Equal(["ab"], seen);
         await Assertions.Expect(State).ToHaveTextAsync("Value: ab", new() { Timeout = 10_000 });
+    }
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("auto")]
+    public async Task The_router_moves_the_focus_to_the_heading_after_the_page_turns_interactive(string mode)
+    {
+        // Why Open also waits for the heading to hold the focus: with the render batches (and the focus call that follows the first one)
+        // held back, a field focused as soon as the page reports itself interactive loses the focus when the call arrives.
+        var settled = await DelayRenderBatches(Page, 400);
+        await Page.GotoAsync($"/{mode}/components/input-menu");
+        await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        var field = Page.GetByRole(AriaRole.Combobox, new() { Name = "Assign to" });
+        await field.FocusAsync();
+        await settled();
+
+        await Page.WaitForFunctionAsync("() => document.activeElement === document.querySelector('h1')");
+    }
+
+    [Theory]
+    [InlineData("server")]
+    [InlineData("auto")]
+    public async Task Text_typed_right_after_Open_survives_late_renders(string mode)
+    {
+        var settled = await DelayRenderBatches(Page, 400);
+        await Open(mode, "input-menu");
+        var field = Page.GetByRole(AriaRole.Combobox, new() { Name = "Assign to" });
+
+        await field.FocusAsync();
+        await Page.Keyboard.TypeAsync("docs");
+        await settled();
+
+        await Assertions.Expect(field).ToHaveValueAsync("docs");
+        await Assertions.Expect(field).ToBeFocusedAsync();
     }
 }

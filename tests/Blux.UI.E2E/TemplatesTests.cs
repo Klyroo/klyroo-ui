@@ -102,7 +102,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.GotoAsync("/docs");
         await Page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "Templates" }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => url.EndsWith("/templates"));
+        await Page.WaitForUrlEndingWithAsync("/templates");
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToContainTextAsync("working app");
     }
 
@@ -258,7 +258,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
 
         // A link to a section stays on the page of the demo.
         await Page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "FAQ" }).ClickAsync();
-        await Page.WaitForURLAsync(url => url.EndsWith(LandingPath + "#faq"));
+        await Page.WaitForUrlEndingWithAsync(LandingPath + "#faq");
 
         var origin = new Uri(BaseUrl).GetLeftPart(UriPartial.Authority);
         lock (requests)
@@ -312,7 +312,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         var dialog = Page.GetByRole(AriaRole.Dialog);
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await dialog.GetByRole(AriaRole.Link, new() { Name = "Pricing" }).ClickAsync();
-        await Page.WaitForURLAsync(url => url.EndsWith(LandingPath + "#pricing"));
+        await Page.WaitForUrlEndingWithAsync(LandingPath + "#pricing");
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
     [Fact]
@@ -412,7 +412,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await Assertions.Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Get started" })).ToBeVisibleAsync();
         await dialog.GetByRole(AriaRole.Link, new() { Name = "Blog" }).ClickAsync();
-        await Page.WaitForURLAsync(url => url.EndsWith(SaasPath + "blog"));
+        await Page.WaitForUrlEndingWithAsync(SaasPath + "blog");
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 
@@ -508,7 +508,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await Assertions.Expect(dialog.GetByRole(AriaRole.Link, new() { Name = "Get in touch" })).ToBeVisibleAsync();
         await dialog.GetByRole(AriaRole.Link, new() { Name = "Writing" }).ClickAsync();
-        await Page.WaitForURLAsync(url => url.EndsWith(PortfolioPath + "writing"));
+        await Page.WaitForUrlEndingWithAsync(PortfolioPath + "writing");
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 
@@ -602,7 +602,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(dialog).ToBeVisibleAsync();
         await dialog.GetByRole(AriaRole.Button, new() { Name = "Reference" }).ClickAsync();
         await dialog.GetByRole(AriaRole.Link, new() { Name = "Exit codes" }).ClickAsync();
-        await Page.WaitForURLAsync(url => url.EndsWith(DocsPath + "reference/exit-codes"));
+        await Page.WaitForUrlEndingWithAsync(DocsPath + "reference/exit-codes");
         await Assertions.Expect(dialog).ToBeHiddenAsync();
     }
 
