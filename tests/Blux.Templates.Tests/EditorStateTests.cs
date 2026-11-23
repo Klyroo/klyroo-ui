@@ -522,6 +522,23 @@ public class EditorStateTests
         Assert.Equal([document.Id], store.Deleted);
     }
 
+    [Fact]
+    public async Task A_change_or_a_rename_that_was_waiting_does_not_bring_a_deleted_document_back()
+    {
+        var store = new MemoryStore();
+        var state = new DocumentState(store);
+        var document = await state.CreateAsync("Doomed", "<p>text</p>");
+        await state.DeleteAsync(document);
+
+        var saved = await state.UpdateHtmlAsync(document, "<p>late change</p>");
+        var renamed = await state.RenameAsync(document, "Late rename");
+
+        Assert.Equal(SaveResult.Gone, saved);
+        Assert.True(renamed);
+        Assert.Empty(state.Items);
+        Assert.Empty(store.Saved);
+    }
+
     // ---------------------------------------------------------------- what travels
 
     [Theory]

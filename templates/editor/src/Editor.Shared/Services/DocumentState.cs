@@ -14,6 +14,9 @@ public enum SaveResult
 
     /// <summary>The storage refused the write (full or blocked): the document lives for this visit only.</summary>
     StorageFailed,
+
+    /// <summary>The document is no longer in the list (deleted, here or in another tab): nothing was written, so a change that was waiting does not bring it back.</summary>
+    Gone,
 }
 
 /// <summary>What happened when a document's text was asked for.</summary>
@@ -87,6 +90,7 @@ public sealed class DocumentState(IDocumentStore store) : IAsyncDisposable
     private IAsyncDisposable? _watch;
     private bool _refreshing;
     private bool _refreshAgain;
+    private bool _disposed;
 
     /// <summary>The documents, the most recently changed first.</summary>
     public IReadOnlyList<Document> Items => _items;
@@ -339,6 +343,10 @@ public sealed class DocumentState(IDocumentStore store) : IAsyncDisposable
     /// </summary>
     public async Task<SaveResult> UpdateHtmlAsync(Document document, string? html)
     {
+        if (!_items.Contains(document))
+        {
+            return SaveResult.Gone;
+        }
         var clean = DocumentHtml.Clean(html);
         if (clean.Length > DocumentLimits.MaxHtmlCharacters)
         {
@@ -425,7 +433,7 @@ public sealed class DocumentState(IDocumentStore store) : IAsyncDisposable
     public async Task<bool> RenameAsync(Document document, string? title)
     {
         var clean = CleanTitle(title);
-        if (clean.Length == 0)
+        if (clean.Length == 0 || !_items.Contains(document))
         {
             return true;
         }
@@ -546,7 +554,7 @@ public sealed class DocumentState(IDocumentStore store) : IAsyncDisposable
     /// <summary>What the store calls when another tab wrote: reads the store again. Calls that come while a read runs are folded into one more read.</summary>
     public async Task RefreshAsync()
     {
-        if (!Loaded)
+        if (!Loaded || _disposed)
         {
             return;
         }
@@ -599,6 +607,7 @@ public sealed class DocumentState(IDocumentStore store) : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         try
         {
             if (_watch is not null)
