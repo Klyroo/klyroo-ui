@@ -89,7 +89,7 @@ function focusSelectAll(part) {
 const rowWatches = new WeakMap();
 
 function watchRowRemoval(part) {
-  const row = part?.closest('tr, [data-slot=grid-card]');
+  const row = part?.closest('tr, [data-slot=grid-card], [data-slot=summary-row]');
   const region = part?.closest('[data-slot=table-root], [data-slot=grid-root]');
   if (!row || !region) return;
   rowWatches.get(row)?.();
@@ -123,7 +123,7 @@ function watchRowRemoval(part) {
 }
 
 function stopRowRemovalWatch(part) {
-  const row = part?.closest('tr, [data-slot=grid-card]');
+  const row = part?.closest('tr, [data-slot=grid-card], [data-slot=summary-row]');
   if (row) rowWatches.get(row)?.();
 }
 
@@ -183,7 +183,11 @@ function watchActionsWidth(root) {
   update();
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId, focusTable, focusSelectAll, watchRowRemoval, stopRowRemovalWatch, keepVirtualFocus, readColumnPrefs, writeColumnPrefs, focusIn, watchActionsWidth };
+function isPhoneViewport() {
+  return typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 767.98px)').matches;
+}
+
+const tools = { version: 1, timeZone, focusPage, focusId, focusTable, focusSelectAll, watchRowRemoval, stopRowRemovalWatch, keepVirtualFocus, readColumnPrefs, writeColumnPrefs, focusIn, watchActionsWidth, isPhoneViewport };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });

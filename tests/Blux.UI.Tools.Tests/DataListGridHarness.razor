@@ -1,13 +1,14 @@
 @using Blux.UI.Tools.Query
 
 <BxDataList TItem="Person" Schema="Schema" Items="Provider is null ? Items : null" Provider="Provider"
-            UrlSync="UrlSync" UrlKey="@UrlKey" Selectable="Selectable" @bind-SelectedKeys="SelectedKeys">
+            UrlSync="UrlSync" UrlKey="@UrlKey" PreferencesKey="@PreferencesKey" Selectable="Selectable" @bind-SelectedKeys="SelectedKeys">
     <BxDataListSearch />
     <BxDataListSortMenu Label="@SortLabel" Items="SortOptions" Layouts="SortLayouts" />
+    <BxDataListViewToggle />
     <BxDataListLayoutSwitch ShowLabels="ShowLayoutLabels" Order="LayoutOrder" />
     @if (IncludeTable)
     {
-        <BxDataListTable Caption="People" RowActions="RowActions">
+        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary">
             <BxDataListColumn Field="name" Title="Full name" />
             <BxDataListColumn Field="age" Align="DataListAlign.End" />
             <BxDataListColumn Field="city" Sortable="false" />
@@ -35,7 +36,9 @@
     [Parameter] public DataListProvider<Person>? Provider { get; set; }
     [Parameter] public bool UrlSync { get; set; }
     [Parameter] public string? UrlKey { get; set; }
+    [Parameter] public string? PreferencesKey { get; set; }
     [Parameter] public bool? Selectable { get; set; }
+    [Parameter] public DataListRowSummary<Person>? RowSummary { get; set; }
     [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
     [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
     [Parameter] public bool IncludeTable { get; set; } = true;

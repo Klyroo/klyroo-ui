@@ -19,6 +19,7 @@ public static partial class BxToolsLocales
             LayoutSwitch = "Weergave",
             TableView = "Tabelweergave",
             GridView = "Rasterweergave",
+            SummaryView = "Samenvattingsweergave",
             ResultRange = "Rijen {0}–{1}",
             ResultCount = "{0}–{1} van {2}",
             ResultCountLoaded = "{0} van {1}",

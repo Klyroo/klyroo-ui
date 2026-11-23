@@ -157,6 +157,19 @@ public sealed record DataListUi : ISlotOverrides
     public string? GridCardFieldLabel { get; init; }
     public string? GridCardFieldValue { get; init; }
     public string? GridEmpty { get; init; }
+    public string? ViewToggle { get; init; }
+    public string? SummaryHeader { get; init; }
+    public string? SummaryList { get; init; }
+    public string? SummaryRow { get; init; }
+    public string? SummaryLeading { get; init; }
+    public string? SummaryBody { get; init; }
+    public string? SummaryTitle { get; init; }
+    public string? SummaryTitleLink { get; init; }
+    public string? SummaryTitleButton { get; init; }
+    public string? SummaryMeta { get; init; }
+    public string? SummaryStatus { get; init; }
+    public string? SummaryDetails { get; init; }
+    public string? SummaryActions { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -312,6 +325,19 @@ public sealed record DataListUi : ISlotOverrides
         "gridCardFieldLabel" => GridCardFieldLabel,
         "gridCardFieldValue" => GridCardFieldValue,
         "gridEmpty" => GridEmpty,
+        "viewToggle" => ViewToggle,
+        "summaryHeader" => SummaryHeader,
+        "summaryList" => SummaryList,
+        "summaryRow" => SummaryRow,
+        "summaryLeading" => SummaryLeading,
+        "summaryBody" => SummaryBody,
+        "summaryTitle" => SummaryTitle,
+        "summaryTitleLink" => SummaryTitleLink,
+        "summaryTitleButton" => SummaryTitleButton,
+        "summaryMeta" => SummaryMeta,
+        "summaryStatus" => SummaryStatus,
+        "summaryDetails" => SummaryDetails,
+        "summaryActions" => SummaryActions,
         _ => null,
     };
 }

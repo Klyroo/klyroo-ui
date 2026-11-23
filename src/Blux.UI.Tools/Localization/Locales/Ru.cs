@@ -19,6 +19,7 @@ public static partial class BxToolsLocales
             LayoutSwitch = "Вид отображения",
             TableView = "Таблица",
             GridView = "Сетка",
+            SummaryView = "Краткий вид",
             ResultRange = "Строки {0}–{1}",
             ResultCount = "{0}–{1} из {2}",
             ResultCountLoaded = "{0} из {1}",

@@ -1,0 +1,47 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Tools.Query
+
+@*
+    View toggle: switches a BxDataListTable that declares a RowSummary between compact summary rows and the full multi-column table.
+    Remembered in the list's preferences cookie (blux-dl-cols) when PreferencesKey is set.
+    Hidden when the table has no RowSummary, when the active layout is Grid, or in static rendering without interactivity.
+*@
+@if (Context.HasRowSummary && Context.EffectiveLayout == DataListLayout.Table && (Context.IsInteractive || Context.WillBeInteractive))
+{
+    var active = Context.SummaryViewActive;
+    var label = Label ?? ToolsMessages.SummaryView;
+    <button type="button" class="@_slots["viewToggle"]"
+            disabled="@(!Context.IsInteractive)"
+            aria-pressed="@(active ? "true" : "false")"
+            aria-label="@(ShowLabel ? null : label)"
+            title="@(ShowLabel ? null : label)"
+            data-slot="view-toggle"
+            @onclick="@(() => Context.SetSummaryView(!active))"
+            @attributes="AdditionalAttributes">
+        @RenderIcon(Icon, "size-4 shrink-0")
+        @if (ShowLabel)
+        {
+            <span>@label</span>
+        }
+    </button>
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>Text and accessible name of the toggle button. Defaults to the localized "Summary view".</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Shows the text label next to the icon (<see langword="true"/> by default).</summary>
+    [Parameter] public bool ShowLabel { get; set; } = true;
+
+    /// <summary>Icon name shown on the toggle button (<c>"list"</c> by default).</summary>
+    [Parameter] public string Icon { get; set; } = "list";
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "viewToggle");
+    }
+}

@@ -41,6 +41,9 @@ public sealed partial record BxToolsMessages
     /// <summary>Accessible name and label of the grid layout option.</summary>
     public string GridView { get; init; } = "Grid view";
 
+    /// <summary>Accessible name and label of the compact summary-rows toggle button.</summary>
+    public string SummaryView { get; init; } = "Summary view";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 

@@ -80,6 +80,19 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
         await cards.First.Locator("input[data-select=row]").CheckAsync();
         await Assertions.Expect(SwitchList.Locator("[data-slot=selection-bar]")).ToBeVisibleAsync();
 
+        // Switch back to Table view and toggle Summary view with BxDataListViewToggle.
+        await SwitchList.Locator("button[data-slot=layout-option][data-layout=table]").ClickAsync();
+        await Assertions.Expect(SwitchList.Locator("[data-slot=table]")).ToHaveCountAsync(1);
+        var viewToggle = SwitchList.Locator("button[data-slot=view-toggle]");
+        await Assertions.Expect(viewToggle).ToHaveAttributeAsync("aria-pressed", "false");
+        await viewToggle.ClickAsync();
+        await Assertions.Expect(viewToggle).ToHaveAttributeAsync("aria-pressed", "true");
+        await Assertions.Expect(SwitchList.Locator("[data-slot=table]")).ToHaveCountAsync(0);
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-row]")).ToHaveCountAsync(10);
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-row]").First.Locator("[data-slot=summary-details]")).ToContainTextAsync("·");
+        await viewToggle.ClickAsync();
+        await Assertions.Expect(SwitchList.Locator("[data-slot=table]")).ToHaveCountAsync(1);
+
         // Removing a card in the standalone grid moves focus to the next card's Remove button.
         var removableCards = GridOnlyList.Locator("[data-slot=grid-card]");
         await Assertions.Expect(removableCards).ToHaveCountAsync(6);
@@ -92,13 +105,38 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
 
     [Theory]
     [MemberData(nameof(AllModes))]
-    public async Task On_a_phone_the_grid_stacks_in_one_column_without_horizontal_overflow(string mode)
+    public async Task On_a_phone_the_grid_stacks_in_one_column_and_the_table_automatically_shows_summary_rows_without_horizontal_overflow(string mode)
     {
         await Page.SetViewportSizeAsync(375, 800);
         await OpenPage(mode, "?grid.l=grid");
 
         await Assertions.Expect(SwitchList.Locator("[data-slot=grid-card]")).ToHaveCountAsync(10);
-        Assert.False(await Page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth"), "the page overflows horizontally at 375px");
+        Assert.False(await Page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth"), "the grid page overflows horizontally at 375px");
+
+        if (mode != "ssr")
+        {
+            // Switch to Table layout on a phone: AutoPhone automatically presents compact summary rows, and ViewToggle can switch to the full table.
+            await SwitchList.Locator("button[data-slot=layout-option][data-layout=table]").ClickAsync();
+            await Assertions.Expect(SwitchList.Locator("[data-slot=summary-row]")).ToHaveCountAsync(10);
+            Assert.False(await Page.EvaluateAsync<bool>("() => document.documentElement.scrollWidth > document.documentElement.clientWidth"), "the summary-row view overflows horizontally at 375px");
+            await SwitchList.Locator("button[data-slot=view-toggle]").ClickAsync();
+            await Assertions.Expect(SwitchList.Locator("[data-slot=table]")).ToHaveCountAsync(1);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Layout_and_sort_apply_after_an_enhanced_navigation(string mode)
+    {
+        await Page.GotoAsync($"/{mode}/components/button");
+        await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
+        if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+        await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
+        await Page.EvaluateAsync("address => Blazor.navigateTo(address)", $"/{mode}/components/data-list-grid?grid.l=grid&grid.s=customer");
+        await Page.EvaluateAsync("() => window.__enhanced");
+        await Assertions.Expect(SwitchList).ToBeVisibleAsync(new() { Timeout = 30_000 });
+        await Assertions.Expect(SwitchList.Locator("[data-slot=grid-card]")).ToHaveCountAsync(10, new() { Timeout = 15_000 });
+        await Assertions.Expect(SwitchList.Locator("[data-slot=grid-card]").First.Locator("[data-slot=card-customer]")).ToHaveTextAsync("Acme Corp");
     }
 
     [Theory]
@@ -113,6 +151,12 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
             await Assertions.Expect(SortPopover).ToBeVisibleAsync();
             await AssertNoAccessibilityViolations();
             await Page.Keyboard.PressAsync("Escape");
+
+            // Check summary rows view accessibility too.
+            await SwitchList.Locator("button[data-slot=layout-option][data-layout=table]").ClickAsync();
+            await SwitchList.Locator("button[data-slot=view-toggle]").ClickAsync();
+            await Assertions.Expect(SwitchList.Locator("[data-slot=summary-row]")).ToHaveCountAsync(10);
+            await AssertNoAccessibilityViolations();
         }
         await DarkMode();
         await AssertNoAccessibilityViolations();

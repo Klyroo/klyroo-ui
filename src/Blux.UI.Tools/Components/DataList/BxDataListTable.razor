@@ -19,16 +19,129 @@
             var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
             var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
             var entries = Context.IsInitial || empty ? null : RowEntries();
-            var virtualizing = IsVirtualized && entries is { Count: > 0 };
-            var resizing = Resizable && Context.IsInteractive;
-            var showColgroup = resizing || columns.Any(c => c.Width is not null);
-            var pinStart = columns.Any(c => c.Pinned == DataListPin.Start);
-            var pinEnd = columns.Any(c => c.Pinned == DataListPin.End);
+            var summaryActive = Context.SummaryViewActive && RowSummary is not null;
+            var virtualizing = IsVirtualized && !summaryActive && entries is { Count: > 0 };
+            var resizing = Resizable && !summaryActive && Context.IsInteractive;
+            var showColgroup = !summaryActive && (resizing || columns.Any(c => c.Width is not null));
+            var pinStart = !summaryActive && columns.Any(c => c.Pinned == DataListPin.Start);
+            var pinEnd = !summaryActive && columns.Any(c => c.Pinned == DataListPin.End);
             // Every column has a width: the table is as wide as their sum, so each column is exactly the width it was given. With a column that sizes to its content, that column takes what is left.
-            var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
+            var allSized = !summaryActive && columns.Count > 0 && columns.All(c => c.Width is not null);
             @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-            <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
+            <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-summary="@(summaryActive ? "true" : null)" data-virtualized="@(IsVirtualized && !summaryActive ? "true" : null)" data-bx-scroll-root="@(IsVirtualized && !summaryActive ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
                  @attributes="AdditionalAttributes">
+                @if (summaryActive)
+                {
+                    @if (Context.IsInitial)
+                    {
+                        <ul class="@_slots["summaryList"]" data-slot="summary-list" aria-busy="true">
+                            @for (var row = 0; row < Math.Clamp(Context.State.PageSize, 3, 10); row++)
+                            {
+                                <li class="@_slots["summaryRow"]" data-slot="skeleton-row">
+                                    <BxSkeleton Class="size-8 shrink-0 rounded-(--blux-radius)" />
+                                    <div class="@_slots["summaryBody"]">
+                                        <BxSkeleton Class="h-4 w-2/5" />
+                                        <BxSkeleton Class="h-3 w-3/5" />
+                                    </div>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else if (empty)
+                    {
+                        <div class="@_slots["empty"]" data-slot="empty-row">
+                            @if (Empty is not null)
+                            {
+                                @Empty(Context)
+                            }
+                            else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+                            {
+                                <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
+                                    <Actions>@FilteredAction</Actions>
+                                </BxDataListEmpty>
+                            }
+                            else
+                            {
+                                <BxDataListEmpty />
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        @if (selecting)
+                        {
+                            <div class="@_slots["summaryHeader"]" data-slot="summary-header">
+                                <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-(--blux-text-muted)">
+                                    <DataListSelectAll TItem="TItem" />
+                                    <span>@ToolsMessages.SelectAllRows</span>
+                                </label>
+                            </div>
+                        }
+                        <ul class="@_slots["summaryList"]" data-slot="summary-list" aria-busy="@(Context.IsLoading ? "true" : null)">
+                            @foreach (var row in entries!)
+                            {
+                                var item = row.Item;
+                                var summary = RowSummary!;
+                                <li @key="row.Key" class="@_slots["summaryRow"]" data-slot="summary-row" data-key="@row.Key">
+                                    @if (selecting)
+                                    {
+                                        <DataListRowSelect TItem="TItem" Item="item" Position="row.Position" />
+                                    }
+                                    @if (summary.Leading is not null)
+                                    {
+                                        <div class="@_slots["summaryLeading"]" data-slot="summary-leading">@summary.Leading(item)</div>
+                                    }
+                                    <div class="@_slots["summaryBody"]" data-slot="summary-body">
+                                        @if (summary.Template is not null)
+                                        {
+                                            @summary.Template(item)
+                                        }
+                                        else
+                                        {
+                                            var title = SummaryTitle(summary, columns, item);
+                                            var href = summary.Href?.Invoke(item);
+                                            var details = SummaryDetails(summary, columns, item);
+                                            @if (!string.IsNullOrEmpty(href))
+                                            {
+                                                <a href="@href" class="@_slots["summaryTitleLink"]" data-slot="summary-title">@title</a>
+                                            }
+                                            else if (Context.IsInteractive && summary.OnSelect.HasDelegate)
+                                            {
+                                                <button type="button" class="@_slots["summaryTitleButton"]" data-slot="summary-title"
+                                                        @onclick="@(() => summary.OnSelect.InvokeAsync(item))">@title</button>
+                                            }
+                                            else
+                                            {
+                                                <p class="@_slots["summaryTitle"]" data-slot="summary-title">@title</p>
+                                            }
+                                            @if (summary.Status is not null || !string.IsNullOrEmpty(details))
+                                            {
+                                                <div class="@_slots["summaryMeta"]" data-slot="summary-meta">
+                                                    @if (summary.Status is not null)
+                                                    {
+                                                        <span class="@_slots["summaryStatus"]" data-slot="summary-status">@summary.Status(item)</span>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(details))
+                                                    {
+                                                        <span class="@_slots["summaryDetails"]" data-slot="summary-details">@details</span>
+                                                    }
+                                                </div>
+                                            }
+                                        }
+                                    </div>
+                                    @if (acting)
+                                    {
+                                        <div class="@_slots["summaryActions"]" data-slot="summary-actions">
+                                            <BxDataListRowActions TItem="TItem" Item="item" Position="row.Position" Actions="RowActions!" MaxVisible="0" OnError="OnRowActionError" />
+                                        </div>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                }
+                else
+                {
                 <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" style="@(virtualizing ? $"min-height:{(int)Math.Ceiling(entries!.Count * EffectiveItemSize)}px" : null)" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                     @if (Caption is not null)
                     {
@@ -151,6 +264,7 @@
                 {
                     @footer
                 }
+                }
             </div>
             @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
             @if (resizing)
@@ -167,6 +281,7 @@
     private ElementReference _root;
     private bool _watching;
     private bool _keepingFocus;
+    private bool _checkedPhone;
     private readonly string _scrollId = NewId("table-scroll");
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -216,6 +331,13 @@
     /// </summary>
     [Parameter] public bool Resizable { get; set; }
 
+    /// <summary>
+    /// Optional compact summary-row presentation (leading tile, title, status, details joined with <c> · </c>, selection checkbox and row actions),
+    /// active automatically below the <c>md</c> breakpoint when <see cref="DataListRowSummary{TItem}.AutoPhone"/> is <see langword="true"/>, when
+    /// <see cref="DataListRowSummary{TItem}.DefaultActive"/> is <see langword="true"/>, or when toggled with <see cref="BxDataListViewToggle{TItem}"/>.
+    /// </summary>
+    [Parameter] public DataListRowSummary<TItem>? RowSummary { get; set; }
+
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
     private float EffectiveItemSize => ItemSize is > 0 ? ItemSize.Value : Context.Density switch
@@ -235,12 +357,17 @@
     protected override void OnAfterRender(bool firstRender)
     {
         if (Context.EffectiveLayout != DataListLayout.Table) return;
-        if (!_watching && Context.IsInteractive && RowActions is { Count: > 0 } && Context.Columns.Any(c => Context.EffectiveColumnPin(c) == DataListPin.End))
+        if (!_checkedPhone && Context.IsInteractive && RowSummary is { AutoPhone: true })
+        {
+            _checkedPhone = true;
+            _ = CheckPhoneViewportAsync();
+        }
+        if (!_watching && Context.IsInteractive && !Context.SummaryViewActive && RowActions is { Count: > 0 } && Context.Columns.Any(c => Context.EffectiveColumnPin(c) == DataListPin.End))
         {
             _watching = true;
             _ = WatchActionsWidthAsync();
         }
-        if (!_keepingFocus && IsVirtualized)
+        if (!_keepingFocus && IsVirtualized && !Context.SummaryViewActive)
         {
             _keepingFocus = true;
             _ = KeepVirtualFocusAsync();
@@ -249,6 +376,19 @@
         if (signature == Context.ColumnsSignature) return;
         Context.ColumnsSignature = signature;
         Context.NotifyChanged();
+    }
+
+    private async Task CheckPhoneViewportAsync()
+    {
+        try
+        {
+            var isPhone = await JS.InvokeAsync<bool>("Blux.tools.isPhoneViewport");
+            Context.SetDetectedPhoneSummary(isPhone);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
     }
 
     // A row that scrolls out of the window takes the focus it held with it: the browser gives it back when the row returns.
@@ -291,7 +431,8 @@
                 _ => "default",
             },
         };
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table;
+        Context.SetRowSummary(RowSummary is not null, RowSummary?.DefaultActive ?? false, RowSummary?.AutoPhone ?? true);
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive;
         if (activeVirtualized) variants["virtualize"] = "true";
         Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
@@ -300,7 +441,7 @@
 
     protected override void OnContextUpdated()
     {
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table;
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive;
         if (activeVirtualized != Context.TableVirtualized)
         {
             _keepingFocus = false;
@@ -311,6 +452,7 @@
 
     public override void Dispose()
     {
+        Context.SetRowSummary(false, false, false);
         Context.RemoveTable();
         Context.SetTableVirtualized(false, null);
         base.Dispose();
@@ -638,10 +780,31 @@
             builder.AddContent(0, template(item));
             return;
         }
+        builder.AddContent(1, ColumnText(column, item));
+    };
+
+    private string? ColumnText(View column, TItem item)
+    {
         var value = column.Source is { } source ? source.ReadValue(item, Context.Schema) : column.Key is not null ? Context.Schema?.ReadField(item, column.Key) : null;
-        var text = column.Source is { } formatter
+        return column.Source is { } formatter
             ? formatter.FormatValue(value, FormatCulture)
             : value is IFormattable formattable ? formattable.ToString(null, FormatCulture) : value?.ToString();
-        builder.AddContent(1, text);
-    };
+    }
+
+    private string SummaryTitle(DataListRowSummary<TItem> summary, List<View> columns, TItem item)
+    {
+        if (summary.Title is not null) return summary.Title(item) ?? "";
+        if (Context.Schema?.GetRowLabel(item) is { Length: > 0 } rowLabel) return rowLabel;
+        return columns.Count > 0 ? ColumnText(columns[0], item) ?? "" : item?.ToString() ?? "";
+    }
+
+    private string SummaryDetails(DataListRowSummary<TItem> summary, List<View> columns, TItem item)
+    {
+        if (summary.Details is not null)
+        {
+            return string.Join(" · ", summary.Details(item).Where(s => !string.IsNullOrWhiteSpace(s)));
+        }
+        if (columns.Count <= 1) return "";
+        return string.Join(" · ", columns.Skip(1).Select(c => ColumnText(c, item)).Where(s => !string.IsNullOrWhiteSpace(s)));
+    }
 }

@@ -117,7 +117,7 @@
     /// </summary>
     [Parameter] public IReadOnlyList<DataListLayout>? Layouts { get; set; }
 
-    private bool ShouldShow => Layouts is null || Layouts.Contains(Context.EffectiveLayout);
+    private bool ShouldShow => Layouts is null || Layouts.Contains(Context.EffectiveLayout) || (Context.EffectiveLayout == DataListLayout.Table && Context.SummaryViewActive);
 
     protected override void OnParametersSet()
     {
