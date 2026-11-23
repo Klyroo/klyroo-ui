@@ -105,6 +105,12 @@ public sealed record DataListUi : ISlotOverrides
     public string? SheetItem { get; init; }
     public string? SheetReason { get; init; }
     public string? SheetIcon { get; init; }
+    public string? InfiniteLoader { get; init; }
+    public string? LoadMoreError { get; init; }
+    public string? LoadMoreErrorText { get; init; }
+    public string? CursorReset { get; init; }
+    public string? InfiniteEnd { get; init; }
+    public string? InfiniteStatus { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -208,6 +214,12 @@ public sealed record DataListUi : ISlotOverrides
         "sheetItem" => SheetItem,
         "sheetReason" => SheetReason,
         "sheetIcon" => SheetIcon,
+        "infiniteLoader" => InfiniteLoader,
+        "loadMoreError" => LoadMoreError,
+        "loadMoreErrorText" => LoadMoreErrorText,
+        "cursorReset" => CursorReset,
+        "infiniteEnd" => InfiniteEnd,
+        "infiniteStatus" => InfiniteStatus,
         _ => null,
     };
 }

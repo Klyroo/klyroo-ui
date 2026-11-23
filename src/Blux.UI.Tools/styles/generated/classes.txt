@@ -16,9 +16,11 @@ aria-disabled:cursor-not-allowed
 aria-disabled:opacity-60
 bg-(--blux-bg)
 bg-(--blux-bg-muted)
+bg-(--blux-error)/5
 border
 border-(--blux-border)
 border-(--blux-border-accented)
+border-(--blux-error)/30
 border-b
 border-s
 border-t
@@ -51,6 +53,8 @@ grid
 grid-cols-2
 group-has-[input:placeholder-shown]/search:invisible
 group/search
+h-11
+h-15
 h-4
 h-8
 h-9
@@ -74,11 +78,13 @@ m-0
 max-h-56
 max-h-72
 max-h-96
+max-h-[32rem]
 max-h-none
 max-w-48
 max-w-[calc(100vw-1rem)]
 max-w-full
 max-w-sm
+max-w-xs
 md:block
 md:flex
 md:hidden
@@ -144,6 +150,7 @@ sr-only
 start-1/2
 sticky
 tabular-nums
+text-(--blux-error-text)
 text-(--blux-text)
 text-(--blux-text-dimmed)
 text-(--blux-text-highlighted)
@@ -154,6 +161,7 @@ text-end
 text-sm
 text-start
 text-xs
+top-0
 transition-opacity
 truncate
 w-10

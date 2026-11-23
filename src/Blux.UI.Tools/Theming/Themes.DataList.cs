@@ -23,7 +23,8 @@ internal static partial class ToolsThemes
                 "filters", "filterTags", "filterTag", "filterTagButton", "filterTagLabel", "filterTagOperator", "filterTagValue", "filterTagRemove", "filterTagRemoveIcon", "addFilter", "clearFilters", "filterPopover", "filterEditor", "filterEditorTitle", "filterField", "filterFieldLabel", "filterOperator", "filterInput", "filterOptions", "filterOption", "filterOptionLink", "filterOptionCount", "filterOptionCheck", "filterEmpty", "filterActions", "filterChoices", "filterMenu", "filterMenuItem", "filterMenuHeader", "filterBack", "filterSection", "filterRange", "filterRangeSlider", "filterPresets", "filterHint", "filterPopoverWide",
                 "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput",
                 "selectCell", "rowSelected", "selectionActions", "selectionBar", "selectionCount", "selectionLive", "selectionScope", "selectionGroup", "actionsDropdown",
-                "rowActionsCell", "rowActions", "rowActionsInline", "rowActionsMenu", "rowActionsPhone", "sheetList", "sheetDivider", "sheetEntry", "sheetHeading", "sheetItem", "sheetReason", "sheetIcon")
+                "rowActionsCell", "rowActions", "rowActionsInline", "rowActionsMenu", "rowActionsPhone", "sheetList", "sheetDivider", "sheetEntry", "sheetHeading", "sheetItem", "sheetReason", "sheetIcon",
+                "infiniteLoader", "loadMoreError", "loadMoreErrorText", "cursorReset", "infiniteEnd", "infiniteStatus")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -135,6 +136,12 @@ internal static partial class ToolsThemes
             .Slot("sheetItem", "flex min-h-11 w-full items-center gap-3 rounded-[calc(var(--blux-radius)_-_2px)] px-3 text-start text-base text-(--blux-text) outline-none hover:bg-(--blux-bg-elevated) focus-visible:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 data-[color=error]:text-(--blux-error-text)")
             .Slot("sheetReason", "px-3 pb-2 text-sm text-(--blux-text-muted)")
             .Slot("sheetIcon", "size-5 shrink-0 text-(--blux-text-muted)")
+            .Slot("infiniteLoader", "flex flex-col items-center justify-center gap-2 py-2")
+            .Slot("loadMoreError", "flex flex-wrap items-center justify-center gap-3 rounded-(--blux-radius) border border-(--blux-error)/30 bg-(--blux-error)/5 px-3 py-2 text-sm")
+            .Slot("loadMoreErrorText", "text-(--blux-error-text)")
+            .Slot("cursorReset", "")
+            .Slot("infiniteEnd", "text-sm text-(--blux-text-muted)")
+            .Slot("infiniteStatus", "sr-only")
             .Variant("position", "sticky", "selectionBar", "sticky bottom-4 mx-auto")
             .Variant("position", "fixed", "selectionBar", "fixed bottom-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2")
             .Default("position", "sticky")
@@ -144,5 +151,11 @@ internal static partial class ToolsThemes
             .Variant("density", "compact", "td", "px-3 py-1.5")
             .Variant("density", "default", "td", "px-4 py-3")
             .Variant("density", "comfortable", "td", "px-4 py-5")
-            .Default("density", "default");
+            .Default("density", "default")
+            .Variant("virtualize", "true", "tableRoot", "max-h-[32rem] overflow-y-auto")
+            .Variant("virtualize", "true", "thead", "sticky top-0 z-10")
+            .Variant("virtualize", "true", "td", "max-w-xs truncate")
+            .Compound(new() { ["virtualize"] = "true", ["density"] = "compact" }, "tr", "h-9")
+            .Compound(new() { ["virtualize"] = "true", ["density"] = "default" }, "tr", "h-11")
+            .Compound(new() { ["virtualize"] = "true", ["density"] = "comfortable" }, "tr", "h-15");
 }

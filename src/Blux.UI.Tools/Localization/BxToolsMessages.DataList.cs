@@ -23,6 +23,18 @@ public sealed partial record BxToolsMessages
     /// <summary>The rows shown out of the total, announced when they change. {0} is the first row number, {1} the last, {2} the total.</summary>
     public string ResultCount { get; init; } = "{0}–{1} of {2}";
 
+    /// <summary>Rows on a cursor page out of the total, when the start offset is not known (a static link). {0} is the row count of the page, {1} the total.</summary>
+    public string ResultCountLoaded { get; init; } = "{0} of {1}";
+
+    /// <summary>Rows on a cursor page when neither the start offset nor the total is known. {0} is the row count of the page.</summary>
+    public string ResultCountShown { get; init; } = "{0} shown";
+
+    /// <summary>Error shown inline by the infinite loader when fetching the next cursor page failed.</summary>
+    public string LoadMoreError { get; init; } = "Could not load more results.";
+
+    /// <summary>Link shown by a statically rendered cursor-paged list to go back to the first page.</summary>
+    public string BackToStart { get; init; } = "Back to start";
+
     /// <summary>Said while the first rows of a data list load.</summary>
     public string Loading { get; init; } = "Loading…";
 

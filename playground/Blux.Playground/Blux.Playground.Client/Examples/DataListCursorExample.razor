@@ -1,0 +1,27 @@
+@using Blux.UI.Tools.Query
+
+@* Cursor paging with a manual Load more button: each click appends the next page in place (10, then 20, then 25), and sorting or searching restarts from the first page.
+   Statically rendered, Load more is a link to the next cursor (?cur.c=...), paired with a Back to start link once past the first page. *@
+<div class="w-full" data-testid="list-cursor">
+    <BxDataList TItem="Invoice" Label="Invoices with cursor paging" Schema="InvoiceData.Schema" Items="_items" PagingMode="DataListPagingMode.Cursor" UrlKey="cur">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListSearch />
+            <div class="flex items-center gap-2">
+                <BxDataListResultCount />
+                <BxDataListRefresh />
+            </div>
+        </div>
+        <BxDataListErrorState />
+        <BxDataListTable Caption="Invoices with cursor paging">
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+            <BxDataListColumn Field="customer" />
+            <BxDataListColumn Field="status" />
+            <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+        </BxDataListTable>
+        <BxDataListInfiniteLoader Auto="false" ShowEnd="true" />
+    </BxDataList>
+</div>
+
+@code {
+    private static readonly Invoice[] _items = InvoiceData.All[..25];
+}

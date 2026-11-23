@@ -33,7 +33,14 @@
             }
             <BxDataListErrorState TItem="TItem" />
             <BxDataListTable TItem="TItem" />
-            <BxDataListPagination TItem="TItem" />
+            @if (PagingMode == DataListPagingMode.Cursor)
+            {
+                <BxDataListInfiniteLoader TItem="TItem" />
+            }
+            else if (PagingMode == DataListPagingMode.Offset)
+            {
+                <BxDataListPagination TItem="TItem" />
+            }
         }
     </div>
 </CascadingValue>
@@ -128,6 +135,12 @@
 
     /// <summary>How tight the rows are.</summary>
     [Parameter] public DataListDensity Density { get; set; }
+
+    /// <summary>
+    /// How the list pages its rows: numbered pages (<see cref="DataListPagingMode.Offset"/>, the default), keyset cursor paging (<see cref="DataListPagingMode.Cursor"/>, with
+    /// <see cref="BxDataListInfiniteLoader{TItem}"/>) or no paging (<see cref="DataListPagingMode.None"/>, every matching row at once, for virtualized tables). Fixed for the life of the list.
+    /// </summary>
+    [Parameter] public DataListPagingMode PagingMode { get; set; }
 
     /// <summary>
     /// The name of the list. Its table is named by it (<c>Results</c> when it has none), and its pagination landmark is "Pagination, &lt;label&gt;": give the lists of a page distinct labels, because two landmarks with the same name cannot be told apart.
@@ -292,7 +305,10 @@
     private async Task InitializeAsync()
     {
         _schema ??= BuildImplicitSchema();
-        var controller = Controller = new DataListController<TItem>(_schema, DataListController<TItem>.CreateProvider(_schema, Items, Provider, Queryable, _executor));
+        var controller = Controller = new DataListController<TItem>(_schema, DataListController<TItem>.CreateProvider(_schema, Items, Provider, Queryable, _executor))
+        {
+            PagingMode = PagingMode,
+        };
         controller.Changed += OnControllerChanged;
         _lastItems = Items;
         _lastQueryable = Queryable;
@@ -475,6 +491,12 @@
     {
         MarkSelectionStale();
         await Controller.RefreshAsync();
+        if (!_disposed) AfterLoad(force: false);
+    });
+
+    internal Task LoadMoreAsync() => Controller is null || !RendererInfo.IsInteractive ? Task.CompletedTask : InvokeAsync(async () =>
+    {
+        await Controller.LoadMoreAsync();
         if (!_disposed) AfterLoad(force: false);
     });
 

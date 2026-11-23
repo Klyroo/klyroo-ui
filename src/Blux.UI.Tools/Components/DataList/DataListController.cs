@@ -40,6 +40,9 @@ public sealed class DataListController<TItem> : IDisposable
     /// <summary>The IANA id of the time zone of the user (<c>Europe/Paris</c>), sent with each request (<see cref="DataListRequest.TimeZone"/>). <see langword="null"/> means UTC.</summary>
     public string? TimeZone { get; set; }
 
+    /// <summary>How requests page: numbered pages (<see cref="DataListPagingMode.Offset"/>), keyset cursors (<see cref="DataListPagingMode.Cursor"/>) or all matching rows (<see cref="DataListPagingMode.None"/>).</summary>
+    public DataListPagingMode PagingMode { get; set; }
+
     /// <summary>Raised on whatever thread finished a load or started one, whenever a flag or the result changes. A component calls <c>InvokeAsync</c> before it renders.</summary>
     public event Action? Changed;
 
@@ -75,6 +78,21 @@ public sealed class DataListController<TItem> : IDisposable
 
     /// <summary>A load of another request than the one on screen is running, with the previous rows still shown.</summary>
     public bool IsReplacing => IsLoading && !_refreshing && Result is not null;
+
+    /// <summary>The next page of a cursor-paged list is being loaded (<see cref="LoadMoreAsync"/>) to append to <see cref="Rows"/>.</summary>
+    public bool IsLoadingMore { get; private set; }
+
+    /// <summary>Why the newest <see cref="LoadMoreAsync"/> failed; <see langword="null"/> when it did not. The previously loaded rows and <see cref="NextCursor"/> stay intact so retrying works.</summary>
+    public Exception? LoadMoreError { get; private set; }
+
+    /// <summary>The newest <see cref="LoadMoreAsync"/> failed.</summary>
+    public bool HasLoadMoreError => LoadMoreError is not null;
+
+    /// <summary>The opaque cursor of the next page (cursor paging only), or <see langword="null"/> after the last one.</summary>
+    public string? NextCursor => PagingMode == DataListPagingMode.Cursor ? Result?.NextCursor : null;
+
+    /// <summary>Whether there is another page to append in cursor mode.</summary>
+    public bool HasMore => !string.IsNullOrEmpty(NextCursor);
 
     /// <summary>The newest load failed.</summary>
     public bool HasError => Error is not null;
@@ -115,9 +133,22 @@ public sealed class DataListController<TItem> : IDisposable
     }
 
     /// <summary>The request for a state: sanitized by the schema, carrying the default sort when the state has none and the time zone.</summary>
-    public DataListRequest BuildRequest(DataListState state)
+    public DataListRequest BuildRequest(DataListState state) => BuildRequest(state, afterCursor: null, includeCount: null);
+
+    private DataListRequest BuildRequest(DataListState state, string? afterCursor, bool? includeCount)
     {
-        var request = Schema.Sanitize(Normalize(state).ToRequest(facets: FacetRequests(), timeZone: TimeZone));
+        var normalized = Normalize(state);
+        var facets = FacetRequests();
+        var raw = PagingMode switch
+        {
+            DataListPagingMode.None => normalized.ToRequest(cursorPaging: false, facets: facets, timeZone: TimeZone) with { Paging = DataListPaging.None.Instance },
+            DataListPagingMode.Cursor => normalized.ToRequest(cursorPaging: true, facets: facets, timeZone: TimeZone) with
+            {
+                Paging = new DataListPaging.Cursor(afterCursor ?? normalized.Cursor, Math.Max(1, normalized.PageSize), Count: includeCount ?? true),
+            },
+            _ => normalized.ToRequest(cursorPaging: false, facets: facets, timeZone: TimeZone),
+        };
+        var request = Schema.Sanitize(raw);
         return request.Sort.Count == 0 && Schema.DefaultSort.Count > 0 ? request with { Sort = Schema.DefaultSort } : request;
     }
 
@@ -165,7 +196,9 @@ public sealed class DataListController<TItem> : IDisposable
         RequestedState = state;
         _dropFacets = false;
         Error = null;
+        LoadMoreError = null;
         IsLoading = false;
+        IsLoadingMore = false;
         _refreshing = false;
     }
 
@@ -198,7 +231,9 @@ public sealed class DataListController<TItem> : IDisposable
         RequestedState = state;
         _refreshing = refresh;
         IsLoading = true;
+        IsLoadingMore = false;
         Error = null;
+        LoadMoreError = null;
         Changed?.Invoke();
 
         try
@@ -278,6 +313,53 @@ public sealed class DataListController<TItem> : IDisposable
     public Task RefreshAsync() =>
         RequestedState is { } state ? LoadAsync(state, refresh: Result is not null) : Task.CompletedTask;
 
+    /// <summary>
+    /// Appends the next page of a cursor-paged list using <see cref="NextCursor"/>. Does nothing outside <see cref="DataListPagingMode.Cursor"/>, while a load is running or when there
+    /// is no next cursor. A newer <see cref="LoadAsync"/> cancels this load and ignores its result; a failure keeps the rows loaded so far and <see cref="NextCursor"/>, sets
+    /// <see cref="LoadMoreError"/> and lets the caller retry.
+    /// </summary>
+    public async Task LoadMoreAsync()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (PagingMode != DataListPagingMode.Cursor || IsLoading || IsLoadingMore || Result is not { } previous || LoadedState is not { } state || NextCursor is not { } cursor || cursor.Length == 0)
+            return;
+
+        var version = Interlocked.Increment(ref _version);
+        var previousCts = _cts;
+        var cts = _cts = new CancellationTokenSource();
+        previousCts?.Dispose();
+
+        IsLoadingMore = true;
+        LoadMoreError = null;
+        Changed?.Invoke();
+
+        try
+        {
+            var request = BuildRequest(state, afterCursor: cursor, includeCount: false);
+            // Facets already belong to the filter and search of the loaded result: appending a page does not ask the provider to recount them.
+            var page = await Provider(request with { Facets = [] }, cts.Token).ConfigureAwait(true);
+            if (version != Volatile.Read(ref _version)) return;
+
+            var combined = new List<TItem>(previous.Items.Count + page.Items.Count);
+            combined.AddRange(previous.Items);
+            combined.AddRange(page.Items);
+            Result = new DataListResult<TItem>(combined, page.TotalCount ?? previous.TotalCount, page.NextCursor, previous.Facets ?? page.Facets);
+            ResultVersion++;
+        }
+        catch (OperationCanceledException) when (cts.IsCancellationRequested || version != Volatile.Read(ref _version))
+        {
+            return;
+        }
+        catch (Exception exception)
+        {
+            if (version != Volatile.Read(ref _version)) return;
+            LoadMoreError = exception;
+        }
+
+        IsLoadingMore = false;
+        Changed?.Invoke();
+    }
+
     /// <summary>Cancels the load that is running, if any. Its result is ignored.</summary>
     public void Cancel()
     {
@@ -293,10 +375,11 @@ public sealed class DataListController<TItem> : IDisposable
         {
             cts.Dispose();
         }
-        var wasLoading = IsLoading;
+        var wasBusy = IsLoading || IsLoadingMore;
         IsLoading = false;
+        IsLoadingMore = false;
         _refreshing = false;
-        if (wasLoading) Changed?.Invoke();
+        if (wasBusy) Changed?.Invoke();
     }
 
     /// <summary>Cancels the running load. The controller cannot load afterwards.</summary>

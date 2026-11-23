@@ -23,13 +23,13 @@
 else if (Context.CanLink)
 {
     <form method="get" action="@Context.Path" data-enhance role="search" aria-label="@Name" class="@_slots["search"]" data-slot="search" @attributes="AdditionalAttributes">
-        @foreach (var (name, value) in Context.FormFields(Context.State with { Search = "", Page = 1 }, "q", "p"))
+        @foreach (var (name, value) in Context.FormFields(Context.State with { Search = "", Page = 1, Cursor = null }, "q", "p", "c"))
         {
             <input type="hidden" name="@name" value="@value" />
         }
         <div class="@_slots["searchField"]">
             @Field(true)
-            @if (Context.HrefWith(s => s with { Search = "", Page = 1 }) is { } href && !string.IsNullOrEmpty(Context.State.Search))
+            @if (Context.HrefWith(s => s with { Search = "", Page = 1, Cursor = null }) is { } href && !string.IsNullOrEmpty(Context.State.Search))
             {
                 <a href="@href" class="@_slots["searchClear"]" data-slot="search-clear" aria-label="@ToolsMessages.ClearSearch">@RenderIcon(Options.Icons.Close, _slots["searchClearIcon"])</a>
             }
@@ -123,7 +123,7 @@ else
         var term = Effective(_text);
         if (term != _seen) _written.Add(term);
         // The same search with other spaces around it, or one that is too short, is not a change: the page stays.
-        Context.SetState(s => s.Search == term ? s : s with { Search = term, Page = 1 }, QueryHistory.Replace);
+        Context.SetState(s => s.Search == term ? s : s with { Search = term, Page = 1, Cursor = null }, QueryHistory.Replace);
         return Task.CompletedTask;
     }
 

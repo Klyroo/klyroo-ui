@@ -4,6 +4,7 @@
 @attribute [CascadingTypeParameter(nameof(TItem))]
 @using Blux.UI.Internal
 @using Blux.UI.Tools.Query
+@using Microsoft.AspNetCore.Components.Web.Virtualization
 
     @ChildContent
     @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
@@ -14,16 +15,19 @@
             var selecting = Context.SelectionVisible;
             var acting = RowActions is { Count: > 0 };
             var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
+            var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
+            var entries = Context.IsInitial || empty ? null : RowEntries();
+            var virtualizing = IsVirtualized && entries is { Count: > 0 };
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div class="@_slots["tableRoot"]" data-slot="table-root" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
-            <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)">
+        <div class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
+            <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>
                 }
                 <thead class="@_slots["thead"]">
-                    <tr class="@_slots["tr"]">
+                    <tr class="@_slots["tr"]" aria-rowindex="@(virtualizing ? 1 : null)">
                         @if (selecting)
                         {
                             @* The box of the header is named by itself: the cell has no text. *@
@@ -62,7 +66,7 @@
                             </tr>
                         }
                     }
-                    else if (Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError)
+                    else if (empty)
                     {
                         <tr class="@_slots["tr"]" data-slot="empty-row">
                             <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0))" class="@_slots["empty"]">
@@ -84,29 +88,17 @@
                             </td>
                         </tr>
                     }
+                    else if (virtualizing)
+                    {
+                        <Virtualize TItem="RowEntry" Items="entries" ItemSize="EffectiveItemSize" OverscanCount="OverscanCount" SpacerElement="tr" Context="row">
+                            @RowFragment(row, selecting, acting, columns, rowIndex: row.Position + 1)
+                        </Virtualize>
+                    }
                     else
                     {
-                        var position = 0;
-                        @foreach (var row in RowEntries())
+                        @foreach (var row in entries!)
                         {
-                            position++;
-                            var rowPosition = position;
-                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" Class="@(selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"])">
-                                @if (selecting)
-                                {
-                                    <td class="@SelectClass("td")"><DataListRowSelect TItem="TItem" Item="row.Item" Position="rowPosition" /></td>
-                                }
-                                @foreach (var column in columns)
-                                {
-                                    <td class="@CellClass(column)">@Cell(column, row.Item)</td>
-                                }
-                                @if (acting)
-                                {
-                                    <td class="@ActionsClass("td")">
-                                        <BxDataListRowActions TItem="TItem" Item="row.Item" Position="rowPosition" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
-                                    </td>
-                                }
-                            </DataListRowView>
+                            @RowFragment(row, selecting, acting, columns, rowIndex: null)
                         }
                     }
                 </tbody>
@@ -142,6 +134,28 @@
     /// <summary>Shown when the list has no rows. It receives the list, whose <see cref="DataListContext{TItem}.IsFiltered"/> tells "nothing matches" from "nothing exists". Without it, <see cref="BxDataListEmpty"/>.</summary>
     [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
 
+    /// <summary>
+    /// Renders only the rows around the scroll viewport with Blazor's <c>Virtualize</c>, using <c>tr</c> spacers, a sticky header and fixed single-line row heights matching
+    /// <see cref="DataListDensity"/> (36 px compact, 44 px default, 60 px comfortable). Meant for <see cref="DataListPagingMode.None"/> and <see cref="DataListPagingMode.Cursor"/> lists
+    /// with many loaded rows. Interactive only: static renders and prerenders draw regular rows without virtualization.
+    /// </summary>
+    [Parameter] public bool Virtualize { get; set; }
+
+    /// <summary>Height in pixels of one row when <see cref="Virtualize"/> is on. Without it, follows <see cref="DataListDensity"/> (36, 44 or 60 px).</summary>
+    [Parameter] public float? ItemSize { get; set; }
+
+    /// <summary>Extra rows rendered above and below the viewport when <see cref="Virtualize"/> is on (3 by default).</summary>
+    [Parameter] public int OverscanCount { get; set; } = 3;
+
+    private bool IsVirtualized => Virtualize && Context.IsInteractive;
+
+    private float EffectiveItemSize => ItemSize is > 0 ? ItemSize.Value : Context.Density switch
+    {
+        DataListDensity.Compact => 36f,
+        DataListDensity.Comfortable => 60f,
+        _ => 44f,
+    };
+
     // Parts that list the columns (a columns panel) render before the columns exist: they hear about a change in the registry once the table has rendered.
     protected override void OnAfterRender(bool firstRender)
     {
@@ -157,7 +171,7 @@
     protected override void OnParametersSet()
     {
         _parentRenders++;
-        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>
+        var variants = new Dictionary<string, string?>
         {
             ["density"] = Context.Density switch
             {
@@ -165,7 +179,9 @@
                 DataListDensity.Comfortable => "comfortable",
                 _ => "default",
             },
-        }, Ui, "tableRoot");
+        };
+        if (IsVirtualized) variants["virtualize"] = "true";
+        _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
     }
 
     // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
@@ -209,7 +225,25 @@
         }
     };
 
-    private sealed record RowEntry(object Key, TItem Item);
+    private sealed record RowEntry(object Key, TItem Item, int Position);
+
+    private RenderFragment RowFragment(RowEntry row, bool selecting, bool acting, List<View> columns, int? rowIndex) =>
+        @<DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="rowIndex" Class="@(selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"])">
+            @if (selecting)
+            {
+                <td class="@SelectClass("td")"><DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" /></td>
+            }
+            @foreach (var column in columns)
+            {
+                <td class="@CellClass(column)">@Cell(column, row.Item)</td>
+            }
+            @if (acting)
+            {
+                <td class="@ActionsClass("td")">
+                    <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
+                </td>
+            }
+        </DataListRowView>;
 
     // The rows with a key each: the row key of the schema, else the identity of the row. A schema whose keys repeat (a data error) falls back to the position.
     private List<RowEntry> RowEntries()
@@ -221,11 +255,13 @@
         {
             var seen = new HashSet<object>();
             var unique = true;
+            var pos = 0;
             foreach (var item in rows)
             {
+                pos++;
                 var key = schema.GetRowKey(item);
                 unique &= seen.Add(key);
-                entries.Add(new RowEntry(key, item));
+                entries.Add(new RowEntry(key, item, pos));
             }
             if (unique) return entries;
             entries.Clear();
@@ -235,7 +271,7 @@
         foreach (var item in rows)
         {
             object key = item is not null && identities.Add(new RowReferenceKey(item)) ? new RowReferenceKey(item) : index;
-            entries.Add(new RowEntry(key, item));
+            entries.Add(new RowEntry(key, item, index + 1));
             index++;
         }
         return entries;

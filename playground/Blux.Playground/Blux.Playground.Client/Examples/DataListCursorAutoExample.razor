@@ -1,0 +1,38 @@
+@using Blux.UI.Tools.Query
+@inject NavigationManager Navigation
+
+@* Automatic infinite scroll inside a scrollable container: scrolling near the bottom loads the next cursor page.
+   Adding ?failmore=1 makes the first load-more request fail once so the inline error and Retry button can be tried while keeping the loaded rows. *@
+<div class="w-full" data-testid="list-cursor-auto">
+    <BxDataList TItem="Invoice" Label="Invoices with infinite scroll" Schema="InvoiceData.Schema" Provider="LoadAsync" PagingMode="DataListPagingMode.Cursor" UrlKey="inf">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListResultCount />
+            <BxDataListRefresh />
+        </div>
+        <BxDataListErrorState />
+        <div class="max-h-72 overflow-y-auto rounded-(--blux-radius) border border-(--blux-border)" data-testid="cursor-scroll">
+            <BxDataListTable Caption="Invoices with infinite scroll" Class="border-0 rounded-none">
+                <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+                <BxDataListColumn Field="customer" />
+                <BxDataListColumn Field="status" />
+                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+            </BxDataListTable>
+            <BxDataListInfiniteLoader Root="[data-testid='cursor-scroll']" RootMargin="0px 0px 40px 0px" ShowEnd="true" />
+        </div>
+    </BxDataList>
+</div>
+
+@code {
+    private static readonly Invoice[] _items = InvoiceData.All[..35];
+    private bool _failedOnce;
+
+    private ValueTask<DataListResult<Invoice>> LoadAsync(DataListRequest request, CancellationToken cancellationToken)
+    {
+        if (request.Paging is DataListPaging.Cursor { After: not null } && !_failedOnce && new Uri(Navigation.Uri).Query.Contains("failmore=1", StringComparison.Ordinal))
+        {
+            _failedOnce = true;
+            throw new InvalidOperationException("Temporary load-more error.");
+        }
+        return ValueTask.FromResult(InvoiceData.Schema.ExecuteInMemory(_items, request));
+    }
+}

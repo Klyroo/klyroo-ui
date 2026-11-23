@@ -13,6 +13,7 @@ public sealed class DataListRowView<TItem> : ComponentBase
 {
     private object? _item;
     private int _revision;
+    private int? _rowIndex;
     private bool _rendered;
 
     /// <summary>The row.</summary>
@@ -20,6 +21,9 @@ public sealed class DataListRowView<TItem> : ComponentBase
 
     /// <summary>Changes when the cells must be built again.</summary>
     [Parameter] public int Revision { get; set; }
+
+    /// <summary>1-based row index in a virtualized table (2 for the first data row, after the header); <see langword="null"/> otherwise.</summary>
+    [Parameter] public int? RowIndex { get; set; }
 
     /// <summary>The classes of the row.</summary>
     [Parameter] public string? Class { get; set; }
@@ -31,7 +35,7 @@ public sealed class DataListRowView<TItem> : ComponentBase
     internal int BuildCount { get; private set; }
 
     // The first render does not ask: what was built is recorded when it is built.
-    protected override bool ShouldRender() => !(_rendered && ReferenceEquals(_item, Item) && _revision == Revision);
+    protected override bool ShouldRender() => !(_rendered && ReferenceEquals(_item, Item) && _revision == Revision && _rowIndex == RowIndex);
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
@@ -39,10 +43,12 @@ public sealed class DataListRowView<TItem> : ComponentBase
         _rendered = true;
         _item = Item;
         _revision = Revision;
+        _rowIndex = RowIndex;
         builder.OpenElement(0, "tr");
         builder.AddAttribute(1, "class", Class);
         builder.AddAttribute(2, "data-slot", "row");
-        builder.AddContent(3, ChildContent);
+        if (RowIndex is { } index) builder.AddAttribute(3, "aria-rowindex", index);
+        builder.AddContent(4, ChildContent);
         builder.CloseElement();
     }
 }

@@ -1,0 +1,42 @@
+@using Blux.UI.Tools.Query
+
+<BxDataList TItem="Person" Schema="Schema" Items="Provider is null ? Items : null" Provider="Provider"
+            PagingMode="PagingMode" Density="Density" UrlSync="UrlSync" UrlKey="@UrlKey"
+            Selectable="Selectable" @bind-SelectedKeys="SelectedKeys">
+    <BxDataListSearch />
+    <BxDataListResultCount />
+    <BxDataListErrorState />
+    <BxDataListTable Caption="People" Virtualize="Virtualize" ItemSize="ItemSize">
+        <BxDataListColumn Field="name" />
+        <BxDataListColumn Field="age" Align="DataListAlign.End" />
+    </BxDataListTable>
+    @if (IncludeLoader)
+    {
+        <BxDataListInfiniteLoader Auto="Auto" ShowEnd="ShowEnd" Label="@Label" ErrorTemplate="ErrorTemplate" />
+    }
+    @if (IncludePagination)
+    {
+        <BxDataListPagination />
+    }
+</BxDataList>
+
+@code {
+    [Parameter] public DataListSchema<Person> Schema { get; set; } = DataListControllerTests.Schema;
+    [Parameter] public IEnumerable<Person>? Items { get; set; } = DataListControllerTests.People;
+    [Parameter] public DataListProvider<Person>? Provider { get; set; }
+    [Parameter] public DataListPagingMode PagingMode { get; set; } = DataListPagingMode.Cursor;
+    [Parameter] public DataListDensity Density { get; set; }
+    [Parameter] public bool UrlSync { get; set; }
+    [Parameter] public string? UrlKey { get; set; }
+    [Parameter] public bool Auto { get; set; } = true;
+    [Parameter] public bool ShowEnd { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public RenderFragment<DataListContext<Person>>? ErrorTemplate { get; set; }
+    [Parameter] public bool Virtualize { get; set; }
+    [Parameter] public float? ItemSize { get; set; }
+    [Parameter] public bool IncludeLoader { get; set; } = true;
+    [Parameter] public bool IncludePagination { get; set; }
+    [Parameter] public bool? Selectable { get; set; }
+    [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
+    [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
+}
