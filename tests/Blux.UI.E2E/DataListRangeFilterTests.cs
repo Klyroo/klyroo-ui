@@ -46,9 +46,6 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
 
     private static AriaRole Control(string mode) => mode == "ssr" ? AriaRole.Link : AriaRole.Button;
 
-    private Task WaitForQuery(string expected) =>
-        Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query) == expected, new() { Timeout = 15_000 });
-
     private static Task ToTop(ILocator trigger) => trigger.EvaluateAsync("e => e.scrollIntoView({ block: 'start' })");
 
     private async Task OpenTag(ILocator list, string name, string dialog)
@@ -247,7 +244,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         await Editor(Date, "Edit filter Issued").GetByRole(Control(mode), new() { Name = "Last 7 days" }).ClickAsync();
 
         // Seven days ending today: the days of the browser, or in a static render the ones of UTC.
-        await Page.WaitForURLAsync(new Regex(@"\?dat\.f\.issued\.between=(?!2026-01-03)\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2}$"), new() { Timeout = 15_000 });
+        await Assertions.Expect(Page).ToHaveURLAsync(new Regex(@"\?dat\.f\.issued\.between=(?!2026-01-03)\d{4}-\d{2}-\d{2}\.\.\d{4}-\d{2}-\d{2}$"), new() { Timeout = 15_000 });
         var query = Uri.UnescapeDataString(new Uri(Page.Url).Query);
         var days = query[(query.IndexOf('=') + 1)..].Split("..").Select(d => DateOnly.ParseExact(d, "yyyy-MM-dd", CultureInfo.InvariantCulture)).ToArray();
         Assert.Equal(6, days[1].DayNumber - days[0].DayNumber);
@@ -267,7 +264,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         await presets.Nth(2).ClickAsync();
 
         // 1 January of the year it is: no invoice is issued after it before 3 January of 2026, whatever the year.
-        await Page.WaitForURLAsync(new Regex(@"\?dat\.f\.issued\.after=\d{4}-01-01$"), new() { Timeout = 15_000 });
+        await Assertions.Expect(Page).ToHaveURLAsync(new Regex(@"\?dat\.f\.issued\.after=\d{4}-01-01$"), new() { Timeout = 15_000 });
         await Assertions.Expect(Tag(Date, "Issued is after 1/1/")).ToBeVisibleAsync();
     }
 
@@ -343,7 +340,7 @@ public class DataListRangeFilterTests(PlaygroundServer server) : PlaygroundTest(
         await field.FillAsync("2026-01-07");
         if (mode == "ssr") await Editor(Date, "Edit filter Issued").GetByRole(AriaRole.Button, new() { Name = "Apply" }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query).Contains("dat.f.issued=2026-01-07"), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("dat.f.issued=2026-01-07");
         await Assertions.Expect(Tag(Date, "Issued is 1/7/2026")).ToBeVisibleAsync();
         await Assertions.Expect(Tag(Number, "Amount is 86.25")).ToBeVisibleAsync();
         await Assertions.Expect(Count(Date)).ToHaveTextAsync("1–1 of 1");

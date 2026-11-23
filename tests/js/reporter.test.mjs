@@ -34,6 +34,19 @@ test('a reporter created on an input that already rendered sequence N continues 
   assert.equal(reporter.isStale(), false);
 });
 
+test('a change reserved before its report makes the render made before it stale, and the report goes above the reservation', () => {
+  const el = host(3);
+  const reporter = new Reporter(el);
+  reporter.adopt();
+  assert.equal(reporter.isStale(), false);
+  reporter.reserve();
+  assert.equal(reporter.isStale(), true);
+  reporter.report('bx-toggle', { open: false });
+  assert.equal(el.events[0].detail.sequence, 5);
+  el.attributes.set('data-bx-seq', '5');
+  assert.equal(reporter.isStale(), false);
+});
+
 test('without adopting, a recreated input would treat an old render as current', () => {
   const el = host(5);
   const reporter = new Reporter(el);
