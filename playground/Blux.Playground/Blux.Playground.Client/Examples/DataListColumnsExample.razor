@@ -1,0 +1,50 @@
+@using Blux.UI.Tools.Query
+
+@* The column panel, resizing and pinning of a data list, remembered in a cookie (PreferencesKey): the first list has the plain case, the second one a selection column and row actions, which stay where they are.
+   Columns are never in the URL. Statically rendered, the page applies the cookie (hidden columns, order, pins, widths) at its first paint; the panel and the resize handles need the page to be interactive. *@
+<div class="flex w-full flex-col gap-8">
+    <div class="w-full" data-testid="list-columns">
+        <BxDataList TItem="Invoice" Label="Invoices with configurable columns" Schema="InvoiceData.Schema" Items="_items" UrlKey="cols" PreferencesKey="demo-cols">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <BxDataListSearch />
+                <div class="flex items-center gap-2">
+                    <BxDataListResultCount />
+                    <BxDataListColumnPanel SearchThreshold="3" />
+                    <BxDataListRefresh />
+                </div>
+            </div>
+            <BxDataListTable Caption="Invoices with configurable columns" Resizable="true">
+                <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" Width="90" Pinned="DataListPin.Start" />
+                <BxDataListColumn Field="customer" Required="true" Width="220" />
+                <BxDataListColumn Field="status" Width="140" />
+                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" Width="150" />
+                <BxDataListColumn Field="issued" Title="Issued date" Width="160" />
+            </BxDataListTable>
+            <BxDataListPagination />
+        </BxDataList>
+    </div>
+
+    <div class="w-full" data-testid="list-columns-fixed">
+        <BxDataList TItem="Invoice" Label="Invoices with selection and row actions" Schema="InvoiceData.Schema" Items="_items" UrlKey="fixed" PreferencesKey="demo-cols-fixed" Selectable="true">
+            <div class="flex flex-wrap items-center justify-end gap-2">
+                <BxDataListColumnPanel />
+            </div>
+            <BxDataListTable Caption="Invoices with selection and row actions" Resizable="true" RowActions="_actions" RowActionsMaxVisible="1">
+                <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" Width="90" />
+                <BxDataListColumn Field="customer" Width="220" />
+                <BxDataListColumn Field="status" Width="140" />
+                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" Width="150" />
+            </BxDataListTable>
+            <BxDataListPagination />
+        </BxDataList>
+    </div>
+</div>
+
+@code {
+    private static readonly Invoice[] _items = InvoiceData.All[..25];
+
+    private static readonly DataListRowAction<Invoice>[] _actions =
+    [
+        new() { Key = "open", Label = "Open", Icon = "download", Href = c => $"#invoice-{c.Item.Id}" },
+    ];
+}

@@ -1,4 +1,4 @@
 {
   "_": "Lucide icons embedded in Blux.UI.Tools, on top of those of Blux.UI. build/gen-icons.mjs writes them to src/Blux.UI.Tools/Icons/ToolsIcons.g.cs.",
-  "icons": ["search-x"]
+  "icons": ["search-x", "columns-3", "pin", "pin-off", "grip-vertical"]
 }

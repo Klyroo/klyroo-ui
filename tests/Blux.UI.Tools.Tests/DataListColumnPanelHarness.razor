@@ -1,0 +1,27 @@
+@using Blux.UI.Tools.Query
+
+<BxDataList TItem="Person" Schema="DataListControllerTests.Schema" Items="DataListControllerTests.People" UrlSync="false" PreferencesKey="@PreferencesKey"
+            PagingMode="PagingMode" Selectable="Selectable">
+    <BxDataListColumnPanel SearchThreshold="SearchThreshold" AllowReorder="AllowReorder" AllowPinning="AllowPinning" />
+    <BxDataListTable Caption="People" Resizable="Resizable" Virtualize="Virtualize" RowActions="RowActions">
+        <BxDataListColumn Field="name" Required="NameRequired" Width="180" />
+        <BxDataListColumn Field="age" Align="DataListAlign.End" Width="100" />
+        <BxDataListColumn Field="city" Visible="CityDefaultVisible" Pinned="CityDefaultPin" Width="CityWidth" />
+    </BxDataListTable>
+</BxDataList>
+
+@code {
+    [Parameter] public string? PreferencesKey { get; set; }
+    [Parameter] public bool Resizable { get; set; } = true;
+    [Parameter] public bool AllowReorder { get; set; } = true;
+    [Parameter] public bool AllowPinning { get; set; } = true;
+    [Parameter] public int SearchThreshold { get; set; } = 30;
+    [Parameter] public bool CityDefaultVisible { get; set; } = true;
+    [Parameter] public DataListPin CityDefaultPin { get; set; }
+    [Parameter] public int? CityWidth { get; set; }
+    [Parameter] public bool NameRequired { get; set; } = true;
+    [Parameter] public bool? Selectable { get; set; }
+    [Parameter] public bool Virtualize { get; set; }
+    [Parameter] public DataListPagingMode PagingMode { get; set; }
+    [Parameter] public IReadOnlyList<DataListRowAction<Person>>? RowActions { get; set; }
+}

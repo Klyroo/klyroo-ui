@@ -203,6 +203,7 @@
             throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} with a Provider or a Queryable needs a Schema: it is the schema that drops what a request must not ask for.");
         }
         UpdateSlots();
+        InitializeColumnPreferences();
         _schema = Schema;
         _executor = Services.GetService(typeof(IDataListQueryExecutor)) as IDataListQueryExecutor;
         if (UrlSync)
@@ -225,9 +226,13 @@
         }
     }
 
-    protected override Task OnInitializedAsync() =>
+    protected override async Task OnInitializedAsync()
+    {
+        // The columns the user chose are known before the rows: an interactive render that no prerender handed them to asks the browser first, so the rows never show up in other columns.
+        await LoadBrowserColumnPreferencesAsync();
         // A list without a schema waits for its table: the columns describe the schema, and they exist once the table rendered.
-        Schema is not null ? EnsureLoadedAsync() : Task.CompletedTask;
+        if (Schema is not null) await EnsureLoadedAsync();
+    }
 
     // Also from OnInitialized: with a source that loads asynchronously the first render happens before the first OnParametersSet.
     private void UpdateSlots() =>
@@ -668,6 +673,7 @@
         _subscription?.Dispose();
         _claim?.Dispose();
         _persistSubscription?.Dispose();
+        _columnsPersistSubscription?.Dispose();
         if (_claimedKey is not null && PersistedKeys.TryGetValue(Services, out var keys))
         {
             lock (keys) keys.Remove(_claimedKey);
