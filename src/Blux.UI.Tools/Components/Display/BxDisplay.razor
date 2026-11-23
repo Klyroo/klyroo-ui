@@ -1,0 +1,1334 @@
+@namespace Blux.UI.Tools
+@inherits BxToolsComponentBase
+@using System.Globalization
+@using Microsoft.JSInterop
+
+@*
+    Read-only display block component supporting the 19 display block kinds of nuxt-ui-tools:
+    Heading, Text, Alert, Facts, Stat, Breakdown, Meter, Chart, Table, Diff, Record, Person,
+    List, Timeline, Date, Media, Code, Empty and Accordion.
+*@
+<div class="@RootClass()" data-slot="display" data-kind="@KindKey" data-surface="@SurfaceKey" data-loading="@(Loading ? "true" : null)" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @RenderSkeleton()
+    }
+    else
+    {
+        @switch (Kind)
+        {
+            case DisplayKind.Heading:
+                @RenderHeading()
+                break;
+            case DisplayKind.Text:
+                @RenderText()
+                break;
+            case DisplayKind.Alert:
+                @RenderAlert()
+                break;
+            case DisplayKind.Facts:
+                @RenderFacts()
+                break;
+            case DisplayKind.Stat:
+                @RenderStat()
+                break;
+            case DisplayKind.Breakdown:
+                @RenderBreakdown()
+                break;
+            case DisplayKind.Meter:
+                @RenderMeter()
+                break;
+            case DisplayKind.Chart:
+                @RenderChart()
+                break;
+            case DisplayKind.Table:
+                @RenderTable()
+                break;
+            case DisplayKind.Diff:
+                @RenderDiff()
+                break;
+            case DisplayKind.Record:
+                @RenderRecord()
+                break;
+            case DisplayKind.Person:
+                @RenderPerson()
+                break;
+            case DisplayKind.List:
+                @RenderList()
+                break;
+            case DisplayKind.Timeline:
+                @RenderTimeline()
+                break;
+            case DisplayKind.Date:
+                @RenderDate()
+                break;
+            case DisplayKind.Media:
+                @RenderMedia()
+                break;
+            case DisplayKind.Code:
+                @RenderCode()
+                break;
+            case DisplayKind.Empty:
+                @RenderEmpty()
+                break;
+            case DisplayKind.Accordion:
+                @RenderAccordion()
+                break;
+        }
+    }
+</div>
+
+@code {
+    private bool _detailsOpen;
+    private bool _detailsInitialized;
+    private bool _secretRevealed;
+    private bool _textExpanded;
+    private int _revealedCount;
+    private readonly HashSet<int> _openAccordionIndices = [];
+    private bool _accordionInitialized;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private IServiceProvider Services { get; set; } = default!;
+
+    /// <summary>The display block kind to render.</summary>
+    [Parameter] public DisplayKind Kind { get; set; } = DisplayKind.Facts;
+
+    /// <summary>Visual variant within <see cref="Kind"/> (for example <c>"hero"</c>, <c>"trend"</c>, <c>"row"</c> for <see cref="DisplayKind.Stat"/>; <c>"bar"</c>, <c>"segments"</c>, <c>"ring"</c>, <c>"scale"</c> for <see cref="DisplayKind.Meter"/>; <c>"block"</c>, <c>"value"</c>, <c>"secret"</c> for <see cref="DisplayKind.Code"/>).</summary>
+    [Parameter] public string? Variant { get; set; }
+
+    /// <summary>Surface treatment (<see cref="DisplaySurface.Plain"/>, <see cref="DisplaySurface.Muted"/>, <see cref="DisplaySurface.Bordered"/> or <see cref="DisplaySurface.Elevated"/>). When <see langword="null"/>, uses the default surface of <see cref="Kind"/>.</summary>
+    [Parameter] public DisplaySurface? Surface { get; set; }
+
+    /// <summary>Primary accent tone of the block.</summary>
+    [Parameter] public BxColor Tone { get; set; } = BxColor.Primary;
+
+    /// <summary>Shows a layout-matched placeholder skeleton instead of the block content.</summary>
+    [Parameter] public bool Loading { get; set; }
+
+    /// <summary>Title or heading text of the block.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Primary text, message or value of the block.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Secondary description or caption text.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Unit or aside text (for <see cref="DisplayKind.Stat"/> or <see cref="DisplayKind.Chart"/>).</summary>
+    [Parameter] public string? Unit { get; set; }
+
+    /// <summary>Leading icon name.</summary>
+    [Parameter] public string? Icon { get; set; }
+
+    /// <summary>Heading level (<c>2</c> to <c>6</c>, <c>3</c> by default) for <see cref="DisplayKind.Heading"/>.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+
+    /// <summary>Count badge text for <see cref="DisplayKind.Heading"/> or <see cref="DisplayKind.Record"/>.</summary>
+    [Parameter] public string? Count { get; set; }
+
+    /// <summary>Chip displayed beside the title or value.</summary>
+    [Parameter] public DisplayChip? Chip { get; set; }
+
+    /// <summary>Primary action of the block.</summary>
+    [Parameter] public DisplayAction? Action { get; set; }
+
+    /// <summary>Action buttons of the block.</summary>
+    [Parameter] public IReadOnlyList<DisplayAction>? Actions { get; set; }
+
+    /// <summary>Paragraphs for <see cref="DisplayKind.Text"/>.</summary>
+    [Parameter] public IReadOnlyList<string>? Paragraphs { get; set; }
+
+    /// <summary>Quote author for <see cref="DisplayKind.Text"/> (<c>Variant="quote"</c>).</summary>
+    [Parameter] public string? Author { get; set; }
+
+    /// <summary>Quote or record metadata text.</summary>
+    [Parameter] public string? Meta { get; set; }
+
+    /// <summary>Maximum number of text lines before clamping with a Read more toggle (<see cref="DisplayKind.Text"/>).</summary>
+    [Parameter] public int? MaxLines { get; set; }
+
+    /// <summary>Collapsible details text (<see cref="DisplayKind.Alert"/>) or footnote (<see cref="DisplayKind.Breakdown"/>).</summary>
+    [Parameter] public string? Details { get; set; }
+
+    /// <summary>Whether collapsible details or breakdown lines start open (<see langword="false"/> by default).</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
+
+    /// <summary>Fact items for <see cref="DisplayKind.Facts"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayFact>? Facts { get; set; }
+
+    /// <summary>Grouped facts for <see cref="DisplayKind.Facts"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayFactGroup>? FactGroups { get; set; }
+
+    /// <summary>Delta text (for example <c>"+12.4%"</c>) for <see cref="DisplayKind.Stat"/>.</summary>
+    [Parameter] public string? Delta { get; set; }
+
+    /// <summary>Delta direction (<c>"up"</c>, <c>"down"</c> or <c>"flat"</c>) for <see cref="DisplayKind.Stat"/>.</summary>
+    [Parameter] public string DeltaDirection { get; set; } = "up";
+
+    /// <summary>Sparkline numeric series (2 or more points) for <see cref="DisplayKind.Stat"/>.</summary>
+    [Parameter] public IReadOnlyList<double>? Trend { get; set; }
+
+    /// <summary>Row metrics for <see cref="DisplayKind.Stat"/> (<c>Variant="row"</c>).</summary>
+    [Parameter] public IReadOnlyList<DisplayStatItem>? StatItems { get; set; }
+
+    /// <summary>Line items for <see cref="DisplayKind.Breakdown"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayBreakdownLine>? BreakdownLines { get; set; }
+
+    /// <summary>Total line for <see cref="DisplayKind.Breakdown"/>.</summary>
+    [Parameter] public DisplayBreakdownLine? BreakdownTotal { get; set; }
+
+    /// <summary>Comparison column headings for <see cref="DisplayKind.Breakdown"/> (<c>Variant="compare"</c>).</summary>
+    [Parameter] public (string First, string Second)? CompareColumns { get; set; }
+
+    /// <summary>Numeric value for <see cref="DisplayKind.Meter"/>.</summary>
+    [Parameter] public double MeterValue { get; set; }
+
+    /// <summary>Maximum numeric value for <see cref="DisplayKind.Meter"/> (<c>100</c> by default).</summary>
+    [Parameter] public double MeterMax { get; set; } = 100;
+
+    /// <summary>Warning percentage threshold (0..100) for <see cref="DisplayKind.Meter"/>.</summary>
+    [Parameter] public double? WarningThreshold { get; set; }
+
+    /// <summary>Error percentage threshold (0..100) for <see cref="DisplayKind.Meter"/>.</summary>
+    [Parameter] public double? ErrorThreshold { get; set; }
+
+    /// <summary>Segments or parts for <see cref="DisplayKind.Meter"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayMeterPart>? MeterParts { get; set; }
+
+    /// <summary>Discrete level labels for <see cref="DisplayKind.Meter"/> (<c>Variant="scale"</c>).</summary>
+    [Parameter] public IReadOnlyList<string>? MeterLevels { get; set; }
+
+    /// <summary>Zero-based current level index for <see cref="DisplayKind.Meter"/> (<c>Variant="scale"</c>).</summary>
+    [Parameter] public int? CurrentLevel { get; set; }
+
+    /// <summary>Data points for <see cref="DisplayKind.Chart"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayChartPoint>? ChartData { get; set; }
+
+    /// <summary>Columns for <see cref="DisplayKind.Table"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayTableColumn>? TableColumns { get; set; }
+
+    /// <summary>Rows (keyed by column key) for <see cref="DisplayKind.Table"/>.</summary>
+    [Parameter] public IReadOnlyList<IReadOnlyDictionary<string, string?>>? TableRows { get; set; }
+
+    /// <summary>Optional footer cell values (keyed by column key) for <see cref="DisplayKind.Table"/>.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string?>? TableFooter { get; set; }
+
+    /// <summary>Diff entries for <see cref="DisplayKind.Diff"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayDiffItem>? DiffItems { get; set; }
+
+    /// <summary>Shows unchanged diff rows when <see langword="true"/> (<see langword="false"/> by default).</summary>
+    [Parameter] public bool ShowUnchanged { get; set; }
+
+    /// <summary>Record items for <see cref="DisplayKind.Record"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayRecordItem>? Records { get; set; }
+
+    /// <summary>People for <see cref="DisplayKind.Person"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayPersonItem>? People { get; set; }
+
+    /// <summary>Contact entries for <see cref="DisplayKind.Person"/> (<c>Variant="contact"</c>).</summary>
+    [Parameter] public IReadOnlyList<DisplayContactItem>? Contacts { get; set; }
+
+    /// <summary>List items for <see cref="DisplayKind.List"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayListItem>? ListItems { get; set; }
+
+    /// <summary>Timeline items for <see cref="DisplayKind.Timeline"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayTimelineItem>? TimelineItems { get; set; }
+
+    /// <summary>Date value for <see cref="DisplayKind.Date"/>.</summary>
+    [Parameter] public DateTimeOffset? DateValue { get; set; }
+
+    /// <summary>End date for <see cref="DisplayKind.Date"/> (<c>Variant="range"</c>).</summary>
+    [Parameter] public DateTimeOffset? EndDateValue { get; set; }
+
+    /// <summary>Reference "now" timestamp for <see cref="DisplayKind.Date"/> (<c>Variant="countdown"</c>) or <see cref="DisplayKind.Timeline"/>.</summary>
+    [Parameter] public DateTimeOffset? Now { get; set; }
+
+    /// <summary>Code language (<c>"json"</c> enables token highlighting) for <see cref="DisplayKind.Code"/>.</summary>
+    [Parameter] public string? Language { get; set; }
+
+    /// <summary>Number of trailing characters left visible when <see cref="DisplayKind.Code"/> is in <c>Variant="secret"</c> (<c>4</c> by default).</summary>
+    [Parameter] public int VisibleChars { get; set; } = 4;
+
+    /// <summary>Whether to show a copy button on <see cref="DisplayKind.Code"/> (<see langword="true"/> by default).</summary>
+    [Parameter] public bool Copy { get; set; } = true;
+
+    /// <summary>Accordion items for <see cref="DisplayKind.Accordion"/>.</summary>
+    [Parameter] public IReadOnlyList<DisplayAccordionItem>? AccordionItems { get; set; }
+
+    /// <summary>Allows multiple accordion items to be open at once (<see langword="false"/> by default).</summary>
+    [Parameter] public bool Multiple { get; set; }
+
+    /// <summary>Media source URL for <see cref="DisplayKind.Media"/>.</summary>
+    [Parameter] public string? Src { get; set; }
+
+    /// <summary>Media gallery image URLs for <see cref="DisplayKind.Media"/> (<c>Variant="gallery"</c>).</summary>
+    [Parameter] public IReadOnlyList<string>? Images { get; set; }
+
+    /// <summary>Maximum number of items initially revealed before a "Show more" button (<see langword="null"/> shows all).</summary>
+    [Parameter] public int? Max { get; set; }
+
+    /// <summary>Number of additional items revealed per click on "Show more" (when <see langword="null"/>, reveals all remaining items).</summary>
+    [Parameter] public int? Step { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!_detailsInitialized)
+        {
+            _detailsInitialized = true;
+            _detailsOpen = DefaultOpen;
+        }
+        if (Max is { } m && _revealedCount < m)
+        {
+            _revealedCount = m;
+        }
+        if (!_accordionInitialized && AccordionItems is { Count: > 0 })
+        {
+            _accordionInitialized = true;
+            for (var i = 0; i < AccordionItems.Count; i++)
+            {
+                if (AccordionItems[i].DefaultOpen)
+                {
+                    _openAccordionIndices.Add(i);
+                    if (!Multiple) break;
+                }
+            }
+        }
+    }
+
+    private string KindKey => Kind.ToString().ToLowerInvariant();
+
+    private DisplaySurface EffectiveSurface => Surface ?? Kind switch
+    {
+        DisplayKind.Facts or DisplayKind.Breakdown or DisplayKind.Table or DisplayKind.Record or DisplayKind.Code => DisplaySurface.Bordered,
+        DisplayKind.Stat => string.Equals(Variant, "row", StringComparison.OrdinalIgnoreCase) ? DisplaySurface.Bordered
+            : string.Equals(Variant, "hero", StringComparison.OrdinalIgnoreCase) || Variant is null ? DisplaySurface.Muted
+            : DisplaySurface.Plain,
+        DisplayKind.Alert => DisplaySurface.Muted,
+        _ => DisplaySurface.Plain,
+    };
+
+    private string SurfaceKey => EffectiveSurface.ToString().ToLowerInvariant();
+
+    private string RootClass()
+    {
+        var surfaceClass = EffectiveSurface switch
+        {
+            DisplaySurface.Muted => "rounded-(--blux-radius) bg-(--blux-bg-muted) p-4",
+            DisplaySurface.Bordered => "rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg) p-4",
+            DisplaySurface.Elevated => "rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg-elevated) p-4 shadow-sm",
+            _ => "",
+        };
+        return $"flex w-full min-w-0 flex-col gap-3 text-sm text-(--blux-text) {surfaceClass} {Class}".Trim();
+    }
+
+    private (IReadOnlyList<T> Visible, int Remaining) ApplyReveal<T>(IReadOnlyList<T>? source)
+    {
+        if (source is null || source.Count == 0) return ([], 0);
+        if (Max is not { } max || max <= 0) return (source, 0);
+        var limit = Math.Max(max, _revealedCount);
+        if (source.Count <= limit) return (source, 0);
+        var nextBatch = Step is > 0 ? Math.Min(Step.Value, source.Count - limit) : source.Count - limit;
+        return (source.Take(limit).ToList(), nextBatch);
+    }
+
+    private void RevealMore(int totalCount)
+    {
+        var current = Math.Max(Max ?? 0, _revealedCount);
+        _revealedCount = Step is > 0 ? Math.Min(totalCount, current + Step.Value) : totalCount;
+    }
+
+    private RenderFragment RenderRevealButton(int nextCount, int totalCount) =>
+        @<button type="button" class="inline-flex items-center gap-1.5 self-start rounded-(--blux-radius) px-2 py-1 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text) focus-visible:outline-2 focus-visible:outline-(--blux-primary-text)"
+                 data-slot="display-more" @onclick="@(() => RevealMore(totalCount))">
+            <span>Show more · @nextCount</span>
+            @RenderIcon("chevron-down", "size-3.5")
+        </button>;
+
+    private async Task CopyToClipboardAsync(string? text)
+    {
+        if (string.IsNullOrEmpty(text) || !RendererInfo.IsInteractive) return;
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private RenderFragment RenderSkeleton() =>
+        @<div class="flex flex-col gap-2.5" data-slot="display-skeleton" aria-busy="true">
+            <BxSkeleton Class="h-5 w-1/3" />
+            <BxSkeleton Class="h-4 w-2/3" />
+            <BxSkeleton Class="h-4 w-1/2" />
+        </div>;
+
+    private RenderFragment RenderHeading() =>
+        @<div class="flex flex-wrap items-center justify-between gap-2" data-slot="display-heading">
+            <div class="flex min-w-0 items-center gap-2.5">
+                @if (!string.IsNullOrEmpty(Icon))
+                {
+                    <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--blux-radius) bg-(--blux-bg-muted) text-(--blux-primary-text)">
+                        @RenderIcon(Icon, "size-4")
+                    </span>
+                }
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    <div class="flex items-center gap-2">
+                        @if (string.Equals(Variant, "eyebrow", StringComparison.OrdinalIgnoreCase))
+                        {
+                            <span class="text-xs font-semibold tracking-wider uppercase text-(--blux-text-muted)" data-slot="heading-title">@Title</span>
+                        }
+                        else
+                        {
+                            <h3 class="m-0 truncate text-base font-semibold text-(--blux-text-highlighted)" data-slot="heading-title">@Title</h3>
+                        }
+                        @if (!string.IsNullOrEmpty(Count))
+                        {
+                            <span class="inline-flex items-center rounded-full border border-(--blux-border-accented) px-2 py-0.5 text-xs font-medium tabular-nums text-(--blux-text-muted)" data-slot="heading-count">@Count</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Description))
+                    {
+                        <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="heading-description">@Description</p>
+                    }
+                </div>
+            </div>
+            @if (Action is not null)
+            {
+                @RenderAction(Action)
+            }
+        </div>;
+
+    private RenderFragment RenderText() =>
+        @<div class="@(string.Equals(Variant, "quote", StringComparison.OrdinalIgnoreCase) ? "border-s-2 border-(--blux-primary-text) ps-3 italic" : "flex flex-col gap-2")" data-slot="display-text">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <p class="m-0 font-semibold text-(--blux-text-highlighted)">@Title</p>
+            }
+            @if (Paragraphs is { Count: > 0 })
+            {
+                @foreach (var p in Paragraphs)
+                {
+                    <p class="m-0 text-(--blux-text)">@p</p>
+                }
+            }
+            else if (!string.IsNullOrEmpty(Value))
+            {
+                <p class="m-0 @(MaxLines is > 0 && !_textExpanded ? "line-clamp-2" : "")" data-slot="text-body">@Value</p>
+            }
+            @if (MaxLines is > 0)
+            {
+                <button type="button" class="self-start text-xs font-medium text-(--blux-primary-text) hover:underline"
+                        data-slot="text-toggle" @onclick="@(() => _textExpanded = !_textExpanded)">
+                    @(_textExpanded ? "Show less" : "Read more")
+                </button>
+            }
+            @if (!string.IsNullOrEmpty(Author) || !string.IsNullOrEmpty(Meta))
+            {
+                <footer class="text-xs not-italic text-(--blux-text-muted)">
+                    @string.Join(" · ", new[] { Author, Meta }.Where(s => !string.IsNullOrWhiteSpace(s)))
+                </footer>
+            }
+        </div>;
+
+    private RenderFragment RenderAlert() =>
+        @<div class="flex items-start gap-3" role="@(Tone == BxColor.Error || Tone == BxColor.Warning ? "status" : null)" data-slot="display-alert">
+            @if (Icon != "")
+            {
+                var iconName = !string.IsNullOrEmpty(Icon) ? Icon
+                    : Tone == BxColor.Success ? "circle-check"
+                    : Tone == BxColor.Warning ? "triangle-alert"
+                    : Tone == BxColor.Error ? "circle-x"
+                    : "info";
+                <span class="mt-0.5 shrink-0 text-(--blux-text-highlighted)">@RenderIcon(iconName, "size-4")</span>
+            }
+            <div class="flex min-w-0 flex-1 flex-col gap-1.5">
+                @if (!string.IsNullOrEmpty(Title))
+                {
+                    <p class="m-0 font-semibold text-(--blux-text-highlighted)" data-slot="alert-title">@Title</p>
+                }
+                @if (!string.IsNullOrEmpty(Value) || !string.IsNullOrEmpty(Description))
+                {
+                    <p class="m-0 text-(--blux-text-muted)" data-slot="alert-message">@(Value ?? Description)</p>
+                }
+                @if (!string.IsNullOrEmpty(Details))
+                {
+                    <button type="button" class="inline-flex items-center gap-1 self-start text-xs font-medium text-(--blux-text-highlighted) hover:underline"
+                            aria-expanded="@(_detailsOpen ? "true" : "false")" data-slot="alert-details-toggle"
+                            @onclick="@(() => _detailsOpen = !_detailsOpen)">
+                        <span>@(_detailsOpen ? "Hide details" : "Show details")</span>
+                        @RenderIcon(_detailsOpen ? "chevron-up" : "chevron-down", "size-3.5")
+                    </button>
+                    @if (_detailsOpen)
+                    {
+                        <div class="rounded-(--blux-radius) bg-(--blux-bg) p-2.5 text-xs text-(--blux-text-muted)" data-slot="alert-details">@Details</div>
+                    }
+                }
+                @if (Actions is { Count: > 0 })
+                {
+                    <div class="mt-1 flex flex-wrap items-center gap-2">
+                        @foreach (var act in Actions)
+                        {
+                            @RenderAction(act)
+                        }
+                    </div>
+                }
+            </div>
+        </div>;
+
+    private RenderFragment RenderFacts() =>
+        @<div class="flex flex-col gap-3" data-slot="display-facts">
+            @if (FactGroups is { Count: > 0 })
+            {
+                @foreach (var grp in FactGroups)
+                {
+                    <div class="flex flex-col gap-2" data-slot="fact-group">
+                        @if (!string.IsNullOrEmpty(grp.Title) || !string.IsNullOrEmpty(grp.Aside))
+                        {
+                            <div class="flex items-center justify-between gap-2 border-b border-(--blux-border) pb-1">
+                                <span class="text-xs font-semibold text-(--blux-text-highlighted)">@grp.Title</span>
+                                @if (!string.IsNullOrEmpty(grp.Aside))
+                                {
+                                    <span class="text-xs text-(--blux-text-muted)">@grp.Aside</span>
+                                }
+                            </div>
+                        }
+                        @RenderFactList(grp.Items)
+                    </div>
+                }
+            }
+            else if (Facts is { Count: > 0 })
+            {
+                var (visible, remaining) = ApplyReveal(Facts);
+                @RenderFactList(visible)
+                @if (remaining > 0)
+                {
+                    @RenderRevealButton(remaining, Facts.Count)
+                }
+            }
+            else
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="display-empty-line">—</p>
+            }
+        </div>;
+
+    private RenderFragment RenderFactList(IReadOnlyList<DisplayFact> items) =>
+        @<dl class="m-0 divide-y divide-(--blux-border)">
+            @foreach (var fact in items)
+            {
+                var isEmpty = string.IsNullOrWhiteSpace(fact.Value) && fact.Chip is null;
+                <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0" data-slot="fact-item">
+                    <dt class="flex items-center gap-1.5 text-xs font-medium text-(--blux-text-muted)" data-slot="fact-label">
+                        @if (!string.IsNullOrEmpty(fact.Icon))
+                        {
+                            @RenderIcon(fact.Icon, "size-3.5 shrink-0")
+                        }
+                        <span>@fact.Label</span>
+                    </dt>
+                    <dd class="m-0 flex items-center gap-1.5 text-end @(fact.Mono ? "font-mono" : "") @(fact.Emphasis ? "font-semibold text-(--blux-text-highlighted)" : "text-(--blux-text)")" data-slot="fact-value">
+                        @if (fact.Loading)
+                        {
+                            <BxSkeleton Class="h-4 w-20" />
+                        }
+                        else if (fact.Chip is { } chip)
+                        {
+                            <BxBadge Label="@chip.Label" Color="@(chip.Color ?? BxColor.Neutral)" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                        }
+                        else if (isEmpty)
+                        {
+                            <span class="text-(--blux-text-dimmed)" data-slot="fact-empty">—</span>
+                        }
+                        else if (!string.IsNullOrEmpty(fact.Href))
+                        {
+                            <a href="@fact.Href" class="text-(--blux-primary-text) hover:underline">@fact.Value</a>
+                        }
+                        else
+                        {
+                            <span>@fact.Value</span>
+                        }
+                        @if ((fact.Copy || !string.IsNullOrEmpty(fact.CopyText)) && !isEmpty)
+                        {
+                            var toCopy = fact.CopyText ?? fact.Value;
+                            <button type="button" class="inline-flex size-6 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    aria-label="@($"Copy {fact.Label}")" data-slot="fact-copy"
+                                    @onclick="@(() => CopyToClipboardAsync(toCopy))">
+                                @RenderIcon("copy", "size-3.5")
+                            </button>
+                        }
+                    </dd>
+                </div>
+            }
+        </dl>;
+
+    private RenderFragment RenderStat() =>
+        @<div class="flex flex-col gap-2" data-slot="display-stat">
+            @if (string.Equals(Variant, "row", StringComparison.OrdinalIgnoreCase) && StatItems is { Count: > 0 })
+            {
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-3" data-slot="stat-row">
+                    @foreach (var item in StatItems)
+                    {
+                        <div class="flex flex-col gap-0.5" data-slot="stat-item">
+                            <span class="text-xs font-medium text-(--blux-text-muted)">@item.Label</span>
+                            <span class="text-xl font-bold tabular-nums text-(--blux-text-highlighted)">@item.Value</span>
+                            @if (!string.IsNullOrEmpty(item.Caption))
+                            {
+                                <span class="text-xs text-(--blux-text-muted)">@item.Caption</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                @if (!string.IsNullOrEmpty(Title))
+                {
+                    <span class="text-xs font-medium text-(--blux-text-muted)" data-slot="stat-label">@Title</span>
+                }
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <div class="flex items-baseline gap-1.5">
+                        <span class="text-2xl font-bold tabular-nums text-(--blux-text-highlighted)" data-slot="stat-value">@(Value ?? "—")</span>
+                        @if (!string.IsNullOrEmpty(Unit))
+                        {
+                            <span class="text-xs font-medium text-(--blux-text-muted)" data-slot="stat-unit">@Unit</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Delta))
+                    {
+                        var deltaColor = DeltaDirection switch
+                        {
+                            "down" => BxColor.Error,
+                            "flat" => BxColor.Neutral,
+                            _ => BxColor.Success,
+                        };
+                        <BxBadge Label="@Delta" Color="deltaColor" Variant="BxVariant.Subtle" Size="BxSize.Sm" data-slot="stat-delta" />
+                    }
+                </div>
+                @if (Trend is { Count: >= 2 })
+                {
+                    @RenderSparkline(Trend)
+                }
+                @if (!string.IsNullOrEmpty(Description))
+                {
+                    <span class="text-xs text-(--blux-text-muted)" data-slot="stat-caption">@Description</span>
+                }
+            }
+        </div>;
+
+    private RenderFragment RenderSparkline(IReadOnlyList<double> points)
+    {
+        var min = points.Min();
+        var max = points.Max();
+        var range = max - min <= 0 ? 1 : max - min;
+        var coords = new List<string>(points.Count);
+        for (var i = 0; i < points.Count; i++)
+        {
+            var x = (i * 100.0 / (points.Count - 1)).ToString("0.#", CultureInfo.InvariantCulture);
+            var y = (28.0 - ((points[i] - min) / range * 24.0)).ToString("0.#", CultureInfo.InvariantCulture);
+            coords.Add($"{x},{y}");
+        }
+        var polyline = string.Join(' ', coords);
+        return @<svg viewBox="0 0 100 30" class="h-8 w-full overflow-visible text-(--blux-primary-text)" data-slot="stat-sparkline" aria-hidden="true">
+            <polyline fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="@polyline" />
+        </svg>;
+    }
+
+    private RenderFragment RenderBreakdown() =>
+        @<div class="flex flex-col gap-2" data-slot="display-breakdown">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <p class="m-0 font-semibold text-(--blux-text-highlighted)">@Title</p>
+            }
+            @if (string.Equals(Variant, "collapsible", StringComparison.OrdinalIgnoreCase))
+            {
+                <button type="button" class="inline-flex items-center gap-1 self-start text-xs font-medium text-(--blux-primary-text) hover:underline"
+                        aria-expanded="@(_detailsOpen ? "true" : "false")" data-slot="breakdown-toggle"
+                        @onclick="@(() => _detailsOpen = !_detailsOpen)">
+                    <span>@(_detailsOpen ? "Hide details" : "Details")</span>
+                    @RenderIcon(_detailsOpen ? "chevron-up" : "chevron-down", "size-3.5")
+                </button>
+            }
+            @if (!string.Equals(Variant, "collapsible", StringComparison.OrdinalIgnoreCase) || _detailsOpen)
+            {
+                @if (BreakdownLines is { Count: > 0 })
+                {
+                    <div class="flex flex-col gap-1.5" data-slot="breakdown-lines">
+                        @foreach (var line in BreakdownLines)
+                        {
+                            <div class="flex items-baseline justify-between gap-2 @(line.IsSubtotal ? "border-t border-(--blux-border) pt-1.5 font-semibold text-(--blux-text-highlighted)" : line.IsMuted ? "text-(--blux-text-dimmed)" : "")" data-slot="breakdown-line">
+                                <span>@line.Label</span>
+                                <span class="tabular-nums">@(line.Value ?? "—")</span>
+                            </div>
+                        }
+                    </div>
+                }
+            }
+            @if (BreakdownTotal is { } total)
+            {
+                <div class="flex items-baseline justify-between gap-2 border-t border-(--blux-border-accented) pt-2 font-semibold text-(--blux-text-highlighted)" data-slot="breakdown-total">
+                    <span>@total.Label</span>
+                    <span class="tabular-nums">@total.Value</span>
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Details))
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="breakdown-footnote">@Details</p>
+            }
+        </div>;
+
+    private RenderFragment RenderMeter()
+    {
+        var max = MeterMax > 0 ? MeterMax : (MeterParts is { Count: > 0 } ? Math.Max(1, MeterParts.Sum(p => p.Value)) : 100);
+        var val = Math.Clamp(MeterValue, 0, max);
+        var pct = Math.Clamp(val / max * 100.0, 0, 100);
+        var effectiveTone = ErrorThreshold is { } err && pct >= err ? "bg-(--blux-error)"
+            : WarningThreshold is { } warn && pct >= warn ? "bg-(--blux-warning)"
+            : "bg-(--blux-primary)";
+
+        return @<div class="flex flex-col gap-2" data-slot="display-meter" data-tone="@(ErrorThreshold is { } e && pct >= e ? "error" : WarningThreshold is { } w && pct >= w ? "warning" : "primary")">
+            @if (!string.IsNullOrEmpty(Title) || !string.IsNullOrEmpty(Value))
+            {
+                <div class="flex items-baseline justify-between gap-2">
+                    <span class="text-xs font-medium text-(--blux-text-muted)" data-slot="meter-label">@Title</span>
+                    <span class="text-xs font-semibold tabular-nums text-(--blux-text-highlighted)" data-slot="meter-value">@(Value ?? $"{val:0.##} / {max:0.##}")</span>
+                </div>
+            }
+            @if (string.Equals(Variant, "scale", StringComparison.OrdinalIgnoreCase) && MeterLevels is { Count: > 0 })
+            {
+                <div class="grid gap-1.5" style="@($"grid-template-columns:repeat({MeterLevels.Count},minmax(0,1fr))")" data-slot="meter-scale">
+                    @for (var i = 0; i < MeterLevels.Count; i++)
+                    {
+                        var reached = CurrentLevel is { } cur && i <= cur;
+                        <div class="rounded-(--blux-radius) border px-2 py-1 text-center text-xs font-medium @(reached ? "border-(--blux-primary-text) bg-(--blux-bg-muted) text-(--blux-text-highlighted)" : "border-(--blux-border) text-(--blux-text-muted)")"
+                             data-slot="meter-level" data-active="@(CurrentLevel == i ? "true" : null)">
+                            @MeterLevels[i]
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="flex h-2.5 w-full overflow-hidden rounded-full bg-(--blux-bg-muted)"
+                     role="meter" aria-label="@(Title ?? "Meter")"
+                     aria-valuenow="@val.ToString("0.##", CultureInfo.InvariantCulture)"
+                     aria-valuemin="0"
+                     aria-valuemax="@max.ToString("0.##", CultureInfo.InvariantCulture)"
+                     data-slot="meter-track">
+                    @if (MeterParts is { Count: > 0 })
+                    {
+                        @foreach (var part in MeterParts)
+                        {
+                            var partPct = Math.Clamp(part.Value / max * 100.0, 0, 100).ToString("0.##", CultureInfo.InvariantCulture);
+                            <div class="h-full bg-(--blux-primary) first:rounded-s-full last:rounded-e-full" style="@($"width:{partPct}%")" title="@($"{part.Label}: {part.Value}")" data-slot="meter-part"></div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="h-full rounded-full @effectiveTone" style="@($"width:{pct.ToString("0.##", CultureInfo.InvariantCulture)}%")" data-slot="meter-bar"></div>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <span class="text-xs text-(--blux-text-muted)" data-slot="meter-caption">@Description</span>
+            }
+        </div>;
+    }
+
+    private RenderFragment RenderChart() =>
+        @<div class="flex flex-col gap-2.5" data-slot="display-chart">
+            @if (!string.IsNullOrEmpty(Title) || !string.IsNullOrEmpty(Unit))
+            {
+                <div class="flex items-baseline justify-between gap-2">
+                    <span class="font-semibold text-(--blux-text-highlighted)" data-slot="chart-title">@Title</span>
+                    @if (!string.IsNullOrEmpty(Unit))
+                    {
+                        <span class="text-xs text-(--blux-text-muted)">@Unit</span>
+                    }
+                </div>
+            }
+            @if (ChartData is not { Count: > 0 })
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="chart-empty">No data</p>
+            }
+            else if (string.Equals(Variant, "funnel", StringComparison.OrdinalIgnoreCase))
+            {
+                var first = Math.Max(1.0, ChartData[0].Value);
+                <div class="flex flex-col gap-2" data-slot="chart-funnel">
+                    @for (var i = 0; i < ChartData.Count; i++)
+                    {
+                        var pt = ChartData[i];
+                        var widthPct = Math.Clamp(pt.Value / first * 100.0, 4, 100).ToString("0.#", CultureInfo.InvariantCulture);
+                        var rate = i > 0 && ChartData[i - 1].Value > 0 ? $"{Math.Round(pt.Value / ChartData[i - 1].Value * 100)}%" : null;
+                        <div class="flex flex-col gap-1" data-slot="funnel-step">
+                            <div class="flex items-baseline justify-between gap-2 text-xs">
+                                <span class="font-medium text-(--blux-text)">@pt.Label</span>
+                                <span class="tabular-nums text-(--blux-text-muted)">@pt.Value @(rate is not null ? $"({rate})" : "")</span>
+                            </div>
+                            <div class="h-2 rounded-full bg-(--blux-primary)" style="@($"width:{widthPct}%")"></div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                var max = Math.Max(1.0, ChartData.Max(d => d.Value));
+                <div class="flex h-24 items-end gap-2 pt-4" data-slot="chart-bars">
+                    @foreach (var pt in ChartData)
+                    {
+                        var hPct = Math.Clamp(pt.Value / max * 100.0, 6, 100).ToString("0.#", CultureInfo.InvariantCulture);
+                        <div class="flex flex-1 flex-col items-center gap-1" title="@($"{pt.Label}: {pt.Value}")" data-slot="chart-bar">
+                            <div class="w-full rounded-t-sm bg-(--blux-primary)" style="@($"height:{hPct}%")"></div>
+                            <span class="max-w-full truncate text-[11px] text-(--blux-text-muted)">@pt.Label</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>;
+
+    private RenderFragment RenderTable()
+    {
+        var cols = TableColumns ?? [];
+        var (visibleRows, remaining) = ApplyReveal(TableRows);
+        return @<div class="flex flex-col gap-2" data-slot="display-table">
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="border-b border-(--blux-border) text-xs font-semibold text-(--blux-text-muted)">
+                        <tr>
+                            @foreach (var col in cols)
+                            {
+                                <th scope="col" class="px-3 py-2 @(col.Numeric || col.Align == DataListAlign.End ? "text-end" : "text-start")">@col.Label</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-(--blux-border)">
+                        @foreach (var row in visibleRows)
+                        {
+                            <tr data-slot="display-table-row">
+                                @foreach (var col in cols)
+                                {
+                                    row.TryGetValue(col.Key, out var val);
+                                    <td class="px-3 py-2 @(col.Numeric || col.Align == DataListAlign.End ? "text-end tabular-nums" : "text-start") @(col.Mono ? "font-mono" : "")">@(val ?? "—")</td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                    @if (TableFooter is { Count: > 0 })
+                    {
+                        <tfoot class="border-t border-(--blux-border-accented) font-semibold text-(--blux-text-highlighted)">
+                            <tr>
+                                @foreach (var col in cols)
+                                {
+                                    TableFooter.TryGetValue(col.Key, out var fVal);
+                                    <td class="px-3 py-2 @(col.Numeric || col.Align == DataListAlign.End ? "text-end tabular-nums" : "text-start")">@fVal</td>
+                                }
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+            @if (remaining > 0 && TableRows is not null)
+            {
+                @RenderRevealButton(remaining, TableRows.Count)
+            }
+        </div>;
+    }
+
+    private RenderFragment RenderDiff()
+    {
+        var items = (DiffItems ?? []).Where(d => ShowUnchanged || d.Changed).ToList();
+        return @<div class="flex flex-col gap-2" data-slot="display-diff">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <p class="m-0 font-semibold text-(--blux-text-highlighted)">@Title</p>
+            }
+            <div class="divide-y divide-(--blux-border)">
+                @foreach (var item in items)
+                {
+                    <div class="flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0" data-slot="diff-item" data-changed="@(item.Changed ? "true" : "false")">
+                        <span class="text-xs font-medium text-(--blux-text-muted)">@item.Label</span>
+                        <div class="flex items-center gap-2 text-xs">
+                            @if (item.Changed)
+                            {
+                                @if (!string.IsNullOrEmpty(item.Before))
+                                {
+                                    <span class="line-through text-(--blux-error-text)" data-slot="diff-before">@item.Before</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Before) && !string.IsNullOrEmpty(item.After))
+                                {
+                                    <span class="text-(--blux-text-muted)" aria-hidden="true">→</span>
+                                }
+                                <span class="font-semibold text-(--blux-success-text)" data-slot="diff-after">@(item.After ?? "—")</span>
+                            }
+                            else
+                            {
+                                <span class="text-(--blux-text-muted)" data-slot="diff-unchanged">@(item.After ?? item.Before ?? "—")</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>;
+    }
+
+    private RenderFragment RenderRecord()
+    {
+        var (visible, remaining) = ApplyReveal(Records);
+        return @<div class="flex flex-col gap-2.5" data-slot="display-record">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-semibold text-(--blux-text-highlighted)">@Title</span>
+                    @if (!string.IsNullOrEmpty(Count))
+                    {
+                        <span class="text-xs tabular-nums text-(--blux-text-muted)">@Count</span>
+                    }
+                </div>
+            }
+            @foreach (var rec in visible)
+            {
+                <div class="flex items-center justify-between gap-3 py-1.5" data-slot="record-item">
+                    <div class="flex min-w-0 items-center gap-3">
+                        @if (!string.IsNullOrEmpty(rec.AvatarText) || !string.IsNullOrEmpty(rec.Icon))
+                        {
+                            <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-(--blux-radius) bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)">
+                                @if (!string.IsNullOrEmpty(rec.Icon))
+                                {
+                                    @RenderIcon(rec.Icon, "size-4")
+                                }
+                                else
+                                {
+                                    @rec.AvatarText
+                                }
+                            </span>
+                        }
+                        <div class="flex min-w-0 flex-col">
+                            @if (!string.IsNullOrEmpty(rec.Reference))
+                            {
+                                <span class="text-[11px] font-mono text-(--blux-text-muted)">@rec.Reference</span>
+                            }
+                            @if (!string.IsNullOrEmpty(rec.Href))
+                            {
+                                <a href="@rec.Href" class="truncate font-medium text-(--blux-text-highlighted) hover:underline" data-slot="record-title">@rec.Title</a>
+                            }
+                            else
+                            {
+                                <span class="truncate font-medium text-(--blux-text-highlighted)" data-slot="record-title">@rec.Title</span>
+                            }
+                            @if (!string.IsNullOrEmpty(rec.Meta) || !string.IsNullOrEmpty(rec.Description))
+                            {
+                                <span class="truncate text-xs text-(--blux-text-muted)">@(rec.Meta ?? rec.Description)</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-2">
+                        @if (rec.Chip is { } chip)
+                        {
+                            <BxBadge Label="@chip.Label" Color="@(chip.Color ?? BxColor.Neutral)" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                        }
+                        @if (!string.IsNullOrEmpty(rec.Trailing))
+                        {
+                            <span class="font-semibold tabular-nums text-(--blux-text-highlighted)" data-slot="record-trailing">@rec.Trailing</span>
+                        }
+                    </div>
+                </div>
+            }
+            @if (remaining > 0 && Records is not null)
+            {
+                @RenderRevealButton(remaining, Records.Count)
+            }
+        </div>;
+    }
+
+    private RenderFragment RenderPerson() =>
+        @<div class="flex flex-col gap-3" data-slot="display-person">
+            @if (string.Equals(Variant, "group", StringComparison.OrdinalIgnoreCase) && People is { Count: > 0 })
+            {
+                var max = Max ?? 4;
+                var shown = People.Take(max).ToList();
+                var extra = People.Count - shown.Count;
+                <div class="flex items-center gap-2" data-slot="person-group">
+                    <div class="flex -space-x-2">
+                        @foreach (var p in shown)
+                        {
+                            <span class="inline-flex size-8 items-center justify-center rounded-full border-2 border-(--blux-bg) bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)"
+                                  title="@p.Name" data-slot="person-avatar">@InitialsOf(p.Name)</span>
+                        }
+                        @if (extra > 0)
+                        {
+                            <span class="inline-flex size-8 items-center justify-center rounded-full border-2 border-(--blux-bg) bg-(--blux-bg-elevated) text-xs font-semibold text-(--blux-text-muted)"
+                                  data-slot="person-overflow">+@extra</span>
+                        }
+                    </div>
+                    @if (!string.IsNullOrEmpty(Title))
+                    {
+                        <span class="text-xs text-(--blux-text-muted)">@Title</span>
+                    }
+                </div>
+            }
+            else
+            {
+                var person = People is { Count: > 0 } ? People[0] : new DisplayPersonItem(Title ?? "User", Description, null, Tone, Chip);
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex min-w-0 items-center gap-2.5">
+                        <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)"
+                              data-slot="person-avatar">@InitialsOf(person.Name)</span>
+                        <div class="flex min-w-0 flex-col">
+                            <span class="truncate font-semibold text-(--blux-text-highlighted)" data-slot="person-name">@person.Name</span>
+                            @if (!string.IsNullOrEmpty(person.Description))
+                            {
+                                <span class="truncate text-xs text-(--blux-text-muted)">@person.Description</span>
+                            }
+                        </div>
+                    </div>
+                    @if (person.Chip is { } chip)
+                    {
+                        <BxBadge Label="@chip.Label" Color="@(chip.Color ?? BxColor.Neutral)" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                    }
+                </div>
+                @if (Contacts is { Count: > 0 })
+                {
+                    <div class="flex flex-col gap-1.5 border-t border-(--blux-border) pt-2" data-slot="person-contacts">
+                        @foreach (var c in Contacts)
+                        {
+                            <div class="flex items-center justify-between gap-2 text-xs">
+                                <span class="truncate text-(--blux-text)">@c.Value</span>
+                                @if (c.Copy)
+                                {
+                                    <button type="button" class="inline-flex size-6 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:bg-(--blux-bg-muted)"
+                                            aria-label="@($"Copy {c.Value}")" @onclick="@(() => CopyToClipboardAsync(c.Value))">
+                                        @RenderIcon("copy", "size-3.5")
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>;
+
+    private static string InitialsOf(string? name)
+    {
+        if (string.IsNullOrWhiteSpace(name)) return "?";
+        var parts = name.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length == 1
+            ? parts[0][..1].ToUpperInvariant()
+            : (parts[0][..1] + parts[^1][..1]).ToUpperInvariant();
+    }
+
+    private RenderFragment RenderList()
+    {
+        var (visible, remaining) = ApplyReveal(ListItems);
+        var isFiles = string.Equals(Variant, "files", StringComparison.OrdinalIgnoreCase);
+        var isSteps = string.Equals(Variant, "steps", StringComparison.OrdinalIgnoreCase);
+        var isChecks = string.Equals(Variant, "checks", StringComparison.OrdinalIgnoreCase);
+        return @<div class="flex flex-col gap-2" data-slot="display-list">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <p class="m-0 font-semibold text-(--blux-text-highlighted)">@Title</p>
+            }
+            <ul class="m-0 flex list-none flex-col gap-2 p-0">
+                @for (var i = 0; i < visible.Count; i++)
+                {
+                    var idx = i;
+                    var item = visible[i];
+                    var state = item.Done ? "done" : item.Current ? "current" : "todo";
+                    <li class="flex items-center justify-between gap-3" data-slot="list-item" data-state="@(isSteps ? state : null)">
+                        <div class="flex min-w-0 items-center gap-2.5">
+                            @if (isFiles)
+                            {
+                                var ext = FilePreviewService.ExtensionLabel(item.FileName ?? item.Text, item.MimeType);
+                                <span class="inline-flex h-6 min-w-8 shrink-0 items-center justify-center rounded-(--blux-radius) bg-(--blux-bg-muted) px-1.5 text-[10px] font-bold uppercase text-(--blux-text-highlighted)"
+                                      data-slot="file-badge">@ext</span>
+                            }
+                            else if (isChecks || isSteps)
+                            {
+                                <span class="inline-flex size-5 shrink-0 items-center justify-center rounded-full @(item.Done ? "bg-(--blux-success)/15 text-(--blux-success-text)" : item.Current ? "bg-(--blux-primary) text-white" : "bg-(--blux-bg-muted) text-(--blux-text-muted)") text-xs font-semibold">
+                                    @if (item.Done)
+                                    {
+                                        @RenderIcon("check", "size-3")
+                                    }
+                                    else
+                                    {
+                                        @(idx + 1)
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="size-1.5 shrink-0 rounded-full bg-(--blux-text-muted)"></span>
+                            }
+                            <div class="flex min-w-0 flex-col">
+                                @if (!string.IsNullOrEmpty(item.Href))
+                                {
+                                    <a href="@item.Href" class="truncate font-medium text-(--blux-text-highlighted) hover:underline"
+                                       @onclick="@(e => OnFileItemClick(e, item, idx))" @onclick:preventDefault="@CanPreviewFiles()">@item.Text</a>
+                                }
+                                else
+                                {
+                                    <span class="truncate text-(--blux-text)">@item.Text</span>
+                                }
+                                @if (!string.IsNullOrEmpty(item.Description) || item.FileSize is not null)
+                                {
+                                    <span class="text-xs text-(--blux-text-muted)">
+                                        @(item.FileSize is { } sz ? FilePreviewService.FormatFileSize(sz, FormatCulture) : item.Description)
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(item.Meta))
+                        {
+                            <span class="shrink-0 text-xs text-(--blux-text-muted)">@item.Meta</span>
+                        }
+                    </li>
+                }
+            </ul>
+            @if (remaining > 0 && ListItems is not null)
+            {
+                @RenderRevealButton(remaining, ListItems.Count)
+            }
+        </div>;
+    }
+
+    private bool CanPreviewFiles() =>
+        RendererInfo.IsInteractive && string.Equals(Variant, "files", StringComparison.OrdinalIgnoreCase)
+        && Services.GetService(typeof(FilePreviewService)) is FilePreviewService { IsMounted: true };
+
+    private void OnFileItemClick(MouseEventArgs _, DisplayListItem clicked, int index)
+    {
+        if (!CanPreviewFiles() || ListItems is null) return;
+        if (Services.GetService(typeof(FilePreviewService)) is not FilePreviewService preview) return;
+        var files = ListItems
+            .Where(x => !string.IsNullOrEmpty(x.Href))
+            .Select(x => new FilePreviewFile
+            {
+                Src = x.Href!,
+                Name = x.FileName ?? x.Text,
+                Mime = x.MimeType,
+                Size = x.FileSize,
+            })
+            .ToList();
+        preview.OpenGallery(files, new FilePreviewOptions { Index = Math.Clamp(index, 0, Math.Max(0, files.Count - 1)) });
+    }
+
+    private RenderFragment RenderTimeline()
+    {
+        var (visible, remaining) = ApplyReveal(TimelineItems);
+        var isPipeline = string.Equals(Variant, "pipeline", StringComparison.OrdinalIgnoreCase);
+        return @<div class="flex flex-col gap-2" data-slot="display-timeline">
+            <ol class="m-0 flex list-none @(isPipeline ? "flex-row flex-wrap items-center gap-4" : "flex-col gap-3") p-0">
+                @for (var i = 0; i < visible.Count; i++)
+                {
+                    var item = visible[i];
+                    var state = item.State ?? DisplayTimelineState.Done;
+                    <li class="flex items-start gap-3" aria-current="@(state == DisplayTimelineState.Current ? "step" : null)" data-slot="timeline-item" data-state="@state.ToString().ToLowerInvariant()">
+                        <span class="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full @(state == DisplayTimelineState.Done ? "bg-(--blux-primary) text-white" : state == DisplayTimelineState.Current ? "border-2 border-(--blux-primary-text) text-(--blux-primary-text)" : "border border-(--blux-border) text-(--blux-text-muted)") text-[11px] font-semibold">
+                            @(i + 1)
+                        </span>
+                        <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                            <div class="flex items-baseline justify-between gap-2">
+                                <span class="font-medium text-(--blux-text-highlighted)" data-slot="timeline-title">@item.Title</span>
+                                @if (!string.IsNullOrEmpty(item.Time))
+                                {
+                                    <span class="text-xs text-(--blux-text-muted)" data-slot="timeline-time">@item.Time</span>
+                                }
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <p class="m-0 text-xs text-(--blux-text-muted)">@item.Description</p>
+                            }
+                            @if (!string.IsNullOrEmpty(item.ActorName))
+                            {
+                                <span class="text-xs font-medium text-(--blux-text-muted)">@item.ActorName</span>
+                            }
+                        </div>
+                    </li>
+                }
+            </ol>
+            @if (remaining > 0 && TimelineItems is not null)
+            {
+                @RenderRevealButton(remaining, TimelineItems.Count)
+            }
+        </div>;
+    }
+
+    private RenderFragment RenderDate()
+    {
+        var date = DateValue ?? DateTimeOffset.UtcNow;
+        var now = Now ?? DateTimeOffset.UtcNow;
+        var days = (int)Math.Round((date.Date - now.Date).TotalDays);
+        return @<div class="flex items-center gap-3" data-slot="display-date">
+            <div class="flex size-12 shrink-0 flex-col items-center justify-center rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-muted) text-center" data-slot="date-tile">
+                <span class="text-[10px] font-bold uppercase text-(--blux-primary-text)">@date.ToString("MMM", FormatCulture)</span>
+                <span class="text-base font-bold leading-none tabular-nums text-(--blux-text-highlighted)">@date.Day</span>
+            </div>
+            <div class="flex min-w-0 flex-col gap-0.5">
+                <span class="font-semibold text-(--blux-text-highlighted)" data-slot="date-title">
+                    @if (string.Equals(Variant, "countdown", StringComparison.OrdinalIgnoreCase))
+                    {
+                        @(days == 0 ? "Today" : days == 1 ? "Tomorrow" : days > 1 ? $"In {days} days" : $"{Math.Abs(days)} days overdue")
+                    }
+                    else if (string.Equals(Variant, "range", StringComparison.OrdinalIgnoreCase) && EndDateValue is { } end)
+                    {
+                        var spanDays = Math.Max(1, (int)Math.Round((end.Date - date.Date).TotalDays) + 1);
+                        @($"{date.ToString("yyyy-MM-dd", FormatCulture)} → {end.ToString("yyyy-MM-dd", FormatCulture)} ({spanDays} days)")
+                    }
+                    else
+                    {
+                        @(Title ?? date.ToString("D", FormatCulture))
+                    }
+                </span>
+                @if (!string.IsNullOrEmpty(Description))
+                {
+                    <span class="text-xs text-(--blux-text-muted)">@Description</span>
+                }
+            </div>
+        </div>;
+    }
+
+    private RenderFragment RenderMedia() =>
+        @<div class="flex flex-col gap-2" data-slot="display-media">
+            @if (string.Equals(Variant, "gallery", StringComparison.OrdinalIgnoreCase) && Images is { Count: > 0 })
+            {
+                var max = Math.Max(1, Max ?? 3);
+                var shown = Images.Take(max).ToList();
+                var hiddenCount = Images.Count - shown.Count;
+                <div class="grid grid-cols-3 gap-2" data-slot="media-gallery">
+                    @for (var i = 0; i < shown.Count; i++)
+                    {
+                        var isLastWithOverflow = i == shown.Count - 1 && hiddenCount > 0;
+                        <div class="relative overflow-hidden rounded-(--blux-radius) border border-(--blux-border)" data-slot="media-tile">
+                            <img src="@shown[i]" alt="@(Title ?? $"Image {i + 1}")" loading="lazy" class="h-24 w-full object-cover" />
+                            @if (isLastWithOverflow)
+                            {
+                                <span class="absolute inset-0 flex items-center justify-center bg-black/60 text-sm font-bold text-white" data-slot="media-overflow">+@hiddenCount</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(Src))
+            {
+                <img src="@Src" alt="@(Title ?? "Media")" loading="lazy" class="max-h-64 w-full rounded-(--blux-radius) object-cover" data-slot="media-image" />
+            }
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="media-caption">@Description</p>
+            }
+        </div>;
+
+    private RenderFragment RenderCode()
+    {
+        var raw = Value ?? "";
+        var isSecret = string.Equals(Variant, "secret", StringComparison.OrdinalIgnoreCase);
+        var shown = isSecret && !_secretRevealed ? MaskSecret(raw, VisibleChars) : raw;
+        return @<div class="flex flex-col gap-2" data-slot="display-code" data-variant="@(Variant ?? "block")">
+            <div class="flex items-center justify-between gap-2">
+                <span class="text-xs font-semibold uppercase text-(--blux-text-muted)" data-slot="code-label">@(Title ?? Language ?? (isSecret ? "Secret" : "Code"))</span>
+                <div class="flex items-center gap-1">
+                    @if (isSecret)
+                    {
+                        <button type="button" class="inline-flex items-center gap-1 rounded-(--blux-radius) px-2 py-1 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                aria-pressed="@(_secretRevealed ? "true" : "false")" data-slot="code-secret-toggle"
+                                @onclick="@(() => _secretRevealed = !_secretRevealed)">
+                            @RenderIcon(_secretRevealed ? "eye-off" : "eye", "size-3.5")
+                            <span>@(_secretRevealed ? "Conceal" : "Reveal")</span>
+                        </button>
+                    }
+                    @if (Copy)
+                    {
+                        <button type="button" class="inline-flex items-center gap-1 rounded-(--blux-radius) px-2 py-1 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                aria-label="Copy code" data-slot="code-copy"
+                                @onclick="@(() => CopyToClipboardAsync(raw))">
+                            @RenderIcon("copy", "size-3.5")
+                        </button>
+                    }
+                </div>
+            </div>
+            <pre class="m-0 overflow-x-auto rounded-(--blux-radius) bg-(--blux-bg-muted) p-3 font-mono text-xs text-(--blux-text-highlighted)" data-slot="code-value"><code>@shown</code></pre>
+        </div>;
+    }
+
+    private static string MaskSecret(string raw, int visible)
+    {
+        if (string.IsNullOrEmpty(raw)) return "••••••••";
+        if (visible <= 0 || raw.Length <= visible) return new string('•', Math.Max(8, raw.Length));
+        return new string('•', 8) + raw[^visible..];
+    }
+
+    private RenderFragment RenderEmpty() =>
+        @<div class="flex flex-col items-center justify-center gap-2 rounded-(--blux-radius) border border-dashed border-(--blux-border-accented) p-6 text-center" data-slot="display-empty">
+            @RenderIcon(!string.IsNullOrEmpty(Icon) ? Icon : "inbox", "size-8 text-(--blux-text-muted)")
+            <p class="m-0 font-semibold text-(--blux-text-highlighted)" data-slot="empty-title">@(Title ?? "Nothing to show")</p>
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="empty-description">@Description</p>
+            }
+            @if (Actions is { Count: > 0 })
+            {
+                <div class="mt-2 flex flex-wrap items-center justify-center gap-2">
+                    @foreach (var act in Actions)
+                    {
+                        @RenderAction(act)
+                    }
+                </div>
+            }
+        </div>;
+
+    private RenderFragment RenderAccordion() =>
+        @<div class="flex flex-col divide-y divide-(--blux-border) rounded-(--blux-radius) border border-(--blux-border)" data-slot="display-accordion">
+            @if (AccordionItems is { Count: > 0 })
+            {
+                @for (var i = 0; i < AccordionItems.Count; i++)
+                {
+                    var idx = i;
+                    var item = AccordionItems[i];
+                    var open = _openAccordionIndices.Contains(idx);
+                    <div class="flex flex-col" data-slot="accordion-item" data-open="@(open ? "true" : "false")">
+                        <button type="button" class="flex min-h-10 w-full items-center justify-between gap-2 px-3.5 py-2 text-start font-medium text-(--blux-text-highlighted) hover:bg-(--blux-bg-muted)"
+                                aria-expanded="@(open ? "true" : "false")" data-slot="accordion-trigger"
+                                @onclick="@(() => ToggleAccordion(idx))">
+                            <span class="flex items-center gap-2">
+                                @if (!string.IsNullOrEmpty(item.Icon))
+                                {
+                                    @RenderIcon(item.Icon, "size-4 text-(--blux-text-muted)")
+                                }
+                                <span>@item.Label</span>
+                            </span>
+                            @RenderIcon(open ? "chevron-up" : "chevron-down", "size-4 text-(--blux-text-muted)")
+                        </button>
+                        @if (open)
+                        {
+                            <div class="px-3.5 pb-3 pt-1 text-xs text-(--blux-text-muted)" role="region" data-slot="accordion-content">
+                                @if (item.Template is not null)
+                                {
+                                    @item.Template
+                                }
+                                else
+                                {
+                                    @item.Content
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+        </div>;
+
+    private void ToggleAccordion(int index)
+    {
+        if (_openAccordionIndices.Contains(index))
+        {
+            _openAccordionIndices.Remove(index);
+        }
+        else
+        {
+            if (!Multiple) _openAccordionIndices.Clear();
+            _openAccordionIndices.Add(index);
+        }
+    }
+
+    private RenderFragment RenderAction(DisplayAction act) =>
+        @<BxButton Label="@act.Label" Href="@act.Href" Color="@act.Color" Variant="@act.Variant" Size="BxSize.Sm"
+                   LeadingIcon="@(string.IsNullOrEmpty(act.Icon) ? null : RenderIcon(act.Icon, "size-4"))"
+                   OnClick="@(() => act.OnClick.InvokeAsync())" data-slot="display-action" />;
+}
