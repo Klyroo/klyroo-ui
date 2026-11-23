@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "Другие действия",
             ActionConfirm = "Подтвердить",
             ActionCancel = "Отмена",
+            RowActionsLabel = "Действия для {0}",
+            RowActionsLabelAt = "Действия для строки {0}",
             ErrorTitle = "Не удалось загрузить данные",
             ErrorDescription = "При загрузке данных произошла ошибка. Повторите попытку.",
             Retry = "Повторить",

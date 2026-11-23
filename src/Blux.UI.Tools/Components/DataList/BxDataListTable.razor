@@ -12,6 +12,7 @@
         @{
             var columns = Columns();
             var selecting = Context.SelectionVisible;
+            var acting = RowActions is { Count: > 0 };
             var label = Caption ?? AriaLabel ?? Context.Label ?? ToolsMessages.Results;
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
@@ -32,6 +33,11 @@
                         {
                             <th scope="col" class="@HeaderClass(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">@Header(column)</th>
                         }
+                        @if (acting)
+                        {
+                            @* The header is read by assistive technology only: the cells hold buttons that name themselves. *@
+                            <th scope="col" class="@ActionsClass("th")" data-key="actions"><span class="sr-only">@ToolsMessages.ActionsMenu</span></th>
+                        }
                     </tr>
                 </thead>
                 <tbody class="@_slots["tbody"]" aria-busy="@(Context.IsLoading || Context.IsInitial ? "true" : null)">
@@ -49,13 +55,17 @@
                                 {
                                     <td class="@CellClass(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
                                 }
+                                @if (acting)
+                                {
+                                    <td class="@ActionsClass("td")"></td>
+                                }
                             </tr>
                         }
                     }
                     else if (Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError)
                     {
                         <tr class="@_slots["tr"]" data-slot="empty-row">
-                            <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0))" class="@_slots["empty"]">
+                            <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0))" class="@_slots["empty"]">
                                 @if (Empty is not null)
                                 {
                                     @Empty(Context)
@@ -90,6 +100,12 @@
                                 {
                                     <td class="@CellClass(column)">@Cell(column, row.Item)</td>
                                 }
+                                @if (acting)
+                                {
+                                    <td class="@ActionsClass("td")">
+                                        <BxDataListRowActions TItem="TItem" Item="row.Item" Position="rowPosition" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
+                                    </td>
+                                }
                             </DataListRowView>
                         }
                     }
@@ -107,6 +123,18 @@
 
     /// <summary>Names the table for assistive technologies (visually hidden), and the scrolling region around it. Without it, the <c>AriaLabel</c> of the table, then the label of the list, then the localized "Results".</summary>
     [Parameter] public string? Caption { get; set; }
+
+    /// <summary>
+    /// The actions of each row: a last column with buttons up to <see cref="RowActionsMaxVisible"/>, then a menu, and below the <c>md</c> breakpoint one button that opens a sheet
+    /// (<see cref="BxDataListRowActions{TItem}"/>). Interactive only, except the actions that are links.
+    /// </summary>
+    [Parameter] public IReadOnlyList<DataListRowAction<TItem>>? RowActions { get; set; }
+
+    /// <summary>How many row actions show as buttons on a wide screen (3 by default); 0 keeps a single "Actions for ..." button per row.</summary>
+    [Parameter] public int RowActionsMaxVisible { get; set; } = 3;
+
+    /// <summary>Raised when a row action threw or reported a failure.</summary>
+    [Parameter] public EventCallback<DataListRowActionFailure<TItem>> OnRowActionError { get; set; }
 
     /// <summary>The accessible name of the table when there is no <see cref="Caption"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
@@ -232,6 +260,8 @@
         return [.. schema.Fields.Where(f => !f.IsCollection)
             .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null))];
     }
+
+    private string ActionsClass(string kind) => $"{_slots[kind]} {_slots[kind + "End"]} {_slots["rowActionsCell"]}";
 
     private string SelectClass(string kind) => $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]}";
 

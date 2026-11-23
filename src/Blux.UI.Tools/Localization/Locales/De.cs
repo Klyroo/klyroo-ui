@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "Weitere Aktionen",
             ActionConfirm = "Bestätigen",
             ActionCancel = "Abbrechen",
+            RowActionsLabel = "Aktionen für {0}",
+            RowActionsLabelAt = "Aktionen für Zeile {0}",
             ErrorTitle = "Die Daten konnten nicht geladen werden",
             ErrorDescription = "Beim Laden der Daten ist ein Fehler aufgetreten. Versuchen Sie es erneut.",
             Retry = "Erneut versuchen",
