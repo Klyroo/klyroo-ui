@@ -25,7 +25,9 @@
             </div>
             <BxDataListFilterTags ShowAdd ShowClear />
             <BxDataListErrorState />
-            <BxDataListTable Caption="Customers">
+            @* The actions of a row are built in: with MaxVisible 0 they stay behind one "Actions for ..." button (a sheet below md). "Send a message" is a link, so it also works
+               before the page is interactive; the others need the interactive render. *@
+            <BxDataListTable Caption="Customers" RowActions="_rowActions" RowActionsMaxVisible="0">
                 <BxDataListColumn Key="name" Title="Customer">
                     <Template Context="customer">
                         <div class="flex items-center gap-3">
@@ -50,16 +52,6 @@
                     <Template Context="customer">@Money.Format(customer.TotalSpent)</Template>
                 </BxDataListColumn>
                 <BxDataListColumn Field="joined" Format="MMM d, yyyy" />
-                <BxDataListColumn Key="actions" Align="DataListAlign.End" Class="w-12">
-                    <HeaderTemplate><span class="sr-only">Actions</span></HeaderTemplate>
-                    <Template Context="customer">
-                        <BxDropdownMenu Items="_rowActions" OnSelect="@(item => OnRowAction(customer, item))" Placement="bottom-end">
-                            <BxButton Square Size="BxSize.Sm" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="@($"Actions for {customer.Name}")" data-testid="@($"actions-{customer.Id}")">
-                                <LeadingIcon>@BxIcons.Named("ellipsis")</LeadingIcon>
-                            </BxButton>
-                        </BxDropdownMenu>
-                    </Template>
-                </BxDataListColumn>
             </BxDataListTable>
             @* The checkbox column comes with this bar: the rows ticked on a page stay ticked on the next one, and only those the search and the filters still match stay ticked.
                Interactive only, like every action. *@
@@ -76,21 +68,36 @@
     private bool _newOpen;
     private DataListAction<Customer>[] _bulkActions = [];
 
-    private static readonly BxMenuItem[] _rowActions =
-    [
-        BxMenuItem.Heading("Actions"),
-        new() { Label = "Copy email", Value = "copy", Icon = BxIcons.Named("copy", "size-4") },
-        new() { Label = "Send a message", Href = "inbox", Icon = BxIcons.Named("mail", "size-4") },
-        BxMenuItem.Separator(),
-        new() { Label = "Delete customer", Value = "delete", Icon = BxIcons.Named("trash", "size-4"), Color = BxColor.Error },
-    ];
+    private DataListRowAction<Customer>[] _rowActions = [];
 
     // /customers?new=true (the "New customer" entry of the create menu) opens the form, whether the page is just loading or already shown, and the parameter is taken
     // off the address (a history entry replaced, not added) so that a reload or Back does not open the form again. Static rendering cannot redirect without losing
     // the form, so it waits for the interactive render, which sees the same address.
     [SupplyParameterFromQuery(Name = "new")] private bool? New { get; set; }
 
-    protected override void OnInitialized() =>
+    protected override void OnInitialized()
+    {
+        _rowActions =
+        [
+            new DataListRowAction<Customer> { Key = "copy", Label = "Copy email", Icon = "copy", Group = "Contact", OnExecute = CopyEmail },
+            new DataListRowAction<Customer> { Key = "message", Label = "Send a message", Icon = "mail", Group = "Contact", Href = _ => "inbox" },
+            new DataListRowAction<Customer>
+            {
+                Key = "delete",
+                Label = "Delete customer",
+                Icon = "trash",
+                Color = BxColor.Error,
+                Group = "Danger",
+                Confirm = new DataListRowActionConfirm<Customer>
+                {
+                    Title = "Delete customer",
+                    Description = context => $"{context.Item.Name} will be removed from the table.",
+                    ConfirmLabel = "Delete",
+                    Color = BxColor.Error,
+                },
+                OnExecute = DeleteOne,
+            },
+        ];
         _bulkActions =
         [
             new DataListAction<Customer>
@@ -111,6 +118,7 @@
                 OnExecute = DeleteSelected,
             },
         ];
+    }
 
     protected override void OnParametersSet()
     {
@@ -131,27 +139,26 @@
         _ => BxColor.Neutral,
     };
 
-    private async Task OnRowAction(Customer customer, BxMenuItem item)
+    private async Task CopyEmail(DataListRowActionContext<Customer> context)
     {
-        switch (item.Value)
+        try
         {
-            case "copy":
-                try
-                {
-                    await JS.InvokeVoidAsync("navigator.clipboard.writeText", customer.Email);
-                    await Toasts.Add(new BxToast { Title = "Email copied", Description = customer.Email, Color = BxColor.Success });
-                }
-                catch (JSException)
-                {
-                    await Toasts.Add(new BxToast { Title = "Could not copy", Description = "The browser did not allow access to the clipboard.", Color = BxColor.Error });
-                }
-                break;
-            case "delete":
-                // The list gets the new rows with the next render of the page and drops the customer from its selection.
-                Store.Remove([customer.Id]);
-                await Toasts.Add(new BxToast { Title = "Customer deleted", Description = customer.Name, Color = BxColor.Success });
-                break;
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", context.Item.Email);
+            await Toasts.Add(new BxToast { Title = "Email copied", Description = context.Item.Email, Color = BxColor.Success });
         }
+        catch (JSException)
+        {
+            context.Fail("The browser did not allow access to the clipboard.");
+            await Toasts.Add(new BxToast { Title = "Could not copy", Description = "The browser did not allow access to the clipboard.", Color = BxColor.Error });
+        }
+    }
+
+    private async Task DeleteOne(DataListRowActionContext<Customer> context)
+    {
+        // The list gets the new rows with the next render of the page and drops the customer from its selection.
+        Store.Remove([context.Item.Id]);
+        StateHasChanged();
+        await Toasts.Add(new BxToast { Title = "Customer deleted", Description = context.Item.Name, Color = BxColor.Success });
     }
 
     private async Task DeleteSelected(DataListActionContext<Customer> context)
