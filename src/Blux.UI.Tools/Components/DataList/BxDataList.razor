@@ -203,6 +203,7 @@
             throw new InvalidOperationException($"{nameof(BxDataList<TItem>)} with a Provider or a Queryable needs a Schema: it is the schema that drops what a request must not ask for.");
         }
         UpdateSlots();
+        InitializeColumnPreferences();
         _schema = Schema;
         _executor = Services.GetService(typeof(IDataListQueryExecutor)) as IDataListQueryExecutor;
         if (UrlSync)
@@ -251,6 +252,11 @@
     protected override Task OnParametersSetAsync() =>
         // While the first load runs, what changed is applied when it ends.
         _init is { IsCompletedSuccessfully: true } ? ApplyParameterChangesAsync() : Task.CompletedTask;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await LoadBrowserColumnPreferencesAsync();
+    }
 
     // What the parent changed since the list last looked: new rows, a new provider, a new state.
     private async Task ApplyParameterChangesAsync()

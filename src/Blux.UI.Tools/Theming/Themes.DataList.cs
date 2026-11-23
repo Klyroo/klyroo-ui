@@ -24,7 +24,9 @@ internal static partial class ToolsThemes
                 "filterPanel", "filterPanelHeader", "filterPanelTitle", "filterPanelCount", "filterPanelDescription", "filterPanelSection", "filterPanelTrigger", "filterPanelContent", "filterPanelEditor", "filterPanelFooter", "filterPanelEmpty", "filterPanelResults", "filterNativeLabel", "filterNativeInput",
                 "selectCell", "rowSelected", "selectionActions", "selectionBar", "selectionCount", "selectionLive", "selectionScope", "selectionGroup", "actionsDropdown",
                 "rowActionsCell", "rowActions", "rowActionsInline", "rowActionsMenu", "rowActionsPhone", "sheetList", "sheetDivider", "sheetEntry", "sheetHeading", "sheetItem", "sheetReason", "sheetIcon",
-                "infiniteLoader", "loadMoreError", "loadMoreErrorText", "cursorReset", "infiniteEnd", "infiniteStatus")
+                "infiniteLoader", "loadMoreError", "loadMoreErrorText", "cursorReset", "infiniteEnd", "infiniteStatus",
+                "thPinnedStart", "thPinnedEnd", "tdPinnedStart", "tdPinnedEnd", "colResize",
+                "columnsPanel", "columnsPopover", "columnsContent", "columnsHeader", "columnsTitle", "columnsCount", "columnsList", "columnsItem", "columnsLabel", "columnsActions", "columnsIconBtn", "columnsIconBtnActive")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -142,6 +144,23 @@ internal static partial class ToolsThemes
             .Slot("cursorReset", "")
             .Slot("infiniteEnd", "text-sm text-(--blux-text-muted)")
             .Slot("infiniteStatus", "sr-only")
+            .Slot("thPinnedStart", "sticky z-[2] bg-(--blux-bg-muted) border-e border-(--blux-border)")
+            .Slot("thPinnedEnd", "sticky z-[2] bg-(--blux-bg-muted) border-s border-(--blux-border)")
+            .Slot("tdPinnedStart", "sticky z-[1] bg-(--blux-bg) border-e border-(--blux-border)")
+            .Slot("tdPinnedEnd", "sticky z-[1] bg-(--blux-bg) border-s border-(--blux-border)")
+            .Slot("colResize", "absolute inset-y-1 end-0 w-2 cursor-col-resize select-none rounded-sm hover:bg-(--blux-primary)/50 focus-visible:bg-(--blux-primary) focus-visible:outline-none data-[resizing=true]:bg-(--blux-primary)")
+            .Slot("columnsPanel", "inline-flex")
+            .Slot("columnsPopover", "w-80 max-w-[calc(100vw-1rem)]")
+            .Slot("columnsContent", "flex max-h-96 flex-col gap-2 overflow-y-auto p-3")
+            .Slot("columnsHeader", "flex items-center justify-between gap-2 border-b border-(--blux-border) pb-2")
+            .Slot("columnsTitle", "text-sm font-semibold text-(--blux-text-highlighted)")
+            .Slot("columnsCount", "text-xs tabular-nums text-(--blux-text-muted)")
+            .Slot("columnsList", "m-0 flex list-none flex-col gap-0.5 p-0")
+            .Slot("columnsItem", "flex min-h-9 items-center justify-between gap-2 rounded-(--blux-radius) px-1.5 hover:bg-(--blux-bg-muted)")
+            .Slot("columnsLabel", "inline-flex min-h-9 min-w-0 flex-1 cursor-pointer items-center gap-2 text-sm text-(--blux-text)")
+            .Slot("columnsActions", "flex shrink-0 items-center gap-0.5")
+            .Slot("columnsIconBtn", "inline-flex size-7 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-(--blux-primary-text)")
+            .Slot("columnsIconBtnActive", "bg-(--blux-bg-elevated) text-(--blux-primary-text)")
             .Variant("position", "sticky", "selectionBar", "sticky bottom-4 mx-auto")
             .Variant("position", "fixed", "selectionBar", "fixed bottom-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2")
             .Default("position", "sticky")

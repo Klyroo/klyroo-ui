@@ -1,0 +1,27 @@
+@using Blux.UI.Tools.Query
+
+@* Column configurator: toggle visibility (Customer is Required and stays visible), reorder with Up/Down, pin to Start/End, resize headers by drag or keyboard, and persist preferences in a cookie (PreferencesKey="demo-cols") so a reload or SSR render paints the exact same columns. *@
+<div class="w-full" data-testid="list-columns">
+    <BxDataList TItem="Invoice" Label="Invoices with configurable columns" Schema="InvoiceData.Schema" Items="_items" UrlKey="cols" PreferencesKey="demo-cols">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <BxDataListSearch />
+            <div class="flex items-center gap-2">
+                <BxDataListResultCount />
+                <BxDataListColumnPanel SearchThreshold="3" />
+                <BxDataListRefresh />
+            </div>
+        </div>
+        <BxDataListTable Caption="Invoices with configurable columns" Resizable="true">
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" Width="90" Pinned="DataListPin.Start" />
+            <BxDataListColumn Field="customer" Required="true" Width="220" />
+            <BxDataListColumn Field="status" Width="140" />
+            <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" Width="150" />
+            <BxDataListColumn Field="issued" Title="Issued date" Width="160" />
+        </BxDataListTable>
+        <BxDataListPagination />
+    </BxDataList>
+</div>
+
+@code {
+    private static readonly Invoice[] _items = InvoiceData.All[..25];
+}

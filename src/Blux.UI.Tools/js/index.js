@@ -6,6 +6,8 @@
 //   import { Reporter, ensureId } from '../../Blux.UI/js/shared.js';
 import { timeZone, storeTimeZone } from './time-zone-cookie.js';
 import { pruneBlank } from './prune-blank.js';
+import { readColumnPrefs as readColumnPrefsCookie, writeColumnPrefs as writeColumnPrefsCookie } from './column-prefs-cookie.js';
+import { attachColumnResize } from './column-resize.js';
 
 // The time zone of the browser goes to the server in a cookie, which the next static or prerendered render reads (the first visit has none and cuts days in UTC).
 function rememberTimeZone() {
@@ -117,9 +119,28 @@ if (typeof document !== 'undefined') {
     },
     true,
   );
+  attachColumnResize(document);
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, focusAfterRowRemoval };
+function readColumnPrefs(key) {
+  if (typeof document === 'undefined') return null;
+  try {
+    return readColumnPrefsCookie(document, key);
+  } catch {
+    return null;
+  }
+}
+
+function writeColumnPrefs(key, value) {
+  if (typeof document === 'undefined') return false;
+  try {
+    return writeColumnPrefsCookie(document, key, value, location.protocol);
+  } catch {
+    return false;
+  }
+}
+
+const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, focusAfterRowRemoval, readColumnPrefs, writeColumnPrefs };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });
