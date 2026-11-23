@@ -160,6 +160,8 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
     protected static async Task<Func<Task>> DelayRenderBatches(IPage page, int milliseconds)
     {
         var marker = System.Text.Encoding.ASCII.GetBytes("JS.RenderBatch");
+        // The focus the router's FocusOnNavigate gives the h1 after the first interactive render is a JavaScript call like the others: held in the same order.
+        var focus = System.Text.Encoding.ASCII.GetBytes("focusBySelector");
         Task tail = Task.CompletedTask;
         await page.RouteWebSocketAsync(new System.Text.RegularExpressions.Regex("/_blazor"), route =>
         {
@@ -167,7 +169,7 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
             server.OnMessage(frame =>
             {
                 var binary = frame.Binary;
-                if (binary is not null && binary.AsSpan().IndexOf(marker) >= 0)
+                if (binary is not null && (binary.AsSpan().IndexOf(marker) >= 0 || binary.AsSpan().IndexOf(focus) >= 0))
                 {
                     lock (marker)
                     {
@@ -197,8 +199,7 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
     /// interactive router): it reads the address the client last heard about, then starts listening for the next navigation, and a navigation that
     /// lands between the two is lost, so the wait ends on a timeout although the address is the expected one.
     /// </summary>
-    protected Task WaitForUrl(string expression, float timeout = 15_000) =>
-        Page.WaitForFunctionAsync($"() => {{ const url = new URL(location.href); return {expression}; }}", null, new() { Timeout = timeout });
+    protected Task WaitForUrl(string expression, float timeout = 15_000) => Page.WaitForUrlAsync(expression, timeout);
 
     /// <summary>Waits until the query of the address, decoded (what a user shares: the comma of a list is written %2C or not), is exactly <paramref name="expected"/>.</summary>
     protected Task WaitForQuery(string expected, float timeout = 15_000) =>
@@ -223,6 +224,10 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
         if (mode != "ssr")
         {
             await Assertions.Expect(page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
+            // The router's FocusOnNavigate moves the focus to the h1 with a JavaScript call that follows the first interactive render
+            // (the app's own, a few tens of milliseconds later, or much later on a loaded server). A field focused before it loses the
+            // focus, and the keys typed next go to the heading. The page is settled once the h1 has the focus.
+            await page.WaitForFunctionAsync("() => !document.querySelector('h1') || document.activeElement === document.querySelector('h1')", null, new() { Timeout = 30_000 });
         }
     }
 
@@ -248,4 +253,23 @@ public abstract class PlaygroundTest(PlaygroundServer server) : IAsyncLifetime
             .ToList();
         Assert.True(violations.Count == 0, string.Join("\n", violations));
     }
+}
+
+/// <summary>
+/// Waits for the address of a page the way a test needs it for an enhanced or same-document navigation: polled in the page, never
+/// by <c>WaitForURLAsync</c> (see <see cref="PlaygroundTest.WaitForUrl"/>). <c>WaitForURLAsync</c> stays only where a full document load is awaited.
+/// </summary>
+internal static class PageUrlWaits
+{
+    /// <summary>Until a JavaScript expression of <c>url</c> (a <c>URL</c>) holds.</summary>
+    public static Task WaitForUrlAsync(this IPage page, string expression, float timeout = 15_000) =>
+        page.WaitForFunctionAsync($"() => {{ const url = new URL(location.href); return {expression}; }}", null, new() { Timeout = timeout });
+
+    /// <summary>Until the full address matches a JavaScript regular expression (the same text Playwright's regex wait tests).</summary>
+    public static Task WaitForUrlMatchingAsync(this IPage page, string pattern, float timeout = 15_000) =>
+        page.WaitForFunctionAsync("pattern => new RegExp(pattern).test(location.href)", pattern, new() { Timeout = timeout });
+
+    /// <summary>Until the full address ends with <paramref name="suffix"/>.</summary>
+    public static Task WaitForUrlEndingWithAsync(this IPage page, string suffix, float timeout = 15_000) =>
+        page.WaitForFunctionAsync("suffix => location.href.endsWith(suffix)", suffix, new() { Timeout = timeout });
 }
