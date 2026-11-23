@@ -117,6 +117,18 @@ const templates = [
     keep: /chat\/completions|(?:Bx)?Chat(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)[A-Za-z]*|bx-chat-[a-z-]*|data-bx-chat[a-z-]*/g,
     browserClass: "Blux.UI.E2E.ChatTemplateTests",
   },
+  {
+    name: "editor",
+    web: "src/Editor.Web",
+    name_in_files: "Editor",
+    renames: ["Acme", "editorApp"],
+    probe: { utility: "max-w-[46rem]", css: "max-width:46rem" },
+    pages: ["/", "/d/0123456789abcdef0123456789abcdef"],
+    services: true,
+    // Blux's own editor components, types and elements (BxEditor, EditorAction, EditorToolbarItem, bx-editor) are not the template name: rename.cs leaves them alone.
+    keep: /Sanitize(?=Editor)Editor[A-Za-z]*|(?<!Add)(?:Bx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Bx(?:Editor)[A-Za-z]*|bx-editor[a-z-]*/g,
+    browserClass: "Blux.UI.E2E.EditorTemplateTests",
+  },
 ];
 
 // templates/_shared holds what the templates copy (the Markdown content code); it is not a template. Every other folder is, and must be listed above.

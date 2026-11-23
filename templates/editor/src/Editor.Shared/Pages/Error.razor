@@ -1,0 +1,20 @@
+@page "/error"
+
+<PageTitle>Error</PageTitle>
+
+<BxDashboardPanel>
+    <ChildContent>
+        <BxDashboardNavbar Title="Something went wrong">
+            <Leading>
+                <BxDashboardSidebarCollapse />
+            </Leading>
+            <Right>
+                <BxColorModeButton />
+            </Right>
+        </BxDashboardNavbar>
+        <div class="flex flex-col items-start gap-4 p-6">
+            <p class="text-(--blux-text-muted)">The request could not be completed. Try again, and if the problem stays, check the logs of the server.</p>
+            <BxButton Label="Back home" Href="./" />
+        </div>
+    </ChildContent>
+</BxDashboardPanel>

@@ -76,6 +76,11 @@ public static partial class BxLocales
             EditorLinkUrl = "Linkadres",
             EditorLinkApply = "Toepassen",
             EditorLinkRemove = "Link verwijderen",
+            // Draft translations of the task list and image messages, marked for review by a native speaker before a stable release.
+            EditorTaskList = "Takenlijst",
+            EditorImage = "Afbeelding",
+            EditorImageUrl = "Afbeeldingsadres",
+            EditorTaskItem = "Taak: {0}",
             EditorDragHandle = "Slepen om het blok te verplaatsen",
             EditorNoResults = "Geen resultaten",
             EditorSuggestionMenu = "Opdrachten",

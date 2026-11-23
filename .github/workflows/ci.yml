@@ -138,6 +138,7 @@ jobs:
       - run: dotnet publish templates/portfolio/src/Portfolio.Web -c Release -o published-templates/portfolio
       - run: dotnet publish templates/changelog/src/Changelog.Web -c Release -o published-templates/changelog
       - run: dotnet publish templates/chat/src/Chat.Web -c Release -o published-templates/chat
+      - run: dotnet publish templates/editor/src/Editor.Web -c Release -o published-templates/editor
       - run: dotnet build tests/Blux.UI.E2E
       - name: Install browser
         run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
@@ -194,3 +195,6 @@ jobs:
       - name: Build the Chat template head
         working-directory: templates/chat
         run: dotnet build src/Chat.Maui/Chat.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}
+      - name: Build the Editor template head
+        working-directory: templates/editor
+        run: dotnet build src/Editor.Maui/Editor.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}

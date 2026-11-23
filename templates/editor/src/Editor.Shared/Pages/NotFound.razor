@@ -1,0 +1,20 @@
+@page "/not-found"
+
+<PageTitle>Not found</PageTitle>
+
+<BxDashboardPanel>
+    <ChildContent>
+        <BxDashboardNavbar Title="Not found">
+            <Leading>
+                <BxDashboardSidebarCollapse />
+            </Leading>
+            <Right>
+                <BxColorModeButton />
+            </Right>
+        </BxDashboardNavbar>
+        <div class="flex flex-col items-start gap-4 p-6">
+            <p class="text-(--blux-text-muted)">There is nothing at this address.</p>
+            <BxButton Label="Back home" Href="./" />
+        </div>
+    </ChildContent>
+</BxDashboardPanel>

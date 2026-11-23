@@ -1,0 +1,191 @@
+@page "/d/{Id}"
+@implements IDisposable
+@inject DocumentState Documents
+@inject NavigationManager Navigation
+@inject IToastService Toasts
+
+<PageTitle>@(_document is null ? "Editor" : $"{_document.Title} · Editor")</PageTitle>
+
+@* One document: the navbar with its title, the editor with its toolbar, and a bar with the word count and the state of the autosave. The address says which
+   document is open (d/{id}). The text is saved a moment after the user stops typing (the editor reports after 400 ms of rest) and when the focus leaves it. *@
+<BxDashboardPanel data-testid="document-panel">
+    <ChildContent>
+        <BxDashboardNavbar Title="@Title">
+            <Leading>
+                <BxDashboardSidebarCollapse />
+            </Leading>
+            <Right>
+                @if (_document is not null)
+                {
+                    <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Rename document" OnClick="@(() => Documents.RequestRename(_document))" data-testid="document-rename">
+                        <LeadingIcon>@BxIcons.Named("lucide:pencil")</LeadingIcon>
+                    </BxButton>
+                    <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Delete document" OnClick="@(() => Documents.RequestDelete(_document))" data-testid="document-delete">
+                        <LeadingIcon>@BxIcons.Named("lucide:trash-2")</LeadingIcon>
+                    </BxButton>
+                }
+                <BxColorModeButton />
+            </Right>
+        </BxDashboardNavbar>
+
+        @if (!_ready)
+        {
+            <div class="document-column flex flex-1 flex-col gap-4 p-6" aria-hidden="true">
+                <BxSkeleton Class="h-9 w-2/3" />
+                <BxSkeleton Class="h-24 w-full" />
+            </div>
+        }
+        else if (_document is null)
+        {
+            <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center" data-testid="document-missing">
+                <p class="text-xl font-semibold text-(--blux-text-highlighted)">This document is not in this browser</p>
+                <p class="max-w-[34rem] text-sm text-(--blux-text-muted)">It was deleted, or it was written in another browser: documents stay on the device that made them.</p>
+                <BxButton Label="Back home" Href="./" />
+            </div>
+        }
+        else
+        {
+            <div class="flex min-h-0 flex-1 flex-col" data-testid="editor-area">
+                <BxEditor @key="_document.Id" Value="@_value" ValueChanged="OnChangedAsync" Label="Document" Placeholder="Write something, or type / for commands" Variant="FieldVariant.None"
+                          Ui="_editorUi" data-testid="editor">
+                    <BxEditorToolbar Items="_toolbar" Label="Formatting" />
+                    <BxEditorToolbar Layout="EditorToolbarLayout.Bubble" Label="Format the selection" />
+                    <BxEditorDragHandle />
+                    <BxEditorSuggestionMenu Items="_commands" />
+                    <BxEditorEmojiMenu />
+                </BxEditor>
+            </div>
+
+            <div class="flex items-center justify-between gap-3 border-t border-(--blux-border) px-4 py-2 text-xs text-(--blux-text-muted)" data-testid="status-bar">
+                <span data-testid="word-count">@Counts</span>
+                <span role="status" class="flex items-center gap-1.5" data-testid="save-state">
+                    @switch (_state)
+                    {
+                        case SaveState.Saving:
+                            <span>Saving...</span>
+                            break;
+                        case SaveState.TooLong:
+                            @BxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--blux-warning-text)")
+                            <span>Not saved: this document is too long to keep in the browser.</span>
+                            break;
+                        case SaveState.Failed:
+                            @BxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--blux-warning-text)")
+                            <span>Not saved: this browser did not keep it, so it lasts for this visit only.</span>
+                            break;
+                        default:
+                            @BxIcons.Named("lucide:check", "size-3.5")
+                            <span>Saved</span>
+                            break;
+                    }
+                </span>
+            </div>
+        }
+    </ChildContent>
+</BxDashboardPanel>
+
+@code {
+    private enum SaveState { Saved, Saving, TooLong, Failed }
+
+    private static readonly EditorUi _editorUi = new() { Root = "min-h-0 flex-1 overflow-y-auto", Content = "document-column px-4 py-6 sm:px-6", Base = "[&_.ProseMirror]:min-h-[60vh]" };
+
+    private static readonly IReadOnlyList<EditorToolbarItem> _toolbar =
+    [
+        new(EditorAction.Bold), new(EditorAction.Italic), new(EditorAction.Underline), new(EditorAction.Strike), new(EditorAction.Code),
+        EditorToolbarItem.Separator,
+        EditorToolbarItem.Heading(1), EditorToolbarItem.Heading(2), EditorToolbarItem.Heading(3),
+        EditorToolbarItem.Separator,
+        new(EditorAction.BulletList), new(EditorAction.OrderedList), new(EditorAction.TaskList), new(EditorAction.Blockquote), new(EditorAction.CodeBlock),
+        EditorToolbarItem.Separator,
+        new(EditorAction.Link), new(EditorAction.Image),
+        EditorToolbarItem.Separator,
+        new(EditorAction.Undo), new(EditorAction.Redo),
+    ];
+
+    // What the slash menu offers. There is no image entry: an image needs an address, which the Image button of the toolbar asks for.
+    private static readonly IReadOnlyList<EditorSuggestionItem> _commands =
+    [
+        new(EditorAction.Paragraph, "Text") { Description = "Plain paragraph", Keywords = "paragraph p" },
+        new(EditorAction.Heading, "Heading 1") { Level = 1, Description = "Big section heading", Keywords = "h1 title" },
+        new(EditorAction.Heading, "Heading 2") { Level = 2, Description = "Medium section heading", Keywords = "h2 subtitle" },
+        new(EditorAction.Heading, "Heading 3") { Level = 3, Description = "Small section heading", Keywords = "h3" },
+        new(EditorAction.BulletList, "Bulleted list") { Description = "A simple list of points", Keywords = "ul unordered" },
+        new(EditorAction.OrderedList, "Numbered list") { Description = "A list with numbers", Keywords = "ol ordered" },
+        new(EditorAction.TaskList, "Task list") { Description = "Items to check off", Keywords = "todo checklist checkbox" },
+        new(EditorAction.Blockquote, "Quote") { Description = "Quote a passage", Keywords = "blockquote citation" },
+        new(EditorAction.CodeBlock, "Code block") { Description = "Monospaced code", Keywords = "pre snippet" },
+        new(EditorAction.HorizontalRule, "Divider") { Description = "A horizontal line", Keywords = "hr rule separator" },
+    ];
+
+    private Document? _document;
+    private string _value = "";
+    private bool _ready;
+    private SaveState _state = SaveState.Saved;
+
+    /// <summary>The id of the document (the address d/{id}).</summary>
+    [Parameter] public string? Id { get; set; }
+
+    private string Title => _document?.Title ?? (_ready ? "Not found" : "Document");
+
+    private string Counts => _document is null ? "" : $"{_document.Words:N0} {(_document.Words == 1 ? "word" : "words")}, {_document.Text.Count(c => c != '\n'):N0} characters";
+
+    protected override void OnInitialized()
+    {
+        Documents.Deleted += OnDeleted;
+        Documents.Changed += OnListChanged;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_ready) Select();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Documents.LoadAsync();
+        _ready = true;
+        Select();
+        StateHasChanged();
+    }
+
+    // Opens the document the address names. The editor is created again for each document (@key), with the text as the value.
+    private void Select()
+    {
+        var found = DocumentJson.IsValidId(Id) ? Documents.Find(Id) : null;
+        if (found == _document) return;
+        _document = found;
+        _value = found?.Html ?? "";
+        _state = SaveState.Saved;
+    }
+
+    // A rename from the dialog, a title that follows the text, a document dropped by the limits: the navbar shows the current title.
+    private void OnListChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void OnDeleted(string id) => _ = InvokeAsync(() =>
+    {
+        if (_document?.Id != id) return;
+        _document = null;
+        Navigation.NavigateTo("./", replace: true);
+        StateHasChanged();
+    });
+
+    private async Task OnChangedAsync(string? html)
+    {
+        var document = _document;
+        if (document is null) return;
+        // The parameter the editor receives must follow what it reported, or the next render would hand it the old text back.
+        _value = html ?? "";
+        _state = SaveState.Saving;
+        var result = await Documents.UpdateHtmlAsync(document, html);
+        // The user may have moved to another document while the write was running.
+        if (document != _document) return;
+        _state = result switch { SaveResult.TooLong => SaveState.TooLong, SaveResult.StorageFailed => SaveState.Failed, _ => SaveState.Saved };
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Documents.Deleted -= OnDeleted;
+        Documents.Changed -= OnListChanged;
+    }
+}
