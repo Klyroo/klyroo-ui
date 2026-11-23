@@ -238,14 +238,14 @@ internal static class DashboardChecks
         await Assertions.Expect(page.Locator("[data-slot=selection-status]")).ToHaveTextAsync("9 selected");
         // Delete the selection, after a confirmation.
         await page.Locator("[data-slot=selection-bar] [data-action=delete]").ClickAsync();
-        await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
+        await page.Locator("dialog[open][data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(page.GetByText("of 231")).ToBeVisibleAsync();
         await Assertions.Expect(page.Locator("[data-slot=selection-bar]")).ToHaveCountAsync(0);
 
         // Row action: delete one customer.
         await rows.First.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Actions for") }).ClickAsync();
         await page.GetByRole(AriaRole.Menuitem, new() { Name = "Delete customer" }).ClickAsync();
-        await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
+        await page.Locator("dialog[open][data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(page.GetByText("of 230")).ToBeVisibleAsync();
 
         // New customer: the form validates, the country is searched in a remote source, and the customer is in the table.
