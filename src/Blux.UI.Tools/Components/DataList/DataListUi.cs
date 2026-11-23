@@ -170,6 +170,17 @@ public sealed record DataListUi : ISlotOverrides
     public string? SummaryStatus { get; init; }
     public string? SummaryDetails { get; init; }
     public string? SummaryActions { get; init; }
+    public string? GroupRow { get; init; }
+    public string? GroupCell { get; init; }
+    public string? SummaryGroupRow { get; init; }
+    public string? GridGroup { get; init; }
+    public string? GridGroupHeader { get; init; }
+    public string? GroupHeader { get; init; }
+    public string? GroupToggle { get; init; }
+    public string? GroupChevron { get; init; }
+    public string? GroupChevronExpanded { get; init; }
+    public string? GroupLabel { get; init; }
+    public string? GroupSummary { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -338,6 +349,17 @@ public sealed record DataListUi : ISlotOverrides
         "summaryStatus" => SummaryStatus,
         "summaryDetails" => SummaryDetails,
         "summaryActions" => SummaryActions,
+        "groupRow" => GroupRow,
+        "groupCell" => GroupCell,
+        "summaryGroupRow" => SummaryGroupRow,
+        "gridGroup" => GridGroup,
+        "gridGroupHeader" => GridGroupHeader,
+        "groupHeader" => GroupHeader,
+        "groupToggle" => GroupToggle,
+        "groupChevron" => GroupChevron,
+        "groupChevronExpanded" => GroupChevronExpanded,
+        "groupLabel" => GroupLabel,
+        "groupSummary" => GroupSummary,
         _ => null,
     };
 }

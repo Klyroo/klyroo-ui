@@ -28,6 +28,7 @@ aria-pressed:text-(--blux-text-highlighted)
 bg-(--blux-bg)
 bg-(--blux-bg-elevated)
 bg-(--blux-bg-muted)
+bg-(--blux-bg-muted)/70
 bg-(--blux-error)/5
 border
 border-(--blux-border)
@@ -52,6 +53,7 @@ data-[dragging=true]:z-10
 data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--blux-primary-text)]
 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--blux-primary-text)]
 data-[resizing=true]:bg-(--blux-primary)
+disabled:cursor-default
 disabled:cursor-not-allowed
 disabled:opacity-40
 disabled:opacity-50
@@ -77,6 +79,7 @@ gap-0.5
 gap-1
 gap-1.5
 gap-2
+gap-2.5
 gap-3
 gap-4
 gap-x-2
@@ -121,6 +124,7 @@ max-h-[32rem]
 max-h-[min(24rem,70dvh)]
 max-h-none
 max-sm:hidden
+max-sm:min-h-11
 max-sm:relative
 max-w-48
 max-w-[calc(100vw-1rem)]
@@ -142,6 +146,7 @@ min-w-5
 min-w-8
 min-w-full
 motion-reduce:animate-none
+motion-reduce:transition-none
 mt-1
 mt-2
 mx-auto
@@ -170,8 +175,10 @@ px-1.5
 px-2
 px-2.5
 px-3
+px-3.5
 px-4
 px-6
+py-0.5
 py-1
 py-1.5
 py-12
@@ -181,6 +188,7 @@ py-3
 py-4
 py-5
 relative
+rotate-90
 rounded-(--blux-radius)
 rounded-[calc(var(--blux-radius)_-_2px)]
 rounded-e-(--blux-radius)
@@ -231,6 +239,7 @@ text-xs
 top-0
 touch-none
 transition-opacity
+transition-transform
 truncate
 w-10
 w-2

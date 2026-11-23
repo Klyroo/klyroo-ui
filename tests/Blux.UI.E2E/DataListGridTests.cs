@@ -22,6 +22,7 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
 
     private ILocator SwitchList => Page.GetByTestId("list-grid-switch");
     private ILocator GridOnlyList => Page.GetByTestId("list-grid-only");
+    private ILocator GroupedList => Page.GetByTestId("list-grouped");
     private ILocator SortPopover => Page.Locator("[data-slot=sort-content]:visible");
 
     private async Task DarkMode()
@@ -101,6 +102,28 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
         await firstRemove.ClickAsync();
         await Assertions.Expect(removableCards).ToHaveCountAsync(5);
         await Assertions.Expect(removableCards.First.Locator("[data-slot=row-action][data-action=remove]")).ToBeFocusedAsync();
+
+        // Grouped list: Paid, Pending, Overdue (explicit Order), then Draft, then Other (~empty) last; fold/unfold and group selection work in Table and Grid views.
+        var groupHeaders = GroupedList.Locator("[data-slot=group-header]");
+        await Assertions.Expect(groupHeaders).ToHaveCountAsync(5);
+        await Assertions.Expect(groupHeaders.Nth(0).Locator("[data-slot=group-label]")).ToHaveTextAsync("Paid");
+        await Assertions.Expect(groupHeaders.Nth(3).Locator("[data-slot=group-label]")).ToHaveTextAsync("Draft");
+        await Assertions.Expect(groupHeaders.Nth(4).Locator("[data-slot=group-label]")).ToHaveTextAsync("Other");
+
+        // Tick the Paid group checkbox -> selects all rows in Paid.
+        await GroupedList.Locator("input[data-select=group][data-group-key=Paid]").CheckAsync();
+        await Assertions.Expect(GroupedList.Locator("[data-slot=selection-bar]")).ToBeVisibleAsync();
+
+        // Fold the Paid group -> its rows collapse and aria-expanded becomes false.
+        var paidToggle = GroupedList.Locator("button[data-slot=group-toggle][data-group-key=Paid]");
+        await Assertions.Expect(paidToggle).ToHaveAttributeAsync("aria-expanded", "true");
+        await paidToggle.ClickAsync();
+        await Assertions.Expect(paidToggle).ToHaveAttributeAsync("aria-expanded", "false");
+
+        // Switch the grouped list to Grid view -> Paid stays folded and the remaining groups show their cards.
+        await GroupedList.Locator("button[data-slot=layout-option][data-layout=grid]").ClickAsync();
+        await Assertions.Expect(GroupedList.Locator("[data-slot=grid-group]")).ToHaveCountAsync(5);
+        await Assertions.Expect(GroupedList.Locator("button[data-slot=group-toggle][data-group-key=Paid]")).ToHaveAttributeAsync("aria-expanded", "false");
     }
 
     [Theory]

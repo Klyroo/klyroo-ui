@@ -44,6 +44,15 @@ public sealed partial record BxToolsMessages
     /// <summary>Accessible name and label of the compact summary-rows toggle button.</summary>
     public string SummaryView { get; init; } = "Summary view";
 
+    /// <summary>Heading of the group that holds rows whose group field is null or empty.</summary>
+    public string GroupEmpty { get; init; } = "Other";
+
+    /// <summary>Accessible name of the checkbox in a group header that selects or unselects every row in the group. {0} is the group label.</summary>
+    public string GroupSelect { get; init; } = "Select all rows in {0}";
+
+    /// <summary>Accessible name of the button in a group header that folds or unfolds the group. {0} is the group label.</summary>
+    public string GroupToggle { get; init; } = "Expand or collapse {0}";
+
     /// <summary>The rows shown when the total is not known. {0} is the first row number, {1} the last.</summary>
     public string ResultRange { get; init; } = "Rows {0}–{1}";
 

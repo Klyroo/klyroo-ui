@@ -1,0 +1,118 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Internal
+
+@*
+    Collapsible header bar of a visual row group inside BxDataListTable or BxDataListGrid:
+    optional tri-state checkbox that ticks or unticks every row in the group, and a button with a chevron,
+    the group label and the summary badge (row count by default) that folds or unfolds the group.
+*@
+@{
+    var collapsed = Collapsed ?? Context.IsGroupCollapsed(Group);
+    var selectable = Selectable ?? Context.SelectionVisible;
+    var toggleLabel = !string.IsNullOrWhiteSpace(ToggleLabel)
+        ? ToggleLabel
+        : string.Format(FormatCulture, ToolsMessages.GroupToggle, Group.Label);
+    var selectLabel = string.Format(FormatCulture, ToolsMessages.GroupSelect, Group.Label);
+    var selectionState = selectable ? Context.GetGroupSelection(Group) : false;
+}
+<div class="@_slots["groupHeader"]" data-slot="group-header" data-group-key="@Group.Key" data-collapsed="@(collapsed ? "true" : null)" @attributes="AdditionalAttributes">
+    @if (selectable)
+    {
+        <BxCheckbox Value="selectionState == true" ValueChanged="OnSelectGroup" Indeterminate="selectionState is null"
+                    Disabled="@(Context.SelectionDisabled || Group.Items.Count == 0)" Size="BxSize.Sm"
+                    aria-label="@selectLabel" data-select="group" data-group-key="@Group.Key" />
+    }
+    <button type="button" class="@_slots["groupToggle"]" data-slot="group-toggle" data-group-key="@Group.Key"
+            aria-expanded="@(collapsed ? "false" : "true")" title="@toggleLabel"
+            disabled="@(!Context.IsInteractive)" @onclick="HandleToggle">
+        @RenderIcon(Options.Icons.ChevronRight, collapsed ? _slots["groupChevron"] : _slots["groupChevronExpanded"])
+        <span class="@_slots["groupLabel"]" data-slot="group-label">
+            @if (GroupBy?.LabelTemplate is { } labelTemplate)
+            {
+                @labelTemplate(Group)
+            }
+            else
+            {
+                @Group.Label
+            }
+        </span>
+        @if (GroupBy?.SummaryTemplate is { } summaryTemplate)
+        {
+            <span class="@_slots["groupSummary"]" data-slot="group-summary">@summaryTemplate(Group)</span>
+        }
+        else if (!string.IsNullOrEmpty(Group.Summary))
+        {
+            <span class="@_slots["groupSummary"]" data-slot="group-summary">@Group.Summary</span>
+        }
+        <span class="sr-only">@toggleLabel</span>
+    </button>
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private DataListContext<TItem>? _subscribedSelection;
+
+    /// <summary>The group rendered by this header.</summary>
+    [Parameter, EditorRequired] public DataListGroup<TItem> Group { get; set; } = default!;
+
+    /// <summary>Optional grouping definition supplying <see cref="DataListGroupBy{TItem}.LabelTemplate"/> or <see cref="DataListGroupBy{TItem}.SummaryTemplate"/>.</summary>
+    [Parameter] public DataListGroupBy<TItem>? GroupBy { get; set; }
+
+    /// <summary>Overrides whether the group is currently collapsed. When <see langword="null"/>, reads <see cref="DataListContext{TItem}.IsGroupCollapsed(DataListGroup{TItem})"/>.</summary>
+    [Parameter] public bool? Collapsed { get; set; }
+
+    /// <summary>Raised when the fold/unfold button is clicked. When not bound, toggles the group on <see cref="DataListContext{TItem}"/>.</summary>
+    [Parameter] public EventCallback<bool> OnToggle { get; set; }
+
+    /// <summary>Overrides whether the group header displays a select-all-in-group checkbox. Defaults to <see cref="DataListContext{TItem}.SelectionVisible"/>.</summary>
+    [Parameter] public bool? Selectable { get; set; }
+
+    /// <summary>Accessible name of the fold/unfold button. Defaults to the localized <see cref="BxToolsMessages.GroupToggle"/> formatted with <see cref="DataListGroup{TItem}.Label"/>.</summary>
+    [Parameter] public string? ToggleLabel { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_subscribedSelection, Context))
+        {
+            if (_subscribedSelection is not null) _subscribedSelection.SelectionChanged -= OnSelectionUpdated;
+            _subscribedSelection = Context;
+            Context.SelectionChanged += OnSelectionUpdated;
+        }
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "groupHeader");
+    }
+
+    private void OnSelectionUpdated()
+    {
+        try
+        {
+            _ = InvokeAsync(StateHasChanged);
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private async Task HandleToggle()
+    {
+        if (!Context.IsInteractive) return;
+        var next = !(Collapsed ?? Context.IsGroupCollapsed(Group));
+        if (OnToggle.HasDelegate)
+        {
+            await OnToggle.InvokeAsync(next);
+        }
+        else
+        {
+            Context.ToggleGroup(Group);
+        }
+    }
+
+    private void OnSelectGroup(bool selected) => Context.SetGroupSelected(Group, selected);
+
+    public override void Dispose()
+    {
+        if (_subscribedSelection is not null) _subscribedSelection.SelectionChanged -= OnSelectionUpdated;
+        base.Dispose();
+    }
+}

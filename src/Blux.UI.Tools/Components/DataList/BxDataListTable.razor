@@ -20,7 +20,9 @@
             var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
             var entries = Context.IsInitial || empty ? null : RowEntries();
             var summaryActive = Context.SummaryViewActive && RowSummary is not null;
-            var virtualizing = IsVirtualized && !summaryActive && entries is { Count: > 0 };
+            var grouping = GroupBy is not null && !Context.IsInitial && !empty;
+            var groups = grouping ? GroupRowEntries() : null;
+            var virtualizing = IsVirtualized && !summaryActive && !grouping && entries is { Count: > 0 };
             var resizing = Resizable && !summaryActive && Context.IsInteractive;
             var showColgroup = !summaryActive && (resizing || columns.Any(c => c.Width is not null));
             var pinStart = !summaryActive && columns.Any(c => c.Pinned == DataListPin.Start);
@@ -78,64 +80,33 @@
                             </div>
                         }
                         <ul class="@_slots["summaryList"]" data-slot="summary-list" aria-busy="@(Context.IsLoading ? "true" : null)">
-                            @foreach (var row in entries!)
+                            @if (grouping)
                             {
-                                var item = row.Item;
-                                var summary = RowSummary!;
-                                <li @key="row.Key" class="@_slots["summaryRow"]" data-slot="summary-row" data-key="@row.Key">
-                                    @if (selecting)
+                                @foreach (var grp in groups!)
+                                {
+                                    var collapsed = Context.IsGroupCollapsed(grp.Group);
+                                    <li @key="@("group:" + grp.Group.Key)" class="@_slots["summaryGroupRow"]" data-slot="group-row" data-group-key="@grp.Group.Key" data-collapsed="@(collapsed ? "true" : null)">
+                                        <BxDataListGroupHeader TItem="TItem" Group="grp.Group" GroupBy="GroupBy" Ui="Ui" />
+                                    </li>
+                                    @if (!collapsed)
                                     {
-                                        <DataListRowSelect TItem="TItem" Item="item" Position="row.Position" />
-                                    }
-                                    @if (summary.Leading is not null)
-                                    {
-                                        <div class="@_slots["summaryLeading"]" data-slot="summary-leading">@summary.Leading(item)</div>
-                                    }
-                                    <div class="@_slots["summaryBody"]" data-slot="summary-body">
-                                        @if (summary.Template is not null)
+                                        @foreach (var row in grp.Entries)
                                         {
-                                            @summary.Template(item)
+                                            <li @key="row.Key" class="@_slots["summaryRow"]" data-slot="summary-row" data-key="@row.Key" data-group-key="@grp.Group.Key">
+                                                @SummaryCells(row, RowSummary!, columns, selecting, acting)
+                                            </li>
                                         }
-                                        else
-                                        {
-                                            var title = SummaryTitle(summary, columns, item);
-                                            var href = summary.Href?.Invoke(item);
-                                            var details = SummaryDetails(summary, columns, item);
-                                            @if (!string.IsNullOrEmpty(href))
-                                            {
-                                                <a href="@href" class="@_slots["summaryTitleLink"]" data-slot="summary-title">@title</a>
-                                            }
-                                            else if (Context.IsInteractive && summary.OnSelect.HasDelegate)
-                                            {
-                                                <button type="button" class="@_slots["summaryTitleButton"]" data-slot="summary-title"
-                                                        @onclick="@(() => summary.OnSelect.InvokeAsync(item))">@title</button>
-                                            }
-                                            else
-                                            {
-                                                <p class="@_slots["summaryTitle"]" data-slot="summary-title">@title</p>
-                                            }
-                                            @if (summary.Status is not null || !string.IsNullOrEmpty(details))
-                                            {
-                                                <div class="@_slots["summaryMeta"]" data-slot="summary-meta">
-                                                    @if (summary.Status is not null)
-                                                    {
-                                                        <span class="@_slots["summaryStatus"]" data-slot="summary-status">@summary.Status(item)</span>
-                                                    }
-                                                    @if (!string.IsNullOrEmpty(details))
-                                                    {
-                                                        <span class="@_slots["summaryDetails"]" data-slot="summary-details">@details</span>
-                                                    }
-                                                </div>
-                                            }
-                                        }
-                                    </div>
-                                    @if (acting)
-                                    {
-                                        <div class="@_slots["summaryActions"]" data-slot="summary-actions">
-                                            <BxDataListRowActions TItem="TItem" Item="item" Position="row.Position" Actions="RowActions!" MaxVisible="0" OnError="OnRowActionError" />
-                                        </div>
                                     }
-                                </li>
+                                }
+                            }
+                            else
+                            {
+                                @foreach (var row in entries!)
+                                {
+                                    <li @key="row.Key" class="@_slots["summaryRow"]" data-slot="summary-row" data-key="@row.Key">
+                                        @SummaryCells(row, RowSummary!, columns, selecting, acting)
+                                    </li>
+                                }
                             }
                         </ul>
                     }
@@ -247,6 +218,28 @@
                                 </DataListRowView>
                             </Virtualize>
                         }
+                        else if (grouping)
+                        {
+                            var colSpan = Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0));
+                            @foreach (var grp in groups!)
+                            {
+                                var collapsed = Context.IsGroupCollapsed(grp.Group);
+                                <tr @key="@("group:" + grp.Group.Key)" class="@_slots["groupRow"]" data-slot="group-row" data-group-key="@grp.Group.Key" data-collapsed="@(collapsed ? "true" : null)">
+                                    <td colspan="@colSpan" class="@_slots["groupCell"]" data-slot="group-cell">
+                                        <BxDataListGroupHeader TItem="TItem" Group="grp.Group" GroupBy="GroupBy" Ui="Ui" />
+                                    </td>
+                                </tr>
+                                @if (!collapsed)
+                                {
+                                    @foreach (var row in grp.Entries)
+                                    {
+                                        <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="null" Class="@RowClass(selecting)">
+                                            @Cells(row, selecting, acting, columns, pinStart, pinEnd)
+                                        </DataListRowView>
+                                    }
+                                }
+                            }
+                        }
                         else
                         {
                             @* The key is on the component itself, directly in the loop: a keyed element inside a RenderFragment would sit in a region of its own, where a key cannot match a row of another position, and every row after a removed one would be rebuilt. *@
@@ -337,6 +330,11 @@
     /// <see cref="DataListRowSummary{TItem}.DefaultActive"/> is <see langword="true"/>, or when toggled with <see cref="BxDataListViewToggle{TItem}"/>.
     /// </summary>
     [Parameter] public DataListRowSummary<TItem>? RowSummary { get; set; }
+
+    /// <summary>
+    /// Optional visual grouping of the loaded rows under collapsible <see cref="BxDataListGroupHeader{TItem}"/> headers with per-group selection checkboxes.
+    /// </summary>
+    [Parameter] public DataListGroupBy<TItem>? GroupBy { get; set; }
 
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
@@ -432,7 +430,8 @@
             },
         };
         Context.SetRowSummary(RowSummary is not null, RowSummary?.DefaultActive ?? false, RowSummary?.AutoPhone ?? true);
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive;
+        Context.SetTableGroupBy(GroupBy);
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null;
         if (activeVirtualized) variants["virtualize"] = "true";
         Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
@@ -441,7 +440,7 @@
 
     protected override void OnContextUpdated()
     {
-        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive;
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table && !Context.SummaryViewActive && GroupBy is null;
         if (activeVirtualized != Context.TableVirtualized)
         {
             _keepingFocus = false;
@@ -452,6 +451,7 @@
 
     public override void Dispose()
     {
+        Context.SetTableGroupBy(null);
         Context.SetRowSummary(false, false, false);
         Context.RemoveTable();
         Context.SetTableVirtualized(false, null);
@@ -500,8 +500,68 @@
     };
 
     private sealed record RowEntry(object Key, TItem Item, int Position);
+    private sealed record GroupedRowEntries(DataListGroup<TItem> Group, List<RowEntry> Entries);
 
     private string RowClass(bool selecting) => selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"];
+
+    private RenderFragment SummaryCells(RowEntry row, DataListRowSummary<TItem> summary, List<View> columns, bool selecting, bool acting) =>
+        @<text>
+            @{
+                var item = row.Item;
+            }
+            @if (selecting)
+            {
+                <DataListRowSelect TItem="TItem" Item="item" Position="row.Position" />
+            }
+            @if (summary.Leading is not null)
+            {
+                <div class="@_slots["summaryLeading"]" data-slot="summary-leading">@summary.Leading(item)</div>
+            }
+            <div class="@_slots["summaryBody"]" data-slot="summary-body">
+                @if (summary.Template is not null)
+                {
+                    @summary.Template(item)
+                }
+                else
+                {
+                    var title = SummaryTitle(summary, columns, item);
+                    var href = summary.Href?.Invoke(item);
+                    var details = SummaryDetails(summary, columns, item);
+                    @if (!string.IsNullOrEmpty(href))
+                    {
+                        <a href="@href" class="@_slots["summaryTitleLink"]" data-slot="summary-title">@title</a>
+                    }
+                    else if (Context.IsInteractive && summary.OnSelect.HasDelegate)
+                    {
+                        <button type="button" class="@_slots["summaryTitleButton"]" data-slot="summary-title"
+                                @onclick="@(() => summary.OnSelect.InvokeAsync(item))">@title</button>
+                    }
+                    else
+                    {
+                        <p class="@_slots["summaryTitle"]" data-slot="summary-title">@title</p>
+                    }
+                    @if (summary.Status is not null || !string.IsNullOrEmpty(details))
+                    {
+                        <div class="@_slots["summaryMeta"]" data-slot="summary-meta">
+                            @if (summary.Status is not null)
+                            {
+                                <span class="@_slots["summaryStatus"]" data-slot="summary-status">@summary.Status(item)</span>
+                            }
+                            @if (!string.IsNullOrEmpty(details))
+                            {
+                                <span class="@_slots["summaryDetails"]" data-slot="summary-details">@details</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+            @if (acting)
+            {
+                <div class="@_slots["summaryActions"]" data-slot="summary-actions">
+                    <BxDataListRowActions TItem="TItem" Item="item" Position="row.Position" Actions="RowActions!" MaxVisible="0" OnError="OnRowActionError" />
+                </div>
+            }
+        </text>;
 
     private RenderFragment Cells(RowEntry row, bool selecting, bool acting, List<View> columns, bool pinStart, bool pinEnd) =>
         @<text>
@@ -522,10 +582,29 @@
         </text>;
 
     // The rows with a key each: the row key of the schema, else the identity of the row (the reference). A schema whose keys repeat (a data error) falls back to the identity of the rows, and a row that is itself listed twice to its position.
-    private List<RowEntry> RowEntries()
+    private List<RowEntry> RowEntries() => BuildRowEntries(Context.Rows);
+
+    private List<GroupedRowEntries> GroupRowEntries()
+    {
+        if (GroupBy is null) return [];
+        var built = GroupBy.BuildGroups(Context.Rows, Context.Schema, ToolsMessages, FormatCulture);
+        var flattened = new List<TItem>(Context.Rows.Count);
+        foreach (var g in built) flattened.AddRange(g.Items);
+        var allEntries = BuildRowEntries(flattened);
+        var result = new List<GroupedRowEntries>(built.Count);
+        var offset = 0;
+        foreach (var g in built)
+        {
+            var count = g.Items.Count;
+            result.Add(new GroupedRowEntries(g, allEntries.GetRange(offset, count)));
+            offset += count;
+        }
+        return result;
+    }
+
+    private List<RowEntry> BuildRowEntries(IReadOnlyList<TItem> rows)
     {
         var schema = Context.Schema;
-        var rows = Context.Rows;
         var entries = new List<RowEntry>(rows.Count);
         if (schema is { HasRowKey: true })
         {

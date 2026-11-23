@@ -99,6 +99,25 @@ public sealed partial class DataListContext<TItem>
 
     internal void SetDetectedPhoneSummary(bool isPhone) => _owner.SetDetectedPhoneSummary(isPhone);
 
+    /// <summary>The active grouping configuration for the current layout (<see cref="BxDataListTable{TItem}.GroupBy"/> or <see cref="BxDataListGrid{TItem}.GroupBy"/>), or <see langword="null"/>.</summary>
+    public DataListGroupBy<TItem>? ActiveGroupBy => _owner.ActiveGroupBy;
+
+    /// <summary>Builds the visual groups of <see cref="Rows"/> for the active layout when <see cref="ActiveGroupBy"/> is configured; empty otherwise.</summary>
+    public IReadOnlyList<DataListGroup<TItem>> Groups() => _owner.BuildActiveGroups();
+
+    /// <summary>Whether <paramref name="group"/> is currently collapsed (folded).</summary>
+    public bool IsGroupCollapsed(DataListGroup<TItem> group) => _owner.IsGroupCollapsed(group.Key, group.DefaultCollapsed);
+
+    /// <summary>Folds or unfolds <paramref name="group"/>, persisting the toggle when <c>PreferencesKey</c> is set.</summary>
+    public void ToggleGroup(DataListGroup<TItem> group) => _owner.ToggleGroup(group.Key);
+
+    /// <summary>Sets whether <paramref name="group"/> is collapsed (folded), persisting the toggle when <c>PreferencesKey</c> is set.</summary>
+    public void SetGroupCollapsed(DataListGroup<TItem> group, bool collapsed) => _owner.SetGroupCollapsed(group.Key, group.DefaultCollapsed, collapsed);
+
+    internal void SetTableGroupBy(DataListGroupBy<TItem>? groupBy) => _owner.SetTableGroupBy(groupBy);
+
+    internal void SetGridGroupBy(DataListGroupBy<TItem>? groupBy) => _owner.SetGridGroupBy(groupBy);
+
     internal void AddTable()
     {
         _tableCount++;

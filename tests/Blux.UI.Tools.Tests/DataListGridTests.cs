@@ -209,6 +209,80 @@ public class DataListGridTests : BluxToolsTestContext
         cut.Find("[data-slot=layout-option][data-layout=grid]").Click();
         Assert.Empty(cut.FindAll("[data-slot=view-toggle]"));
     }
+
+    [Fact]
+    public void GroupBy_orders_groups_places_empty_last_folds_selects_groups_skips_collapsed_in_shift_range_and_persists_toggles()
+    {
+        var items = new List<Person>
+        {
+            new(1, "Alice", 30, "Lyon"),
+            new(2, "Bob", 25, "Paris"),
+            new(3, "Charlie", 35, ""),
+            new(4, "Diana", 28, "Lille"),
+            new(5, "Eve", 40, "Paris"),
+        };
+
+        var groupBy = new DataListGroupBy<Person>
+        {
+            Field = "city",
+            Order = ["Paris"],
+        };
+
+        var cut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Items, items)
+            .Add(x => x.GroupBy, groupBy)
+            .Add(x => x.PreferencesKey, "people-groups")
+            .Add(x => x.Selectable, true));
+
+        // Order: Paris first (explicit Order), then Lille, then Lyon (alphabetical), then Other (~empty) last.
+        var headers = cut.FindAll("[data-slot=group-header]");
+        Assert.Equal(4, headers.Count);
+        Assert.Equal(["Paris", "Lille", "Lyon", "~empty"], headers.Select(h => h.GetAttribute("data-group-key")).ToArray());
+        Assert.Equal(["Paris", "Lille", "Lyon", "Other"], headers.Select(h => h.QuerySelector("[data-slot=group-label]")?.TextContent).ToArray());
+        Assert.Equal(["2", "1", "1", "1"], headers.Select(h => h.QuerySelector("[data-slot=group-summary]")?.TextContent).ToArray());
+
+        // Select the Paris group via its group checkbox -> ticks Bob (2) and Eve (5).
+        cut.Find("input[data-select=group][data-group-key=Paris]").Change(true);
+        Assert.True(cut.Find("input[data-select=row][data-key='2']").HasAttribute("checked"));
+        Assert.True(cut.Find("input[data-select=row][data-key='5']").HasAttribute("checked"));
+        Assert.False(cut.Find("input[data-select=row][data-key='4']").HasAttribute("checked"));
+
+        // Untick Eve (5) -> Paris group checkbox becomes indeterminate (data-indeterminate="1").
+        cut.Find("input[data-select=row][data-key='5']").Change(false);
+        var parisGroupCheckbox = cut.Find("input[data-select=group][data-group-key=Paris]");
+        Assert.Equal("1", parisGroupCheckbox.GetAttribute("data-indeterminate"));
+
+        // Fold Lille group -> its row (Diana, key 4) disappears from the DOM and cookie persists v1!gLille.
+        var lilleToggle = cut.Find("button[data-slot=group-toggle][data-group-key=Lille]");
+        Assert.Equal("true", lilleToggle.GetAttribute("aria-expanded"));
+        lilleToggle.Click();
+        Assert.Equal("false", cut.Find("button[data-slot=group-toggle][data-group-key=Lille]").GetAttribute("aria-expanded"));
+        Assert.Empty(cut.FindAll("input[data-select=row][data-key='4']"));
+
+        var write = JSInterop.Invocations["Blux.tools.writeColumnPrefs"].Last();
+        Assert.Equal("people-groups", write.Arguments[0]);
+        Assert.Equal("v1!gLille", write.Arguments[1]);
+
+        // Shift-click range from Eve (5, in Paris) to Alice (1, in Lyon) skips Diana (4, in folded Lille).
+        var eveBox = cut.Find("input[data-select=row][data-key='5']");
+        eveBox.Click(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { ShiftKey = false });
+        eveBox.Change(true);
+
+        var aliceBox = cut.Find("input[data-select=row][data-key='1']");
+        aliceBox.Click(new Microsoft.AspNetCore.Components.Web.MouseEventArgs { ShiftKey = true });
+        aliceBox.Change(true);
+
+        // Unfold Lille and verify Diana (4) was NOT selected while folded.
+        cut.Find("button[data-slot=group-toggle][data-group-key=Lille]").Click();
+        Assert.True(cut.Find("input[data-select=row][data-key='5']").HasAttribute("checked"));
+        Assert.True(cut.Find("input[data-select=row][data-key='1']").HasAttribute("checked"));
+        Assert.False(cut.Find("input[data-select=row][data-key='4']").HasAttribute("checked"));
+
+        // Switch to Grid layout -> renders 4 grid-group sections with cards.
+        cut.Find("[data-slot=layout-option][data-layout=grid]").Click();
+        Assert.Equal(4, cut.FindAll("[data-slot=grid-group]").Count);
+        Assert.Equal(5, cut.FindAll("[data-slot=grid-card]").Count);
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>

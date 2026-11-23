@@ -1,3 +1,4 @@
+using Blux.UI.Tools.Query;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
@@ -22,6 +23,8 @@ public partial class BxDataList<TItem>
     private bool _rowSummaryDefaultActive;
     private bool _rowSummaryAutoPhone = true;
     private bool? _phoneSummaryDetected;
+    private DataListGroupBy<TItem>? _tableGroupBy;
+    private DataListGroupBy<TItem>? _gridGroupBy;
 
     /// <summary>
     /// Name under which column visibility, order, pinning and widths are saved in the grouped cookie <c>blux-dl-cols</c> (scoped to the path base of the app like the other Blux cookies, SameSite=Lax, a year,
@@ -76,10 +79,67 @@ public partial class BxDataList<TItem>
                 if (clone.Widths.TryGetValue(key, out var width) && column.Width is { } declaredWidth && Math.Clamp(declaredWidth, min, max) == Math.Clamp(width, min, max)) clone.Widths.Remove(key);
             }
         }
+        else
+        {
+            clone.ToggledGroups.RemoveWhere(k => k.Length is 0 or > DataListColumnPreferences.MaxKeyLength);
+        }
         return clone;
     }
 
-    internal bool HasCustomColumnPreferences => !PrunedPreferences().IsEmpty;
+    internal bool HasCustomColumnPreferences => PrunedPreferences().HasColumnOverrides;
+
+    internal DataListGroupBy<TItem>? ActiveGroupBy =>
+        _context.EffectiveLayout == DataListLayout.Grid ? _gridGroupBy : _tableGroupBy;
+
+    internal void SetTableGroupBy(DataListGroupBy<TItem>? groupBy)
+    {
+        if (ReferenceEquals(_tableGroupBy, groupBy)) return;
+        _tableGroupBy = groupBy;
+        _context.NotifyChanged();
+    }
+
+    internal void SetGridGroupBy(DataListGroupBy<TItem>? groupBy)
+    {
+        if (ReferenceEquals(_gridGroupBy, groupBy)) return;
+        _gridGroupBy = groupBy;
+        _context.NotifyChanged();
+    }
+
+    internal IReadOnlyList<DataListGroup<TItem>> BuildActiveGroups()
+    {
+        if (ActiveGroupBy is not { } groupBy) return [];
+        var rows = Controller?.Rows ?? [];
+        return groupBy.BuildGroups(rows, _schema, ToolsMessages, CurrentLocale.Culture);
+    }
+
+    internal bool IsGroupCollapsed(string groupKey, bool defaultCollapsed)
+    {
+        if (string.IsNullOrEmpty(groupKey)) return defaultCollapsed;
+        return _columnPrefs.ToggledGroups.Contains(groupKey) ? !defaultCollapsed : defaultCollapsed;
+    }
+
+    internal void ToggleGroup(string groupKey)
+    {
+        if (string.IsNullOrEmpty(groupKey) || groupKey.Length > DataListColumnPreferences.MaxKeyLength) return;
+        if (!_columnPrefs.ToggledGroups.Remove(groupKey))
+        {
+            _columnPrefs.ToggledGroups.Add(groupKey);
+        }
+        PersistColumnPreferences();
+        _context.NotifyChanged();
+    }
+
+    internal void SetGroupCollapsed(string groupKey, bool defaultCollapsed, bool collapsed)
+    {
+        if (string.IsNullOrEmpty(groupKey) || groupKey.Length > DataListColumnPreferences.MaxKeyLength) return;
+        var shouldBeToggled = collapsed != defaultCollapsed;
+        var changed = shouldBeToggled
+            ? _columnPrefs.ToggledGroups.Add(groupKey)
+            : _columnPrefs.ToggledGroups.Remove(groupKey);
+        if (!changed) return;
+        PersistColumnPreferences();
+        _context.NotifyChanged();
+    }
 
     internal bool HasRowSummary => _hasRowSummary;
 
@@ -450,8 +510,8 @@ public partial class BxDataList<TItem>
 
     internal void ResetColumns()
     {
-        if (_columnPrefs.IsEmpty) return;
-        _columnPrefs.Clear();
+        if (!_columnPrefs.HasColumnOverrides) return;
+        _columnPrefs.ClearColumns();
         Announce(ToolsMessages.ColumnsWereReset);
         PersistColumnPreferences();
         _context.NotifyChanged();

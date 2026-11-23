@@ -74,6 +74,19 @@ public sealed partial class DataListContext<TItem>
         if (IsInteractive) _owner.SetPageSelected(selected);
     }
 
+    /// <summary>
+    /// The selection state of a visual row group: <see langword="true"/> when all rows in <paramref name="group"/> are ticked,
+    /// <see langword="false"/> when none is (or the group is empty), and <see langword="null"/> when only some are ticked (indeterminate).
+    /// </summary>
+    public bool? GetGroupSelection(DataListGroup<TItem> group) =>
+        _owner.GetGroupSelection(group.Items);
+
+    /// <summary>Ticks or unticks every row in <paramref name="group"/>.</summary>
+    public void SetGroupSelected(DataListGroup<TItem> group, bool selected)
+    {
+        if (IsInteractive) _owner.SetGroupSelected(group.Items, selected);
+    }
+
     /// <summary>Unticks every row, and goes back to acting on the selection when the bulk scope was every result.</summary>
     public void ClearSelection()
     {

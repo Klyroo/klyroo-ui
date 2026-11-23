@@ -74,13 +74,17 @@ internal sealed class DataListColumnPreferences
     public HashSet<string> Unpinned { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> Widths { get; } = new(StringComparer.Ordinal);
     public bool? SummaryView { get; set; }
+    public HashSet<string> ToggledGroups { get; } = new(StringComparer.Ordinal);
+
+    public bool HasColumnOverrides =>
+        Order.Count > 0 || Hidden.Count > 0 || Shown.Count > 0
+        || PinnedStart.Count > 0 || PinnedEnd.Count > 0 || Unpinned.Count > 0
+        || Widths.Count > 0;
 
     public bool IsEmpty =>
-        Order.Count == 0 && Hidden.Count == 0 && Shown.Count == 0
-        && PinnedStart.Count == 0 && PinnedEnd.Count == 0 && Unpinned.Count == 0
-        && Widths.Count == 0 && SummaryView is null;
+        !HasColumnOverrides && SummaryView is null && ToggledGroups.Count == 0;
 
-    public void Clear()
+    public void ClearColumns()
     {
         Order.Clear();
         Hidden.Clear();
@@ -89,7 +93,13 @@ internal sealed class DataListColumnPreferences
         PinnedEnd.Clear();
         Unpinned.Clear();
         Widths.Clear();
+    }
+
+    public void Clear()
+    {
+        ClearColumns();
         SummaryView = null;
+        ToggledGroups.Clear();
     }
 
     public DataListColumnPreferences Clone()
@@ -103,6 +113,7 @@ internal sealed class DataListColumnPreferences
         copy.Unpinned.UnionWith(Unpinned);
         foreach (var (key, width) in Widths) copy.Widths[key] = width;
         copy.SummaryView = SummaryView;
+        copy.ToggledGroups.UnionWith(ToggledGroups);
         return copy;
     }
 
@@ -117,6 +128,7 @@ internal sealed class DataListColumnPreferences
         PinnedEnd.RemoveWhere(k => !ValidKey(k, knownKeys) || PinnedStart.Contains(k));
         Unpinned.RemoveWhere(k => !ValidKey(k, knownKeys) || PinnedStart.Contains(k) || PinnedEnd.Contains(k));
         foreach (var key in Widths.Keys.Where(k => !ValidKey(k, knownKeys)).ToList()) Widths.Remove(key);
+        ToggledGroups.RemoveWhere(k => k.Length is 0 or > MaxKeyLength);
     }
 
     /// <summary>Sanitizes a <c>PreferencesKey</c> to the cookie-safe subset (<c>[A-Za-z0-9_-]</c>, max 64 chars), or <see langword="null"/> when blank.</summary>
@@ -142,11 +154,11 @@ internal sealed class DataListColumnPreferences
         if (IsEmpty) return "";
         if (!ValidSection(Order) || !ValidSection(Hidden) || !ValidSection(Shown)
             || !ValidSection(PinnedStart) || !ValidSection(PinnedEnd) || !ValidSection(Unpinned)
-            || !ValidSection(Widths.Keys))
+            || !ValidSection(Widths.Keys) || !ValidSection(ToggledGroups))
         {
             return null;
         }
-        var parts = new List<string>(8) { "v1" };
+        var parts = new List<string>(9) { "v1" };
         if (Order.Count > 0) parts.Add("o" + JoinKeys(Order));
         if (Hidden.Count > 0) parts.Add("h" + JoinKeys(Hidden.Order(StringComparer.Ordinal)));
         if (Shown.Count > 0) parts.Add("v" + JoinKeys(Shown.Order(StringComparer.Ordinal)));
@@ -159,6 +171,7 @@ internal sealed class DataListColumnPreferences
                 .Select(p => $"{Escape(p.Key)}*{Math.Clamp(p.Value, MinAllowedWidth, MaxAllowedWidth).ToString(CultureInfo.InvariantCulture)}")));
         }
         if (SummaryView is { } sv) parts.Add(sv ? "m1" : "m0");
+        if (ToggledGroups.Count > 0) parts.Add("g" + JoinKeys(ToggledGroups.Order(StringComparer.Ordinal)));
         var encoded = string.Join('!', parts);
         return encoded.Length > MaxEncodedLength ? null : encoded;
     }
@@ -235,6 +248,9 @@ internal sealed class DataListColumnPreferences
                 case 'm':
                     if (body == "1") prefs.SummaryView = true;
                     else if (body == "0") prefs.SummaryView = false;
+                    break;
+                case 'g':
+                    foreach (var key in SplitKeys(body)) prefs.ToggledGroups.Add(key);
                     break;
             }
         }
