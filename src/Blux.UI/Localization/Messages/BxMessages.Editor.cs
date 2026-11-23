@@ -40,6 +40,12 @@ public sealed partial record BxMessages
     /// <summary>Accessible name of the field that takes the address of an image (the button is <see cref="EditorLinkApply"/>).</summary>
     public string EditorImageUrl { get; init; } = "Image address";
 
+    /// <summary>Explains why the editor refused an address when it takes only some schemes; <c>{0}</c> lists them ("https, http, mailto").</summary>
+    public string EditorSchemesOnly { get; init; } = "Only {0} addresses are accepted.";
+
+    /// <summary>Explains why the editor refused an address when no list of schemes is known.</summary>
+    public string EditorAddressRefused { get; init; } = "This address is not accepted.";
+
     /// <summary>Accessible name of the checkbox of a task item; <c>{0}</c> is the text of the item.</summary>
     public string EditorTaskItem { get; init; } = "Task: {0}";
 

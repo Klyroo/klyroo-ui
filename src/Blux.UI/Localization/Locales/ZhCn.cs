@@ -80,6 +80,9 @@ public static partial class BxLocales
             EditorTaskList = "任务列表",
             EditorImage = "图片",
             EditorImageUrl = "图片地址",
+            // Draft translations of the messages that explain a refused address, marked for review by a native speaker before a stable release.
+            EditorSchemesOnly = "仅接受 {0} 地址。",
+            EditorAddressRefused = "不接受此地址。",
             EditorTaskItem = "任务：{0}",
             EditorDragHandle = "拖动以移动块",
             EditorNoResults = "无结果",

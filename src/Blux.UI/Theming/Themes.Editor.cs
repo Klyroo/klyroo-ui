@@ -42,7 +42,7 @@ internal static partial class Themes
             "inline-flex shrink-0 cursor-pointer items-center justify-center rounded-[calc(var(--blux-radius)_-_2px)] text-(--blux-text-muted) transition-colors " +
             "hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) aria-pressed:bg-(--bx-color)/10 aria-pressed:text-(--bx-color-text) aria-pressed:ring aria-pressed:ring-inset aria-pressed:ring-(--bx-color-text)/75 " +
             "disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--bx-color-text)";
-        return new ComponentTheme("editorToolbar", "root", "button", "icon", "separator", "linkForm", "linkInput", "linkButton")
+        return new ComponentTheme("editorToolbar", "root", "button", "icon", "separator", "linkForm", "linkInput", "linkButton", "linkMessage")
             .Slot("root", "items-center gap-0.5")
             .Variant("layout", "fixed", "root", "flex flex-wrap border-b border-(--blux-border) p-1.5")
             .Variant("layout", "bubble", "root", "m-0 inset-auto flex flex-wrap overflow-visible rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-overlay) p-1 " +
@@ -50,11 +50,12 @@ internal static partial class Themes
             .Slot("button", button)
             .Slot("icon", "pointer-events-none shrink-0")
             .Slot("separator", "mx-1 h-5 w-px shrink-0 bg-(--blux-border)")
-            .Slot("linkForm", "flex w-full basis-full items-center gap-1 pt-1 " + HiddenAttribute)
+            .Slot("linkForm", "flex w-full basis-full flex-wrap items-center gap-1 pt-1 " + HiddenAttribute)
             .Slot("linkInput", "min-w-0 flex-1 rounded-[calc(var(--blux-radius)_-_2px)] border-0 bg-(--blux-bg) px-2 py-1 text-sm text-(--blux-text) ring ring-inset ring-(--blux-border-accented) " +
                                "placeholder:text-(--blux-text-dimmed) focus:outline-none focus-visible:ring-2 focus-visible:ring-(--bx-color-text)")
             .Slot("linkButton", "cursor-pointer rounded-[calc(var(--blux-radius)_-_2px)] px-2 py-1 text-xs font-medium text-(--bx-color-text) transition-colors hover:bg-(--blux-bg-elevated) " +
                                 "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--bx-color-text)")
+            .Slot("linkMessage", "w-full basis-full px-1 text-xs text-(--blux-error-text) empty:hidden")
             .Variant("size", "xs", "button", "size-6").Variant("size", "xs", "icon", "size-3.5")
             .Variant("size", "sm", "button", "size-7").Variant("size", "sm", "icon", "size-4")
             .Variant("size", "md", "button", "size-8").Variant("size", "md", "icon", "size-4")
