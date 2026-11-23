@@ -27,7 +27,7 @@
             var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label"
+        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
              @attributes="AdditionalAttributes">
             <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
@@ -129,18 +129,28 @@
                     else if (virtualizing)
                     {
                         <Virtualize TItem="RowEntry" Items="entries" ItemSize="EffectiveItemSize" OverscanCount="OverscanCount" SpacerElement="tr" Context="row">
-                            @RowFragment(row, selecting, acting, columns, pinStart, pinEnd, rowIndex: row.Position + 1)
+                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="row.Position + 1" Class="@RowClass(selecting)">
+                                @Cells(row, selecting, acting, columns, pinStart, pinEnd)
+                            </DataListRowView>
                         </Virtualize>
                     }
                     else
                     {
+                        @* The key is on the component itself, directly in the loop: a keyed element inside a RenderFragment would sit in a region of its own, where a key cannot match a row of another position, and every row after a removed one would be rebuilt. *@
                         @foreach (var row in entries!)
                         {
-                            @RowFragment(row, selecting, acting, columns, pinStart, pinEnd, rowIndex: null)
+                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="null" Class="@RowClass(selecting)">
+                                @Cells(row, selecting, acting, columns, pinStart, pinEnd)
+                            </DataListRowView>
                         }
                     }
                 </tbody>
             </table>
+            @* The loader of a virtualized list (cursor paging) is drawn here, in the box that scrolls: a sentinel after the box would never move while the rows scroll inside it. *@
+            @if (IsVirtualized && Context.TableFooter is { } footer)
+            {
+                @footer
+            }
         </div>
         @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
         @if (resizing)
@@ -155,6 +165,8 @@
     private int _parentRenders;
     private ElementReference _root;
     private bool _watching;
+    private bool _keepingFocus;
+    private readonly string _scrollId = NewId("table-scroll");
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -220,10 +232,28 @@
             _watching = true;
             _ = WatchActionsWidthAsync();
         }
+        if (!_keepingFocus && IsVirtualized)
+        {
+            _keepingFocus = true;
+            _ = KeepVirtualFocusAsync();
+        }
         var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}"));
         if (signature == Context.ColumnsSignature) return;
         Context.ColumnsSignature = signature;
         Context.NotifyChanged();
+    }
+
+    // A row that scrolls out of the window takes the focus it held with it: the browser gives it back when the row returns.
+    private async Task KeepVirtualFocusAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.keepVirtualFocus", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
     }
 
     private async Task WatchActionsWidthAsync()
@@ -254,8 +284,15 @@
             },
         };
         if (IsVirtualized) variants["virtualize"] = "true";
+        Context.SetTableVirtualized(IsVirtualized, IsVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
         _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
+    }
+
+    public override void Dispose()
+    {
+        Context.SetTableVirtualized(false, null);
+        base.Dispose();
     }
 
     // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
@@ -301,8 +338,10 @@
 
     private sealed record RowEntry(object Key, TItem Item, int Position);
 
-    private RenderFragment RowFragment(RowEntry row, bool selecting, bool acting, List<View> columns, bool pinStart, bool pinEnd, int? rowIndex) =>
-        @<DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="rowIndex" Class="@(selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"])">
+    private string RowClass(bool selecting) => selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"];
+
+    private RenderFragment Cells(RowEntry row, bool selecting, bool acting, List<View> columns, bool pinStart, bool pinEnd) =>
+        @<text>
             @if (selecting)
             {
                 <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"><DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" /></td>
@@ -317,9 +356,9 @@
                     <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
                 </td>
             }
-        </DataListRowView>;
+        </text>;
 
-    // The rows with a key each: the row key of the schema, else the identity of the row. A schema whose keys repeat (a data error) falls back to the position.
+    // The rows with a key each: the row key of the schema, else the identity of the row (the reference). A schema whose keys repeat (a data error) falls back to the identity of the rows, and a row that is itself listed twice to its position.
     private List<RowEntry> RowEntries()
     {
         var schema = Context.Schema;

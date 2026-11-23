@@ -137,23 +137,203 @@ public class DataListCursorTests : BluxToolsTestContext
         Assert.Equal(10, controller.Rows.Count);
     }
 
-    [Fact]
-    public async Task Refresh_in_cursor_mode_restarts_from_the_first_page()
+    // A source that can lose rows between the requests, and remembers the cursor of every page it was asked for.
+    private sealed class Source(IEnumerable<Person> rows)
     {
-        using var controller = new DataListController<Person>(
-            DataListControllerTests.Schema,
-            DataListControllerTests.Schema.InMemoryProvider(DataListControllerTests.People))
+        public List<Person> Rows { get; } = [.. rows];
+
+        public List<string?> After { get; } = [];
+
+        public Func<DataListRequest, bool>? Fail { get; set; }
+
+        public DataListProvider<Person> Provider => (request, token) =>
         {
-            PagingMode = DataListPagingMode.Cursor,
+            if (request.Paging is DataListPaging.Cursor cursor) After.Add(cursor.After);
+            if (Fail?.Invoke(request) == true) throw new InvalidOperationException("The source is down.");
+            return ValueTask.FromResult(DataListControllerTests.Schema.ExecuteInMemory(Rows, request));
         };
+    }
+
+    [Fact]
+    public async Task Refresh_in_cursor_mode_loads_every_page_on_screen_again_from_the_first_cursor()
+    {
+        var source = new Source(DataListControllerTests.People);
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        await controller.LoadMoreAsync();
+        await controller.LoadMoreAsync();
+        Assert.Equal(30, controller.Rows.Count);
+        Assert.Equal(3, controller.PagesLoaded);
+        var cursors = source.After.ToList();
+        source.After.Clear();
+        // The first page lost a row: the pages on screen shift by one.
+        source.Rows.RemoveAll(p => p.Id == 1);
+
+        await controller.RefreshAsync();
+
+        // The three pages again, one after the other, each by the cursor the previous answer gave: the rows on screen are what the source holds now.
+        Assert.Equal(cursors.Count, source.After.Count);
+        Assert.Null(source.After[0]);
+        Assert.Equal(30, controller.Rows.Count);
+        Assert.Equal("Person 02", controller.Rows[0].Name);
+        Assert.Equal("Person 31", controller.Rows[29].Name);
+        Assert.Equal(3, controller.PagesLoaded);
+        Assert.True(controller.HasMore);
+        Assert.Equal(44, controller.Result!.TotalCount);
+        Assert.False(controller.HasError);
+        // The list goes on from where it was.
+        await controller.LoadMoreAsync();
+        Assert.Equal(40, controller.Rows.Count);
+    }
+
+    [Fact]
+    public async Task A_refresh_keeps_the_rows_on_screen_when_the_first_page_fails_and_reports_the_error()
+    {
+        var source = new Source(DataListControllerTests.People);
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        await controller.LoadMoreAsync();
+
+        source.Fail = request => request.Paging is DataListPaging.Cursor { After: null };
+        await controller.RefreshAsync();
+
+        Assert.True(controller.HasError);
+        Assert.Equal(20, controller.Rows.Count);
+        Assert.Equal(2, controller.PagesLoaded);
+    }
+
+    [Fact]
+    public async Task A_page_that_fails_during_a_refresh_sends_the_list_back_to_its_first_page_without_an_error()
+    {
+        var source = new Source(DataListControllerTests.People);
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        var firstCursor = controller.NextCursor;
+        await controller.LoadMoreAsync();
+        await controller.LoadMoreAsync();
+        Assert.Equal(30, controller.Rows.Count);
+
+        // Pages 1 and 2 answer, the third does not.
+        var asked = 0;
+        source.Fail = request => request.Paging is DataListPaging.Cursor && ++asked == 3;
+        await controller.RefreshAsync();
+
+        Assert.False(controller.HasError);
+        Assert.Equal(10, controller.Rows.Count);
+        Assert.Equal(1, controller.PagesLoaded);
+        Assert.Equal(firstCursor, controller.NextCursor);
+        // A fresh start: the next page loads as usual.
+        source.Fail = null;
+        await controller.LoadMoreAsync();
+        Assert.Equal(20, controller.Rows.Count);
+        Assert.Equal(2, controller.PagesLoaded);
+    }
+
+    [Fact]
+    public async Task A_refresh_loads_at_most_MaxRefreshPages_and_the_list_goes_on_after_them()
+    {
+        var source = new Source(DataListControllerTests.People);
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor, MaxRefreshPages = 2 };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        await controller.LoadMoreAsync();
+        await controller.LoadMoreAsync();
+        await controller.LoadMoreAsync();
+        Assert.Equal(40, controller.Rows.Count);
+        source.After.Clear();
+
+        await controller.RefreshAsync();
+
+        Assert.Equal(2, source.After.Count);
+        Assert.Equal(20, controller.Rows.Count);
+        Assert.Equal(2, controller.PagesLoaded);
+        Assert.True(controller.HasMore);
+        await controller.LoadMoreAsync();
+        Assert.Equal("Person 30", controller.Rows[^1].Name);
+    }
+
+    [Fact]
+    public async Task A_refresh_of_a_list_entered_at_a_cursor_starts_from_that_cursor()
+    {
+        var source = new Source(DataListControllerTests.People);
+        using var first = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor };
+        await first.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        var middle = first.NextCursor;
+
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, source.Provider) { PagingMode = DataListPagingMode.Cursor };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState with { Cursor = middle });
+        await controller.LoadMoreAsync();
+        Assert.Equal("Person 11", controller.Rows[0].Name);
+        source.After.Clear();
+
+        await controller.RefreshAsync();
+
+        Assert.Equal(middle, source.After[0]);
+        Assert.Equal(20, controller.Rows.Count);
+        Assert.Equal("Person 11", controller.Rows[0].Name);
+    }
+
+    [Fact]
+    public async Task A_row_repeated_on_a_later_page_is_kept_where_it_first_appeared_and_not_listed_twice()
+    {
+        var calls = 0;
+        // The second page repeats the last row of the first one (the cursor overlaps) and the third repeats a row of the first.
+        DataListProvider<Person> provider = (request, token) =>
+        {
+            var page = ++calls;
+            return ValueTask.FromResult(page switch
+            {
+                1 => new DataListResult<Person>([.. DataListControllerTests.People.Take(3)], 9, "p2"),
+                2 => new DataListResult<Person>([DataListControllerTests.People[2], DataListControllerTests.People[3], DataListControllerTests.People[4]], null, "p3"),
+                _ => new DataListResult<Person>([DataListControllerTests.People[0], DataListControllerTests.People[5]], null, null),
+            });
+        };
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, provider) { PagingMode = DataListPagingMode.Cursor };
 
         await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
         await controller.LoadMoreAsync();
-        Assert.Equal(20, controller.Rows.Count);
+        await controller.LoadMoreAsync();
+
+        Assert.Equal([1, 2, 3, 4, 5, 6], controller.Rows.Select(p => p.Id));
+        Assert.False(controller.HasMore);
+        Assert.Equal(9, controller.Result!.TotalCount);
+    }
+
+    [Fact]
+    public async Task Repeated_rows_are_dropped_by_a_refresh_of_several_pages_too()
+    {
+        // Every page, whatever the cursor, ends with the row the next one starts with.
+        DataListProvider<Person> provider = (request, token) =>
+        {
+            var after = request.Paging is DataListPaging.Cursor { After: { } a } ? int.Parse(a) : 0;
+            var rows = DataListControllerTests.People.Skip(after).Take(4).ToList();
+            return ValueTask.FromResult(new DataListResult<Person>(rows, 45, after + 3 < 12 ? (after + 3).ToString() : null));
+        };
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, provider) { PagingMode = DataListPagingMode.Cursor };
+        await controller.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        await controller.LoadMoreAsync();
+        await controller.LoadMoreAsync();
+        Assert.Equal(Enumerable.Range(1, 10), controller.Rows.Select(p => p.Id));
 
         await controller.RefreshAsync();
-        Assert.Equal(10, controller.Rows.Count);
-        Assert.True(controller.HasMore);
+
+        Assert.Equal(Enumerable.Range(1, 10), controller.Rows.Select(p => p.Id));
+        Assert.Equal(3, controller.PagesLoaded);
+    }
+
+    [Theory]
+    [InlineData(DataListPagingMode.Offset)]
+    [InlineData(DataListPagingMode.None)]
+    public void A_cursor_means_nothing_unless_the_list_pages_by_cursor(DataListPagingMode mode)
+    {
+        using var controller = new DataListController<Person>(DataListControllerTests.Schema, DataListControllerTests.Schema.InMemoryProvider(DataListControllerTests.People)) { PagingMode = mode };
+        var stray = DataListControllerTests.Schema.DefaultState with { Cursor = "abc", Page = 3 };
+
+        var normalized = controller.Normalize(stray);
+
+        Assert.Null(normalized.Cursor);
+        Assert.Equal(3, normalized.Page);
+        controller.PagingMode = DataListPagingMode.Cursor;
+        Assert.Equal("abc", controller.Normalize(stray).Cursor);
     }
 
     [Fact]
@@ -317,6 +497,88 @@ public class DataListCursorTests : BluxToolsTestContext
         var firstRow = cut.Find("tbody tr[data-slot=row]");
         Assert.Equal("2", firstRow.GetAttribute("aria-rowindex"));
         Assert.Contains(heightClass, firstRow.ClassName);
+    }
+
+    [Fact]
+    public void Virtualized_cursor_table_hosts_auto_infinite_loader_inside_its_scroll_box()
+    {
+        var cut = Render<DataListCursorHarness>(p => p
+            .Add(x => x.PagingMode, DataListPagingMode.Cursor)
+            .Add(x => x.Virtualize, true)
+            .Add(x => x.Auto, true));
+
+        var root = cut.Find("[data-slot=table-root]");
+        var scrollId = root.GetAttribute("data-bx-scroll-root");
+        Assert.False(string.IsNullOrEmpty(scrollId));
+
+        // The infinite loader is rendered inside the table's scroll root, not outside it, and watches that scroll root.
+        Assert.Single(cut.FindAll("[data-slot=infinite-loader]"));
+        var loaderInTable = root.QuerySelector("[data-slot=infinite-loader]");
+        Assert.NotNull(loaderInTable);
+        var scroller = root.QuerySelector("bx-infinite-scroll");
+        Assert.NotNull(scroller);
+        Assert.Equal($"[data-bx-scroll-root='{scrollId}']", scroller.GetAttribute("data-root"));
+    }
+
+    [Fact]
+    public async Task Interactive_cursor_list_entered_at_a_cursor_shows_back_to_start_button_and_resets_to_first_page()
+    {
+        using var initial = new DataListController<Person>(
+            DataListControllerTests.Schema,
+            DataListControllerTests.Schema.InMemoryProvider(DataListControllerTests.People[..25]))
+        {
+            PagingMode = DataListPagingMode.Cursor,
+        };
+        await initial.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        var secondCursor = initial.NextCursor;
+        Assert.NotNull(secondCursor);
+
+        var cut = Render<DataListCursorHarness>(p => p
+            .Add(x => x.Items, DataListControllerTests.People[..25])
+            .Add(x => x.Auto, false)
+            .Add(x => x.State, DataListControllerTests.Schema.DefaultState with { Cursor = secondCursor }));
+
+        Assert.Contains("Person 11", cut.Find("tbody").TextContent);
+        Assert.Equal("10 of 25", cut.Find("[data-slot=result-count]").TextContent);
+
+        var reset = cut.Find("button[data-slot=cursor-reset]");
+        Assert.Equal("Back to start", reset.TextContent.Trim());
+
+        reset.Click();
+
+        Assert.Empty(cut.FindAll("[data-slot=cursor-reset]"));
+        Assert.Contains("Person 01", cut.Find("tbody").TextContent);
+        Assert.Equal("1–10 of 25", cut.Find("[data-slot=result-count]").TextContent);
+    }
+
+    [Fact]
+    public async Task Changing_PagingMode_dynamically_resets_page_and_cursor_and_reloads_from_first_rows()
+    {
+        using var initial = new DataListController<Person>(
+            DataListControllerTests.Schema,
+            DataListControllerTests.Schema.InMemoryProvider(DataListControllerTests.People[..25]))
+        {
+            PagingMode = DataListPagingMode.Cursor,
+        };
+        await initial.LoadAsync(DataListControllerTests.Schema.DefaultState);
+        var secondCursor = initial.NextCursor!;
+
+        var cut = Render<DataListCursorHarness>(p => p
+            .Add(x => x.Items, DataListControllerTests.People[..25])
+            .Add(x => x.PagingMode, DataListPagingMode.Cursor)
+            .Add(x => x.Auto, false)
+            .Add(x => x.State, DataListControllerTests.Schema.DefaultState with { Cursor = secondCursor }));
+
+        Assert.Contains("Person 11", cut.Find("tbody").TextContent);
+
+        cut.Render(p => p
+            .Add(x => x.Items, DataListControllerTests.People[..25])
+            .Add(x => x.PagingMode, DataListPagingMode.None)
+            .Add(x => x.Auto, false)
+            .Add(x => x.State, DataListControllerTests.Schema.DefaultState with { Cursor = secondCursor }));
+
+        Assert.Equal(25, cut.FindAll("tbody tr[data-slot=row]").Count);
+        Assert.Contains("Person 01", cut.FindAll("tbody tr[data-slot=row]")[0].TextContent);
     }
 }
 
