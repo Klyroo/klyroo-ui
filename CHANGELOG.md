@@ -6,6 +6,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+### Added
+
+- **Submenus in `BxDropdownMenu`.** A `BxMenuItem` with `Children` opens a nested menu (its own popover, opened by the item as invoker): right arrow (left in right-to-left text), Enter, Space and a click open it and focus its first item, left arrow and Escape close it and give focus back to the item, the pointer opens it after a short pause and closes it after a pause on another item. Any depth, all render modes; `DropdownMenuUi.ItemChevron` styles the arrow. `BxContextMenu` renders such an item as a plain item.
+- **Row actions in Blux.UI.Tools.** `DataListRowAction<TItem>` (Group, Children, Href, Visible, Disabled, DisabledReason, Loading, Confirm, RefreshOnSuccess, OnExecute with a `DataListRowActionContext<TItem>` that can `Fail()` without throwing), the `BxDataListRowActions` part and the `RowActions` parameter of `BxDataListTable` (a last column). Buttons up to `MaxVisible` and an overflow menu on a wide screen, one "Actions for {row}" button that opens a bottom sheet below `md` (with the reasons of disabled actions); the focus moves to the next row's actions when an action removes its row. Interactive only, except link actions, which are plain links in static rendering.
+
 ### Changed
 
 - **The data list docs are five pages.** `/components/data-list` keeps the basics (memory, provider, URL, search, large first page, error); `data-list-filters`, `data-list-filter-panel`, `data-list-facets` and `data-list-selection` hold the rest, so no page hands a state close to the 32 KB the client can send back to the server when a Server or Auto circuit starts. The old anchors of the moved examples no longer exist on `/components/data-list`.
