@@ -77,7 +77,10 @@ function focusAfterRowRemoval(part) {
   const row = part?.closest('tr');
   const region = part?.closest('[data-slot=table-root]');
   if (!row || !region) return;
-  const anchor = (from) => [...(from?.querySelectorAll('[data-row-action-anchor]') ?? [])].find((el) => el.getClientRects().length > 0 && !el.disabled);
+  const visible = (el) => el.getClientRects().length > 0 && !el.disabled;
+  // The button that opens the actions of the row (the menu on a wide screen, the sheet on a phone), else the first control of its actions.
+  const anchor = (from) => [...(from?.querySelectorAll('[data-slot=row-actions-trigger], [data-slot=row-actions-phone]') ?? [])].find(visible)
+    ?? [...(from?.querySelectorAll('[data-row-action-anchor]') ?? [])].find(visible);
   const next = anchor(row.nextElementSibling);
   const lost = () => {
     const active = document.activeElement;

@@ -99,7 +99,7 @@ public sealed record DataListUi : ISlotOverrides
     public string? RowActionsMenu { get; init; }
     public string? RowActionsPhone { get; init; }
     public string? SheetList { get; init; }
-    public string? SheetSeparator { get; init; }
+    public string? SheetDivider { get; init; }
     public string? SheetEntry { get; init; }
     public string? SheetHeading { get; init; }
     public string? SheetItem { get; init; }
@@ -202,7 +202,7 @@ public sealed record DataListUi : ISlotOverrides
         "rowActionsMenu" => RowActionsMenu,
         "rowActionsPhone" => RowActionsPhone,
         "sheetList" => SheetList,
-        "sheetSeparator" => SheetSeparator,
+        "sheetDivider" => SheetDivider,
         "sheetEntry" => SheetEntry,
         "sheetHeading" => SheetHeading,
         "sheetItem" => SheetItem,

@@ -93,7 +93,7 @@ public class DataListRowActionsTests : BluxToolsTestContext
         Assert.Equal(["menuitem:A", "menuitem:C", "separator:", "menuitem:B", "separator:", "menuitem:D"],
             menu.Children.Select(c => $"{c.GetAttribute("role")}:{(c.GetAttribute("role") == "menuitem" ? c.TextContent.Trim() : "")}"));
         // The sheet has the same groups with a divider between.
-        Assert.Equal(2, Row(cut, 0).QuerySelectorAll("[data-slot=row-actions-sheet-list] > li[role=separator]").Length);
+        Assert.Equal(2, Row(cut, 0).QuerySelectorAll("[data-slot=row-actions-sheet-list] > li[data-divider]").Length);
     }
 
     [Fact]
