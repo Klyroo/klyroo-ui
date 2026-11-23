@@ -27,11 +27,11 @@
                     var color = item.Color?.Value;
                     if (item.Href is not null && !item.Disabled)
                     {
-                        <a role="menuitem" tabindex="-1" href="@item.Href" class="@_slots["item"]" data-color="@color">@ItemContent(item)</a>
+                        <a role="menuitem" tabindex="-1" href="@item.Href" class="@_slots["item"]" data-color="@color" title="@item.Description" aria-description="@item.Description">@ItemContent(item)</a>
                     }
                     else
                     {
-                        <button type="button" role="menuitem" tabindex="-1" class="@_slots["item"]" data-color="@color"
+                        <button type="button" role="menuitem" tabindex="-1" class="@_slots["item"]" data-color="@color" title="@item.Description" aria-description="@item.Description"
                                 aria-disabled="@(item.Disabled ? "true" : null)"
                                 @onclick="(item.Disabled || !OnSelect.HasDelegate ? default : EventCallback.Factory.Create(this, () => OnSelect.InvokeAsync(item)))">
                             @ItemContent(item)

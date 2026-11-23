@@ -23,6 +23,11 @@ public sealed record BxMenuItem
     public bool Disabled { get; init; }
 
     /// <summary>
+    /// A hint for the item, such as why it is disabled: it is the title (the tooltip) of the entry and its accessible description. Not shown otherwise.
+    /// </summary>
+    public string? Description { get; init; }
+
+    /// <summary>
     /// Items of a submenu. An item with children opens a nested menu (on the right arrow key, Enter, a click or a pause of the pointer) instead of
     /// being selected, so <see cref="Href"/> and <see cref="BxDropdownMenu.OnSelect"/> do not apply to it. Only <see cref="BxDropdownMenu"/> shows
     /// submenus: <see cref="BxContextMenu"/> renders such an item as a plain item.

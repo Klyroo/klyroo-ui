@@ -76,6 +76,35 @@ public class OverlayTests : BluxTestContext
     }
 
     [Fact]
+    public void DropdownMenu_and_ContextMenu_give_an_item_its_description_as_title_and_accessible_description()
+    {
+        BxMenuItem[] items =
+        [
+            new() { Label = "Archive", Disabled = true, Description = "Nothing to archive." },
+            new() { Label = "Docs", Href = "/docs", Description = "The docs." },
+            new() { Label = "Send to", Description = "Sends it.", Children = [new() { Label = "Email" }] },
+            new() { Label = "Plain" },
+        ];
+        var dropdown = Render<BxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<button>Menu</button>"));
+        var context = Render<BxContextMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<div>Area</div>"));
+
+        foreach (var cut in new IRenderedComponent<IComponent>[] { dropdown, context })
+        {
+            var entries = cut.FindAll("[role=menuitem]");
+            string? Title(string text) => entries.First(e => e.TextContent.Contains(text)).GetAttribute("title");
+            string? Description(string text) => entries.First(e => e.TextContent.Contains(text)).GetAttribute("aria-description");
+            Assert.Equal("Nothing to archive.", Title("Archive"));
+            Assert.Equal("Nothing to archive.", Description("Archive"));
+            Assert.Equal("The docs.", Title("Docs"));
+            Assert.Equal("The docs.", Description("Docs"));
+            Assert.Null(Title("Plain"));
+            Assert.Null(Description("Plain"));
+        }
+        // Only the dropdown has submenus.
+        Assert.Equal("Sends it.", dropdown.Find("button[aria-haspopup=menu]").GetAttribute("title"));
+    }
+
+    [Fact]
     public void DropdownMenu_renders_a_submenu_next_to_the_menu_and_names_it_after_its_item()
     {
         BxMenuItem? selected = null;
