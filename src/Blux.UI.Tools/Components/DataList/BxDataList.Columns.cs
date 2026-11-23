@@ -16,13 +16,15 @@ public partial class BxDataList<TItem>
     private bool _columnPrefsResolved;
     private PersistentComponentState? _columnsPersistent;
     private PersistingComponentStateSubscription? _columnsPersistSubscription;
+    private string? _claimedPreferencesKey;
     private bool _columnsOverflowLogged;
 
     /// <summary>
-    /// Name under which column visibility, order, pinning and widths are saved: a cookie <c>blux-dl-cols-&lt;key&gt;</c> (scoped to the path base of the app like the other Blux cookies, SameSite=Lax, a year),
-    /// or a localStorage entry of the same name in a Blazor Hybrid web view (MAUI), where there is no server to read a cookie. Statically rendered and prerendered lists read it from the request when the
-    /// server calls <c>AddBluxServer()</c> (package <c>Blux.UI.Server</c>), so the first paint already has the user's columns; an interactive list takes it from the prerender or from the browser.
-    /// Only letters, digits, <c>_</c> and <c>-</c> are kept (64 characters at most). Without a key the preferences stay in memory for the life of the component. Never part of the URL.
+    /// Name under which column visibility, order, pinning and widths are saved in the grouped cookie <c>blux-dl-cols</c> (scoped to the path base of the app like the other Blux cookies, SameSite=Lax, a year,
+    /// capped at 3,000 characters across up to 32 lists with least-recently-updated eviction, and 600 characters per list), or a localStorage entry of the same name in a Blazor Hybrid web view (MAUI),
+    /// where there is no server to read a cookie. Statically rendered and prerendered lists read it from the request when the server calls <c>AddBluxServer()</c> (package <c>Blux.UI.Server</c>), so the first
+    /// paint already has the user's columns; an interactive list takes it from the prerender or from the browser. Only letters, digits, <c>_</c> and <c>-</c> are kept (64 characters at most). Without a key
+    /// the preferences stay in memory for the life of the component. Never part of the URL.
     /// </summary>
     [Parameter] public string? PreferencesKey { get; set; }
 
@@ -79,7 +81,8 @@ public partial class BxDataList<TItem>
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only a string goes through the reflection-based serializer of PersistentComponentState, and string has a built-in converter.")]
     private void InitializeColumnPreferences()
     {
-        if (NormalizedPreferencesKey is null) return;
+        if (NormalizedPreferencesKey is not { } normalized) return;
+        _claimedPreferencesKey = ServerColumnPreferences.Claim(Services, normalized);
         _columnsPersistent = Services.GetService(typeof(PersistentComponentState)) as PersistentComponentState;
         if (RendererInfo.IsInteractive)
         {
@@ -90,7 +93,7 @@ public partial class BxDataList<TItem>
             }
             return;
         }
-        var (prefs, fromServer) = ServerColumnPreferences.Read(Services, NormalizedPreferencesKey, interactive: false);
+        var (prefs, fromServer) = ServerColumnPreferences.Read(Services, normalized, interactive: false);
         _columnPrefs = prefs;
         _columnPrefsResolved = fromServer;
         if (fromServer && !prefs.IsEmpty && _columnsPersistent is not null && AssignedRenderMode is not null)
@@ -100,6 +103,13 @@ public partial class BxDataList<TItem>
         }
     }
 
+    private void DisposeColumnPreferences()
+    {
+        _columnsPersistSubscription?.Dispose();
+        ServerColumnPreferences.Release(Services, _claimedPreferencesKey);
+        _claimedPreferencesKey = null;
+    }
+
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only a string goes through the reflection-based serializer of PersistentComponentState, and string has a built-in converter.")]
     private Task PersistColumnPreferencesAsync()
     {
@@ -107,14 +117,7 @@ public partial class BxDataList<TItem>
         if (string.IsNullOrEmpty(encoded) || ColumnsPersistKey is not { } key || _columnsPersistent is null) return Task.CompletedTask;
         // The client sends the whole persisted state back when a circuit starts: the preferences count in the budget of the page like a result does, and a refused one is read from the browser instead.
         if (!DataListPersistBudget.Reserve(Services, encoded.Length + key.Length + 16, ToolsOptions.PersistMaxBytes, ToolsOptions.PersistPageMaxBytes)) return Task.CompletedTask;
-        try
-        {
-            _columnsPersistent.PersistAsJson(key, encoded);
-        }
-        catch (InvalidOperationException)
-        {
-            // Two lists with the same PreferencesKey share one cookie: the first one handed it over.
-        }
+        _columnsPersistent.PersistAsJson(key, encoded);
         return Task.CompletedTask;
     }
 
@@ -363,22 +366,20 @@ public partial class BxDataList<TItem>
 
     internal void MoveColumn(string key, int delta)
     {
-        if (delta == 0) return;
-        var keys = OrderedKeys();
-        var from = keys.FindIndex(k => string.Equals(k, key, StringComparison.Ordinal));
+        if (delta == 0 || FindColumn(key) is not { Required: false }) return;
+        var configurable = OrderedColumns().Where(c => !c.Required && c.ResolvedKey is not null).Select(c => c.ResolvedKey!).ToList();
+        var from = configurable.FindIndex(k => string.Equals(k, key, StringComparison.Ordinal));
         if (from < 0) return;
-        var to = Math.Clamp(from + delta, 0, keys.Count - 1);
+        var to = Math.Clamp(from + delta, 0, configurable.Count - 1);
         if (to == from) return;
-        var moved = keys[from];
-        keys.RemoveAt(from);
-        keys.Insert(to, moved);
-        ApplyOrder(keys, moved);
+        MoveColumnNextTo(key, configurable[to], after: to > from);
     }
 
     /// <summary>Puts <paramref name="key"/> right before or right after <paramref name="targetKey"/>: what dropping a dragged column on another does.</summary>
     internal void MoveColumnNextTo(string key, string targetKey, bool after)
     {
         if (string.Equals(key, targetKey, StringComparison.Ordinal)) return;
+        if (FindColumn(key) is not { Required: false } || FindColumn(targetKey) is not { Required: false }) return;
         var keys = OrderedKeys();
         if (!keys.Contains(key, StringComparer.Ordinal) || !keys.Contains(targetKey, StringComparer.Ordinal)) return;
         var before = keys.ToList();

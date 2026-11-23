@@ -28,17 +28,17 @@ function fakeStorage() {
   return { map, getItem: (k) => map.get(k) ?? null, setItem: (k, v) => map.set(k, v), removeItem: (k) => map.delete(k) };
 }
 
-test('writes and reads column prefs at the root path', () => {
+test('writes and reads column prefs at the root path in one grouped cookie', () => {
   const doc = fakeDoc('http://localhost/');
   assert.equal(writeColumnPrefs(doc, 'invoices', 'v1!hstatus!wcustomer*220', 'http:'), true);
   assert.equal(readColumnPrefs(doc, 'invoices'), 'v1!hstatus!wcustomer*220');
-  assert.equal(doc.writes[0], 'blux-dl-cols-invoices=v1!hstatus!wcustomer*220; path=/; max-age=31536000; SameSite=Lax');
+  assert.equal(doc.writes[0], 'blux-dl-cols=invoices.v1!hstatus!wcustomer*220; path=/; max-age=31536000; SameSite=Lax');
 });
 
 test('a page below the root without a base element is still the root app', () => {
   const doc = fakeDoc('http://localhost/customers/list', false);
   assert.equal(writeColumnPrefs(doc, 'invoices', 'v1!hstatus', 'http:'), true);
-  assert.match(doc.writes[0], /^blux-dl-cols-invoices=v1!hstatus; path=\/; /);
+  assert.match(doc.writes[0], /^blux-dl-cols=invoices\.v1!hstatus; path=\/; /);
 });
 
 test('scopes the name and the path below a path base and adds Secure on https', () => {
@@ -46,7 +46,7 @@ test('scopes the name and the path below a path base and adds Secure on https', 
   assert.equal(writeColumnPrefs(doc, 'cust', 'v1!sname', 'https:'), true);
   assert.equal(readColumnPrefs(doc, 'cust'), 'v1!sname');
   // The name carries the slug of the base (BxPathScope.CookieName), the path is the base itself.
-  assert.equal(doc.writes[0], 'blux-dl-cols-cust.demo.dashboard~~=v1!sname; path=/demo/dashboard; max-age=31536000; SameSite=Lax; Secure');
+  assert.equal(doc.writes[0], 'blux-dl-cols.demo.dashboard~~=cust.v1!sname; path=/demo/dashboard; max-age=31536000; SameSite=Lax; Secure');
 });
 
 test('the cookie of another app on the origin is not read', () => {
@@ -56,13 +56,40 @@ test('the cookie of another app on the origin is not read', () => {
   assert.equal(readColumnPrefs(doc, 'cust'), null);
 });
 
-test('empty value deletes the cookie', () => {
+test('multiple lists share one grouped cookie in LRU order and clearing one keeps the others until the last is removed', () => {
   const doc = fakeDoc('http://localhost/');
-  writeColumnPrefs(doc, 'invoices', 'v1!hstatus');
+  assert.equal(writeColumnPrefs(doc, 'invoices', 'v1!hstatus'), true);
+  assert.equal(writeColumnPrefs(doc, 'customers', 'v1!sname'), true);
+  assert.equal(doc.cookie, 'blux-dl-cols=customers.v1!sname!!invoices.v1!hstatus');
   assert.equal(readColumnPrefs(doc, 'invoices'), 'v1!hstatus');
+  assert.equal(readColumnPrefs(doc, 'customers'), 'v1!sname');
+
+  // Updating invoices promotes it to the front.
+  assert.equal(writeColumnPrefs(doc, 'invoices', 'v1!hamount'), true);
+  assert.equal(doc.cookie, 'blux-dl-cols=invoices.v1!hamount!!customers.v1!sname');
+
+  // Clearing invoices keeps customers in the cookie.
   assert.equal(writeColumnPrefs(doc, 'invoices', ''), true);
   assert.equal(readColumnPrefs(doc, 'invoices'), null);
-  assert.match(doc.writes[1], /max-age=0/);
+  assert.equal(readColumnPrefs(doc, 'customers'), 'v1!sname');
+  assert.equal(doc.cookie, 'blux-dl-cols=customers.v1!sname');
+
+  // Clearing the last list deletes the cookie.
+  assert.equal(writeColumnPrefs(doc, 'customers', ''), true);
+  assert.equal(readColumnPrefs(doc, 'customers'), null);
+  assert.match(doc.writes.at(-1), /max-age=0/);
+});
+
+test('evicts the least-recently-updated lists when the grouped cookie exceeds 3000 characters or 32 lists', () => {
+  const doc = fakeDoc('http://localhost/');
+  const payload = 'v1!h' + 'a'.repeat(400);
+  for (let i = 1; i <= 10; i++) {
+    assert.equal(writeColumnPrefs(doc, `list-${i}`, payload), true);
+  }
+  assert.ok(doc.cookie.length <= 3020);
+  // Most recent lists stay; oldest lists were evicted.
+  assert.equal(readColumnPrefs(doc, 'list-10'), payload);
+  assert.equal(readColumnPrefs(doc, 'list-1'), null);
 });
 
 test('rejects unsafe keys and values, on the way out and on the way in', () => {
@@ -71,18 +98,18 @@ test('rejects unsafe keys and values, on the way out and on the way in', () => {
   assert.equal(writeColumnPrefs(doc, 'good', 'bad;value'), false);
   assert.equal(writeColumnPrefs(doc, 'good', 'a%20b'), false, 'a percent sign would be decoded by the server');
   assert.equal(writeColumnPrefs(doc, 'good', 'a+b'), false);
-  assert.equal(writeColumnPrefs(doc, 'good', 'v1!h' + 'a'.repeat(2000)), false, 'longer than the bound');
+  assert.equal(writeColumnPrefs(doc, 'good', 'v1!h' + 'a'.repeat(600)), false, 'longer than the per-list bound');
   assert.equal(readColumnPrefs(doc, 'bad key'), null);
-  const tampered = fakeDoc('http://localhost/', true, 'blux-dl-cols-good=v1!h<script>');
+  const tampered = fakeDoc('http://localhost/', true, 'blux-dl-cols=good.v1!h<script>');
   assert.equal(readColumnPrefs(tampered, 'good'), null);
   assert.equal(doc.writes.length, 0);
 });
 
-test('a web view keeps the preferences in localStorage under the same name and writes no cookie', () => {
+test('a web view keeps the preferences in localStorage under the same grouped name and writes no cookie', () => {
   const doc = fakeDoc('http://0.0.0.0/', false, '', 'webview');
   const storage = fakeStorage();
   assert.equal(writeColumnPrefs(doc, 'invoices', 'v1!hstatus', 'https:', storage), true);
-  assert.equal(storage.map.get('blux-dl-cols-invoices'), 'v1!hstatus');
+  assert.equal(storage.map.get('blux-dl-cols'), 'invoices.v1!hstatus');
   assert.equal(doc.writes.length, 0);
   assert.equal(readColumnPrefs(doc, 'invoices', storage), 'v1!hstatus');
   assert.equal(writeColumnPrefs(doc, 'invoices', '', 'https:', storage), true);

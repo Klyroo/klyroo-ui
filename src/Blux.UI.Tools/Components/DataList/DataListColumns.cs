@@ -53,12 +53,18 @@ internal sealed class DataListColumnPreferences
     public const int MinAllowedWidth = 64;
     public const int MaxAllowedWidth = 900;
 
-    /// <summary>The longest value written to or read from the cookie. A cookie is limited to about 4 KB with its name, and a request carries every cookie of the site.</summary>
-    public const int MaxEncodedLength = 2000;
+    /// <summary>The longest encoded preferences value for one list. Lists share one grouped cookie per path base (<see cref="CookieName"/>, capped at <see cref="MaxCookieLength"/>).</summary>
+    public const int MaxEncodedLength = 600;
 
-    private const int MaxKeyLength = 64;
-    private const int MaxKeysPerSection = 100;
-    private const string CookiePrefix = "blux-dl-cols-";
+    /// <summary>The longest grouped cookie value (<see cref="CookieName"/>) across all lists of the app.</summary>
+    public const int MaxCookieLength = 3000;
+
+    /// <summary>The maximum number of lists kept in the grouped cookie (<see cref="CookieName"/>); older entries are evicted in LRU order.</summary>
+    public const int MaxCookieEntries = 32;
+
+    public const int MaxKeyLength = 64;
+    public const int MaxKeysPerSection = 100;
+    public const string CookieName = "blux-dl-cols";
 
     public List<string> Order { get; } = [];
     public HashSet<string> Hidden { get; } = new(StringComparer.Ordinal);
@@ -100,38 +106,43 @@ internal sealed class DataListColumnPreferences
     /// <summary>Drops every key that is not in <paramref name="knownKeys"/>, every key that is in two sections that exclude each other, and the visibility of <paramref name="requiredKeys"/>.</summary>
     public void Prune(IReadOnlySet<string> knownKeys, IReadOnlySet<string> requiredKeys)
     {
-        Order.RemoveAll(k => !knownKeys.Contains(k));
-        Hidden.RemoveWhere(k => !knownKeys.Contains(k) || requiredKeys.Contains(k));
-        Shown.RemoveWhere(k => !knownKeys.Contains(k) || Hidden.Contains(k));
-        PinnedStart.RemoveWhere(k => !knownKeys.Contains(k));
-        PinnedEnd.RemoveWhere(k => !knownKeys.Contains(k) || PinnedStart.Contains(k));
-        Unpinned.RemoveWhere(k => !knownKeys.Contains(k) || PinnedStart.Contains(k) || PinnedEnd.Contains(k));
-        foreach (var key in Widths.Keys.Where(k => !knownKeys.Contains(k)).ToList()) Widths.Remove(key);
+        static bool ValidKey(string k, IReadOnlySet<string> known) => k.Length is > 0 and <= MaxKeyLength && known.Contains(k);
+        Order.RemoveAll(k => !ValidKey(k, knownKeys));
+        Hidden.RemoveWhere(k => !ValidKey(k, knownKeys) || requiredKeys.Contains(k));
+        Shown.RemoveWhere(k => !ValidKey(k, knownKeys) || Hidden.Contains(k));
+        PinnedStart.RemoveWhere(k => !ValidKey(k, knownKeys));
+        PinnedEnd.RemoveWhere(k => !ValidKey(k, knownKeys) || PinnedStart.Contains(k));
+        Unpinned.RemoveWhere(k => !ValidKey(k, knownKeys) || PinnedStart.Contains(k) || PinnedEnd.Contains(k));
+        foreach (var key in Widths.Keys.Where(k => !ValidKey(k, knownKeys)).ToList()) Widths.Remove(key);
     }
 
     /// <summary>Sanitizes a <c>PreferencesKey</c> to the cookie-safe subset (<c>[A-Za-z0-9_-]</c>, max 64 chars), or <see langword="null"/> when blank.</summary>
     public static string? NormalizeKey(string? key)
     {
         if (string.IsNullOrWhiteSpace(key)) return null;
-        var sb = new StringBuilder(Math.Min(key.Length, 64));
+        var sb = new StringBuilder(Math.Min(key.Length, MaxKeyLength));
         foreach (var ch in key)
         {
-            if (sb.Length == 64) break;
+            if (sb.Length == MaxKeyLength) break;
             if (char.IsAsciiLetterOrDigit(ch) || ch is '_' or '-') sb.Append(ch);
             else sb.Append('_');
         }
         return sb.Length > 0 ? sb.ToString() : null;
     }
 
-    public static string CookieNameFor(string normalizedKey) => CookiePrefix + normalizedKey;
-
     /// <summary>
-    /// Encodes the preferences as a compact cookie-safe token, or empty string when nothing overrides defaults. Returns <see langword="null"/> when the result would pass
-    /// <see cref="MaxEncodedLength"/>: the caller keeps the preferences in memory and leaves the cookie as it was.
+    /// Encodes the preferences as a compact cookie-safe token, or empty string when nothing overrides defaults. Returns <see langword="null"/> when any key exceeds <see cref="MaxKeyLength"/>,
+    /// any section exceeds <see cref="MaxKeysPerSection"/>, or the result would pass <see cref="MaxEncodedLength"/>: the caller keeps the preferences in memory and leaves the cookie as it was.
     /// </summary>
     public string? Encode()
     {
         if (IsEmpty) return "";
+        if (!ValidSection(Order) || !ValidSection(Hidden) || !ValidSection(Shown)
+            || !ValidSection(PinnedStart) || !ValidSection(PinnedEnd) || !ValidSection(Unpinned)
+            || !ValidSection(Widths.Keys))
+        {
+            return null;
+        }
         var parts = new List<string>(8) { "v1" };
         if (Order.Count > 0) parts.Add("o" + JoinKeys(Order));
         if (Hidden.Count > 0) parts.Add("h" + JoinKeys(Hidden.Order(StringComparer.Ordinal)));
@@ -146,6 +157,26 @@ internal sealed class DataListColumnPreferences
         }
         var encoded = string.Join('!', parts);
         return encoded.Length > MaxEncodedLength ? null : encoded;
+    }
+
+    private static bool ValidSection(IReadOnlyCollection<string> keys) =>
+        keys.Count <= MaxKeysPerSection && keys.All(k => k.Length is > 0 and <= MaxKeyLength);
+
+    /// <summary>Extracts and decodes the preferences of <paramref name="normalizedKey"/> from the grouped <see cref="CookieName"/> cookie value (<c>key1.v1!...!!key2.v1!...</c>).</summary>
+    public static DataListColumnPreferences DecodeFromCookie(string? rawCookie, string? normalizedKey)
+    {
+        if (string.IsNullOrWhiteSpace(rawCookie) || rawCookie.Length > MaxCookieLength || string.IsNullOrEmpty(normalizedKey))
+            return new DataListColumnPreferences();
+        var count = 0;
+        foreach (var entry in rawCookie.Split("!!", StringSplitOptions.RemoveEmptyEntries))
+        {
+            if (++count > MaxCookieEntries) break;
+            var dot = entry.IndexOf('.');
+            if (dot <= 0) continue;
+            if (entry.AsSpan(0, dot).SequenceEqual(normalizedKey.AsSpan()))
+                return Decode(entry[(dot + 1)..]);
+        }
+        return new DataListColumnPreferences();
     }
 
     /// <summary>Parses an encoded cookie string. Never throws on malformed input: invalid tokens are skipped.</summary>
@@ -265,9 +296,30 @@ internal sealed class DataListColumnPreferences
 /// <summary>Reads column preferences from <see cref="IBxRequestCookies"/> during SSR or prerender so the first paint has the user's columns.</summary>
 internal static class ServerColumnPreferences
 {
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<IServiceProvider, HashSet<string>> ClaimedKeys = new();
+
+    public static string Claim(IServiceProvider services, string normalizedKey)
+    {
+        var keys = ClaimedKeys.GetOrCreateValue(services);
+        lock (keys)
+        {
+            if (!keys.Add(normalizedKey))
+            {
+                throw new InvalidOperationException($"Two data lists on the same page use the PreferencesKey '{normalizedKey}': give each list its own PreferencesKey.");
+            }
+        }
+        return normalizedKey;
+    }
+
+    public static void Release(IServiceProvider services, string? claimedKey)
+    {
+        if (claimedKey is null || !ClaimedKeys.TryGetValue(services, out var keys)) return;
+        lock (keys) keys.Remove(claimedKey);
+    }
+
     /// <summary>
-    /// The preferences the cookie of the current request holds. <c>ReadFromServer</c> is true when there was a request to ask (even if it carried no cookie): the browser has nothing to add for this render.
-    /// An interactive render has no request (a circuit is not an HTTP request) and the browser has no <see cref="IBxRequestCookies"/>: both read the cookie in the browser instead.
+    /// The preferences the grouped cookie of the current request holds for <paramref name="normalizedKey"/>. <c>ReadFromServer</c> is true when there was a request to ask (even if it carried no cookie):
+    /// the browser has nothing to add for this render. An interactive render has no request (a circuit is not an HTTP request) and the browser has no <see cref="IBxRequestCookies"/>: both read the cookie in the browser instead.
     /// </summary>
     public static (DataListColumnPreferences Preferences, bool ReadFromServer) Read(IServiceProvider services, string? normalizedKey, bool interactive)
     {
@@ -277,7 +329,7 @@ internal static class ServerColumnPreferences
             services.GetService<MissingServerWarning>()?.WarnColumns(services);
             return (new DataListColumnPreferences(), false);
         }
-        var cookieName = BxPathScope.CookieName(DataListColumnPreferences.CookieNameFor(normalizedKey), request.PathBase);
-        return (DataListColumnPreferences.Decode(request.Get(cookieName)), true);
+        var cookieName = BxPathScope.CookieName(DataListColumnPreferences.CookieName, request.PathBase);
+        return (DataListColumnPreferences.DecodeFromCookie(request.Get(cookieName), normalizedKey), true);
     }
 }

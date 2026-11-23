@@ -17,8 +17,14 @@ builder.Services.AddBluxServer();
 cuts the days of its date filters in UTC until the browser is interactive, and logs one warning in Development that says so. With it, the list uses the time zone the browser stored in
 its `blux-timezone` cookie from the second page onwards (the cookie is written by a script, so the first visit has none), so a static page and a prerender show the same days as the interactive render.
 
-The same goes for the columns a user chose in a `BxDataList` with a `PreferencesKey` (visibility, order, pins, widths, in the cookie `blux-dl-cols-<key>`): with `AddBluxServer()` the first HTML
+The same goes for the columns a user chose in a `BxDataList` with a `PreferencesKey` (visibility, order, pins, widths, grouped in the cookie `blux-dl-cols`): with `AddBluxServer()` the first HTML
 already has them, without it a static render or a prerender paints the default columns (one warning in Development) and the interactive render applies the cookie once it can read it.
+
+Because a page that reads a request cookie produces HTML shaped for that user, `IBxRequestCookies.Get` automatically marks the HTTP response `Cache-Control: private` (unless `private` or `no-store` is already set) and adds `Cookie` to `Vary`, so a shared cache or CDN does not serve one user's rendered HTML to another. If your own middleware manages caching headers, you can disable this:
+
+```csharp
+builder.Services.AddBluxServer(options => options.SetCacheHeaders = false);
+```
 
 An interactive render after a prerender has no HTTP request (the circuit is not one), so `IBxRequestCookies` returns nothing there; components read cookies only while they
 are not interactive.

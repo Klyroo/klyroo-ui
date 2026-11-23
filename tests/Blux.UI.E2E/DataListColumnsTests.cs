@@ -9,8 +9,9 @@ namespace Blux.UI.E2E;
 /// </summary>
 public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(server)
 {
-    private const string Cookie = "blux-dl-cols-demo-cols";
-    private const string FixedCookie = "blux-dl-cols-demo-cols-fixed";
+    private const string Cookie = "blux-dl-cols";
+    private const string DemoKey = "demo-cols";
+    private const string FixedKey = "demo-cols-fixed";
 
     private async Task OpenPage(string mode, string query = "")
     {
@@ -71,11 +72,13 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         Assert.Equal(["id", "customer", "status", "amount", "issued"], await Keys(List));
 
         // Hide status, pin amount to the end, put issued first, widen customer.
-        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = "v1!oissued~id~customer~status~amount!hstatus!eamount!wcustomer*300", Url = BaseUrl }]);
+        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = $"{DemoKey}.v1!oissued~id~customer~status~amount!hstatus!eamount!wcustomer*300", Url = BaseUrl }]);
 
-        // What the browser gets before any script runs: the page is already in the columns of the user.
+        // What the browser gets before any script runs: the page is already in the columns of the user, and the response is marked private and varies on Cookie.
         var response = await Page.APIRequest.GetAsync("/ssr/components/data-list-columns");
         Assert.Equal(200, response.Status);
+        Assert.Contains("private", response.Headers.GetValueOrDefault("cache-control", ""), StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Cookie", response.Headers.GetValueOrDefault("vary", ""), StringComparison.OrdinalIgnoreCase);
         var html = await response.TextAsync();
         var list = html[html.IndexOf("data-testid=\"list-columns\"", StringComparison.Ordinal)..];
         list = list[..list.IndexOf("data-testid=\"list-columns-fixed\"", StringComparison.Ordinal)];
@@ -96,7 +99,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
     [Fact]
     public async Task A_cookie_with_keys_that_are_no_column_or_markup_changes_nothing_and_cannot_hide_the_required_column()
     {
-        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = "v1!hcustomer~'3cb'3eoops~status!wnope*5000!oevil~id", Url = BaseUrl }]);
+        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = $"{DemoKey}.v1!hcustomer~'3cb'3eoops~status!wnope*5000!oevil~id", Url = BaseUrl }]);
         await OpenPage("ssr");
 
         Assert.Equal(["id", "customer", "amount", "issued"], (await Keys(List)).Where(k => k != "status").ToArray());
@@ -139,7 +142,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuenow", "166");
         await Assertions.Expect(handle).ToHaveAttributeAsync("aria-valuetext", "166 pixels");
 
-        await WaitForCookie(Cookie, @"^v1!hstatus!eamount!wamount\*166$");
+        await WaitForCookie(Cookie, $@"^{DemoKey}\.v1!hstatus!eamount!wamount\*166$");
         var cookie = (await Page.Context.CookiesAsync()).Single(c => c.Name == Cookie);
         Assert.Equal("Lax", cookie.SameSite.ToString());
         Assert.Equal("/", cookie.Path);
@@ -374,7 +377,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         // Ticking a row still works, the row action is still there, and a hidden column took none of them with it.
         await Fixed.Locator("tbody tr[data-slot=row]").First.Locator("input[type=checkbox]").CheckAsync();
         await Assertions.Expect(Fixed.Locator("tbody tr[data-slot=row]").First.GetByRole(AriaRole.Link, new() { Name = "Open" })).ToBeVisibleAsync();
-        await WaitForCookie(FixedCookie, @"^v1!scustomer!eamount$");
+        await WaitForCookie(Cookie, $@"^{FixedKey}\.v1!scustomer!eamount$");
     }
 
     // ---- a web view (MAUI)
@@ -398,8 +401,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await page.Locator("[data-slot=columns-content]:visible input[data-col-toggle=status]").UncheckAsync();
         await Assertions.Expect(list.Locator("thead th[data-key=status]")).ToHaveCountAsync(0);
 
-        await page.WaitForFunctionAsync("() => localStorage.getItem('blux-dl-cols-demo-cols') === 'v1!hstatus'");
-        Assert.DoesNotContain(await page.Context.CookiesAsync(), c => c.Name.StartsWith("blux-dl-cols-", StringComparison.Ordinal));
+        await page.WaitForFunctionAsync("() => localStorage.getItem('blux-dl-cols') === 'demo-cols.v1!hstatus'");
+        Assert.DoesNotContain(await page.Context.CookiesAsync(), c => c.Name.StartsWith("blux-dl-cols", StringComparison.Ordinal));
 
         // No server reads a cookie in a web view: the list asks the browser, and shows the columns of the user once it did.
         await page.ReloadAsync();
@@ -414,7 +417,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
     [MemberData(nameof(AllModes))]
     public async Task The_cookie_applies_after_an_enhanced_navigation_and_changes_still_work(string mode)
     {
-        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = "v1!hissued!estatus", Url = BaseUrl }]);
+        await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = $"{DemoKey}.v1!hissued!estatus", Url = BaseUrl }]);
         await Page.GotoAsync($"/{mode}/components/button");
         await Page.WaitForFunctionAsync("() => !!customElements.get('bx-popover')");
         if (mode != "ssr") await Assertions.Expect(Page.GetByTestId("renderer")).ToHaveAttributeAsync("data-interactive", "true", new() { Timeout = 30_000 });
@@ -432,7 +435,7 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Content.Locator("input[data-col-toggle=issued]").CheckAsync();
         await Assertions.Expect(List.Locator("thead th[data-key=issued]")).ToHaveCountAsync(1);
         await Page.Keyboard.PressAsync("Escape");
-        await WaitForCookie(Cookie, @"^v1!estatus$");
+        await WaitForCookie(Cookie, $@"^{DemoKey}\.v1!estatus$");
 
         // Away and back, again without a document load: the list is built again from the cookie.
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => { Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true }); setTimeout(r, 8000); }); }");
@@ -459,6 +462,11 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         await Assertions.Expect(List.Locator("thead th[data-key=id]")).ToHaveAttributeAsync("data-pinned", "start");
         Assert.NotEqual("sticky", await List.Locator("thead th[data-key=id]").EvaluateAsync<string>("el => getComputedStyle(el).position"));
         if (mode == "ssr") return;
+
+        // Its resize handle stays contained inside the header cell (max-sm:relative) rather than stretching over the whole table.
+        var idThBox = (await List.Locator("thead th[data-key=id]").BoundingBoxAsync())!;
+        var idHandleBox = (await List.Locator("[data-slot=col-resize][data-col-key=id]").BoundingBoxAsync())!;
+        Assert.True(idHandleBox.Height <= idThBox.Height + 1, $"pinned resize handle height {idHandleBox.Height} exceeds header height {idThBox.Height}");
 
         await OpenPanel(List);
         var panel = (await Content.BoundingBoxAsync())!;
