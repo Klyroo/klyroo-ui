@@ -6,6 +6,9 @@
 //   import { Reporter, ensureId } from '../../Blux.UI/js/shared.js';
 import { timeZone, storeTimeZone } from './time-zone-cookie.js';
 import { pruneBlank } from './prune-blank.js';
+import { readColumnPrefs as readColumnPrefsCookie, writeColumnPrefs as writeColumnPrefsCookie } from './column-prefs-cookie.js';
+import { attachColumnResize } from './column-resize.js';
+import { attachColumnPanelDrag } from './column-panel-drag.js';
 
 // The time zone of the browser goes to the server in a cookie, which the next static or prerendered render reads (the first visit has none and cuts days in UTC).
 function rememberTimeZone() {
@@ -117,9 +120,54 @@ if (typeof document !== 'undefined') {
     },
     true,
   );
+  attachColumnResize(document);
+  attachColumnPanelDrag(document);
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, focusAfterRowRemoval };
+function readColumnPrefs(key) {
+  if (typeof document === 'undefined') return null;
+  try {
+    return readColumnPrefsCookie(document, key);
+  } catch {
+    return null;
+  }
+}
+
+function writeColumnPrefs(key, value) {
+  if (typeof document === 'undefined') return false;
+  try {
+    return writeColumnPrefsCookie(document, key, value, location.protocol);
+  } catch {
+    return false;
+  }
+}
+
+// Puts the focus on the control of the column panel that was just used: the render that moved or pinned a column can leave the focus on another column's button, or on one that is now disabled.
+// Tries the selectors in order, the first that finds an enabled control wins.
+function focusIn(root, ...selectors) {
+  if (!root) return;
+  for (const selector of selectors) {
+    const target = root.querySelector(selector);
+    if (target && !target.disabled) {
+      target.focus({ preventScroll: false });
+      return;
+    }
+  }
+}
+
+// A column pinned to the end sticks next to the row actions column, which is as wide as its buttons: the table root gets that width as --bx-actions-w, and keeps it up to date.
+const watched = new WeakSet();
+function watchActionsWidth(root) {
+  if (!root || watched.has(root) || typeof ResizeObserver === 'undefined') return;
+  const cell = root.querySelector('th[data-key=actions]');
+  if (!cell) return;
+  watched.add(root);
+  const update = () => root.style.setProperty('--bx-actions-w', `${Math.round(cell.getBoundingClientRect().width)}px`);
+  new ResizeObserver(update).observe(cell);
+  update();
+}
+
+const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, focusAfterRowRemoval, readColumnPrefs, writeColumnPrefs, focusIn, watchActionsWidth };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });

@@ -5,6 +5,7 @@
 @using Blux.UI.Internal
 @using Blux.UI.Tools.Query
 @using Microsoft.AspNetCore.Components.Web.Virtualization
+@using Microsoft.JSInterop
 
     @ChildContent
     @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
@@ -18,29 +19,66 @@
             var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
             var entries = Context.IsInitial || empty ? null : RowEntries();
             var virtualizing = IsVirtualized && entries is { Count: > 0 };
+            var resizing = Resizable && Context.IsInteractive;
+            var showColgroup = resizing || columns.Any(c => c.Width is not null);
+            var pinStart = columns.Any(c => c.Pinned == DataListPin.Start);
+            var pinEnd = columns.Any(c => c.Pinned == DataListPin.End);
+            // Every column has a width: the table is as wide as their sum, so each column is exactly the width it was given. With a column that sizes to its content, that column takes what is left.
+            var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
-            <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
+        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label"
+             @attributes="AdditionalAttributes">
+            <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>
+                }
+                @if (showColgroup)
+                {
+                    <colgroup>
+                        @if (selecting)
+                        {
+                            <col />
+                        }
+                        @foreach (var column in columns)
+                        {
+                            <col data-col-key="@column.Key" style="@(column.Width is { } w ? $"width:{w}px" : null)" />
+                        }
+                        @if (acting)
+                        {
+                            <col />
+                        }
+                    </colgroup>
                 }
                 <thead class="@_slots["thead"]">
                     <tr class="@_slots["tr"]" aria-rowindex="@(virtualizing ? 1 : null)">
                         @if (selecting)
                         {
                             @* The box of the header is named by itself: the cell has no text. *@
-                            <th scope="col" class="@SelectClass("th")" data-key="select"><DataListSelectAll TItem="TItem" /></th>
+                            <th scope="col" class="@SelectClass("th", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)" data-key="select"><DataListSelectAll TItem="TItem" /></th>
                         }
                         @foreach (var column in columns)
                         {
-                            <th scope="col" class="@HeaderClass(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">@Header(column)</th>
+                            <th scope="col" class="@HeaderClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">
+                                @Header(column)
+                                @if (resizing && column.Resizable && column.Key is not null)
+                                {
+                                    var col = column;
+                                    @* A separator the keyboard and the pointer both move (js/column-resize.js): the width is changed in the browser and reported once, as the value of bx-change. *@
+                                    <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnResize, col.Title)"
+                                         aria-valuemin="@col.MinWidth" aria-valuemax="@col.MaxWidth" aria-valuenow="@(col.Width ?? col.DeclaredWidth)"
+                                         aria-valuetext="@((col.Width ?? col.DeclaredWidth) is { } known ? string.Format(FormatCulture, ToolsMessages.ColumnWidthPixels, known) : null)"
+                                         class="@_slots["colResize"]" data-slot="col-resize" data-col-key="@col.Key" data-min-width="@col.MinWidth" data-max-width="@col.MaxWidth"
+                                         data-default-width="@col.DeclaredWidth" data-value-text="@ToolsMessages.ColumnWidthPixels"
+                                         @onbxchange="@(e => OnResizeReported(col, e))" @onbxchange:stopPropagation="true"></div>
+                                }
+                            </th>
                         }
                         @if (acting)
                         {
                             @* The header is read by assistive technology only: the cells hold buttons that name themselves. *@
-                            <th scope="col" class="@ActionsClass("th")" data-key="actions"><span class="sr-only">@ToolsMessages.ActionsMenu</span></th>
+                            <th scope="col" class="@ActionsClass("th", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)" data-key="actions"><span class="sr-only">@ToolsMessages.ActionsMenu</span></th>
                         }
                     </tr>
                 </thead>
@@ -53,15 +91,15 @@
                             <tr class="@_slots["tr"]" data-slot="skeleton-row">
                                 @if (selecting)
                                 {
-                                    <td class="@SelectClass("td")"></td>
+                                    <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"></td>
                                 }
                                 @foreach (var column in columns)
                                 {
-                                    <td class="@CellClass(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
+                                    <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
                                 }
                                 @if (acting)
                                 {
-                                    <td class="@ActionsClass("td")"></td>
+                                    <td class="@ActionsClass("td", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)"></td>
                                 }
                             </tr>
                         }
@@ -91,24 +129,34 @@
                     else if (virtualizing)
                     {
                         <Virtualize TItem="RowEntry" Items="entries" ItemSize="EffectiveItemSize" OverscanCount="OverscanCount" SpacerElement="tr" Context="row">
-                            @RowFragment(row, selecting, acting, columns, rowIndex: row.Position + 1)
+                            @RowFragment(row, selecting, acting, columns, pinStart, pinEnd, rowIndex: row.Position + 1)
                         </Virtualize>
                     }
                     else
                     {
                         @foreach (var row in entries!)
                         {
-                            @RowFragment(row, selecting, acting, columns, rowIndex: null)
+                            @RowFragment(row, selecting, acting, columns, pinStart, pinEnd, rowIndex: null)
                         }
                     }
                 </tbody>
             </table>
         </div>
+        @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
+        @if (resizing)
+        {
+            <div class="sr-only" role="status" aria-live="polite" data-slot="col-live">@Context.WidthAnnouncement</div>
+        }
     </Defer>
 
 @code {
     private SlotSet _slots = default!;
+    private SlotSet _sizedSlots = default!;
     private int _parentRenders;
+    private ElementReference _root;
+    private bool _watching;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     /// <summary>The columns: <see cref="BxDataListColumn{TItem}"/> components. Without any, the table shows one column per field of the schema.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -147,6 +195,14 @@
     /// <summary>Extra rows rendered above and below the viewport when <see cref="Virtualize"/> is on (3 by default).</summary>
     [Parameter] public int OverscanCount { get; set; } = 3;
 
+    /// <summary>
+    /// Puts a resize handle (a vertical separator) on the end edge of the header of each <see cref="BxDataListColumn{TItem}.Resizable"/> column (false by default): drag it, or focus it and press ArrowLeft and ArrowRight
+    /// (16 px, 64 with Shift; in right-to-left text the arrow that points away from the start edge grows the column), Home and End for the limits, Delete or a double click for the declared width.
+    /// The browser changes the width while the gesture runs and reports it once; the list keeps it in its column preferences (<see cref="BxDataList{TItem}.PreferencesKey"/>). Interactive only: a static render has no handle
+    /// but still applies a saved width.
+    /// </summary>
+    [Parameter] public bool Resizable { get; set; }
+
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
     private float EffectiveItemSize => ItemSize is > 0 ? ItemSize.Value : Context.Density switch
@@ -159,14 +215,31 @@
     // Parts that list the columns (a columns panel) render before the columns exist: they hear about a change in the registry once the table has rendered.
     protected override void OnAfterRender(bool firstRender)
     {
+        if (!_watching && Context.IsInteractive && RowActions is { Count: > 0 } && Context.Columns.Any(c => Context.EffectiveColumnPin(c) == DataListPin.End))
+        {
+            _watching = true;
+            _ = WatchActionsWidthAsync();
+        }
         var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}"));
         if (signature == Context.ColumnsSignature) return;
         Context.ColumnsSignature = signature;
         Context.NotifyChanged();
     }
 
-    // A render caused by the parent (new templates, new parameters) rebuilds the rows; one caused by the list (a flag, a new result) rebuilds them only for a new result.
-    private int Revision => unchecked(_parentRenders * 7919 + Context.ResultVersion);
+    private async Task WatchActionsWidthAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.watchActionsWidth", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
+    }
+
+    // A render caused by the parent (new templates, new parameters) rebuilds the rows; one caused by the list (a flag, a new result) rebuilds them only for a new result or column change.
+    private int Revision => unchecked(_parentRenders * 7919 + Context.ResultVersion * 31 + Context.ColumnsVersion);
 
     protected override void OnParametersSet()
     {
@@ -182,6 +255,7 @@
         };
         if (IsVirtualized) variants["virtualize"] = "true";
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
+        _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
     }
 
     // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
@@ -227,19 +301,19 @@
 
     private sealed record RowEntry(object Key, TItem Item, int Position);
 
-    private RenderFragment RowFragment(RowEntry row, bool selecting, bool acting, List<View> columns, int? rowIndex) =>
+    private RenderFragment RowFragment(RowEntry row, bool selecting, bool acting, List<View> columns, bool pinStart, bool pinEnd, int? rowIndex) =>
         @<DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="rowIndex" Class="@(selecting ? _slots["tr"] + " " + _slots["rowSelected"] : _slots["tr"])">
             @if (selecting)
             {
-                <td class="@SelectClass("td")"><DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" /></td>
+                <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"><DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" /></td>
             }
             @foreach (var column in columns)
             {
-                <td class="@CellClass(column)">@Cell(column, row.Item)</td>
+                <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)">@Cell(column, row.Item)</td>
             }
             @if (acting)
             {
-                <td class="@ActionsClass("td")">
+                <td class="@ActionsClass("td", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)">
                     <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
                 </td>
             }
@@ -277,35 +351,139 @@
         return entries;
     }
 
-    private sealed record View(BxDataListColumn<TItem>? Source, string? Key, string Title, DataListAlign Align, bool Sortable, string? Class);
+    private sealed record View(
+        BxDataListColumn<TItem>? Source,
+        string? Key,
+        string Title,
+        DataListAlign Align,
+        bool Sortable,
+        string? Class,
+        DataListPin Pinned,
+        int? Width,
+        int? DeclaredWidth,
+        int MinWidth,
+        int MaxWidth,
+        bool Resizable,
+        string? PinOffset);
 
-    // The columns as declared, or one per field of the schema when none was.
+    // The room the selection column takes at the start edge (the w-10 of its slot): a column pinned to the start sticks after it.
+    private const string SelectionWidth = "2.5rem";
+
+    // The columns as declared (filtered, ordered and grouped by pin edge), or one per field of the schema when none was.
     private List<View> Columns()
     {
         var schema = Context.Schema;
         if (Context.Columns.Count > 0)
         {
-            return [.. Context.Columns.Where(c => c.Visible).Select(c =>
+            var raw = Context.TableColumns();
+            var selecting = Context.SelectionVisible;
+            var acting = RowActions is { Count: > 0 };
+            // A pinned column needs a width of its own: the offset of the next one is the sum of the widths before it. Without one it gets BxDataList<TItem>.DefaultPinnedWidth.
+            int? WidthOf(BxDataListColumn<TItem> c, DataListPin pin)
             {
+                var min = Math.Max(DataListColumnPreferences.MinAllowedWidth, c.MinWidth);
+                var max = Math.Clamp(c.MaxWidth, min, DataListColumnPreferences.MaxAllowedWidth);
+                var width = Context.EffectiveColumnWidth(c);
+                return width ?? (pin == DataListPin.None ? null : Math.Clamp(BxDataList<TItem>.DefaultPinnedWidth, min, max));
+            }
+            var pins = raw.Select(Context.EffectiveColumnPin).ToArray();
+            var widths = new int?[raw.Count];
+            for (var i = 0; i < raw.Count; i++) widths[i] = WidthOf(raw[i], pins[i]);
+            var offsets = new string?[raw.Count];
+            var sum = 0;
+            for (var i = 0; i < raw.Count; i++)
+            {
+                if (pins[i] != DataListPin.Start) continue;
+                offsets[i] = selecting ? $"calc({SelectionWidth} + {sum}px)" : $"{sum}px";
+                sum += widths[i] ?? 0;
+            }
+            sum = 0;
+            for (var i = raw.Count - 1; i >= 0; i--)
+            {
+                if (pins[i] != DataListPin.End) continue;
+                offsets[i] = acting ? $"calc(var(--bx-actions-w, 0px) + {sum}px)" : $"{sum}px";
+                sum += widths[i] ?? 0;
+            }
+            var views = new List<View>(raw.Count);
+            for (var i = 0; i < raw.Count; i++)
+            {
+                var c = raw[i];
                 var key = c.ResolvedKey;
                 var sortable = key is not null && schema is not null && schema.SortKeys.Contains(key) && (c.Sortable ?? true);
-                return new View(c, key, c.ResolvedTitle, c.Align, sortable, c.Class);
-            })];
+                var min = Math.Max(DataListColumnPreferences.MinAllowedWidth, c.MinWidth);
+                var max = Math.Clamp(c.MaxWidth, min, DataListColumnPreferences.MaxAllowedWidth);
+                int? declared = c.Width is { } w ? Math.Clamp(w, min, max) : pins[i] != DataListPin.None ? Math.Clamp(BxDataList<TItem>.DefaultPinnedWidth, min, max) : null;
+                views.Add(new View(c, key, c.ResolvedTitle, c.Align, sortable, c.Class, pins[i], widths[i], declared, min, max, c.Resizable, offsets[i]));
+            }
+            return views;
         }
         if (schema is null) return [];
         return [.. schema.Fields.Where(f => !f.IsCollection)
-            .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null))];
+            .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null, DataListPin.None, null, null, DataListColumnPreferences.MinAllowedWidth, DataListColumnPreferences.MaxAllowedWidth, false, null))];
     }
 
-    private string ActionsClass(string kind) => $"{_slots[kind]} {_slots[kind + "End"]} {_slots["rowActionsCell"]}";
+    // The selection and actions columns are fixed: never hidden, never moved. They stick only to give way to the columns pinned on their side.
+    private string ActionsClass(string kind, bool stuck) =>
+        $"{_slots[kind]} {_slots[kind + "End"]} {_slots["rowActionsCell"]} {(stuck ? _slots[kind == "th" ? "thPinnedEnd" : "tdPinnedEnd"] : "")}".TrimEnd();
 
-    private string SelectClass(string kind) => $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]}";
+    private string SelectClass(string kind, bool stuck) =>
+        $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]} {(stuck ? _slots[kind == "th" ? "thPinnedStart" : "tdPinnedStart"] : "")}".TrimEnd();
 
-    private string HeaderClass(View column) =>
-        $"{_slots["th"]} {AlignClass(column.Align, "th")} {column.Class}".Trim();
+    private string HeaderClass(View column)
+    {
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => _slots["thPinnedStart"],
+            DataListPin.End => _slots["thPinnedEnd"],
+            _ => "",
+        };
+        // The handle sits at the end edge of the cell: a pinned cell is already a positioned box.
+        var resize = Resizable && Context.IsInteractive && column.Resizable && column.Pinned == DataListPin.None ? "relative" : "";
+        var sized = column.Width is not null ? _slots["colSized"] : "";
+        return $"{_slots["th"]} {AlignClass(column.Align, "th")} {pin} {resize} {sized} {column.Class}".Trim();
+    }
 
-    private string CellClass(View column) =>
-        $"{_slots["td"]} {AlignClass(column.Align, "td")} {column.Class}".Trim();
+    private string CellClass(View column)
+    {
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => _slots["tdPinnedStart"],
+            DataListPin.End => _slots["tdPinnedEnd"],
+            _ => "",
+        };
+        var sized = column.Width is not null ? _slots["colSized"] : "";
+        return $"{_slots["td"]} {AlignClass(column.Align, "td")} {pin} {sized} {column.Class}".Trim();
+    }
+
+    private static string? PinAttr(View column) => column.Pinned switch
+    {
+        DataListPin.Start => "start",
+        DataListPin.End => "end",
+        _ => null,
+    };
+
+    // The inline style of a cell of the column: the width it was given (a column the user resized keeps it whatever its content) and, when pinned, the distance from its edge.
+    private static string? CellStyle(View column)
+    {
+        var width = column.Width is { } px ? $"width:{px}px;min-width:{px}px;max-width:{px}px" : null;
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => $"inset-inline-start:{column.PinOffset}",
+            DataListPin.End => $"inset-inline-end:{column.PinOffset}",
+            _ => null,
+        };
+        return width is null ? pin : pin is null ? width : $"{width};{pin}";
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private void OnResizeReported(View column, BxChangeEventArgs e)
+    {
+        if (column.Key is null || e.Value is not { } value) return;
+        if (value == "reset") Context.SetColumnWidth(column.Key, null);
+        else if (int.TryParse(value, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var width)) Context.SetColumnWidth(column.Key, width);
+    }
 
     private string AlignClass(DataListAlign align, string kind) => align switch
     {

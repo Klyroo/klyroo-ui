@@ -14,10 +14,10 @@ public partial class ToolsLocalizationTests
 
     private static string[] Placeholders(string text) => Placeholder().Matches(text).Select(m => m.Value).Order().ToArray();
 
-    // Words that are the same in English and in a language: "No" in Spanish, Italian and Portuguese, "is" in Dutch, and the "+{0}" of a count that is more.
+    // Words that are the same in English and in a language: "No" in Spanish, Italian and Portuguese, "is" in Dutch, "{0} pixels" in French, Dutch and Brazilian Portuguese, and the "+{0}" of a count that is more.
     private static readonly HashSet<(string Code, string Name)> SharedWords =
     [
-        ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"), ("nl", "FilterPanelTitle"), ("fr", "ActionsMenu"),
+        ("es", "FilterNo"), ("it", "FilterNo"), ("pt", "FilterNo"), ("pt-BR", "FilterNo"), ("nl", "OperatorIs"), ("nl", "FilterPanelTitle"), ("fr", "ActionsMenu"), ("fr", "ColumnWidthPixels"), ("nl", "ColumnWidthPixels"), ("pt-BR", "ColumnWidthPixels"),
         .. new[] { "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru" }.Select(code => (code, "FilterMore")),
     ];
 
