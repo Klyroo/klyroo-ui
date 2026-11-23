@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "Meer acties",
             ActionConfirm = "Bevestigen",
             ActionCancel = "Annuleren",
+            RowActionsLabel = "Acties voor {0}",
+            RowActionsLabelAt = "Acties voor rij {0}",
             ErrorTitle = "De gegevens konden niet worden geladen",
             ErrorDescription = "Er is iets misgegaan bij het laden van de gegevens. Probeer het opnieuw.",
             Retry = "Opnieuw proberen",

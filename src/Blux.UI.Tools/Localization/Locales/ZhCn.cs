@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "更多操作",
             ActionConfirm = "确认",
             ActionCancel = "取消",
+            RowActionsLabel = "{0} 的操作",
+            RowActionsLabelAt = "第 {0} 行的操作",
             ErrorTitle = "无法加载数据",
             ErrorDescription = "加载数据时出错，请重试。",
             Retry = "重试",
