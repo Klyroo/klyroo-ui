@@ -108,7 +108,7 @@ public class OverlayTests : BluxTestContext
         Assert.Equal(["Email", "Team", "Hidden"], sub.QuerySelectorAll(":scope > [role=menuitem]").Select(i => i.TextContent.Trim()));
 
         // A disabled item with children does not open anything; an item with children is never selected.
-        var export = cut.FindAll("button[aria-haspopup=menu]")[^1];
+        var export = cut.Find("button[aria-haspopup=menu][aria-disabled=true]");
         Assert.Equal("true", export.GetAttribute("aria-disabled"));
         Assert.Null(export.GetAttribute("popovertarget"));
         Assert.Throws<MissingEventHandlerException>(() => send.Click());
