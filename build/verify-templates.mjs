@@ -126,7 +126,7 @@ const templates = [
     pages: ["/", "/d/0123456789abcdef0123456789abcdef"],
     services: true,
     // Blux's own editor components, types and elements (BxEditor, EditorAction, EditorToolbarItem, bx-editor) are not the template name: rename.cs leaves them alone.
-    keep: /(?:Bx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Bx(?:Editor)[A-Za-z]*|bx-editor[a-z-]*/g,
+    keep: /Sanitize(?=Editor)Editor[A-Za-z]*|(?<!Add)(?:Bx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Bx(?:Editor)[A-Za-z]*|bx-editor[a-z-]*/g,
     browserClass: "Blux.UI.E2E.EditorTemplateTests",
   },
 ];
