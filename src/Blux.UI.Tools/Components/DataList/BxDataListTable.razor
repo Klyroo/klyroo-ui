@@ -11,7 +11,8 @@
     @* After the columns above, which register while they render; a list without a schema is loaded from here, once its columns describe one. *@
     <DataListLoadTrigger TItem="TItem" />
     <Defer>
-        @{
+        @if (Context.EffectiveLayout == DataListLayout.Table)
+        {
             var columns = Columns();
             var selecting = Context.SelectionVisible;
             var acting = RowActions is { Count: > 0 };
@@ -25,137 +26,137 @@
             var pinEnd = columns.Any(c => c.Pinned == DataListPin.End);
             // Every column has a width: the table is as wide as their sum, so each column is exactly the width it was given. With a column that sizes to its content, that column takes what is left.
             var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
-        }
-        @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
-             @attributes="AdditionalAttributes">
-            <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" style="@(virtualizing ? $"min-height:{(int)Math.Ceiling(entries!.Count * EffectiveItemSize)}px" : null)" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
-                @if (Caption is not null)
-                {
-                    <caption class="@_slots["caption"]">@Caption</caption>
-                }
-                @if (showColgroup)
-                {
-                    <colgroup>
-                        @if (selecting)
-                        {
-                            <col />
-                        }
-                        @foreach (var column in columns)
-                        {
-                            <col data-col-key="@column.Key" style="@(column.Width is { } w ? $"width:{w}px" : null)" />
-                        }
-                        @if (acting)
-                        {
-                            <col />
-                        }
-                    </colgroup>
-                }
-                <thead class="@_slots["thead"]">
-                    <tr class="@_slots["tr"]" aria-rowindex="@(virtualizing ? 1 : null)">
-                        @if (selecting)
-                        {
-                            @* The box of the header is named by itself: the cell has no text. *@
-                            <th scope="col" class="@SelectClass("th", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)" data-key="select"><DataListSelectAll TItem="TItem" /></th>
-                        }
-                        @foreach (var column in columns)
-                        {
-                            <th scope="col" class="@HeaderClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">
-                                @Header(column)
-                                @if (resizing && column.Resizable && column.Key is not null)
-                                {
-                                    var col = column;
-                                    @* A separator the keyboard and the pointer both move (js/column-resize.js): the width is changed in the browser and reported once, as the value of bx-change. *@
-                                    <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnResize, col.Title)"
-                                         aria-valuemin="@col.MinWidth" aria-valuemax="@col.MaxWidth" aria-valuenow="@(col.Width ?? col.DeclaredWidth)"
-                                         aria-valuetext="@((col.Width ?? col.DeclaredWidth) is { } known ? string.Format(FormatCulture, ToolsMessages.ColumnWidthPixels, known) : null)"
-                                         class="@_slots["colResize"]" data-slot="col-resize" data-col-key="@col.Key" data-min-width="@col.MinWidth" data-max-width="@col.MaxWidth"
-                                         data-default-width="@col.DeclaredWidth" data-value-text="@ToolsMessages.ColumnWidthPixels"
-                                         @onbxchange="@(e => OnResizeReported(col, e))" @onbxchange:stopPropagation="true"></div>
-                                }
-                            </th>
-                        }
-                        @if (acting)
-                        {
-                            @* The header is read by assistive technology only: the cells hold buttons that name themselves. *@
-                            <th scope="col" class="@ActionsClass("th", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)" data-key="actions"><span class="sr-only">@ToolsMessages.ActionsMenu</span></th>
-                        }
-                    </tr>
-                </thead>
-                <tbody class="@_slots["tbody"]" aria-busy="@(Context.IsLoading || Context.IsInitial ? "true" : null)">
-                    @if (Context.IsInitial)
+            @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
+            <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
+                 @attributes="AdditionalAttributes">
+                <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" style="@(virtualizing ? $"min-height:{(int)Math.Ceiling(entries!.Count * EffectiveItemSize)}px" : null)" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
+                    @if (Caption is not null)
                     {
-                        @* Placeholders keep the height of the page while the first rows load. *@
-                        @for (var row = 0; row < Math.Clamp(Context.State.PageSize, 3, 10); row++)
+                        <caption class="@_slots["caption"]">@Caption</caption>
+                    }
+                    @if (showColgroup)
+                    {
+                        <colgroup>
+                            @if (selecting)
+                            {
+                                <col />
+                            }
+                            @foreach (var column in columns)
+                            {
+                                <col data-col-key="@column.Key" style="@(column.Width is { } w ? $"width:{w}px" : null)" />
+                            }
+                            @if (acting)
+                            {
+                                <col />
+                            }
+                        </colgroup>
+                    }
+                    <thead class="@_slots["thead"]">
+                        <tr class="@_slots["tr"]" aria-rowindex="@(virtualizing ? 1 : null)">
+                            @if (selecting)
+                            {
+                                @* The box of the header is named by itself: the cell has no text. *@
+                                <th scope="col" class="@SelectClass("th", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)" data-key="select"><DataListSelectAll TItem="TItem" /></th>
+                            }
+                            @foreach (var column in columns)
+                            {
+                                <th scope="col" class="@HeaderClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">
+                                    @Header(column)
+                                    @if (resizing && column.Resizable && column.Key is not null)
+                                    {
+                                        var col = column;
+                                        @* A separator the keyboard and the pointer both move (js/column-resize.js): the width is changed in the browser and reported once, as the value of bx-change. *@
+                                        <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnResize, col.Title)"
+                                             aria-valuemin="@col.MinWidth" aria-valuemax="@col.MaxWidth" aria-valuenow="@(col.Width ?? col.DeclaredWidth)"
+                                             aria-valuetext="@((col.Width ?? col.DeclaredWidth) is { } known ? string.Format(FormatCulture, ToolsMessages.ColumnWidthPixels, known) : null)"
+                                             class="@_slots["colResize"]" data-slot="col-resize" data-col-key="@col.Key" data-min-width="@col.MinWidth" data-max-width="@col.MaxWidth"
+                                             data-default-width="@col.DeclaredWidth" data-value-text="@ToolsMessages.ColumnWidthPixels"
+                                             @onbxchange="@(e => OnResizeReported(col, e))" @onbxchange:stopPropagation="true"></div>
+                                    }
+                                </th>
+                            }
+                            @if (acting)
+                            {
+                                @* The header is read by assistive technology only: the cells hold buttons that name themselves. *@
+                                <th scope="col" class="@ActionsClass("th", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)" data-key="actions"><span class="sr-only">@ToolsMessages.ActionsMenu</span></th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="@_slots["tbody"]" aria-busy="@(Context.IsLoading || Context.IsInitial ? "true" : null)">
+                        @if (Context.IsInitial)
                         {
-                            <tr class="@_slots["tr"]" data-slot="skeleton-row">
-                                @if (selecting)
-                                {
-                                    <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"></td>
-                                }
-                                @foreach (var column in columns)
-                                {
-                                    <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
-                                }
-                                @if (acting)
-                                {
-                                    <td class="@ActionsClass("td", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)"></td>
-                                }
+                            @* Placeholders keep the height of the page while the first rows load. *@
+                            @for (var row = 0; row < Math.Clamp(Context.State.PageSize, 3, 10); row++)
+                            {
+                                <tr class="@_slots["tr"]" data-slot="skeleton-row">
+                                    @if (selecting)
+                                    {
+                                        <td class="@SelectClass("td", pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"></td>
+                                    }
+                                    @foreach (var column in columns)
+                                    {
+                                        <td class="@CellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
+                                    }
+                                    @if (acting)
+                                    {
+                                        <td class="@ActionsClass("td", pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)"></td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else if (empty)
+                        {
+                            <tr class="@_slots["tr"]" data-slot="empty-row">
+                                <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0))" class="@_slots["empty"]">
+                                    @if (Empty is not null)
+                                    {
+                                        @Empty(Context)
+                                    }
+                                    else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+                                    {
+                                        @* A search or filters are on: nothing matches, which is not the same as nothing existing. *@
+                                        <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
+                                            <Actions>@FilteredAction</Actions>
+                                        </BxDataListEmpty>
+                                    }
+                                    else
+                                    {
+                                        <BxDataListEmpty />
+                                    }
+                                </td>
                             </tr>
                         }
-                    }
-                    else if (empty)
-                    {
-                        <tr class="@_slots["tr"]" data-slot="empty-row">
-                            <td colspan="@Math.Max(1, columns.Count + (selecting ? 1 : 0) + (acting ? 1 : 0))" class="@_slots["empty"]">
-                                @if (Empty is not null)
-                                {
-                                    @Empty(Context)
-                                }
-                                else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
-                                {
-                                    @* A search or filters are on: nothing matches, which is not the same as nothing existing. *@
-                                    <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
-                                        <Actions>@FilteredAction</Actions>
-                                    </BxDataListEmpty>
-                                }
-                                else
-                                {
-                                    <BxDataListEmpty />
-                                }
-                            </td>
-                        </tr>
-                    }
-                    else if (virtualizing)
-                    {
-                        <Virtualize TItem="RowEntry" Items="entries" ItemSize="EffectiveItemSize" OverscanCount="OverscanCount" SpacerElement="tr" Context="row">
-                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="row.Position + 1" Class="@RowClass(selecting)">
-                                @Cells(row, selecting, acting, columns, pinStart, pinEnd)
-                            </DataListRowView>
-                        </Virtualize>
-                    }
-                    else
-                    {
-                        @* The key is on the component itself, directly in the loop: a keyed element inside a RenderFragment would sit in a region of its own, where a key cannot match a row of another position, and every row after a removed one would be rebuilt. *@
-                        @foreach (var row in entries!)
+                        else if (virtualizing)
                         {
-                            <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="null" Class="@RowClass(selecting)">
-                                @Cells(row, selecting, acting, columns, pinStart, pinEnd)
-                            </DataListRowView>
+                            <Virtualize TItem="RowEntry" Items="entries" ItemSize="EffectiveItemSize" OverscanCount="OverscanCount" SpacerElement="tr" Context="row">
+                                <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="row.Position + 1" Class="@RowClass(selecting)">
+                                    @Cells(row, selecting, acting, columns, pinStart, pinEnd)
+                                </DataListRowView>
+                            </Virtualize>
                         }
-                    }
-                </tbody>
-            </table>
-            @* The loader of a virtualized list (cursor paging) is drawn here, in the box that scrolls: a sentinel after the box would never move while the rows scroll inside it. *@
-            @if (IsVirtualized && Context.TableFooter is { } footer)
+                        else
+                        {
+                            @* The key is on the component itself, directly in the loop: a keyed element inside a RenderFragment would sit in a region of its own, where a key cannot match a row of another position, and every row after a removed one would be rebuilt. *@
+                            @foreach (var row in entries!)
+                            {
+                                <DataListRowView TItem="TItem" @key="row.Key" Item="row.Item" Revision="Revision" RowIndex="null" Class="@RowClass(selecting)">
+                                    @Cells(row, selecting, acting, columns, pinStart, pinEnd)
+                                </DataListRowView>
+                            }
+                        }
+                    </tbody>
+                </table>
+                @* The loader of a virtualized list (cursor paging) is drawn here, in the box that scrolls: a sentinel after the box would never move while the rows scroll inside it. *@
+                @if (IsVirtualized && Context.TableFooter is { } footer)
+                {
+                    @footer
+                }
+            </div>
+            @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
+            @if (resizing)
             {
-                @footer
+                <div class="sr-only" role="status" aria-live="polite" data-slot="col-live">@Context.WidthAnnouncement</div>
             }
-        </div>
-        @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
-        @if (resizing)
-        {
-            <div class="sr-only" role="status" aria-live="polite" data-slot="col-live">@Context.WidthAnnouncement</div>
         }
     </Defer>
 
@@ -224,9 +225,16 @@
         _ => 44f,
     };
 
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Context.AddTable();
+    }
+
     // Parts that list the columns (a columns panel) render before the columns exist: they hear about a change in the registry once the table has rendered.
     protected override void OnAfterRender(bool firstRender)
     {
+        if (Context.EffectiveLayout != DataListLayout.Table) return;
         if (!_watching && Context.IsInteractive && RowActions is { Count: > 0 } && Context.Columns.Any(c => Context.EffectiveColumnPin(c) == DataListPin.End))
         {
             _watching = true;
@@ -283,14 +291,27 @@
                 _ => "default",
             },
         };
-        if (IsVirtualized) variants["virtualize"] = "true";
-        Context.SetTableVirtualized(IsVirtualized, IsVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table;
+        if (activeVirtualized) variants["virtualize"] = "true";
+        Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
         _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
     }
 
+    protected override void OnContextUpdated()
+    {
+        var activeVirtualized = IsVirtualized && Context.EffectiveLayout == DataListLayout.Table;
+        if (activeVirtualized != Context.TableVirtualized)
+        {
+            _keepingFocus = false;
+            _watching = false;
+            Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
+        }
+    }
+
     public override void Dispose()
     {
+        Context.RemoveTable();
         Context.SetTableVirtualized(false, null);
         base.Dispose();
     }

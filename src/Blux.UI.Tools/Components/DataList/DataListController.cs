@@ -223,6 +223,20 @@ public sealed class DataListController<TItem> : IDisposable
     }
 
     /// <summary>
+    /// Updates the state when only <see cref="DataListState.Layout"/> changed: the rows on screen are the same in Table and Grid views, so the source is not queried again.
+    /// </summary>
+    internal bool TryAdoptLayout(DataListState state)
+    {
+        var normalized = Normalize(state);
+        if (IsLoading || HasError || Result is null || LoadedState is not { } loaded) return false;
+        if ((normalized with { Layout = loaded.Layout }) != loaded) return false;
+        RequestedState = state;
+        LoadedState = normalized;
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>
     /// Loads the rows for a state. A load that is still running is cancelled and its result, should it arrive, is ignored. The rows of the previous
     /// result stay until this one replaces them; a failure keeps them and sets <see cref="Error"/>. A page past the last one is replaced by the
     /// last page when the total is known (read it back as <see cref="LoadedState"/>).

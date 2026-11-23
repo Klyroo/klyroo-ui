@@ -135,6 +135,28 @@ public sealed record DataListUi : ISlotOverrides
     public string? ColumnsLive { get; init; }
     public string? ColumnsPinGroup { get; init; }
     public string? ColumnsSearch { get; init; }
+    public string? SortMenu { get; init; }
+    public string? SortMenuPopover { get; init; }
+    public string? SortMenuContent { get; init; }
+    public string? SortMenuHeader { get; init; }
+    public string? SortMenuTitle { get; init; }
+    public string? SortMenuDirections { get; init; }
+    public string? SortMenuDirection { get; init; }
+    public string? SortMenuList { get; init; }
+    public string? SortMenuItem { get; init; }
+    public string? LayoutSwitch { get; init; }
+    public string? LayoutOption { get; init; }
+    public string? GridRoot { get; init; }
+    public string? GridHeader { get; init; }
+    public string? Grid { get; init; }
+    public string? GridCard { get; init; }
+    public string? GridCardTop { get; init; }
+    public string? GridCardBody { get; init; }
+    public string? GridCardFields { get; init; }
+    public string? GridCardField { get; init; }
+    public string? GridCardFieldLabel { get; init; }
+    public string? GridCardFieldValue { get; init; }
+    public string? GridEmpty { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -268,6 +290,28 @@ public sealed record DataListUi : ISlotOverrides
         "columnsLive" => ColumnsLive,
         "columnsPinGroup" => ColumnsPinGroup,
         "columnsSearch" => ColumnsSearch,
+        "sortMenu" => SortMenu,
+        "sortMenuPopover" => SortMenuPopover,
+        "sortMenuContent" => SortMenuContent,
+        "sortMenuHeader" => SortMenuHeader,
+        "sortMenuTitle" => SortMenuTitle,
+        "sortMenuDirections" => SortMenuDirections,
+        "sortMenuDirection" => SortMenuDirection,
+        "sortMenuList" => SortMenuList,
+        "sortMenuItem" => SortMenuItem,
+        "layoutSwitch" => LayoutSwitch,
+        "layoutOption" => LayoutOption,
+        "gridRoot" => GridRoot,
+        "gridHeader" => GridHeader,
+        "grid" => Grid,
+        "gridCard" => GridCard,
+        "gridCardTop" => GridCardTop,
+        "gridCardBody" => GridCardBody,
+        "gridCardFields" => GridCardFields,
+        "gridCardField" => GridCardField,
+        "gridCardFieldLabel" => GridCardFieldLabel,
+        "gridCardFieldValue" => GridCardFieldValue,
+        "gridEmpty" => GridEmpty,
         _ => null,
     };
 }

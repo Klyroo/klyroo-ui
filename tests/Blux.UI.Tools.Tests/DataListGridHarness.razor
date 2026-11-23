@@ -1,0 +1,54 @@
+@using Blux.UI.Tools.Query
+
+<BxDataList TItem="Person" Schema="Schema" Items="Provider is null ? Items : null" Provider="Provider"
+            UrlSync="UrlSync" UrlKey="@UrlKey" Selectable="Selectable" @bind-SelectedKeys="SelectedKeys">
+    <BxDataListSearch />
+    <BxDataListSortMenu Label="@SortLabel" Items="SortOptions" Layouts="SortLayouts" />
+    <BxDataListLayoutSwitch ShowLabels="ShowLayoutLabels" Order="LayoutOrder" />
+    @if (IncludeTable)
+    {
+        <BxDataListTable Caption="People" RowActions="RowActions">
+            <BxDataListColumn Field="name" Title="Full name" />
+            <BxDataListColumn Field="age" Align="DataListAlign.End" />
+            <BxDataListColumn Field="city" Sortable="false" />
+        </BxDataListTable>
+    }
+    @if (IncludeGrid)
+    {
+        <BxDataListGrid Columns="GridColumns" ItemTemplate="ItemTemplate" Empty="EmptyTemplate"
+                        ShowSelectionControl="ShowSelectionControl" RowActions="RowActions" RowActionsMaxVisible="RowActionsMaxVisible" />
+    }
+</BxDataList>
+
+@code {
+    public static DataListSchema<Person> DefaultSchema { get; } = DataListSchema.For<Person>(s => s
+        .RowKey(p => p.Id)
+        .Search(p => p.Name)
+        .Field(p => p.Name, f => f.Sortable())
+        .Field(p => p.Age, f => f.Sortable())
+        .Field(p => p.City, f => f.Sortable())
+        .DefaultSort(p => p.Name)
+        .DefaultPageSize(10));
+
+    [Parameter] public DataListSchema<Person> Schema { get; set; } = DefaultSchema;
+    [Parameter] public IEnumerable<Person>? Items { get; set; } = DataListControllerTests.People[..10];
+    [Parameter] public DataListProvider<Person>? Provider { get; set; }
+    [Parameter] public bool UrlSync { get; set; }
+    [Parameter] public string? UrlKey { get; set; }
+    [Parameter] public bool? Selectable { get; set; }
+    [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
+    [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
+    [Parameter] public bool IncludeTable { get; set; } = true;
+    [Parameter] public bool IncludeGrid { get; set; } = true;
+    [Parameter] public int GridColumns { get; set; } = 3;
+    [Parameter] public bool ShowLayoutLabels { get; set; }
+    [Parameter] public IReadOnlyList<DataListLayout>? LayoutOrder { get; set; }
+    [Parameter] public string? SortLabel { get; set; }
+    [Parameter] public IReadOnlyList<DataListSortOption>? SortOptions { get; set; }
+    [Parameter] public IReadOnlyList<DataListLayout>? SortLayouts { get; set; }
+    [Parameter] public RenderFragment<Person>? ItemTemplate { get; set; }
+    [Parameter] public RenderFragment<DataListContext<Person>>? EmptyTemplate { get; set; }
+    [Parameter] public bool ShowSelectionControl { get; set; } = true;
+    [Parameter] public IReadOnlyList<DataListRowAction<Person>>? RowActions { get; set; }
+    [Parameter] public int RowActionsMaxVisible { get; set; }
+}

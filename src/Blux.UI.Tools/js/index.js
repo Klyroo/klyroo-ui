@@ -89,8 +89,8 @@ function focusSelectAll(part) {
 const rowWatches = new WeakMap();
 
 function watchRowRemoval(part) {
-  const row = part?.closest('tr');
-  const region = part?.closest('[data-slot=table-root]');
+  const row = part?.closest('tr, [data-slot=grid-card]');
+  const region = part?.closest('[data-slot=table-root], [data-slot=grid-root]');
   if (!row || !region) return;
   rowWatches.get(row)?.();
   const visible = (el) => el.getClientRects().length > 0 && !el.disabled;
@@ -123,7 +123,7 @@ function watchRowRemoval(part) {
 }
 
 function stopRowRemovalWatch(part) {
-  const row = part?.closest('tr');
+  const row = part?.closest('tr, [data-slot=grid-card]');
   if (row) rowWatches.get(row)?.();
 }
 

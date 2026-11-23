@@ -1,0 +1,266 @@
+@namespace Blux.UI.Tools
+@typeparam TItem
+@inherits DataListPartBase<TItem>
+@using Blux.UI.Internal
+@using Blux.UI.Tools.Query
+
+@*
+    Grid layout of a data list: renders each row as a card (ItemTemplate, or a default key/value summary of the visible columns / schema fields),
+    with optional selection checkboxes (top bar select-all + per-card checkbox) and per-card row actions.
+    When placed alongside BxDataListTable, only the active layout (Context.EffectiveLayout, synced with ?l=grid|table) renders its body.
+*@
+<DataListLoadTrigger TItem="TItem" />
+<Defer>
+    @if (Context.EffectiveLayout == DataListLayout.Grid)
+    {
+        var selecting = Context.SelectionVisible;
+        var acting = RowActions is { Count: > 0 };
+        var label = AriaLabel ?? Context.Label ?? ToolsMessages.Results;
+        var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
+        var entries = Context.IsInitial || empty ? null : RowEntries();
+
+        <div class="@_slots["gridRoot"]" data-slot="grid-root" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
+            @if (Context.IsInitial)
+            {
+                <div class="@_slots["grid"]" data-slot="grid" aria-busy="true">
+                    @for (var i = 0; i < Math.Clamp(Context.State.PageSize, 3, 9); i++)
+                    {
+                        <div class="@_slots["gridCard"]" data-slot="skeleton-card">
+                            @if (SkeletonTemplate is not null)
+                            {
+                                @SkeletonTemplate
+                            }
+                            else
+                            {
+                                <BxSkeleton Class="h-5 w-1/2" />
+                                <BxSkeleton Class="h-4 w-3/4" />
+                                <BxSkeleton Class="h-4 w-2/3" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
+            else if (empty)
+            {
+                <div class="@_slots["gridEmpty"]" data-slot="empty-grid">
+                    @if (Empty is not null)
+                    {
+                        @Empty(Context)
+                    }
+                    else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+                    {
+                        <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
+                            <Actions>@FilteredAction</Actions>
+                        </BxDataListEmpty>
+                    }
+                    else
+                    {
+                        <BxDataListEmpty />
+                    }
+                </div>
+            }
+            else
+            {
+                @if (selecting && ShowSelectionControl)
+                {
+                    <div class="@_slots["gridHeader"]" data-slot="grid-header">
+                        <label class="inline-flex cursor-pointer items-center gap-2 text-xs font-medium text-(--blux-text-muted)">
+                            <DataListSelectAll TItem="TItem" />
+                            <span>@ToolsMessages.SelectAllRows</span>
+                        </label>
+                    </div>
+                }
+                <div class="@_slots["grid"]" data-slot="grid" aria-busy="@(Context.IsLoading ? "true" : null)">
+                    @foreach (var row in entries!)
+                    {
+                        <article @key="row.Key" class="@_slots["gridCard"]" data-slot="grid-card" data-key="@row.Key">
+                            @if ((selecting && ShowSelectionControl) || acting)
+                            {
+                                <div class="@_slots["gridCardTop"]" data-slot="grid-card-top">
+                                    @if (selecting && ShowSelectionControl)
+                                    {
+                                        <DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" />
+                                    }
+                                    else
+                                    {
+                                        <span></span>
+                                    }
+                                    @if (acting)
+                                    {
+                                        <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
+                                    }
+                                </div>
+                            }
+                            <div class="@_slots["gridCardBody"]" data-slot="grid-card-body">
+                                @if (ItemTemplate is not null)
+                                {
+                                    @ItemTemplate(row.Item)
+                                }
+                                else
+                                {
+                                    @DefaultCard(row.Item)
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+        </div>
+    }
+</Defer>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>Template for rendering the body of each card in the grid. When <see langword="null"/>, renders the visible columns or schema fields as label/value pairs.</summary>
+    [Parameter] public RenderFragment<TItem>? ItemTemplate { get; set; }
+
+    /// <summary>Custom content shown for each placeholder card while the initial result loads.</summary>
+    [Parameter] public RenderFragment? SkeletonTemplate { get; set; }
+
+    /// <summary>Shown when the list has no rows. Without it, <see cref="BxDataListEmpty"/> (with the filtered-empty variant when search or filters are active).</summary>
+    [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
+
+    /// <summary>Maximum number of card columns on wide screens (1 to 4, 3 by default).</summary>
+    [Parameter] public int Columns { get; set; } = 3;
+
+    /// <summary>Draws a selection checkbox on each card and a select-all header when selection is enabled (<see langword="true"/> by default).</summary>
+    [Parameter] public bool ShowSelectionControl { get; set; } = true;
+
+    /// <summary>Per-card actions (<see cref="BxDataListRowActions{TItem}"/>).</summary>
+    [Parameter] public IReadOnlyList<DataListRowAction<TItem>>? RowActions { get; set; }
+
+    /// <summary>How many row actions show as inline buttons on each card (0 by default, keeping one menu trigger button per card).</summary>
+    [Parameter] public int RowActionsMaxVisible { get; set; }
+
+    /// <summary>Raised when a row action threw or reported a failure.</summary>
+    [Parameter] public EventCallback<DataListRowActionFailure<TItem>> OnRowActionError { get; set; }
+
+    /// <summary>Accessible name of the grid region. Defaults to the label of the list, then the localized "Results".</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        Context.AddGrid();
+    }
+
+    protected override void OnParametersSet()
+    {
+        var cols = Math.Clamp(Columns, 1, 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?> { ["gridColumns"] = cols }, Ui, "gridRoot");
+    }
+
+    public override void Dispose()
+    {
+        Context.RemoveGrid();
+        base.Dispose();
+    }
+
+    private DataListState Shown => Context.LoadedState ?? Context.State;
+
+    private bool OnlySearch => Shown.Filters.SequenceEqual(Context.ResetState(Shown).Filters);
+
+    private string FilteredTitle => string.IsNullOrWhiteSpace(Shown.Search)
+        ? ToolsMessages.NoResultsFiltered
+        : string.Format(FormatCulture, ToolsMessages.NoResultsFor, Shown.Search.Trim());
+
+    private string FilteredDescription => string.IsNullOrWhiteSpace(Shown.Search) ? ToolsMessages.NoResultsDescription : ToolsMessages.NoResultsForDescription;
+
+    private RenderFragment FilteredAction => builder =>
+    {
+        var label = OnlySearch ? ToolsMessages.ClearSearch : ToolsMessages.ResetFilters;
+        if (Context.IsInteractive)
+        {
+            builder.OpenComponent<BxButton>(0);
+            builder.AddAttribute(1, nameof(BxButton.Label), label);
+            builder.AddAttribute(2, nameof(BxButton.Variant), ButtonVariant.Outline);
+            builder.AddAttribute(3, nameof(BxButton.Color), BxColor.Neutral);
+            builder.AddAttribute(4, nameof(BxButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () =>
+            {
+                Context.Reset(QueryHistory.Push);
+                Context.RequestSearchFocus();
+            }));
+            builder.AddAttribute(5, "data-slot", "reset");
+            builder.CloseComponent();
+        }
+        else if (Context.HrefWith(Context.ResetState) is { } href)
+        {
+            builder.OpenComponent<BxButton>(6);
+            builder.AddAttribute(7, nameof(BxButton.Label), label);
+            builder.AddAttribute(8, nameof(BxButton.Variant), ButtonVariant.Outline);
+            builder.AddAttribute(9, nameof(BxButton.Color), BxColor.Neutral);
+            builder.AddAttribute(10, nameof(BxButton.Href), href);
+            builder.AddAttribute(11, "data-slot", "reset");
+            builder.CloseComponent();
+        }
+    };
+
+    private sealed record RowEntry(object Key, TItem Item, int Position);
+
+    private List<RowEntry> RowEntries()
+    {
+        var schema = Context.Schema;
+        var rows = Context.Rows;
+        var entries = new List<RowEntry>(rows.Count);
+        if (schema is { HasRowKey: true })
+        {
+            var seen = new HashSet<object>();
+            var unique = true;
+            var pos = 0;
+            foreach (var item in rows)
+            {
+                pos++;
+                var key = schema.GetRowKey(item);
+                unique &= seen.Add(key);
+                entries.Add(new RowEntry(key, item, pos));
+            }
+            if (unique) return entries;
+            entries.Clear();
+        }
+        var identities = new HashSet<object>();
+        var index = 0;
+        foreach (var item in rows)
+        {
+            object key = item is not null && identities.Add(new RowReferenceKey(item)) ? new RowReferenceKey(item) : index;
+            entries.Add(new RowEntry(key, item, index + 1));
+            index++;
+        }
+        return entries;
+    }
+
+    private RenderFragment DefaultCard(TItem item) =>
+        @<dl class="@_slots["gridCardFields"]">
+            @if (Context.Columns.Count > 0)
+            {
+                @foreach (var col in Context.TableColumns())
+                {
+                    <div class="@_slots["gridCardField"]">
+                        <dt class="@_slots["gridCardFieldLabel"]">@col.ResolvedTitle</dt>
+                        <dd class="@_slots["gridCardFieldValue"]">
+                            @if (col.Template is { } template)
+                            {
+                                @template(item)
+                            }
+                            else
+                            {
+                                @col.FormatValue(col.ReadValue(item, Context.Schema), FormatCulture)
+                            }
+                        </dd>
+                    </div>
+                }
+            }
+            else if (Context.Schema is { } schema)
+            {
+                @foreach (var field in schema.Fields.Where(f => !f.IsCollection))
+                {
+                    var val = schema.ReadField(item, field.Key);
+                    var text = val is IFormattable formattable ? formattable.ToString(null, FormatCulture) : val?.ToString();
+                    <div class="@_slots["gridCardField"]">
+                        <dt class="@_slots["gridCardFieldLabel"]">@DataListText.Humanize(field.Key)</dt>
+                        <dd class="@_slots["gridCardFieldValue"]">@text</dd>
+                    </div>
+                }
+            }
+        </dl>;
+}
