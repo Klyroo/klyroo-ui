@@ -41,6 +41,14 @@ public class TemplateScreenshots(PlaygroundServer server)
                 await page.WaitForFunctionAsync("() => { const r = document.querySelector('[data-testid=renderer]'); return !r || /Server|WebAssembly/.test(r.textContent ?? ''); }", null, new() { Timeout = 30_000 });
                 await Assertions.Expect(page.Locator("html")).ToHaveClassAsync(new System.Text.RegularExpressions.Regex(mode == "dark" ? "dark" : "^((?!dark).)*$"));
                 // Fonts and the icon bundle settled, and nothing animating when the shot is taken.
+                // The Editor template starts on an empty home page: open its guide, a document that shows what the editor does.
+                if (name == "editor")
+                {
+                    await page.GetByTestId("home-guide").ClickAsync();
+                    await EditorChecks.WaitForDocumentUrl(page);
+                    await EditorChecks.WaitEditor(page);
+                    await Assertions.Expect(page.GetByTestId("save-state")).ToHaveTextAsync("Saved");
+                }
                 await page.EvaluateAsync("() => document.fonts.ready");
                 // FocusOnNavigate puts the focus on the h1 of the page: its ring is not part of the design.
                 await page.EvaluateAsync("() => document.activeElement instanceof HTMLElement && document.activeElement.blur()");

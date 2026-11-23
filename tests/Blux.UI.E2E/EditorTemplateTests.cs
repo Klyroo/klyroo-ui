@@ -544,7 +544,7 @@ public class EditorTemplateTests(PlaygroundServer server)
                 var css = await http.GetStringAsync(new Uri(new Uri(baseUrl), sheet), TestContext.Current.CancellationToken);
                 Assert.Contains(Probe, css);
                 // The task items and images of the editor are styled by the library, from the classes the build compiled.
-                Assert.Contains("taskItem", css);
+                Assert.Contains("data-type=taskList", css.Replace("\\", "").Replace("\"", ""));
             }
         }
         finally
