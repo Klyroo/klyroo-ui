@@ -188,6 +188,31 @@
     internal DataListState ResetState(DataListState state) =>
         state with { Search = "", Filters = _schema?.DefaultState.Filters ?? [], Page = 1, Cursor = null };
 
+    /// <summary>
+    /// Replaces a row in the loaded result in place by its schema <c>RowKey</c>, refreshing any matching entry in the selection without re-querying the source.
+    /// </summary>
+    public bool UpdateRow(TItem item) => item is not null && UpdateRows([item]) > 0;
+
+    /// <summary>
+    /// Replaces matching rows in the loaded result in place by their schema <c>RowKey</c>, refreshing any matching entries in the selection without re-querying the source.
+    /// </summary>
+    public int UpdateRows(IEnumerable<TItem> items)
+    {
+        if (Controller is null) return 0;
+        MarkSelectionStale();
+        return Controller.UpdateRows(items);
+    }
+
+    /// <summary>
+    /// Resets the search and filters to the schema defaults (on page 1), clears the row selection, and resets tree expansion to its defaults.
+    /// </summary>
+    public void ResetAll(QueryHistory history = QueryHistory.Push)
+    {
+        ClearSelection();
+        ResetTreeExpansion();
+        SetState(ResetState, history);
+    }
+
     protected override void OnInitialized()
     {
         var sources = (Items is not null ? 1 : 0) + (Queryable is not null ? 1 : 0) + (Provider is not null ? 1 : 0);
