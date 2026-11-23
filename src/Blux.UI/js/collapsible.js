@@ -8,11 +8,18 @@ import { Reporter } from './shared.js';
  *
  * Disclosure pattern. hidden="until-found" keeps a closed region searchable with find-in-page, which opens it.
  * Changes are reported with "bx-toggle".
+ *
+ * A static page has no .NET to hold the open state: the state lives here, and an enhanced navigation (a GET form, a link) that merges the
+ * server markup over this element, which resets aria-expanded, data-state and hidden to what was rendered, gets it back in refresh().
+ * What the server renders (the open attribute) wins only when it changed since the last render: a section the user opened or closed by hand
+ * stays as it is while the server still says what it said before.
  */
 export class BxCollapsibleElement extends HTMLElement {
   static observedAttributes = ['data-bx-seq', 'open'];
 
   #reporter = new Reporter(this);
+  #open = false;
+  #rendered = false;
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
@@ -30,6 +37,15 @@ export class BxCollapsibleElement extends HTMLElement {
     else this.#apply();
   }
 
+  /** After an enhanced navigation or form post merged server HTML over this element. */
+  refresh() {
+    // A bound collapsible takes its state from the renders of its component, which no merge replaces.
+    if (this.#reporter.bound) return;
+    const rendered = this.hasAttribute('open');
+    if (rendered !== this.#rendered) this.#apply();
+    else this.#set(this.#open);
+  }
+
   // Only direct children: a collapsible nested in the content has its own trigger and region.
   get #trigger() {
     return this.querySelector(':scope > [data-bx-collapsible-trigger]');
@@ -41,7 +57,8 @@ export class BxCollapsibleElement extends HTMLElement {
 
   #apply() {
     if (this.#reporter.isStale()) return;
-    this.#set(this.hasAttribute('open'));
+    this.#rendered = this.hasAttribute('open');
+    this.#set(this.#rendered);
   }
 
   #isOpen() {
@@ -49,6 +66,7 @@ export class BxCollapsibleElement extends HTMLElement {
   }
 
   #set(open) {
+    this.#open = open;
     this.#trigger?.setAttribute('aria-expanded', String(open));
     this.dataset.state = open ? 'open' : 'closed';
     const content = this.#content;

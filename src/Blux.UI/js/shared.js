@@ -47,6 +47,14 @@ export class Reporter {
     target.dispatchEvent(new CustomEvent(type, { bubbles: true, detail: { ...detail, sequence: ++this.#sequence } }));
   }
 
+  /**
+   * Marks a change the element has made that its report will follow later (a native popover closes at once and tells the page a task afterwards):
+   * a render made before it, that arrives in between, is older than the change and is ignored like one older than a report.
+   */
+  reserve() {
+    this.#sequence++;
+  }
+
   /** True when the attribute change being processed comes from a render older than the last report. */
   isStale() {
     const seen = this.#host.getAttribute('data-bx-seq');
