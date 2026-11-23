@@ -246,7 +246,8 @@ internal static class EditorChecks
             localStorage.setItem(prefix + ':d:' + oversized, JSON.stringify({ id: oversized, title: 'Big', html: '<p>' + 'a'.repeat(2000000) + '</p>' }));
             localStorage.setItem(prefix + ':d:not-an-id', 'garbage');
         }", new[] { Prefix(pathBase), id, oversized });
-        await page.GotoAsync($"d/{id}");
+        // Relative to the <base> of the app, which is not the base of the test context when the app runs behind the docs host.
+        await page.GotoAsync(await page.Locator("base").GetAttributeAsync("href") + $"d/{id}");
         await WaitInteractive(page);
         await WaitEditor(page);
         await Assertions.Expect(Surface(page).Locator("h1")).ToHaveTextAsync("Tampered");
