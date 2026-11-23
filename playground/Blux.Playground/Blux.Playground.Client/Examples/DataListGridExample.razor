@@ -17,11 +17,11 @@
                 </div>
             </div>
             <BxDataListSelectionActions Actions="_bulkActions" />
-            <BxDataListTable Caption="Invoices with table and grid views" RowActions="_rowActions" RowSummary="_summary">
+            <BxDataListTable Caption="Invoices with table and grid views" RowActions="_rowActions" RowSummary="_summary" Summaries="_summaries">
                 <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
-                <BxDataListColumn Field="customer" />
+                <BxDataListColumn Field="customer" Summary="DataListSummaryKind.Count" />
                 <BxDataListColumn Field="status" />
-                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" Summary="DataListSummaryKind.Sum" />
             </BxDataListTable>
             <BxDataListGrid Columns="3" RowActions="_rowActions">
                 <ItemTemplate Context="invoice">
@@ -178,6 +178,11 @@
         Status = i => @<span class="rounded-full border border-(--blux-border-accented) px-2 py-0.5 text-xs">@i.Status</span>,
         Details = i => [i.Amount.ToString("C2"), i.Issued.ToString("yyyy-MM-dd")],
         Href = i => $"#invoice-{i.Id}",
+    };
+
+    private static readonly DataListSummaries<Invoice> _summaries = new()
+    {
+        Scopes = [DataListSummaryScope.Page, DataListSummaryScope.Filtered, DataListSummaryScope.Selection],
     };
 
     private DataListRowAction<Invoice>[] _removeActions =>

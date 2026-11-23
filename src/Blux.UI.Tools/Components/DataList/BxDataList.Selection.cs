@@ -320,6 +320,19 @@ public partial class BxDataList<TItem>
     /// <summary>The request for every row the list matches: the one on screen without paging and facets.</summary>
     internal DataListRequest? AllResultsRequest => Controller?.LoadedRequest is { } request ? request with { Paging = DataListPaging.None.Instance, Facets = [] } : null;
 
+    internal IReadOnlyList<TItem> FilteredRowsForSummary()
+    {
+        if (Items is not null && _schema is not null && Controller?.LoadedRequest is { } request)
+        {
+            return _schema.ExecuteInMemory(Items, request with { Paging = DataListPaging.None.Instance, Facets = [] }).Items;
+        }
+        if (Items is not null)
+        {
+            return [.. Items];
+        }
+        return Controller?.Rows ?? [];
+    }
+
     // The rows an action receives: the ticked ones, or for "every result" of a list in memory the rows the query matches (a provider's rows never come to the client).
     internal DataListActionContext<TItem> CreateActionContext(DataListActionScope scope, bool resolveAll, CancellationToken cancellationToken)
     {

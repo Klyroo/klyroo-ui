@@ -95,6 +95,12 @@ public class DataListGridTests(PlaygroundServer server) : PlaygroundTest(server)
         await viewToggle.ClickAsync();
         await Assertions.Expect(SwitchList.Locator("[data-slot=table]")).ToHaveCountAsync(1);
 
+        // Footer summaries (<tfoot>): Page (10 rows), Filtered (25 rows), Selection (1 row selected earlier).
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-footer-row]")).ToHaveCountAsync(3);
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-footer-row][data-scope=page] [data-slot=summary-cell][data-key=customer]")).ToHaveTextAsync("10 rows");
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-footer-row][data-scope=filtered] [data-slot=summary-cell][data-key=customer]")).ToHaveTextAsync("25 rows");
+        await Assertions.Expect(SwitchList.Locator("[data-slot=summary-footer-row][data-scope=selection] [data-slot=summary-cell][data-key=customer]")).ToHaveTextAsync("1 row");
+
         // Removing a card in the standalone grid moves focus to the next card's Remove button.
         var removableCards = GridOnlyList.Locator("[data-slot=grid-card]");
         await Assertions.Expect(removableCards).ToHaveCountAsync(6);

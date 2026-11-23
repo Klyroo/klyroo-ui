@@ -252,6 +252,45 @@
                             }
                         }
                     </tbody>
+                    @if (!Context.IsInitial && !empty && HasActiveSummaries(columns))
+                    {
+                        var scopes = EffectiveSummaryScopes();
+                        <tfoot class="@_slots["tfoot"]" data-slot="tfoot" aria-busy="@(_summaryLoading ? "true" : null)">
+                            @foreach (var scope in scopes)
+                            {
+                                var scopeRows = RowsForSummaryScope(scope);
+                                var scopeLabel = SummaryScopeLabel(scope, scopes.Count > 1);
+                                <tr @key="@("tfoot:" + scope)" class="@_slots["tfootRow"]" data-slot="summary-footer-row" data-scope="@SummaryScopeKey(scope)">
+                                    @if (selecting)
+                                    {
+                                        <td class="@SelectFooterClass(pinStart)" style="@(pinStart ? "inset-inline-start:0" : null)" data-pinned="@(pinStart ? "start" : null)"></td>
+                                    }
+                                    @for (var i = 0; i < columns.Count; i++)
+                                    {
+                                        var column = columns[i];
+                                        if (i == 0 && !HasSummaryForColumn(column, scope))
+                                        {
+                                            <th scope="row" class="@FooterCellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" data-slot="summary-label" data-key="@column.Key">@scopeLabel</th>
+                                        }
+                                        else
+                                        {
+                                            <td class="@FooterCellClass(column)" style="@CellStyle(column)" data-pinned="@PinAttr(column)" data-slot="summary-cell" data-key="@column.Key">
+                                                @if (i == 0)
+                                                {
+                                                    <span class="@_slots["tfootLabel"]" data-slot="summary-label">@scopeLabel</span>
+                                                }
+                                                @RenderSummaryCell(column, scope, scopeRows)
+                                            </td>
+                                        }
+                                    }
+                                    @if (acting)
+                                    {
+                                        <td class="@ActionsFooterClass(pinEnd)" style="@(pinEnd ? "inset-inline-end:0" : null)" data-pinned="@(pinEnd ? "end" : null)"></td>
+                                    }
+                                </tr>
+                            }
+                        </tfoot>
+                    }
                 </table>
                 @* The loader of a virtualized list (cursor paging) is drawn here, in the box that scrolls: a sentinel after the box would never move while the rows scroll inside it. *@
                 @if (IsVirtualized && Context.TableFooter is { } footer)
@@ -276,6 +315,11 @@
     private bool _watching;
     private bool _keepingFocus;
     private bool _checkedPhone;
+    private bool _subscribedSelectionForSummary;
+    private bool _summaryLoading;
+    private string? _summaryResolveSignature;
+    private CancellationTokenSource? _summaryCts;
+    private readonly Dictionary<DataListSummaryScope, IReadOnlyDictionary<string, object?>> _resolvedSummaries = [];
     private readonly string _scrollId = NewId("table-scroll");
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -344,6 +388,13 @@
     /// </summary>
     [Parameter] public DataListTree<TItem>? Tree { get; set; }
 
+    /// <summary>
+    /// Optional footer summary (<c>&lt;tfoot&gt;</c>) configuration: target <see cref="DataListSummaryScope"/>(s) (<c>Filtered</c>, <c>Page</c>, <c>Selection</c>),
+    /// custom row label, and optional <see cref="DataListSummaries{TItem}.ResolveAsync"/> delegate for remote or asynchronous totals.
+    /// When <see langword="null"/>, a single <see cref="DataListSummaryScope.Filtered"/> summary row is still rendered automatically whenever any column declares a summary.
+    /// </summary>
+    [Parameter] public DataListSummaries<TItem>? Summaries { get; set; }
+
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
     private float EffectiveItemSize => ItemSize is > 0 ? ItemSize.Value : Context.Density switch
@@ -378,10 +429,13 @@
             _keepingFocus = true;
             _ = KeepVirtualFocusAsync();
         }
-        var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}"));
-        if (signature == Context.ColumnsSignature) return;
-        Context.ColumnsSignature = signature;
-        Context.NotifyChanged();
+        var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}:{c.HasSummary}"));
+        if (signature != Context.ColumnsSignature)
+        {
+            Context.ColumnsSignature = signature;
+            Context.NotifyChanged();
+        }
+        EnsureSummariesResolved();
     }
 
     private async Task CheckPhoneViewportAsync()
@@ -445,6 +499,8 @@
         Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
         _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
+        SyncSummarySelectionSubscription();
+        EnsureSummariesResolved();
     }
 
     protected override void OnContextUpdated()
@@ -456,10 +512,18 @@
             _watching = false;
             Context.SetTableVirtualized(activeVirtualized, activeVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         }
+        EnsureSummariesResolved();
     }
 
     public override void Dispose()
     {
+        if (_subscribedSelectionForSummary)
+        {
+            Context.SelectionChanged -= OnSummarySelectionChanged;
+            _subscribedSelectionForSummary = false;
+        }
+        _summaryCts?.Cancel();
+        _summaryCts?.Dispose();
         Context.SetTableTree(null);
         Context.SetTableGroupBy(null);
         Context.SetRowSummary(false, false, false);
@@ -804,6 +868,195 @@
 
     private string SelectClass(string kind, bool stuck) =>
         $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]} {(stuck ? _slots[kind == "th" ? "thPinnedStart" : "tdPinnedStart"] : "")}".TrimEnd();
+
+    private string ActionsFooterClass(bool stuck) =>
+        $"{_slots["td"]} {_slots["tfootCell"]} {_slots["tdEnd"]} {_slots["rowActionsCell"]} {(stuck ? _slots["tfootCellPinnedEnd"] : "")}".TrimEnd();
+
+    private string SelectFooterClass(bool stuck) =>
+        $"{_slots["td"]} {_slots["tfootCell"]} {_slots["tdStart"]} {_slots["selectCell"]} {(stuck ? _slots["tfootCellPinnedStart"] : "")}".TrimEnd();
+
+    private string FooterCellClass(View column)
+    {
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => _slots["tfootCellPinnedStart"],
+            DataListPin.End => _slots["tfootCellPinnedEnd"],
+            _ => "",
+        };
+        var sized = column.Width is not null ? _slots["colSized"] : "";
+        return $"{_slots["td"]} {_slots["tfootCell"]} {AlignClass(column.Align, "td")} {pin} {sized} {column.Class}".Trim();
+    }
+
+    private bool HasActiveSummaries(List<View> columns) =>
+        Summaries is not null || columns.Any(c => c.Source?.HasSummary == true);
+
+    private IReadOnlyList<DataListSummaryScope> EffectiveSummaryScopes() =>
+        Summaries?.EffectiveScopes ?? [DataListSummaryScope.Filtered];
+
+    private IReadOnlyList<TItem> RowsForSummaryScope(DataListSummaryScope scope) => scope switch
+    {
+        DataListSummaryScope.Page => Context.Rows,
+        DataListSummaryScope.Selection => Context.SelectedItems,
+        _ => Context.FilteredRows(),
+    };
+
+    private static string SummaryScopeKey(DataListSummaryScope scope) => scope switch
+    {
+        DataListSummaryScope.Page => "page",
+        DataListSummaryScope.Selection => "selection",
+        _ => "filtered",
+    };
+
+    private string SummaryScopeLabel(DataListSummaryScope scope, bool multipleScopes)
+    {
+        if (!multipleScopes)
+        {
+            if (!string.IsNullOrWhiteSpace(Summaries?.Label)) return Summaries.Label;
+            return scope switch
+            {
+                DataListSummaryScope.Page => ToolsMessages.SummaryPage,
+                DataListSummaryScope.Selection => ToolsMessages.SummarySelection,
+                _ => ToolsMessages.SummaryTotal,
+            };
+        }
+        return scope switch
+        {
+            DataListSummaryScope.Page => ToolsMessages.SummaryPage,
+            DataListSummaryScope.Selection => ToolsMessages.SummarySelection,
+            _ => !string.IsNullOrWhiteSpace(Summaries?.Label) ? Summaries.Label : ToolsMessages.SummaryFiltered,
+        };
+    }
+
+    private bool HasSummaryForColumn(View column, DataListSummaryScope scope)
+    {
+        if (column.Source?.HasSummary == true) return true;
+        if (column.Key is not null && _resolvedSummaries.TryGetValue(scope, out var map) && map.ContainsKey(column.Key)) return true;
+        return false;
+    }
+
+    private RenderFragment RenderSummaryCell(View column, DataListSummaryScope scope, IReadOnlyList<TItem> scopeRows) => builder =>
+    {
+        var src = column.Source;
+        object? rawValue = null;
+        var hasAsync = column.Key is not null && _resolvedSummaries.TryGetValue(scope, out var map) && map.TryGetValue(column.Key, out rawValue);
+        if (!hasAsync && src is not null)
+        {
+            if (src.SummaryValue is not null)
+            {
+                rawValue = src.SummaryValue(scopeRows);
+            }
+            else if (src.Summary != DataListSummaryKind.None)
+            {
+                rawValue = DataListSummaryCalculator.Compute(src.Summary, scopeRows, item => src.ReadValue(item, Context.Schema));
+            }
+        }
+        var formatted = src is not null
+            ? src.FormatSummaryValue(rawValue, FormatCulture, ToolsMessages)
+            : (rawValue is IFormattable f ? f.ToString(null, FormatCulture) : rawValue?.ToString());
+
+        if (src?.SummaryTemplate is { } template)
+        {
+            var ctx = new DataListSummaryCellContext<TItem>(Context, column.Key, scope, scopeRows, rawValue, formatted, _summaryLoading);
+            builder.AddContent(0, template(ctx));
+            return;
+        }
+        if (_summaryLoading && !hasAsync && Summaries?.ResolveAsync is not null)
+        {
+            builder.OpenComponent<BxSkeleton>(1);
+            builder.AddAttribute(2, nameof(BxSkeleton.Class), "inline-block h-4 w-16");
+            builder.CloseComponent();
+            return;
+        }
+        if (!string.IsNullOrEmpty(formatted))
+        {
+            builder.AddContent(3, formatted);
+        }
+    };
+
+    private void SyncSummarySelectionSubscription()
+    {
+        var shouldSubscribe = Summaries is not null || Context.Columns.Any(c => c.HasSummary);
+        if (shouldSubscribe && !_subscribedSelectionForSummary)
+        {
+            Context.SelectionChanged += OnSummarySelectionChanged;
+            _subscribedSelectionForSummary = true;
+        }
+    }
+
+    private void OnSummarySelectionChanged()
+    {
+        if (!EffectiveSummaryScopes().Contains(DataListSummaryScope.Selection)) return;
+        try
+        {
+            _ = InvokeAsync(() =>
+            {
+                EnsureSummariesResolved();
+                StateHasChanged();
+            });
+        }
+        catch (ObjectDisposedException)
+        {
+        }
+    }
+
+    private void EnsureSummariesResolved()
+    {
+        SyncSummarySelectionSubscription();
+        if (Summaries?.ResolveAsync is not { } resolver || Context.IsInitial) return;
+        var scopes = EffectiveSummaryScopes();
+        var selectionPart = scopes.Contains(DataListSummaryScope.Selection)
+            ? string.Join(',', Context.SelectedKeys.Order(StringComparer.Ordinal))
+            : "";
+        var sig = $"{Context.ResultVersion}|{string.Join(',', scopes)}|{selectionPart}";
+        if (sig == _summaryResolveSignature) return;
+        _summaryResolveSignature = sig;
+        _summaryCts?.Cancel();
+        _summaryCts?.Dispose();
+        var cts = CancellationTokenSource.CreateLinkedTokenSource(Context.LifetimeToken);
+        _summaryCts = cts;
+        _ = RunSummaryResolveAsync(resolver, scopes, cts.Token);
+    }
+
+    private async Task RunSummaryResolveAsync(
+        Func<DataListSummaryResolveContext<TItem>, ValueTask<IReadOnlyDictionary<string, object?>>> resolver,
+        IReadOnlyList<DataListSummaryScope> scopes,
+        CancellationToken ct)
+    {
+        _summaryLoading = true;
+        try
+        {
+            var next = new Dictionary<DataListSummaryScope, IReadOnlyDictionary<string, object?>>();
+            foreach (var scope in scopes)
+            {
+                ct.ThrowIfCancellationRequested();
+                var rows = RowsForSummaryScope(scope);
+                var ctx = new DataListSummaryResolveContext<TItem>(Context, scope, rows, Context.AllResultsRequest, ct);
+                var values = await resolver(ctx);
+                if (values is not null) next[scope] = values;
+            }
+            if (ct.IsCancellationRequested) return;
+            _resolvedSummaries.Clear();
+            foreach (var (s, map) in next) _resolvedSummaries[s] = map;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                _summaryLoading = false;
+                try
+                {
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+            }
+        }
+    }
 
     private string HeaderClass(View column)
     {

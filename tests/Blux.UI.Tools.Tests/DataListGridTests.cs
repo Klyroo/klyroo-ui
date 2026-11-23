@@ -364,6 +364,72 @@ public class DataListGridTests : BluxToolsTestContext
         Assert.True(cut.Find("input[data-select=row][data-key='12']").HasAttribute("checked"));
         Assert.False(cut.Find("input[data-select=row][data-key='111']").HasAttribute("checked"));
     }
+
+    [Fact]
+    public void Summaries_compute_page_filtered_and_selection_scopes_and_support_async_resolve()
+    {
+        var items = DataListControllerTests.People[..15];
+        var summaries = new DataListSummaries<Person>
+        {
+            Scopes = [DataListSummaryScope.Page, DataListSummaryScope.Filtered, DataListSummaryScope.Selection],
+        };
+
+        var cut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Items, items)
+            .Add(x => x.Summaries, summaries)
+            .Add(x => x.AgeSummary, DataListSummaryKind.Sum)
+            .Add(x => x.CitySummary, DataListSummaryKind.Count)
+            .Add(x => x.Selectable, true));
+
+        var footerRows = cut.FindAll("[data-slot=summary-footer-row]");
+        Assert.Equal(3, footerRows.Count);
+        Assert.Equal(["page", "filtered", "selection"], footerRows.Select(r => r.GetAttribute("data-scope")).ToArray());
+
+        // Page scope aggregates the first 10 rows (Ages 21..30 -> sum 255, count 10 rows).
+        var pageRow = cut.Find("[data-slot=summary-footer-row][data-scope=page]");
+        Assert.Equal("Page", pageRow.QuerySelector("[data-slot=summary-label]")?.TextContent);
+        Assert.Equal("255", pageRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
+        Assert.Equal("10 rows", pageRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
+
+        // Filtered scope aggregates all 15 matching rows (Ages 21..35 -> sum 420, count 15 rows).
+        var filteredRow = cut.Find("[data-slot=summary-footer-row][data-scope=filtered]");
+        Assert.Equal("Filtered", filteredRow.QuerySelector("[data-slot=summary-label]")?.TextContent);
+        Assert.Equal("420", filteredRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
+        Assert.Equal("15 rows", filteredRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
+
+        // Selection scope starts at 0, then updates when row 1 (Age 21) is ticked.
+        var selectionRow = cut.Find("[data-slot=summary-footer-row][data-scope=selection]");
+        Assert.Equal("0", selectionRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
+        Assert.Equal("0 rows", selectionRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
+
+        cut.Find("input[data-select=row][data-key='1']").Change(true);
+        selectionRow = cut.Find("[data-slot=summary-footer-row][data-scope=selection]");
+        Assert.Equal("21", selectionRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
+        Assert.Equal("1 row", selectionRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
+
+        // Async ResolveAsync overrides computed values.
+        var asyncSummaries = new DataListSummaries<Person>
+        {
+            Scope = DataListSummaryScope.Filtered,
+            Label = "Server total",
+            ResolveAsync = _ => ValueTask.FromResult<IReadOnlyDictionary<string, object?>>(new Dictionary<string, object?>
+            {
+                ["age"] = 9999m,
+                ["city"] = 42,
+            }),
+        };
+
+        var asyncCut = Render<DataListGridHarness>(p => p
+            .Add(x => x.Items, items)
+            .Add(x => x.Summaries, asyncSummaries)
+            .Add(x => x.AgeSummary, DataListSummaryKind.Sum)
+            .Add(x => x.CitySummary, DataListSummaryKind.Count));
+
+        var asyncRow = asyncCut.Find("[data-slot=summary-footer-row][data-scope=filtered]");
+        Assert.Equal("Server total", asyncRow.QuerySelector("[data-slot=summary-label]")?.TextContent);
+        Assert.Equal("9999", asyncRow.QuerySelector("[data-slot=summary-cell][data-key=age]")?.TextContent);
+        Assert.Equal("42 rows", asyncRow.QuerySelector("[data-slot=summary-cell][data-key=city]")?.TextContent);
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>

@@ -191,6 +191,12 @@ public sealed record DataListUi : ISlotOverrides
     public string? TreeChevronExpanded { get; init; }
     public string? TreeSpacer { get; init; }
     public string? TreeContent { get; init; }
+    public string? Tfoot { get; init; }
+    public string? TfootRow { get; init; }
+    public string? TfootCell { get; init; }
+    public string? TfootCellPinnedStart { get; init; }
+    public string? TfootCellPinnedEnd { get; init; }
+    public string? TfootLabel { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -380,6 +386,12 @@ public sealed record DataListUi : ISlotOverrides
         "treeChevronExpanded" => TreeChevronExpanded,
         "treeSpacer" => TreeSpacer,
         "treeContent" => TreeContent,
+        "tfoot" => Tfoot,
+        "tfootRow" => TfootRow,
+        "tfootCell" => TfootCell,
+        "tfootCellPinnedStart" => TfootCellPinnedStart,
+        "tfootCellPinnedEnd" => TfootCellPinnedEnd,
+        "tfootLabel" => TfootLabel,
         _ => null,
     };
 }

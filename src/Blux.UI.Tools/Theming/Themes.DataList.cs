@@ -32,7 +32,8 @@ internal static partial class ToolsThemes
                 "gridRoot", "gridHeader", "grid", "gridCard", "gridCardTop", "gridCardBody", "gridCardFields", "gridCardField", "gridCardFieldLabel", "gridCardFieldValue", "gridEmpty",
                 "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions",
                 "groupRow", "groupCell", "summaryGroupRow", "gridGroup", "gridGroupHeader", "groupHeader", "groupToggle", "groupChevron", "groupChevronExpanded", "groupLabel", "groupSummary",
-                "treeCell", "treeRailBlank", "treeRailPass", "treeRailBranch", "treeRailLast", "treeToggle", "treeChevron", "treeChevronExpanded", "treeSpacer", "treeContent")
+                "treeCell", "treeRailBlank", "treeRailPass", "treeRailBranch", "treeRailLast", "treeToggle", "treeChevron", "treeChevronExpanded", "treeSpacer", "treeContent",
+                "tfoot", "tfootRow", "tfootCell", "tfootCellPinnedStart", "tfootCellPinnedEnd", "tfootLabel")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -231,6 +232,12 @@ internal static partial class ToolsThemes
             .Slot("treeChevronExpanded", "size-4 shrink-0 rotate-90 transition-transform motion-reduce:transition-none")
             .Slot("treeSpacer", "inline-block size-6 shrink-0")
             .Slot("treeContent", "min-w-0 truncate")
+            .Slot("tfoot", "border-t border-(--blux-border-accented) bg-(--blux-bg-muted) font-semibold text-(--blux-text-highlighted) transition-opacity aria-busy:opacity-60")
+            .Slot("tfootRow", "border-b border-(--blux-border) last:border-b-0")
+            .Slot("tfootCell", "font-semibold text-(--blux-text-highlighted)")
+            .Slot("tfootCellPinnedStart", "sm:sticky sm:z-[1] sm:border-e sm:border-(--blux-border) bg-(--blux-bg-muted)")
+            .Slot("tfootCellPinnedEnd", "sm:sticky sm:z-[1] sm:border-s sm:border-(--blux-border) bg-(--blux-bg-muted)")
+            .Slot("tfootLabel", "me-2 font-semibold text-(--blux-text-muted)")
             .Variant("gridColumns", "1", "grid", "grid-cols-1")
             .Variant("gridColumns", "2", "grid", "grid-cols-1 sm:grid-cols-2")
             .Variant("gridColumns", "3", "grid", "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")

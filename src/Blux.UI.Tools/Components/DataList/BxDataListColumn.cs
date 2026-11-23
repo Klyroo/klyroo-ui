@@ -93,6 +93,20 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// <summary>Whether the user can resize the column by dragging its header handle or using the keyboard (true by default). Only when <see cref="BxDataListTable{TItem}.Resizable"/> is on.</summary>
     [Parameter] public bool Resizable { get; set; } = true;
 
+    /// <summary>Built-in aggregation shown for this column in the table's summary footer (<c>&lt;tfoot&gt;</c>): <see cref="DataListSummaryKind.Sum"/>, <see cref="DataListSummaryKind.Average"/>, <see cref="DataListSummaryKind.Count"/>, <see cref="DataListSummaryKind.Min"/> or <see cref="DataListSummaryKind.Max"/>.</summary>
+    [Parameter] public DataListSummaryKind Summary { get; set; }
+
+    /// <summary>Format string applied to the summary footer value of this column. When <see langword="null"/>, falls back to <see cref="Format"/> (or the localized row count for <see cref="DataListSummaryKind.Count"/>).</summary>
+    [Parameter] public string? SummaryFormat { get; set; }
+
+    /// <summary>Custom synchronous aggregation calculator for this column in the table's summary footer (<c>&lt;tfoot&gt;</c>), receiving the rows of the active <see cref="DataListSummaryScope"/>.</summary>
+    [Parameter] public Func<IReadOnlyList<TItem>, object?>? SummaryValue { get; set; }
+
+    /// <summary>Custom template for rendering the summary footer cell (<c>&lt;tfoot&gt;</c>) of this column.</summary>
+    [Parameter] public RenderFragment<DataListSummaryCellContext<TItem>>? SummaryTemplate { get; set; }
+
+    internal bool HasSummary => Summary != DataListSummaryKind.None || SummaryValue is not null || SummaryTemplate is not null;
+
     /// <summary>The key of the column: <see cref="Key"/>, <see cref="Field"/> or the member path of <see cref="Property"/> in camel case.</summary>
     public string? EffectiveKey => ResolvedKey;
 
@@ -148,6 +162,23 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
         IFormattable formattable => formattable.ToString(null, culture),
         _ => value.ToString(),
     };
+
+    /// <summary>The text of a summary footer cell for an aggregated value.</summary>
+    internal string? FormatSummaryValue(object? value, CultureInfo culture, BxToolsMessages messages)
+    {
+        if (value is null) return null;
+        var fmt = !string.IsNullOrEmpty(SummaryFormat) ? SummaryFormat : Format;
+        if (Summary == DataListSummaryKind.Count && string.IsNullOrEmpty(fmt) && value is int count)
+        {
+            return string.Format(culture, count == 1 ? messages.SummaryRowOne : messages.SummaryRowOther, count);
+        }
+        return value switch
+        {
+            IFormattable formattable when !string.IsNullOrEmpty(fmt) => formattable.ToString(fmt, culture),
+            IFormattable formattable => formattable.ToString(null, culture),
+            _ => value.ToString(),
+        };
+    }
 
     /// <summary>The value of the column for a row, from its <see cref="Property"/> or from the field of the schema; <see langword="null"/> when it has neither.</summary>
     internal object? ReadValue(TItem item, DataListSchema<TItem>? schema)

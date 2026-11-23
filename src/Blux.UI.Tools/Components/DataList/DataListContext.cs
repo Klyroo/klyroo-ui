@@ -262,6 +262,12 @@ public sealed partial class DataListContext<TItem>
     /// <summary>The rows of <see cref="Result"/>; empty before the first load.</summary>
     public IReadOnlyList<TItem> Rows => _owner.Controller?.Rows ?? [];
 
+    /// <summary>Every row matching the active search and filters for an in-memory list (<c>Items</c>), or the loaded <see cref="Rows"/> for a provider or queryable source.</summary>
+    public IReadOnlyList<TItem> FilteredRows() => _owner.FilteredRowsForSummary();
+
+    /// <summary>The request for every row the list matches (the loaded request without paging or facets), or <see langword="null"/> before the first load.</summary>
+    public DataListRequest? AllResultsRequest => _owner.AllResultsRequest;
+
     /// <summary>The state <see cref="Result"/> was loaded for: the page and page size of the rows on screen.</summary>
     public DataListState? LoadedState => _owner.Controller?.LoadedState;
 
