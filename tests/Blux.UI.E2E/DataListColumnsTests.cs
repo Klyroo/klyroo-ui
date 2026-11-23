@@ -41,6 +41,8 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
     {
         await list.Locator("[data-slot=columns-trigger]").ClickAsync();
         await Assertions.Expect(Content).ToBeVisibleAsync();
+        // The popover moves while it opens: a pointer test measures where its items are once it has stopped.
+        await Page.WaitForFunctionAsync("() => document.getAnimations().length === 0");
     }
 
     private Task<string?> CookieValue(string name) => Page.Context.CookiesAsync().ContinueWith(t => t.Result.FirstOrDefault(c => c.Name == name)?.Value);
