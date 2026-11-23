@@ -18,12 +18,18 @@ public enum EditorAction
     Heading,
     BulletList,
     OrderedList,
+
+    /// <summary>A list of items with a checkbox each.</summary>
+    TaskList,
     Blockquote,
     CodeBlock,
     HorizontalRule,
 
     /// <summary>Sets or removes the link of the selection; the toolbar asks for the address in a small field.</summary>
     Link,
+
+    /// <summary>Inserts an image from an http or https address; the toolbar asks for the address in a small field.</summary>
+    Image,
     ClearFormatting,
     Undo,
     Redo,
@@ -283,10 +289,12 @@ internal static class EditorActions
         EditorAction.Heading => "heading",
         EditorAction.BulletList => "bulletList",
         EditorAction.OrderedList => "orderedList",
+        EditorAction.TaskList => "taskList",
         EditorAction.Blockquote => "blockquote",
         EditorAction.CodeBlock => "codeBlock",
         EditorAction.HorizontalRule => "horizontalRule",
         EditorAction.Link => "link",
+        EditorAction.Image => "image",
         EditorAction.ClearFormatting => "clearFormatting",
         EditorAction.Undo => "undo",
         EditorAction.Redo => "redo",
@@ -298,7 +306,7 @@ internal static class EditorActions
     /// <summary>Buttons that stay pressed while the selection has the format.</summary>
     public static bool IsToggle(EditorAction action) => action is
         EditorAction.Bold or EditorAction.Italic or EditorAction.Strike or EditorAction.Underline or EditorAction.Code or EditorAction.Heading or
-        EditorAction.BulletList or EditorAction.OrderedList or EditorAction.Blockquote or EditorAction.CodeBlock or EditorAction.Link;
+        EditorAction.BulletList or EditorAction.OrderedList or EditorAction.TaskList or EditorAction.Blockquote or EditorAction.CodeBlock or EditorAction.Link;
 
     public static string Label(BxMessages strings, EditorAction action, int level) => action switch
     {
@@ -311,10 +319,12 @@ internal static class EditorActions
         EditorAction.Heading => string.Format(strings.EditorHeading, level),
         EditorAction.BulletList => strings.EditorBulletList,
         EditorAction.OrderedList => strings.EditorOrderedList,
+        EditorAction.TaskList => strings.EditorTaskList,
         EditorAction.Blockquote => strings.EditorBlockquote,
         EditorAction.CodeBlock => strings.EditorCodeBlock,
         EditorAction.HorizontalRule => strings.EditorHorizontalRule,
         EditorAction.Link => strings.EditorLink,
+        EditorAction.Image => strings.EditorImage,
         EditorAction.ClearFormatting => strings.EditorClearFormatting,
         EditorAction.Undo => strings.EditorUndo,
         EditorAction.Redo => strings.EditorRedo,
@@ -335,10 +345,12 @@ internal static class EditorActions
         EditorAction.Heading => level switch { 1 => "lucide:heading-1", 2 => "lucide:heading-2", 3 => "lucide:heading-3", _ => "lucide:heading-4" },
         EditorAction.BulletList => "lucide:list",
         EditorAction.OrderedList => "lucide:list-ordered",
+        EditorAction.TaskList => "lucide:list-todo",
         EditorAction.Blockquote => "lucide:quote",
         EditorAction.CodeBlock => "lucide:square-code",
         EditorAction.HorizontalRule => icons.Minus,
         EditorAction.Link => "lucide:link",
+        EditorAction.Image => "lucide:image",
         EditorAction.ClearFormatting => "lucide:remove-formatting",
         EditorAction.Undo => "lucide:undo-2",
         EditorAction.Redo => "lucide:redo-2",

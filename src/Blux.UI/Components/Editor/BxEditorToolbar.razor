@@ -43,6 +43,13 @@
             <button type="button" class="@_slots["linkButton"]" data-link="remove">@Messages.EditorLinkRemove</button>
         </div>
     }
+    @if (HasImage)
+    {
+        <div class="@_slots["linkForm"]" data-slot="image-form" role="group" aria-label="@Messages.EditorImage" hidden>
+            <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="image-input" aria-label="@Messages.EditorImageUrl" placeholder="https://" />
+            <button type="button" class="@_slots["linkButton"]" data-image="apply">@Messages.EditorLinkApply</button>
+        </div>
+    }
 </bx-editor-toolbar>
 
 @code {
@@ -69,6 +76,8 @@
     private bool Bubble => Layout == EditorToolbarLayout.Bubble;
 
     private IReadOnlyList<EditorToolbarItem> EffectiveItems => Items ?? (Bubble ? EditorToolbarItem.BubbleDefaults : EditorToolbarItem.Defaults);
+
+    private bool HasImage => EffectiveItems.Any(i => !i.IsSeparator && i.Action == EditorAction.Image);
 
     private bool HasLink => EffectiveItems.Any(i => !i.IsSeparator && i.Action == EditorAction.Link);
 

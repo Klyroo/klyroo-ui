@@ -76,6 +76,11 @@ public static partial class BxLocales
             EditorLinkUrl = "عنوان الرابط",
             EditorLinkApply = "تطبيق",
             EditorLinkRemove = "إزالة الرابط",
+            // Draft translations of the task list and image messages, marked for review by a native speaker before a stable release.
+            EditorTaskList = "قائمة مهام",
+            EditorImage = "صورة",
+            EditorImageUrl = "عنوان الصورة",
+            EditorTaskItem = "مهمة: {0}",
             EditorDragHandle = "اسحب لنقل الكتلة",
             EditorNoResults = "لا توجد نتائج",
             EditorSuggestionMenu = "الأوامر",

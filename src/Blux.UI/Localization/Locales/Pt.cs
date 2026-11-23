@@ -76,6 +76,11 @@ public static partial class BxLocales
             EditorLinkUrl = "Endereço da ligação",
             EditorLinkApply = "Aplicar",
             EditorLinkRemove = "Remover ligação",
+            // Draft translations of the task list and image messages, marked for review by a native speaker before a stable release.
+            EditorTaskList = "Lista de tarefas",
+            EditorImage = "Imagem",
+            EditorImageUrl = "Endereço da imagem",
+            EditorTaskItem = "Tarefa: {0}",
             EditorDragHandle = "Arraste para mover o bloco",
             EditorNoResults = "Sem resultados",
             EditorSuggestionMenu = "Comandos",

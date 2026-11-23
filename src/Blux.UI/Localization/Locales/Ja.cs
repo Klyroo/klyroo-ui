@@ -76,6 +76,11 @@ public static partial class BxLocales
             EditorLinkUrl = "リンク先アドレス",
             EditorLinkApply = "適用",
             EditorLinkRemove = "リンクを削除",
+            // Draft translations of the task list and image messages, marked for review by a native speaker before a stable release.
+            EditorTaskList = "タスクリスト",
+            EditorImage = "画像",
+            EditorImageUrl = "画像のアドレス",
+            EditorTaskItem = "タスク: {0}",
             EditorDragHandle = "ドラッグしてブロックを移動",
             EditorNoResults = "結果がありません",
             EditorSuggestionMenu = "コマンド",
