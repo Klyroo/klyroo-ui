@@ -1,0 +1,139 @@
+@using Blux.UI.Tools.Query
+
+@* Row actions: the first two as buttons, the others in a menu with a divider between groups and a submenu (Send to); below the md breakpoint one "Actions for Invoice N" button opens a sheet that also says why an
+   action is disabled. Open is a link, so it also works in a statically rendered list; everything else needs the page to be interactive. Delete asks first, and the focus then moves to the actions of the next row. *@
+<div class="w-full" data-testid="list-rowactions">
+    <p role="status" class="mb-2 min-h-5 text-sm text-(--blux-text-muted)" data-testid="ra-message">@_message</p>
+    <BxDataList TItem="Invoice" Label="Invoices with row actions" Schema="InvoiceFilterData.Schema" Items="_items" UrlKey="ra">
+        <BxDataListSearch />
+        <BxDataListTable RowActions="_actions" RowActionsMaxVisible="2" OnRowActionError="@((DataListRowActionFailure<Invoice> failure) => OnError(failure))">
+            <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+            <BxDataListColumn Field="customer" />
+            <BxDataListColumn Field="status" />
+            <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+        </BxDataListTable>
+        <BxDataListPagination />
+    </BxDataList>
+</div>
+
+@code {
+    private IReadOnlyList<Invoice> _items = InvoiceData.All;
+    private string? _message;
+    private DataListRowAction<Invoice>[] _actions = [];
+
+    // The parts render themselves: the page renders again to show its own text (and to hand the list its new rows).
+    private void Say(string message)
+    {
+        _message = message;
+        StateHasChanged();
+    }
+
+    private void OnError(DataListRowActionFailure<Invoice> failure) =>
+        Say($"{failure.Action.Label} failed for invoice {failure.Item.Id}: {failure.Message ?? failure.Exception?.Message}");
+
+    protected override void OnInitialized() =>
+        _actions =
+        [
+            new DataListRowAction<Invoice>
+            {
+                Key = "open",
+                Label = "Open",
+                Icon = "download",
+                Group = "View",
+                Href = c => $"#invoice-{c.Item.Id}",
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "copy",
+                Label = "Copy number",
+                Icon = "copy",
+                Group = "View",
+                OnExecute = c =>
+                {
+                    Say($"Copied the number of invoice {c.Item.Id}.");
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "send",
+                Label = "Send to",
+                Group = "Share",
+                Children =
+                [
+                    new DataListRowAction<Invoice>
+                    {
+                        Key = "send-email",
+                        Label = "Email",
+                        Disabled = c => c.Item.Status == "Draft",
+                        DisabledReason = _ => "A draft cannot be sent.",
+                        OnExecute = c =>
+                        {
+                            Say($"Invoice {c.Item.Id} sent by email.");
+                            return Task.CompletedTask;
+                        },
+                    },
+                    new DataListRowAction<Invoice>
+                    {
+                        Key = "send-message",
+                        Label = "Message",
+                        OnExecute = c =>
+                        {
+                            Say($"Invoice {c.Item.Id} sent as a message.");
+                            return Task.CompletedTask;
+                        },
+                    },
+                ],
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "paid",
+                Label = "Mark as paid",
+                Group = "Manage",
+                Disabled = c => c.Item.Status == "Paid",
+                DisabledReason = _ => "This invoice is already paid.",
+                OnExecute = c =>
+                {
+                    var id = c.Item.Id;
+                    _items = [.. _items.Select(i => i.Id == id ? i with { Status = "Paid" } : i)];
+                    Say($"Invoice {id} is paid.");
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "archive",
+                Label = "Archive",
+                Group = "Manage",
+                Visible = c => c.Item.Status != "Draft",
+                OnExecute = c =>
+                {
+                    // A refusal that is not an exception: the row stays and OnError hears about it.
+                    c.Fail("the server refused");
+                    return Task.CompletedTask;
+                },
+            },
+            new DataListRowAction<Invoice>
+            {
+                Key = "delete",
+                Label = "Delete",
+                Icon = "trash",
+                Color = BxColor.Error,
+                Group = "Danger",
+                Confirm = new DataListRowActionConfirm<Invoice>
+                {
+                    Title = "Delete invoice",
+                    Description = c => $"Invoice {c.Item.Id} will be removed from the list.",
+                    ConfirmLabel = "Delete",
+                    Color = BxColor.Error,
+                },
+                OnExecute = c =>
+                {
+                    var id = c.Item.Id;
+                    _items = [.. _items.Where(i => i.Id != id)];
+                    Say($"Deleted invoice {id}.");
+                    return Task.CompletedTask;
+                },
+            },
+        ];
+}

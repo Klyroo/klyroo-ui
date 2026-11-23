@@ -30,6 +30,8 @@ public static partial class BxToolsLocales
             ActionsMore = "مزيد من الإجراءات",
             ActionConfirm = "تأكيد",
             ActionCancel = "إلغاء",
+            RowActionsLabel = "إجراءات لـ {0}",
+            RowActionsLabelAt = "إجراءات الصف {0}",
             ErrorTitle = "تعذّر تحميل البيانات",
             ErrorDescription = "حدث خطأ أثناء تحميل البيانات. حاول مرة أخرى.",
             Retry = "إعادة المحاولة",

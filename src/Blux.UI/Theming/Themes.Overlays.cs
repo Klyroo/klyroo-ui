@@ -30,7 +30,7 @@ internal static partial class Themes
             .Slot("content", "m-0 inset-auto max-w-xs rounded-(--blux-radius) border-0 bg-(--blux-text) px-2 py-1 text-xs text-(--blux-bg) shadow-sm");
 
     public static ComponentTheme DropdownMenu() =>
-        new ComponentTheme("dropdownMenu", "content", "group", "label", "separator", "item", "itemIcon", "itemLabel", "itemShortcut")
+        new ComponentTheme("dropdownMenu", "content", "group", "label", "separator", "item", "itemIcon", "itemLabel", "itemShortcut", "itemChevron")
             .Slot("content", "m-0 inset-auto min-w-44 overflow-visible rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-overlay) p-1 text-(--blux-text) shadow-lg")
             .Slot("group", "")
             .Slot("label", "px-2 py-1.5 text-xs font-semibold text-(--blux-text-muted)")
@@ -39,7 +39,8 @@ internal static partial class Themes
                           "hover:bg-(--blux-bg-elevated) focus:bg-(--blux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60 data-[color=error]:text-(--blux-error-text)")
             .Slot("itemIcon", "size-4 shrink-0 text-(--blux-text-muted) group-data-[color=error]:text-(--blux-error-text)")
             .Slot("itemLabel", "truncate")
-            .Slot("itemShortcut", "ms-auto ps-4 text-xs text-(--blux-text-dimmed)");
+            .Slot("itemShortcut", "ms-auto ps-4 text-xs text-(--blux-text-dimmed)")
+            .Slot("itemChevron", "ms-auto size-4 shrink-0 text-(--blux-text-muted) rtl:rotate-180");
 
     public static ComponentTheme Toaster() =>
         new ComponentTheme("toast", "viewport", "root", "wrapper", "title", "description", "close")

@@ -33,6 +33,10 @@ public sealed partial class DataListContext<TItem>
     /// <summary>The row key of a row, as text. Throws when the schema has no <c>RowKey</c>.</summary>
     public string RowKey(TItem item) => _owner.KeyOf(item);
 
+    /// <summary>What a row action receives. A list without a row key identifies the row by its place on the page.</summary>
+    internal DataListRowActionContext<TItem> CreateRowActionContext(TItem item, int position) =>
+        new(this, item, Schema is { HasRowKey: true } ? _owner.KeyOf(item) : "#" + position, position, LifetimeToken);
+
     /// <summary>Whether a key is ticked.</summary>
     public bool IsKeySelected(string key) => _owner.IsKeySelected(key);
 

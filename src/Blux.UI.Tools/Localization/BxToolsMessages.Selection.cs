@@ -40,4 +40,10 @@ public sealed partial record BxToolsMessages
 
     /// <summary>Cancel button of the dialog an action asks before it runs.</summary>
     public string ActionCancel { get; init; } = "Cancel";
+
+    /// <summary>Accessible name of the button that opens the actions of one row of a data list; {0} is the label of the row.</summary>
+    public string RowActionsLabel { get; init; } = "Actions for {0}";
+
+    /// <summary>Accessible name of the button that opens the actions of a row that has no label; {0} is its position on the page.</summary>
+    public string RowActionsLabelAt { get; init; } = "Actions for row {0}";
 }

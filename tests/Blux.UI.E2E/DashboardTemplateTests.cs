@@ -245,6 +245,7 @@ internal static class DashboardChecks
         // Row action: delete one customer.
         await rows.First.GetByRole(AriaRole.Button, new() { NameRegex = new Regex("^Actions for") }).ClickAsync();
         await page.GetByRole(AriaRole.Menuitem, new() { Name = "Delete customer" }).ClickAsync();
+        await page.Locator("[data-slot=action-dialog] [data-slot=action-confirm]").ClickAsync();
         await Assertions.Expect(page.GetByText("of 230")).ToBeVisibleAsync();
 
         // New customer: the form validates, the country is searched in a remote source, and the customer is in the table.

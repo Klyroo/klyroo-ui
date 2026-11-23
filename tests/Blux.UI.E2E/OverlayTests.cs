@@ -156,6 +156,126 @@ public class OverlayTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.GetByTestId("menu-state")).ToHaveTextAsync("Last action: Billing");
     }
 
+    private ILocator MenuNamed(string name) => Page.GetByRole(AriaRole.Menu, new() { Name = name, Exact = true });
+
+    private ILocator ItemNamed(string menu, string name) => MenuNamed(menu).GetByRole(AriaRole.Menuitem, new() { Name = name, Exact = true });
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task Submenus_follow_the_menu_keyboard_pattern(string mode)
+    {
+        await Open(mode, "dropdown-menu");
+        var trigger = Page.GetByTestId("submenu-trigger");
+
+        await trigger.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Assertions.Expect(ItemNamed("Share", "Copy link")).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        // A disabled item is skipped by the arrows, an item with a submenu announces it.
+        var send = ItemNamed("Share", "Send to");
+        await Assertions.Expect(send).ToBeFocusedAsync();
+        await Assertions.Expect(send).ToHaveAttributeAsync("aria-haspopup", "menu");
+        await Assertions.Expect(send).ToHaveAttributeAsync("aria-expanded", "false");
+
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(MenuNamed("Send to")).ToBeVisibleAsync();
+        await Assertions.Expect(send).ToHaveAttributeAsync("aria-expanded", "true");
+        await Assertions.Expect(ItemNamed("Send to", "Email")).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("End");
+        await Assertions.Expect(ItemNamed("Send to", "Team")).ToBeFocusedAsync();
+
+        // A second level, then back with the left arrow (focus returns to the item that opened it) and with Escape (only the submenu closes).
+        await Page.Keyboard.PressAsync("ArrowRight");
+        await Assertions.Expect(ItemNamed("Team", "Design")).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("ArrowLeft");
+        await Assertions.Expect(MenuNamed("Team")).ToBeHiddenAsync();
+        await Assertions.Expect(ItemNamed("Send to", "Team")).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(ItemNamed("Team", "Design")).ToBeFocusedAsync();
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(MenuNamed("Team")).ToBeHiddenAsync();
+        await Assertions.Expect(ItemNamed("Send to", "Team")).ToBeFocusedAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeVisibleAsync();
+
+        await Page.Keyboard.PressAsync("ArrowLeft");
+        await Assertions.Expect(MenuNamed("Send to")).ToBeHiddenAsync();
+        await Assertions.Expect(send).ToBeFocusedAsync();
+        await Assertions.Expect(MenuNamed("Share")).ToBeVisibleAsync();
+
+        // The disabled item with children never opens; Escape closes the menu and focus returns to the button.
+        await Page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(MenuNamed("Share")).ToBeHiddenAsync();
+        await Assertions.Expect(trigger).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_submenu_item_reaches_dotnet_and_closes_every_level(string mode)
+    {
+        await Open(mode, "dropdown-menu");
+        await Page.GetByTestId("submenu-trigger").ClickAsync();
+
+        // The pointer opens the submenu after a short rest on its item, and it stays open while the pointer moves into it.
+        await ItemNamed("Share", "Send to").HoverAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeVisibleAsync();
+        await ItemNamed("Send to", "Team").HoverAsync();
+        await Assertions.Expect(MenuNamed("Team")).ToBeVisibleAsync();
+        await ItemNamed("Team", "Engineering").ClickAsync();
+
+        await Assertions.Expect(MenuNamed("Share")).ToBeHiddenAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeHiddenAsync();
+        await Assertions.Expect(MenuNamed("Team")).ToBeHiddenAsync();
+        await Assertions.Expect(Page.GetByTestId("submenu-state")).ToHaveTextAsync("Last action: Engineering");
+        await Assertions.Expect(Page.GetByTestId("submenu-trigger")).ToBeFocusedAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task A_submenu_closes_when_the_pointer_rests_on_another_item_and_when_clicking_outside(string mode)
+    {
+        await Open(mode, "dropdown-menu");
+        await Page.GetByTestId("submenu-trigger").ClickAsync();
+        await ItemNamed("Share", "Send to").ClickAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeVisibleAsync();
+
+        await ItemNamed("Share", "Copy link").HoverAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeHiddenAsync();
+        await Assertions.Expect(MenuNamed("Share")).ToBeVisibleAsync();
+
+        await ItemNamed("Share", "Send to").ClickAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeVisibleAsync();
+        await Page.GetByRole(AriaRole.Heading, new() { Level = 1 }).ClickAsync();
+        await Assertions.Expect(MenuNamed("Send to")).ToBeHiddenAsync();
+        await Assertions.Expect(MenuNamed("Share")).ToBeHiddenAsync();
+    }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task An_open_submenu_has_no_accessibility_violations_in_light_and_dark(string mode)
+    {
+        await Open(mode, "dropdown-menu");
+        foreach (var dark in new[] { false, true })
+        {
+            if (dark)
+            {
+                await Page.GetByRole(AriaRole.Button, new() { Name = "Toggle dark mode" }).ClickAsync();
+                await Assertions.Expect(Page.Locator("html")).ToHaveClassAsync(new System.Text.RegularExpressions.Regex("dark"));
+                await Page.WaitForFunctionAsync("() => document.getAnimations().length === 0");
+            }
+            await Page.GetByTestId("submenu-trigger").ClickAsync();
+            await ItemNamed("Share", "Send to").ClickAsync();
+            await ItemNamed("Send to", "Team").ClickAsync();
+            await Assertions.Expect(MenuNamed("Team")).ToBeVisibleAsync();
+
+            await AssertNoAccessibilityViolations();
+
+            await Page.Keyboard.PressAsync("Escape");
+            await Page.Keyboard.PressAsync("Escape");
+            await Page.Keyboard.PressAsync("Escape");
+            await Assertions.Expect(MenuNamed("Share")).ToBeHiddenAsync();
+        }
+    }
+
     [Theory]
     [MemberData(nameof(AllModes))]
     public async Task Tooltip_shows_on_keyboard_focus_and_hides_on_Escape(string mode)
