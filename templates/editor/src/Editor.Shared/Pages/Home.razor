@@ -1,0 +1,63 @@
+@page "/"
+@inject DocumentState Documents
+@inject NavigationManager Navigation
+
+<PageTitle>Editor</PageTitle>
+
+@* The home page: what there is to do when no document is open. The list is read from the browser after the first render. *@
+<BxDashboardPanel data-testid="home-panel">
+    <ChildContent>
+        <BxDashboardNavbar Title="Editor">
+            <Leading>
+                <BxDashboardSidebarCollapse />
+            </Leading>
+            <Right>
+                <BxColorModeButton />
+            </Right>
+        </BxDashboardNavbar>
+
+        <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-8 p-4 sm:p-6" data-testid="empty-state">
+            <div class="flex flex-col items-center gap-3 text-center">
+                <span class="flex size-12 items-center justify-center rounded-full bg-(--blux-primary) text-(--blux-primary-contrast)" aria-hidden="true">
+                    @BxIcons.Named("lucide:file-text", "size-6")
+                </span>
+                <p class="text-2xl font-semibold text-(--blux-text-highlighted)">Write something</p>
+                <p class="max-w-[34rem] text-sm text-(--blux-text-muted)">Start a document, or open one from the list. Your documents stay in this browser and are saved as you type.</p>
+            </div>
+            <div class="flex flex-wrap justify-center gap-3">
+                <BxButton Label="New document" OnClick="NewAsync" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-new">
+                    <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
+                </BxButton>
+                <BxButton Label="Open the guide" OnClick="GuideAsync" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-guide" />
+            </div>
+        </div>
+    </ChildContent>
+</BxDashboardPanel>
+
+@code {
+    private bool _busy;
+
+    // The list is read after the first render, in the browser: a state that already read it (a navigation inside the app) is not read again.
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await Documents.LoadAsync();
+        StateHasChanged();
+    }
+
+    private async Task NewAsync()
+    {
+        _busy = true;
+        var document = await Documents.CreateAsync();
+        Navigation.NavigateTo($"d/{document.Id}");
+    }
+
+    private async Task GuideAsync()
+    {
+        _busy = true;
+        // The guide is a document like any other: opened again, it is the one already in the list.
+        var existing = Documents.Items.FirstOrDefault(d => d.Title == SampleDocument.Title && !d.AutoTitle);
+        var document = existing ?? await Documents.CreateAsync(SampleDocument.Title, SampleDocument.Html);
+        Navigation.NavigateTo($"d/{document.Id}");
+    }
+}
