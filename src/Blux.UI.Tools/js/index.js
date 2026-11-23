@@ -9,6 +9,7 @@ import { pruneBlank } from './prune-blank.js';
 import { readColumnPrefs as readColumnPrefsCookie, writeColumnPrefs as writeColumnPrefsCookie } from './column-prefs-cookie.js';
 import { attachColumnResize } from './column-resize.js';
 import { attachColumnPanelDrag } from './column-panel-drag.js';
+import { keepVirtualFocus } from './virtual-focus.js';
 
 // The time zone of the browser goes to the server in a cookie, which the next static or prerendered render reads (the first visit has none and cuts days in UTC).
 function rememberTimeZone() {
@@ -30,6 +31,11 @@ function focusPage(root) {
   const usable = active && root.contains(active) && !active.disabled && active.getAttribute('aria-disabled') !== 'true';
   if (usable) return;
   root.querySelector('[aria-current="page"]')?.focus();
+}
+
+// The control that was pressed is going away (the "back to start" of a list that was entered mid-way): the focus goes to the table region of the list, which starts again from its first page.
+function focusTable(part) {
+  part?.closest('[data-slot=root]')?.querySelector('[data-slot=table-root]')?.focus();
 }
 
 // Puts the focus in the control with this id (the search field after its "clear" action removed the button that had it).
@@ -174,7 +180,7 @@ function watchActionsWidth(root) {
   update();
 }
 
-const tools = { version: 1, timeZone, focusPage, focusId, focusSelectAll, watchRowRemoval, stopRowRemovalWatch, readColumnPrefs, writeColumnPrefs, focusIn, watchActionsWidth };
+const tools = { version: 1, timeZone, focusPage, focusId, focusTable, focusSelectAll, watchRowRemoval, stopRowRemovalWatch, keepVirtualFocus, readColumnPrefs, writeColumnPrefs, focusIn, watchActionsWidth };
 
 // Merged into the same global as Blux.UI: either initializer may run first.
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, { tools });

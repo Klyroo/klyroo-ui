@@ -138,7 +138,8 @@
 
     /// <summary>
     /// How the list pages its rows: numbered pages (<see cref="DataListPagingMode.Offset"/>, the default), keyset cursor paging (<see cref="DataListPagingMode.Cursor"/>, with
-    /// <see cref="BxDataListInfiniteLoader{TItem}"/>) or no paging (<see cref="DataListPagingMode.None"/>, every matching row at once, for virtualized tables). Fixed for the life of the list.
+    /// <see cref="BxDataListInfiniteLoader{TItem}"/>) or no paging (<see cref="DataListPagingMode.None"/>, every matching row at once, for virtualized tables). Changing it after the first render
+    /// starts the list again from its first rows (page 1, no cursor) and loads it in the new mode; a cursor in the address of a list that does not page by cursor is dropped.
     /// </summary>
     [Parameter] public DataListPagingMode PagingMode { get; set; }
 
@@ -263,6 +264,22 @@
         var controller = Controller;
         if (controller is null || _disposed) return;
         var reload = false;
+        if (controller.PagingMode != PagingMode)
+        {
+            // Pages of one mode mean nothing in another (a cursor of the address in a list with numbered pages, a page number in a list with a cursor): the list starts again from its first rows.
+            controller.PagingMode = PagingMode;
+            var restart = controller.Normalize(_state with { Page = 1, Cursor = null });
+            if (UrlSync && Query.Interactive == true && !restart.Equals(_state))
+            {
+                // The URL stays the one source of the state: the write notifies the subscription, which loads.
+                Query.SetMany(Changes(restart), QueryHistory.Replace);
+            }
+            else
+            {
+                _state = restart;
+                reload = true;
+            }
+        }
         if (!ReferenceEquals(Items, _lastItems) || !ReferenceEquals(Queryable, _lastQueryable) || !ReferenceEquals(Provider, _lastProvider))
         {
             // A provider is usually a lambda or a method group, new on every render of the parent: it replaces the old one without loading again. New rows or a new query load again.

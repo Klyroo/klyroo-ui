@@ -1,73 +1,26 @@
 @namespace Blux.UI.Tools
 @typeparam TItem
 @inherits DataListPartBase<TItem>
+@using Microsoft.JSInterop
 
 @*
     Cursor paging: appends the next page as the user approaches the end of the list (Auto = true, via BxInfiniteScroll) or on click (Auto = false).
     Statically rendered (and prerendered), the button is a link to the next cursor (?c=...) so paging works without JavaScript, alongside a link back to the start once past the first page.
+    A list that was entered at a cursor (?c=...) has a "Back to start" control as long as it shows that state, interactive too: a link when static, a button that goes back to the first page when interactive.
     A load-more failure keeps the rows loaded so far and shows an inline retry alert.
+    With a virtualized table (the table scrolls in a box of its own) and Auto, the loader is drawn inside that box, after the table: the sentinel then scrolls with the rows and the observer watches the box.
 *@
-@if (Context.PagingMode == DataListPagingMode.Cursor && Context.Result is not null)
+@if (!Hosted)
 {
-    var hasResetLink = !Context.IsInteractive && Context.CanLink && !string.IsNullOrEmpty(Context.State.Cursor);
-    if (Context.HasLoadMoreError)
-    {
-        <div class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
-            <div class="@_slots["loadMoreError"]" data-slot="load-more-error" role="alert">
-                @if (ErrorTemplate is not null)
-                {
-                    @ErrorTemplate(Context)
-                }
-                else
-                {
-                    <span class="@_slots["loadMoreErrorText"]">@ToolsMessages.LoadMoreError</span>
-                    <BxButton Label="@ToolsMessages.Retry" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm"
-                              OnClick="OnLoadMoreAsync" data-slot="load-more-retry" />
-                }
-            </div>
-        </div>
-    }
-    else if (Context.Rows.Count > 0)
-    {
-        <div class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
-            @if (Auto)
-            {
-                <BxInfiniteScroll HasMore="Context.HasMore" Loading="Context.IsLoadingMore" OnLoadMore="OnLoadMoreAsync"
-                                  Root="@Root" RootMargin="@RootMargin" Href="@NextHref" Label="@Label" ShowEnd="ShowEnd" />
-            }
-            else
-            {
-                @if (Context.HasMore)
-                {
-                    <BxButton Variant="ButtonVariant.Outline" Label="@(Label ?? Messages.LoadMore)" Href="@(Context.IsInteractive ? null : NextHref)"
-                              Disabled="@(!Context.IsInteractive && NextHref is null)" Loading="Context.IsLoadingMore"
-                              OnClick="@(Context.IsInteractive ? EventCallback.Factory.Create(this, OnLoadMoreAsync) : default)"
-                              data-slot="load-more-trigger" />
-                }
-                else if (ShowEnd)
-                {
-                    <p class="@_slots["infiniteEnd"]" data-slot="end" aria-hidden="true">@Messages.NoMoreItems</p>
-                }
-                <div role="status" aria-live="polite" aria-atomic="true" class="@_slots["infiniteStatus"]" data-slot="status">@ManualAnnouncement</div>
-            }
-            @if (hasResetLink && ResetHref is { } reset)
-            {
-                <BxButton Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" Label="@ToolsMessages.BackToStart"
-                          Href="@reset" Class="@_slots["cursorReset"]" data-slot="cursor-reset" />
-            }
-        </div>
-    }
-    else if (hasResetLink && ResetHref is { } reset)
-    {
-        <div class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
-            <BxButton Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" Label="@ToolsMessages.BackToStart"
-                      Href="@reset" Class="@_slots["cursorReset"]" data-slot="cursor-reset" />
-        </div>
-    }
+    @Content
 }
 
 @code {
     private SlotSet _slots = default!;
+    private ElementReference _root;
+    private RenderFragment? _content;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     /// <summary>Automatically loads the next page when the sentinel approaches the viewport (<see langword="true"/> by default). Set to <see langword="false"/> for a manual Load more button only.</summary>
     [Parameter] public bool Auto { get; set; } = true;
@@ -75,7 +28,10 @@
     /// <summary>Margin of the <c>IntersectionObserver</c> when <see cref="Auto"/> is <see langword="true"/> (<c>"0px 0px 320px 0px"</c> by default).</summary>
     [Parameter] public string RootMargin { get; set; } = "0px 0px 320px 0px";
 
-    /// <summary>Optional CSS selector of the scrolling element when <see cref="Auto"/> is <see langword="true"/>. Without it, watches the closest scrollable ancestor or the viewport.</summary>
+    /// <summary>
+    /// Optional CSS selector of the scrolling element when <see cref="Auto"/> is <see langword="true"/>. Without it, watches the closest scrollable ancestor or the viewport; next to a table with <c>Virtualize</c>
+    /// the loader is drawn inside the scrolling box of the table and watches it.
+    /// </summary>
     [Parameter] public string? Root { get; set; }
 
     /// <summary>Text of the Load more button. Defaults to the localized "Load more".</summary>
@@ -87,6 +43,9 @@
     /// <summary>Custom content shown when loading the next page fails (replaces the default message and Retry button).</summary>
     [Parameter] public RenderFragment<DataListContext<TItem>>? ErrorTemplate { get; set; }
 
+    // With a virtualized table the automatic loader lives in its scroll box (the table draws it): a sentinel outside the box never moves while the rows scroll in it.
+    private bool Hosted => Auto && Context.TableVirtualized;
+
     private string? NextHref =>
         !Context.IsInteractive && Context.CanLink && Context.HasMore && Context.NextCursor is { } next
             ? Context.HrefWith(s => s with { Cursor = next, Page = 1 })
@@ -94,10 +53,125 @@
 
     private string? ResetHref => Context.HrefWith(s => s with { Cursor = null, Page = 1 });
 
+    // The list was entered mid-way (a cursor in its state): the way back to the first page.
+    private bool EnteredMidWay => !string.IsNullOrEmpty(Context.State.Cursor);
+
     private string ManualAnnouncement => Context.IsLoadingMore ? Messages.LoadingMore : !Context.HasMore ? Messages.NoMoreItems : "";
 
-    protected override void OnParametersSet() =>
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+        _content = Content;
+    }
+
+    protected override void OnParametersSet()
+    {
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(), Ui, "infiniteLoader");
+        Host();
+    }
+
+    protected override void OnContextUpdated() => Host();
+
+    // The table draws what this part gives it, when it has a box of its own.
+    private void Host() => Context.HostInTable(this, Hosted ? _content : null);
 
     private Task OnLoadMoreAsync() => Context.LoadMoreAsync();
+
+    private async Task OnBackToStartAsync()
+    {
+        Context.SetState(s => s with { Cursor = null, Page = 1 }, QueryHistory.Push);
+        // The control goes away with the cursor: the focus goes to the table, which now starts from its first page.
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.focusTable", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
+    }
+
+    public override void Dispose()
+    {
+        Context.HostInTable(this, null);
+        base.Dispose();
+    }
+
+    private RenderFragment BackToStart(bool outline) =>
+        @<text>
+            @if (Context.IsInteractive)
+            {
+                <BxButton Variant="@(outline ? ButtonVariant.Outline : ButtonVariant.Ghost)" Color="BxColor.Neutral" Size="BxSize.Sm" Label="@ToolsMessages.BackToStart"
+                          OnClick="OnBackToStartAsync" Class="@_slots["cursorReset"]" data-slot="cursor-reset" />
+            }
+            else if (Context.CanLink && ResetHref is { } reset)
+            {
+                <BxButton Variant="@(outline ? ButtonVariant.Outline : ButtonVariant.Ghost)" Color="BxColor.Neutral" Size="BxSize.Sm" Label="@ToolsMessages.BackToStart"
+                          Href="@reset" Class="@_slots["cursorReset"]" data-slot="cursor-reset" />
+            }
+        </text>;
+
+    private RenderFragment Content =>
+        @<text>
+            @if (Context.PagingMode == DataListPagingMode.Cursor && Context.Result is not null)
+            {
+                var hasResetLink = EnteredMidWay && (Context.IsInteractive || Context.CanLink);
+                if (Context.HasLoadMoreError)
+                {
+                    <div @ref="_root" class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
+                        <div class="@_slots["loadMoreError"]" data-slot="load-more-error" role="alert">
+                            @if (ErrorTemplate is not null)
+                            {
+                                @ErrorTemplate(Context)
+                            }
+                            else
+                            {
+                                <span class="@_slots["loadMoreErrorText"]">@ToolsMessages.LoadMoreError</span>
+                                <BxButton Label="@ToolsMessages.Retry" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm"
+                                          OnClick="OnLoadMoreAsync" data-slot="load-more-retry" />
+                            }
+                        </div>
+                        @if (hasResetLink)
+                        {
+                            @BackToStart(false)
+                        }
+                    </div>
+                }
+                else if (Context.Rows.Count > 0)
+                {
+                    <div @ref="_root" class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
+                        @if (Auto)
+                        {
+                            <BxInfiniteScroll HasMore="Context.HasMore" Loading="Context.IsLoadingMore" OnLoadMore="OnLoadMoreAsync"
+                                              Root="@(Root ?? Context.TableScrollSelector)" RootMargin="@RootMargin" Href="@NextHref" Label="@Label" ShowEnd="ShowEnd" />
+                        }
+                        else
+                        {
+                            @if (Context.HasMore)
+                            {
+                                <BxButton Variant="ButtonVariant.Outline" Label="@(Label ?? Messages.LoadMore)" Href="@(Context.IsInteractive ? null : NextHref)"
+                                          Disabled="@(!Context.IsInteractive && NextHref is null)" Loading="Context.IsLoadingMore"
+                                          OnClick="@(Context.IsInteractive ? EventCallback.Factory.Create(this, OnLoadMoreAsync) : default)"
+                                          data-slot="load-more-trigger" />
+                            }
+                            else if (ShowEnd)
+                            {
+                                <p class="@_slots["infiniteEnd"]" data-slot="end" aria-hidden="true">@Messages.NoMoreItems</p>
+                            }
+                            <div role="status" aria-live="polite" aria-atomic="true" class="@_slots["infiniteStatus"]" data-slot="status">@ManualAnnouncement</div>
+                        }
+                        @if (hasResetLink)
+                        {
+                            @BackToStart(false)
+                        }
+                    </div>
+                }
+                else if (hasResetLink)
+                {
+                    <div @ref="_root" class="@_slots["infiniteLoader"]" data-slot="infinite-loader" @attributes="AdditionalAttributes">
+                        @BackToStart(true)
+                    </div>
+                }
+            }
+        </text>;
 }
