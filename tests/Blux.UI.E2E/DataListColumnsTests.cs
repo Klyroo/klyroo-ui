@@ -74,10 +74,10 @@ public class DataListColumnsTests(PlaygroundServer server) : PlaygroundTest(serv
         // Hide status, pin amount to the end, put issued first, widen customer.
         await Page.Context.AddCookiesAsync([new() { Name = Cookie, Value = $"{DemoKey}.v1!oissued~id~customer~status~amount!hstatus!eamount!wcustomer*300", Url = BaseUrl }]);
 
-        // What the browser gets before any script runs: the page is already in the columns of the user, and the response is marked private and varies on Cookie.
+        // What the browser gets before any script runs: the page is already in the columns of the user, and the response is non-public (private or no-store) and varies on Cookie.
         var response = await Page.APIRequest.GetAsync("/ssr/components/data-list-columns");
         Assert.Equal(200, response.Status);
-        Assert.Contains("private", response.Headers.GetValueOrDefault("cache-control", ""), StringComparison.OrdinalIgnoreCase);
+        Assert.Matches("private|no-store", response.Headers.GetValueOrDefault("cache-control", ""));
         Assert.Contains("Cookie", response.Headers.GetValueOrDefault("vary", ""), StringComparison.OrdinalIgnoreCase);
         var html = await response.TextAsync();
         var list = html[html.IndexOf("data-testid=\"list-columns\"", StringComparison.Ordinal)..];

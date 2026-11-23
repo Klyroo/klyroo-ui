@@ -145,8 +145,8 @@ internal static partial class ToolsThemes
             .Slot("infiniteEnd", "text-sm text-(--blux-text-muted)")
             .Slot("infiniteStatus", "sr-only")
             // Pinned columns stick from the sm breakpoint up: on a phone they would leave no room for the others, so there they scroll with the table (they keep their place in the order).
-            .Slot("thPinnedStart", "sm:sticky sm:z-[2] sm:border-e sm:border-(--blux-border) bg-(--blux-bg-muted)")
-            .Slot("thPinnedEnd", "sm:sticky sm:z-[2] sm:border-s sm:border-(--blux-border) bg-(--blux-bg-muted)")
+            .Slot("thPinnedStart", "max-sm:relative sm:sticky sm:z-[2] sm:border-e sm:border-(--blux-border) bg-(--blux-bg-muted)")
+            .Slot("thPinnedEnd", "max-sm:relative sm:sticky sm:z-[2] sm:border-s sm:border-(--blux-border) bg-(--blux-bg-muted)")
             .Slot("tdPinnedStart", "sm:sticky sm:z-[1] sm:border-e sm:border-(--blux-border) bg-(--blux-bg)")
             .Slot("tdPinnedEnd", "sm:sticky sm:z-[1] sm:border-s sm:border-(--blux-border) bg-(--blux-bg)")
             .Slot("colSized", "box-border overflow-hidden text-ellipsis")
