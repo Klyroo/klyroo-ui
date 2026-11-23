@@ -35,6 +35,21 @@
                 <BxSkeleton Class="h-24 w-full" />
             </div>
         }
+        else if (_document is not null && _loadingBody)
+        {
+            <div class="document-column flex flex-1 flex-col gap-4 p-6" role="status" aria-label="Opening the document" data-testid="document-loading">
+                <BxSkeleton Class="h-9 w-2/3" />
+                <BxSkeleton Class="h-24 w-full" />
+            </div>
+        }
+        else if (_document is not null && _loadFailed)
+        {
+            <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center" data-testid="document-unreadable">
+                <p class="text-xl font-semibold text-(--blux-text-highlighted)">This document could not be opened</p>
+                <p class="max-w-[34rem] text-sm text-(--blux-text-muted)">This browser did not give the text back, so it is not shown rather than shown empty. Try again, or go back to the list.</p>
+                <BxButton Label="Try again" OnClick="RetryAsync" data-testid="document-retry" />
+            </div>
+        }
         else if (_document is null)
         {
             <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center" data-testid="document-missing">
@@ -45,8 +60,10 @@
         }
         else
         {
-            <div class="flex min-h-0 flex-1 flex-col" data-testid="editor-area">
-                <BxEditor @key="_document.Id" Value="@_value" ValueChanged="OnChangedAsync" Label="Document" Placeholder="Write something, or type / for commands" Variant="FieldVariant.None"
+            <div class="flex min-h-0 flex-1 flex-col" data-testid="editor-area" @onfocusin="@(() => _editing = true)" @onfocusout="@(() => _editing = false)">
+                @* The editor is made again for each document, and when its text is read again from the storage (@key), with the text as the value. It never sends a text past the limit. *@
+                <BxEditor @key="@($"{_document.Id}:{_revision}")" Value="@_value" ValueChanged="OnChangedAsync" Label="Document" Placeholder="Write something, or type / for commands" Variant="FieldVariant.None"
+                          MaxLength="DocumentLimits.MaxHtmlCharacters" OnLimit="OnLimitAsync" ImageSchemes="_imageSchemes" LinkSchemes="_linkSchemes"
                           Ui="_editorUi" data-testid="editor">
                     <BxEditorToolbar Items="_toolbar" Label="Formatting" />
                     <BxEditorToolbar Layout="EditorToolbarLayout.Bubble" Label="Format the selection" />
@@ -56,13 +73,30 @@
                 </BxEditor>
             </div>
 
-            <div class="flex items-center justify-between gap-3 border-t border-(--blux-border) px-4 py-2 text-xs text-(--blux-text-muted)" data-testid="status-bar">
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-(--blux-border) px-4 py-2 text-xs text-(--blux-text-muted)" data-testid="status-bar">
                 <span data-testid="word-count">@Counts</span>
+                <span class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+                    @if (_external == ExternalChange.Updated)
+                    {
+                        <span role="status" data-testid="external-change">This document was changed in another tab and has been updated here.</span>
+                    }
+                    else if (_external == ExternalChange.Conflict)
+                    {
+                        <span role="status" class="flex items-center gap-1.5" data-testid="external-conflict">
+                            @BxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--blux-warning-text)")
+                            <span>Another tab changed this document. Saving here replaces that version.</span>
+                        </span>
+                        <BxButton Size="BxSize.Xs" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Label="Load the other version" OnClick="ReloadAsync" data-testid="external-reload" />
+                    }
                 <span role="status" class="flex items-center gap-1.5" data-testid="save-state">
                     @switch (_state)
                     {
                         case SaveState.Saving:
                             <span>Saving...</span>
+                            break;
+                        case SaveState.OverLimit:
+                            @BxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--blux-warning-text)")
+                            <span>Not saved: this document is too long (@_overLength.ToString("N0") of @DocumentLimits.MaxHtmlCharacters.ToString("N0") characters). Shorten it to save again.</span>
                             break;
                         case SaveState.TooLong:
                             @BxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--blux-warning-text)")
@@ -78,13 +112,20 @@
                             break;
                     }
                 </span>
+                </span>
             </div>
         }
     </ChildContent>
 </BxDashboardPanel>
 
 @code {
-    private enum SaveState { Saved, Saving, TooLong, Failed }
+    private enum SaveState { Saved, Saving, OverLimit, TooLong, Failed }
+
+    private enum ExternalChange { None, Updated, Conflict }
+
+    // What the server keeps: the allow-list of DocumentHtml takes https images and http, https and mailto links, so the editor refuses the rest when it is typed, not after a reload.
+    private static readonly string[] _imageSchemes = ["https"];
+    private static readonly string[] _linkSchemes = ["http", "https", "mailto"];
 
     private static readonly EditorUi _editorUi = new() { Root = "min-h-0 flex-1 overflow-y-auto", Content = "document-column px-4 py-6 sm:px-6", Base = "[&_.ProseMirror]:min-h-[60vh]" };
 
@@ -118,8 +159,15 @@
 
     private Document? _document;
     private string _value = "";
+    private int _revision;
     private bool _ready;
+    private bool _loadingBody;
+    private bool _loadFailed;
+    private bool _editing;
+    private int _overLength;
+    private ExternalChange _external;
     private SaveState _state = SaveState.Saved;
+    private DocumentSaver _saver = default!;
 
     /// <summary>The id of the document (the address d/{id}).</summary>
     [Parameter] public string? Id { get; set; }
@@ -130,13 +178,16 @@
 
     protected override void OnInitialized()
     {
+        _saver = new DocumentSaver(Documents);
+        _saver.Finished += OnSaveFinished;
         Documents.Deleted += OnDeleted;
         Documents.Changed += OnListChanged;
+        Documents.ChangedElsewhere += OnChangedElsewhere;
     }
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
-        if (_ready) Select();
+        if (_ready) await SelectAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -144,18 +195,83 @@
         if (!firstRender) return;
         await Documents.LoadAsync();
         _ready = true;
-        Select();
+        await SelectAsync();
         StateHasChanged();
     }
 
-    // Opens the document the address names. The editor is created again for each document (@key), with the text as the value.
-    private void Select()
+    // Opens the document the address names. Its text is read now (the list only has the title), and the editor is created again for each document (@key) with the text as the value.
+    private async Task SelectAsync()
     {
         var found = DocumentJson.IsValidId(Id) ? Documents.Find(Id) : null;
         if (found == _document) return;
         _document = found;
-        _value = found?.Html ?? "";
-        _state = SaveState.Saved;
+        _value = "";
+        _external = ExternalChange.None;
+        _overLength = 0;
+        _editing = false;
+        _loadFailed = false;
+        _loadingBody = found is not null;
+        _state = found is not null && _saver.IsBusy(found) ? SaveState.Saving : SaveState.Saved;
+        if (found is null) return;
+        await OpenBodyAsync(found);
+    }
+
+    // Reads the text of the document and gives it to the editor. A document that is gone from the list was left by OnDeleted already.
+    private async Task OpenBodyAsync(Document document)
+    {
+        _loadingBody = true;
+        StateHasChanged();
+        var result = await Documents.OpenAsync(document);
+        if (document != _document) return;
+        _loadingBody = false;
+        _loadFailed = result == OpenResult.Failed;
+        if (result == OpenResult.Opened)
+        {
+            _value = document.Html;
+            _revision++;
+        }
+    }
+
+    private async Task RetryAsync()
+    {
+        if (_document is null) return;
+        _loadFailed = false;
+        await OpenBodyAsync(_document);
+    }
+
+    // Another tab changed this document. Not being typed in: take its text now and say so. Being typed in: keep what is on the screen, say so, and let the user choose.
+    private void OnChangedElsewhere(Document document) => _ = InvokeAsync(async () =>
+    {
+        if (document != _document) return;
+        if (_editing || _saver.IsBusy(document) || _state == SaveState.OverLimit)
+        {
+            _external = ExternalChange.Conflict;
+            StateHasChanged();
+            return;
+        }
+        await ReloadAsync();
+    });
+
+    // Takes the text from the storage again, dropping what is on the screen.
+    private async Task ReloadAsync()
+    {
+        var document = _document;
+        if (document is null) return;
+        var result = await Documents.OpenAsync(document);
+        if (document != _document) return;
+        if (result == OpenResult.Opened)
+        {
+            _value = document.Html;
+            _revision++;
+            _state = SaveState.Saved;
+            _overLength = 0;
+            _external = ExternalChange.Updated;
+        }
+        else if (result == OpenResult.Failed)
+        {
+            _loadFailed = true;
+        }
+        StateHasChanged();
     }
 
     // A rename from the dialog, a title that follows the text, a document dropped by the limits: the navbar shows the current title.
@@ -176,16 +292,43 @@
         // The parameter the editor receives must follow what it reported, or the next render would hand it the old text back.
         _value = html ?? "";
         _state = SaveState.Saving;
-        var result = await Documents.UpdateHtmlAsync(document, html);
+        if (_external == ExternalChange.Updated) _external = ExternalChange.None;
+        // One write at a time, the latest text last: the status below follows the last change, not the first one to finish.
+        await _saver.SubmitAsync(document, html);
+    }
+
+    // The last change given to the saver was written, or refused.
+    private void OnSaveFinished(Document document, SaveResult result) => _ = InvokeAsync(() =>
+    {
         // The user may have moved to another document while the write was running.
         if (document != _document) return;
         _state = result switch { SaveResult.TooLong => SaveState.TooLong, SaveResult.StorageFailed => SaveState.Failed, _ => SaveState.Saved };
+        // What was saved replaced the version of the other tab: there is nothing left to choose.
+        if (result == SaveResult.Saved) _external = ExternalChange.None;
         StateHasChanged();
+    });
+
+    // The editor measures its text and never sends one past the limit: the last text that fit stays what is kept, and the status says what happened.
+    private Task OnLimitAsync(BxLimitEventArgs e)
+    {
+        if (e.Exceeded)
+        {
+            _overLength = e.Length;
+            _state = SaveState.OverLimit;
+        }
+        else if (_state == SaveState.OverLimit)
+        {
+            _overLength = 0;
+            _state = _document is not null && _saver.IsBusy(_document) ? SaveState.Saving : SaveState.Saved;
+        }
+        return Task.CompletedTask;
     }
 
     public void Dispose()
     {
+        _saver.Finished -= OnSaveFinished;
         Documents.Deleted -= OnDeleted;
         Documents.Changed -= OnListChanged;
+        Documents.ChangedElsewhere -= OnChangedElsewhere;
     }
 }
