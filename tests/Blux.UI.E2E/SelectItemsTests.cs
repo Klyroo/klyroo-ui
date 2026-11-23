@@ -310,4 +310,30 @@ public class SelectItemsTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.Locator("[popover]:popover-open")).ToHaveCountAsync(1);
         await AssertNoAccessibilityViolations();
     }
+
+    [Theory]
+    [MemberData(nameof(AllModes))]
+    public async Task SelectMenu_opened_again_right_after_a_choice_starts_from_an_empty_search(string mode)
+    {
+        await Open(mode, "select-menu");
+        var trigger = Page.GetByRole(AriaRole.Combobox, new() { Name = "Destination" });
+        await trigger.FocusAsync();
+        await Page.Keyboard.PressAsync("ArrowDown");
+        await Page.Keyboard.TypeAsync("jap");
+
+        // Enter and the next ArrowDown in the same task: the "toggle" event of the closing arrives after both, so closing cannot wait for it.
+        var search = await Page.EvaluateAsync<string>(@"() => {
+            const host = document.querySelector('bx-select-menu:has([data-testid=destination])') ?? document.querySelector('[data-testid=destination]').closest('bx-select-menu');
+            const field = host.querySelector('[data-slot=search]');
+            const press = (target, key) => target.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
+            press(field, 'Enter');
+            press(host.querySelector('[data-slot=trigger]'), 'ArrowDown');
+            return field.value;
+        }");
+
+        Assert.Equal("", search);
+        await Page.Keyboard.TypeAsync("fra");
+        await Page.Keyboard.PressAsync("Enter");
+        await Assertions.Expect(trigger.Locator("[data-slot=label]")).ToHaveAttributeAsync("data-label", "France");
+    }
 }
