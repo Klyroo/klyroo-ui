@@ -122,7 +122,8 @@ const templates = [
     web: "src/Editor.Web",
     name_in_files: "Editor",
     renames: ["Acme", "editorApp"],
-    probe: { utility: "max-w-[46rem]", css: "max-width:46rem" },
+    // A class that appears only in the markup (Home.razor, DocumentPage.razor): the .document-column rule of app.css writes max-width:46rem by hand, so it would prove nothing about Tailwind scanning the Razor files.
+    probe: { utility: "max-w-[34rem]", css: "max-width:34rem" },
     pages: ["/", "/d/0123456789abcdef0123456789abcdef"],
     services: true,
     // Blux's own editor components, types and elements (BxEditor, EditorAction, EditorToolbarItem, bx-editor) are not the template name: rename.cs leaves them alone.

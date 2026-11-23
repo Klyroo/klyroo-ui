@@ -35,7 +35,15 @@
     {
         Documents.RenameRequested += OnRename;
         Documents.DeleteRequested += OnDelete;
+        Documents.Notice += OnNotice;
     }
+
+    // What the app removed on its own (the limits, a repair of the storage, another tab) is never silent: a toast says how many documents went and why. It stays long enough to read.
+    private void OnNotice(StateNotice notice) => _ = InvokeAsync(async () =>
+    {
+        var (title, description) = notice.Describe();
+        await Toasts.Add(new BxToast { Title = title, Description = description, Color = BxColor.Warning, Duration = TimeSpan.FromSeconds(15) });
+    });
 
     private void OnRename(Document document) => _ = InvokeAsync(() =>
     {
@@ -72,5 +80,6 @@
     {
         Documents.RenameRequested -= OnRename;
         Documents.DeleteRequested -= OnDelete;
+        Documents.Notice -= OnNotice;
     }
 }
