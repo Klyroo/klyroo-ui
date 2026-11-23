@@ -17,7 +17,9 @@
         var acting = RowActions is { Count: > 0 };
         var label = AriaLabel ?? Context.Label ?? ToolsMessages.Results;
         var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
-        var entries = Context.IsInitial || empty ? null : RowEntries();
+        var grouping = GroupBy is not null && !Context.IsInitial && !empty;
+        var groups = grouping ? GroupRowEntries() : null;
+        var entries = Context.IsInitial || empty || grouping ? null : RowEntries();
 
         <div class="@_slots["gridRoot"]" data-slot="grid-root" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
             @if (Context.IsInitial)
@@ -70,40 +72,40 @@
                         </label>
                     </div>
                 }
-                <div class="@_slots["grid"]" data-slot="grid" aria-busy="@(Context.IsLoading ? "true" : null)">
-                    @foreach (var row in entries!)
+                @if (grouping)
+                {
+                    @foreach (var grp in groups!)
                     {
-                        <article @key="row.Key" class="@_slots["gridCard"]" data-slot="grid-card" data-key="@row.Key">
-                            @if ((selecting && ShowSelectionControl) || acting)
+                        var collapsed = Context.IsGroupCollapsed(grp.Group);
+                        <section @key="@("group:" + grp.Group.Key)" class="@_slots["gridGroup"]" data-slot="grid-group" data-group-key="@grp.Group.Key" data-collapsed="@(collapsed ? "true" : null)">
+                            <div class="@_slots["gridGroupHeader"]" data-slot="group-row" data-group-key="@grp.Group.Key" data-collapsed="@(collapsed ? "true" : null)">
+                                <BxDataListGroupHeader TItem="TItem" Group="grp.Group" GroupBy="GroupBy" Selectable="selecting && ShowSelectionControl" Ui="Ui" />
+                            </div>
+                            @if (!collapsed)
                             {
-                                <div class="@_slots["gridCardTop"]" data-slot="grid-card-top">
-                                    @if (selecting && ShowSelectionControl)
+                                <div class="@_slots["grid"]" data-slot="grid" aria-busy="@(Context.IsLoading ? "true" : null)">
+                                    @foreach (var row in grp.Entries)
                                     {
-                                        <DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" />
-                                    }
-                                    else
-                                    {
-                                        <span></span>
-                                    }
-                                    @if (acting)
-                                    {
-                                        <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
+                                        <article @key="row.Key" class="@_slots["gridCard"]" data-slot="grid-card" data-key="@row.Key" data-group-key="@grp.Group.Key">
+                                            @CardInner(row, selecting, acting)
+                                        </article>
                                     }
                                 </div>
                             }
-                            <div class="@_slots["gridCardBody"]" data-slot="grid-card-body">
-                                @if (ItemTemplate is not null)
-                                {
-                                    @ItemTemplate(row.Item)
-                                }
-                                else
-                                {
-                                    @DefaultCard(row.Item)
-                                }
-                            </div>
-                        </article>
+                        </section>
                     }
-                </div>
+                }
+                else
+                {
+                    <div class="@_slots["grid"]" data-slot="grid" aria-busy="@(Context.IsLoading ? "true" : null)">
+                        @foreach (var row in entries!)
+                        {
+                            <article @key="row.Key" class="@_slots["gridCard"]" data-slot="grid-card" data-key="@row.Key">
+                                @CardInner(row, selecting, acting)
+                            </article>
+                        }
+                    </div>
+                }
             }
         </div>
     }
@@ -139,6 +141,11 @@
     /// <summary>Accessible name of the grid region. Defaults to the label of the list, then the localized "Results".</summary>
     [Parameter] public string? AriaLabel { get; set; }
 
+    /// <summary>
+    /// Optional visual grouping of the loaded cards under collapsible <see cref="BxDataListGroupHeader{TItem}"/> headers with per-group selection checkboxes.
+    /// </summary>
+    [Parameter] public DataListGroupBy<TItem>? GroupBy { get; set; }
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -147,12 +154,14 @@
 
     protected override void OnParametersSet()
     {
+        Context.SetGridGroupBy(GroupBy);
         var cols = Math.Clamp(Columns, 1, 4).ToString(System.Globalization.CultureInfo.InvariantCulture);
         _slots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?> { ["gridColumns"] = cols }, Ui, "gridRoot");
     }
 
     public override void Dispose()
     {
+        Context.SetGridGroupBy(null);
         Context.RemoveGrid();
         base.Dispose();
     }
@@ -197,11 +206,62 @@
     };
 
     private sealed record RowEntry(object Key, TItem Item, int Position);
+    private sealed record GroupedRowEntries(DataListGroup<TItem> Group, List<RowEntry> Entries);
 
-    private List<RowEntry> RowEntries()
+    private RenderFragment CardInner(RowEntry row, bool selecting, bool acting) =>
+        @<text>
+            @if ((selecting && ShowSelectionControl) || acting)
+            {
+                <div class="@_slots["gridCardTop"]" data-slot="grid-card-top">
+                    @if (selecting && ShowSelectionControl)
+                    {
+                        <DataListRowSelect TItem="TItem" Item="row.Item" Position="row.Position" />
+                    }
+                    else
+                    {
+                        <span></span>
+                    }
+                    @if (acting)
+                    {
+                        <BxDataListRowActions TItem="TItem" Item="row.Item" Position="row.Position" Actions="RowActions!" MaxVisible="RowActionsMaxVisible" OnError="OnRowActionError" />
+                    }
+                </div>
+            }
+            <div class="@_slots["gridCardBody"]" data-slot="grid-card-body">
+                @if (ItemTemplate is not null)
+                {
+                    @ItemTemplate(row.Item)
+                }
+                else
+                {
+                    @DefaultCard(row.Item)
+                }
+            </div>
+        </text>;
+
+    private List<RowEntry> RowEntries() => BuildRowEntries(Context.Rows);
+
+    private List<GroupedRowEntries> GroupRowEntries()
+    {
+        if (GroupBy is null) return [];
+        var built = GroupBy.BuildGroups(Context.Rows, Context.Schema, ToolsMessages, FormatCulture);
+        var flattened = new List<TItem>(Context.Rows.Count);
+        foreach (var g in built) flattened.AddRange(g.Items);
+        var allEntries = BuildRowEntries(flattened);
+        var result = new List<GroupedRowEntries>(built.Count);
+        var offset = 0;
+        foreach (var g in built)
+        {
+            var count = g.Items.Count;
+            result.Add(new GroupedRowEntries(g, allEntries.GetRange(offset, count)));
+            offset += count;
+        }
+        return result;
+    }
+
+    private List<RowEntry> BuildRowEntries(IReadOnlyList<TItem> rows)
     {
         var schema = Context.Schema;
-        var rows = Context.Rows;
         var entries = new List<RowEntry>(rows.Count);
         if (schema is { HasRowKey: true })
         {

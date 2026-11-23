@@ -30,7 +30,8 @@ internal static partial class ToolsThemes
                 "sortMenu", "sortMenuPopover", "sortMenuContent", "sortMenuHeader", "sortMenuTitle", "sortMenuDirections", "sortMenuDirection", "sortMenuList", "sortMenuItem",
                 "layoutSwitch", "layoutOption",
                 "gridRoot", "gridHeader", "grid", "gridCard", "gridCardTop", "gridCardBody", "gridCardFields", "gridCardField", "gridCardFieldLabel", "gridCardFieldValue", "gridEmpty",
-                "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions")
+                "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions",
+                "groupRow", "groupCell", "summaryGroupRow", "gridGroup", "gridGroupHeader", "groupHeader", "groupToggle", "groupChevron", "groupChevronExpanded", "groupLabel", "groupSummary")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -208,6 +209,17 @@ internal static partial class ToolsThemes
             .Slot("summaryStatus", "shrink-0")
             .Slot("summaryDetails", "min-w-0 truncate")
             .Slot("summaryActions", "shrink-0")
+            .Slot("groupRow", "border-b border-(--blux-border) bg-(--blux-bg-muted)/70 last:border-b-0")
+            .Slot("groupCell", "px-4 py-2")
+            .Slot("summaryGroupRow", "bg-(--blux-bg-muted)/70 px-4 py-2")
+            .Slot("gridGroup", "flex flex-col gap-3")
+            .Slot("gridGroupHeader", "rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-muted)/70 px-3.5 py-2")
+            .Slot("groupHeader", "flex min-w-0 items-center gap-2.5")
+            .Slot("groupToggle", "inline-flex min-h-9 min-w-0 flex-1 items-center gap-2 rounded-(--blux-radius) px-1.5 py-1 text-start text-sm font-semibold text-(--blux-text-highlighted) hover:bg-(--blux-bg-muted) disabled:cursor-default focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) max-sm:min-h-11")
+            .Slot("groupChevron", "size-4 shrink-0 text-(--blux-text-muted) transition-transform motion-reduce:transition-none")
+            .Slot("groupChevronExpanded", "size-4 shrink-0 rotate-90 text-(--blux-text-muted) transition-transform motion-reduce:transition-none")
+            .Slot("groupLabel", "min-w-0 truncate")
+            .Slot("groupSummary", "inline-flex min-w-5 shrink-0 items-center justify-center rounded-full border border-(--blux-border-accented) bg-(--blux-bg) px-1.5 py-0.5 text-xs font-medium tabular-nums text-(--blux-text-muted)")
             .Variant("gridColumns", "1", "grid", "grid-cols-1")
             .Variant("gridColumns", "2", "grid", "grid-cols-1 sm:grid-cols-2")
             .Variant("gridColumns", "3", "grid", "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")

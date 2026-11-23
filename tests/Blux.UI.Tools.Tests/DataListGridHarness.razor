@@ -8,7 +8,7 @@
     <BxDataListLayoutSwitch ShowLabels="ShowLayoutLabels" Order="LayoutOrder" />
     @if (IncludeTable)
     {
-        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary">
+        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary" GroupBy="GroupBy">
             <BxDataListColumn Field="name" Title="Full name" />
             <BxDataListColumn Field="age" Align="DataListAlign.End" />
             <BxDataListColumn Field="city" Sortable="false" />
@@ -16,7 +16,7 @@
     }
     @if (IncludeGrid)
     {
-        <BxDataListGrid Columns="GridColumns" ItemTemplate="ItemTemplate" Empty="EmptyTemplate"
+        <BxDataListGrid Columns="GridColumns" ItemTemplate="ItemTemplate" Empty="EmptyTemplate" GroupBy="GroupBy"
                         ShowSelectionControl="ShowSelectionControl" RowActions="RowActions" RowActionsMaxVisible="RowActionsMaxVisible" />
     }
 </BxDataList>
@@ -39,6 +39,7 @@
     [Parameter] public string? PreferencesKey { get; set; }
     [Parameter] public bool? Selectable { get; set; }
     [Parameter] public DataListRowSummary<Person>? RowSummary { get; set; }
+    [Parameter] public DataListGroupBy<Person>? GroupBy { get; set; }
     [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
     [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
     [Parameter] public bool IncludeTable { get; set; } = true;

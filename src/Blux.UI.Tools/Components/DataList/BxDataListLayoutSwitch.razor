@@ -42,14 +42,14 @@
         }
         else
         {
-            <span class="@_slots["layoutOption"]" aria-current="@(active ? "true" : null)"
-                  aria-label="@(ShowLabels ? null : label)" data-slot="layout-option" data-layout="@key">
+            <button type="button" disabled class="@_slots["layoutOption"]" aria-pressed="@(active ? "true" : "false")"
+                    aria-label="@(ShowLabels ? null : label)" data-slot="layout-option" data-layout="@key">
                 @RenderIcon(icon, "size-4 shrink-0")
                 @if (ShowLabels)
                 {
                     <span>@label</span>
                 }
-            </span>
+            </button>
         }
     }
 </div>

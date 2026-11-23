@@ -103,6 +103,24 @@ public partial class BxDataList<TItem>
         AfterUserChange(changed);
     }
 
+    internal bool? GetGroupSelection(IReadOnlyList<TItem> items)
+    {
+        if (items.Count == 0) return false;
+        var ticked = 0;
+        foreach (var row in items)
+        {
+            if (_selection.Contains(KeyOf(row))) ticked++;
+        }
+        return ticked == 0 ? false : ticked == items.Count ? true : null;
+    }
+
+    internal void SetGroupSelected(IReadOnlyList<TItem> items, bool selected)
+    {
+        var changed = _selection.SetMany(items.Select(row => new KeyValuePair<string, TItem>(KeyOf(row), row)), selected);
+        _anchorKey = null;
+        AfterUserChange(changed);
+    }
+
     // Unticks only these keys: the rows an action targeted, not the ones ticked while it ran.
     internal void ClearSelection(IEnumerable<string> keys)
     {
@@ -130,16 +148,33 @@ public partial class BxDataList<TItem>
         _context.NotifyChanged();
     }
 
-    // The keys in the order of the rows on screen, from the anchor of a shift-click to the row clicked.
+    // The keys in the order of the visible rows on screen (respecting group order and skipping collapsed groups), from the anchor of a shift-click to the row clicked.
     private List<KeyValuePair<string, TItem>>? RowSpan(string from, string to)
     {
-        var rows = Controller?.Rows;
-        if (rows is null) return null;
+        var rows = VisibleRowsForSelection();
+        if (rows is null || rows.Count == 0) return null;
         var entries = rows.Select(row => new KeyValuePair<string, TItem>(KeyOf(row), row)).ToList();
         var a = entries.FindIndex(e => e.Key == from);
         var b = entries.FindIndex(e => e.Key == to);
         if (a < 0 || b < 0) return null;
         return entries.GetRange(Math.Min(a, b), Math.Abs(a - b) + 1);
+    }
+
+    private IReadOnlyList<TItem>? VisibleRowsForSelection()
+    {
+        var rows = Controller?.Rows;
+        if (rows is null || rows.Count == 0) return rows;
+        if (ActiveGroupBy is null) return rows;
+        var groups = BuildActiveGroups();
+        var visible = new List<TItem>(rows.Count);
+        foreach (var group in groups)
+        {
+            if (!IsGroupCollapsed(group.Key, group.DefaultCollapsed))
+            {
+                visible.AddRange(group.Items);
+            }
+        }
+        return visible;
     }
 
     private void AfterUserChange(bool changed)

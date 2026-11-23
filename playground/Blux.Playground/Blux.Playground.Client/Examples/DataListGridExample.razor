@@ -50,11 +50,42 @@
             <BxDataListGrid Columns="3" RowActions="_removeActions" RowActionsMaxVisible="1" />
         </BxDataList>
     </div>
+
+    <div class="w-full" data-testid="list-grouped">
+        <BxDataList TItem="Invoice" Label="Invoices grouped by status" Schema="InvoiceData.Schema" Items="_groupedItems" PagingMode="DataListPagingMode.None" UrlKey="grp" PreferencesKey="demo-groups" Selectable="true">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <BxDataListResultCount />
+                <div class="flex flex-wrap items-center gap-2">
+                    <BxDataListSortMenu />
+                    <BxDataListLayoutSwitch />
+                </div>
+            </div>
+            <BxDataListSelectionActions Actions="_bulkActions" />
+            <BxDataListTable Caption="Invoices grouped by status" GroupBy="_groupBy">
+                <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
+                <BxDataListColumn Field="customer" />
+                <BxDataListColumn Field="status" />
+                <BxDataListColumn Field="amount" Align="DataListAlign.End" Format="C2" />
+            </BxDataListTable>
+            <BxDataListGrid Columns="3" GroupBy="_groupBy" />
+        </BxDataList>
+    </div>
 </div>
 
 @code {
     private static readonly Invoice[] _items = InvoiceData.All[..25];
     private List<Invoice> _removable = [.. InvoiceData.All[..6]];
+    private static readonly Invoice[] _groupedItems =
+    [
+        .. InvoiceData.All[..6],
+        InvoiceData.All[6] with { Status = "" },
+    ];
+
+    private static readonly DataListGroupBy<Invoice> _groupBy = new()
+    {
+        Field = "status",
+        Order = ["Paid", "Pending", "Overdue"],
+    };
 
     private static readonly DataListSchema<Invoice> _gridOnlySchema = DataListSchema.For<Invoice>(s => s
         .RowKey(i => i.Id)
