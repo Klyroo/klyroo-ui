@@ -36,7 +36,7 @@ public class DataListPersistenceTests(PlaygroundServer server) : PlaygroundTest(
         }
     }
 
-    public static TheoryData<string> DataListPages => new("data-list", "data-list-filters", "data-list-filter-panel", "data-list-facets", "data-list-selection");
+    public static TheoryData<string> DataListPages => new("data-list", "data-list-filters", "data-list-filter-panel", "data-list-facets", "data-list-selection", "data-list-columns");
 
     /// <summary>
     /// The state a prerendered page persists is what the client sends back to the server when a Server or Auto circuit starts, and SignalR refuses a message past 32 KB. The data list docs are split

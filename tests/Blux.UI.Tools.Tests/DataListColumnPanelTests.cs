@@ -174,6 +174,18 @@ public class DataListColumnPanelTests : BluxToolsTestContext
         cut.Find($"[data-slot=col-resize][data-col-key={key}]").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = value });
 
     [Fact]
+    public void A_table_whose_columns_all_have_a_width_is_as_wide_as_their_sum_and_otherwise_fills_its_container()
+    {
+        var some = Render<DataListColumnPanelHarness>();
+        Assert.Contains("min-w-full", some.Find("table").GetAttribute("class"));
+        Assert.DoesNotContain("min-w-0", some.Find("table").GetAttribute("class"));
+
+        var all = Render<DataListColumnPanelHarness>(p => p.Add(x => x.CityWidth, 120));
+        Assert.Contains("min-w-0", all.Find("table").GetAttribute("class"));
+        Assert.DoesNotContain("min-w-full", all.Find("table").GetAttribute("class"));
+    }
+
+    [Fact]
     public void A_resize_reported_by_the_handle_sets_the_width_of_the_col_and_the_cells_and_reset_goes_back_to_the_declared_one()
     {
         var cut = Render<DataListColumnPanelHarness>();

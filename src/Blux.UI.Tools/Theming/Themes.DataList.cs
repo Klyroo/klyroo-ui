@@ -169,6 +169,7 @@ internal static partial class ToolsThemes
             .Slot("columnsPinGroup", "contents max-sm:hidden")
             .Slot("columnsSearch", "h-9 w-full rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg) px-3 text-sm text-(--blux-text) placeholder:text-(--blux-text-dimmed) focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-(--blux-primary-text)")
             .Slot("columnsIconBtnActive", "bg-(--blux-bg-elevated) text-(--blux-primary-text)")
+            .Variant("sized", "true", "table", "min-w-0")
             .Variant("position", "sticky", "selectionBar", "sticky bottom-4 mx-auto")
             .Variant("position", "fixed", "selectionBar", "fixed bottom-4 start-1/2 -translate-x-1/2 rtl:translate-x-1/2")
             .Default("position", "sticky")

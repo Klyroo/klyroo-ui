@@ -23,11 +23,13 @@
             var showColgroup = resizing || columns.Any(c => c.Width is not null);
             var pinStart = columns.Any(c => c.Pinned == DataListPin.Start);
             var pinEnd = columns.Any(c => c.Pinned == DataListPin.End);
+            // Every column has a width: the table is as wide as their sum, so each column is exactly the width it was given. With a column that sizes to its content, that column takes what is left.
+            var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
         <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label"
              @attributes="AdditionalAttributes">
-            <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
+            <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>
@@ -149,6 +151,7 @@
 
 @code {
     private SlotSet _slots = default!;
+    private SlotSet _sizedSlots = default!;
     private int _parentRenders;
     private ElementReference _root;
     private bool _watching;
@@ -247,6 +250,7 @@
         };
         if (IsVirtualized) variants["virtualize"] = "true";
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
+        _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
     }
 
     // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
