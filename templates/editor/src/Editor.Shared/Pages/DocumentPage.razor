@@ -126,7 +126,7 @@
 
     private string Title => _document?.Title ?? (_ready ? "Not found" : "Document");
 
-    private string Counts => _document is null ? "" : $"{_document.Words:N0} {(_document.Words == 1 ? "word" : "words")}, {_document.Text.Length:N0} characters";
+    private string Counts => _document is null ? "" : $"{_document.Words:N0} {(_document.Words == 1 ? "word" : "words")}, {_document.Text.Count(c => c != '\n'):N0} characters";
 
     protected override void OnInitialized()
     {
