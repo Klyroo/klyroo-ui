@@ -732,6 +732,18 @@ public class EditorTemplateTests(PlaygroundServer server)
             await EditorChecks.WaitEditor(page);
             await Assertions.Expect(EditorChecks.Surface(page)).ToContainTextAsync("Written by WebAssembly");
 
+            // Another tab of the same browser, with the runtime already downloaded (so WebAssembly too): what it writes reaches this one, which is not being typed in.
+            var second = await context.NewPageAsync();
+            await second.GotoAsync(page.Url);
+            await Assertions.Expect(second.GetByTestId("renderer")).ToHaveTextAsync("WebAssembly", new() { Timeout = 60_000 });
+            await EditorChecks.WaitEditor(second);
+            await EditorChecks.Surface(second).ClickAsync();
+            await second.Keyboard.PressAsync("Control+End");
+            await second.Keyboard.TypeAsync(" and a second tab");
+            await Assertions.Expect(EditorChecks.Surface(page)).ToContainTextAsync("and a second tab", new() { Timeout = 15_000 });
+            await Assertions.Expect(page.GetByTestId("external-change")).ToBeVisibleAsync();
+            await second.CloseAsync();
+
             await EditorChecks.AssertNoHorizontalScroll(page);
             await EditorChecks.AssertMobilePanel(page);
 
