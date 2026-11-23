@@ -12,7 +12,7 @@ export function watchDark(dotnet) {
 }
 
 /**
- * Everything the app keeps in the local storage, as one JSON text: the conversations (the values of the keys that start with prefix + ':c:', at most 200), the model
+ * Everything the app keeps in the local storage, as one JSON text: the conversations (the id and the value of the keys that start with prefix + ':c:', at most 200), the model
  * chosen last and the UTC offset of the browser in minutes. Local storage is shared by every app of the site; the prefix is what tells this app's keys apart.
  */
 export function loadAll(prefix) {
@@ -22,7 +22,7 @@ export function loadAll(prefix) {
     const key = localStorage.key(i);
     if (key && key.startsWith(start)) {
       const value = localStorage.getItem(key);
-      if (value) conversations.push(value);
+      if (value) conversations.push({ id: key.slice(start.length), json: value });
     }
   }
   return JSON.stringify({

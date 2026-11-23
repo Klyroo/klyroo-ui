@@ -361,20 +361,43 @@ public class ChatTemplateTests
     }
 
     [Fact]
-    public void A_full_table_refuses_new_callers_instead_of_pushing_out_or_sharing_with_the_ones_it_has()
+    public void A_full_table_forgets_the_idle_caller_whose_last_request_is_the_oldest_and_never_one_with_a_reply_in_flight()
     {
         var clock = new Clock();
         var guard = new AssistantGuard(new AssistantOptions { RequestsPerMinute = 100_000, MaxConcurrentStreams = 1_000_000, DailyRequestsPerCaller = 100_000, DailyRequestsGlobal = int.MaxValue }, clock);
-        for (var i = 0; i < AssistantGuard.MaxCallers; i++) guard.Enter("caller-" + i).Dispose();
+        var busy = guard.Enter("caller-0");
+        for (var i = 1; i < AssistantGuard.MaxCallers; i++)
+        {
+            clock.Advance(TimeSpan.FromMilliseconds(1));
+            guard.Enter("caller-" + i).Dispose();
+        }
         Assert.Equal(AssistantGuard.MaxCallers, guard.Callers);
-        // A newcomer is refused, and an attacker's addresses cannot drain a shared bucket: the callers already known are untouched.
-        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("newcomer")).Status);
-        guard.Enter("caller-0").Dispose();
-        guard.Enter("caller-" + (AssistantGuard.MaxCallers - 1)).Dispose();
-        // The next day nobody has anything left to remember, and the table makes room.
-        clock.Advance(TimeSpan.FromDays(1));
+        // A newcomer is let in, today, and the table stays the same size: caller-1 (the oldest idle one) made room, caller-0 (still replying) did not.
         guard.Enter("newcomer").Dispose();
-        Assert.True(guard.Callers < AssistantGuard.MaxCallers);
+        Assert.Equal(AssistantGuard.MaxCallers, guard.Callers);
+        busy.Dispose();
+        // Many new names do not take the budget of anybody beyond the table: the table never grows and nobody is refused for being new.
+        for (var i = 0; i < 500; i++) guard.Enter("flood-" + i).Dispose();
+        Assert.Equal(AssistantGuard.MaxCallers, guard.Callers);
+    }
+
+    [Fact]
+    public void A_refused_newcomer_leaves_nothing_in_the_table()
+    {
+        var guard = new AssistantGuard(new AssistantOptions { MaxConcurrentStreams = 1, RequestsPerMinute = 10 });
+        using var held = guard.Enter("a");
+        Assert.Equal(503, Assert.Throws<CompletionException>(() => guard.Enter("b")).Status);
+        Assert.Equal(1, guard.Callers);
+    }
+
+    [Fact]
+    public void The_daily_budgets_do_not_apply_to_the_simulated_provider_but_the_minute_and_in_flight_limits_do()
+    {
+        var guard = new AssistantGuard(new AssistantOptions { Provider = AssistantOptions.Simulated, DailyRequestsPerCaller = 1, DailyRequestsGlobal = 1, RequestsPerMinute = 5, MaxConcurrentPerCaller = 1, MaxConcurrentStreams = 10 });
+        for (var i = 0; i < 5; i++) guard.Enter("a").Dispose();
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("a")).Status);
+        using var held = guard.Enter("b");
+        Assert.Equal(429, Assert.Throws<CompletionException>(() => guard.Enter("b")).Status);
     }
 
     [Fact]
@@ -751,7 +774,9 @@ public class ChatTemplateTests
     {
         public Dictionary<string, string> Saved { get; } = [];
 
-        public List<string> Initial { get; } = [];
+        public List<StoredConversation> Initial { get; } = [];
+
+        public List<string> Deleted { get; } = [];
 
         public string? Model { get; set; }
 
@@ -770,6 +795,7 @@ public class ChatTemplateTests
 
         public Task DeleteAsync(string id)
         {
+            Deleted.Add(id);
             Saved.Remove(id);
             return Task.CompletedTask;
         }
@@ -865,6 +891,67 @@ public class ChatTemplateTests
     }
 
     [Fact]
+    public void A_conversation_in_a_language_that_needs_many_bytes_with_long_thinking_survives_the_storage()
+    {
+        var conversation = new Conversation { Model = "m" };
+        // The most the page keeps: the cap in characters, all of them outside ASCII, and the longest thinking in every answer.
+        var perMessage = ConversationLimits.MaxConversationCharacters / (ConversationLimits.MaxMessages - 1);
+        for (var i = 0; i < ConversationLimits.MaxMessages; i += 2)
+        {
+            conversation.Messages.Add(new ConversationMessage { Role = CompletionMessage.UserRole, Content = new string('\u4f60', perMessage) });
+            conversation.Messages.Add(new ConversationMessage { Role = CompletionMessage.AssistantRole, Content = new string('\u597d', perMessage), Reasoning = new string('\u601d', ConversationLimits.MaxStoredReasoningCharacters), ThinkingSeconds = 4 });
+        }
+        var json = ConversationJson.Write(conversation);
+        // Written as it is, not as six characters each, and well inside what is read back.
+        Assert.DoesNotContain("\\u4f60", json);
+        Assert.True(json.Length < ConversationJson.MaxJsonCharacters);
+        Assert.True(ConversationJson.TryRead(json, out var back));
+        Assert.Equal(conversation.Messages.Count, back.Messages.Count);
+        Assert.Equal(conversation.Messages[1].Reasoning, back.Messages[1].Reasoning);
+
+        // The worst case of escaping (every character a quote) is still inside the bound that Write can reach.
+        var quotes = new Conversation { Model = "m" };
+        quotes.Messages.Add(new ConversationMessage { Role = CompletionMessage.UserRole, Content = new string('"', ConversationLimits.MaxStoredMessageCharacters), Reasoning = new string('"', ConversationLimits.MaxStoredReasoningCharacters) });
+        Assert.True(ConversationJson.TryRead(ConversationJson.Write(quotes), out _));
+    }
+
+    [Fact]
+    public void On_overflow_the_longest_recent_stretch_that_fits_is_kept()
+    {
+        var conversation = new Conversation { Model = "m" };
+        var size = ConversationLimits.MaxStoredMessageCharacters;
+        for (var i = 0; i < 6; i++)
+        {
+            conversation.Messages.Add(new ConversationMessage { Role = i % 2 == 0 ? CompletionMessage.UserRole : CompletionMessage.AssistantRole, Content = i + new string('x', size - 1) });
+        }
+        Assert.True(ConversationJson.TryRead(ConversationJson.Write(conversation), out var back));
+        // Two cap's worth is 120,000 characters: three messages of 40,000 fit, the fourth back does not.
+        Assert.Equal(["3", "4", "5"], back.Messages.Select(m => m.Content[..1]));
+    }
+
+    private sealed class Accessor(HttpContext? context) : IHttpContextAccessor
+    {
+        public HttpContext? HttpContext { get; set; } = context;
+    }
+
+    [Fact]
+    public async Task The_circuit_gets_the_key_of_the_connection_and_the_shared_unknown_key_when_it_cannot_be_read()
+    {
+        var withAddress = new CallerKey();
+        var context = new DefaultHttpContext();
+        context.Connection.RemoteIpAddress = IPAddress.Parse("2001:db8:5:6:1:2:3:4");
+        await new CallerCircuitHandler(new Accessor(context), withAddress).OnCircuitOpenedAsync(null!, TestContext.Current.CancellationToken);
+        Assert.Equal("2001:db8:5:6::/64", withAddress.Value);
+
+        var one = new CallerKey();
+        var two = new CallerKey();
+        await new CallerCircuitHandler(new Accessor(null), one).OnCircuitOpenedAsync(null!, TestContext.Current.CancellationToken);
+        await new CallerCircuitHandler(new Accessor(new DefaultHttpContext()), two).OnCircuitOpenedAsync(null!, TestContext.Current.CancellationToken);
+        Assert.Equal("unknown", one.Value);
+        Assert.Equal("unknown", two.Value);
+    }
+
+    [Fact]
     public void The_title_comes_from_the_first_question_on_one_line_cut_at_a_word()
     {
         Assert.Equal("New conversation", Conversation.TitleFrom("   \n "));
@@ -898,7 +985,7 @@ public class ChatTemplateTests
         var old = Talk("old"); old.UpdatedAt = DateTimeOffset.UtcNow.AddDays(-2);
         var recent = Talk("recent"); recent.UpdatedAt = DateTimeOffset.UtcNow;
         var empty = new Conversation { Model = "m" };
-        store.Initial.AddRange([ConversationJson.Write(old), "garbage", ConversationJson.Write(recent), ConversationJson.Write(empty), ConversationJson.Write(recent)]);
+        store.Initial.AddRange([new(old.Id, ConversationJson.Write(old)), new("0123456789abcdef0123456789abcdef", "garbage"), new(recent.Id, ConversationJson.Write(recent)), new(empty.Id, ConversationJson.Write(empty)), new(recent.Id, ConversationJson.Write(recent))]);
         var state = new ConversationState(store);
 
         await state.LoadAsync();
@@ -906,6 +993,9 @@ public class ChatTemplateTests
 
         Assert.True(state.Loaded);
         Assert.Equal(["recent", "old"], state.Items.Select(c => c.Title));
+        // What is not a conversation under our prefix is removed, not left to fill the storage (and the cap on what is read): the garbage, the empty one and the duplicate.
+        Assert.Contains("0123456789abcdef0123456789abcdef", store.Deleted);
+        Assert.Contains(empty.Id, store.Deleted);
         Assert.Equal("m-2", state.Model);
         Assert.Equal(TimeSpan.FromHours(2), state.UtcOffset);
     }

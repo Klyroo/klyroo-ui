@@ -31,9 +31,12 @@ else
             @if (!Streaming && (Message.Content.Length > 0 || Message.Interrupted))
             {
                 <div class="-ms-1.5 flex items-center gap-0.5">
-                    <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">
-                        <LeadingIcon>@BxIcons.Named(_copied ? "lucide:check" : "lucide:copy")</LeadingIcon>
-                    </BxButton>
+                    @if (Message.Content.Length > 0)
+                    {
+                        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">
+                            <LeadingIcon>@BxIcons.Named(_copied ? "lucide:check" : "lucide:copy")</LeadingIcon>
+                        </BxButton>
+                    }
                     @if (CanRegenerate)
                     {
                         <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Write the answer again" OnClick="OnRegenerate" data-testid="message-regenerate">

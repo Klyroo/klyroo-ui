@@ -24,7 +24,9 @@ public sealed class LocalStorageConversationStore(IJSRuntime js, NavigationManag
         var json = await module.InvokeAsync<string>("loadAll", Prefix);
         using var document = JsonDocument.Parse(json);
         var root = document.RootElement;
-        var conversations = root.GetProperty("conversations").EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToList();
+        var conversations = root.GetProperty("conversations").EnumerateArray()
+            .Where(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("id", out var i) && i.ValueKind == JsonValueKind.String && e.TryGetProperty("json", out var j) && j.ValueKind == JsonValueKind.String)
+            .Select(e => new StoredConversation(e.GetProperty("id").GetString()!, e.GetProperty("json").GetString()!)).ToList();
         var model = root.TryGetProperty("model", out var m) && m.ValueKind == JsonValueKind.String ? m.GetString() : null;
         var offset = root.TryGetProperty("utcOffsetMinutes", out var o) && o.ValueKind == JsonValueKind.Number ? o.GetInt32() : 0;
         return new StoredData(conversations, model, offset);
