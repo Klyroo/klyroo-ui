@@ -1,4 +1,5 @@
 using Blux.UI.Tools.Query;
+using Microsoft.AspNetCore.Components;
 
 namespace Blux.UI.Tools;
 
@@ -63,6 +64,44 @@ public sealed partial class DataListContext<TItem>
     internal CancellationToken LifetimeToken => _owner.LifetimeToken;
 
     internal Microsoft.Extensions.Logging.ILogger? Logger => _owner.Logger;
+
+    private object? _footerOwner;
+
+    /// <summary>Whether the table shows its rows in a scroll box of its own (<c>Virtualize</c> on an interactive table): a loader that watches the scroll position then lives inside that box.</summary>
+    internal bool TableVirtualized { get; private set; }
+
+    /// <summary>The CSS selector of the scroll box of a virtualized table, or <see langword="null"/>.</summary>
+    internal string? TableScrollSelector { get; private set; }
+
+    /// <summary>What a part asked the table to draw after its rows, inside its scroll box (see <see cref="HostInTable"/>).</summary>
+    internal RenderFragment? TableFooter { get; private set; }
+
+    // Set by the table while it renders its rows in a box that scrolls.
+    internal void SetTableVirtualized(bool virtualized, string? selector)
+    {
+        if (TableVirtualized == virtualized && TableScrollSelector == selector) return;
+        TableVirtualized = virtualized;
+        TableScrollSelector = selector;
+        NotifyChanged();
+    }
+
+    // A part that cannot sit where the table needs it (the loader of a virtualized table, which has to scroll with the rows) gives the table what to draw there. Only the part that gave it can take it back.
+    internal void HostInTable(object owner, RenderFragment? footer)
+    {
+        if (footer is null)
+        {
+            if (!ReferenceEquals(_footerOwner, owner)) return;
+            _footerOwner = null;
+            if (TableFooter is null) return;
+            TableFooter = null;
+            NotifyChanged();
+            return;
+        }
+        if (ReferenceEquals(_footerOwner, owner) && ReferenceEquals(TableFooter, footer)) return;
+        _footerOwner = owner;
+        TableFooter = footer;
+        NotifyChanged();
+    }
 
     private readonly List<BxDataListColumn<TItem>> _columns = [];
     private int _columnIndex;

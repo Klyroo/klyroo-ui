@@ -40,6 +40,23 @@ public static class InvoiceData
         .DefaultPageSize(10));
 }
 
+/// <summary>The schema of the cursor examples with many rows: 20 invoices per page, so a virtualized list takes several pages to fill its scroll box.</summary>
+public static class InvoiceCursorData
+{
+    /// <summary>The invoice schema with a page of 20.</summary>
+    public static readonly DataListSchema<Invoice> Schema = DataListSchema.For<Invoice>(s => s
+        .RowKey(i => i.Id)
+        .RowLabel(i => $"Invoice {i.Id}")
+        .Search(i => i.Customer, i => i.Status)
+        .Field(i => i.Id, f => f.Sortable())
+        .Field(i => i.Customer, f => f.Sortable())
+        .Field(i => i.Status, f => f.Sortable())
+        .Field(i => i.Amount, f => f.Sortable())
+        .Field(i => i.Issued, f => f.Sortable())
+        .DefaultSort(i => i.Id)
+        .DefaultPageSize(20));
+}
+
 /// <summary>600 invoices and a schema that shows 300 at a time: a first result too big to hand from the prerender to the interactive render (see <c>PersistMaxBytes</c>).</summary>
 public static class InvoiceLargeData
 {

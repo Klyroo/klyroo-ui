@@ -19,6 +19,7 @@ public sealed class DataListController<TItem> : IDisposable
     private bool _refreshing;
     private bool _dropFacets;
     private bool _disposed;
+    private int _pagesLoaded = 1;
 
     /// <summary>Creates a controller.</summary>
     /// <param name="schema">What a request may ask for; also names the sortable fields.</param>
@@ -98,6 +99,18 @@ public sealed class DataListController<TItem> : IDisposable
     public bool HasError => Error is not null;
 
     /// <summary>
+    /// How many cursor pages <see cref="Rows"/> holds right now: 1 after a load, one more after each <see cref="LoadMoreAsync"/> that appended a page (cursor paging only).
+    /// </summary>
+    public int PagesLoaded => PagingMode == DataListPagingMode.Cursor ? _pagesLoaded : 1;
+
+    /// <summary>
+    /// The most cursor pages a <see cref="RefreshAsync"/> loads again (20 by default, at least 1). A refresh of a cursor-paged list asks for the pages that are on screen one after the other, starting from the first cursor, and replaces
+    /// the rows with what they return, so the list stays where it was; when more pages than this were loaded, the first <see cref="MaxRefreshPages"/> come back and the list goes on from the cursor after them. This bounds the requests a refresh makes and the memory it
+    /// holds (the old rows and the new ones for the time it runs).
+    /// </summary>
+    public int MaxRefreshPages { get; set; } = 20;
+
+    /// <summary>
     /// The one source of a list from what the component was given.
     /// </summary>
     /// <param name="schema">The schema, used to run <paramref name="items"/>.</param>
@@ -122,14 +135,20 @@ public sealed class DataListController<TItem> : IDisposable
         throw new InvalidOperationException("A data list needs a source: give it Items, a Queryable or a Provider.");
     }
 
-    /// <summary>Brings a state into the range the schema allows: a page of at least 1, a page size from 1 to <see cref="DataListSchema.MaxPageSize"/> (the default one for zero or less) and a search without the spaces around it.</summary>
+    /// <summary>
+    /// Brings a state into the range the schema allows: a page of at least 1, a page size from 1 to <see cref="DataListSchema.MaxPageSize"/> (the default one for zero or less), a search without the spaces around it
+    /// and no cursor unless the list pages by cursor (a stray <c>c</c> in the address of a list with numbered pages, or with no paging, is dropped).
+    /// </summary>
     public DataListState Normalize(DataListState state)
     {
         ArgumentNullException.ThrowIfNull(state);
         var size = state.PageSize <= 0 ? Schema.DefaultPageSize : Math.Min(state.PageSize, Schema.MaxPageSize);
         var page = Math.Clamp(state.Page, 1, DataListState.MaxPage);
         var search = state.Search.Trim();
-        return size == state.PageSize && page == state.Page && search == state.Search ? state : state with { Page = page, PageSize = size, Search = search };
+        var cursor = PagingMode == DataListPagingMode.Cursor ? state.Cursor : null;
+        return size == state.PageSize && page == state.Page && search == state.Search && cursor == state.Cursor
+            ? state
+            : state with { Page = page, PageSize = size, Search = search, Cursor = cursor };
     }
 
     /// <summary>The request for a state: sanitized by the schema, carrying the default sort when the state has none and the time zone.</summary>
@@ -200,6 +219,7 @@ public sealed class DataListController<TItem> : IDisposable
         IsLoading = false;
         IsLoadingMore = false;
         _refreshing = false;
+        _pagesLoaded = 1;
     }
 
     /// <summary>
@@ -241,7 +261,17 @@ public sealed class DataListController<TItem> : IDisposable
             var normalized = Normalize(state);
             var request = BuildRequest(normalized);
             var cached = ReusableFacets(request, refresh);
-            var result = await Fetch(request, cached, cts.Token).ConfigureAwait(true);
+            var pages = 1;
+            DataListResult<TItem> result;
+            if (refresh && PagingMode == DataListPagingMode.Cursor && _pagesLoaded > 1 && Result is not null)
+            {
+                // A refresh of a list that grew keeps what is on screen: the pages are asked for again, one after the other.
+                (result, pages) = await FetchLoadedPages(normalized, request, cts.Token).ConfigureAwait(true);
+            }
+            else
+            {
+                result = await Fetch(request, cached, cts.Token).ConfigureAwait(true);
+            }
             if (version != Volatile.Read(ref _version)) return;
 
             if (request.Paging is DataListPaging.Offset { Skip: > 0 } offset && result.TotalCount is { } total && offset.Skip >= total)
@@ -259,6 +289,7 @@ public sealed class DataListController<TItem> : IDisposable
             ResultVersion++;
             LoadedState = normalized;
             LoadedRequest = request;
+            _pagesLoaded = pages;
             _dropFacets = false;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested || version != Volatile.Read(ref _version))
@@ -283,6 +314,58 @@ public sealed class DataListController<TItem> : IDisposable
     {
         var result = await Provider(cached is null ? request : request with { Facets = [] }, cancellationToken).ConfigureAwait(true);
         return cached is not null ? result with { Facets = cached } : result;
+    }
+
+    // The pages of a cursor-paged list that are on screen, asked for again from the first cursor (that of the state, when the list was entered mid-way): the first one the way a load asks for it (count and facets), the
+    // others by the cursor each answer gives, up to MaxRefreshPages. A page that fails after the first one is not an error of the list: it goes back to the first page, which is a fresh start the user can scroll on from.
+    private async Task<(DataListResult<TItem> Result, int Pages)> FetchLoadedPages(DataListState state, DataListRequest first, CancellationToken cancellationToken)
+    {
+        var wanted = Math.Clamp(_pagesLoaded, 1, Math.Max(1, MaxRefreshPages));
+        var head = await Fetch(first, null, cancellationToken).ConfigureAwait(true);
+        if (wanted == 1 || string.IsNullOrEmpty(head.NextCursor)) return (head, 1);
+        var items = new List<TItem>(head.Items.Count * wanted);
+        var keys = KeysOf(items);
+        AppendDistinct(items, keys, head.Items);
+        var last = head;
+        var pages = 1;
+        try
+        {
+            while (pages < wanted && !string.IsNullOrEmpty(last.NextCursor))
+            {
+                var page = await Provider(BuildRequest(state, afterCursor: last.NextCursor, includeCount: false) with { Facets = [] }, cancellationToken).ConfigureAwait(true);
+                AppendDistinct(items, keys, page.Items);
+                last = page;
+                pages++;
+            }
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
+        {
+            return (head, 1);
+        }
+        return (new DataListResult<TItem>(items, head.TotalCount, last.NextCursor, head.Facets), pages);
+    }
+
+    // The keys of the rows already held (the row key of the schema), or null when the schema has none: rows then cannot be told apart and none is dropped.
+    private HashSet<string>? KeysOf(IReadOnlyList<TItem> rows)
+    {
+        if (!Schema.HasRowKey) return null;
+        var keys = new HashSet<string>(rows.Count, StringComparer.Ordinal);
+        foreach (var row in rows) keys.Add(Schema.GetRowKey(row));
+        return keys;
+    }
+
+    // Appends the rows of a page that are not on screen yet: a row that shows up on two pages (it moved between the requests) is kept where it first appeared.
+    private void AppendDistinct(List<TItem> target, HashSet<string>? keys, IReadOnlyList<TItem> page)
+    {
+        if (keys is null)
+        {
+            target.AddRange(page);
+            return;
+        }
+        foreach (var row in page)
+        {
+            if (keys.Add(Schema.GetRowKey(row))) target.Add(row);
+        }
     }
 
     /// <summary>
@@ -340,11 +423,13 @@ public sealed class DataListController<TItem> : IDisposable
             var page = await Provider(request with { Facets = [] }, cts.Token).ConfigureAwait(true);
             if (version != Volatile.Read(ref _version)) return;
 
+            // A row the source repeats on a later page (it moved while the user was scrolling, or the cursor overlaps) stays where it first appeared.
             var combined = new List<TItem>(previous.Items.Count + page.Items.Count);
             combined.AddRange(previous.Items);
-            combined.AddRange(page.Items);
+            AppendDistinct(combined, KeysOf(previous.Items), page.Items);
             Result = new DataListResult<TItem>(combined, page.TotalCount ?? previous.TotalCount, page.NextCursor, previous.Facets ?? page.Facets);
             ResultVersion++;
+            _pagesLoaded++;
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested || version != Volatile.Read(ref _version))
         {

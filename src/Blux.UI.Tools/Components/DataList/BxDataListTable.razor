@@ -27,7 +27,7 @@
             var allSized = columns.Count > 0 && columns.All(c => c.Width is not null);
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label"
+        <div @ref="_root" class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" data-bx-scroll-root="@(IsVirtualized ? _scrollId : null)" tabindex="0" role="region" aria-label="@label"
              @attributes="AdditionalAttributes">
             <table class="@(allSized ? _sizedSlots["table"] : _slots["table"])" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
@@ -146,6 +146,11 @@
                     }
                 </tbody>
             </table>
+            @* The loader of a virtualized list (cursor paging) is drawn here, in the box that scrolls: a sentinel after the box would never move while the rows scroll inside it. *@
+            @if (IsVirtualized && Context.TableFooter is { } footer)
+            {
+                @footer
+            }
         </div>
         @* What a resize changed, said once in words: the separator itself says its value while it has the focus. *@
         @if (resizing)
@@ -160,6 +165,8 @@
     private int _parentRenders;
     private ElementReference _root;
     private bool _watching;
+    private bool _keepingFocus;
+    private readonly string _scrollId = NewId("table-scroll");
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -225,10 +232,28 @@
             _watching = true;
             _ = WatchActionsWidthAsync();
         }
+        if (!_keepingFocus && IsVirtualized)
+        {
+            _keepingFocus = true;
+            _ = KeepVirtualFocusAsync();
+        }
         var signature = string.Join('|', Context.Columns.Select(c => $"{c.EffectiveKey}:{c.Visible}:{c.EffectiveTitle}"));
         if (signature == Context.ColumnsSignature) return;
         Context.ColumnsSignature = signature;
         Context.NotifyChanged();
+    }
+
+    // A row that scrolls out of the window takes the focus it held with it: the browser gives it back when the row returns.
+    private async Task KeepVirtualFocusAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("Blux.tools.keepVirtualFocus", _root);
+        }
+        catch (Exception e) when (e is JSException or JSDisconnectedException or InvalidOperationException or TaskCanceledException)
+        {
+            // No browser side (a test, a circuit that ended).
+        }
     }
 
     private async Task WatchActionsWidthAsync()
@@ -259,8 +284,15 @@
             },
         };
         if (IsVirtualized) variants["virtualize"] = "true";
+        Context.SetTableVirtualized(IsVirtualized, IsVirtualized ? $"[data-bx-scroll-root='{_scrollId}']" : null);
         _slots = ResolveSlots(ToolsOptions.DataList, variants, Ui, "tableRoot");
         _sizedSlots = ResolveSlots(ToolsOptions.DataList, new Dictionary<string, string?>(variants) { ["sized"] = "true" }, Ui, "tableRoot");
+    }
+
+    public override void Dispose()
+    {
+        Context.SetTableVirtualized(false, null);
+        base.Dispose();
     }
 
     // The state the rows on screen were loaded for: the text of the empty state is about what was searched, not about what is being typed.
