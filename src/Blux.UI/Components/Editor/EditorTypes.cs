@@ -218,6 +218,9 @@ public sealed record EditorToolbarUi : ISlotOverrides
     public string? LinkInput { get; init; }
     public string? LinkButton { get; init; }
 
+    /// <summary>The explanation shown under the address field when the editor does not accept the address.</summary>
+    public string? LinkMessage { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -227,6 +230,7 @@ public sealed record EditorToolbarUi : ISlotOverrides
         "linkForm" => LinkForm,
         "linkInput" => LinkInput,
         "linkButton" => LinkButton,
+        "linkMessage" => LinkMessage,
         _ => null,
     };
 }

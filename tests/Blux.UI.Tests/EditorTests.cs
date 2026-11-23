@@ -79,6 +79,37 @@ public class EditorTests : BluxTestContext
     }
 
     [Fact]
+    public void Editor_gives_the_browser_its_length_limit_and_the_schemes_it_accepts()
+    {
+        var none = Render<BxEditor>(p => p.Add(e => e.Value, "<p>a</p>"));
+        var plain = none.Find("bx-editor");
+        Assert.False(plain.HasAttribute("data-max-length"));
+        Assert.False(plain.HasAttribute("data-image-schemes"));
+        Assert.False(plain.HasAttribute("data-link-schemes"));
+
+        var cut = Render<BxEditor>(p => p.Add(e => e.MaxLength, 150_000).Add(e => e.ImageSchemes, ["https"]).Add(e => e.LinkSchemes, ["HTTPS", "http:", "mailto"]));
+        var host = cut.Find("bx-editor");
+        Assert.Equal("150000", host.GetAttribute("data-max-length"));
+        Assert.Equal("https", host.GetAttribute("data-image-schemes"));
+        Assert.Equal("https http mailto", host.GetAttribute("data-link-schemes"));
+
+        Assert.False(Render<BxEditor>(p => p.Add(e => e.MaxLength, 0)).Find("bx-editor").HasAttribute("data-max-length"));
+        Assert.False(Render<BxEditor>(p => p.Add(e => e.LinkSchemes, [])).Find("bx-editor").HasAttribute("data-link-schemes"));
+    }
+
+    [Fact]
+    public void Editor_tells_the_page_when_the_browser_says_the_text_is_over_its_limit()
+    {
+        var seen = new List<BxLimitEventArgs>();
+        var cut = Render<BxEditor>(p => p.Add(e => e.MaxLength, 10).Add(e => e.OnLimit, (BxLimitEventArgs e) => seen.Add(e)));
+
+        cut.Find("bx-editor").TriggerEvent("onbxlimit", new BxLimitEventArgs { Exceeded = true, Length = 42, Max = 10 });
+        cut.Find("bx-editor").TriggerEvent("onbxlimit", new BxLimitEventArgs { Exceeded = false, Length = 8, Max = 10 });
+
+        Assert.Equal([(true, 42, 10), (false, 8, 10)], seen.Select(e => (e.Exceeded, e.Length, e.Max)));
+    }
+
+    [Fact]
     public void Editor_in_an_EditForm_posts_under_the_field_name_and_reports_invalid()
     {
         var model = new Note();
@@ -223,6 +254,22 @@ public class EditorTests : BluxTestContext
 
         var without = Render<BxEditorToolbar>();
         Assert.Empty(without.FindAll("[data-slot=image-form]"));
+    }
+
+    [Fact]
+    public void Toolbar_forms_have_a_live_region_for_the_reason_an_address_is_refused_and_the_messages_to_say_it()
+    {
+        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.Link), new EditorToolbarItem(EditorAction.Image)]));
+
+        var toolbar = cut.Find("bx-editor-toolbar");
+        Assert.Equal("Only {0} addresses are accepted.", toolbar.GetAttribute("data-schemes-message"));
+        Assert.Equal("This address is not accepted.", toolbar.GetAttribute("data-refused-message"));
+        foreach (var form in new[] { "link-form", "image-form" })
+        {
+            var message = cut.Find($"[data-slot={form}] [data-slot=form-message]");
+            Assert.Equal("status", message.GetAttribute("role"));
+            Assert.Empty(message.TextContent);
+        }
     }
 
     [Fact]

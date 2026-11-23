@@ -1,0 +1,26 @@
+<div class="flex w-full max-w-2xl flex-col gap-3">
+    <BxFormField Label="Short note" Help="At most 200 characters of HTML. Links take https and mailto addresses, images https addresses.">
+        <BxEditor @bind-Value="_html" MaxLength="200" OnLimit="OnLimit" ImageSchemes="_https" LinkSchemes="_links" Placeholder="Write a short note..." data-testid="limit-editor">
+            <BxEditorToolbar Items="_items" />
+        </BxEditor>
+    </BxFormField>
+    <p class="text-sm text-(--blux-text-muted)" role="status" data-testid="limit-state">@_state</p>
+    <p class="break-all font-mono text-xs text-(--blux-text-muted)" data-testid="limit-html">@(string.IsNullOrEmpty(_html) ? "(empty)" : _html)</p>
+</div>
+
+@code {
+    private static readonly string[] _https = ["https"];
+    private static readonly string[] _links = ["https", "mailto"];
+
+    private static readonly IReadOnlyList<EditorToolbarItem> _items =
+    [
+        new(EditorAction.Bold), new(EditorAction.TaskList), new(EditorAction.Link), new(EditorAction.Image), new(EditorAction.Undo),
+    ];
+
+    private string? _html = "<p>Short.</p>";
+    private string _state = "Within the limit";
+
+    // The editor does not send a text that is over the limit: _html stays the last one that fit.
+    private void OnLimit(BxLimitEventArgs e) =>
+        _state = e.Exceeded ? $"Too long: {e.Length} of {e.Max} characters, not kept" : "Within the limit";
+}
