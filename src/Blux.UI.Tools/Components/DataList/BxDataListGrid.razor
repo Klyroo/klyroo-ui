@@ -22,6 +22,12 @@
         var entries = Context.IsInitial || empty || grouping ? null : RowEntries();
 
         <div class="@_slots["gridRoot"]" data-slot="grid-root" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
+            @if (ShowProgressLine && (Context.IsRefreshing || Context.IsReplacing))
+            {
+                <div class="@_slots["progressLine"]" data-slot="progress-line" aria-hidden="true">
+                    <div class="@_slots["progressLineBar"]"></div>
+                </div>
+            }
             @if (Context.IsInitial)
             {
                 <div class="@_slots["grid"]" data-slot="grid" aria-busy="true">
@@ -45,20 +51,7 @@
             else if (empty)
             {
                 <div class="@_slots["gridEmpty"]" data-slot="empty-grid">
-                    @if (Empty is not null)
-                    {
-                        @Empty(Context)
-                    }
-                    else if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
-                    {
-                        <BxDataListEmpty Title="@FilteredTitle" Description="@FilteredDescription" data-filtered="true">
-                            <Actions>@FilteredAction</Actions>
-                        </BxDataListEmpty>
-                    }
-                    else
-                    {
-                        <BxDataListEmpty />
-                    }
+                    @RenderEmptyState()
                 </div>
             }
             else
@@ -120,8 +113,19 @@
     /// <summary>Custom content shown for each placeholder card while the initial result loads.</summary>
     [Parameter] public RenderFragment? SkeletonTemplate { get; set; }
 
-    /// <summary>Shown when the list has no rows. Without it, <see cref="BxDataListEmpty"/> (with the filtered-empty variant when search or filters are active).</summary>
+    /// <summary>Shown when the list has no rows. Without it, <see cref="EmptyState"/> or <see cref="BxDataListEmpty"/> (with the filtered-empty variant when search or filters are active).</summary>
     [Parameter] public RenderFragment<DataListContext<TItem>>? Empty { get; set; }
+
+    /// <summary>
+    /// Declarative configuration for the unfiltered empty state (icon, title, description, and an optional first-use <see cref="DataListEmptyState.Action"/>).
+    /// When search or filters are active, the filtered empty state is still displayed instead and the first-use action is omitted.
+    /// </summary>
+    [Parameter] public DataListEmptyState? EmptyState { get; set; }
+
+    /// <summary>
+    /// Draws a subtle top progress indicator while the cards on screen are being refreshed or replaced (<see langword="true"/> by default).
+    /// </summary>
+    [Parameter] public bool ShowProgressLine { get; set; } = true;
 
     /// <summary>Maximum number of card columns on wide screens (1 to 4, 3 by default).</summary>
     [Parameter] public int Columns { get; set; } = 3;
@@ -203,6 +207,50 @@
             builder.AddAttribute(11, "data-slot", "reset");
             builder.CloseComponent();
         }
+    };
+
+    private RenderFragment RenderEmptyState() => builder =>
+    {
+        if (Empty is not null)
+        {
+            builder.AddContent(0, Empty(Context));
+            return;
+        }
+        if (Context.IsFilteredFor(Context.LoadedState ?? Context.State))
+        {
+            builder.OpenComponent<BxDataListEmpty>(1);
+            builder.AddAttribute(2, nameof(BxDataListEmpty.Title), FilteredTitle);
+            builder.AddAttribute(3, nameof(BxDataListEmpty.Description), FilteredDescription);
+            builder.AddAttribute(4, nameof(BxDataListEmpty.Actions), FilteredAction);
+            builder.AddAttribute(5, "data-filtered", "true");
+            builder.CloseComponent();
+            return;
+        }
+        builder.OpenComponent<BxDataListEmpty>(6);
+        if (EmptyState is { } es)
+        {
+            if (es.Icon is not null) builder.AddAttribute(7, nameof(BxDataListEmpty.Icon), es.Icon);
+            if (es.Title is not null) builder.AddAttribute(8, nameof(BxDataListEmpty.Title), es.Title);
+            if (es.HideDescription) builder.AddAttribute(9, nameof(BxDataListEmpty.Description), "");
+            else if (es.Description is not null) builder.AddAttribute(10, nameof(BxDataListEmpty.Description), es.Description);
+            if (es.Action is { } act && (!string.IsNullOrEmpty(act.Href) || Context.IsInteractive))
+            {
+                builder.AddAttribute(11, nameof(BxDataListEmpty.Actions), (RenderFragment)(b =>
+                {
+                    b.OpenComponent<BxButton>(0);
+                    b.AddAttribute(1, nameof(BxButton.Label), act.Label);
+                    b.AddAttribute(2, nameof(BxButton.Color), act.Color);
+                    b.AddAttribute(3, nameof(BxButton.Variant), act.Variant);
+                    if (!string.IsNullOrEmpty(act.Icon)) b.AddAttribute(4, nameof(BxButton.LeadingIcon), RenderIcon(act.Icon, "size-4"));
+                    if (!string.IsNullOrEmpty(act.Href)) b.AddAttribute(5, nameof(BxButton.Href), act.Href);
+                    if (Context.IsInteractive && act.OnClick.HasDelegate)
+                        b.AddAttribute(6, nameof(BxButton.OnClick), EventCallback.Factory.Create<MouseEventArgs>(this, () => act.OnClick.InvokeAsync()));
+                    b.AddAttribute(7, "data-slot", "empty-action");
+                    b.CloseComponent();
+                }));
+            }
+        }
+        builder.CloseComponent();
     };
 
     private sealed record RowEntry(object Key, TItem Item, int Position);

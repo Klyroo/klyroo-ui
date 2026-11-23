@@ -8,15 +8,16 @@
     <BxDataListLayoutSwitch ShowLabels="ShowLayoutLabels" Order="LayoutOrder" />
     @if (IncludeTable)
     {
-        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary" GroupBy="GroupBy" Tree="Tree" Summaries="Summaries">
-            <BxDataListColumn Field="name" Title="Full name" Summary="NameSummary" />
-            <BxDataListColumn Field="age" Align="DataListAlign.End" Summary="AgeSummary" SummaryFormat="@AgeSummaryFormat" />
-            <BxDataListColumn Field="city" Sortable="false" Summary="CitySummary" />
+        <BxDataListTable Caption="People" RowActions="RowActions" RowSummary="RowSummary" GroupBy="GroupBy" Tree="Tree" Summaries="Summaries"
+                         HeaderMenu="HeaderMenu" EmptyState="EmptyState">
+            <BxDataListColumn Field="name" Title="Full name" Summary="NameSummary" Skeleton="NameSkeleton" />
+            <BxDataListColumn Field="age" Align="DataListAlign.End" Summary="AgeSummary" SummaryFormat="@AgeSummaryFormat" Skeleton="AgeSkeleton" />
+            <BxDataListColumn Field="city" Sortable="false" Summary="CitySummary" Skeleton="CitySkeleton" />
         </BxDataListTable>
     }
     @if (IncludeGrid)
     {
-        <BxDataListGrid Columns="GridColumns" ItemTemplate="ItemTemplate" Empty="EmptyTemplate" GroupBy="GroupBy"
+        <BxDataListGrid Columns="GridColumns" ItemTemplate="ItemTemplate" Empty="EmptyTemplate" EmptyState="EmptyState" GroupBy="GroupBy"
                         ShowSelectionControl="ShowSelectionControl" RowActions="RowActions" RowActionsMaxVisible="RowActionsMaxVisible" />
     }
 </BxDataList>
@@ -46,6 +47,11 @@
     [Parameter] public DataListSummaryKind AgeSummary { get; set; }
     [Parameter] public string? AgeSummaryFormat { get; set; }
     [Parameter] public DataListSummaryKind CitySummary { get; set; }
+    [Parameter] public bool HeaderMenu { get; set; }
+    [Parameter] public DataListEmptyState? EmptyState { get; set; }
+    [Parameter] public DataListSkeletonKind NameSkeleton { get; set; } = DataListSkeletonKind.Text;
+    [Parameter] public DataListSkeletonKind AgeSkeleton { get; set; } = DataListSkeletonKind.Text;
+    [Parameter] public DataListSkeletonKind CitySkeleton { get; set; } = DataListSkeletonKind.Text;
     [Parameter] public IReadOnlySet<string>? SelectedKeys { get; set; }
     [Parameter] public EventCallback<IReadOnlySet<string>> SelectedKeysChanged { get; set; }
     [Parameter] public bool IncludeTable { get; set; } = true;

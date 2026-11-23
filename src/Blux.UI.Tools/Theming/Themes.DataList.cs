@@ -33,7 +33,8 @@ internal static partial class ToolsThemes
                 "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions",
                 "groupRow", "groupCell", "summaryGroupRow", "gridGroup", "gridGroupHeader", "groupHeader", "groupToggle", "groupChevron", "groupChevronExpanded", "groupLabel", "groupSummary",
                 "treeCell", "treeRailBlank", "treeRailPass", "treeRailBranch", "treeRailLast", "treeToggle", "treeChevron", "treeChevronExpanded", "treeSpacer", "treeContent",
-                "tfoot", "tfootRow", "tfootCell", "tfootCellPinnedStart", "tfootCellPinnedEnd", "tfootLabel")
+                "tfoot", "tfootRow", "tfootCell", "tfootCellPinnedStart", "tfootCellPinnedEnd", "tfootLabel",
+                "progressLine", "progressLineBar", "headerCell", "headerMenu", "headerMenuTrigger")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -238,6 +239,11 @@ internal static partial class ToolsThemes
             .Slot("tfootCellPinnedStart", "sm:sticky sm:z-[1] sm:border-e sm:border-(--blux-border) bg-(--blux-bg-muted)")
             .Slot("tfootCellPinnedEnd", "sm:sticky sm:z-[1] sm:border-s sm:border-(--blux-border) bg-(--blux-bg-muted)")
             .Slot("tfootLabel", "me-2 font-semibold text-(--blux-text-muted)")
+            .Slot("progressLine", "h-0.5 w-full overflow-hidden bg-(--blux-primary)/15")
+            .Slot("progressLineBar", "h-full w-1/3 animate-pulse rounded-full bg-(--blux-primary) motion-reduce:w-full motion-reduce:animate-none")
+            .Slot("headerCell", "inline-flex items-center gap-1")
+            .Slot("headerMenu", "inline-flex")
+            .Slot("headerMenuTrigger", "inline-flex size-6 items-center justify-center rounded-(--blux-radius) text-(--blux-text-muted) hover:bg-(--blux-bg-elevated) hover:text-(--blux-text) focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) max-sm:size-9")
             .Variant("gridColumns", "1", "grid", "grid-cols-1")
             .Variant("gridColumns", "2", "grid", "grid-cols-1 sm:grid-cols-2")
             .Variant("gridColumns", "3", "grid", "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")
