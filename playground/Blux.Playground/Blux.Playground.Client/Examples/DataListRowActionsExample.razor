@@ -59,14 +59,15 @@
                 Key = "send",
                 Label = "Send to",
                 Group = "Share",
+                // A disabled parent disables its children, in the menu and in the sheet.
+                Disabled = c => c.Item.Status == "Draft",
+                DisabledReason = _ => "A draft cannot be sent.",
                 Children =
                 [
                     new DataListRowAction<Invoice>
                     {
                         Key = "send-email",
                         Label = "Email",
-                        Disabled = c => c.Item.Status == "Draft",
-                        DisabledReason = _ => "A draft cannot be sent.",
                         OnExecute = c =>
                         {
                             Say($"Invoice {c.Item.Id} sent by email.");
