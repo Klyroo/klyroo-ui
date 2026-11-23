@@ -111,6 +111,23 @@ public sealed record DataListUi : ISlotOverrides
     public string? CursorReset { get; init; }
     public string? InfiniteEnd { get; init; }
     public string? InfiniteStatus { get; init; }
+    public string? ThPinnedStart { get; init; }
+    public string? ThPinnedEnd { get; init; }
+    public string? TdPinnedStart { get; init; }
+    public string? TdPinnedEnd { get; init; }
+    public string? ColResize { get; init; }
+    public string? ColumnsPanel { get; init; }
+    public string? ColumnsPopover { get; init; }
+    public string? ColumnsContent { get; init; }
+    public string? ColumnsHeader { get; init; }
+    public string? ColumnsTitle { get; init; }
+    public string? ColumnsCount { get; init; }
+    public string? ColumnsList { get; init; }
+    public string? ColumnsItem { get; init; }
+    public string? ColumnsLabel { get; init; }
+    public string? ColumnsActions { get; init; }
+    public string? ColumnsIconBtn { get; init; }
+    public string? ColumnsIconBtnActive { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
     {
@@ -220,6 +237,23 @@ public sealed record DataListUi : ISlotOverrides
         "cursorReset" => CursorReset,
         "infiniteEnd" => InfiniteEnd,
         "infiniteStatus" => InfiniteStatus,
+        "thPinnedStart" => ThPinnedStart,
+        "thPinnedEnd" => ThPinnedEnd,
+        "tdPinnedStart" => TdPinnedStart,
+        "tdPinnedEnd" => TdPinnedEnd,
+        "colResize" => ColResize,
+        "columnsPanel" => ColumnsPanel,
+        "columnsPopover" => ColumnsPopover,
+        "columnsContent" => ColumnsContent,
+        "columnsHeader" => ColumnsHeader,
+        "columnsTitle" => ColumnsTitle,
+        "columnsCount" => ColumnsCount,
+        "columnsList" => ColumnsList,
+        "columnsItem" => ColumnsItem,
+        "columnsLabel" => ColumnsLabel,
+        "columnsActions" => ColumnsActions,
+        "columnsIconBtn" => ColumnsIconBtn,
+        "columnsIconBtnActive" => ColumnsIconBtnActive,
         _ => null,
     };
 }

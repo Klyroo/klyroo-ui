@@ -68,6 +68,24 @@ public sealed class BxDataListColumn<TItem> : ComponentBase, IDisposable
     /// </summary>
     [Parameter] public bool Visible { get; set; } = true;
 
+    /// <summary>When <see langword="true"/>, the column cannot be hidden by <see cref="BxDataListColumnPanel{TItem}"/> or <see cref="DataListContext{TItem}.SetColumnVisible"/>.</summary>
+    [Parameter] public bool Required { get; set; }
+
+    /// <summary>Default horizontal pin edge (<see cref="DataListPin.Start"/> or <see cref="DataListPin.End"/>). Users can override it through the column panel.</summary>
+    [Parameter] public DataListPin Pinned { get; set; }
+
+    /// <summary>Default width in pixels, clamped to [<see cref="MinWidth"/>, <see cref="MaxWidth"/>]. <see langword="null"/> lets the browser size the column.</summary>
+    [Parameter] public int? Width { get; set; }
+
+    /// <summary>Minimum width in pixels when resized (64 by default).</summary>
+    [Parameter] public int MinWidth { get; set; } = DataListColumnPreferences.MinAllowedWidth;
+
+    /// <summary>Maximum width in pixels when resized (900 by default).</summary>
+    [Parameter] public int MaxWidth { get; set; } = DataListColumnPreferences.MaxAllowedWidth;
+
+    /// <summary>Whether the user can resize the column by dragging its header handle or using the keyboard (true by default).</summary>
+    [Parameter] public bool Resizable { get; set; } = true;
+
     /// <summary>The key of the column: <see cref="Key"/>, <see cref="Field"/> or the member path of <see cref="Property"/> in camel case.</summary>
     public string? EffectiveKey => ResolvedKey;
 

@@ -18,13 +18,32 @@
             var empty = Context.Result is not null && Context.Rows.Count == 0 && !Context.HasError;
             var entries = Context.IsInitial || empty ? null : RowEntries();
             var virtualizing = IsVirtualized && entries is { Count: > 0 };
+            var showColgroup = (Resizable && Context.IsInteractive) || columns.Any(c => c.Width is not null);
         }
         @* A scrolling region that can take focus needs a name; the table inside has the same one. *@
-        <div class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label" @attributes="AdditionalAttributes">
+        <div class="@_slots["tableRoot"]" data-slot="table-root" data-virtualized="@(IsVirtualized ? "true" : null)" tabindex="0" role="region" aria-label="@label"
+             @onbxchange="OnTableChange" @attributes="AdditionalAttributes">
             <table class="@_slots["table"]" data-slot="table" aria-label="@(Caption is null ? label : null)" aria-rowcount="@(virtualizing ? entries!.Count + 1 : null)">
                 @if (Caption is not null)
                 {
                     <caption class="@_slots["caption"]">@Caption</caption>
+                }
+                @if (showColgroup)
+                {
+                    <colgroup>
+                        @if (selecting)
+                        {
+                            <col />
+                        }
+                        @foreach (var column in columns)
+                        {
+                            <col data-col-key="@column.Key" style="@(column.Width is { } w ? $"width:{w}px" : null)" />
+                        }
+                        @if (acting)
+                        {
+                            <col />
+                        }
+                    </colgroup>
                 }
                 <thead class="@_slots["thead"]">
                     <tr class="@_slots["tr"]" aria-rowindex="@(virtualizing ? 1 : null)">
@@ -35,7 +54,17 @@
                         }
                         @foreach (var column in columns)
                         {
-                            <th scope="col" class="@HeaderClass(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">@Header(column)</th>
+                            <th scope="col" class="@HeaderClass(column)" style="@PinStyle(column)" data-pinned="@PinAttr(column)" aria-sort="@AriaSort(column)" data-key="@column.Key">
+                                @Header(column)
+                                @if (Resizable && Context.IsInteractive && column.Resizable && column.Key is not null)
+                                {
+                                    var col = column;
+                                    <div role="separator" tabindex="0" aria-orientation="vertical" aria-label="@string.Format(FormatCulture, ToolsMessages.ColumnResize, col.Title)"
+                                         aria-valuemin="@col.MinWidth" aria-valuemax="@col.MaxWidth" aria-valuenow="@(col.Width ?? 150)"
+                                         class="@_slots["colResize"]" data-slot="col-resize" data-col-key="@col.Key" data-min-width="@col.MinWidth" data-max-width="@col.MaxWidth"
+                                         @onkeydown="@(e => OnResizeKeyDown(col, e))"></div>
+                                }
+                            </th>
                         }
                         @if (acting)
                         {
@@ -57,7 +86,7 @@
                                 }
                                 @foreach (var column in columns)
                                 {
-                                    <td class="@CellClass(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
+                                    <td class="@CellClass(column)" style="@PinStyle(column)" data-pinned="@PinAttr(column)"><BxSkeleton Class="@_slots["skeleton"]" /></td>
                                 }
                                 @if (acting)
                                 {
@@ -147,6 +176,9 @@
     /// <summary>Extra rows rendered above and below the viewport when <see cref="Virtualize"/> is on (3 by default).</summary>
     [Parameter] public int OverscanCount { get; set; } = 3;
 
+    /// <summary>Enables pointer-drag and keyboard column resizing on headers of resizable columns (false by default). Interactive only.</summary>
+    [Parameter] public bool Resizable { get; set; }
+
     private bool IsVirtualized => Virtualize && Context.IsInteractive;
 
     private float EffectiveItemSize => ItemSize is > 0 ? ItemSize.Value : Context.Density switch
@@ -165,8 +197,8 @@
         Context.NotifyChanged();
     }
 
-    // A render caused by the parent (new templates, new parameters) rebuilds the rows; one caused by the list (a flag, a new result) rebuilds them only for a new result.
-    private int Revision => unchecked(_parentRenders * 7919 + Context.ResultVersion);
+    // A render caused by the parent (new templates, new parameters) rebuilds the rows; one caused by the list (a flag, a new result) rebuilds them only for a new result or column change.
+    private int Revision => unchecked(_parentRenders * 7919 + Context.ResultVersion * 31 + Context.ColumnsVersion);
 
     protected override void OnParametersSet()
     {
@@ -235,7 +267,7 @@
             }
             @foreach (var column in columns)
             {
-                <td class="@CellClass(column)">@Cell(column, row.Item)</td>
+                <td class="@CellClass(column)" style="@PinStyle(column)" data-pinned="@PinAttr(column)">@Cell(column, row.Item)</td>
             }
             @if (acting)
             {
@@ -277,35 +309,138 @@
         return entries;
     }
 
-    private sealed record View(BxDataListColumn<TItem>? Source, string? Key, string Title, DataListAlign Align, bool Sortable, string? Class);
+    private sealed record View(
+        BxDataListColumn<TItem>? Source,
+        string? Key,
+        string Title,
+        DataListAlign Align,
+        bool Sortable,
+        string? Class,
+        DataListPin Pinned,
+        int? Width,
+        int MinWidth,
+        int MaxWidth,
+        bool Resizable,
+        int PinOffset);
 
-    // The columns as declared, or one per field of the schema when none was.
+    // The columns as declared (filtered, ordered and grouped by pin edge), or one per field of the schema when none was.
     private List<View> Columns()
     {
         var schema = Context.Schema;
         if (Context.Columns.Count > 0)
         {
-            return [.. Context.Columns.Where(c => c.Visible).Select(c =>
+            var raw = Context.TableColumns();
+            var startOffset = 0;
+            var startOffsets = new int[raw.Count];
+            for (var i = 0; i < raw.Count; i++)
             {
+                if (Context.EffectiveColumnPin(raw[i]) == DataListPin.Start)
+                {
+                    startOffsets[i] = startOffset;
+                    startOffset += Context.EffectiveColumnWidth(raw[i]) ?? 150;
+                }
+            }
+            var endOffset = 0;
+            var endOffsets = new int[raw.Count];
+            for (var i = raw.Count - 1; i >= 0; i--)
+            {
+                if (Context.EffectiveColumnPin(raw[i]) == DataListPin.End)
+                {
+                    endOffsets[i] = endOffset;
+                    endOffset += Context.EffectiveColumnWidth(raw[i]) ?? 150;
+                }
+            }
+            var views = new List<View>(raw.Count);
+            for (var i = 0; i < raw.Count; i++)
+            {
+                var c = raw[i];
                 var key = c.ResolvedKey;
                 var sortable = key is not null && schema is not null && schema.SortKeys.Contains(key) && (c.Sortable ?? true);
-                return new View(c, key, c.ResolvedTitle, c.Align, sortable, c.Class);
-            })];
+                var pin = Context.EffectiveColumnPin(c);
+                var min = Math.Max(DataListColumnPreferences.MinAllowedWidth, c.MinWidth);
+                var max = Math.Clamp(c.MaxWidth, min, DataListColumnPreferences.MaxAllowedWidth);
+                var offset = pin == DataListPin.Start ? startOffsets[i] : pin == DataListPin.End ? endOffsets[i] : 0;
+                views.Add(new View(c, key, c.ResolvedTitle, c.Align, sortable, c.Class, pin, Context.EffectiveColumnWidth(c), min, max, c.Resizable, offset));
+            }
+            return views;
         }
         if (schema is null) return [];
         return [.. schema.Fields.Where(f => !f.IsCollection)
-            .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null))];
+            .Select(f => new View(null, f.Key, DataListText.Humanize(f.Key), DataListAlign.Start, f.Sortable, null, DataListPin.None, null, DataListColumnPreferences.MinAllowedWidth, DataListColumnPreferences.MaxAllowedWidth, false, 0))];
     }
 
     private string ActionsClass(string kind) => $"{_slots[kind]} {_slots[kind + "End"]} {_slots["rowActionsCell"]}";
 
     private string SelectClass(string kind) => $"{_slots[kind]} {_slots[kind + "Start"]} {_slots["selectCell"]}";
 
-    private string HeaderClass(View column) =>
-        $"{_slots["th"]} {AlignClass(column.Align, "th")} {column.Class}".Trim();
+    private string HeaderClass(View column)
+    {
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => _slots["thPinnedStart"],
+            DataListPin.End => _slots["thPinnedEnd"],
+            _ => "",
+        };
+        var resize = Resizable && Context.IsInteractive && column.Resizable ? "relative" : "";
+        return $"{_slots["th"]} {AlignClass(column.Align, "th")} {pin} {resize} {column.Class}".Trim();
+    }
 
-    private string CellClass(View column) =>
-        $"{_slots["td"]} {AlignClass(column.Align, "td")} {column.Class}".Trim();
+    private string CellClass(View column)
+    {
+        var pin = column.Pinned switch
+        {
+            DataListPin.Start => _slots["tdPinnedStart"],
+            DataListPin.End => _slots["tdPinnedEnd"],
+            _ => "",
+        };
+        return $"{_slots["td"]} {AlignClass(column.Align, "td")} {pin} {column.Class}".Trim();
+    }
+
+    private static string? PinAttr(View column) => column.Pinned switch
+    {
+        DataListPin.Start => "start",
+        DataListPin.End => "end",
+        _ => null,
+    };
+
+    private static string? PinStyle(View column) => column.Pinned switch
+    {
+        DataListPin.Start => $"inset-inline-start:{column.PinOffset}px",
+        DataListPin.End => $"inset-inline-end:{column.PinOffset}px",
+        _ => null,
+    };
+
+    private void OnResizeKeyDown(View column, KeyboardEventArgs e)
+    {
+        if (column.Key is null || !Context.IsInteractive) return;
+        var current = column.Width ?? 150;
+        switch (e.Key)
+        {
+            case "ArrowRight":
+                Context.SetColumnWidth(column.Key, Math.Min(column.MaxWidth, current + 16));
+                break;
+            case "ArrowLeft":
+                Context.SetColumnWidth(column.Key, Math.Max(column.MinWidth, current - 16));
+                break;
+            case "Home":
+                Context.SetColumnWidth(column.Key, null);
+                break;
+        }
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private void OnTableChange(BxChangeEventArgs e)
+    {
+        if (e.Value is not { } value || !value.StartsWith("col-width:", StringComparison.Ordinal)) return;
+        var body = value["col-width:".Length..];
+        var colon = body.LastIndexOf(':');
+        if (colon <= 0 || colon == body.Length - 1) return;
+        var key = body[..colon];
+        if (int.TryParse(body[(colon + 1)..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var width))
+            Context.SetColumnWidth(key, width);
+    }
 
     private string AlignClass(DataListAlign align, string kind) => align switch
     {

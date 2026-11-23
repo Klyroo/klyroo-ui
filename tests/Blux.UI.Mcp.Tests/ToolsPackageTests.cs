@@ -62,6 +62,7 @@ public class ToolsPackageTests
             ["data-list-facets"] = ["BxDataListFilterEditor<TItem>"],
             ["data-list-selection"] = ["BxDataListSelectionActions<TItem>", "BxDataListActionsDropdown<TItem>", "BxDataListRowActions<TItem>"],
             ["data-list-cursor"] = ["BxDataListInfiniteLoader<TItem>"],
+            ["data-list-columns"] = ["BxDataListColumnPanel<TItem>"],
         };
         foreach (var (slug, api) in pages)
         {
