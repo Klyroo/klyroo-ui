@@ -2,6 +2,19 @@ using Blux.UI.Tools.Query;
 
 namespace Blux.UI.Tools;
 
+/// <summary>How a data list pages its rows.</summary>
+public enum DataListPagingMode
+{
+    /// <summary>Numbered pages (<c>p</c>, <c>ps</c>) with <see cref="BxDataListPagination{TItem}"/>.</summary>
+    Offset,
+
+    /// <summary>Keyset cursor paging (<c>c</c>): pages append in place with <see cref="BxDataListInfiniteLoader{TItem}"/>, and degrade to a link in static rendering.</summary>
+    Cursor,
+
+    /// <summary>No paging: the source returns every matching row at once. Pairs with <see cref="BxDataListTable{TItem}.Virtualize"/>.</summary>
+    None,
+}
+
 /// <summary>How tight the rows of a data list are.</summary>
 public enum DataListDensity
 {
@@ -106,6 +119,24 @@ public sealed partial class DataListContext<TItem>
     /// <summary>Other rows are being loaded (a new page, sort or filter) while the previous ones stay on screen.</summary>
     public bool IsReplacing => _owner.Controller?.IsReplacing ?? false;
 
+    /// <summary>The next page of a cursor-paged list is being loaded to append to the rows on screen.</summary>
+    public bool IsLoadingMore => _owner.Controller?.IsLoadingMore ?? false;
+
+    /// <summary>Whether the source has another page after the rows loaded so far (cursor paging only).</summary>
+    public bool HasMore => _owner.Controller?.HasMore ?? false;
+
+    /// <summary>The opaque cursor for the next page (cursor paging only), or <see langword="null"/> after the last one.</summary>
+    public string? NextCursor => _owner.Controller?.NextCursor;
+
+    /// <summary>The newest load-more request failed while the previously loaded rows stayed on screen.</summary>
+    public bool HasLoadMoreError => _owner.Controller?.HasLoadMoreError ?? false;
+
+    /// <summary>Why the newest load-more request failed; <see langword="null"/> when it did not.</summary>
+    public Exception? LoadMoreError => _owner.Controller?.LoadMoreError;
+
+    /// <summary>How the list pages its rows.</summary>
+    public DataListPagingMode PagingMode => _owner.PagingMode;
+
     /// <summary>The newest load failed. The previous rows, if any, are still in <see cref="Rows"/>.</summary>
     public bool HasError => _owner.Controller?.HasError ?? false;
 
@@ -169,6 +200,9 @@ public sealed partial class DataListContext<TItem>
     /// <summary>Loads the rows on screen again, or the failed request again after an error.</summary>
     public Task RefreshAsync() => _owner.RefreshAsync();
 
+    /// <summary>Appends the next page of a cursor-paged list. Does nothing outside cursor mode, while a load is running, when there is no next cursor, or when the renderer is not interactive.</summary>
+    public Task LoadMoreAsync() => _owner.LoadMoreAsync();
+
     /// <summary>The sort that applies: the state's, or the schema's default one when the state has none.</summary>
     public IReadOnlyList<DataListSort> EffectiveSort =>
         State.Sort.Count > 0 ? State.Sort : Schema?.DefaultSort ?? [];
@@ -190,6 +224,6 @@ public sealed partial class DataListContext<TItem>
             false => [new DataListSort(key, true)],
             true => Schema?.DefaultSort ?? [],
         };
-        return state with { Sort = next, Page = 1 };
+        return state with { Sort = next, Page = 1, Cursor = null };
     }
 }

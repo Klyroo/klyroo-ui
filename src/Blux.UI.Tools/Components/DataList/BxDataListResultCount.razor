@@ -25,10 +25,17 @@
                 return search.Length > 0 ? string.Format(FormatCulture, ToolsMessages.NoResultsFor, search) : ToolsMessages.NoResults;
             }
             var loaded = Context.LoadedState ?? Context.State;
-            var first = (long)(loaded.Page - 1) * loaded.PageSize + 1;
-            var last = first + result.Items.Count - 1;
             // Numbers are written with the group separator of the culture.
             string Number(long value) => value.ToString("N0", FormatCulture);
+            if (!string.IsNullOrEmpty(loaded.Cursor))
+            {
+                // A cursor page loaded directly from the address (static SSR): the 1-based start offset is unknown.
+                return result.TotalCount is { } cursorTotal
+                    ? string.Format(FormatCulture, ToolsMessages.ResultCountLoaded, Number(result.Items.Count), Number(cursorTotal))
+                    : string.Format(FormatCulture, ToolsMessages.ResultCountShown, Number(result.Items.Count));
+            }
+            var first = Context.PagingMode == DataListPagingMode.Offset ? (long)(loaded.Page - 1) * loaded.PageSize + 1 : 1;
+            var last = first + result.Items.Count - 1;
             return result.TotalCount is { } total
                 ? string.Format(FormatCulture, ToolsMessages.ResultCount, Number(first), Number(last), Number(total))
                 : string.Format(FormatCulture, ToolsMessages.ResultRange, Number(first), Number(last));

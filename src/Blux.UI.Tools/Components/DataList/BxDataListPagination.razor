@@ -8,7 +8,7 @@
     Offset paging: the pages and a page size picker. Interactive, the pages are buttons and the picker reports a change. Statically rendered
     (and prerendered), the pages are links and the picker is a GET form, so reading works without a circuit or a WebAssembly runtime.
 *@
-@if (Context.Result is not null && Total > 0)
+@if (Context.PagingMode == DataListPagingMode.Offset && Context.Result is not null && Total > 0)
 {
     <div class="@_slots["pagination"]" data-slot="pagination" @ref="_root" @attributes="AdditionalAttributes">
         @if (ShowPageSize)
@@ -27,7 +27,7 @@
                 else if (Context.CanLink)
                 {
                     <form method="get" action="@Context.Path" class="@_slots["pageSizeForm"]">
-                        @foreach (var (name, value) in Context.FormFields(Context.State with { Page = 1 }, "ps", "p"))
+                        @foreach (var (name, value) in Context.FormFields(Context.State with { Page = 1, Cursor = null }, "ps", "p", "c"))
                         {
                             <input type="hidden" name="@name" value="@value" />
                         }
@@ -128,7 +128,7 @@
     private void OnPageSize(ChangeEventArgs e)
     {
         if (!int.TryParse(e.Value?.ToString(), out var size) || size < 1) return;
-        Context.SetState(s => s with { PageSize = size, Page = 1 }, QueryHistory.Push);
+        Context.SetState(s => s with { PageSize = size, Page = 1, Cursor = null }, QueryHistory.Push);
     }
 
     // After a page change the control the user pressed can be gone (the previous button is disabled on the first page): keep focus in the pagination.
