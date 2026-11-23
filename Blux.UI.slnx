@@ -48,6 +48,9 @@
     <Project Path="templates/chat/src/Chat.Shared/Chat.Shared.csproj" />
     <Project Path="templates/chat/src/Chat.Web/Chat.Web.csproj" />
     <Project Path="templates/chat/src/Chat.Web.Client/Chat.Web.Client.csproj" />
+    <Project Path="templates/editor/src/Editor.Shared/Editor.Shared.csproj" />
+    <Project Path="templates/editor/src/Editor.Web/Editor.Web.csproj" />
+    <Project Path="templates/editor/src/Editor.Web.Client/Editor.Web.Client.csproj" />
   </Folder>
   <Folder Name="/build/">
     <Project Path="build/Blux.UI.ClassExtractor/Blux.UI.ClassExtractor.csproj" />

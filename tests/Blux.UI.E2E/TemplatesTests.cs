@@ -65,7 +65,7 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(starter.GetByTestId("template-source-missing")).ToHaveTextAsync("Repository not published yet");
 
         // The light and the dark screenshot are both images of the site that load.
-        foreach (var name in new[] { "starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog", "chat" })
+        foreach (var name in new[] { "starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog", "chat", "editor" })
         {
             var live = cards.Filter(new() { Has = Page.Locator($"img[src$='img/template-{name}-light.png']") });
             await Assertions.Expect(live.GetByText("Live demo")).ToBeVisibleAsync();
@@ -87,13 +87,13 @@ public class TemplatesTests(PlaygroundServer server) : PlaygroundTest(server)
         var landing = Card("Landing");
         await Assertions.Expect(landing.GetByRole(AriaRole.List, new() { Name = "Landing features" }).GetByRole(AriaRole.Listitem)).ToHaveCountAsync(3);
 
-        // The two others are planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
+        // The one other is planned: a badge, no link at all (a broken Preview or Source would be worse than none), no screenshot.
         var planned = cards.Filter(new() { HasNot = Page.GetByTestId("template-preview") });
-        await Assertions.Expect(planned).ToHaveCountAsync(2);
-        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(2);
+        await Assertions.Expect(planned).ToHaveCountAsync(1);
+        await Assertions.Expect(planned.GetByText("Coming soon", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(1);
         await Assertions.Expect(planned.Locator("a")).ToHaveCountAsync(0);
         await Assertions.Expect(planned.Locator("img")).ToHaveCountAsync(0);
-        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(2);
+        await Assertions.Expect(planned.GetByTestId("template-planned")).ToHaveCountAsync(1);
     }
 
     [Fact]

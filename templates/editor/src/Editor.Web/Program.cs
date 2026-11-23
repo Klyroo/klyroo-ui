@@ -31,7 +31,7 @@ if (forwardedHeaders)
     });
 }
 
-builder.Services.AddEditorUi();
+builder.Services.AddEditorApp();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
