@@ -2,6 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
 using Blux.UI;
 using Editor.Shared;
+using Editor.Shared.Data;
 using Editor.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,10 @@ builder.Services.AddEditorUi();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
+    // The circuit of the Server render mode refuses a message from the browser of more than 32 KB by default, and closes. The editor reports the whole text of a document and the
+    // browser hands over a document it reads from its storage as one message, so a few thousand words are enough to pass it. DocumentLimits works out the size of a document at its
+    // bound, in bytes, and this is the bound for the messages (see "How a document is kept" in the README). Nothing else of the app is changed by it.
+    .AddHubOptions(options => options.MaximumReceiveMessageSize = DocumentLimits.MaxReceiveMessageBytes)
     .AddInteractiveWebAssemblyComponents();
 
 var app = builder.Build();

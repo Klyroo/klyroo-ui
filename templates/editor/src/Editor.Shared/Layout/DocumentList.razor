@@ -76,6 +76,7 @@
     private string _query = "";
     private string? _activeId;
     private IReadOnlyList<DocumentGroup> _groups = [];
+    private int _search;
 
     protected override void OnInitialized()
     {
@@ -92,8 +93,30 @@
         return path.StartsWith("d/", StringComparison.Ordinal) ? path[2..].TrimEnd('/') : null;
     }
 
-    private void Refresh() =>
-        _groups = DocumentGroups.Of(Documents.Search(_query), DateTimeOffset.UtcNow, Documents.UtcOffset);
+    private IReadOnlyList<DocumentGroup> Group(IReadOnlyList<Document> documents) =>
+        DocumentGroups.Of(documents, DateTimeOffset.UtcNow, Documents.UtcOffset);
+
+    // The list as it is, at once; a search also looks in the text of the documents, which is kept where the documents are, so it answers a moment later.
+    private void Refresh()
+    {
+        _search++;
+        if (string.IsNullOrWhiteSpace(_query))
+        {
+            _groups = Group(Documents.Items);
+            return;
+        }
+        _ = SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        var search = _search;
+        var found = await Documents.SearchAsync(_query);
+        // The user typed again, or the list changed, while this one was looking: the newer answer wins.
+        if (search != _search) return;
+        _groups = Group(found);
+        await InvokeAsync(StateHasChanged);
+    }
 
     private void OnQuery(string? value)
     {

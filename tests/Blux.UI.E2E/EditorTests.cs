@@ -627,4 +627,118 @@ public class EditorTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(second).ToHaveAttributeAsync("data-action", "redo");
         await Assertions.Expect(second).ToBeDisabledAsync(new() { Timeout = 1000 });
     }
+
+    // ---- Length limit, accepted addresses
+
+    [Fact]
+    public async Task A_text_over_MaxLength_is_never_sent_says_so_and_is_sent_again_once_it_fits()
+    {
+        await OpenEditor("server", "editor");
+        var editor = Page.GetByTestId("limit-editor");
+        var state = Page.GetByTestId("limit-state");
+        var html = Page.GetByTestId("limit-html");
+        await Assertions.Expect(html).ToHaveTextAsync("<p>Short.</p>");
+        // What the page sends to the server over the circuit: the text that is over the limit must not be in any of it.
+        var sent = new List<string>();
+        Page.WebSocket += (_, socket) => socket.FrameSent += (_, frame) => { lock (sent) sent.Add(frame.Text ?? System.Text.Encoding.Latin1.GetString(frame.Binary ?? [])); };
+
+        await Surface("limit-editor").ClickAsync();
+        await Page.Keyboard.PressAsync("Control+a");
+        await Page.Keyboard.InsertTextAsync(new string('a', 300));
+
+        await Assertions.Expect(state).ToContainTextAsync("Too long: 307 of 200 characters");
+        await Assertions.Expect(editor).ToHaveAttributeAsync("data-over-limit", "");
+        await Assertions.Expect(Surface("limit-editor")).ToHaveAttributeAsync("aria-invalid", "true");
+        // The bound value is still the last one that fit, and the 300 characters did not travel.
+        await Assertions.Expect(html).ToHaveTextAsync("<p>Short.</p>");
+        await Page.WaitForTimeoutAsync(600);
+        await Assertions.Expect(html).ToHaveTextAsync("<p>Short.</p>");
+        lock (sent) Assert.DoesNotContain(sent, frame => frame.Contains(new string('a', 100), StringComparison.Ordinal));
+
+        await Page.Keyboard.PressAsync("Control+a");
+        await Page.Keyboard.TypeAsync("Fits again");
+
+        await Assertions.Expect(state).ToHaveTextAsync("Within the limit");
+        await Assertions.Expect(editor).Not.ToHaveAttributeAsync("data-over-limit", new Regex(".*"));
+        await Assertions.Expect(Surface("limit-editor")).Not.ToHaveAttributeAsync("aria-invalid", "true");
+        await Assertions.Expect(html).ToHaveTextAsync("<p>Fits again</p>");
+    }
+
+    [Fact]
+    public async Task An_image_address_the_page_does_not_accept_is_refused_with_the_reason_and_an_accepted_one_goes_in()
+    {
+        await Page.RouteAsync(new Regex(@"^https?://images\.example\.test/"), route =>
+            route.FulfillAsync(new() { ContentType = "image/png", BodyBytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAHnOcQAAAAABJRU5ErkJggg==") }));
+        await OpenEditor("server", "editor");
+        var editor = Page.GetByTestId("limit-editor");
+        var toolbar = editor.GetByRole(AriaRole.Toolbar);
+        await Surface("limit-editor").ClickAsync();
+        await toolbar.GetByRole(AriaRole.Button, new() { Name = "Image" }).ClickAsync();
+        var address = toolbar.GetByRole(AriaRole.Textbox, new() { Name = "Image address" });
+
+        await address.FillAsync("http://images.example.test/plain.png");
+        await address.PressAsync("Enter");
+
+        await Assertions.Expect(address).ToHaveAttributeAsync("aria-invalid", "true");
+        var message = editor.Locator("[data-slot=image-form] [data-slot=form-message]");
+        await Assertions.Expect(message).ToHaveTextAsync("Only https addresses are accepted.");
+        Assert.Equal("status", await message.GetAttributeAsync("role"));
+        var messageId = await message.GetAttributeAsync("id");
+        Assert.False(string.IsNullOrEmpty(messageId));
+        await Assertions.Expect(address).ToHaveAttributeAsync("aria-describedby", messageId!);
+        await Assertions.Expect(address).ToBeFocusedAsync();
+        await Assertions.Expect(Surface("limit-editor").Locator("img")).ToHaveCountAsync(0);
+
+        // Typing a new address takes the explanation back; an https one is inserted and the form closes.
+        await address.FillAsync("https://images.example.test/ok.png");
+        await Assertions.Expect(message).ToBeEmptyAsync();
+        await Assertions.Expect(address).ToHaveAttributeAsync("aria-invalid", "false");
+        await address.PressAsync("Enter");
+        await Assertions.Expect(Surface("limit-editor").Locator("img[src='https://images.example.test/ok.png']")).ToHaveCountAsync(1);
+        await Assertions.Expect(address).ToBeHiddenAsync();
+    }
+
+    [Fact]
+    public async Task A_link_address_the_page_does_not_accept_is_refused_with_the_reason()
+    {
+        await OpenEditor("server", "editor");
+        var editor = Page.GetByTestId("limit-editor");
+        var toolbar = editor.GetByRole(AriaRole.Toolbar);
+        await Surface("limit-editor").ClickAsync();
+        await Page.Keyboard.PressAsync("Control+a");
+        await Page.Keyboard.TypeAsync("a link");
+        await Page.Keyboard.PressAsync("Control+a");
+        await toolbar.GetByRole(AriaRole.Button, new() { Name = "Link", Exact = true }).ClickAsync();
+        var address = toolbar.GetByRole(AriaRole.Textbox, new() { Name = "Link address" });
+        var message = editor.Locator("[data-slot=link-form] [data-slot=form-message]");
+
+        foreach (var refused in new[] { "/relative/page", "example.com", "tel:+123456", "http://exa mple.com/a b" })
+        {
+            await address.FillAsync(refused);
+            await address.PressAsync("Enter");
+            await Assertions.Expect(address).ToHaveAttributeAsync("aria-invalid", "true");
+            await Assertions.Expect(message).ToHaveTextAsync("Only https, mailto addresses are accepted.");
+            await Assertions.Expect(Surface("limit-editor").Locator("a")).ToHaveCountAsync(0);
+        }
+
+        await address.FillAsync("mailto:someone@example.com");
+        await address.PressAsync("Enter");
+        await Assertions.Expect(Surface("limit-editor").Locator("a")).ToHaveAttributeAsync("href", "mailto:someone@example.com");
+        await Assertions.Expect(address).ToBeHiddenAsync();
+    }
+
+    [Fact]
+    public async Task The_checkbox_of_a_task_is_named_with_the_text_as_typed_even_when_it_looks_like_a_replacement_pattern()
+    {
+        await OpenEditor("server", "editor");
+        var editor = Page.GetByTestId("limit-editor");
+        await Surface("limit-editor").ClickAsync();
+        await Page.Keyboard.PressAsync("Control+a");
+        await Page.Keyboard.PressAsync("Delete");
+        await editor.GetByRole(AriaRole.Toolbar).GetByRole(AriaRole.Button, new() { Name = "Task list" }).ClickAsync();
+
+        await Page.Keyboard.TypeAsync("Pay $& then $' and $1");
+
+        await Assertions.Expect(editor.GetByRole(AriaRole.Checkbox)).ToHaveAccessibleNameAsync("Task: Pay $& then $' and $1");
+    }
 }

@@ -47,7 +47,7 @@
     <Compile Include="..\..\templates\chat\src\Chat.Web\AssistantEndpoints.cs;..\..\templates\chat\src\Chat.Web\CallerAccess.cs" LinkBase="Chat" />
     <!-- The plain C# of the Editor template: the allow-list that cleans the HTML of a document, the documents and their JSON, and the state that keeps them within the bounds. -->
     <Compile Include="..\..\templates\editor\src\Editor.Shared\Data\*.cs" LinkBase="Editor\Data" />
-    <Compile Include="..\..\templates\editor\src\Editor.Shared\Services\DocumentState.cs;..\..\templates\editor\src\Editor.Shared\Services\DocumentStore.cs" LinkBase="Editor\Services" />
+    <Compile Include="..\..\templates\editor\src\Editor.Shared\Services\DocumentState.cs;..\..\templates\editor\src\Editor.Shared\Services\DocumentSaver.cs;..\..\templates\editor\src\Editor.Shared\Services\DocumentStore.cs" LinkBase="Editor\Services" />
     <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
     <Compile Include="..\..\playground\Blux.Playground\Blux.Playground.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
   </ItemGroup>

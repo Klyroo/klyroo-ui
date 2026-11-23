@@ -107,6 +107,10 @@ function registerEvents(blazor) {
     browserEventName: 'bx-change',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });
+  blazor.registerCustomEventType('bxlimit', {
+    browserEventName: 'bx-limit',
+    createEventArgs: (event) => ({ exceeded: event.detail.exceeded, length: event.detail.length, max: event.detail.max }),
+  });
   blazor.registerCustomEventType('bxsearch', {
     browserEventName: 'bx-search',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
