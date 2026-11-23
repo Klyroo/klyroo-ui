@@ -175,7 +175,7 @@ Changelog) : Web, SSR statique. Contenu Markdig + YamlDotNet, copie de référen
 (processus enfants derrière YARP, chien de garde si l'hôte meurt). Prérequis livrés dans la librairie : Tailwind sans Node (`BluxTailwind`), apps sous un
 chemin de base, `BxSkipLink`, fond du `body`, index de recherche chargé à la demande.
 Faits : Starter, Landing, SaaS (auth en UI seule), Docs, Portfolio (formulaire de contact en UI seule), Changelog, Dashboard (sur `BxDataList`, couleurs en cookie lues au rendu serveur), Chat (fournisseur compatible OpenAI, démo simulée par
-visiteur, garde-fou de dépenses et politique d'autorisation). Restent : Editor, Calendar (sur `BxScheduler`).
+visiteur, garde-fou de dépenses et politique d'autorisation), Editor (`BxEditor` avec listes de tâches et images http(s), documents en `localStorage`). Reste : Calendar (sur `BxScheduler`).
 
 **Port de nuxt-ui-tools (2026-11-21)** : les 11 domaines (spécifications dans `.claude/specs/nuxt-ui-tools/`, non versionnées). Paquets compagnons
 `Blux.UI.Tools`, `Blux.UI.Tools.Query` (sans Blazor), `Blux.UI.Tools.EntityFrameworkCore`, plus tard `Blux.UI.Spreadsheet` : même version exacte que Blux.UI,
