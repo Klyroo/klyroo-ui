@@ -292,6 +292,7 @@ export class BxSelectMenuElement extends HTMLElement {
     } else {
       this.#model.set([value]);
       this.#content.hidePopover();
+      this.#closed();
     }
   }
 
@@ -321,13 +322,20 @@ export class BxSelectMenuElement extends HTMLElement {
       this.#opened();
       return;
     }
+    this.#closed();
+  };
+
+  // "toggle" fires asynchronously, so closing is done here, right after hidePopover(): a list closed by Enter and opened again by the very next
+  // ArrowDown would otherwise still count as open and keep the text and the highlight of the previous time.
+  #closed() {
+    if (this.#isOpen()) return;
     this.#trigger.setAttribute('aria-expanded', 'false');
-    this.dataset.state = content.dataset.state = 'closed';
+    this.dataset.state = this.#content.dataset.state = 'closed';
     this.#stopFloating?.();
     this.#stopFloating = null;
     this.#debouncer.cancel();
     this.#highlight(null);
-  };
+  }
 
   #onKeyDown = (event) => {
     const trigger = this.#trigger;
@@ -361,6 +369,7 @@ export class BxSelectMenuElement extends HTMLElement {
       }
       case 'Tab':
         this.#content.hidePopover();
+        this.#closed();
         trigger.focus({ preventScroll: true });
         break;
     }
