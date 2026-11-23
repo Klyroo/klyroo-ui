@@ -43,9 +43,6 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
 
     private static AriaRole Control(string mode) => mode == "ssr" ? AriaRole.Link : AriaRole.Button;
 
-    private Task WaitForQuery(string expected) =>
-        Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query) == expected, new() { Timeout = 15_000 });
-
     // A closed section is opened with its trigger; the section is open when the trigger says so.
     private static async Task Expand(ILocator panel, string key)
     {
@@ -229,7 +226,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await field.FillAsync("2026-01-07");
         if (mode == "ssr") await Apply(Panel);
 
-        await Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query).Contains("pnl.f.issued=2026-01-07"), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("pnl.f.issued=2026-01-07");
         await Assertions.Expect(Tag("Issued is 1/7/2026")).ToBeVisibleAsync();
         await Assertions.Expect(Count).ToHaveTextAsync("1–1 of 1");
     }
@@ -317,7 +314,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
             await field.PressSequentiallyAsync("umbrella", new() { Delay = 20 });
         }
 
-        await Page.WaitForURLAsync(url => Uri.UnescapeDataString(new Uri(url).Query).Contains("pnl.f.customer=umbrella"), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("pnl.f.customer=umbrella");
         await Assertions.Expect(Tag("Customer contains umbrella")).ToBeVisibleAsync();
         await Assertions.Expect(Tag("Status is Paid")).ToBeVisibleAsync();
         // Umbrella invoices are all paid.
@@ -439,7 +436,7 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
 
         await Section(Panel, "amount").Locator("xpath=ancestor::*[@data-slot='filter-panel']").GetByRole(AriaRole.Button, new() { Name = "Apply", Exact = true }).ClickAsync();
 
-        await Page.WaitForURLAsync(url => new Uri(url).Query.Contains("pnl.f.status=~"), new() { Timeout = 15_000 });
+        await WaitForQueryContaining("pnl.f.status=~");
         await Assertions.Expect(Tag("Status is Paid or empty")).ToBeVisibleAsync();
         await Assertions.Expect(Tag("Customer contains umbrella or empty")).ToBeVisibleAsync();
     }
@@ -566,6 +563,15 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
 
     // ---- sections the user opened by hand
 
+    // Blazor changes the address before it merges the response into the page: a check made once the address changed can still see the page as it was
+    // before the merge, and pass for the wrong reason. The merge is over when Blazor says so (enhancedload), and the listener is in place before the click.
+    private async Task WaitForMerge(Func<Task> act)
+    {
+        await Page.EvaluateAsync("() => { window.__merged = new Promise((resolve) => Blazor.addEventListener('enhancedload', () => setTimeout(resolve, 0), { once: true })); }");
+        await act();
+        await Page.EvaluateAsync("() => window.__merged");
+    }
+
     [Fact]
     public async Task Statically_a_section_opened_by_hand_stays_open_after_the_form_is_applied()
     {
@@ -574,11 +580,14 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await Expand(Panel, "customer");
         await Panel.GetByLabel("Value for Customer").FillAsync("globex");
 
-        await Apply(Panel);
+        await WaitForMerge(() => Apply(Panel));
 
         await WaitForQuery("?pnl.f.customer=globex");
+        await Assertions.Expect(Tag("Customer contains globex")).ToBeVisibleAsync();
         await Assertions.Expect(Trigger(Panel, "customer")).ToHaveAttributeAsync("aria-expanded", "true");
         await Assertions.Expect(Trigger(Panel, "amount")).ToHaveAttributeAsync("aria-expanded", "true");
+        await Assertions.Expect(Section(Panel, "amount")).ToHaveAttributeAsync("data-state", "open");
+        await Assertions.Expect(Section(Panel, "amount").Locator("[data-bx-collapsible-content]")).ToBeVisibleAsync();
         await Assertions.Expect(Trigger(Panel, "issued")).ToHaveAttributeAsync("aria-expanded", "false");
     }
 
@@ -588,10 +597,29 @@ public class DataListFilterPanelTests(PlaygroundServer server) : PlaygroundTest(
         await OpenList("ssr", "?pnl.f.amount=500");
         await Expand(Panel, "issued");
 
-        await Section(Panel, "amount").GetByRole(AriaRole.Link, new() { Name = "is at least" }).ClickAsync();
+        await WaitForMerge(() => Section(Panel, "amount").GetByRole(AriaRole.Link, new() { Name = "is at least" }).ClickAsync());
 
         await WaitForQuery("?pnl.f.amount.gte=500");
+        await Assertions.Expect(Tag("Amount is at least 500")).ToBeVisibleAsync();
         await Assertions.Expect(Trigger(Panel, "issued")).ToHaveAttributeAsync("aria-expanded", "true");
+    }
+
+    [Fact]
+    public async Task Statically_a_section_closed_by_hand_stays_closed_while_the_server_still_renders_it_open()
+    {
+        await OpenList("ssr", "?pnl.f.amount=500");
+        await Assertions.Expect(Trigger(Panel, "amount")).ToHaveAttributeAsync("aria-expanded", "true");
+        await Trigger(Panel, "amount").ClickAsync();
+        await Assertions.Expect(Trigger(Panel, "amount")).ToHaveAttributeAsync("aria-expanded", "false");
+        await Expand(Panel, "customer");
+        await Panel.GetByLabel("Value for Customer").FillAsync("globex");
+
+        await WaitForMerge(() => Apply(Panel));
+
+        await Assertions.Expect(Tag("Customer contains globex")).ToBeVisibleAsync();
+        await Assertions.Expect(Trigger(Panel, "amount")).ToHaveAttributeAsync("aria-expanded", "false");
+        await Assertions.Expect(Section(Panel, "amount").Locator("[data-bx-collapsible-content]")).ToHaveAttributeAsync("hidden", "until-found");
+        await Assertions.Expect(Trigger(Panel, "customer")).ToHaveAttributeAsync("aria-expanded", "true");
     }
 
     // ---- accessibility and a narrow screen

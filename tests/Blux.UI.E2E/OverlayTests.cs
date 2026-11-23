@@ -56,6 +56,33 @@ public class OverlayTests(PlaygroundServer server) : PlaygroundTest(server)
         await Assertions.Expect(Page.GetByTestId("modal-state")).ToHaveTextAsync("Dialog: closed");
     }
 
+    // The dialog closes at once and its "close" event, the report to .NET, comes a task later. A render that still says "open" (the echo of the opening on a busy
+    // circuit) that lands in between must not reopen what the user has just closed. The page does what the browser does for the button, then what Blazor does for
+    // that render, in one task: no timing is left to chance.
+    [Theory]
+    [MemberData(nameof(InteractiveModes))]
+    public async Task A_bound_modal_closed_by_the_user_is_not_reopened_by_a_render_that_was_made_before(string mode)
+    {
+        await Open(mode, "modal");
+        await Page.GetByTestId("modal-trigger").ClickAsync();
+        await Assertions.Expect(Page.GetByTestId("modal-state")).ToHaveTextAsync("Dialog: open");
+
+        var open = await Page.EvaluateAsync<bool>(@"() => {
+            const element = document.querySelector('[data-testid=modal-save]').closest('bx-modal');
+            const dialog = element.querySelector(':scope > dialog');
+            const seq = element.getAttribute('data-bx-seq');
+            element.querySelector('[data-testid=modal-save]').click();
+            element.removeAttribute('open');
+            element.setAttribute('data-bx-seq', seq);
+            element.setAttribute('open', '');
+            return dialog.open;
+        }");
+
+        Assert.False(open, "a render older than the close reopened the dialog");
+        await Assertions.Expect(Page.GetByTestId("modal-state")).ToHaveTextAsync("Dialog: closed");
+        await Assertions.Expect(Page.GetByRole(AriaRole.Dialog, new() { Name = "Edit profile" })).ToBeHiddenAsync();
+    }
+
     [Theory]
     [MemberData(nameof(AllModes))]
     public async Task Non_dismissible_modal_ignores_Escape(string mode)
