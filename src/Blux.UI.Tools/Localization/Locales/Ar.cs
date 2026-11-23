@@ -19,6 +19,7 @@ public static partial class BxToolsLocales
             LayoutSwitch = "طريقة العرض",
             TableView = "عرض الجدول",
             GridView = "عرض الشبكة",
+            SummaryView = "عرض ملخص",
             ResultRange = "الصفوف {0}–{1}",
             ResultCount = "{0}–{1} من {2}",
             ResultCountLoaded = "{0} من {1}",

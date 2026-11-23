@@ -18,6 +18,10 @@ public partial class BxDataList<TItem>
     private PersistingComponentStateSubscription? _columnsPersistSubscription;
     private string? _claimedPreferencesKey;
     private bool _columnsOverflowLogged;
+    private bool _hasRowSummary;
+    private bool _rowSummaryDefaultActive;
+    private bool _rowSummaryAutoPhone = true;
+    private bool? _phoneSummaryDetected;
 
     /// <summary>
     /// Name under which column visibility, order, pinning and widths are saved in the grouped cookie <c>blux-dl-cols</c> (scoped to the path base of the app like the other Blux cookies, SameSite=Lax, a year,
@@ -76,6 +80,36 @@ public partial class BxDataList<TItem>
     }
 
     internal bool HasCustomColumnPreferences => !PrunedPreferences().IsEmpty;
+
+    internal bool HasRowSummary => _hasRowSummary;
+
+    internal bool SummaryViewActive =>
+        _hasRowSummary && (_columnPrefs.SummaryView ?? (_rowSummaryAutoPhone && _phoneSummaryDetected is { } detected ? detected : _rowSummaryDefaultActive));
+
+    internal void SetRowSummary(bool enabled, bool defaultActive, bool autoPhone)
+    {
+        if (_hasRowSummary == enabled && _rowSummaryDefaultActive == defaultActive && _rowSummaryAutoPhone == autoPhone) return;
+        _hasRowSummary = enabled;
+        _rowSummaryDefaultActive = defaultActive;
+        _rowSummaryAutoPhone = autoPhone;
+        if (!enabled) _phoneSummaryDetected = null;
+        _context.NotifyChanged();
+    }
+
+    internal void SetDetectedPhoneSummary(bool isPhone)
+    {
+        if (_phoneSummaryDetected == isPhone) return;
+        _phoneSummaryDetected = isPhone;
+        _context.NotifyChanged();
+    }
+
+    internal void SetSummaryView(bool active)
+    {
+        if (!_hasRowSummary || SummaryViewActive == active && _columnPrefs.SummaryView == active) return;
+        _columnPrefs.SummaryView = active;
+        PersistColumnPreferences();
+        _context.NotifyChanged();
+    }
 
     // OnInitialized: a static render and a prerender read the request; an interactive render takes what the prerender handed over.
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Only a string goes through the reflection-based serializer of PersistentComponentState, and string has a built-in converter.")]

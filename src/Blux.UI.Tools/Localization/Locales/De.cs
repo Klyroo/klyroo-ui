@@ -19,6 +19,7 @@ public static partial class BxToolsLocales
             LayoutSwitch = "Ansicht",
             TableView = "Tabellenansicht",
             GridView = "Rasteransicht",
+            SummaryView = "Kompaktansicht",
             ResultRange = "Zeilen {0}–{1}",
             ResultCount = "{0}–{1} von {2}",
             ResultCountLoaded = "{0} von {1}",

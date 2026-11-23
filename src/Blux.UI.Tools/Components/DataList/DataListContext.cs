@@ -86,6 +86,19 @@ public sealed partial class DataListContext<TItem>
         : HasTable && !HasGrid ? DataListLayout.Table
         : State.Layout;
 
+    /// <summary>Whether the table has a <see cref="DataListRowSummary{TItem}"/> configured.</summary>
+    public bool HasRowSummary => _owner.HasRowSummary;
+
+    /// <summary>Whether the table currently renders compact summary rows instead of the multi-column table.</summary>
+    public bool SummaryViewActive => EffectiveLayout == DataListLayout.Table && _owner.SummaryViewActive;
+
+    /// <summary>Switches between compact summary rows (<see langword="true"/>) and the full table (<see langword="false"/>), persisting the choice when <c>PreferencesKey</c> is set.</summary>
+    public void SetSummaryView(bool active) => _owner.SetSummaryView(active);
+
+    internal void SetRowSummary(bool enabled, bool defaultActive, bool autoPhone) => _owner.SetRowSummary(enabled, defaultActive, autoPhone);
+
+    internal void SetDetectedPhoneSummary(bool isPhone) => _owner.SetDetectedPhoneSummary(isPhone);
+
     internal void AddTable()
     {
         _tableCount++;

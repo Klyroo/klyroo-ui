@@ -29,7 +29,8 @@ internal static partial class ToolsThemes
                 "columnsPanel", "columnsPopover", "columnsContent", "columnsHeader", "columnsTitle", "columnsCount", "columnsList", "columnsItem", "columnsLabel", "columnsActions", "columnsIconBtn", "columnsIconBtnActive",
                 "sortMenu", "sortMenuPopover", "sortMenuContent", "sortMenuHeader", "sortMenuTitle", "sortMenuDirections", "sortMenuDirection", "sortMenuList", "sortMenuItem",
                 "layoutSwitch", "layoutOption",
-                "gridRoot", "gridHeader", "grid", "gridCard", "gridCardTop", "gridCardBody", "gridCardFields", "gridCardField", "gridCardFieldLabel", "gridCardFieldValue", "gridEmpty")
+                "gridRoot", "gridHeader", "grid", "gridCard", "gridCardTop", "gridCardBody", "gridCardFields", "gridCardField", "gridCardFieldLabel", "gridCardFieldValue", "gridEmpty",
+                "viewToggle", "summaryHeader", "summaryList", "summaryRow", "summaryLeading", "summaryBody", "summaryTitle", "summaryTitleLink", "summaryTitleButton", "summaryMeta", "summaryStatus", "summaryDetails", "summaryActions")
             .Slot("root", "flex w-full min-w-0 flex-col gap-3")
             .Slot("toolbar", "flex flex-wrap items-center justify-between gap-2")
             .Slot("search", "flex w-full min-w-0 items-center gap-2 sm:max-w-sm")
@@ -194,6 +195,19 @@ internal static partial class ToolsThemes
             .Slot("gridCardFieldLabel", "text-xs font-medium text-(--blux-text-muted)")
             .Slot("gridCardFieldValue", "min-w-0 truncate font-medium text-(--blux-text-highlighted)")
             .Slot("gridEmpty", "rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg)")
+            .Slot("viewToggle", "inline-flex min-h-11 items-center justify-center gap-1.5 rounded-(--blux-radius) border border-(--blux-border-accented) bg-(--blux-bg) px-2.5 text-xs font-medium text-(--blux-text) hover:bg-(--blux-bg-muted) disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-(--blux-primary-text) aria-pressed:border-(--blux-primary-text) aria-pressed:bg-(--blux-bg-muted) aria-pressed:text-(--blux-text-highlighted) sm:min-h-8")
+            .Slot("summaryHeader", "flex items-center justify-between gap-2 border-b border-(--blux-border) bg-(--blux-bg-muted) px-4 py-2.5")
+            .Slot("summaryList", "m-0 flex list-none flex-col divide-y divide-(--blux-border) p-0 transition-opacity aria-busy:opacity-60")
+            .Slot("summaryRow", "flex min-h-16 items-center gap-3 px-4 py-3 text-sm has-[input[data-select=row]:checked]:bg-(--blux-bg-muted)")
+            .Slot("summaryLeading", "flex size-8 shrink-0 items-center justify-center rounded-(--blux-radius) bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)")
+            .Slot("summaryBody", "flex min-w-0 flex-1 flex-col gap-1")
+            .Slot("summaryTitle", "m-0 truncate font-medium text-(--blux-text-highlighted)")
+            .Slot("summaryTitleLink", "truncate font-medium text-(--blux-text-highlighted) hover:underline focus-visible:outline-2 focus-visible:outline-(--blux-primary-text)")
+            .Slot("summaryTitleButton", "truncate text-start font-medium text-(--blux-text-highlighted) hover:underline focus-visible:outline-2 focus-visible:outline-(--blux-primary-text)")
+            .Slot("summaryMeta", "flex min-w-0 flex-wrap items-center gap-2 text-xs text-(--blux-text-muted)")
+            .Slot("summaryStatus", "shrink-0")
+            .Slot("summaryDetails", "min-w-0 truncate")
+            .Slot("summaryActions", "shrink-0")
             .Variant("gridColumns", "1", "grid", "grid-cols-1")
             .Variant("gridColumns", "2", "grid", "grid-cols-1 sm:grid-cols-2")
             .Variant("gridColumns", "3", "grid", "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3")

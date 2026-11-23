@@ -5,18 +5,19 @@
    - The second list is a standalone grid (DefaultLayout = Grid) with custom sort options and a card removal action. *@
 <div class="flex w-full flex-col gap-8">
     <div class="w-full" data-testid="list-grid-switch">
-        <BxDataList TItem="Invoice" Label="Invoices with table and grid views" Schema="InvoiceData.Schema" Items="_items" UrlKey="grid" Selectable="true">
+        <BxDataList TItem="Invoice" Label="Invoices with table and grid views" Schema="InvoiceData.Schema" Items="_items" UrlKey="grid" PreferencesKey="demo-grid" Selectable="true">
             <div class="flex flex-wrap items-center justify-between gap-2">
                 <BxDataListSearch />
                 <div class="flex flex-wrap items-center gap-2">
                     <BxDataListResultCount />
                     <BxDataListSortMenu />
+                    <BxDataListViewToggle />
                     <BxDataListLayoutSwitch />
                     <BxDataListRefresh />
                 </div>
             </div>
             <BxDataListSelectionActions Actions="_bulkActions" />
-            <BxDataListTable Caption="Invoices with table and grid views" RowActions="_rowActions">
+            <BxDataListTable Caption="Invoices with table and grid views" RowActions="_rowActions" RowSummary="_summary">
                 <BxDataListColumn Field="id" Title="No." Align="DataListAlign.End" />
                 <BxDataListColumn Field="customer" />
                 <BxDataListColumn Field="status" />
@@ -81,6 +82,15 @@
     [
         new() { Key = "open", Label = "Open", Icon = "download", Href = c => $"#invoice-{c.Item.Id}" },
     ];
+
+    private static readonly DataListRowSummary<Invoice> _summary = new()
+    {
+        Title = i => i.Customer,
+        Leading = i => @<span>#@i.Id</span>,
+        Status = i => @<span class="rounded-full border border-(--blux-border-accented) px-2 py-0.5 text-xs">@i.Status</span>,
+        Details = i => [i.Amount.ToString("C2"), i.Issued.ToString("yyyy-MM-dd")],
+        Href = i => $"#invoice-{i.Id}",
+    };
 
     private DataListRowAction<Invoice>[] _removeActions =>
     [

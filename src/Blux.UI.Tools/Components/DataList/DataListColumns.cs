@@ -73,11 +73,12 @@ internal sealed class DataListColumnPreferences
     public HashSet<string> PinnedEnd { get; } = new(StringComparer.Ordinal);
     public HashSet<string> Unpinned { get; } = new(StringComparer.Ordinal);
     public Dictionary<string, int> Widths { get; } = new(StringComparer.Ordinal);
+    public bool? SummaryView { get; set; }
 
     public bool IsEmpty =>
         Order.Count == 0 && Hidden.Count == 0 && Shown.Count == 0
         && PinnedStart.Count == 0 && PinnedEnd.Count == 0 && Unpinned.Count == 0
-        && Widths.Count == 0;
+        && Widths.Count == 0 && SummaryView is null;
 
     public void Clear()
     {
@@ -88,6 +89,7 @@ internal sealed class DataListColumnPreferences
         PinnedEnd.Clear();
         Unpinned.Clear();
         Widths.Clear();
+        SummaryView = null;
     }
 
     public DataListColumnPreferences Clone()
@@ -100,6 +102,7 @@ internal sealed class DataListColumnPreferences
         copy.PinnedEnd.UnionWith(PinnedEnd);
         copy.Unpinned.UnionWith(Unpinned);
         foreach (var (key, width) in Widths) copy.Widths[key] = width;
+        copy.SummaryView = SummaryView;
         return copy;
     }
 
@@ -155,6 +158,7 @@ internal sealed class DataListColumnPreferences
             parts.Add("w" + string.Join('~', Widths.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => $"{Escape(p.Key)}*{Math.Clamp(p.Value, MinAllowedWidth, MaxAllowedWidth).ToString(CultureInfo.InvariantCulture)}")));
         }
+        if (SummaryView is { } sv) parts.Add(sv ? "m1" : "m0");
         var encoded = string.Join('!', parts);
         return encoded.Length > MaxEncodedLength ? null : encoded;
     }
@@ -227,6 +231,10 @@ internal sealed class DataListColumnPreferences
                         if (digits.Length > 5 || !int.TryParse(digits, NumberStyles.None, CultureInfo.InvariantCulture, out var px)) continue;
                         prefs.Widths[key] = Math.Clamp(px, MinAllowedWidth, MaxAllowedWidth);
                     }
+                    break;
+                case 'm':
+                    if (body == "1") prefs.SummaryView = true;
+                    else if (body == "0") prefs.SummaryView = false;
                     break;
             }
         }

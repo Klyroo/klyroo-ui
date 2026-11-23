@@ -19,6 +19,7 @@ public static partial class BxToolsLocales
             LayoutSwitch = "表示形式",
             TableView = "テーブル表示",
             GridView = "グリッド表示",
+            SummaryView = "要約表示",
             ResultRange = "{0}–{1}行目",
             ResultCount = "{2}件中 {0}–{1}件",
             ResultCountLoaded = "{1}件中 {0}件",

@@ -153,6 +153,62 @@ public class DataListGridTests : BluxToolsTestContext
         cut.Find("[data-slot=empty-grid] [data-slot=reset]").Click();
         Assert.Equal(10, cut.FindAll("[data-slot=grid-card]").Count);
     }
+
+    [Fact]
+    public void RowSummary_and_ViewToggle_switch_between_table_and_summary_rows_persist_to_cookie_and_hide_in_Grid_layout()
+    {
+        Person? selected = null;
+        var summary = new DataListRowSummary<Person>
+        {
+            Title = p => p.Name,
+            Leading = p => builder => builder.AddContent(0, $"#{p.Id}"),
+            Status = p => builder => builder.AddContent(0, p.City),
+            Details = p => [$"{p.Age} yrs", "Active"],
+            OnSelect = Microsoft.AspNetCore.Components.EventCallback.Factory.Create<Person>(this, p => selected = p),
+            AutoPhone = false,
+        };
+
+        var cut = Render<DataListGridHarness>(p => p
+            .Add(x => x.RowSummary, summary)
+            .Add(x => x.PreferencesKey, "people-summary")
+            .Add(x => x.Selectable, true)
+            .Add(x => x.SortLayouts, [DataListLayout.Grid]));
+
+        // Starts in full Table view on desktop: ViewToggle is visible and unpressed, SortMenu is hidden (SortLayouts = [Grid]).
+        var toggle = cut.Find("button[data-slot=view-toggle]");
+        Assert.Equal("false", toggle.GetAttribute("aria-pressed"));
+        Assert.Single(cut.FindAll("[data-slot=table]"));
+        Assert.Empty(cut.FindAll("[data-slot=summary-list]"));
+        Assert.Empty(cut.FindAll("[data-slot=sort-menu]"));
+
+        // Click ViewToggle -> switches to Summary rows view, shows SortMenu (since table headers are gone), and persists v1!m1 to cookie.
+        toggle.Click();
+
+        Assert.Equal("true", cut.Find("button[data-slot=view-toggle]").GetAttribute("aria-pressed"));
+        Assert.Empty(cut.FindAll("[data-slot=table]"));
+        Assert.Single(cut.FindAll("[data-slot=summary-list]"));
+        Assert.Equal(10, cut.FindAll("[data-slot=summary-row]").Count);
+        Assert.Single(cut.FindAll("[data-slot=sort-menu]"));
+
+        var firstRow = cut.Find("[data-slot=summary-row]");
+        Assert.Equal("#1", firstRow.QuerySelector("[data-slot=summary-leading]")?.TextContent);
+        Assert.Equal("Person 01", firstRow.QuerySelector("[data-slot=summary-title]")?.TextContent);
+        Assert.Equal("Lyon", firstRow.QuerySelector("[data-slot=summary-status]")?.TextContent);
+        Assert.Equal("21 yrs · Active", firstRow.QuerySelector("[data-slot=summary-details]")?.TextContent);
+
+        // Clicking the summary title invokes OnSelect.
+        firstRow.QuerySelector("button[data-slot=summary-title]")!.Click();
+        Assert.Equal(1, selected?.Id);
+
+        // Cookie wrote v1!m1.
+        var write = JSInterop.Invocations["Blux.tools.writeColumnPrefs"].Last();
+        Assert.Equal("people-summary", write.Arguments[0]);
+        Assert.Equal("v1!m1", write.Arguments[1]);
+
+        // Switching to Grid layout hides ViewToggle.
+        cut.Find("[data-slot=layout-option][data-layout=grid]").Click();
+        Assert.Empty(cut.FindAll("[data-slot=view-toggle]"));
+    }
 }
 
 /// <summary>Static SSR behavior of <see cref="BxDataListLayoutSwitch{TItem}"/>, <see cref="BxDataListSortMenu{TItem}"/> and <see cref="BxDataListGrid{TItem}"/>.</summary>
