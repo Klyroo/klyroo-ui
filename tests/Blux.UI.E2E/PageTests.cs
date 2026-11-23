@@ -43,7 +43,7 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
         // Forced: Playwright refuses to click an element that something else covers, which is what the stretched link does.
         await card.GetByText("Install the package").ClickAsync(new() { Force = true });
 
-        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        await Page.WaitForUrlMatchingAsync("/docs/installation$");
     }
 
     [Theory]
@@ -60,12 +60,12 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
         Assert.EndsWith("/components/page-card", new Uri(Page.Url).AbsolutePath);
 
         await card.GetByTestId("card-footer-text").ClickAsync(new() { Force = true });
-        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        await Page.WaitForUrlMatchingAsync("/docs/installation$");
         // The address changes as soon as the link is followed, before an interactive router has rendered the new page:
         // going back at that moment races with the render, and the card would still be the old one on screen.
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "Installation", Level = 1 })).ToBeVisibleAsync();
         await Page.GoBackAsync();
-        await Page.WaitForURLAsync(new Regex($"/{mode}/components/page-card$"));
+        await Page.WaitForUrlMatchingAsync($"/{mode}/components/page-card$");
         await Assertions.Expect(Page.GetByRole(AriaRole.Heading, new() { Name = "PageCard", Level = 1 })).ToBeVisibleAsync();
         await Assertions.Expect(card).ToBeVisibleAsync();
 
@@ -74,7 +74,7 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
         var header = card.GetByTestId("card-header");
         await header.EvaluateAsync("e => e.scrollIntoView({ block: 'center' })");
         await header.ClickAsync(new() { Force = true });
-        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        await Page.WaitForUrlMatchingAsync("/docs/installation$");
     }
 
     [Theory]
@@ -97,7 +97,7 @@ public class PageTests(PlaygroundServer server) : PlaygroundTest(server)
 
         await Page.GetByTestId("feature-link").GetByText("The whole feature is one link.").ClickAsync(new() { Force = true });
 
-        await Page.WaitForURLAsync(new Regex("/docs/installation$"));
+        await Page.WaitForUrlMatchingAsync("/docs/installation$");
     }
 
     [Theory]

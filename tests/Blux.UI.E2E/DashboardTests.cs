@@ -382,7 +382,7 @@ public class DashboardTests(PlaygroundServer server) : PlaygroundTest(server)
         await Page.EvaluateAsync("() => { window.__enhanced = new Promise((r) => Blazor.addEventListener('enhancedload', () => setTimeout(r, 50), { once: true })); }");
         await Page.EvaluateAsync("() => Blazor.navigateTo('/ssr/components/dashboard-resize-handle')");
         await Page.EvaluateAsync("() => window.__enhanced");
-        await Page.WaitForURLAsync(new Regex("/dashboard-resize-handle$"));
+        await Page.WaitForUrlMatchingAsync("/dashboard-resize-handle$");
 
         Assert.Equal(["50 1 0%", "50 1 0%"], await FirstGroupFlex());
     }

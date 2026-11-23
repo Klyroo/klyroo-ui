@@ -64,7 +64,7 @@ internal static class ChangelogChecks
         await Assertions.Expect(pagination).ToContainTextAsync("Page 1 of 2");
         await Assertions.Expect(pagination.GetByRole(AriaRole.Link, new() { Name = "Newer releases" })).ToHaveCountAsync(0);
         await pagination.GetByRole(AriaRole.Link, new() { Name = "Older releases" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"\?page=2$"));
+        await page.WaitForUrlMatchingAsync(@"\?page=2$");
         await Assertions.Expect(page.GetByTestId("release")).ToHaveCountAsync(2);
         await Assertions.Expect(page.GetByTestId("release").First.GetByRole(AriaRole.Heading, new() { Level = 2 })).ToHaveTextAsync("Tern 0.9.0");
         // v0.8.0 has no name and no notes: its title is its tag.
@@ -73,12 +73,12 @@ internal static class ChangelogChecks
         await Assertions.Expect(last).ToContainTextAsync("Page 2 of 2");
         await Assertions.Expect(last.GetByRole(AriaRole.Link, new() { Name = "Older releases" })).ToHaveCountAsync(0);
         await last.GetByRole(AriaRole.Link, new() { Name = "Newer releases" }).ClickAsync();
-        await page.WaitForURLAsync(url => !url.Contains("page="));
+        await page.WaitForUrlAsync("!url.search.includes('page=')");
         await Assertions.Expect(page.GetByTestId("release")).ToHaveCountAsync(10);
 
         // A release page: its own address from the tag, the notes in full, a way back, and the neighbours in time.
         await page.GetByTestId("release").First.GetByRole(AriaRole.Link, new() { Name = "Tern 1.4.0" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/releases/v1\.4\.0$"));
+        await page.WaitForUrlMatchingAsync(@"/releases/v1\.4\.0$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Tern 1.4.0");
         await Assertions.Expect(page).ToHaveTitleAsync("Tern 1.4.0 - Tern");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 2, Name = "Highlights" })).ToBeVisibleAsync();
@@ -87,7 +87,7 @@ internal static class ChangelogChecks
         await Assertions.Expect(neighbours.GetByRole(AriaRole.Link)).ToHaveCountAsync(1);
         await Assertions.Expect(neighbours.GetByRole(AriaRole.Link, new() { Name = "Tern 1.3.2" })).ToHaveAttributeAsync("rel", "next");
         await neighbours.GetByRole(AriaRole.Link, new() { Name = "Tern 1.3.2" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/releases/v1\.3\.2$"));
+        await page.WaitForUrlMatchingAsync(@"/releases/v1\.3\.2$");
         var both = page.GetByRole(AriaRole.Navigation, new() { Name = "Other releases" });
         await Assertions.Expect(both.GetByRole(AriaRole.Link, new() { Name = "Tern 1.4.0" })).ToHaveAttributeAsync("rel", "prev");
         await Assertions.Expect(both.GetByRole(AriaRole.Link, new() { Name = "Tern 1.3.1" })).ToHaveAttributeAsync("rel", "next");

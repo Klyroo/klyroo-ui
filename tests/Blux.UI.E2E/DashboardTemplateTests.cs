@@ -35,7 +35,7 @@ internal static class DashboardChecks
         // A shorter period: a link, so the address keeps it, and the figures change.
         var before = await page.GetByTestId("stat-revenue-value").TextContentAsync();
         await page.GetByTestId("period-week").ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"period=week"));
+        await page.WaitForUrlMatchingAsync(@"period=week");
         await Assertions.Expect(page.GetByTestId("period-week")).ToHaveAttributeAsync("aria-current", "true");
         await Assertions.Expect(page.GetByTestId("stat-revenue-value")).Not.ToHaveTextAsync(before!);
     }
@@ -102,7 +102,7 @@ internal static class DashboardChecks
         await Assertions.Expect(palette.GetByRole(AriaRole.Combobox)).ToBeVisibleAsync();
         await palette.GetByRole(AriaRole.Combobox).FillAsync("security");
         await palette.GetByRole(AriaRole.Option, new() { Name = "Security" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("settings/security$"));
+        await page.WaitForUrlMatchingAsync("settings/security$");
         await Assertions.Expect(page.GetByTestId("settings-security")).ToBeVisibleAsync();
 
         // Notifications: the bell opens the slideover, which lists them and marks them read.
@@ -198,7 +198,7 @@ internal static class DashboardChecks
 
         // Sort: a click on a header sorts, and the state is in the address.
         await page.GetByRole(AriaRole.Button, new() { Name = "Sort by Orders, ascending" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"[?&]s="));
+        await page.WaitForUrlMatchingAsync(@"[?&]s=");
         var orders = (await rows.Locator("td:nth-child(7)").AllTextContentsAsync()).Select(t => int.Parse(t.Trim())).ToArray();
         Assert.Equal(orders.Order(), orders);
 
@@ -220,7 +220,7 @@ internal static class DashboardChecks
         var panel = page.GetByRole(AriaRole.Dialog, new() { Name = "Add filter" });
         await panel.GetByRole(AriaRole.Button, new() { Name = "Company", Exact = true }).ClickAsync();
         await panel.GetByLabel("Value for Company").PressSequentiallyAsync("Kestrel", new() { Delay = 20 });
-        await page.WaitForURLAsync(new Regex(@"f\.company=Kestrel"));
+        await page.WaitForUrlMatchingAsync(@"f\.company=Kestrel");
         await Assertions.Expect(page.Locator("[data-slot=filter-tag-button]", new() { HasTextString = "Company contains Kestrel" })).ToBeVisibleAsync();
         await Assertions.Expect(rows.First).ToContainTextAsync("Kestrel");
         Assert.All(await rows.AllTextContentsAsync(), text => Assert.Contains("Kestrel", text));
@@ -283,7 +283,7 @@ internal static class DashboardChecks
         await page.GotoAsync("");
         await WaitInteractive(page);
         await ChooseNewCustomer();
-        await page.WaitForURLAsync(new Regex("customers$"));
+        await page.WaitForUrlMatchingAsync("customers$");
         await Assertions.Expect(form).ToBeVisibleAsync();
         Assert.DoesNotContain("new=", page.Url);
         await page.Keyboard.PressAsync("Escape");
@@ -469,7 +469,7 @@ internal static class DashboardChecks
         Assert.Equal("3 unread", unread);
 
         await page.GetByTestId("mail-1").ClickAsync();
-        await page.WaitForURLAsync(new Regex("inbox/1$"));
+        await page.WaitForUrlMatchingAsync("inbox/1$");
         await Assertions.Expect(page.GetByTestId("mail-article").GetByRole(AriaRole.Heading, new() { Level = 2 })).ToHaveTextAsync("Renewal for the Business plan");
         await Assertions.Expect(page.GetByTestId("unread-count")).ToHaveTextAsync("2 unread");
 

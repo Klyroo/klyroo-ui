@@ -27,7 +27,7 @@ internal static class SaasChecks
 
         // Pricing, from the header.
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Main" }).GetByRole(AriaRole.Link, new() { Name = "Pricing" }).First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/pricing$"));
+        await page.WaitForUrlMatchingAsync("/pricing$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Pay for the monitors you use");
         var pricing = page.GetByTestId("pricing");
         await Assertions.Expect(pricing.GetByText("$29", new() { Exact = true }).Locator("visible=true")).ToHaveCountAsync(1);
@@ -55,14 +55,14 @@ internal static class SaasChecks
         await Go(page, "blog");
         await Assertions.Expect(page.GetByTestId("post")).ToHaveCountAsync(5);
         await page.GetByRole(AriaRole.Link, new() { Name = "engineering (2)" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex(@"/blog\?tag=engineering$"));
+        await page.WaitForUrlMatchingAsync(@"/blog\?tag=engineering$");
         await Assertions.Expect(page.GetByTestId("post")).ToHaveCountAsync(2);
         await Assertions.Expect(page.GetByRole(AriaRole.Link, new() { Name = "engineering (2)" })).ToHaveAttributeAsync("aria-current", "page");
         await Go(page, "blog?tag=nothing");
         await Assertions.Expect(page.GetByText("No posts with this tag")).ToBeVisibleAsync();
         await Go(page, "blog");
         await page.GetByRole(AriaRole.Link, new() { Name = "Grace periods without the guesswork" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/blog/grace-periods-without-the-guesswork$"));
+        await page.WaitForUrlMatchingAsync("/blog/grace-periods-without-the-guesswork$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Grace periods without the guesswork");
         await Assertions.Expect(page).ToHaveTitleAsync("Grace periods without the guesswork - Tideline");
         var article = page.GetByTestId("article");
@@ -74,13 +74,13 @@ internal static class SaasChecks
         await Assertions.Expect(article.Locator("img")).ToHaveCountAsync(1);
         await page.WaitForFunctionAsync("() => { const i = document.querySelector('[data-testid=article] img'); return i && i.complete && i.naturalWidth > 0; }");
         await article.GetByRole(AriaRole.Link, new() { Name = "guide on grace periods" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/docs/guides/grace-periods$"));
+        await page.WaitForUrlMatchingAsync("/docs/guides/grace-periods$");
 
         // Documentation: sections, the navigation of docs only, the table of contents and the previous and next links of docs only.
         await Go(page, "docs");
         await Assertions.Expect(page.GetByTestId("sections").GetByRole(AriaRole.Listitem).Filter(new() { Has = page.GetByRole(AriaRole.Heading, new() { Level = 2 }) })).ToHaveCountAsync(3);
         await page.GetByTestId("sections").GetByRole(AriaRole.Link, new() { Name = "Concepts", Exact = true }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/docs/getting-started/concepts$"));
+        await page.WaitForUrlMatchingAsync("/docs/getting-started/concepts$");
         var nav = page.GetByRole(AriaRole.Navigation, new() { Name = "Documentation", Exact = true });
         await Assertions.Expect(nav.GetByRole(AriaRole.Link, new() { Name = "Concepts", Exact = true })).ToHaveAttributeAsync("aria-current", "page");
         await Assertions.Expect(nav.Locator("a")).ToHaveCountAsync(10);
@@ -98,7 +98,7 @@ internal static class SaasChecks
         await Assertions.Expect(page.GetByTestId("release")).ToHaveCountAsync(5);
         await Assertions.Expect(page.GetByTestId("release").First).ToContainTextAsync("2.0");
         await page.GetByTestId("release").First.GetByRole(AriaRole.Link, new() { Name = "2.0" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/changelog/2-0$"));
+        await page.WaitForUrlMatchingAsync("/changelog/2-0$");
         await Assertions.Expect(page.GetByTestId("release-page")).ToContainTextAsync("Public status pages");
 
         // Dates: the visible date is the one of the culture, the datetime attribute is not; the page of a version says the same as the list.
@@ -108,11 +108,11 @@ internal static class SaasChecks
         // Plain pages: a Markdown page outside the docs, the blog and the changelog, reached from the footer, with a link to a sibling page.
         await Go(page, "");
         await page.GetByRole(AriaRole.Navigation, new() { Name = "Footer" }).GetByRole(AriaRole.Link, new() { Name = "Terms of service" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/legal/terms$"));
+        await page.WaitForUrlMatchingAsync("/legal/terms$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Terms of service");
         await Assertions.Expect(page).ToHaveTitleAsync("Terms of service - Tideline");
         await page.GetByTestId("plain-page").GetByRole(AriaRole.Link, new() { Name = "privacy policy" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/legal/privacy$"));
+        await page.WaitForUrlMatchingAsync("/legal/privacy$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Privacy policy");
 
         // Search: one index for the docs, the blog and the changelog, fetched the first time the search opens.
@@ -125,7 +125,7 @@ internal static class SaasChecks
         var post = search.GetByRole(AriaRole.Option).Filter(new() { HasText = "Roles and an audit log" });
         await Assertions.Expect(post.First).ToBeVisibleAsync();
         await post.First.ClickAsync();
-        await page.WaitForURLAsync(new Regex("/blog/roles-and-an-audit-log-for-your-team$"));
+        await page.WaitForUrlMatchingAsync("/blog/roles-and-an-audit-log-for-your-team$");
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ internal static class SaasChecks
         // Forgot password: reached from the sign-in page, checks the email, sends nothing.
         await Go(page, "login");
         await page.GetByRole(AriaRole.Link, new() { Name = "Forgot your password?" }).ClickAsync();
-        await page.WaitForURLAsync(new Regex("/forgot-password$"));
+        await page.WaitForUrlMatchingAsync("/forgot-password$");
         await Assertions.Expect(page.GetByRole(AriaRole.Heading, new() { Level = 1 })).ToHaveTextAsync("Reset your password");
         await page.GetByRole(AriaRole.Button, new() { Name = "Send the link" }).ClickAsync();
         await Assertions.Expect(page.Locator("input[aria-invalid=true]")).ToHaveCountAsync(1);
