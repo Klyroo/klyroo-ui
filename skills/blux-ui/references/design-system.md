@@ -1,6 +1,6 @@
 # Design system
 
-Blux UI is themed at four levels, from the broadest to the most local: design tokens (CSS variables), the global theme in C#, scoped overrides, and per instance. Pick the broadest level that does the job.
+Lux.UI is themed at four levels, from the broadest to the most local: design tokens (CSS variables), the global theme in C#, scoped overrides, and per instance. Pick the broadest level that does the job.
 
 ## Tokens
 
@@ -57,10 +57,10 @@ The `dark` class on `<html>` switches the dark tokens. `<BxColorModeScript />` i
 
 ## Global theme
 
-Every styled component has a theme in C#: slots (the parts), variants, compound variants and defaults. Configure it in `AddBluxUi`. Classes you add are merged after the defaults with tailwind-merge, so the last conflicting utility wins.
+Every styled component has a theme in C#: slots (the parts), variants, compound variants and defaults. Configure it in `AddLuxUi`. Classes you add are merged after the defaults with tailwind-merge, so the last conflicting utility wins.
 
 ```csharp
-builder.Services.AddBluxUi(o =>
+builder.Services.AddLuxUi(o =>
 {
     o.Button.Slot("base", "rounded-full");
     o.Card.Slot("root", "shadow-sm");
@@ -69,18 +69,18 @@ builder.Services.AddBluxUi(o =>
 });
 ```
 
-- The property name on `BluxOptions` is the theme (`o.Button`, `o.Card`, `o.Modal`). `get-component` with `sections: "theme"` shows it for each component, with its slot names, variants and defaults.
+- The property name on `LuxOptions` is the theme (`o.Button`, `o.Card`, `o.Modal`). `get-component` with `sections: "theme"` shows it for each component, with its slot names, variants and defaults.
 - `Slot(slot, classes)` adds to a slot, `Variant(variant, value, slot, classes)` to a variant value, `Compound(when, slot, classes)` to a combination, `Default(variant, value)` changes the default.
-- A theme becomes read-only the first time a component renders with it: configure it in `AddBluxUi`, not later. `AddBluxUi` may be called several times (a library, then the app) and configures the same options.
+- A theme becomes read-only the first time a component renders with it: configure it in `AddLuxUi`, not later. `AddLuxUi` may be called several times (a library, then the app) and configures the same options.
 - Call it with the same configuration in the server and in the `.Client` project, or components change appearance when Auto mode switches runtime.
 - Every class must be a literal so the Tailwind build can see it.
 
 ## Scoped and per instance
 
-Order of precedence, last wins: theme defaults, `AddBluxUi`, enclosing `BxTheme` scopes, `Ui`, then `Class` on the root.
+Order of precedence, last wins: theme defaults, `AddLuxUi`, enclosing `BxTheme` scopes, `Ui`, then `Class` on the root.
 
 ```razor
-@using Blux.UI.Theming
+@using Lux.UI.Theming
 
 @* One component *@
 <BxButton Label="Save" Class="px-6" Ui="@(new ButtonUi { Label = "uppercase tracking-wide" })" />
@@ -97,5 +97,5 @@ Order of precedence, last wins: theme defaults, `AddBluxUi`, enclosing `BxTheme`
 
 ## Tailwind or not
 
-- Precompiled (no Tailwind in the app): `Class` and `Ui` can only use classes that already exist in `blux.css` or in your own CSS. Prefer tokens and `AddBluxUi`.
-- Tailwind v4 compiled by the app: import `obj/blux/blux.theme.css` after `@import "tailwindcss";` and load only your stylesheet. `Class` and `Ui` then accept any utility.
+- Precompiled (no Tailwind in the app): `Class` and `Ui` can only use classes that already exist in `lux.css` or in your own CSS. Prefer tokens and `AddLuxUi`.
+- Tailwind v4 compiled by the app: import `obj/blux/lux.theme.css` after `@import "tailwindcss";` and load only your stylesheet. `Class` and `Ui` then accept any utility.

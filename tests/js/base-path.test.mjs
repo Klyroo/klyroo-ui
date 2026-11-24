@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey, scopedCookieName } from '../../src/Blux.UI/js/base-path.js';
+import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey, scopedCookieName } from '../../src/Lux.UI/js/base-path.js';
 
 test('an app at the root keeps the cookie at /', () => {
   assert.equal(cookiePathFor('https://example.com/'), '/');

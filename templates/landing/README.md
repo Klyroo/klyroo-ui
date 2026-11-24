@@ -1,6 +1,6 @@
 # Landing
 
-A marketing site for a product, on Blux UI: a header with navigation, a language select and a color mode button, a hero, a logo strip, features, a "how it works" section, testimonials, pricing with a monthly and yearly switch, a FAQ, a call to action and a footer. The product in the copy (Paperlane, an invoicing tool) and every name in it are made up.
+A marketing site for a product, on Lux.UI: a header with navigation, a language select and a color mode button, a hero, a logo strip, features, a "how it works" section, testimonials, pricing with a monthly and yearly switch, a FAQ, a call to action and a footer. The product in the copy (Paperlane, an invoicing tool) and every name in it are made up.
 
 The site is rendered by the server and sent as HTML. There is no circuit and no WebAssembly download, so it is quick to load and cheap to host.
 
@@ -24,7 +24,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Landing.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `Landing.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Landing.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -43,8 +43,8 @@ src/Landing.Web/
 - Reorder, remove or add a section in `Components/Pages/Home.razor`. A section is a component, so a new one is a new file in `Components/Sections`.
 - Replace the marks in `Assets/marks` with the logos of your customers (SVG that uses `currentColor` follows light and dark mode), and keep the names in `SiteContent.Logos` in step.
 - The copy is English only. The language select translates what Blux itself writes (labels, the menu, the accordion) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteContent` or move the strings to resource files.
-- Tailwind is compiled by the build from `Styles/app.css` (`<BluxTailwind>true</BluxTailwind>` in `Landing.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
-- Package versions are in `Directory.Packages.props`. The Blux.UI version is pinned there.
+- Tailwind is compiled by the build from `Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `Landing.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
+- Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
 
 ## Why the page is static
 
@@ -58,7 +58,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Landing.Web
-dotnet build src/Landing.Web -t:BluxTailwindWatch
+dotnet build src/Landing.Web -t:LuxTailwindWatch
 ```
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.

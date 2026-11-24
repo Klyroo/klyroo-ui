@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using Blux.Templates.Content;
-using Blux.UI;
+using Lux.UI;
 
 namespace SaaS.Web.Site;
 

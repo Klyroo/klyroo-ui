@@ -1,0 +1,136 @@
+@namespace Lux.UI
+@using Lux.UI.Internal
+@inherits BxFieldBase<string>
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>
+    /// Toolbars, drag handle and suggestion menus: components of the editor family placed inside it. They are wired to
+    /// the editor by the browser.
+    /// </summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Shown while the editor is empty.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>The text can be selected and copied but not changed. The value still posts with the form.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Accessible name of the editable area when there is no enclosing <see cref="BxFormField"/> label. Defaults to <see cref="BxMessages.EditorLabel"/>.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public EditorUi? Ui { get; set; }
+
+    /// <summary>
+    /// The most characters of HTML the editor reports (<see cref="BxFieldBase{TValue}.ValueChanged"/>), or null for no limit. A value longer than that is never sent to .NET: the
+    /// editor keeps it on the page, marks the text invalid (<c>aria-invalid</c>, and <c>data-over-limit</c> on the element) and raises <see cref="OnLimit"/>, so the
+    /// bound value stays the last one that fit. Measured on the HTML the editor writes, in UTF-16 characters; a server that cleans or rewrites the HTML should measure again.
+    /// </summary>
+    [Parameter] public int? MaxLength { get; set; }
+
+    /// <summary>
+    /// Raised when the HTML goes past <see cref="MaxLength"/>, while it keeps changing past it, and once more when it is back within it. Settles after 400 ms without typing, like the value.
+    /// </summary>
+    [Parameter] public EventCallback<BxLimitEventArgs> OnLimit { get; set; }
+
+    /// <summary>
+    /// The schemes an image address may have: <c>http</c> and <c>https</c> (the default, <c>null</c>) or one of them. An address with another scheme, no host, a user name or
+    /// longer than 2,048 characters is refused when it is entered, with a message that names the schemes, and is not an image when it is pasted or loaded. List
+    /// what the server keeps: a server that keeps only https images should say so here.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? ImageSchemes { get; set; }
+
+    /// <summary>
+    /// The schemes a link may have, as absolute addresses (for example <c>https</c>, <c>http</c> and <c>mailto</c>). Without a list, the editor takes what TipTap takes: those schemes
+    /// and a few more (tel:, ftp:), and relative addresses. With one, an address of another scheme or a relative one is refused when it is entered, with a message that names the
+    /// schemes, and is not a link when it is pasted, typed or loaded. List what the server keeps.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? LinkSchemes { get; set; }
+
+    private EventCallback<BxLimitEventArgs> LimitHandler =>
+        OnLimit.HasDelegate ? EventCallback.Factory.Create<BxLimitEventArgs>(this, OnLimitReported) : default;
+
+    private static string? Schemes(IReadOnlyList<string>? schemes) =>
+        schemes is { Count: > 0 } ? string.Join(' ', schemes.Select(s => s.Trim().TrimEnd(':').ToLowerInvariant()).Where(s => s.Length > 0)) : null;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxLimitEventArgs))]
+    private Task OnLimitReported(BxLimitEventArgs e) => OnLimit.InvokeAsync(e);
+
+    private EventCallback<BxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<BxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Editor, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(BxChangeEventArgs))]
+    private async Task OnChange(BxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = e.Value ?? "";
+        if (value == (Value ?? ""))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<bx-editor data-bx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                    data-value="@(Value ?? "")"
+                    data-placeholder="@Placeholder"
+                    data-readonly="@(ReadOnly ? "" : null)"
+                    data-label="@(Label ?? Messages.EditorLabel)"
+                    data-task-label="@Messages.EditorTaskItem"
+                    data-max-length="@(MaxLength is > 0 ? MaxLength : null)"
+                    data-image-schemes="@Schemes(ImageSchemes)"
+                    data-link-schemes="@Schemes(LinkSchemes)"
+                    data-labelledby="@Field?.LabelId"
+                    data-describedby="@Field?.DescribedBy"
+                    data-invalid="@(binding.Invalid ? "true" : null)"
+                    data-required="@(Required || Field?.Required == true ? "true" : null)"
+                    data-editor-id="@ControlId"
+                    disabled="@Disabled"
+                    class="@binding.WithFieldClass(_slots["root"])"
+                    data-color="@Color.Value"
+                    @onbxchange="ChangeHandler"
+                    @onbxchange:stopPropagation="true"
+                    @onbxlimit="LimitHandler"
+                    @onbxlimit:stopPropagation="true"
+                    @attributes="AdditionalAttributes">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            @ChildContent
+            <div class="@_slots["content"]" data-slot="content">
+                @if (Options.SanitizeEditorHtml is { } sanitize)
+                {
+                    <div class="@_slots["fallback"]" data-slot="fallback">@((MarkupString)sanitize(Value ?? ""))</div>
+                }
+                else
+                {
+                    @* No sanitizer configured: show the text, escaped, never the posted markup itself. *@
+                    <div class="@_slots["fallback"] whitespace-pre-line" data-slot="fallback">@Lux.UI.Internal.HtmlText.ToPlainText(Value)</div>
+                }
+                <div class="@_slots["base"]" data-slot="editor" data-permanent></div>
+            </div>
+        </bx-editor>;
+}

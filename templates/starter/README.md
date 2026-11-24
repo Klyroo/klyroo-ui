@@ -1,6 +1,6 @@
 # Starter
 
-A minimal Blazor app on Blux UI: a header with navigation, a language select and a color mode button, a home page with a hero, a features grid and an interactive demo, an about page and a footer. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
+A minimal Blazor app on Lux.UI: a header with navigation, a language select and a color mode button, a home page with a hero, a features grid and an interactive demo, an about page and a footer. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
 
 <!-- rename:start -->
 ## Make it yours
@@ -22,7 +22,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Starter.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `Starter.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Starter.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -36,8 +36,8 @@ src/
 
 - Replace `Pages/Home.razor` with your own home page and edit `Layout/MainLayout.razor` for the header, the footer and the navigation.
 - `StarterServices.cs` configures Blux for the three hosts in one place (colors, locales, default sizes).
-- Tailwind is compiled by the build from `src/Starter.Shared/Styles/app.css` (`<BluxTailwind>true</BluxTailwind>` in `Starter.Shared.csproj`), with no Node and no `package.json`. The result is served at `_content/Starter.Shared/app.css`, which both the web host and the MAUI app link.
-- Package versions are in `Directory.Packages.props`. The Blux.UI version is pinned there.
+- Tailwind is compiled by the build from `src/Starter.Shared/Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `Starter.Shared.csproj`), with no Node and no `package.json`. The result is served at `_content/Starter.Shared/app.css`, which both the web host and the MAUI app link.
+- Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
 
 ## Develop
 
@@ -45,7 +45,7 @@ Run the app with `dotnet watch`, and Tailwind in a second terminal, so a new uti
 
 ```bash
 dotnet watch --project src/Starter.Web
-dotnet build src/Starter.Shared -t:BluxTailwindWatch
+dotnet build src/Starter.Shared -t:LuxTailwindWatch
 ```
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.

@@ -1,0 +1,19 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@* A list element: its direct children must be <li>. *@
+<ul class="@_slots["root"]" @attributes="AdditionalAttributes">@ChildContent</ul>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The items, as <c>li</c> elements.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Draws a line between the items; otherwise they are only spaced.</summary>
+    [Parameter] public bool Divide { get; set; } = true;
+    [Parameter] public PageListUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageList, new Dictionary<string, string?> { ["divide"] = VariantValue.Of(Divide) }, Ui, "root");
+}

@@ -4,7 +4,7 @@ using Chat.Maui.Services;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Chat.Shared.Services;
-using Blux.UI;
+using Lux.UI;
 
 namespace Chat.Maui;
 

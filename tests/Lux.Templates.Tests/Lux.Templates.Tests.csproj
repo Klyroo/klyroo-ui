@@ -1,0 +1,67 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Tests of what the project templates share. templates/_shared/Content is the reference copy of the Markdown content code that every content template
+    (Docs and Changelog, and the ones to come) carries in its own Content folder: it is compiled here as it is, so the unit tests run against the reference, and
+    TemplateCopyTests fails when the copy of a template differs from it. Testing the reference rather than one template's copy keeps a single set of tests
+    for all of them; the copy test is what makes that valid.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" />
+    <PackageReference Include="Markdig" />
+    <PackageReference Include="YamlDotNet" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Lux.UI\Lux.UI.csproj" />
+    <ProjectReference Include="..\..\..\lux-query\src\Lux.Query.Core\Lux.Query.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\templates\_shared\Content\**\*.cs" LinkBase="Shared" />
+    <!-- The release code of the Changelog template (the GitHub client, the cache, the renderer of release notes, the feed): plain C#, no Razor, so it is tested as it is. -->
+    <Compile Include="..\..\templates\changelog\src\Changelog.Web\ReleaseNotes\*.cs" LinkBase="Changelog" />
+    <!-- The sample releases the Changelog template ships. -->
+    <None Include="..\..\templates\changelog\src\Changelog.Web\data\releases.json" Link="changelog-releases.json" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The data and the services of the Dashboard template: plain C#, no Razor, so the sample data, the schema of the customer table and the stores are tested as they are. -->
+    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Data\*.cs" LinkBase="Dashboard\Data" />
+    <Compile Include="..\..\templates\dashboard\src\Dashboard.Shared\Services\AppStores.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppState.cs;..\..\templates\dashboard\src\Dashboard.Shared\Services\AppearanceStore.cs" LinkBase="Dashboard\Services" />
+    <!-- The data code of the SaaS template (the library that reads the posts and versions, the pricing, the copy): plain C#, no Razor, so it is tested as it is, with its sample content. -->
+    <Compile Include="..\..\templates\saas\src\SaaS.Web\Site\*.cs" LinkBase="SaaS" />
+    <!-- The data code of the Portfolio template (the library that reads the projects and articles, the resume, the talks, the contact message): plain C#, no Razor, so it is tested as it is, with its sample content. -->
+    <Compile Include="..\..\templates\portfolio\src\Portfolio.Web\Site\*.cs" LinkBase="Portfolio" />
+    <!-- The plain C# of the Chat template: the providers of replies and their limits, the conversations, the Markdown of an answer and the endpoint of the web host. The renderer it uses is the reference compiled above (its copies are checked by TemplateCopyTests). -->
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Assistant\*.cs" LinkBase="Chat\Assistant" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Data\*.cs" LinkBase="Chat\Data" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Services\ConversationState.cs;..\..\templates\chat\src\Chat.Shared\Services\ConversationStore.cs" LinkBase="Chat\Services" />
+    <Compile Include="..\..\templates\chat\src\Chat.Shared\Markdown\MessageMarkdown.cs" LinkBase="Chat\Markdown" />
+    <Compile Include="..\..\templates\chat\src\Chat.Web\AssistantEndpoints.cs;..\..\templates\chat\src\Chat.Web\CallerAccess.cs" LinkBase="Chat" />
+    <!-- The plain C# of the Editor template: the allow-list that cleans the HTML of a document, the documents and their JSON, and the state that keeps them within the bounds. -->
+    <Compile Include="..\..\templates\editor\src\Editor.Shared\Data\*.cs" LinkBase="Editor\Data" />
+    <Compile Include="..\..\templates\editor\src\Editor.Shared\Services\DocumentState.cs;..\..\templates\editor\src\Editor.Shared\Services\DocumentSaver.cs;..\..\templates\editor\src\Editor.Shared\Services\DocumentStore.cs" LinkBase="Editor\Services" />
+    <!-- The list of templates of the gallery: the shared folder must never be one of them. -->
+    <Compile Include="..\..\..\lux.stack\site\Lux.Stack.Site.Client\Templates\TemplateRegistry.cs" Link="TemplateRegistry.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <!-- What Microsoft.NET.Sdk.Web imports for the Changelog template, whose release code is compiled here. -->
+    <Using Include="Microsoft.AspNetCore.Builder" />
+    <Using Include="Microsoft.AspNetCore.Http" />
+    <Using Include="Microsoft.AspNetCore.Routing" />
+    <Using Include="Microsoft.Extensions.Configuration" />
+    <Using Include="Microsoft.Extensions.DependencyInjection" />
+    <Using Include="Microsoft.Extensions.Hosting" />
+    <Using Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+
+</Project>

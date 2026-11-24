@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Blux.Maui.Shared/Blux.Maui.Shared.csproj" />
-  <Project Path="Blux.Maui.Web/Blux.Maui.Web.csproj" />
-  <Project Path="Blux.Maui/Blux.Maui.csproj" />
-</Solution>

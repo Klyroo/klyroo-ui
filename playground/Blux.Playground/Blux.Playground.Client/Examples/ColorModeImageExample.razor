@@ -1,9 +1,0 @@
-<BxColorModeImage Light="@Scene("#fef3c7", "#f59e0b")" Dark="@Scene("#0f172a", "#e2e8f0")" Alt="A sun by day, a moon by night"
-                  width="320" height="160" Class="rounded-lg" data-testid="color-mode-image" />
-
-@code {
-    // Two SVG pictures stand in for two real image files.
-    private static string Scene(string sky, string body) =>
-        "data:image/svg+xml," + Uri.EscapeDataString(
-            $"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 160'><rect width='320' height='160' fill='{sky}'/><circle cx='160' cy='80' r='34' fill='{body}'/></svg>");
-}

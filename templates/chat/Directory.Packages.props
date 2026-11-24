@@ -4,7 +4,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Blux.UI" Version="0.1.0-alpha" />
+    <PackageVersion Include="Lux.UI" Version="0.1.0-alpha" />
     <!-- Markdown to HTML (BSD-2-Clause): the answers of the assistant are Markdown. -->
     <PackageVersion Include="Markdig" Version="1.6.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />

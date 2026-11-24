@@ -1,8 +1,0 @@
-@typeparam TItem
-@* Hands the context of the enclosing list to a test. *@
-@code {
-    [CascadingParameter] public DataListContext<TItem> Context { get; set; } = default!;
-    [Parameter] public Action<DataListContext<TItem>>? OnContext { get; set; }
-
-    protected override void OnInitialized() => OnContext?.Invoke(Context);
-}

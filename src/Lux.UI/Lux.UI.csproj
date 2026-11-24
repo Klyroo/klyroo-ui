@@ -1,0 +1,87 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <!-- VersionPrefix and VersionSuffix live in build/Version.props, shared with the dotnet tool. -->
+  <Import Project="..\..\build\Version.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Lux.UI</RootNamespace>
+    <PackageId>Lux.UI</PackageId>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>Accessible, themable Blazor components styled with Tailwind CSS v4.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>blazor;components;ui;tailwind</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- BL0007: Color and Size have a getter that falls back to LuxOptions.Defaults, which an auto property cannot do. -->
+    <NoWarn>$(NoWarn);CS1591;BL0007</NoWarn>
+    <IsTrimmable>true</IsTrimmable>
+  </PropertyGroup>
+
+  <!-- Package metadata. -->
+  <PropertyGroup>
+    <Authors>lux-ui contributors</Authors>
+    <Copyright>Copyright (c) 2026 lux-ui contributors</Copyright>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReleaseNotes>See CHANGELOG.md, included in this package.</PackageReleaseNotes>
+    <RepositoryType>git</RepositoryType>
+    <!-- TODO(release): set both once the hosting account is decided (for example https://github.com/OWNER/lux-ui).
+         Left empty on purpose: the pack neither warns nor fails without them, but no repository link appears on nuget.org. -->
+    <RepositoryUrl></RepositoryUrl>
+    <PackageProjectUrl></PackageProjectUrl>
+  </PropertyGroup>
+
+  <!-- Reproducible build and debugging experience. SourceLink for GitHub is built into the .NET SDK (8+): no package reference. -->
+  <PropertyGroup>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Only once RepositoryUrl is set: otherwise the pack would fill it from the git origin (in CI, the checkout's URL). -->
+    <PublishRepositoryUrl Condition="'$(RepositoryUrl)' != ''">true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" />
+    <PackageReference Include="TailwindMerge.NET" />
+  </ItemGroup>
+
+  <!-- The name parser and the SVG reader are shared with the build task, so the library and the task read an icon name the same way. -->
+  <ItemGroup>
+    <Compile Include="..\Lux.UI.Build.Tasks\Icons\IconNames.cs;..\Lux.UI.Build.Tasks\Icons\IconCollections.g.cs;..\Lux.UI.Build.Tasks\Icons\SvgImport.cs;..\Lux.UI.Build.Tasks\Icons\SvgSanitizer.cs" LinkBase="Internal\Icons" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Lux.UI.Tests" />
+    <InternalsVisibleTo Include="Lux.UI.ClassExtractor" />
+    <InternalsVisibleTo Include="Lux.UI.DocsBundle" />
+    <InternalsVisibleTo Include="Lux.Stack.DocsBundle" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../CHANGELOG.md" Pack="true" PackagePath="/" />
+    <None Include="assets/icon.png" Pack="true" PackagePath="/" />
+    <None Include="buildTransitive/Lux.UI.targets;buildTransitive/Lux.UI.Tasks.targets;buildTransitive/Lux.UI.Fonts.targets;buildTransitive/Lux.UI.Icons.targets;buildTransitive/Lux.UI.Tailwind.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+  </ItemGroup>
+
+  <!--
+    The MSBuild task assembly (self-hosted fonts and the build features to come): built first, then shipped next to the targets
+    that load it. It is never referenced by the app, so it adds no dependency.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\Lux.UI.Build.Tasks\Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" PrivateAssets="all" />
+    <None Include="..\Lux.UI.Build.Tasks\bin\$(Configuration)\netstandard2.0\Lux.UI.Build.Tasks.dll" Pack="true" PackagePath="build/tasks/;buildTransitive/tasks/" Visible="false" />
+  </ItemGroup>
+
+  <!-- Sources of the generated assets: not shipped as content. -->
+  <ItemGroup>
+    <Content Remove="js/**;styles/**" />
+    <None Include="js/**;styles/**" Pack="false" />
+  </ItemGroup>
+
+</Project>

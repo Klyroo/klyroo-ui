@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { storeTimeZone, TIME_ZONE_COOKIE } from '../../src/Blux.UI.Tools/js/time-zone-cookie.js';
+import { storeTimeZone, TIME_ZONE_COOKIE } from '../../src/Lux.UI.Tools/js/time-zone-cookie.js';
 
 // A document with a cookie jar that keeps what is assigned, the way the name=value part of document.cookie does.
 function fakeDocument(baseURI, hasBase = true) {

@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>$(BluxSampleTfm)</TargetFramework>
+    <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Lux.Maui.Shared\Lux.Maui.Shared.csproj" />
+  </ItemGroup>
+
+  <!--
+    The Blux build features (self-hosted fonts, bundled icons). An app gets all of this from the Lux.UI package (buildTransitive);
+    here Lux.UI is a project reference, so the task assembly is built first and the targets are imported by hand.
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Lux.UI.Build.Tasks\Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+  <PropertyGroup>
+    <LuxBuildTasksAssembly>$(MSBuildThisFileDirectory)..\..\..\src\Lux.UI.Build.Tasks\bin\$(Configuration)\netstandard2.0\Lux.UI.Build.Tasks.dll</LuxBuildTasksAssembly>
+  </PropertyGroup>
+  <Import Project="..\..\..\src\Lux.UI\buildTransitive\Lux.UI.Tasks.targets" />
+  <Import Project="..\..\..\src\Lux.UI\buildTransitive\Lux.UI.Fonts.targets" />
+  <Import Project="..\..\..\src\Lux.UI\buildTransitive\Lux.UI.Icons.targets" />
+
+  <ItemGroup>
+    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <!-- The icon scan also reads the pages of the shared project. -->
+    <LuxIconScanDirectory Include="..\Lux.Maui.Shared" />
+  </ItemGroup>
+
+</Project>

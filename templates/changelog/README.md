@@ -1,6 +1,6 @@
 # Changelog
 
-A release notes site on Blux UI, built from the releases of a GitHub repository: a timeline of versions (date, version, author, notes), a page for each release, an Atom feed, and an "older releases" pagination. The releases are read from the GitHub REST API while the site runs and kept in memory for an hour. The product in the sample releases (Tern, a command line tool) and every name in them are made up.
+A release notes site on Lux.UI, built from the releases of a GitHub repository: a timeline of versions (date, version, author, notes), a page for each release, an Atom feed, and an "older releases" pagination. The releases are read from the GitHub REST API while the site runs and kept in memory for an hour. The product in the sample releases (Tern, a command line tool) and every name in them are made up.
 
 The pages are rendered by the server and sent as HTML: no circuit, no WebAssembly download. The notes of a release are Markdown written by other people, so they are rendered as untrusted input (see "Release notes are untrusted" below).
 
@@ -13,7 +13,7 @@ This repository is a GitHub template. After you create your repository from it, 
 dotnet run rename.cs MyApp
 ```
 
-`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Blux UI components that contain the template name (`BxChangelogVersions`) are left alone.
+`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Lux.UI components that contain the template name (`BxChangelogVersions`) are left alone.
 
 <!-- rename:end -->
 ## Run
@@ -30,7 +30,7 @@ Out of the box the site shows the sample releases of `src/Changelog.Web/data/rel
 Changelog__Repository=dotnet/aspnetcore dotnet run --project src/Changelog.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `Changelog.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Changelog.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## Settings
 
@@ -126,7 +126,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Changelog.Web
-dotnet build src/Changelog.Web -t:BluxTailwindWatch
+dotnet build src/Changelog.Web -t:LuxTailwindWatch
 ```
 
 ## The shared Markdown code

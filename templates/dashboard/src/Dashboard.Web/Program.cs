@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Blux.UI;
-using Blux.UI.Server;
+using Lux.UI;
+using Lux.UI.Server;
 using Dashboard.Shared;
 using Dashboard.Web.Components;
 
@@ -28,7 +28,7 @@ if (forwardedHeaders)
 builder.Services.AddDashboardUi();
 // The cookies of the request, for the components that render before the browser is there: the color choice of the app, and the time zone of the customers table (its
 // days are the user's from the first byte). Server only: the WebAssembly client and the MAUI app have no request.
-builder.Services.AddBluxServer();
+builder.Services.AddLuxServer();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents()
     .AddInteractiveWebAssemblyComponents();

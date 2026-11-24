@@ -1,5 +1,0 @@
-@* Shows which runtime rendered the page. E2E tests wait on data-interactive before interacting. *@
-<p class="inline-flex items-center gap-1.5 text-xs text-(--blux-text-muted)" data-testid="renderer" data-interactive="@(RendererInfo.IsInteractive ? "true" : "false")">
-    <span class="size-1.5 rounded-full @(RendererInfo.IsInteractive ? "bg-emerald-500" : "bg-zinc-400")" aria-hidden="true"></span>
-    <span>Rendered by <strong class="font-medium text-(--blux-text)">@RendererInfo.Name</strong>@(RendererInfo.IsInteractive ? ", interactive" : ", static")</span>
-</p>

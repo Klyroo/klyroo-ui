@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace Portfolio.Web.Site;
 
@@ -43,7 +43,7 @@ public static class SiteInfo
     public const string ContactHref = "contact";
     public const string UsesHref = "uses";
 
-    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Blux UI.";
+    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
 
     // Layout
 

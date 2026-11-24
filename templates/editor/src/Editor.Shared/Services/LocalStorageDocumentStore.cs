@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Editor.Shared.Data;
 using Microsoft.AspNetCore.Components;
 using System.Text.Json;

@@ -1,0 +1,34 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@*
+    A button that switches between light and dark. The icon follows the "dark" class of the page through CSS and the
+    click is handled in the browser, so it works on static pages and stays in sync with every other color mode control.
+*@
+<BxButton Color="Color" Variant="Variant" Size="Size" Square="@(Label is null)" Label="@Label" Class="@Class"
+          @attributes="AdditionalAttributes"
+          aria-label="@(Label is null ? (AriaLabel ?? Messages.ToggleColorMode) : null)"
+          data-bx-color-mode="toggle">
+    <LeadingIcon>
+        @RenderIcon(Options.Icons.Dark, _slots["moon"])
+        @RenderIcon(Options.Icons.Light, _slots["sun"])
+    </LeadingIcon>
+</BxButton>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+
+    /// <summary>Visible text next to the icon. Without it the button is icon-only and needs <see cref="AriaLabel"/>.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Accessible name of an icon-only button. Defaults to the built-in text.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ColorModeButton, new Dictionary<string, string?>(), null, "");
+}

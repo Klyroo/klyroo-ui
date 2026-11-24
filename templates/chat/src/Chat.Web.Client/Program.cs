@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;

@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Editor.Maui.Services;
 using Editor.Shared;
 using Editor.Shared.Services;
-using Blux.UI;
+using Lux.UI;
 
 namespace Editor.Maui;
 

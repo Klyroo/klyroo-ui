@@ -1,0 +1,136 @@
+@namespace Lux.UI
+@implements IDisposable
+@inherits BxComponentBase
+
+@*
+    Site navigation as a disclosure, not role="menu": links in a list, and sub-items behind buttons with aria-expanded.
+    Horizontal: sub-items open in a <BxPopover> panel. Vertical: they form a <BxCollapsible> group.
+    The active link carries aria-current="page", computed from the current address, so it is right in static rendering too.
+*@
+<nav aria-label="@AriaLabel" data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <ul class="@_slots["list"]">
+        @foreach (var item in Items)
+        {
+            <li class="@_slots["item"]">@Entry(item)</li>
+        }
+    </ul>
+</nav>
+
+@code {
+    private SlotSet _slots = default!;
+    private bool _horizontal = true;
+    private bool _subscribed;
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<BxNavigationItem> Items { get; set; } = [];
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+
+    /// <summary>Accessible name of the navigation landmark. Needed when the page has several.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public NavigationMenuUi? Ui { get; set; }
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        _subscribed = true;
+    }
+
+    protected override void OnParametersSet()
+    {
+        _horizontal = Orientation == BxOrientation.Horizontal;
+        _slots = ResolveSlots(Options.NavigationMenu, new Dictionary<string, string?>
+        {
+            ["orientation"] = _horizontal ? "horizontal" : "vertical",
+        }, Ui, "root");
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
+        _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (_subscribed) Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private bool IsActive(BxNavigationItem item)
+    {
+        if (item.Active is { } forced) return forced;
+        if (item.Children is { Count: > 0 }) return item.Children.Any(IsActive);
+        if (string.IsNullOrEmpty(item.Href)) return false;
+        return LinkMatcher.Matches(Navigation, item.Href, item.Exact);
+    }
+
+    private RenderFragment Entry(BxNavigationItem item) =>
+        @<text>
+            @if (item.Children is { Count: > 0 })
+            {
+                if (_horizontal)
+                {
+                    <BxPopover Placement="bottom-start" Role="@((string?)null)" Ui="_panelUi">
+                        <ChildContent>
+                            <button type="button" disabled="@item.Disabled" data-state="@(IsActive(item) ? "active" : null)" class="@_slots["trigger"]">
+                                @Inner(item)
+                                @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
+                            </button>
+                        </ChildContent>
+                        <Content>
+                            <ul class="@_slots["panelList"]">
+                                @foreach (var child in item.Children)
+                                {
+                                    <li>@Link(child)</li>
+                                }
+                            </ul>
+                        </Content>
+                    </BxPopover>
+                }
+                else
+                {
+                    <BxCollapsible Open="@IsActive(item)" Disabled="@item.Disabled" ShowIcon="false" Ui="_groupUi">
+                        <Trigger>
+                            @Inner(item)
+                            @RenderIcon(Options.Icons.ChevronDown, _slots["chevron"])
+                        </Trigger>
+                        <ChildContent>
+                            <ul class="@_slots["groupList"]">
+                                @foreach (var child in item.Children)
+                                {
+                                    <li>@Entry(child)</li>
+                                }
+                            </ul>
+                        </ChildContent>
+                    </BxCollapsible>
+                }
+            }
+            else
+            {
+                @Link(item)
+            }
+        </text>;
+
+    private RenderFragment Link(BxNavigationItem item) =>
+        @<text>
+            @if (item.Href is not null && !item.Disabled)
+            {
+                <a href="@item.Href" target="@item.Target" aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
+            }
+            else
+            {
+                <span aria-disabled="@(item.Disabled ? "true" : null)" class="@_slots["link"]">@Inner(item)</span>
+            }
+        </text>;
+
+    private RenderFragment Inner(BxNavigationItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                <span class="@_slots["icon"]" aria-hidden="true">@item.Icon</span>
+            }
+            <span class="@_slots["label"]">@item.Label</span>
+        </text>;
+
+    private PopoverUi _panelUi => new() { Content = _slots["panel"] };
+    private CollapsibleUi _groupUi => new() { Root = _slots["group"], Trigger = _slots["trigger"] };
+}

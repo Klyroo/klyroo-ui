@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Chat.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,7 +14,7 @@ public static class ChatServices
     /// </summary>
     public static IServiceCollection AddChatUi(this IServiceCollection services)
     {
-        services.AddBluxUi();
+        services.AddLuxUi();
         // A host with system bars (the MAUI app) registers its own before calling this; the others get one that does nothing.
         services.TryAddSingleton<ISystemBars, NoSystemBars>();
         // Where the conversations are kept. The local storage of the browser by default: replace it to keep them somewhere else (see Services/ConversationStore.cs).

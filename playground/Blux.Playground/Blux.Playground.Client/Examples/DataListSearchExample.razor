@@ -1,6 +1,0 @@
-@* The default layout: a schema that declares search fields adds the search field, next to the result count and the refresh button. Search "umbrella" (the customer) or "overdue"
-   (the status), in any case and without accents. Searching goes back to the first page and replaces the address (find.q) instead of adding an entry, so Back leaves the page
-   rather than replaying every keystroke; a search that matches nothing offers to clear itself. *@
-<div class="w-full" data-testid="list-search">
-    <BxDataList TItem="Invoice" Label="Invoices with search" Schema="InvoiceData.Schema" Items="InvoiceData.All" UrlKey="find" ResultJson="DemoJson.Default.DataListResultInvoice" />
-</div>

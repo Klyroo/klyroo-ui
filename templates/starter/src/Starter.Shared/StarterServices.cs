@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Starter.Shared.Services;
@@ -13,7 +13,7 @@ public static class StarterServices
     /// </summary>
     public static IServiceCollection AddStarterUi(this IServiceCollection services)
     {
-        services.AddBluxUi();
+        services.AddLuxUi();
         // A host with system bars (the MAUI app) registers its own before calling this; the others get one that does nothing.
         services.TryAddSingleton<ISystemBars, NoSystemBars>();
         return services;

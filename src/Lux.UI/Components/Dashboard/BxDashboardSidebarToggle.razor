@@ -1,0 +1,35 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@*
+    Opens the off-canvas sidebar panel; visible below the lg breakpoint, where the sidebar is not a column. The panel is the
+    aside of the sidebar, a popover that the browser makes modal while it is open (js/layout.js), which also points this
+    button at it and keeps aria-expanded and aria-controls up to date, so it works in static rendering.
+*@
+<BxButton Square Variant="Variant" Color="Color" Size="Size" Class="@_slots["root"]"
+          LeadingIcon="@(RenderIcon(Options.Icons.Menu, "size-5"))"
+          aria-label="@(Label ?? Messages.OpenSidebar)" aria-haspopup="dialog" popovertarget="@TargetId"
+          data-bx-sidebar-open="" data-bx-sidebar-for="@(For ?? Context?.Key)"
+          @attributes="AdditionalAttributes" />
+
+@code {
+    private SlotSet _slots = default!;
+
+    // The panel of the sidebar is named by its storage id, so the button is a native popover invoker from the server: it opens the panel before any script runs.
+    private string? TargetId => (For ?? Context?.Key) is { Length: > 0 } key ? BxSidebar.PanelId(key) : null;
+
+    [CascadingParameter] private DashboardContext? Context { get; set; }
+
+    /// <summary>The storage id of the sidebar to open. Defaults to the one of the enclosing group, or the sidebar of the same dashboard.</summary>
+    [Parameter] public string? For { get; set; }
+
+    /// <summary>Accessible name. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DashboardSidebarToggle, new Dictionary<string, string?>(), null, "root");
+}

@@ -1,7 +1,0 @@
-<div class="grid w-full gap-4 sm:grid-cols-2">
-    @foreach (var variant in Enum.GetValues<PageCardVariant>())
-    {
-        <BxPageCard Variant="variant" Icon="star" Title="@($"{variant} card")"
-                    Description="Hover the spotlight card to see its glow." />
-    }
-</div>

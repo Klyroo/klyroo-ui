@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace Dashboard.Shared.Data;
 

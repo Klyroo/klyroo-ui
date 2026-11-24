@@ -1,19 +1,16 @@
 {
-  "name": "blux-ui-build",
+  "name": "lux-ui-build",
   "private": true,
-  "description": "Builds the generated assets of Blux.UI. Only needed to work on the library, never by apps using it.",
+  "description": "Builds the generated assets of Lux.UI. Only needed to work on the library, never by apps using it.",
   "type": "module",
   "scripts": {
-    "classes": "dotnet run --project build/Blux.UI.ClassExtractor -- src/Blux.UI",
-    "classes:tools": "dotnet build src/Blux.UI.Tools -c Debug --nologo -v q && dotnet run --project build/Blux.UI.ClassExtractor -- src/Blux.UI.Tools --assembly src/Blux.UI.Tools/bin/Debug/net10.0/Blux.UI.Tools.dll --extension Blux.UI.Tools.BluxToolsOptions --only-extensions --theme-css blux-tools.theme.css",
-    "css": "tailwindcss -i src/Blux.UI/styles/blux.css -o src/Blux.UI/wwwroot/blux.css --minify && tailwindcss -i src/Blux.UI/styles/blux.preflight.css -o src/Blux.UI/wwwroot/blux.preflight.css --minify",
-    "js": "esbuild src/Blux.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/Blux.UI.lib.module.js",
-    "js:tools": "esbuild src/Blux.UI.Tools/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI.Tools/wwwroot/Blux.UI.Tools.lib.module.js",
-    "editor": "esbuild src/Blux.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Blux.UI/wwwroot/blux-editor.js",
+    "classes": "dotnet run --project build/Lux.UI.ClassExtractor -- src/Lux.UI",
+    "css": "tailwindcss -i src/Lux.UI/styles/lux.css -o src/Lux.UI/wwwroot/lux.css --minify && tailwindcss -i src/Lux.UI/styles/lux.preflight.css -o src/Lux.UI/wwwroot/lux.preflight.css --minify",
+    "js": "esbuild src/Lux.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Lux.UI/wwwroot/Lux.UI.lib.module.js",
+    "editor": "esbuild src/Lux.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Lux.UI/wwwroot/lux-editor.js",
     "icons": "node build/gen-icons.mjs",
     "test:js": "node --test tests/js/*.test.mjs",
-    "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor && npm run classes:tools && npm run js:tools && npm run site:css",
-    "site:css": "tailwindcss -i playground/Blux.Playground/Blux.Playground/Styles/site.css -o playground/Blux.Playground/Blux.Playground/wwwroot/site.css --minify"
+    "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor"
   },
   "devDependencies": {
     "@floating-ui/dom": "1.8.0",

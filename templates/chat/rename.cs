@@ -69,7 +69,7 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
     return Fail($"Run this from the root of the repository, the folder that holds rename.cs and {Template}.slnx (it was already renamed if the solution has another name).");
 }
 
-// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Blux UI names with "Chat" is not the template
+// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Lux.UI names with "Chat" is not the template
 // name and is left alone: the components (BxChatMessages, BxChatPrompt...), their types (ChatRole, ChatStatus, ChatMessagesUi...) and the attributes of their
 // elements (data-bx-chat-input, bx-chat-messages).
 const string BluxChat = "(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)";

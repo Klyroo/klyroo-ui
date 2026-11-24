@@ -1,6 +1,6 @@
 # SaaS
 
-The marketing site of a subscription product, on Blux UI: a landing page, a pricing page with a monthly and yearly switch, a plan comparison and a FAQ, a blog, a documentation section with search, a changelog, legal pages, and sign-in, sign-up and forgot-password pages. The product (Tideline, heartbeat monitoring for scheduled jobs) and every name, price and quote in it are made up.
+The marketing site of a subscription product, on Lux.UI: a landing page, a pricing page with a monthly and yearly switch, a plan comparison and a FAQ, a blog, a documentation section with search, a changelog, legal pages, and sign-in, sign-up and forgot-password pages. The product (Tideline, heartbeat monitoring for scheduled jobs) and every name, price and quote in it are made up.
 
 The site is rendered by the server and sent as HTML. There is no circuit and no WebAssembly download, so it is quick to load and cheap to host. The documentation, the blog posts, the changelog and the legal pages are Markdown files that you write.
 
@@ -26,7 +26,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/SaaS.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `SaaS.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `SaaS.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -51,8 +51,8 @@ src/SaaS.Web/
 - Change the name, links and words in `Site/SiteInfo.cs`, and the plans, prices and questions in `Site/PricingInfo.cs`. The label of the yearly option ("Yearly, 2 months free") is worked out from the prices. `ContactUrl`, `StatusUrl` and the two sign-in addresses are placeholders on example.com: point them at your own.
 - Reorder, remove or add a section of the home page in `Components/Pages/Home.razor`. A section is a component, so a new one is a new file in `Components/Sections`.
 - The text is English only. The language select translates what Blux itself writes (labels, menus, the messages of the forms) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteInfo` or move the strings to resource files.
-- Tailwind is compiled by the build from `Styles/app.css` (`<BluxTailwind>true</BluxTailwind>` in `SaaS.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
-- Package versions are in `Directory.Packages.props`. The Blux.UI version is pinned there.
+- Tailwind is compiled by the build from `Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `SaaS.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
+- Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
 
 ## Write content
 
@@ -130,7 +130,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/SaaS.Web
-dotnet build src/SaaS.Web -t:BluxTailwindWatch
+dotnet build src/SaaS.Web -t:LuxTailwindWatch
 ```
 
 In Development the site reads the content again a moment after a `.md` or `.yml` file changes (reload the page to see it). A file with a mistake does not take the site down: the previous content stays and the error, with the file name, is in the log. A published site reads its files once, when it starts, and stops with the file name if one cannot be used.

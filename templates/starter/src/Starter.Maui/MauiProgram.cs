@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Starter.Maui.Services;
 using Starter.Shared;
 using Starter.Shared.Services;
-using Blux.UI;
+using Lux.UI;
 
 namespace Starter.Maui;
 

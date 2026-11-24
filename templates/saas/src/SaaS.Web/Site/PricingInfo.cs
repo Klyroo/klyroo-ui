@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace SaaS.Web.Site;
 

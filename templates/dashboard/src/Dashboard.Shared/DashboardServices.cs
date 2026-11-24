@@ -1,5 +1,6 @@
-using Blux.UI;
-using Blux.UI.Tools;
+using Lux.UI;
+using Lux.Table;
+using Lux.Query;
 using Dashboard.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -14,8 +15,10 @@ public static class DashboardServices
     /// </summary>
     public static IServiceCollection AddDashboardUi(this IServiceCollection services)
     {
-        // Blux.UI and the data list. The primary color is the one of the appearance dialog (AppearanceState), not an option here.
-        services.AddBluxUiTools();
+        // Lux.UI, Lux.Query, and Lux.Table. The primary color is the one of the appearance dialog (AppearanceState), not an option here.
+        services.AddLuxUi();
+        services.AddLuxQuery();
+        services.AddLuxTable();
         // A host with system bars (the MAUI app) registers its own before calling this; the others get one that does nothing.
         services.TryAddSingleton<ISystemBars, NoSystemBars>();
 

@@ -29,67 +29,67 @@ jobs:
           cache: npm
 
       - run: npm ci
-      # The CSS and JS in src/Blux.UI/wwwroot are committed: rebuilding them must change nothing.
+      # The CSS and JS in src/Lux.UI/wwwroot are committed: rebuilding them must change nothing.
       - name: Generated assets are up to date
         run: |
           npm run build
-          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot src/Blux.UI.Tools/styles/generated src/Blux.UI.Tools/wwwroot src/Blux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
+          changes=$(git status --porcelain -- src/Lux.UI/styles/generated src/Lux.UI/wwwroot src/Lux.UI.Tools/styles/generated src/Lux.UI.Tools/wwwroot src/Lux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
           if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
 
       - name: Browser code unit tests (spatial navigation geometry)
         run: npm run test:js
-      - run: dotnet build Blux.UI.slnx -c Release
+      - run: dotnet build Lux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
-      - name: Blux.UI.Tools tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
-      - name: Blux.UI.Tools.Query tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tools.Query.Tests -c Release --no-build
+        run: dotnet test --project tests/Lux.UI.Tests -c Release --no-build
+      - name: Lux.UI.Tools tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Lux.UI.Tools.Tests -c Release --no-build
+      - name: Lux.UI.Tools.Query tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Lux.UI.Tools.Query.Tests -c Release --no-build
       # The IQueryable applier translated by EF Core to SQLite SQL and compared with the in-memory executor on the same rows.
-      - name: Blux.UI.Tools.Query against EF Core and SQLite (net10.0)
-        run: dotnet test --project tests/Blux.UI.Tools.Query.EfTests -c Release --no-build
+      - name: Lux.UI.Tools.Query against EF Core and SQLite (net10.0)
+        run: dotnet test --project tests/Lux.UI.Tools.Query.EfTests -c Release --no-build
       # Backs IsAotCompatible: the in-memory executor, published with NativeAOT and run (needs clang, which the runner image has).
-      - name: Blux.UI.Tools.EntityFrameworkCore adapter against EF Core and SQLite (net10.0)
-        run: dotnet test --project tests/Blux.UI.Tools.EntityFrameworkCore.Tests -c Release --no-build
+      - name: Lux.UI.Tools.EntityFrameworkCore adapter against EF Core and SQLite (net10.0)
+        run: dotnet test --project tests/Lux.UI.Tools.EntityFrameworkCore.Tests -c Release --no-build
 
-      - name: Blux.UI.Tools.Query NativeAOT smoke
+      - name: Lux.UI.Tools.Query NativeAOT smoke
         run: |
-          dotnet publish tests/Blux.UI.Tools.Query.AotSmoke -c Release -r linux-x64 -o "$RUNNER_TEMP/aot-smoke"
-          "$RUNNER_TEMP/aot-smoke/Blux.UI.Tools.Query.AotSmoke"
+          dotnet publish tests/Lux.UI.Tools.Query.AotSmoke -c Release -r linux-x64 -o "$RUNNER_TEMP/aot-smoke"
+          "$RUNNER_TEMP/aot-smoke/Lux.UI.Tools.Query.AotSmoke"
       - name: AI tooling tests (bundle, MCP tools, llms.txt, skill)
-        run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
+        run: dotnet test --project tests/Lux.UI.Mcp.Tests -c Release --no-build
       - name: Template tests (shared Markdown content code, copies in the templates)
-        run: dotnet test --project tests/Blux.Templates.Tests -c Release --no-build
+        run: dotnet test --project tests/Lux.Templates.Tests -c Release --no-build
       - name: Template demo supervisor tests (docs host, fake demo, watchdog)
         run: dotnet test --project tests/Blux.Playground.Tests -c Release --no-build
       - name: Image provider and local optimizer tests
         run: |
-          dotnet test --project tests/Blux.UI.Images.Tests -c Release --no-build
-          dotnet test --project tests/Blux.UI.Images.Local.Tests -c Release --no-build
-      - name: Blux.UI.Server tests (request cookies)
-        run: dotnet test --project tests/Blux.UI.Server.Tests -c Release --no-build
+          dotnet test --project tests/Lux.UI.Images.Tests -c Release --no-build
+          dotnet test --project tests/Lux.UI.Images.Local.Tests -c Release --no-build
+      - name: Lux.UI.Server tests (request cookies)
+        run: dotnet test --project tests/Lux.UI.Server.Tests -c Release --no-build
       - name: Pack
         run: |
-          dotnet pack src/Blux.UI -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Server -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Mcp -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Images -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Server -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools.Query -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
       # Inspects the .nupkg and .snupkg, then builds a throwaway Blazor Web App against the package in both CSS modes.
       # It packs on its own and needs the network on a fresh runner (framework packages), hence --online.
       - name: Package check
         run: node build/verify-package.mjs --online
-      # The project templates (templates/*): the web apps are built from the source of the library by the solution build above (Blux.UI.slnx lists
-      # them); this exports each one as a repository of its own and builds, runs and renames it against the packed Blux.UI. Needs the network, hence
+      # The project templates (templates/*): the web apps are built from the source of the library by the solution build above (Lux.UI.slnx lists
+      # them); this exports each one as a repository of its own and builds, runs and renames it against the packed Lux.UI. Needs the network, hence
       # after the package check, which warms the NuGet cache.
       # The browser part of the check (the published template in Chromium) uses the E2E project and its Playwright browser.
       - name: Install Chromium for the template check
         run: |
-          dotnet build tests/Blux.UI.E2E
-          pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+          dotnet build tests/Lux.UI.E2E
+          pwsh tests/Lux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
       - name: Template check
         run: node build/verify-templates.mjs
       - uses: actions/upload-artifact@v7
@@ -110,12 +110,12 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-      - run: dotnet build tests/Blux.UI.E2E
+      - run: dotnet build tests/Lux.UI.E2E
       - name: Install browser
-        run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps ${{ matrix.browser }}
+        run: pwsh tests/Lux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps ${{ matrix.browser }}
       # Every test runs in the four render modes of the playground: ssr, server, wasm, auto.
       - name: E2E tests
-        run: dotnet test --project tests/Blux.UI.E2E --no-build
+        run: dotnet test --project tests/Lux.UI.E2E --no-build
         env:
           BLUX_BROWSER: ${{ matrix.browser }}
 
@@ -139,16 +139,16 @@ jobs:
       - run: dotnet publish templates/changelog/src/Changelog.Web -c Release -o published-templates/changelog
       - run: dotnet publish templates/chat/src/Chat.Web -c Release -o published-templates/chat
       - run: dotnet publish templates/editor/src/Editor.Web -c Release -o published-templates/editor
-      - run: dotnet build tests/Blux.UI.E2E
+      - run: dotnet build tests/Lux.UI.E2E
       - name: Install browser
-        run: pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
+        run: pwsh tests/Lux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install --with-deps chromium
       - name: E2E tests
-        run: dotnet test --project tests/Blux.UI.E2E --no-build
+        run: dotnet test --project tests/Lux.UI.E2E --no-build
         env:
           BLUX_PLAYGROUND_PUBLISHED: published
           BLUX_TEMPLATES_PUBLISHED: published-templates
 
-  # The Blazor Hybrid sample (samples/Blux.Maui) and the MAUI heads of the app templates (templates/*/src/*.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
+  # The Blazor Hybrid sample (samples/Lux.Maui) and the MAUI heads of the app templates (templates/*/src/*.Maui): the shared pages in a BlazorWebView. Each platform builds on its own runner;
   # iOS and Mac Catalyst need macOS, Windows needs Windows. Not run locally except for Android.
   maui:
     name: MAUI sample and templates (${{ matrix.name }})
@@ -179,12 +179,12 @@ jobs:
       - name: Install the MAUI workload
         run: dotnet workload install ${{ matrix.workload }}
       - name: Build the sample
-        working-directory: samples/Blux.Maui
-        run: dotnet build Blux.Maui/Blux.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}
+        working-directory: samples/Lux.Maui
+        run: dotnet build Lux.Maui/Lux.Maui.csproj -f ${{ matrix.framework }} -c Release ${{ matrix.args }}
       - name: Build the web host of the sample
         if: matrix.name == 'android'
-        working-directory: samples/Blux.Maui
-        run: dotnet build Blux.Maui.Web/Blux.Maui.Web.csproj -c Release
+        working-directory: samples/Lux.Maui
+        run: dotnet build Lux.Maui.Web/Lux.Maui.Web.csproj -c Release
       # Built from the source of the library (templates/Directory.Build.targets swaps the package), with the global.json of the template.
       - name: Build the Starter template head
         working-directory: templates/starter

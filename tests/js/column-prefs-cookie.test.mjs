@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readColumnPrefs, writeColumnPrefs } from '../../src/Blux.UI.Tools/js/column-prefs-cookie.js';
-import { keyboardWidth, dragWidth } from '../../src/Blux.UI.Tools/js/column-resize.js';
+import { readColumnPrefs, writeColumnPrefs } from '../../src/Lux.UI.Tools/js/column-prefs-cookie.js';
+import { keyboardWidth, dragWidth } from '../../src/Lux.UI.Tools/js/column-resize.js';
 
 function fakeDoc(baseURI = 'http://localhost/', hasBase = true, initial = '', host = null) {
   let stored = initial;

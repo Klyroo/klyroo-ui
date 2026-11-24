@@ -6,11 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <!-- Tailwind compiled by the build (no Node): Styles/app.css becomes app.css, which App.razor links. -->
-    <BluxTailwind>true</BluxTailwind>
+    <LuxTailwind>true</LuxTailwind>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blux.UI" />
+    <PackageReference Include="Lux.UI" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
@@ -22,8 +22,8 @@
 
   <!-- Fonts are downloaded at build time and served from the site's own origin (BxFonts in App.razor links them). -->
   <ItemGroup>
-    <BluxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <BluxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

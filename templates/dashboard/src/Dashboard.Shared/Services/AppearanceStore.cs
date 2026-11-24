@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 

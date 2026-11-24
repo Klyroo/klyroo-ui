@@ -1,9 +1,0 @@
-<div class="flex w-full max-w-xs flex-col gap-3">
-    <BxFormField Label="Color">
-        <BxListbox Items="Colors" Name="color" Value="@(["green"])" />
-    </BxFormField>
-</div>
-
-@code {
-    private static readonly BxSelectItem[] Colors = [new("red", "Red"), new("green", "Green"), new("blue", "Blue")];
-}

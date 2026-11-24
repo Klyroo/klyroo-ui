@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
 using Blux.Templates.Content;
-using Blux.UI;
+using Lux.UI;
 using Portfolio.Web.Components;
 using Portfolio.Web.Site;
 
@@ -25,7 +25,7 @@ if (forwardedHeaders)
     });
 }
 
-builder.Services.AddBluxUi();
+builder.Services.AddLuxUi();
 // Static server rendering only: no AddInteractiveServerComponents, no AddInteractiveWebAssemblyComponents. Add one of them (and a render mode on
 // the component) the day a page needs a component that runs .NET in the browser.
 builder.Services.AddRazorComponents();
