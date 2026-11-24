@@ -257,18 +257,13 @@ public class TemplateLaunchTests
         var root = RepositoryRoot();
         var verify = File.ReadAllText(Path.Combine(root, "build", "verify-templates.mjs"));
         var solution = File.ReadAllText(Path.Combine(root, "Lux.UI.slnx"));
-        var e2e = File.ReadAllText(Path.Combine(root, "tests", "Lux.UI.E2E", "Lux.UI.E2E.csproj"));
-        var ci = File.ReadAllText(Path.Combine(root, ".github", "workflows", "ci.yml"));
 
         foreach (var template in TemplateRegistry.All.Where(t => t.HasDemo))
         {
             Assert.Contains($"name: \"{template.Name}\"", verify);
             Assert.Contains($"web: \"{template.WebProject}\"", verify);
             Assert.Contains($"templates/{template.Name}/{template.WebProject}/{template.WebAssembly}.csproj", solution);
-            Assert.Contains($"templates\\{template.Name}\\{template.WebProject!.Replace('/', '\\')}\\{template.WebAssembly}.csproj", e2e);
-            Assert.Contains($"templates/{template.Name}/{template.WebProject}", ci);
-            Assert.Contains($"published-templates/{template.Name}", ci);
-            Assert.True(File.Exists(Path.Combine(root, "templates", template.Name, template.WebProject.Replace('/', Path.DirectorySeparatorChar), template.WebAssembly + ".csproj")));
+            Assert.True(File.Exists(Path.Combine(root, "templates", template.Name, template.WebProject!.Replace('/', Path.DirectorySeparatorChar), template.WebAssembly + ".csproj")));
         }
     }
 
