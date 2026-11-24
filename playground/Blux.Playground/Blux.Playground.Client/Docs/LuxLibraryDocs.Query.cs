@@ -378,6 +378,72 @@ public static partial class LuxLibraryDocs
                 ]),
             MauiAndAotPage("Lux.Query", "Lux.Query.Core", "Lux.Query", "builder.Services.AddLuxQuery();",
                 "var page = EmployeeSchemas.Directory.ExecuteInMemory(localEmployees, request);"),
+            new("examples", "Live Examples", "Examples",
+                "Interactive, runnable examples exercising Lux.Query.Core schemas, compound FilterGroup ASTs, NativeAOT JSON serialization, and deterministic paging.",
+                [
+                    new("inmemory-search", "1. In-Memory Search, Sort & Boolean Filter",
+                        Paragraphs: ["Execute a strongly typed DataListSchema directly over an in-memory sequence with instant search, sort toggling, and boolean predicate filtering — zero reflection and NativeAOT-ready."],
+                        LiveDemoKey: "query-inmemory",
+                        LiveDemoTitle: "ExecuteInMemory · Search + Sort + Filter",
+                        CodeSamples:
+                        [
+                            new("ProductQuery.cs", """
+                                var schema = DataListSchema.For<Product>()
+                                    .Field(p => p.Name, f => f.Key("name").Searchable().Sortable())
+                                    .Field(p => p.Price, f => f.Key("price").Sortable().Filter(DataListFilter.Number()))
+                                    .Field(p => p.Active, f => f.Key("active").Filter(DataListFilter.Boolean()))
+                                    .Build();
+
+                                var request = new DataListRequest
+                                {
+                                    Search = new DataListSearch("studio"),
+                                    Sorts = [new DataListSort("price", Descending: true)],
+                                    Filters = DataListFilterGroup.And(
+                                        new FilterRule("active", FilterOperator.Is, new FilterValue.Boolean(true)))
+                                };
+
+                                DataListResult<Product> result = schema.ExecuteInMemory(catalog, request);
+                                """)
+                        ]),
+                    new("compound-ast", "2. Compound Range & List Filter AST + AOT JSON",
+                        Paragraphs: ["Combine FilterOperator.Between (FilterValue.Range) and FilterOperator.In (FilterValue.List) inside a single DataListFilterGroup and inspect the exact wire payload produced by DataListJsonContext."],
+                        LiveDemoKey: "query-filters",
+                        LiveDemoTitle: "Compound FilterGroup AST + DataListJsonContext",
+                        CodeSamples:
+                        [
+                            new("CompoundFilterAst.cs", """
+                                var rules = new List<FilterRule>
+                                {
+                                    new("price", FilterOperator.Between,
+                                        new FilterValue.Range(new FilterValue.Number(min), new FilterValue.Number(max))),
+                                    new("category", FilterOperator.In,
+                                        new FilterValue.List([.. selectedCategories.Select(c => new FilterValue.Text(c))]))
+                                };
+
+                                var request = new DataListRequest { Filters = DataListFilterGroup.And([.. rules]) };
+                                var result  = schema.ExecuteInMemory(catalog, request);
+                                var payload = JsonSerializer.Serialize(request, DataListJsonContext.Default.DataListRequest);
+                                """)
+                        ]),
+                    new("deterministic-paging", "3. Deterministic Pagination & Page-Size Switching",
+                        Paragraphs: ["Switch Page and PageSize dynamically while keeping TotalCount, HasNextPage, and slice boundaries strictly deterministic across server and client."],
+                        LiveDemoKey: "query-paging",
+                        LiveDemoTitle: "Deterministic Paging & TotalCount",
+                        CodeSamples:
+                        [
+                            new("PagedQuery.cs", """
+                                var request = new DataListRequest
+                                {
+                                    Page = currentPage,
+                                    PageSize = pageSize,
+                                    Sorts = [new DataListSort("id", Descending: false)]
+                                };
+
+                                var page = schema.ExecuteInMemory(catalog, request);
+                                var totalPages = Math.Max(1, (int)Math.Ceiling(page.TotalCount / (double)pageSize));
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Query.Core and Lux.Query.",
                 [],

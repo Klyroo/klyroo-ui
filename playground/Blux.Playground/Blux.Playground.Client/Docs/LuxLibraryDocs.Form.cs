@@ -292,6 +292,76 @@ public static partial class LuxLibraryDocs
                 ]),
             MauiAndAotPage("Lux.Form", "Lux.Form.Core", "Lux.Form", "builder.Services.AddLuxForm();",
                 "var form = new FormController(schema); if (await form.SubmitAsync()) Save(form.BuildOutput());"),
+            new("examples", "Live Examples", "Examples",
+                "Interactive BxFormEngine playgrounds covering conditional reactivity, multi-step wizards, and dynamic repeating FormArray collections.",
+                [
+                    new("reactive-form", "1. Conditional Visibility & Synchronous Validation",
+                        Paragraphs: ["Toggle between Individual and Company accounts to see the VAT ID field appear and become conditionally required via FormCondition, with live validated payload output."],
+                        LiveDemoKey: "form-reactive",
+                        LiveDemoTitle: "BxFormEngine · Conditional Rules & Validation",
+                        CodeSamples:
+                        [
+                            new("AccountForm.cs", """
+                                var schema = new FormSchema
+                                {
+                                    Id = "account-form",
+                                    Fields =
+                                    [
+                                        new FormFieldSchema { Key = "name", Label = "Full Name", Kind = FormFieldKind.Text, Required = true },
+                                        new FormFieldSchema
+                                        {
+                                            Key = "accountType", Label = "Account Type", Kind = FormFieldKind.Select, DefaultValue = "personal",
+                                            Options = [new("personal", "Individual"), new("company", "Company")]
+                                        },
+                                        new FormFieldSchema
+                                        {
+                                            Key = "vatId", Label = "EU VAT ID", Kind = FormFieldKind.Text,
+                                            VisibleWhen = FormCondition.Equals("accountType", "company"),
+                                            RequiredWhen = FormCondition.Equals("accountType", "company")
+                                        }
+                                    ]
+                                };
+                                """)
+                        ]),
+                    new("wizard-steps", "2. Multi-Step Onboarding Wizard",
+                        Paragraphs: ["Organize complex workflows into sequential FormStepSchema stages with per-step validation gates before advancing to the next step."],
+                        LiveDemoKey: "form-wizard",
+                        LiveDemoTitle: "BxFormEngine · Multi-Step FormStepSchema Wizard",
+                        CodeSamples:
+                        [
+                            new("OnboardingWizard.cs", """
+                                var schema = new FormSchema
+                                {
+                                    Id = "workspace-wizard",
+                                    Steps =
+                                    [
+                                        new FormStepSchema { Key = "workspace", Title = "Workspace", FieldKeys = ["workspace", "region"] },
+                                        new FormStepSchema { Key = "billing", Title = "Billing", FieldKeys = ["plan", "seats"] }
+                                    ],
+                                    Fields = [ /* workspace, region, plan, seats */ ]
+                                };
+                                """)
+                        ]),
+                    new("repeating-array", "3. Dynamic Repeating FormArray Line Items",
+                        Paragraphs: ["Add, edit, and remove structured sub-records at runtime using FormController.AddArrayItem, SetArrayItemValue, and RemoveArrayItem with live invoice totals."],
+                        LiveDemoKey: "form-array",
+                        LiveDemoTitle: "FormController · Dynamic FormArray Line Items",
+                        CodeSamples:
+                        [
+                            new("InvoiceItems.cs", """
+                                // Append a new repeating item and mutate a sub-field
+                                controller.AddArrayItem("items", new Dictionary<string, object?>
+                                {
+                                    ["description"] = "Support SLA",
+                                    ["qty"] = 1,
+                                    ["price"] = 450m
+                                });
+
+                                controller.SetArrayItemValue("items", index: 0, fieldKey: "qty", value: 2);
+                                controller.RemoveArrayItem("items", index: 1);
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Form.Core and Lux.Form.",
                 [],

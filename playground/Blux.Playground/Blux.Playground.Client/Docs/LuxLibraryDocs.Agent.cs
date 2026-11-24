@@ -246,6 +246,59 @@ public static partial class LuxLibraryDocs
                                 """)
                         ])
                 ]),
+            new("examples", "Live Examples", "Examples",
+                "Interactive Lux.Agent sandboxes demonstrating semantic Snapshot/Query/Act automation, secret redaction, AllowPolicy confirmation gates, and UndoStack<T> time travel.",
+                [
+                    new("bridge-sandbox", "1. Live Snapshot, Accent-Insensitive Query & Act Pipeline",
+                        Paragraphs: ["Inspect live AgentComponentSnapshot JSON with automatic password redaction (\"[redacted]\"), run semantic queries without opening dropdown popups, and execute multi-step AgentActStep plans."],
+                        LiveDemoKey: "agent-bridge",
+                        LiveDemoTitle: "AgentBridgeService · Snapshot, Query & Act",
+                        CodeSamples:
+                        [
+                            new("AgentBridgeExample.cs", """
+                                var snapshot = agent.Snapshot();
+                                var matches  = agent.Query(new AgentQueryRequest { Within = "region", Text = "Europe" });
+
+                                var result = await agent.ActAsync([
+                                    new AgentActStep("Project Name", "set", "LuxStack Cloud"),
+                                    new AgentActStep("Region", "set", "eu-west")
+                                ]);
+                                """)
+                        ]),
+                    new("policy-gate", "2. Consequential Action Policy Gate (AllowPolicy)",
+                        Paragraphs: ["Toggle between Permissive, Deny Consequential, and Require Approval policies to test how AgentBridgeService enforces AllowPolicy before executing confirmed actions."],
+                        LiveDemoKey: "agent-policy",
+                        LiveDemoTitle: "AgentBridgeService.AllowPolicy · Safety Gate",
+                        CodeSamples:
+                        [
+                            new("PolicyGate.cs", """
+                                // Reject any step whose control requires confirmation unless explicitly approved
+                                agent.AllowPolicy = (step, confirmRequired) =>
+                                    Task.FromResult(!confirmRequired || userApprovedInModal);
+
+                                var outcome = await agent.ActAsync([
+                                    new AgentActStep("Delete Workspace", "submit")
+                                ]);
+                                // outcome.Ok == false when blocked by policy
+                                """)
+                        ]),
+                    new("undo-stack", "3. Immutable UndoStack<T> State Time-Travel",
+                        Paragraphs: ["Record immutable document snapshots into UndoStack<T>, step backward with Undo(), step forward with Redo(), and observe automatic redo-branch truncation on new edits."],
+                        LiveDemoKey: "agent-undo",
+                        LiveDemoTitle: "UndoStack<T> · Record, Undo & Redo",
+                        CodeSamples:
+                        [
+                            new("UndoHistory.cs", """
+                                var history = new UndoStack<EditorSnapshot>(initial, limit: 50);
+
+                                history.Record(history.Current with { Title = "Q4 Roadmap" });
+                                history.Record(history.Current with { Status = "Published" });
+
+                                if (history.CanUndo) history.Undo();
+                                if (history.CanRedo) history.Redo();
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Agent.Core and Lux.Agent.",
                 [],

@@ -268,6 +268,57 @@ public static partial class LuxLibraryDocs
                 ]),
             MauiAndAotPage("Lux.Display", "Lux.Display.Core", "Lux.Display", "builder.Services.AddLuxDisplay();",
                 "var kind = FilePreviewService.DetectKind(filePath); var csv = FilePreviewService.ParseCsv(rawText);"),
+            new("examples", "Live Examples", "Examples",
+                "Interactive content viewers exercising BxDisplay auto-detection, structured CSV/JSON rendering, and the BxAudioPlayer media transport.",
+                [
+                    new("format-blocks", "1. Interactive BxDisplay Blocks (Stat, Meter Thresholds, Masked Secret & Diff)",
+                        Paragraphs: ["Toggle the storage quota meter across Normal (55%), Warning (82%), and Error (95%) thresholds alongside Stat sparklines, masked secret code blocks with copy button, and structured Diff rows."],
+                        LiveDemoKey: "display-blocks",
+                        LiveDemoTitle: "BxDisplay · Stat, Meter, Secret Code & Diff",
+                        CodeSamples:
+                        [
+                            new("DisplayBlocks.razor", """
+                                <BxDisplay Kind="DisplayKind.Stat" Title="MRR" Value="€148,900" Delta="+14.2%" Trend="@([102.0, 118.0, 134.0, 148.9])" />
+                                <BxDisplay Kind="DisplayKind.Meter" Title="Storage Quota" MeterValue="@_val" MeterMax="100" WarningThreshold="75" ErrorThreshold="90" />
+                                <BxDisplay Kind="DisplayKind.Code" Variant="secret" Title="API Token" Value="sk_live_luxstack_3210" VisibleChars="4" Copy="true" />
+                                <BxDisplay Kind="DisplayKind.Diff" Title="Plan Upgrade" DiffItems="@([new DisplayDiffItem("Tier", "Starter", "Enterprise", Changed: true)])" />
+                                """)
+                        ]),
+                    new("structured-inspector", "2. Structured Facts & Release Timeline Blocks",
+                        Paragraphs: ["Combine DisplayKind.Facts (copyable monospace metadata, status chips, null-safe fallbacks) with DisplayKind.Timeline (Done, Current, Upcoming pipeline stages)."],
+                        LiveDemoKey: "display-structured",
+                        LiveDemoTitle: "BxDisplay · Facts & Timeline",
+                        CodeSamples:
+                        [
+                            new("StructuredBlocks.razor", """
+                                <BxDisplay Kind="DisplayKind.Facts" Surface="DisplaySurface.Bordered" Title="Cluster Metadata" Facts="@([
+                                    new DisplayFact { Label = "Environment", Value = "Production", Copy = true, Mono = true },
+                                    new DisplayFact { Label = "Region", Value = "eu-west-3", Chip = new DisplayChip("Healthy", BxColor.Success) }
+                                ])" />
+                                <BxDisplay Kind="DisplayKind.Timeline" Surface="DisplaySurface.Bordered" Title="Release Pipeline" TimelineItems="@([
+                                    new DisplayTimelineItem("Build NativeAOT Core", Time: "09:12", State: DisplayTimelineState.Done),
+                                    new DisplayTimelineItem("Rollout Canary", Time: "In progress", State: DisplayTimelineState.Current)
+                                ])" />
+                                """)
+                        ]),
+                    new("audio-player", "3. Constrained BxAudioPlayer & Headless FilePreviewService",
+                        Paragraphs: ["Render a constrained exam-mode BxAudioPlayer (Start/End clip window, MaxPlays=2, Seekable=false) paired with live Lux.Display.Core FilePreviewService.DetectKind, FormatFileSize, and ParseCsv output."],
+                        LiveDemoKey: "display-audio",
+                        LiveDemoTitle: "BxAudioPlayer & Headless FilePreviewService",
+                        CodeSamples:
+                        [
+                            new("AudioAndPreview.razor", """
+                                <BxAudioPlayer Src="/media/sample.mp3" Title="Exam Listening Extract"
+                                               Start="15" End="45" MaxPlays="2" Seekable="false" />
+
+                                @code {
+                                    var kind  = FilePreviewService.DetectKind("report.csv");                 // FilePreviewKind.Csv
+                                    var size  = FilePreviewService.FormatFileSize(1_572_864);                // "1.5 MB"
+                                    var table = FilePreviewService.ParseCsv("Region,MRR\nEU,148900\nUS,192400");
+                                }
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Display.Core and Lux.Display.",
                 [],
