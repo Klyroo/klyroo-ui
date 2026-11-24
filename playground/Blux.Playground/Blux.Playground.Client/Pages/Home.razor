@@ -24,10 +24,10 @@
                 Adopt a single library or install the entire stack in one package.
             </p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
-                <BxButton Label="Explore Lux.UI" Href="/ui" Size="BxSize.Xl" Class="rounded-lg px-5">
+                <BxButton Label="Browse Libraries" Href="#libraries" Size="BxSize.Xl" Class="rounded-lg px-5">
                     <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
                 </BxButton>
-                <BxButton Label="Read the Docs" Href="/docs" Size="BxSize.Xl" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg px-5" />
+                <BxButton Label="Starter Templates" Href="templates" Size="BxSize.Xl" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg px-5" />
             </div>
             <div class="mt-4">
                 <button type="button" data-copy-text="dotnet add package Lux.Stack"
@@ -41,7 +41,7 @@
 </section>
 
 @* Open Source Libraries Grid (TanStack-inspired 8-card showcase) *@
-<section aria-labelledby="libraries-heading" class="border-b border-(--blux-border)">
+<section id="libraries" aria-labelledby="libraries-heading" class="scroll-mt-28 border-b border-(--blux-border)">
     <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
             <h2 id="libraries-heading" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
@@ -145,7 +145,7 @@
 </section>
 
 @* Interactive Component & API Router *@
-<section aria-labelledby="redirections-heading">
+<section id="redirections" aria-labelledby="redirections-heading" class="scroll-mt-28">
     <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
             <div>

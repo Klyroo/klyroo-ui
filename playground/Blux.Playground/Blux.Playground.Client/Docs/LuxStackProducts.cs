@@ -506,4 +506,34 @@ public static class LuxStackProducts
         string.IsNullOrWhiteSpace(slug)
             ? null
             : All.FirstOrDefault(p => string.Equals(p.Slug, slug.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Resolves which LuxStack library owns the current route path, or null on the LuxStack Hub / Templates.</summary>
+    public static LuxProductInfo? ResolveFromPath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path)) return null;
+        var clean = path.Split('?', '#')[0].Trim('/');
+        if (clean.Length == 0 || clean is "stack" or "templates") return null;
+
+        var segs = clean.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        if (segs.Length == 0) return null;
+
+        if (segs[0].Equals("stack", StringComparison.OrdinalIgnoreCase) && segs.Length >= 2)
+        {
+            return Find(segs[1]);
+        }
+        if (segs[0].Equals("docs", StringComparison.OrdinalIgnoreCase))
+        {
+            if (segs.Length >= 2 && segs[1].StartsWith("lux-", StringComparison.OrdinalIgnoreCase))
+            {
+                return Find(segs[1]["lux-".Length..]);
+            }
+            return Find("ui");
+        }
+        if (segs[0].Equals("components", StringComparison.OrdinalIgnoreCase)
+            || (segs.Length >= 2 && segs[1].Equals("components", StringComparison.OrdinalIgnoreCase)))
+        {
+            return Find("ui");
+        }
+        return Find(segs[0]);
+    }
 }
