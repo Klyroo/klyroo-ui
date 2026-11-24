@@ -21,8 +21,8 @@
                 @attributes="AdditionalAttributes">
     <span hidden data-lx-chat-sink
           data-lx-seq="@(OnSubmit.HasDelegate ? _sequence : null)"
-          @onbxchange="ChangeHandler"
-          @onbxchange:stopPropagation="true"></span>
+          @onlxchange="ChangeHandler"
+          @onlxchange:stopPropagation="true"></span>
     <CascadingValue Value="_context" IsFixed="false">
         @if (FormName is not null)
         {

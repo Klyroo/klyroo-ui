@@ -57,7 +57,7 @@ public class EditorTests : LuxTestContext
         Assert.Equal("data-lx-seq", cut.Find("lx-editor").Attributes[0]!.Name);
         Assert.Equal("0", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
 
-        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>b</p>", Sequence = 4 });
+        cut.Find("lx-editor").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "<p>b</p>", Sequence = 4 });
 
         Assert.Equal("<p>b</p>", value);
         Assert.Equal("4", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
@@ -72,7 +72,7 @@ public class EditorTests : LuxTestContext
         var calls = 0;
         var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>a</p>").Add(e => e.ValueChanged, (string? _) => calls++));
 
-        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>a</p>", Sequence = 2 });
+        cut.Find("lx-editor").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "<p>a</p>", Sequence = 2 });
 
         Assert.Equal(0, calls);
         Assert.Equal("2", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
@@ -103,8 +103,8 @@ public class EditorTests : LuxTestContext
         var seen = new List<LxLimitEventArgs>();
         var cut = Render<LxEditor>(p => p.Add(e => e.MaxLength, 10).Add(e => e.OnLimit, (LxLimitEventArgs e) => seen.Add(e)));
 
-        cut.Find("lx-editor").TriggerEvent("onbxlimit", new LxLimitEventArgs { Exceeded = true, Length = 42, Max = 10 });
-        cut.Find("lx-editor").TriggerEvent("onbxlimit", new LxLimitEventArgs { Exceeded = false, Length = 8, Max = 10 });
+        cut.Find("lx-editor").TriggerEvent("onlxlimit", new LxLimitEventArgs { Exceeded = true, Length = 42, Max = 10 });
+        cut.Find("lx-editor").TriggerEvent("onlxlimit", new LxLimitEventArgs { Exceeded = false, Length = 8, Max = 10 });
 
         Assert.Equal([(true, 42, 10), (false, 8, 10)], seen.Select(e => (e.Exceeded, e.Length, e.Max)));
     }
@@ -129,7 +129,7 @@ public class EditorTests : LuxTestContext
 
         Assert.Equal("true", cut.Find("lx-editor").GetAttribute("data-invalid"));
 
-        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>x</p>", Sequence = 1 });
+        cut.Find("lx-editor").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "<p>x</p>", Sequence = 1 });
 
         Assert.Equal("<p>x</p>", model.Body);
         Assert.False(cut.Find("lx-editor").HasAttribute("data-invalid"));

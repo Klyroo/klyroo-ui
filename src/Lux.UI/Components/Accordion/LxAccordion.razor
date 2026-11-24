@@ -11,8 +11,8 @@
               data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
               value="@string.Join(',', _open)"
               class="@_slots["root"]"
-              @onbxchange="ChangeHandler"
-              @onbxchange:stopPropagation="true"
+              @onlxchange="ChangeHandler"
+              @onlxchange:stopPropagation="true"
               @attributes="AdditionalAttributes">
     @for (var i = 0; i < Items.Count; i++)
     {

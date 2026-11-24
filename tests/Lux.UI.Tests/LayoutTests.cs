@@ -274,7 +274,7 @@ public class LayoutTests : LuxTestContext
 
         var host = cut.Find("lx-sidebar");
         Assert.Equal("data-lx-seq", host.Attributes.First().Name);
-        host.TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 1 });
+        host.TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false, Sequence = 1 });
 
         Assert.True(collapsed);
         Assert.Equal("collapsed", cut.Find("aside").GetAttribute("data-state"));

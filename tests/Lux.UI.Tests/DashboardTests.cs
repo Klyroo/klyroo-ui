@@ -55,11 +55,11 @@ public class DashboardTests : LuxTestContext
             .AddChildContent("<p>child</p>"));
 
         // A listener on the group element would also hear the lx-change of any component inside it.
-        Assert.Throws<Bunit.MissingEventHandlerException>(() => cut.Find("lx-dashboard-group").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "1,99", Sequence = 1 }));
+        Assert.Throws<Bunit.MissingEventHandlerException>(() => cut.Find("lx-dashboard-group").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "1,99", Sequence = 1 }));
         var sink = cut.Find("lx-dashboard-group > [data-lx-dashboard-sink]");
         Assert.Equal(0, sink.ChildElementCount);
 
-        sink.TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "20,80", Sequence = 3 });
+        sink.TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "20,80", Sequence = 3 });
 
         Assert.Equal([20.0, 80.0], Assert.Single(reported));
         Assert.Equal("3", cut.Find("lx-dashboard-group").GetAttribute("data-lx-seq"));

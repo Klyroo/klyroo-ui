@@ -86,8 +86,8 @@ else
                           disabled="@Disabled"
                           class="@_slots["root"]"
                           data-color="@Color.Value"
-                          @onbxchange="ChangeHandler"
-                          @onbxchange:stopPropagation="true">
+                          @onlxchange="ChangeHandler"
+                          @onlxchange:stopPropagation="true">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Invariant(Value)" disabled="@Disabled" />
             <input @attributes="InputAttributes(binding)" />
             <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Messages.InputNumberDecrement" disabled="@Disabled">

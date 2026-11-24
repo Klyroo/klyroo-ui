@@ -340,7 +340,7 @@ public class ChatTests : LuxTestContext
         var sink = cut.Find("[data-lx-chat-sink]");
         Assert.Equal("0", sink.GetAttribute("data-lx-seq"));
 
-        sink.TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "Hello there", Sequence = 1 });
+        sink.TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "Hello there", Sequence = 1 });
 
         Assert.Equal(["Hello there"], received);
         Assert.Equal("1", cut.Find("[data-lx-chat-sink]").GetAttribute("data-lx-seq"));
@@ -362,7 +362,7 @@ public class ChatTests : LuxTestContext
 
         // The prompt listens on its sink only: an event raised elsewhere in it never reaches OnSubmit.
         Assert.Single(cut.FindAll("[data-lx-chat-sink]"));
-        Assert.Throws<MissingEventHandlerException>(() => cut.Find("#inner").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 }));
+        Assert.Throws<MissingEventHandlerException>(() => cut.Find("#inner").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 }));
         Assert.Empty(received);
     }
 
@@ -373,8 +373,8 @@ public class ChatTests : LuxTestContext
         var busy = Render<LxChatPrompt>(p => p.Add(x => x.Status, ChatStatus.Streaming).Add(x => x.OnSubmit, (string text) => received.Add(text)));
         var disabled = Render<LxChatPrompt>(p => p.Add(x => x.Disabled, true).Add(x => x.OnSubmit, (string text) => received.Add(text)));
 
-        busy.Find("[data-lx-chat-sink]").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 });
-        disabled.Find("[data-lx-chat-sink]").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 });
+        busy.Find("[data-lx-chat-sink]").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 });
+        disabled.Find("[data-lx-chat-sink]").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "x", Sequence = 1 });
 
         Assert.Empty(received);
         Assert.True(busy.Find("lx-chat-prompt").HasAttribute("data-busy"));
@@ -602,7 +602,7 @@ public class ChatTests : LuxTestContext
         var cut = Render<LxChatReasoning>(p => p.Add(r => r.Open, false).Add(r => r.OpenChanged, (bool value) => open = value));
         Assert.Equal("data-lx-seq", cut.Find("lx-chat-disclosure").Attributes.First().Name);
 
-        cut.Find("lx-chat-disclosure").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = true, Sequence = 2 });
+        cut.Find("lx-chat-disclosure").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = true, Sequence = 2 });
 
         Assert.True(open);
         Assert.Equal("2", cut.Find("lx-chat-disclosure").GetAttribute("data-lx-seq"));
@@ -701,7 +701,7 @@ public class ChatTests : LuxTestContext
         var open = false;
         var cut = Render<LxChatTool>(p => p.Add(t => t.Text, "x").Add(t => t.ChildContent, "<p>y</p>").Add(t => t.OpenChanged, (bool value) => open = value));
 
-        cut.Find("lx-chat-disclosure").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = true, Sequence = 1 });
+        cut.Find("lx-chat-disclosure").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = true, Sequence = 1 });
 
         Assert.True(open);
         Assert.Equal("1", cut.Find("lx-chat-disclosure").GetAttribute("data-lx-seq"));

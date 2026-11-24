@@ -64,18 +64,18 @@ public class PickersTests : LuxTestContext
     {
         DateOnly? single = null;
         var cut = Render<LxCalendar>(p => p.Add(c => c.Value, single).Add(c => c.ValueChanged, (DateOnly? v) => single = v));
-        cut.Find("lx-calendar").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "2026-11-20", Sequence = 3 });
+        cut.Find("lx-calendar").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "2026-11-20", Sequence = 3 });
         Assert.Equal(new DateOnly(2026, 11, 20), single);
         Assert.Equal("3", cut.Find("lx-calendar").GetAttribute("data-lx-seq"));
 
         LxDateRange? range = null;
         var ranged = Render<LxCalendar>(p => p.Add(c => c.Mode, LxCalendarMode.Range).Add(c => c.RangeChanged, (LxDateRange v) => range = v));
-        ranged.Find("lx-calendar").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "2026-11-09/2026-11-13", Sequence = 1 });
+        ranged.Find("lx-calendar").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "2026-11-09/2026-11-13", Sequence = 1 });
         Assert.Equal(new LxDateRange(new DateOnly(2026, 11, 9), new DateOnly(2026, 11, 13)), range);
 
         IReadOnlyList<DateOnly>? dates = null;
         var multiple = Render<LxCalendar>(p => p.Add(c => c.Mode, LxCalendarMode.Multiple).Add(c => c.ValuesChanged, (IReadOnlyList<DateOnly> v) => dates = v));
-        multiple.Find("lx-calendar").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "2026-11-02,2026-11-20", Sequence = 1 });
+        multiple.Find("lx-calendar").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "2026-11-02,2026-11-20", Sequence = 1 });
         Assert.Equal([new DateOnly(2026, 11, 2), new DateOnly(2026, 11, 20)], dates);
     }
 
@@ -168,10 +168,10 @@ public class PickersTests : LuxTestContext
         TimeOnly? value = null;
         var cut = Render<LxInputTime>(p => p.Add(t => t.Value, value).Add(t => t.ValueChanged, (TimeOnly? v) => value = v));
 
-        cut.Find("lx-input-time").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "09:30", Sequence = 2 });
+        cut.Find("lx-input-time").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "09:30", Sequence = 2 });
         Assert.Equal(new TimeOnly(9, 30), value);
 
-        cut.Find("lx-input-time").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "", Sequence = 3 });
+        cut.Find("lx-input-time").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "", Sequence = 3 });
         Assert.Null(value);
     }
 
@@ -203,7 +203,7 @@ public class PickersTests : LuxTestContext
         })));
         Assert.Equal("model.Start", cut.Find("input[type=hidden]").GetAttribute("name"));
 
-        cut.Find("lx-input-time").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "08:15", Sequence = 1 });
+        cut.Find("lx-input-time").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "08:15", Sequence = 1 });
 
         Assert.Equal(new TimeOnly(8, 15), model.Start);
     }
@@ -241,7 +241,7 @@ public class PickersTests : LuxTestContext
         string? value = null;
         var cut = Render<LxColorPicker>(p => p.Add(c => c.Value, value).Add(c => c.ValueChanged, (string? v) => value = v));
 
-        cut.Find("lx-color-picker").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "#AABBCC", Sequence = 1 });
+        cut.Find("lx-color-picker").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "#AABBCC", Sequence = 1 });
 
         Assert.Equal("#aabbcc", value);
     }
@@ -342,7 +342,7 @@ public class PickersTests : LuxTestContext
         var index = 0;
         var cut = Render<LxCarousel>(p => p.Add(c => c.Items, Slides(3)).Add(c => c.AriaLabel, "Places").Add(c => c.Index, index).Add(c => c.IndexChanged, (int v) => index = v));
 
-        cut.Find("lx-carousel").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "2", Sequence = 4 });
+        cut.Find("lx-carousel").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "2", Sequence = 4 });
 
         Assert.Equal(2, index);
         Assert.Equal("4", cut.Find("lx-carousel").GetAttribute("data-lx-seq"));

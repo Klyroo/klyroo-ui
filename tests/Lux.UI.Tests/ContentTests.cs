@@ -463,7 +463,7 @@ public class ContentTests : LuxTestContext
             .Add(s => s.OnSelect, EventCallback.Factory.Create<LxCommandItem>(this, item => selected = item)));
 
         // The palette reports with lx-change; the handler is only attached when OnSelect is bound.
-        cut.Find("lx-command-palette").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "/docs#why", Sequence = 1 });
+        cut.Find("lx-command-palette").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "/docs#why", Sequence = 1 });
 
         Assert.Equal("Why another library", selected?.Label);
         Assert.Equal("/docs#why", selected?.Href);

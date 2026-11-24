@@ -96,8 +96,8 @@ else
                     aria-describedby="@Field?.DescribedBy"
                     class="@_slots["root"]"
                     data-color="@Color.Value"
-                    @onbxchange="ChangeHandler"
-                    @onbxchange:stopPropagation="true"
+                    @onlxchange="ChangeHandler"
+                    @onlxchange:stopPropagation="true"
                     @attributes="AdditionalAttributes">
             <div class="@_slots["track"]" data-slot="track" aria-hidden="true"><div class="@_slots["range"]" data-slot="range"></div></div>
             <input @attributes="ThumbAttributes(binding, false)" />

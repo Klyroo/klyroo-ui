@@ -30,7 +30,7 @@ public class NavigationTests : LuxTestContext
         string? value = "account";
         var cut = Render<LxTabs>(p => p.Add(t => t.Items, Tabs).Add(t => t.Value, value).Add(t => t.ValueChanged, (string? v) => value = v));
 
-        cut.Find("lx-tabs").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "password", Sequence = 1 });
+        cut.Find("lx-tabs").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "password", Sequence = 1 });
 
         Assert.Equal("password", value);
         Assert.Equal("true", cut.FindAll("[role=tab]")[1].GetAttribute("aria-selected"));

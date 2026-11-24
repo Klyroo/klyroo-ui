@@ -9,8 +9,8 @@
                  open="@Open"
                  disabled="@Disabled"
                  class="@_slots["root"]"
-                 @onbxtoggle="ToggleHandler"
-                 @onbxtoggle:stopPropagation="true">
+                 @onlxtoggle="ToggleHandler"
+                 @onlxtoggle:stopPropagation="true">
     <div data-slot="trigger" role="group" class="@_slots["trigger"]" tabindex="@(Focusable ? "0" : null)" @attributes="AdditionalAttributes">@ChildContent</div>
     <div popover="manual" role="menu" aria-label="@(Label ?? Messages.ContextMenu)" class="@_slots["content"]" data-slot="content">
         @foreach (var item in Items)

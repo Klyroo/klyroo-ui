@@ -65,14 +65,14 @@ public class InputCommitTests : LuxTestContext
         var cut = Render<LxInput>(p => p.Add(i => i.Debounce, 300).Add(i => i.Value, "")
             .Add(i => i.ValueChanged, (string? v) => reports.Add(v)));
 
-        await cut.Find("input").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "hello", Sequence = 1 });
+        await cut.Find("input").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "hello", Sequence = 1 });
 
         Assert.Equal(["hello"], reports);
         Assert.Equal("1", cut.Find("input").GetAttribute("data-lx-seq"));
         Assert.Equal("hello", cut.Find("input").GetAttribute("value"));
 
         // The same text reported again (after Escape on an empty field, say) raises nothing but still acknowledges.
-        await cut.Find("input").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "hello", Sequence = 2 });
+        await cut.Find("input").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "hello", Sequence = 2 });
         Assert.Equal(["hello"], reports);
         Assert.Equal("2", cut.Find("input").GetAttribute("data-lx-seq"));
     }
@@ -84,7 +84,7 @@ public class InputCommitTests : LuxTestContext
         var cut = Render<LxInput>(p => p.Add(i => i.ClearOnEscape, true).Add(i => i.Value, "text")
             .Add(i => i.ValueChanged, (string? v) => reports.Add(v)));
 
-        await cut.Find("input").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "", Sequence = 1 });
+        await cut.Find("input").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "", Sequence = 1 });
 
         Assert.Equal([""], reports);
     }
@@ -120,7 +120,7 @@ public class InputCommitTests : LuxTestContext
         Assert.Equal("model.Email", cut.Find("input").GetAttribute("name"));
         Assert.Equal("250", cut.Find("input").GetAttribute("data-lx-debounce"));
 
-        await cut.Find("input").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "a@b.c", Sequence = 1 });
+        await cut.Find("input").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "a@b.c", Sequence = 1 });
 
         Assert.Equal("a@b.c", model.Email);
         cut.Find("form").Submit();
@@ -147,9 +147,9 @@ public class InputCommitTests : LuxTestContext
         Assert.True(names.IndexOf("data-lx-force") < names.IndexOf("value"), string.Join(",", names));
 
         // A report the browser sent before the call and .NET handles after it is dropped; one from the new sequence counts.
-        await input.TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "typed before", Sequence = 7 });
+        await input.TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "typed before", Sequence = 7 });
         Assert.Equal(["new"], reports);
-        await cut.Find("input").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "typed after", Sequence = floor + 1 });
+        await cut.Find("input").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "typed after", Sequence = floor + 1 });
         Assert.Equal(["new", "typed after"], reports);
 
         // Setting the same text again still cancels what is pending in the browser: the marker changes.

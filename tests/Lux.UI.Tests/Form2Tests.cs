@@ -39,7 +39,7 @@ public class Form2Tests : LuxTestContext
         var cut = Render<LxSelectMenu>(p => p.Add(s => s.Items, Items).Add(s => s.Multiple, true)
             .Add(s => s.Value, []).Add(s => s.ValueChanged, (IReadOnlyList<string>? v) => value = v));
 
-        cut.Find("lx-select-menu").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "a" + Sep + "b", Sequence = 3 });
+        cut.Find("lx-select-menu").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "a" + Sep + "b", Sequence = 3 });
 
         Assert.Equal(["a", "b"], value);
         Assert.Equal("3", cut.Find("lx-select-menu").GetAttribute("data-lx-seq"));
@@ -117,7 +117,7 @@ public class Form2Tests : LuxTestContext
         string? value = null;
         var cut = Render<LxInputMenu>(p => p.Add(m => m.Items, Items).Add(m => m.Value, value).Add(m => m.ValueChanged, (string? v) => value = v));
 
-        cut.Find("lx-input-menu").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "b", Sequence = 2 });
+        cut.Find("lx-input-menu").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "b", Sequence = 2 });
 
         Assert.Equal("b", value);
     }
@@ -145,10 +145,10 @@ public class Form2Tests : LuxTestContext
         decimal? value = null;
         var cut = Render<LxInputNumber>(p => p.Add(n => n.Value, value).Add(n => n.ValueChanged, (decimal? v) => value = v));
 
-        cut.Find("lx-input-number").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "12.5", Sequence = 1 });
+        cut.Find("lx-input-number").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "12.5", Sequence = 1 });
         Assert.Equal(12.5m, value);
 
-        cut.Find("lx-input-number").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "", Sequence = 2 });
+        cut.Find("lx-input-number").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "", Sequence = 2 });
         Assert.Null(value);
     }
 
@@ -173,7 +173,7 @@ public class Form2Tests : LuxTestContext
         IReadOnlyList<string> tags = [];
         var cut = Render<LxInputTags>(p => p.Add(t => t.Value, tags).Add(t => t.ValueChanged, (IReadOnlyList<string>? v) => tags = v!));
 
-        cut.Find("lx-input-tags").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "one" + Sep + "two", Sequence = 4 });
+        cut.Find("lx-input-tags").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "one" + Sep + "two", Sequence = 4 });
 
         Assert.Equal(["one", "two"], tags);
     }
@@ -230,7 +230,7 @@ public class Form2Tests : LuxTestContext
         Assert.All(inputs, i => Assert.Equal("price", i.GetAttribute("name")));
         Assert.Equal("group", cut.Find("lx-slider").GetAttribute("role"));
 
-        cut.Find("lx-slider").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "30" + Sep + "40.5", Sequence = 1 });
+        cut.Find("lx-slider").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "30" + Sep + "40.5", Sequence = 1 });
 
         Assert.Equal([30d, 40.5d], value);
     }
@@ -297,7 +297,7 @@ public class Form2Tests : LuxTestContext
         var value = false;
         var cut = Render<LxToggle>(p => p.Add(t => t.Label, "Bold").Add(t => t.Value, value).Add(t => t.ValueChanged, (bool v) => value = v));
 
-        cut.Find("lx-toggle").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "true", Sequence = 1 });
+        cut.Find("lx-toggle").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "true", Sequence = 1 });
 
         Assert.True(value);
     }

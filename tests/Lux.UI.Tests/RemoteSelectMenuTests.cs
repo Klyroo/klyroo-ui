@@ -43,7 +43,7 @@ public class RemoteSelectMenuTests : LuxTestContext
         });
 
     private static Task Search(IRenderedComponent<LxSelectMenu> cut, string text) =>
-        cut.Find("lx-select-menu").TriggerEventAsync("onbxsearch", new LxSearchEventArgs { Value = text, Sequence = 1 });
+        cut.Find("lx-select-menu").TriggerEventAsync("onlxsearch", new LxSearchEventArgs { Value = text, Sequence = 1 });
 
     private static string[] Labels(IRenderedComponent<LxSelectMenu> cut) => [.. cut.FindAll("[role=option]:not([data-slot=create])").Select(o => o.GetAttribute("data-label")!)];
 
@@ -197,11 +197,11 @@ public class RemoteSelectMenuTests : LuxTestContext
         var cut = Open(fake);
         await Search(cut, "");
 
-        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
+        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
         Assert.Equal(20, Labels(cut).Length);
         Assert.Equal(new LxOptionsRequest("", 10, 10, null), fake.Requests[1]);
 
-        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
+        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
         Assert.Equal(25, Labels(cut).Length);
 
         var end = cut.Find("lx-infinite-scroll");

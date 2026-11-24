@@ -87,8 +87,8 @@ else
                           class="@_slots["root"]"
                           data-color="@Color.Value"
                           data-disabled="@(Disabled ? "" : null)"
-                          @onbxchange="ChangeHandler"
-                          @onbxchange:stopPropagation="true"
+                          @onlxchange="ChangeHandler"
+                          @onlxchange:stopPropagation="true"
                           @attributes="AdditionalAttributes">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Hex" disabled="@Disabled" />
             <div data-slot="area" class="@_slots["area"]">

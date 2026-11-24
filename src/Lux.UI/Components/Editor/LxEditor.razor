@@ -113,10 +113,10 @@ else
                     disabled="@Disabled"
                     class="@binding.WithFieldClass(_slots["root"])"
                     data-color="@Color.Value"
-                    @onbxchange="ChangeHandler"
-                    @onbxchange:stopPropagation="true"
-                    @onbxlimit="LimitHandler"
-                    @onbxlimit:stopPropagation="true"
+                    @onlxchange="ChangeHandler"
+                    @onlxchange:stopPropagation="true"
+                    @onlxlimit="LimitHandler"
+                    @onlxlimit:stopPropagation="true"
                     @attributes="AdditionalAttributes">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
             @ChildContent

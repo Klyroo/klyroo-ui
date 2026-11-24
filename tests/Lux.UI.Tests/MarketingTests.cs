@@ -223,7 +223,7 @@ public class MarketingTests : LuxTestContext
             fields: [new LxAuthField("code", "otp") { Label = "Code", Length = 6 }]);
         Assert.Equal("That code is not right.", cut.Find("p[data-slot=error]").TextContent.Trim());
 
-        cut.Find("lx-pin-input").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "12", Sequence = 1 });
+        cut.Find("lx-pin-input").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "12", Sequence = 1 });
         cut.Find("form").Submit();
 
         Assert.Equal("Enter all 6 characters.", cut.Find("p[data-slot=error]").TextContent.Trim());

@@ -124,8 +124,8 @@ function discoverComponents(root = document) {
   for (const el of root.querySelectorAll(selector)) {
     if (seen.has(el)) continue;
     // Skip inner native controls that belong to a higher-level lx-* custom element already in the list
-    const ownerBx = el.parentElement?.closest('lx-select, lx-select-menu, lx-pin-input, lx-color-picker');
-    if (ownerBx && seen.has(ownerBx)) continue;
+    const ownerLx = el.parentElement?.closest('lx-select, lx-select-menu, lx-pin-input, lx-color-picker');
+    if (ownerLx && seen.has(ownerLx)) continue;
     seen.add(el);
     list.push(el);
   }
@@ -139,8 +139,8 @@ function describeElement(el) {
   const disabled = el.hasAttribute('disabled') || el.getAttribute('aria-disabled') === 'true';
   const offPage = !el.isConnected || el.closest('[hidden], dialog:not([open])') !== null;
 
-  if (el.__bxPrimitive) {
-    const prim = el.__bxPrimitive;
+  if (el.__lxPrimitive) {
+    const prim = el.__lxPrimitive;
     const st = prim.store.get();
     const actions = prim.agent?.actions ?? Object.keys(prim.api).filter((k) => !['keydown', 'pointerdown', 'wheel'].includes(k));
     return {
@@ -328,8 +328,8 @@ export function createAgent({ allow = null } = {}) {
       const prevValue = el.value ?? el.getAttribute('value') ?? null;
       const args = step.args ?? [];
 
-      if (el.__bxPrimitive && typeof el.__bxPrimitive.api[step.action] === 'function') {
-        el.__bxPrimitive.api[step.action](...args);
+      if (el.__lxPrimitive && typeof el.__lxPrimitive.api[step.action] === 'function') {
+        el.__lxPrimitive.api[step.action](...args);
       } else if (step.action === 'setValue') {
         const nextVal = args[0] ?? '';
         if ('value' in el) el.value = nextVal;

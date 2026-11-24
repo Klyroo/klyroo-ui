@@ -265,10 +265,10 @@ else
                          disabled="@Disabled"
                          class="@_slots["root"]"
                          data-color="@Color.Value"
-                         @onbxchange="ChangeHandler"
-                         @onbxchange:stopPropagation="true"
-                         @onbxsearch="SearchHandler"
-                         @onbxsearch:stopPropagation="true">
+                         @onlxchange="ChangeHandler"
+                         @onlxchange:stopPropagation="true"
+                         @onlxsearch="SearchHandler"
+                         @onlxsearch:stopPropagation="true">
             <span data-slot="values" hidden></span>
             <button type="button" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
                 @if (HasIcons)

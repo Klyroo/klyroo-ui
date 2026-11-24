@@ -9,8 +9,8 @@
                 open="@Open"
                 data-state="@(Open ? "open" : "closed")"
                 class="@_slots["root"]"
-                @onbxtoggle="ToggleHandler"
-                @onbxtoggle:stopPropagation="true"
+                @onlxtoggle="ToggleHandler"
+                @onlxtoggle:stopPropagation="true"
                 @attributes="AdditionalAttributes">
     <button type="button" data-lx-collapsible-trigger id="@($"{_id}-trigger")" aria-controls="@($"{_id}-content")"
             aria-expanded="@(Open ? "true" : "false")" disabled="@Disabled" class="@_slots["trigger"]">

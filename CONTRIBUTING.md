@@ -16,7 +16,7 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
    through `Reporter` from `js/shared.js`, which adds a sequence number. The component:
    - renders `data-lx-seq="@(Bound ? _sequence : null)"` as the **first** attribute of the custom element;
    - stores `e.Sequence` in its handler before anything else;
-   - adds `@onbx...:stopPropagation="true"` so nested components don't trigger each other;
+   - adds `@onlx...:stopPropagation="true"` so nested components don't trigger each other;
    - puts `[DynamicDependency(PublicConstructors | PublicProperties, typeof(LxChangeEventArgs))]` (or the toggle args)
      on the handler, or trimming removes the event args.
    The element observes `data-lx-seq` and its state attribute, ignores renders older than its last report

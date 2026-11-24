@@ -15,8 +15,8 @@
                         @attributes="AdditionalAttributes">
         @* The listener is on a childless element, so the lx-change of a component inside the group is never read as sizes. *@
         <span hidden data-lx-dashboard-sink
-              @onbxchange="ChangeHandler"
-              @onbxchange:stopPropagation="true"></span>
+              @onlxchange="ChangeHandler"
+              @onlxchange:stopPropagation="true"></span>
         @ChildContent
     </lx-dashboard-group>
 </CascadingValue>

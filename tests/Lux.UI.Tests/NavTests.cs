@@ -310,7 +310,7 @@ public class NavTests : LuxTestContext
         var cut = Render<LxCollapsible>(p => p.Add(c => c.Open, open).Add(c => c.OpenChanged, (bool v) => open = v));
         Assert.Equal("0", cut.Find("lx-collapsible").GetAttribute("data-lx-seq"));
 
-        cut.Find("lx-collapsible").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = true, Sequence = 4 });
+        cut.Find("lx-collapsible").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = true, Sequence = 4 });
 
         Assert.True(open);
         Assert.Equal("4", cut.Find("lx-collapsible").GetAttribute("data-lx-seq"));
@@ -355,7 +355,7 @@ public class NavTests : LuxTestContext
 
         Assert.Equal("true", cut.FindAll("[role=treeitem]")[4].GetAttribute("aria-selected"));
 
-        cut.Find("lx-tree").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "a.cs", Sequence = 2 });
+        cut.Find("lx-tree").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "a.cs", Sequence = 2 });
 
         Assert.Equal("a.cs", value);
         Assert.Equal("true", cut.FindAll("[role=treeitem]")[1].GetAttribute("aria-selected"));
@@ -460,7 +460,7 @@ public class NavTests : LuxTestContext
         IReadOnlyList<double>? sizes = null;
         var cut = Render<LxSplitter>(p => p.Add(s => s.Panels, TwoPanels).Add(s => s.SizesChanged, (IReadOnlyList<double> v) => sizes = v));
 
-        cut.Find("lx-splitter").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "45.5,54.5", Sequence = 3 });
+        cut.Find("lx-splitter").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "45.5,54.5", Sequence = 3 });
 
         Assert.Equal([45.5, 54.5], sizes);
         Assert.Equal("45.5,54.5", cut.Find("lx-splitter").GetAttribute("sizes"));

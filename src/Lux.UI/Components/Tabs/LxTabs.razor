@@ -7,8 +7,8 @@
          orientation="@(Orientation == LxOrientation.Vertical ? "vertical" : "horizontal")"
          class="@_slots["root"]"
          data-color="@Color.Value"
-         @onbxchange="ChangeHandler"
-         @onbxchange:stopPropagation="true"
+         @onlxchange="ChangeHandler"
+         @onlxchange:stopPropagation="true"
          @attributes="AdditionalAttributes">
     <div role="tablist" aria-orientation="@(Orientation == LxOrientation.Vertical ? "vertical" : null)" aria-label="@AriaLabel" class="@_slots["list"]">
         @for (var i = 0; i < Items.Count; i++)

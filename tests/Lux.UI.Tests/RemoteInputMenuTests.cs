@@ -31,7 +31,7 @@ public class RemoteInputMenuTests : LuxTestContext
         });
 
     private static Task Search(IRenderedComponent<LxInputMenu> cut, string text) =>
-        cut.Find("lx-input-menu").TriggerEventAsync("onbxsearch", new LxSearchEventArgs { Value = text, Sequence = 1 });
+        cut.Find("lx-input-menu").TriggerEventAsync("onlxsearch", new LxSearchEventArgs { Value = text, Sequence = 1 });
 
     private static string[] Labels(IRenderedComponent<LxInputMenu> cut) => [.. cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")!)];
 
@@ -67,7 +67,7 @@ public class RemoteInputMenuTests : LuxTestContext
         Assert.NotNull(more);
         Assert.Equal("#" + scroller.Id, more.GetAttribute("data-root"));
 
-        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
+        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
 
         Assert.Equal(11, Labels(cut).Length);
         Assert.Equal(new LxOptionsRequest("City 1", 10, 10, null), fake.Requests[1]);
