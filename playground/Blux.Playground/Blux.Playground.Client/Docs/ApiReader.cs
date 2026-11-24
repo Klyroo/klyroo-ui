@@ -25,10 +25,19 @@ public static class ApiReader
             // No defaults to show.
         }
 
-        return component.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+        var parameters = component.GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Where(p => p.GetCustomAttribute<ParameterAttribute>() is { CaptureUnmatchedValues: false })
             .OrderBy(p => p.Name == "ChildContent" ? 1 : 0)
             .ThenBy(p => p.Name, StringComparer.Ordinal)
+            .Select(p => new ApiParameter(p.Name, TypeName(p.PropertyType), DefaultOf(p, instance), Describe(p)))
+            .ToList();
+
+        if (parameters.Count > 0) return parameters;
+
+        // Headless C# controllers & models have no [Parameter] attributes: list their public properties instead.
+        return component.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => p.GetIndexParameters().Length == 0)
+            .OrderBy(p => p.Name, StringComparer.Ordinal)
             .Select(p => new ApiParameter(p.Name, TypeName(p.PropertyType), DefaultOf(p, instance), Describe(p)))
             .ToList();
     }

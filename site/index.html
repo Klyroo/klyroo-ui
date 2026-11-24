@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr" data-theme="dark">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -185,7 +185,11 @@ footer { padding: 36px 0; font-size: 12.5px; color: var(--text-muted); display: 
           <h1>Accessible primitives<br /><span class="accent">zero SignalR lag.</span></h1>
         </div>
         <div>
-          <p class="lead">Design system complet pour Blazor (Server, WASM, Auto, SSR) et .NET MAUI Blazor Hybrid. Les menus, dialogues, popovers et onglets répondent instantanément à 60fps dans le navigateur via Web Components natifs et Behaviors composables (dialog, popup, rovingTabindex, formAssociated).</p>
+          <p class="lead">Complete design system for Blazor (Server, WebAssembly, Auto, Static SSR) and .NET MAUI Blazor Hybrid. Menus, dialogs, popovers, and tabs answer instantaneously at 60fps in the browser via native Web Components and composable behaviors (dialog, popup, rovingTabindex, formAssociated).</p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px">
+            <a class="btn btn-accent" href="../README.md">Read Documentation →</a>
+            <a class="btn" href="../ECOSYSTEM.md">API Reference</a>
+          </div>
           <div class="install-stack">
             <button class="cmd mono" type="button" onclick="copyCmd(this,'dotnet add package Blux.UI')">
               <span>$ dotnet add package <strong>Blux.UI</strong> <span class="comment"># Blazor + MAUI Hybrid</span></span>
@@ -218,7 +222,7 @@ footer { padding: 36px 0; font-size: 12.5px; color: var(--text-muted); display: 
     <div class="wrap">
       <div class="eyebrow mono">Why Lux.UI</div>
       <h2>Headless C# engine.<br /><span style="color:var(--accent)">Production-ready UI.</span></h2>
-      <div class="grid-4"><article class="card"><span class="tag mono">DOM Native</span><h3>Zero-Roundtrip Popovers &amp; Dialogs</h3><p>Construit sur les API HTML Popover &amp; &lt;dialog&gt; natives : light-dismiss, Escape et empilement top-layer gérés sans aller-retour SignalR.</p></article><article class="card"><span class="tag mono">Behaviors</span><h3>Composable Behaviors (ui-sdk.dev)</h3><p>Primitives JS autonomes dialog(), popup(), rovingTabindex(), formAssociated() et dismissable() sans dépendance tierce.</p></article><article class="card"><span class="tag mono">Tailwind v4</span><h3>Un seul thème par tokens CSS</h3><p>Variables CSS sémantiques (--blux-primary, --blux-bg, --blux-border), 12 locales intégrées et mode sombre instantané.</p></article><article class="card"><span class="tag mono">Multiplatform</span><h3>Mobile 44px Touch &amp; TV D-Pad</h3><p>Zones tactiles 44px pour iOS/Android, gestion des safe areas et mode focus directionnel pour Android TV.</p></article></div>
+      <div class="grid-4"><article class="card"><span class="tag mono">DOM Native</span><h3>Zero-Roundtrip Popovers &amp; Dialogs</h3><p>Built on native HTML Popover and &lt;dialog&gt; APIs with light-dismiss, Escape handling, and top-layer stacking managed directly by the browser.</p></article><article class="card"><span class="tag mono">Behaviors</span><h3>Composable Behaviors (ui-sdk.dev)</h3><p>Standalone JS primitives: dialog(), popup(), rovingTabindex(), formAssociated(), and dismissable() with zero external dependencies.</p></article><article class="card"><span class="tag mono">Tailwind v4</span><h3>Tailwind v4 &amp; Design Tokens</h3><p>A single stylesheet driven by semantic CSS variables (--blux-primary, --blux-bg, --blux-border), 12 built-in locales, and instant dark mode.</p></article><article class="card"><span class="tag mono">Multiplatform</span><h3>Mobile 44px Touch &amp; TV D-Pad</h3><p>44px touch hit targets calibrated for iOS/Android, safe area insets, and directional D-pad focus rings for Android TV.</p></article></div>
     </div>
   </section>
 
@@ -265,12 +269,30 @@ const tabsCtrl = rovingTabindex(tabListElement, {
 
   <section class="band">
     <div class="wrap">
-      <div class="eyebrow mono">Package Exports &amp; Components</div>
+      <div class="eyebrow mono">Exhaustive Documentation</div>
+      <h2>Guides, Architecture &amp; API Reference</h2>
+      <div class="grid-4" style="grid-template-columns:repeat(auto-fit,minmax(260px,1fr))">
+            <a class="card" href="../README.md"><span class="tag mono">README</span><h3>Overview &amp; Quick Start</h3><p>Full Lux.UI design system overview, installation, and component showcase.</p></a>
+            <a class="card" href="../ECOSYSTEM.md"><span class="tag mono">ECOSYSTEM</span><h3>LuxStack Architecture</h3><p>How Lux.UI connects to all 7 specialized LuxStack libraries.</p></a>
+            <a class="card" href="../skills/blux-ui/SKILL.md"><span class="tag mono">AI SKILL</span><h3>Agent Skill Guide</h3><p>Machine-readable reference for AI coding assistants.</p></a>
+            <a class="card" href="http://localhost:5180/docs"><span class="tag mono">LIVE DOCS</span><h3>Interactive Playground Docs</h3><p>Browse 125+ live components, guides, and API tables.</p></a>
+            </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="wrap">
+      <div class="eyebrow mono">Package Exports</div>
       <h2>Included in Lux.UI</h2>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Export</th><th>Layer</th><th>NuGet Package</th><th>Description</th></tr></thead>
-          <tbody><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxButton</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">7 couleurs, 6 variantes, états loading et lien.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxModal</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Dialogue natif &lt;dialog&gt;, piège à focus et fermeture Escape.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxSelect</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Navigation clavier, typeahead et soumission formulaire native.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxTabs</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Flèches clavier et activation instantanée côté navigateur.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxCommandPalette</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Palette de commandes Ctrl+K avec raccourcis et groupes.</td></tr><tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxChatMessages</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Flux IA streaming avec raisonnement et appels d&#x27;outils.</td></tr></tbody>
+          <tbody>
+            <tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxButton</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Seven colors, six variants, loading and link states.</td></tr>
+            <tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxModal</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Native &lt;dialog&gt; with focus trap, inert background, and Escape.</td></tr>
+            <tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxSelect</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">Keyboard typeahead and hidden input for native forms.</td></tr>
+            <tr><td class="mono" style="font-weight:600;color:var(--text-strong)">BxTabs</td><td><span class="mono layer-ui">UI</span></td><td class="mono">Blux.UI</td><td style="color:var(--text-muted)">WAI-ARIA tabs with arrow keys and zero SignalR round-trips.</td></tr>
+            </tbody>
         </table>
       </div>
     </div>

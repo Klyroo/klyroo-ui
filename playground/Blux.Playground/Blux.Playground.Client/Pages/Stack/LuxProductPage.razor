@@ -63,7 +63,14 @@ else
                     @Product.Description
                 </p>
 
-                <div class="mt-6 flex flex-col gap-2.5">
+                <div class="mt-6 flex flex-wrap items-center gap-3">
+                    <BxButton Label="@($"Read {Product.Name} docs")" Href="@Product.DocsHref" Size="BxSize.Lg" Class="rounded-lg px-5">
+                        <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
+                    </BxButton>
+                    <BxButton Label="All LuxStack libraries" Href="/stack" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Size="BxSize.Lg" Class="rounded-lg" />
+                </div>
+
+                <div class="mt-4 flex flex-col gap-2.5">
                     <button type="button" data-copy-text="@($"dotnet add package {Product.UiPackage}")"
                             class="group flex items-center justify-between gap-3 rounded-xl border border-(--blux-border-accented) bg-(--blux-bg) px-4 py-2.5 font-mono text-xs text-(--blux-text-highlighted) hover:border-(--blux-primary-text)">
                         <span><span class="text-(--blux-text-muted)">$</span> dotnet add package @Product.UiPackage <span class="text-(--blux-text-muted)"># Blazor + MAUI Hybrid</span></span>
