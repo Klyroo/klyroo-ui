@@ -97,6 +97,19 @@ else
                     </div>
                 }
 
+                @if (sec.Callout is not null)
+                {
+                    <div class="my-5 rounded-xl border border-(--blux-border-accented) bg-(--blux-bg-muted)/70 px-4 py-3 text-sm text-(--blux-text)"
+                         style="@($"border-inline-start: 3px solid {_library.AccentHex}")">
+                        <strong class="font-mono text-xs uppercase tracking-wider text-(--blux-text-highlighted)">Note · </strong>@sec.Callout
+                    </div>
+                }
+
+                @if (sec.LiveDemoKey is not null)
+                {
+                    <LuxLibraryLiveDemo DemoKey="@sec.LiveDemoKey" Title="@(sec.LiveDemoTitle ?? sec.Heading)" />
+                }
+
                 @if (sec.CodeSamples is not null)
                 {
                     @foreach (var sample in sec.CodeSamples)

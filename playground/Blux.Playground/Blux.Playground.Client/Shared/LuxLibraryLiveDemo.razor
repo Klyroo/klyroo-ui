@@ -1,0 +1,238 @@
+@using Blux.UI.Tools.Query
+
+<div class="my-6 overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg)">
+    <div class="flex items-center justify-between gap-2 border-b border-(--blux-border) bg-(--blux-bg-muted)/60 px-4 py-2 font-mono text-xs text-(--blux-text-muted)">
+        <span class="flex items-center gap-2 text-(--blux-text-highlighted)">
+            <span class="size-2 rounded-full bg-(--blux-primary)" aria-hidden="true"></span>
+            LIVE EXAMPLE · @Title
+        </span>
+        <span>Interactive</span>
+    </div>
+    <div class="p-5">
+        @switch (DemoKey)
+        {
+            case "query-inmemory":
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="w-60">
+                            <BxInput Value="@_qSearch" ValueChanged="@OnQuerySearch" Placeholder="Filter by name (e.g. M)..." aria-label="Search products" />
+                        </div>
+                        <BxButton Label="@(_qDesc ? "Sort: Price DESC" : "Sort: Price ASC")" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" OnClick="@ToggleQuerySort" />
+                        <BxButton Label="@(_qActiveOnly ? "Active only: ON" : "Active only: OFF")" Size="BxSize.Sm" Color="@(_qActiveOnly ? BxColor.Success : BxColor.Neutral)" Variant="ButtonVariant.Soft" OnClick="@ToggleQueryActive" />
+                    </div>
+                    <p class="font-mono text-xs text-(--blux-text-muted)">
+                        Matched <strong class="text-(--blux-text-highlighted)">@_qResult.TotalCount</strong> items via <code>DataListSchema.ExecuteInMemory</code>
+                    </p>
+                    <div class="grid gap-2 sm:grid-cols-3">
+                        @foreach (var item in _qResult.Items)
+                        {
+                            <div class="flex items-center justify-between rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 px-3 py-2.5 font-mono text-xs">
+                                <span>@item.Name</span>
+                                <span class="font-semibold text-(--blux-text-highlighted)">€@item.Price</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                break;
+
+            case "table-basic":
+                <BxDataList TItem="TableDemoRow" Schema="@TableSchema" Items="@TableRows" UrlSync="false">
+                    <BxDataListTable TItem="TableDemoRow" HeaderMenu="true" ShowProgressLine="true" Summaries="@(new DataListSummaries<TableDemoRow>())">
+                        <BxDataListColumn TItem="TableDemoRow" Field="name" Title="Employee" />
+                        <BxDataListColumn TItem="TableDemoRow" Field="dept" Title="Department" />
+                        <BxDataListColumn TItem="TableDemoRow" Field="salary" Title="Salary (€)" Summary="DataListSummaryKind.Sum" />
+                    </BxDataListTable>
+                </BxDataList>
+                break;
+
+            case "form-reactive":
+                <div class="flex flex-col gap-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-(--blux-border) bg-(--blux-bg-muted)/40 px-3 py-2 font-mono text-xs">
+                        <span>IsDirty: <strong>@_formCtrl.IsDirty</strong></span>
+                        <span>DirtyPaths: <strong>@(_formCtrl.DirtyPaths.Count == 0 ? "none" : string.Join(", ", _formCtrl.DirtyPaths))</strong></span>
+                        <span>Company visible (age &ge; 21): <strong>@(_formCtrl.GetValue<double>("age") >= 21)</strong></span>
+                    </div>
+                    <BxFormEngine Form="@_formCtrl" SubmitLabel="Validate & Submit" ShowReset="true" />
+                </div>
+                break;
+
+            case "dashboard-kpi":
+                <div class="flex flex-col gap-5">
+                    <BxDashboardStats Title="Executive KPIs" Items="@DashStats" />
+                    <div class="grid gap-4 lg:grid-cols-2">
+                        <BxDashboardGauge Title="Q4 ARR Target" Value="86" Max="100" Target="90" Format="DashboardFormatPreset.Percent" Caption="86% reached" />
+                        <BxDashboardBars Title="Platform Distribution" Items="@DashBars" Format="DashboardFormatPreset.Compact" />
+                    </div>
+                </div>
+                break;
+
+            case "display-blocks":
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <BxDisplay Kind="DisplayKind.Stat" Title="Monthly Recurring Revenue" Value="€148,900" Delta="+14.2%" Trend="@([102.0, 118.0, 134.0, 148.9])" />
+                    <BxDisplay Kind="DisplayKind.Meter" Title="Storage Quota" MeterValue="92" MeterMax="100" WarningThreshold="75" ErrorThreshold="90" />
+                    <BxDisplay Kind="DisplayKind.Code" Variant="secret" Title="Production API Token" Value="sk_live_luxstack_3210" VisibleChars="4" Copy="true" />
+                    <BxDisplay Kind="DisplayKind.Diff" Title="Plan Upgrade" DiffItems="@([new DisplayDiffItem("Tier", "Starter", "Enterprise", Changed: true)])" />
+                </div>
+                break;
+
+            case "display-audio":
+                <BxAudioPlayer Src="/media/sample.mp3" Title="Exam Listening Extract (Start=15s · End=45s · MaxPlays=2 · Seekable=false)" Start="15" End="45" MaxPlays="2" Seekable="false" />
+                break;
+
+            case "spreadsheet-wizard":
+                <BxSpreadsheetImport Importer="@_importer" Title="Import Product Rates" Wizard="true" />
+                break;
+
+            case "agent-bridge":
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <div class="flex flex-col gap-3 rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 p-4">
+                        <p class="font-mono text-xs uppercase text-(--blux-text-muted)">Semantic Actions &amp; UndoStack&lt;T&gt;</p>
+                        <p class="font-mono text-sm text-(--blux-text-highlighted)">@_undo.Current</p>
+                        <div class="flex flex-wrap gap-2">
+                            <BxButton Label="Act: setValue" Size="BxSize.Sm" OnClick="@RunAgentStep" />
+                            <BxButton Label="Undo" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Disabled="@(!_undo.CanUndo)" OnClick="@(() => _undo.Undo())" />
+                            <BxButton Label="Redo" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Disabled="@(!_undo.CanRedo)" OnClick="@(() => _undo.Redo())" />
+                        </div>
+                    </div>
+                    <div class="rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 p-4 font-mono text-xs">
+                        <p class="uppercase text-(--blux-text-muted)">AgentBridgeService.Snapshot() · Secrets Redacted</p>
+                        <ul class="mt-2 space-y-1">
+                            @foreach (var s in _agent.Snapshot())
+                            {
+                                <li class="flex justify-between gap-2">
+                                    <span>@s.Ref · @s.Label</span>
+                                    <strong class="text-(--blux-text-highlighted)">@(s.Value?.ToString() ?? "null")</strong>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+                break;
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string DemoKey { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "Interactive Demo";
+
+    // Query demo
+    private sealed record QueryItem(int Id, string Name, decimal Price, bool Active);
+    private static readonly QueryItem[] QueryItems =
+    [
+        new(1, "4K Studio Monitor", 350m, true),
+        new(2, "Mechanical Keyboard", 120m, true),
+        new(3, "Ergonomic Mouse", 45m, true),
+        new(4, "USB-C Microphone", 140m, false),
+        new(5, "Mesh Desk Mat", 29m, true)
+    ];
+    private static readonly DataListSchema<QueryItem> QuerySchema = DataListSchema.For<QueryItem>(s => s
+        .RowKey(p => p.Id)
+        .Search(p => p.Name)
+        .Field(p => p.Price, f => f.Key("price").Sortable())
+        .Field(p => p.Active, f => f.Key("active").Filter(DataListFilter.Boolean())));
+    private string _qSearch = "";
+    private bool _qDesc = true;
+    private bool _qActiveOnly;
+    private DataListResult<QueryItem> _qResult = default!;
+
+    private void OnQuerySearch(string v) { _qSearch = v; RunQuery(); }
+    private void ToggleQuerySort() { _qDesc = !_qDesc; RunQuery(); }
+    private void ToggleQueryActive() { _qActiveOnly = !_qActiveOnly; RunQuery(); }
+    private void RunQuery()
+    {
+        var filter = _qActiveOnly
+            ? DataListFilterGroup.And(new FilterRule("active", FilterOperator.Is, new FilterValue.Boolean(true)))
+            : DataListFilterGroup.Empty;
+        _qResult = QuerySchema.ExecuteInMemory(QueryItems, new DataListRequest(
+            new DataListPaging.Offset(0, 10),
+            [new DataListSort("price", Descending: _qDesc)],
+            filter,
+            string.IsNullOrWhiteSpace(_qSearch) ? null : new DataListSearch(_qSearch)));
+    }
+
+    // Table demo
+    private sealed record TableDemoRow(int Id, string Name, string Dept, decimal Salary);
+    private static readonly DataListSchema<TableDemoRow> TableSchema = DataListSchema.For<TableDemoRow>(s => s
+        .RowKey(r => r.Id)
+        .Field(r => r.Name, f => f.Key("name").Sortable())
+        .Field(r => r.Dept, f => f.Key("dept").Sortable())
+        .Field(r => r.Salary, f => f.Key("salary").Sortable()));
+    private static readonly TableDemoRow[] TableRows =
+    [
+        new(1, "Alice Martin", "Engineering", 120000m),
+        new(2, "Bob Chen", "Engineering", 95000m),
+        new(3, "Claire Petit", "Product", 110000m)
+    ];
+
+    // Form demo
+    private readonly FormController _formCtrl = new(new FormSchema
+    {
+        FormKey = "docs-reactive-demo",
+        Title = "Profile Settings",
+        Fields =
+        [
+            new FormFieldSchema { Key = "name", Label = "Full Name", Required = true, DefaultValue = "Alice" },
+            new FormFieldSchema { Key = "age", Label = "Age (set < 21 to hide Company)", Kind = FormFieldKind.Number, Min = 18, Max = 120, DefaultValue = 25.0 },
+            new FormFieldSchema { Key = "company", Label = "Company", Required = true, DefaultValue = "LuxStack Labs", Condition = f => f.GetValue<double>("age") >= 21 },
+            new FormFieldSchema { Key = "password", Label = "Password", Kind = FormFieldKind.Password, PasswordRequirements = [new("len", "At least 8 characters", s => s.Length >= 8)] }
+        ]
+    });
+
+    // Dashboard demo
+    private static readonly IReadOnlyList<DashboardStatsItem> DashStats =
+    [
+        new("mrr", "MRR", 148900, DashboardFormatPreset.Compact, Delta: 14.2, Progress: 0.86),
+        new("ratio", "Retention", 0.964, DashboardFormatPreset.Ratio, Delta: 2.1, Progress: 0.96),
+        new("users", "Active Users", 24850, DashboardFormatPreset.Compact, Delta: 18.5)
+    ];
+    private static readonly IReadOnlyList<DashboardBarItem> DashBars =
+    [
+        new("Blazor Web", 14200, Tag: "Web"),
+        new(".NET MAUI Mobile", 7850, Tag: "iOS/Android"),
+        new(".NET MAUI Desktop", 2800, Tag: "Win/Mac")
+    ];
+
+    // Spreadsheet demo
+    private readonly SpreadsheetImporter _importer;
+
+    // Agent demo
+    private readonly AgentBridgeService _agent = new();
+    private readonly FormController _agentForm = new(new FormSchema
+    {
+        FormKey = "agent-live",
+        Title = "Agent Target",
+        Fields =
+        [
+            new FormFieldSchema { Key = "project", Label = "Project", DefaultValue = "Apollo" },
+            new FormFieldSchema { Key = "token", Label = "API Secret", Kind = FormFieldKind.Password, DefaultValue = "sk_live_secret_99" }
+        ]
+    });
+    private readonly UndoStack<string> _undo = new("Project = Apollo");
+    private int _step;
+
+    private async Task RunAgentStep()
+    {
+        _step++;
+        var next = _step % 2 == 1 ? "Atlas" : "Orion";
+        await _agent.ActAsync([new AgentActStep("Project", "setValue", [next])]);
+        _undo.Record($"Step #{_step}: Project = {next}");
+    }
+
+    public LuxLibraryLiveDemo()
+    {
+        RunQuery();
+        _agent.RegisterForm(_agentForm);
+        _importer = new SpreadsheetImporter(new SpreadsheetSchema
+        {
+            Key = "rates",
+            Columns =
+            [
+                new SpreadsheetColumnSchema { Key = "code", Label = "Code", Required = true },
+                new SpreadsheetColumnSchema { Key = "price", Label = "Unit Price", Kind = SpreadsheetColumnKind.Number, DecimalSeparator = ',', Required = true, Rules = [SpreadsheetRule.Min(0)] },
+                new SpreadsheetColumnSchema { Key = "currency", Label = "Currency", Kind = SpreadsheetColumnKind.Select, Required = true, Options = [new("EUR", "Euro", ["€", "EUR"]), new("USD", "US Dollar", ["$", "USD"])] }
+            ]
+        });
+        _importer.LoadText("Export Report 2026;;\nCode;Amount;Currency\nA1;12,50;€\nA2;45,00;USD", "rates.csv");
+    }
+}
