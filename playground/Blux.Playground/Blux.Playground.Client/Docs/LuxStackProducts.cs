@@ -22,6 +22,7 @@ public sealed record LuxProductInfo(
     string RepoPath,
     string CorePackage,
     string UiPackage,
+    string DocsHref,
     IReadOnlyList<string> Platforms,
     IReadOnlyList<(string Title, string Description, string Tag)> Features,
     string CoreCodeTitle,
@@ -41,20 +42,21 @@ public static class LuxStackProducts
             Tagline: "125+ zero-roundtrip primitives & composable DOM behaviors",
             HeroHeadline: "Accessible primitives",
             HeroAccent: "zero SignalR lag.",
-            Description: "Design system complet pour Blazor (Server, WASM, Auto, SSR) et .NET MAUI Blazor Hybrid. Les menus, dialogues, popovers et onglets s'exécutent à 60fps dans le navigateur via Web Components natifs et Behaviors composables (dialog, popup, rovingTabindex, formAssociated).",
+            Description: "Complete design system for Blazor (Server, WebAssembly, Auto, Static SSR) and .NET MAUI Blazor Hybrid. Menus, dialogs, popovers, and tabs answer instantaneously at 60fps in the browser via native Web Components and composable behaviors (dialog, popup, rovingTabindex, formAssociated).",
             AccentHex: "#10b981",
             BadgeColor: BxColor.Success,
             RepoName: "lux-ui",
             RepoPath: "/home/gpoumarat/lux-ui",
             CorePackage: "Blux.UI.Build.Tasks",
             UiPackage: "Blux.UI",
+            DocsHref: "/docs",
             Platforms: ["Blazor Server", "Blazor WASM", "Blazor Auto / SSR", ".NET MAUI Hybrid (iOS, Android, Mac, Win)", "Android TV (D-Pad)"],
             Features:
             [
-                ("Zero-Roundtrip Popovers & Dialogs", "Basé sur les API natives HTML Popover et <dialog> avec light-dismiss et pile top-layer gérée directement par le navigateur.", "DOM Native"),
-                ("Composable Behaviors (ui-sdk.dev)", "Primitives JS déclaratives : dialog(), popup(), rovingTabindex(), formAssociated() et dismissable() sans dépendance externe.", "Behaviors"),
-                ("Tailwind v4 & Design Tokens", "Un seul thème piloté par variables CSS (--blux-primary, --blux-bg, --blux-border), 12 locales intégrées et mode sombre instantané.", "Tailwind v4"),
-                ("Mobile 44px Touch & TV D-Pad", "Zones tactiles 44px calibrées pour iOS/Android, safe areas et anneau de focus directionnel pour Android TV.", "Multiplatform")
+                ("Zero-Roundtrip Popovers & Dialogs", "Built on native HTML Popover and <dialog> APIs with light-dismiss, Escape handling, and top-layer stacking managed directly by the browser.", "DOM Native"),
+                ("Composable Behaviors (ui-sdk.dev)", "Standalone JS primitives: dialog(), popup(), rovingTabindex(), formAssociated(), and dismissable() with zero external dependencies.", "Behaviors"),
+                ("Tailwind v4 & Design Tokens", "A single stylesheet driven by semantic CSS variables (--blux-primary, --blux-bg, --blux-border), 12 built-in locales, and instant dark mode.", "Tailwind v4"),
+                ("Mobile 44px Touch & TV D-Pad", "44px touch hit targets calibrated for iOS/Android, safe area insets, and directional D-pad focus rings for Android TV.", "Multiplatform")
             ],
             CoreCodeTitle: "js/behaviors.js · Composable DOM Behaviors",
             CoreCode: """
@@ -105,20 +107,21 @@ public static class LuxStackProducts
             Tagline: "Headless NativeAOT Query AST, URL codecs, IQueryable applier, EF Core & QueryState",
             HeroHeadline: "Headless query engine",
             HeroAccent: "& reactive URL state.",
-            Description: "Moteur de requêtage fortement typé et 100% NativeAOT : AST de filtres composables (DataListSchema, DataListRequest, DataListFilterGroup), codecs d'URL, exécuteur InMemory et traduction SQL Entity Framework Core (EfAsyncQueryExecutor), accompagné de QueryState pour synchroniser l'URL dans Blazor et MAUI Hybrid.",
+            Description: "Strongly typed, 100% NativeAOT query engine: composable filter AST (DataListSchema, DataListRequest, DataListFilterGroup), reversible URL query codecs, InMemory & IQueryable evaluators, Entity Framework Core async SQL executor (EfAsyncQueryExecutor), and reactive QueryState for Blazor and MAUI Hybrid.",
             AccentHex: "#ff4154",
             BadgeColor: BxColor.Error,
             RepoName: "lux-query",
             RepoPath: "/home/gpoumarat/lux-query",
             CorePackage: "Lux.Query.Core",
             UiPackage: "Lux.Query",
+            DocsHref: "/docs/lux-query",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Entity Framework Core"],
             Features:
             [
-                ("Typed Schema & Filter AST", "Décrivez champs triables, filtres typés et recherche plein texte avec DataListSchema.For<T>() sans aucune chaîne magique.", "Typed AST"),
-                ("InMemory, IQueryable & EF Core", "Exécutez le même DataListRequest en mémoire (ExecuteInMemory), sur LINQ IQueryable ou en SQL asynchrone via EfAsyncQueryExecutor.", "Any Backend"),
-                ("URL Query Codecs & QueryState", "Sérialisation réversible des filtres, tris et pages dans la query-string avec gestion de l'historique et support mobile WebView.", "URL Sync"),
-                ("100% Headless & NativeAOT", "Lux.Query.Core n'a aucune dépendance UI : compilez-le en NativeAOT, dans vos APIs minimales, Workers ou ViewModels MAUI.", "NativeAOT")
+                ("Typed Schema & Filter AST", "Declare searchable, sortable, and filterable fields with DataListSchema.For<T>() with zero magic strings and full compile-time safety.", "Typed AST"),
+                ("InMemory, IQueryable & EF Core", "Execute the exact same DataListRequest in memory (ExecuteInMemory), over LINQ IQueryable, or translated to async SQL via EfAsyncQueryExecutor.", "Any Backend"),
+                ("URL Query Codecs & QueryState", "Reversible serialization of filters, sorts, and paging into the query string with browser history control and mobile WebView support.", "URL Sync"),
+                ("100% Headless & NativeAOT", "Lux.Query.Core has zero UI dependencies: compile it in NativeAOT APIs, background workers, CLI tools, or native .NET MAUI ViewModels.", "NativeAOT")
             ],
             CoreCodeTitle: "Lux.Query.Core · Typed Schema & InMemory / IQueryable",
             CoreCode: """
@@ -149,36 +152,37 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DataListSchema", "Fluent typed schema builder for searchable, sortable and filterable fields.", "/docs/datalist-sources", "Core"),
-                new("DataListRequest", "Immutable paging (Offset/Cursor), sorting, filtering & search AST.", "/docs/datalist-sources", "Core"),
-                new("QueryCodecs", "Reversible URL search parameter serialization for complex filter trees.", "/docs/url-state", "Core"),
-                new("EfAsyncQueryExecutor", "Translates DataListRequest directly to async SQL via Entity Framework Core.", "/docs/datalist-sources", "Core"),
-                new("QueryState", "Reactive URL state manager for Blazor Web and .NET MAUI BlazorWebView.", "/docs/url-state", "UI")
+                new("DataListSchema", "Fluent typed schema builder for searchable, sortable and filterable fields.", "/docs/lux-query", "Core"),
+                new("DataListRequest", "Immutable paging (Offset/Cursor), sorting, filtering & search AST.", "/docs/lux-query", "Core"),
+                new("QueryCodecs", "Reversible URL search parameter serialization for complex filter trees.", "/docs/lux-query", "Core"),
+                new("EfAsyncQueryExecutor", "Translates DataListRequest directly to async SQL via Entity Framework Core.", "/docs/lux-query", "Core"),
+                new("QueryState", "Reactive URL state manager for Blazor Web and .NET MAUI BlazorWebView.", "/docs/lux-query", "UI")
             ]),
 
         new(
             Slug: "table",
             Name: "Lux.Table",
             ShortName: "Table",
-            Tagline: "Headless tree/grouping models & high-density enterprise BxDataList",
+            Tagline: "Headless tree hierarchy engine & high-density enterprise BxDataList",
             HeroHeadline: "Supercharged tables",
             HeroAccent: "& headless datagrids.",
-            Description: "L'équivalent .NET de TanStack Table combiné à la finition de Nuxt UI Tools : table, grille de cartes, hiérarchie arborescente (DataListTree), regroupement, agrégations de pied de page, barre de progression fine 2px, menu d'en-tête Tri/Masquer, virtualisation 60fps et vues sauvegardées.",
+            Description: "The .NET counterpart to TanStack Table paired with Nuxt UI Tools polish: table and card grid layouts, NativeAOT tree hierarchy (DataListTree<TItem>), visual grouping, footer aggregations, 2px loading progress line, automatic Sort/Hide HeaderMenu, 60fps virtualization, and responsive mobile summary rows.",
             AccentHex: "#00d8ff",
             BadgeColor: BxColor.Info,
             RepoName: "lux-table",
             RepoPath: "/home/gpoumarat/lux-table",
             CorePackage: "Lux.Table.Core",
             UiPackage: "Lux.Table",
+            DocsHref: "/docs/lux-table",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Entity Framework Core"],
             Features:
             [
-                ("Headless Tree Hierarchy (NativeAOT)", "Lux.Table.Core construit et aplatit des arbres hiérarchiques (DataListTree<T>) avec profondeur et rails visuels, sans dépendance UI.", "Headless Tree"),
-                ("Nuxt UI Tools Polish Included", "Barre de progression 2px pendant le chargement, menu d'en-tête auto (Tri Asc/Desc/Masquer), skeletons adaptatifs et EmptyState 1er usage.", "UX Polish"),
-                ("Grouping, Summaries & Pinning", "Regroupement visuel (DataListGroupBy), agrégations Sum/Avg/Min/Max en pied de tableau, redimensionnement et épinglage de colonnes.", "Enterprise Grid"),
-                ("Responsive Summary Rows on Phone", "Bascule automatiquement en lignes résumées scannables (DataListRowSummary) sous 768px sur smartphones iOS/Android.", "Mobile Ready")
+                ("Headless Tree Hierarchy (NativeAOT)", "Lux.Table.Core builds and flattens hierarchical trees (DataListTree<TItem>) with depth tracking and continuation rails without any UI dependency.", "Headless Tree"),
+                ("Nuxt UI Tools Polish Included", "2px indeterminate progress line during reloads, automatic Sort Asc/Desc/Hide HeaderMenu, adaptive skeletons, and first-use EmptyState CTAs.", "UX Polish"),
+                ("Grouping, Summaries & Pinning", "Visual row grouping (DataListGroupBy), footer Sum/Avg/Min/Max aggregations, column resizing, and left/right sticky column pinning.", "Enterprise Grid"),
+                ("Responsive Summary Rows on Phone", "Automatically switches to scannable summary rows (DataListRowSummary) below 768px on iOS and Android phones.", "Mobile Ready")
             ],
-            CoreCodeTitle: "Lux.Table.Core · Headless DataListTree<T>",
+            CoreCodeTitle: "Lux.Table.Core · Headless DataListTree<T> (NativeAOT)",
             CoreCode: """
                 using Blux.UI.Tools;
 
@@ -205,10 +209,10 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/components/data-list", "Core"),
+                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/docs/lux-table", "Core"),
                 new("BxDataList<TItem>", "Full-featured enterprise datagrid with table, grid, filter bar & pagination.", "/components/data-list", "UI"),
-                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/components/data-list", "UI"),
-                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/components/data-list", "UI")
+                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/docs/lux-table", "UI"),
+                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/docs/lux-table", "UI")
             ]),
 
         new(
@@ -218,20 +222,21 @@ public static class LuxStackProducts
             Tagline: "31-kind schema-driven form engine, reactive conditions, dirty diffing & wizards",
             HeroHeadline: "Schema-driven forms",
             HeroAccent: "without boilerplate.",
-            Description: "Moteur de formulaires déclaratif 100% NativeAOT dans Lux.Form.Core : 31 types de champs (FormFieldKind), visibilité conditionnelle réactive, suivi dirty/touched précis, transformations de sortie, assistants multi-étapes avec SkipWhen, FormPage et modales programmatiques via FormService.",
+            Description: "Declarative, 100% NativeAOT form engine in Lux.Form.Core: 31 field kinds (FormFieldKind), reactive conditional visibility, dirty/touched diffing, output transforms, multi-step wizards with SkipWhen, sectioned FormPage layouts, and programmatic modal/drawer overlays via FormService.",
             AccentHex: "#f59e0b",
             BadgeColor: BxColor.Warning,
             RepoName: "lux-form",
             RepoPath: "/home/gpoumarat/lux-form",
             CorePackage: "Lux.Form.Core",
             UiPackage: "Lux.Form",
+            DocsHref: "/docs/lux-form",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
-                ("31 Declarative Field Kinds", "Text, Password (avec jauge d'exigences), Number, Select, AutoComplete, Checkbox, Switch, Slider, Repeatable Arrays et Tabs pilotés par FormSchema.", "31 Field Kinds"),
-                ("Reactive Conditions & Output Transforms", "Évalue Condition = f => ... en temps réel, ignore les champs masqués à la validation et applique TransformOutput au submit.", "Reactive Engine"),
-                ("Multi-Step Wizards with SkipWhen", "Découpage en FormStepSchema avec saut conditionnel d'étapes (SkipWhen), validation par palier et re-baselining dirty après soumission.", "Wizard Flow"),
-                ("FormPage & Overlay FormService", "Sections suivies (BxFormPage) et ouverture programmatique de formulaires en modale ou tiroir via FormService + BxFormProvider.", "Overlay Host")
+                ("31 Declarative Field Kinds", "Text, Password (with requirement checklist), Number, Select, AutoComplete, Checkbox, Switch, Slider, Repeatable Arrays, and Tabs driven by FormSchema.", "31 Field Kinds"),
+                ("Reactive Conditions & Transforms", "Evaluates Condition = f => ... live, automatically skips hidden fields during validation and output building, and applies TransformOutput on submit.", "Reactive Engine"),
+                ("Multi-Step Wizards with SkipWhen", "Split complex flows into FormStepSchema with conditional SkipWhen branching, per-step validation, and automatic dirty re-baselining after submit.", "Wizard Flow"),
+                ("FormPage & Overlay FormService", "Sectioned pages with completion indicators (BxFormPage) and programmatic modal/drawer form hosts via FormService + BxFormProvider.", "Overlay Host")
             ],
             CoreCodeTitle: "Lux.Form.Core · Headless FormSchema & FormController",
             CoreCode: """
@@ -261,11 +266,11 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("FormSchema", "Declarative schema with 31 field kinds, steps, sections, rules & transforms.", "/components/form", "Core"),
-                new("FormController", "Headless NativeAOT state machine for values, errors, dirty paths & steps.", "/components/form", "Core"),
-                new("FormService", "Programmatic overlay service to open forms in modals or drawers.", "/components/form", "Core"),
-                new("BxFormEngine", "Automatic Blazor/MAUI renderer for FormSchema & multi-step wizards.", "/components/form", "UI"),
-                new("BxFormPage", "Sectioned form page layout with live completion & dirty status.", "/components/form", "UI")
+                new("FormSchema", "Declarative schema with 31 field kinds, steps, sections, rules & transforms.", "/docs/lux-form", "Core"),
+                new("FormController", "Headless NativeAOT state machine for values, errors, dirty paths & steps.", "/docs/lux-form", "Core"),
+                new("FormService", "Programmatic overlay service to open forms in modals or drawers.", "/docs/lux-form", "Core"),
+                new("BxFormEngine", "Automatic Blazor/MAUI renderer for FormSchema & multi-step wizards.", "/docs/lux-form", "UI"),
+                new("BxFormPage", "Sectioned form page layout with live completion & dirty status.", "/docs/lux-form", "UI")
             ]),
 
         new(
@@ -275,20 +280,21 @@ public static class LuxStackProducts
             Tagline: "Staged 3-wave analytical queries, global filters, comparison ranges & 13 KPI blocks",
             HeroHeadline: "Analytical dashboards",
             HeroAccent: "staged for speed.",
-            Description: "Orchestrateur de tableaux de bord analytiques avec chargement étagé en 3 vagues (Essential → Background → Deferred), barre de filtres et vues réactives, plages de comparaison (année bissextile gérée), export CSV RFC-4180 et 13 composants analytiques prêts à l'emploi.",
+            Description: "Analytical dashboard orchestrator with 3-wave staged query loading (Essential -> Background -> Deferred), reactive global filter toolbar and views, leap-year-safe comparison date ranges, RFC 4180 UTF-8 BOM CSV export, and 13 ready-to-use KPI & visualization blocks.",
             AccentHex: "#8b5cf6",
             BadgeColor: BxColor.Primary,
             RepoName: "lux-dashboard",
             RepoPath: "/home/gpoumarat/lux-dashboard",
             CorePackage: "Lux.Dashboard.Core",
             UiPackage: "Lux.Dashboard",
+            DocsHref: "/docs/lux-dashboard",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid (Tablet, Desktop, Mobile)"],
             Features:
             [
-                ("3-Wave Staged Query Orchestration", "DashboardController exécute d'abord Essential (KPI critiques), puis Background (graphes), et garde Deferred en chargement paresseux.", "Staged Waves"),
-                ("Global Filters, Presets & Views", "Filtres synchronisés (DashboardFilterControl) avec bouton Reset automatique et onglets de vues (DashboardViewMeta) avec badges.", "Reactive Filters"),
-                ("13 Analytical Visualization Blocks", "BxDashboardPage, Grid, Card, Stat, Stats, Gauge SVG, Details, Bars, List, Table triable avec export CSV, Alerts, Feed et Chart.", "13 Widgets"),
-                ("Smart Formatters & CSV Export", "DashboardFormat formate Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), plages de comparaison et CSV UTF-8 BOM.", "Analytics Core")
+                ("3-Wave Staged Query Orchestration", "DashboardController runs Essential KPIs first, Background charts second, and keeps Deferred resources idle until explicitly requested.", "Staged Waves"),
+                ("Global Filters, Presets & Views", "Synchronized filters (DashboardFilterControl) with one-click Reset detection and tabbed DashboardViewMeta views with live count badges.", "Reactive Filters"),
+                ("13 Analytical Visualization Blocks", "BxDashboardPage, Grid, Card, Stat, Stats, SVG Gauge, Details, Bars, List, sortable Table with CSV export, Alerts, Feed, and Chart.", "13 Widgets"),
+                ("Smart Formatters & CSV Export", "DashboardFormat formats Compact (12.6K), Delta (+14.2%), Points (+2.1 pts), Ratio (57%), leap-year date ranges, and locale-aware UTF-8 BOM CSV.", "Analytics Core")
             ],
             CoreCodeTitle: "Lux.Dashboard.Core · Staged DashboardController",
             CoreCode: """
@@ -320,12 +326,12 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DashboardController", "Staged 3-wave query coordinator (Essential/Background/Deferred), filters & views.", "/components/dashboard-panel", "Core"),
-                new("DashboardFormat", "Compact/Delta/Points/Ratio formatters, leap-year ranges & BOM CSV exporter.", "/components/dashboard-panel", "Core"),
-                new("BxDashboardPage", "Full analytical dashboard shell with filter toolbar, views & refresh state.", "/components/dashboard-panel", "UI"),
-                new("BxDashboardStats", "Multi-KPI summary strip with delta badges, progress and status pills.", "/components/dashboard-panel", "UI"),
-                new("BxDashboardGauge", "SVG circular gauge with target marker and formatted center value.", "/components/dashboard-panel", "UI"),
-                new("BxDashboardTable", "Sortable analytical table block with inline bars, deltas & CSV export.", "/components/dashboard-panel", "UI")
+                new("DashboardController", "Staged 3-wave query coordinator (Essential/Background/Deferred), filters & views.", "/docs/lux-dashboard", "Core"),
+                new("DashboardFormat", "Compact/Delta/Points/Ratio formatters, leap-year ranges & BOM CSV exporter.", "/docs/lux-dashboard", "Core"),
+                new("BxDashboardPage", "Full analytical dashboard shell with filter toolbar, views & refresh state.", "/docs/lux-dashboard", "UI"),
+                new("BxDashboardStats", "Multi-KPI summary strip with delta badges, progress and status pills.", "/docs/lux-dashboard", "UI"),
+                new("BxDashboardGauge", "SVG circular gauge with target marker and formatted center value.", "/docs/lux-dashboard", "UI"),
+                new("BxDashboardTable", "Sortable analytical table block with inline bars, deltas & CSV export.", "/docs/lux-dashboard", "UI")
             ]),
 
         new(
@@ -335,20 +341,21 @@ public static class LuxStackProducts
             Tagline: "19 read-only display blocks, constrained audio/video players & modal file preview",
             HeroHeadline: "Rich display blocks",
             HeroAccent: "& constrained media.",
-            Description: "19 blocs d'affichage en lecture seule dans <BxDisplay> (Heading, Alert, Facts, Stat avec sparkline, Breakdown, Meter avec seuils, Diff, Code/Secret masqué, Timeline, Accordion…), lecteurs Audio/Vidéo avec découpage temporel et quota d'écoutes (MaxPlays, Seekable=false), et prévisualiseur modal de fichiers.",
+            Description: "19 read-only presentation blocks inside <BxDisplay> (Heading, Alert, Facts, Stat with sparkline, Breakdown, Meter with thresholds, Diff, masked Code/Secret, Timeline, Accordion…), constrained Audio/Video players with clip Start/End bounds and MaxPlays quotas, plus a modal multi-format file previewer.",
             AccentHex: "#ec4899",
             BadgeColor: BxColor.Secondary,
             RepoName: "lux-display",
             RepoPath: "/home/gpoumarat/lux-display",
             CorePackage: "Lux.Display.Core",
             UiPackage: "Lux.Display",
+            DocsHref: "/docs/lux-display",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
-                ("19 Read-Only Display Blocks", "Heading, Text, Alert dépliable, Callout, Facts copiables, Stat avec sparkline, Breakdown, Meter à seuils, Diff avant/après, Timeline, Code/Secret.", "19 Blocks"),
-                ("Constrained Audio & Video Players", "Supporte segment Start/End, quota MaxPlays (idéal pour examens/certifications), verrouillage du seek (Seekable=false) et pistes sous-titres.", "Media Quotas"),
-                ("Multi-Format FilePreviewService", "Détection MIME/extension headless dans .Core, parseur CSV RFC-4180 intégré et lightbox modale zoomable (Image, PDF, Audio, Vidéo, CSV).", "File Lightbox"),
-                ("Secret Masking & One-Click Reveal", "Mode DisplayKind.Code + Variant=\"secret\" qui masque les clés API (••••••••3210) avec bouton Révéler/Masquer et copie.", "Security UX")
+                ("19 Read-Only Display Blocks", "Heading, Text, expandable Alert, Callout, copyable Facts, Stat with sparkline, Breakdown, threshold Meter, Diff before/after, Timeline, and Secret Code.", "19 Blocks"),
+                ("Constrained Audio & Video Players", "Supports Start/End clip slicing, MaxPlays play quotas (ideal for exams and language assessments), Seekable=false locking, and subtitle tracks.", "Media Quotas"),
+                ("Multi-Format FilePreviewService", "Headless MIME/extension detection in .Core, built-in RFC 4180 CSV parser, and zoomable modal lightbox for images, PDFs, audio, video, and CSV.", "File Lightbox"),
+                ("Secret Masking & One-Click Reveal", "DisplayKind.Code with Variant=\"secret\" automatically masks API keys (••••••••3210) with Reveal/Hide toggle and clipboard copy.", "Security UX")
             ],
             CoreCodeTitle: "Lux.Display.Core · FilePreviewService & CSV Parser",
             CoreCode: """
@@ -375,11 +382,11 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("FilePreviewService", "Headless MIME detector, RFC 4180 CSV parser and lightbox queue state.", "/components/modal", "Core"),
-                new("BxDisplay", "19-kind read-only block component (Stat, Facts, Meter, Diff, Code/Secret, Timeline).", "/components/card", "UI"),
-                new("BxAudioPlayer", "Constrained audio player with Start/End clip bounds, MaxPlays & Seekable guard.", "/components/card", "UI"),
-                new("BxVideoPlayer", "Constrained video player with tracks, clip bounds and play-limit locking.", "/components/card", "UI"),
-                new("BxFilePreviewProvider", "Modal lightbox host for images, PDFs, audio, video and parsed CSV files.", "/components/modal", "UI")
+                new("FilePreviewService", "Headless MIME detector, RFC 4180 CSV parser and lightbox queue state.", "/docs/lux-display", "Core"),
+                new("BxDisplay", "19-kind read-only block component (Stat, Facts, Meter, Diff, Code/Secret, Timeline).", "/docs/lux-display", "UI"),
+                new("BxAudioPlayer", "Constrained audio player with Start/End clip bounds, MaxPlays & Seekable guard.", "/docs/lux-display", "UI"),
+                new("BxVideoPlayer", "Constrained video player with tracks, clip bounds and play-limit locking.", "/docs/lux-display", "UI"),
+                new("BxFilePreviewProvider", "Modal lightbox host for images, PDFs, audio, video and parsed CSV files.", "/docs/lux-display", "UI")
             ]),
 
         new(
@@ -389,20 +396,21 @@ public static class LuxStackProducts
             Tagline: "Headless CSV/TSV importer, 20-row header detection, 80%-pass suggestions & batch retry",
             HeroHeadline: "Intelligent CSV import",
             HeroAccent: "& row reconciliation.",
-            Description: "Moteur d'importation de tableurs 100% NativeAOT dans Lux.Spreadsheet.Core : détection heuristique de la ligne d'en-tête sur 20 lignes, normalisation NFD sans accents, suggestion de colonnes validées à ≥80 %, questions de valeurs inconnues, gestion des doublons/upserts, édition en ligne et soumission par lots avec relance des rejets.",
+            Description: "100% NativeAOT spreadsheet import engine in Lux.Spreadsheet.Core: 20-row heuristic header layout detection, NFD accent-insensitive normalization, ≥80% pass-rate column suggestions, unknown value resolution questions, duplicate & existing record upsert policies, inline cell edits, and batched submission with rejected-row retry.",
             AccentHex: "#14b8a6",
             BadgeColor: BxColor.Success,
             RepoName: "lux-spreadsheet",
             RepoPath: "/home/gpoumarat/lux-spreadsheet",
             CorePackage: "Lux.Spreadsheet.Core",
             UiPackage: "Lux.Spreadsheet",
+            DocsHref: "/docs/lux-spreadsheet",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
-                ("20-Row Heuristic Header Detection", "Ignore automatiquement les lignes de titre ou métadonnées d'export Excel/CSV pour localiser la vraie ligne d'en-tête.", "Auto Header"),
-                ("NFD Normalization & 80%-Pass Matching", "Normalise les en-têtes (accents, *, (required)) et suggère les colonnes manquantes uniquement si ≥80 % des lignes respectent le type et les règles.", "Smart Mapping"),
-                ("Unknown Value Questions & Upsert Rules", "Invite l'utilisateur à mapper ou ignorer les valeurs inconnues et détecte doublons intra-fichier ou mises à jour d'enregistrements existants.", "Reconciliation"),
-                ("Batch Submit & Retry Rejected Rows", "Exécute l'envoi par lots configurables et isole les lignes rejetées par l'API pour édition en ligne et relance ciblée.", "Batch Retry")
+                ("20-Row Heuristic Header Detection", "Automatically skips export banners and title rows across the first 20 rows of a CSV/TSV or clipboard paste to locate the real header row.", "Auto Header"),
+                ("NFD Normalization & 80%-Pass Matching", "Normalizes headers (accents, *, (required)) and suggests unmapped columns only when ≥80% of sample values pass type parsing and validation rules.", "Smart Mapping"),
+                ("Unknown Value Questions & Upsert", "Surfaces unknown select values as explicit mapping questions and resolves intra-file duplicates or updates against existing database records.", "Reconciliation"),
+                ("Batch Submit & Retry Rejected Rows", "Submits validated rows in configurable batches and isolates server-rejected rows for inline correction and targeted retry.", "Batch Retry")
             ],
             CoreCodeTitle: "Lux.Spreadsheet.Core · Headless SpreadsheetImporter",
             CoreCode: """
@@ -430,9 +438,9 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("SpreadsheetSchema", "Column definitions, rules, options, duplicate policies & existing record lookup.", "/components/file-upload", "Core"),
-                new("SpreadsheetImporter", "Headless NativeAOT parser, layout detector, column suggester & batch runner.", "/components/file-upload", "Core"),
-                new("BxSpreadsheetImport", "Interactive 5-step Blazor/MAUI import wizard with inline cell editing.", "/components/file-upload", "UI")
+                new("SpreadsheetSchema", "Column definitions, rules, options, duplicate policies & existing record lookup.", "/docs/lux-spreadsheet", "Core"),
+                new("SpreadsheetImporter", "Headless NativeAOT parser, layout detector, column suggester & batch runner.", "/docs/lux-spreadsheet", "Core"),
+                new("BxSpreadsheetImport", "Interactive 5-step Blazor/MAUI import wizard with inline cell editing.", "/docs/lux-spreadsheet", "UI")
             ]),
 
         new(
@@ -442,20 +450,21 @@ public static class LuxStackProducts
             Tagline: "Semantic AI Agent Bridge (snapshot/query/act), WebMCP tools, observe stream & UndoStack",
             HeroHeadline: "AI-ready interfaces",
             HeroAccent: "& semantic WebMCP.",
-            Description: "Inspiré de ui-sdk.dev : rend vos formulaires (Lux.Form), tableaux de bord (Lux.Dashboard) et imports (Lux.Spreadsheet) directement pilotables par des agents IA sans sélecteurs CSS fragiles. Expose Snapshot/Query/Act sémantique, politique d'autorisation, redaction [redacted] des secrets, WebMCP et UndoStack<T>.",
+            Description: "Inspired by ui-sdk.dev: makes Lux.Form, Lux.Dashboard, and Lux.Spreadsheet immediately inspectable and operable by AI agents without brittle CSS selectors. Provides semantic Snapshot/Query/Act, global permission policies, automatic [redacted] secret masking, WebMCP browser assets, and UndoStack<T>.",
             AccentHex: "#6366f1",
             BadgeColor: BxColor.Info,
             RepoName: "lux-agent",
             RepoPath: "/home/gpoumarat/lux-agent",
             CorePackage: "Lux.Agent.Core",
             UiPackage: "Lux.Agent",
+            DocsHref: "/docs/lux-agent",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Browser WebMCP (navigator.modelContext)"],
             Features:
             [
-                ("Semantic Snapshot, Query & Act", "Expose jusqu'à 100 contrôles avec ref stable (c1, c2…), état, choix interrogeables sans ouvrir de popup et actions sémantiques (setValue, toggle, submit).", "Semantic Bridge"),
-                ("Permission Gate & Confirmation Policy", "AllowPolicy global ou par appel avec indicateur ConfirmRequired pour bloquer ou valider les actions sensibles avant exécution.", "Policy Guard"),
-                ("Observe Stream & Secret Redaction", "Flux unifié ObservedChange (source Agent/User) où les champs Password/OneTimeCode sont systématiquement masqués en [redacted].", "Privacy First"),
-                ("WebMCP JS Assets & UndoStack<T>", "Inclut _content/Lux.Agent/lux-agent.js + lux-behaviors.js pour WebMCP et UndoStack<T> borné dans Lux.Agent.Core (NativeAOT).", "WebMCP + Undo")
+                ("Semantic Snapshot, Query & Act", "Exposes up to 100 controls by stable ref (c1, c2…), queries select/filter choices without opening popups, and runs semantic actions (setValue, toggle, submit).", "Semantic Bridge"),
+                ("Permission Gate & Confirmation Policy", "Global AllowPolicy or per-call gate with ConfirmRequired flags to approve or block consequential actions before execution.", "Policy Guard"),
+                ("Observe Stream & Secret Redaction", "Unified ObservedChange stream (Agent/User source) where Password and OneTimeCode fields are always redacted as [redacted].", "Privacy First"),
+                ("WebMCP JS Assets & UndoStack<T>", "Ships _content/Lux.Agent/lux-agent.js + lux-behaviors.js for WebMCP and a bounded generic UndoStack<T> in Lux.Agent.Core (NativeAOT).", "WebMCP + Undo")
             ],
             CoreCodeTitle: "Lux.Agent · AgentBridgeService & UndoStack<T>",
             CoreCode: """
@@ -486,10 +495,10 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("AgentComponentSnapshot", "Compact NativeAOT semantic snapshot model with state, actions & flags.", "/docs/mcp", "Core"),
-                new("UndoStack<T>", "Generic bounded Undo/Redo stack with labels and state notifications.", "/docs/mcp", "Core"),
-                new("AgentBridgeService", "Connects FormController, DashboardController & SpreadsheetImporter to AI agents.", "/docs/mcp", "UI"),
-                new("lux-agent.js & lux-behaviors.js", "Static web assets for WebMCP (navigator.modelContext) and composable DOM behaviors.", "/docs/mcp", "UI")
+                new("AgentComponentSnapshot", "Compact NativeAOT semantic snapshot model with state, actions & flags.", "/docs/lux-agent", "Core"),
+                new("UndoStack<T>", "Generic bounded Undo/Redo stack with labels and state notifications.", "/docs/lux-agent", "Core"),
+                new("AgentBridgeService", "Connects FormController, DashboardController & SpreadsheetImporter to AI agents.", "/docs/lux-agent", "UI"),
+                new("lux-agent.js & lux-behaviors.js", "Static web assets for WebMCP (navigator.modelContext) and composable DOM behaviors.", "/docs/lux-agent", "UI")
             ])
     ];
 
