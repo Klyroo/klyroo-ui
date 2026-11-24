@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxKbd"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxKbd"/> slots.</summary>
 public sealed record KbdUi : ISlotOverrides
 {
     public string? Base { get; init; }

@@ -1,0 +1,122 @@
+@namespace Lux.UI
+@using System.Globalization
+@using Lux.UI.Internal
+@inherits LxFieldBase<TimeOnly?>
+
+@if (UseEditContext)
+{
+    <FieldBridge TValue="TimeOnly?" Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</FieldBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>Show an AM/PM segment. Defaults to what the culture's short time pattern uses.</summary>
+    [Parameter] public bool? Hour12 { get; set; }
+
+    /// <summary>Minutes added or removed by the arrow keys on the minute segment.</summary>
+    [Parameter] public int Step { get; set; } = 1;
+
+    /// <summary>Accessible name of the field when it is not inside a <see cref="LxFormField"/> with a label.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputTimeUi? Ui { get; set; }
+
+    private bool Use12 => Hour12 ?? FormatCulture.DateTimeFormat.ShortTimePattern.Contains('h');
+    private string Am => string.IsNullOrEmpty(FormatCulture.DateTimeFormat.AMDesignator) ? Messages.TimeAm : FormatCulture.DateTimeFormat.AMDesignator;
+    private string Pm => string.IsNullOrEmpty(FormatCulture.DateTimeFormat.PMDesignator) ? Messages.TimePm : FormatCulture.DateTimeFormat.PMDesignator;
+
+    private string HourLabel => Value is not { } t ? "--" : (Use12 ? (t.Hour % 12 == 0 ? 12 : t.Hour % 12) : t.Hour).ToString("00", CultureInfo.InvariantCulture);
+    private string MinuteLabel => Value is not { } t ? "--" : t.Minute.ToString("00", CultureInfo.InvariantCulture);
+    private string PeriodLabel => Value is { Hour: >= 12 } ? Pm : Am;
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputTime, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var time = Iso.ParseTime(e.Value);
+        if (time == Value)
+        {
+            return;
+        }
+        Value = time;
+        await ValueChanged.InvokeAsync(time);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> HourAttributes(EditBinding binding) => SegmentAttributes("hour", HourLabel, Messages.Hours, Value is null, binding);
+    private Dictionary<string, object> MinuteAttributes(EditBinding binding) => SegmentAttributes("minute", MinuteLabel, Messages.Minutes, Value is null, binding);
+    private Dictionary<string, object> PeriodAttributes(EditBinding binding) => SegmentAttributes("period", PeriodLabel, Messages.DayPeriod, false, binding);
+
+    private Dictionary<string, object> SegmentAttributes(string segment, string label, string name, bool placeholder, EditBinding binding)
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            ["role"] = "spinbutton",
+            ["class"] = _slots["segment"],
+            ["data-segment"] = segment,
+            ["data-label"] = label,
+            ["aria-label"] = name,
+            ["data-slot"] = "segment",
+        };
+        if (placeholder) attributes["data-placeholder"] = "";
+        if (Disabled)
+        {
+            attributes["aria-disabled"] = "true";
+        }
+        else
+        {
+            attributes["tabindex"] = "0";
+        }
+        if (Required || Field?.Required == true) attributes["aria-required"] = "true";
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<lx-input-time data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                        value="@Iso.Time(Value)"
+                        hour12="@(Use12 ? "" : null)"
+                        step="@Step"
+                        data-label-am="@Am"
+                        data-label-pm="@Pm"
+                        id="@ControlId"
+                        role="group"
+                        aria-label="@(Field?.LabelId is null ? AriaLabel : null)"
+                        aria-labelledby="@Field?.LabelId"
+                        aria-describedby="@FormFieldContext.Join(Field?.DescribedBy)"
+                        class="@binding.WithFieldClass(_slots["root"])"
+                        data-color="@Color.Value"
+                        data-disabled="@(Disabled ? "" : null)"
+                        data-invalid="@(binding.Invalid ? "" : null)"
+                        @onbxchange="ChangeHandler"
+                        @onbxchange:stopPropagation="true"
+                        @attributes="AdditionalAttributes">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@Iso.Time(Value)" disabled="@Disabled" />
+            <span @attributes="HourAttributes(binding)"></span>
+            <span class="@_slots["separator"]" aria-hidden="true">:</span>
+            <span @attributes="MinuteAttributes(binding)"></span>
+            @if (Use12)
+            {
+                <span @attributes="PeriodAttributes(binding)"></span>
+            }
+        </lx-input-time>;
+}

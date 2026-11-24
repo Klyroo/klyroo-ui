@@ -1,5 +1,5 @@
 using System.Net;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 
 namespace Chat.Shared.Markdown;
 

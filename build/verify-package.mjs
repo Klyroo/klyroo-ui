@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const online = process.argv.includes("--online");
 const keep = process.argv.includes("--keep");
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const work = mkdtempSync(join(tmpdir(), "blux-pkgcheck-"));
+const work = mkdtempSync(join(tmpdir(), "lux-pkgcheck-"));
 const feed = join(work, "feed");
 const failures = [];
 const check = (ok, what) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) failures.push(what); return ok; };
@@ -56,12 +56,12 @@ try {
   mkdirSync(feed);
   const pack = run("dotnet", ["pack", "src/Lux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack -c Release succeeds without warnings")) console.log(pack.out);
-  const nupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.nupkg$/.test(f));
-  const snupkgName = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.snupkg$/.test(f));
+  const nupkgName = readdirSync(feed).find((f) => /^Lux\.UI\.\d.*\.nupkg$/.test(f));
+  const snupkgName = readdirSync(feed).find((f) => /^Lux\.UI\.\d.*\.snupkg$/.test(f));
   check(!!nupkgName, ".nupkg produced");
   check(!!snupkgName, ".snupkg produced");
   if (!nupkgName || !snupkgName) throw new Error("pack produced no package");
-  const version = nupkgName.replace(/^Blux\.UI\./, "").replace(/\.nupkg$/, "");
+  const version = nupkgName.replace(/^Lux\.UI\./, "").replace(/\.nupkg$/, "");
   console.log(`version: ${version}`);
 
   // 2. .nupkg contents.
@@ -74,7 +74,7 @@ try {
     "build/Lux.UI.Tasks.targets", "build/Lux.UI.Fonts.targets", "build/Lux.UI.Icons.targets", "build/Lux.UI.Tailwind.targets", "build/tasks/Lux.UI.Build.Tasks.dll", "CHANGELOG.md", "icon.png", "Lux.UI.nuspec"]) {
     check(nupkg.has(n), `nupkg contains ${n}`);
   }
-  check(names.some((n) => /^staticwebassets\/Blux\.UI(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), "nupkg contains the JS initializer (Lux.UI.lib.module.js, fingerprinted)");
+  check(names.some((n) => /^staticwebassets\/Lux\.UI(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), "nupkg contains the JS initializer (Lux.UI.lib.module.js, fingerprinted)");
   check(names.some((n) => /^build\/.*StaticWebAssets/i.test(n)), "nupkg declares its static web assets for consumers (build/*StaticWebAssets*)");
   check(!names.some((n) => /^(js|styles)\//.test(n)), "sources of generated assets (js/, styles/) are not shipped");
   check(!names.some((n) => n.endsWith(".pdb")), "no .pdb in the .nupkg (symbols go to the .snupkg)");
@@ -110,40 +110,40 @@ try {
     check([...pkg.keys()].every((n) => !n.endsWith(".pdb")), `${id}: no .pdb in the .nupkg`);
     const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
     check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
-    // The local optimizer reaches Lux.UI through Lux.UI.Images. The query package depends on no Blux package and no ASP.NET Core.
-    const dependency = id.endsWith(".Local") ? "Blux\\.UI\\.Images" : id === "Lux.UI.Tools.EntityFrameworkCore" ? "Blux\\.UI\\.Tools" : "Blux\\.UI";
+    // The local optimizer reaches Lux.UI through Lux.UI.Images. The query package depends on no Lux package and no ASP.NET Core.
+    const dependency = id.endsWith(".Local") ? "Lux\\.UI\\.Images" : id === "Lux.UI.Tools.EntityFrameworkCore" ? "Lux\\.UI\\.Tools" : "Lux\\.UI";
     if (id === "Lux.UI.Tools.Query") {
-      check(!/<dependency id="Blux\.UI/.test(spec) && !/Microsoft\.AspNetCore/.test(spec), `${id}: depends on no Blux package and no ASP.NET Core`);
+      check(!/<dependency id="Lux\.UI/.test(spec) && !/Microsoft\.AspNetCore/.test(spec), `${id}: depends on no Lux package and no ASP.NET Core`);
     } else {
       check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
     }
     if (id === "Lux.UI.Tools.EntityFrameworkCore") {
       // Lockstep with Lux.UI.Tools, and the one outside dependency: EF Core 10. Lux.UI and the query package come through Lux.UI.Tools.
-      check(new RegExp(`<dependency id="Blux\\.UI\\.Tools" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Lux.UI.Tools [${version}]`);
+      check(new RegExp(`<dependency id="Lux\\.UI\\.Tools" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Lux.UI.Tools [${version}]`);
       check(/<dependency id="Microsoft\.EntityFrameworkCore" version="10\./.test(spec), `${id}: depends on Microsoft.EntityFrameworkCore 10`);
       check(!/<dependency id="Microsoft\.EntityFrameworkCore\.(Sqlite|SqlServer|Relational)/.test(spec), `${id}: depends on no EF Core provider`);
     }
     if (id === "Lux.UI.Tools") {
       // Lockstep: exactly the version of Lux.UI and of the query package, and the build assets of Lux.UI still flow to an app that only references Tools.
-      for (const dep of ["Blux\\.UI", "Blux\\.UI\\.Tools\\.Query"]) {
+      for (const dep of ["Lux\\.UI", "Lux\\.UI\\.Tools\\.Query"]) {
         check(new RegExp(`<dependency id="${dep}" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly ${dep.replace(/\\/g, "")} [${version}]`);
       }
-      check(!/<dependency id="Blux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Lux.UI flow through this package`);
-      for (const n of ["staticwebassets/blux-tools.theme.css", "buildTransitive/Lux.UI.Tools.targets", "build/Lux.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
+      check(!/<dependency id="Lux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Lux.UI flow through this package`);
+      for (const n of ["staticwebassets/lux-tools.theme.css", "buildTransitive/Lux.UI.Tools.targets", "build/Lux.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
       const names = [...pkg.keys()];
-      check(names.some((n) => /^staticwebassets\/Blux\.UI\.Tools(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), `${id}: nupkg contains the JS initializer (Lux.UI.Tools.lib.module.js, fingerprinted)`);
-      check(!names.includes("staticwebassets/blux-tools.css"), `${id}: no precompiled stylesheet in the nupkg (it needs Tailwind compiled by the app)`);
+      check(names.some((n) => /^staticwebassets\/Lux\.UI\.Tools(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), `${id}: nupkg contains the JS initializer (Lux.UI.Tools.lib.module.js, fingerprinted)`);
+      check(!names.includes("staticwebassets/lux-tools.css"), `${id}: no precompiled stylesheet in the nupkg (it needs Tailwind compiled by the app)`);
       check(names.some((n) => /^build\/.*StaticWebAssets/i.test(n)), `${id}: nupkg declares its static web assets for consumers`);
       check(!names.some((n) => /^(js|styles)\//.test(n)), `${id}: sources of generated assets (js/, styles/) are not shipped`);
-      const toolsTheme = readFileSync(join(root, "src", "Lux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8");
-      check(pkg.has("staticwebassets/blux-tools.theme.css") && pkg.get("staticwebassets/blux-tools.theme.css")().toString("utf8") === toolsTheme, `${id}: packed blux-tools.theme.css equals the committed one`);
+      const toolsTheme = readFileSync(join(root, "src", "Lux.UI.Tools", "wwwroot", "lux-tools.theme.css"), "utf8");
+      check(pkg.has("staticwebassets/lux-tools.theme.css") && pkg.get("staticwebassets/lux-tools.theme.css")().toString("utf8") === toolsTheme, `${id}: packed lux-tools.theme.css equals the committed one`);
     }
     if (id === "Lux.UI.Server") {
       // Lockstep with Lux.UI, and the ASP.NET Core shared framework: a WebAssembly client must not reference it.
-      check(new RegExp(`<dependency id="Blux\\.UI" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Lux.UI [${version}]`);
-      check(!/<dependency id="Blux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Lux.UI flow through this package`);
+      check(new RegExp(`<dependency id="Lux\\.UI" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Lux.UI [${version}]`);
+      check(!/<dependency id="Lux\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Lux.UI flow through this package`);
       check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
-      check(!/<dependency id="Blux\.UI\.(Tools|Images)/.test(spec), `${id}: depends on no other Blux package than Lux.UI`);
+      check(!/<dependency id="Lux\.UI\.(Tools|Images)/.test(spec), `${id}: depends on no other Lux package than Lux.UI`);
     }
     if (id.endsWith(".Local")) {
       check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
@@ -157,11 +157,11 @@ try {
   const app = join(work, "app");
   mkdirSync(app);
   writeFileSync(join(app, "global.json"), JSON.stringify({ sdk: { version: "10.0.100", rollForward: "latestFeature" } }));
-  const sources = [`<add key="blux-feed" value="${feed}" />`, `<add key="local-cache" value="${cache}" />`];
+  const sources = [`<add key="lux-feed" value="${feed}" />`, `<add key="local-cache" value="${cache}" />`];
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Lux.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Lux.UI" /><package pattern="Lux.UI.Images" /><package pattern="Lux.UI.Images.Local" /><package pattern="Lux.UI.Server" /><package pattern="Lux.UI.Tools" /><package pattern="Lux.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="lux-feed"><package pattern="Lux.UI" /><package pattern="Lux.UI.Images" /><package pattern="Lux.UI.Images.Local" /><package pattern="Lux.UI.Server" /><package pattern="Lux.UI.Tools" /><package pattern="Lux.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
@@ -169,7 +169,7 @@ try {
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
   // The server also uses the local image optimizer; the client only needs the URL builder. Both use Lux.UI.Tools (a Razor class library with its own CSS and JS initializer).
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Lux.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Lux.UI.Images"]]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Lux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Lux.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><BluxToolsOwnTailwind>true</BluxToolsOwnTailwind></PropertyGroup>\n</Project>`));
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Lux.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Lux.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><LuxToolsOwnTailwind>true</LuxToolsOwnTailwind></PropertyGroup>\n</Project>`));
   }
   // More projects that only reach Lux.UI.Tools through Site.Client: a host with no Tailwind (it must not be told about Tools), one that compiles Tailwind with Node (it must),
   // and one whose package.json only has a Tailwind plugin of Prettier (it must not: the dependency is not tailwindcss itself).
@@ -181,7 +181,7 @@ try {
   for (const [name, packageJson] of extras) {
     const dir = join(app, "Site", name);
     mkdirSync(dir);
-    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${name === "Site.Node" ? "<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
+    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${name === "Site.Node" ? "<LuxToolsOwnTailwind>true</LuxToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
     if (packageJson) writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson));
     const added = run("dotnet", ["sln", join(app, "Site", "Site.sln"), "add", join(dir, `${name}.csproj`)], app, consumerEnv);
     check(added.code === 0, `${name} added to the consumer solution`);
@@ -205,10 +205,10 @@ try {
   const prog = join(server, "Program.cs");
   writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddLuxUi();\nbuilder.Services.AddLuxUiTools();\nbuilder.Services.AddLuxServer();\nbuilder.Services.AddLuxImagesLocal();\n\nvar app = builder.Build();\napp.MapLuxImages();").replace("using Site.Components;", "using Site.Components;\nusing Lux.UI;\nusing Lux.UI.Server;\nusing Lux.UI.Tools;"));
   const home = join(server, "Components", "Pages", "Home.razor");
-  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Lux.UI\n<BxButton Label="Save" />\n<BxSwitch Label="Notify" />\n<BxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<BxButton Label="Close" LeadingIcon='BxIcons.Named("pkg:check-mark")' />\n@using Lux.UI.Tools\n<BxDataListEmpty data-testid="pkg-empty" />\n`);
+  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Lux.UI\n<LxButton Label="Save" />\n<LxSwitch Label="Notify" />\n<LxIcon Name="i-pkg-check-mark" Label="Check mark" />\n<LxButton Label="Close" LeadingIcon='LxIcons.Named("pkg:check-mark")' />\n@using Lux.UI.Tools\n<LxDataListEmpty data-testid="pkg-empty" />\n`);
   const appRazor = join(server, "Components", "App.razor");
-  const original = readFileSync(appRazor, "utf8").replace("<ResourcePreloader />", "<BxFonts />\n    <ResourcePreloader />");
-  check(original.includes("<BxFonts />"), "consumer App.razor has BxFonts");
+  const original = readFileSync(appRazor, "utf8").replace("<ResourcePreloader />", "<LxFonts />\n    <ResourcePreloader />");
+  check(original.includes("<LxFonts />"), "consumer App.razor has LxFonts");
   const themeCss = readFileSync(join(root, "src", "Lux.UI", "wwwroot", "lux.theme.css"), "utf8");
   check(nupkg.has("staticwebassets/lux.theme.css") && nupkg.get("staticwebassets/lux.theme.css")().toString("utf8") === themeCss, "packed lux.theme.css equals the committed one");
 
@@ -216,7 +216,7 @@ try {
     const r = run("dotnet", ["build", "-c", "Release", join(app, "Site", "Site.sln")], app, consumerEnv);
     check(r.code === 0, `${label}: consumer builds`);
     if (r.code !== 0) console.log(r.out);
-    check(!/warning[^\n]*Blux/i.test(r.out), `${label}: no Lux.UI warning in the consumer build`);
+    check(!/warning[^\n]*Lux/i.test(r.out), `${label}: no Lux.UI warning in the consumer build`);
   };
 
   // Mode A: precompiled CSS.
@@ -227,44 +227,44 @@ try {
   for (const f of ["lux.css", "lux.preflight.css", "Lux.UI.lib.module.js", "lux-editor.js"]) {
     check(manifest.includes(`_content/Lux.UI/${f}`), `precompiled mode: static web asset _content/Lux.UI/${f}`);
   }
-  for (const f of ["blux-tools.theme.css", "Lux.UI.Tools.lib.module.js"]) {
+  for (const f of ["lux-tools.theme.css", "Lux.UI.Tools.lib.module.js"]) {
     check(manifest.includes(`_content/Lux.UI.Tools/${f}`), `precompiled mode: static web asset _content/Lux.UI.Tools/${f}`);
   }
   {
-    // Without LuxTailwind and without BluxToolsOwnTailwind the build tells the app that Tools needs Tailwind.
-    const r = run("dotnet", ["build", "-c", "Release", "-p:BluxToolsOwnTailwind=false", join(app, "Site", "Site.sln")], app, consumerEnv);
-    check(r.code === 0 && /warning BLUXTOOLS001[^\n]*BluxToolsOwnTailwind/.test(r.out), "tools: referencing Lux.UI.Tools without Tailwind and without BluxToolsOwnTailwind warns with BLUXTOOLS001");
-    check(/Site\.Client uses Blux\.UI\.Tools/.test(r.out) && /Site uses Blux\.UI\.Tools/.test(r.out), "tools: the projects that reference Lux.UI.Tools are warned");
-    check(!/Site\.Plain uses Blux\.UI\.Tools/.test(r.out), "tools: a project that only reaches Lux.UI.Tools through another one, with no Tailwind, is not warned");
-    check(!/Site\.Prettier uses Blux\.UI\.Tools/.test(r.out), "tools: a package.json with only prettier-plugin-tailwindcss is not Tailwind");
-    check(/Site\.Node uses Blux\.UI\.Tools/.test(r.out), "tools: a project that compiles Tailwind with Node (package.json) is warned even without a reference of its own");
+    // Without LuxTailwind and without LuxToolsOwnTailwind the build tells the app that Tools needs Tailwind.
+    const r = run("dotnet", ["build", "-c", "Release", "-p:LuxToolsOwnTailwind=false", join(app, "Site", "Site.sln")], app, consumerEnv);
+    check(r.code === 0 && /warning LUXTOOLS001[^\n]*LuxToolsOwnTailwind/.test(r.out), "tools: referencing Lux.UI.Tools without Tailwind and without LuxToolsOwnTailwind warns with LUXTOOLS001");
+    check(/Site\.Client uses Lux\.UI\.Tools/.test(r.out) && /Site uses Lux\.UI\.Tools/.test(r.out), "tools: the projects that reference Lux.UI.Tools are warned");
+    check(!/Site\.Plain uses Lux\.UI\.Tools/.test(r.out), "tools: a project that only reaches Lux.UI.Tools through another one, with no Tailwind, is not warned");
+    check(!/Site\.Prettier uses Lux\.UI\.Tools/.test(r.out), "tools: a package.json with only prettier-plugin-tailwindcss is not Tailwind");
+    check(/Site\.Node uses Lux\.UI\.Tools/.test(r.out), "tools: a project that compiles Tailwind with Node (package.json) is warned even without a reference of its own");
     build("own tailwind declared");
   }
 
   // Self-hosted fonts: generated by the task from the package's targets, then part of the static web assets.
-  const fontsOut = join(server, "obj", "Release", "net10.0", "blux", "fonts");
-  const fontsCssFile = join(fontsOut, "blux.fonts.css");
+  const fontsOut = join(server, "obj", "Release", "net10.0", "lux", "fonts");
+  const fontsCssFile = join(fontsOut, "lux.fonts.css");
   const fontsCss = existsSync(fontsCssFile) ? readFileSync(fontsCssFile, "utf8") : "";
-  check(/font-family: "PackageCheck";/.test(fontsCss) && /font-display: swap;/.test(fontsCss), "fonts: blux.fonts.css declares the local font with font-display");
-  check(/font-family: "PackageCheck Fallback";[\s\S]*size-adjust: [\d.]+%;[\s\S]*ascent-override:[\s\S]*descent-override:[\s\S]*line-gap-override:/.test(fontsCss), "fonts: blux.fonts.css has a fallback face with metric overrides");
-  check(/--blux-font-sans: "PackageCheck", "PackageCheck Fallback", /.test(fontsCss), "fonts: --blux-font-sans lists the font and its fallback");
+  check(/font-family: "PackageCheck";/.test(fontsCss) && /font-display: swap;/.test(fontsCss), "fonts: lux.fonts.css declares the local font with font-display");
+  check(/font-family: "PackageCheck Fallback";[\s\S]*size-adjust: [\d.]+%;[\s\S]*ascent-override:[\s\S]*descent-override:[\s\S]*line-gap-override:/.test(fontsCss), "fonts: lux.fonts.css has a fallback face with metric overrides");
+  check(/--lux-font-sans: "PackageCheck", "PackageCheck Fallback", /.test(fontsCss), "fonts: --lux-font-sans lists the font and its fallback");
   const fontFile = /url\("(PackageCheck-400-normal\.[0-9a-f]{8}\.woff2)"\)/.exec(fontsCss)?.[1];
   check(!!fontFile && existsSync(join(fontsOut, fontFile)), `fonts: the font file is generated with a hashed name (${fontFile})`);
   check(existsSync(join(fontsOut, "..", "LuxFontsManifest.g.cs")) && !existsSync(join(fontsOut, "LuxFontsManifest.g.cs")), "fonts: the manifest source is generated next to the fonts folder, not in it");
-  check(!manifest.includes("LuxFontsManifest") && !manifest.includes(".stamp") && !manifest.includes("blux.fonts.json"), "fonts: only fonts and the stylesheet are static web assets");
-  check(manifest.includes("_blux/fonts/blux.fonts") && !!fontFile && manifest.includes(`_blux/fonts/${fontFile}`), "fonts: stylesheet and font file are static web assets under _blux/fonts/");
+  check(!manifest.includes("LuxFontsManifest") && !manifest.includes(".stamp") && !manifest.includes("lux.fonts.json"), "fonts: only fonts and the stylesheet are static web assets");
+  check(manifest.includes("_lux/fonts/lux.fonts") && !!fontFile && manifest.includes(`_lux/fonts/${fontFile}`), "fonts: stylesheet and font file are static web assets under _lux/fonts/");
   const endpointsFile = join(server, "obj", "Release", "net10.0", "staticwebassets.build.endpoints.json");
   const endpoints = existsSync(endpointsFile) ? JSON.parse(readFileSync(endpointsFile, "utf8")).Endpoints : [];
-  const fontEndpoints = endpoints.filter((e) => fontFile && e.Route.startsWith("_blux/fonts/PackageCheck-400") && e.Route.endsWith(".woff2"));
+  const fontEndpoints = endpoints.filter((e) => fontFile && e.Route.startsWith("_lux/fonts/PackageCheck-400") && e.Route.endsWith(".woff2"));
   check(fontEndpoints.length >= 2 && fontEndpoints.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable")), "fonts: every route of the font is served with a year of immutable cache");
   for (const [ext, mime] of [["ttf", "font/ttf"], ["woff", "font/woff"]]) {
-    const routes = endpoints.filter((e) => e.Route.startsWith("_blux/fonts/PackageCheck-") && e.Route.endsWith("." + ext));
+    const routes = endpoints.filter((e) => e.Route.startsWith("_lux/fonts/PackageCheck-") && e.Route.endsWith("." + ext));
     check(routes.length >= 2 && routes.every((e) => e.ResponseHeaders.some((h) => h.Name === "Cache-Control" && h.Value === "max-age=31536000, immutable") && e.ResponseHeaders.some((h) => h.Name === "Content-Type" && h.Value === mime)), `fonts: every route of the .${ext} font is served as ${mime} with a year of immutable cache`);
   }
-  check(!endpoints.some((e) => /\.(cs|json|stamp)$/.test(e.Route) && e.Route.startsWith("_blux/fonts/")), "fonts: no generated source, manifest or stamp is published as an endpoint");
+  check(!endpoints.some((e) => /\.(cs|json|stamp)$/.test(e.Route) && e.Route.startsWith("_lux/fonts/")), "fonts: no generated source, manifest or stamp is published as an endpoint");
 
   // Bundled icons: generated from the folder with no network, then compiled into the app.
-  const iconsFile = join(server, "obj", "Release", "net10.0", "blux", "icons", "LuxIcons.g.cs");
+  const iconsFile = join(server, "obj", "Release", "net10.0", "lux", "icons", "LuxIcons.g.cs");
   const iconsSource = existsSync(iconsFile) ? readFileSync(iconsFile, "utf8") : "";
   check(/LuxIconBundle\.Add\("pkg", "check-mark", "<g fill=\\"none\\" stroke=\\"currentColor\\" stroke-width=\\"2\\"><path d=\\"M2 2h20\\"\/><\/g>", "0 0 24 24"\)/.test(iconsSource), "icons: the custom collection is generated into LuxIcons.g.cs");
   check(iconsSource.includes("ModuleInitializer"), "icons: the registration is a module initializer");
@@ -280,12 +280,12 @@ try {
       try { const res = await fetch(url + "/"); if (res.ok) html = await res.text(); } catch { /* not up yet */ }
     }
     try {
-      check(/data-testid="pkg-empty"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*><g[^>]*><path[\s\S]*?<p class="[^"]*" data-slot="title">No results<\/p>/.test(html) && !/data-bx-missing-icon="search-x"/.test(html), "tools: the page renders BxDataListEmpty with the icon of Lux.UI.Tools and its default text");
-      check(!/blux-tools[^"]*\.css/.test(html), "tools: the page links no precompiled Tools stylesheet (there is none)");
-      check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-bx-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
+      check(/data-testid="pkg-empty"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*><g[^>]*><path[\s\S]*?<p class="[^"]*" data-slot="title">No results<\/p>/.test(html) && !/data-lx-missing-icon="search-x"/.test(html), "tools: the page renders LxDataListEmpty with the icon of Lux.UI.Tools and its default text");
+      check(!/lux-tools[^"]*\.css/.test(html), "tools: the page links no precompiled Tools stylesheet (there is none)");
+      check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-lx-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
       const preload = /<link rel="preload" as="font" type="font\/woff2" crossorigin href="([^"]+)"/.exec(html)?.[1];
-      const sheet = /<link rel="stylesheet" href="(_blux\/fonts\/blux\.fonts[^"]*\.css)"/.exec(html)?.[1];
-      check(!!preload && preload.startsWith("_blux/fonts/PackageCheck-400-normal."), `fonts: the page preloads the font (${preload})`);
+      const sheet = /<link rel="stylesheet" href="(_lux\/fonts\/lux\.fonts[^"]*\.css)"/.exec(html)?.[1];
+      check(!!preload && preload.startsWith("_lux/fonts/PackageCheck-400-normal."), `fonts: the page preloads the font (${preload})`);
       check(!!sheet, `fonts: the page links the fingerprinted stylesheet (${sheet})`);
       if (preload) { const r = await fetch(`${url}/${preload}`); const b = new Uint8Array(await r.arrayBuffer()); check(r.ok && b.length > 1000 && String.fromCharCode(...b.slice(0, 4)) === "wOF2", "fonts: the font file is served as woff2"); }
       if (sheet) { const r = await fetch(`${url}/${sheet}`); check(r.ok && (await r.text()).includes("PackageCheck Fallback"), "fonts: the stylesheet is served"); }
@@ -298,9 +298,9 @@ try {
   {
     const r = run("dotnet", ["build", "-c", "Release", "-p:LuxFonts=false", join(app, "Site", "Site.sln")], app, consumerEnv);
     check(r.code === 0, "fonts off: consumer builds");
-    check(!readFileSync(manifestFile, "utf8").includes("_blux/fonts/"), "fonts off: no font in the static web assets");
+    check(!readFileSync(manifestFile, "utf8").includes("_lux/fonts/"), "fonts off: no font in the static web assets");
     build("fonts back on");
-    check(readFileSync(manifestFile, "utf8").includes("_blux/fonts/"), "fonts back on: the fonts are in the static web assets again");
+    check(readFileSync(manifestFile, "utf8").includes("_lux/fonts/"), "fonts back on: the fonts are in the static web assets again");
   }
 
   // LuxIcons=false after a build with icons: the file the earlier build left on disk is not deleted by the test. The generated file must be in
@@ -321,16 +321,16 @@ try {
     check(readFileSync(iconsFile, "utf8").includes("[assembly: global::Lux.UI.LuxIconRegistrar("), "icons back on: the generated file announces its registrar with an assembly attribute");
   }
 
-  // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/blux/ on every build.
-  for (const dir of [server, client]) rmSync(join(dir, "obj", "blux"), { recursive: true, force: true });
+  // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/lux/ on every build.
+  for (const dir of [server, client]) rmSync(join(dir, "obj", "lux"), { recursive: true, force: true });
   mkdirSync(join(server, "Styles"));
-  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/blux/lux.theme.css";\n@import "../obj/blux/blux-tools.theme.css";\n`);
+  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/lux/lux.theme.css";\n@import "../obj/lux/lux-tools.theme.css";\n`);
   build("tailwind mode");
   for (const [label, dir] of [["server", server], ["client", client]]) {
-    const copied = join(dir, "obj", "blux", "lux.theme.css");
-    check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/blux/lux.theme.css copied by the targets, identical to the package's`);
-    const copiedTools = join(dir, "obj", "blux", "blux-tools.theme.css");
-    check(existsSync(copiedTools) && readFileSync(copiedTools, "utf8") === readFileSync(join(root, "src", "Lux.UI.Tools", "wwwroot", "blux-tools.theme.css"), "utf8"), `tailwind mode: ${label} obj/blux/blux-tools.theme.css copied by the targets, identical to the package's`);
+    const copied = join(dir, "obj", "lux", "lux.theme.css");
+    check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/lux/lux.theme.css copied by the targets, identical to the package's`);
+    const copiedTools = join(dir, "obj", "lux", "lux-tools.theme.css");
+    check(existsSync(copiedTools) && readFileSync(copiedTools, "utf8") === readFileSync(join(root, "src", "Lux.UI.Tools", "wwwroot", "lux-tools.theme.css"), "utf8"), `tailwind mode: ${label} obj/lux/lux-tools.theme.css copied by the targets, identical to the package's`);
   }
 
   // Tailwind compiled by the app at build time, without Node: LuxTailwind=true downloads the pinned standalone CLI. The cache is a fresh folder
@@ -341,7 +341,7 @@ try {
     const rcl = join(app, "Site", "Rcl");
     mkdirSync(join(rcl, "Styles"), { recursive: true });
     writeFileSync(join(rcl, "Rcl.csproj"), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><LuxTailwind>true</LuxTailwind></PropertyGroup>\n  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /><PackageReference Include="Lux.UI" Version="${version}" /></ItemGroup>\n</Project>\n`);
-    writeFileSync(join(rcl, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/lux.theme.css";\n`);
+    writeFileSync(join(rcl, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/lux/lux.theme.css";\n`);
     writeFileSync(join(rcl, "Widget.razor"), `<p class="tracking-[0.246em]">Rcl widget</p>\n`);
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><ProjectReference Include="..\\Rcl\\Rcl.csproj" /></ItemGroup>\n</Project>`));
     // In the solution, so that a Release build of it builds the library in Release too (a project outside the solution is built as Debug).
@@ -352,7 +352,7 @@ try {
       const r = run("dotnet", ["build", "-c", "Release", ...extra, join(app, "Site", "Site.sln")], app, consumerEnv);
       check(r.code === 0, `${label}: consumer builds`);
       if (r.code !== 0) console.log(r.out);
-      check(!/warning[^\n]*Blux/i.test(r.out), `${label}: no Lux.UI warning in the consumer build`);
+      check(!/warning[^\n]*Lux/i.test(r.out), `${label}: no Lux.UI warning in the consumer build`);
       return r;
     };
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <PropertyGroup><LuxTailwind>true</LuxTailwind></PropertyGroup>\n</Project>`));
@@ -361,7 +361,7 @@ try {
     mkdirSync(shared, { recursive: true });
     writeFileSync(join(shared, "Shared.razor"), `<p class="tracking-[0.555em]">shared</p>\n`);
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("</Project>", `  <ItemGroup><LuxTailwindAdditionalInput Include="../Shared/**/*.razor" /></ItemGroup>\n</Project>`));
-    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/blux/lux.theme.css";\n@source "../../Shared";\n`);
+    writeFileSync(join(server, "Styles", "app.css"), `@import "tailwindcss";\n@import "../obj/lux/lux.theme.css";\n@source "../../Shared";\n`);
     const homeSource = readFileSync(home, "utf8");
     const withClasses = (classes) => writeFileSync(home, `${homeSource}\n<p class="${classes}">Tailwind check</p>\n`);
     // tracking-[0.123em] is an arbitrary value: it is in no precompiled stylesheet, only a build that scans the app's sources can produce it.
@@ -372,29 +372,29 @@ try {
     check(existsSync(join(server, "wwwroot", "app.css")), "tailwind: the template's own wwwroot/app.css is there to collide with");
     {
       const r = run("dotnet", ["build", "-c", "Release", ...flags, join(app, "Site", "Site.sln")], app, consumerEnv);
-      check(r.code !== 0 && /BLUXTW004[^\n]*wwwroot\/app\.css[^\n]*LuxTailwindAssetPath/.test(r.out), "tailwind: a wwwroot/app.css of the project is reported as BLUXTW004 naming LuxTailwindAssetPath");
+      check(r.code !== 0 && /LUXTW004[^\n]*wwwroot\/app\.css[^\n]*LuxTailwindAssetPath/.test(r.out), "tailwind: a wwwroot/app.css of the project is reported as LUXTW004 naming LuxTailwindAssetPath");
     }
     // The app takes the way out the error names: it serves the generated stylesheet under another name.
     writeFileSync(serverProj, readFileSync(serverProj, "utf8").replace("<LuxTailwind>true</LuxTailwind>", "<LuxTailwind>true</LuxTailwind><LuxTailwindAssetPath>site.tailwind.css</LuxTailwindAssetPath>"));
     buildTw("tailwind: first build");
-    const twDir = join(server, "obj", "Release", "net10.0", "blux", "tailwind");
+    const twDir = join(server, "obj", "Release", "net10.0", "lux", "tailwind");
     const twOut = join(twDir, "site.tailwind.css");
     const css = () => (existsSync(twOut) ? readFileSync(twOut, "utf8") : "");
-    check(existsSync(twOut), "tailwind: the stylesheet is generated under obj/<config>/<tfm>/blux/tailwind/");
+    check(existsSync(twOut), "tailwind: the stylesheet is generated under obj/<config>/<tfm>/lux/tailwind/");
     check(css().includes("letter-spacing:.123em"), "tailwind: the generated CSS has the utility the app uses and lux.css lacks (tracking-[0.123em])");
     check(!readFileSync(join(root, "src", "Lux.UI", "wwwroot", "lux.css"), "utf8").includes("123em"), "tailwind: that utility is not in the precompiled lux.css, so the check proves the app's CSS was compiled");
     check(!css().includes(".987em"), "tailwind: obj is not scanned for class names");
-    check(css().includes("--blux-primary") && css().includes(".bg-\\(--blux-bg-elevated\\)"), "tailwind: the Blux theme tokens and the classes of the Blux components are generated too");
+    check(css().includes("--lux-primary") && css().includes(".bg-\\(--lux-bg-elevated\\)"), "tailwind: the Lux theme tokens and the classes of the Lux components are generated too");
     // Lux.UI.Tools has no precompiled sheet: with LuxTailwind the generated entry imports its theme by itself, and the single compiled sheet holds the classes of Lux.UI, of Tools and the variants of both.
-    const wrapperText = existsSync(join(twDir, "blux.tailwind.input.css")) ? readFileSync(join(twDir, "blux.tailwind.input.css"), "utf8") : "";
-    check(/@import "[^"]*blux-tools\.theme\.css";/.test(wrapperText), "tailwind: the generated entry imports the Tools theme, the app's stylesheet does not have to");
+    const wrapperText = existsSync(join(twDir, "lux.tailwind.input.css")) ? readFileSync(join(twDir, "lux.tailwind.input.css"), "utf8") : "";
+    check(/@import "[^"]*lux-tools\.theme\.css";/.test(wrapperText), "tailwind: the generated entry imports the Tools theme, the app's stylesheet does not have to");
     const toolsClasses = readFileSync(join(root, "src", "Lux.UI.Tools", "styles", "generated", "classes.txt"), "utf8").split("\n").filter(Boolean);
     const escapeClass = (c) => c.replace(/[^a-zA-Z0-9_-]/g, (ch) => "\\" + ch);
     check(toolsClasses.length > 0 && toolsClasses.every((c) => css().includes("." + escapeClass(c))), "tailwind: every class of the Tools components is in the compiled sheet");
     check(css().includes(".lg\\:flex-row") && /\.dark\\:/.test(css()), "tailwind: the same sheet has the lg: and dark: variants of the Lux.UI components (nothing repeats them after them)");
     check(css().trim().split("\n").length <= 3, "tailwind: Release output is minified");
     const swa = readFileSync(manifestFile, "utf8");
-    check(swa.includes("blux/tailwind/site.tailwind.css") && swa.includes('"RelativePath":"site.tailwind#[.{fingerprint}]?.css"'), "tailwind: the stylesheet (from obj) is a static web asset");
+    check(swa.includes("lux/tailwind/site.tailwind.css") && swa.includes('"RelativePath":"site.tailwind#[.{fingerprint}]?.css"'), "tailwind: the stylesheet (from obj) is a static web asset");
     check(!existsSync(join(server, "wwwroot", "site.tailwind.css")), "tailwind: nothing is written into the source tree (wwwroot)");
 
     // Incremental: nothing changed, so the CLI does not run again; a source change does.
@@ -434,7 +434,7 @@ try {
       check(r.code === 0 && css().includes("1.345") && !existsSync(emptyCache), "tailwind: LuxTailwindExecutable is used, with no download and nothing written to the cache");
       withClasses("tracking-[0.123em] leading-[1.456]");
       const off = run("dotnet", ["build", "-c", "Release", "-p:LuxOffline=true", `-p:LuxTailwindCacheDir=${emptyCache}`, join(app, "Site", "Site.sln")], app, consumerEnv);
-      check(off.code !== 0 && /BLUXTW001[^\n]*LuxTailwindExecutable/.test(off.out), "tailwind: offline with an empty cache fails with an error that names LuxTailwindExecutable");
+      check(off.code !== 0 && /LUXTW001[^\n]*LuxTailwindExecutable/.test(off.out), "tailwind: offline with an empty cache fails with an error that names LuxTailwindExecutable");
     }
 
     // A cached binary that changed after it was verified is never run: offline it is rejected and deleted, online it is downloaded again.
@@ -442,7 +442,7 @@ try {
       writeFileSync(cached, Buffer.concat([readFileSync(cached), Buffer.from("x")]));
       writeFileSync(home, `${homeSource}\n<p class="tracking-[0.123em] leading-[1.567]">Tailwind check</p>\n`);
       const bad = run("dotnet", ["build", "-c", "Release", "-p:LuxOffline=true", `-p:LuxTailwindCacheDir=${tailwindCache}`, join(app, "Site", "Site.sln")], app, consumerEnv);
-      check(bad.code !== 0 && /BLUXTW001[^\n]*(SHA-256|checksum)/.test(bad.out) && !existsSync(cached), "tailwind: a modified cached binary is rejected offline and deleted, never run");
+      check(bad.code !== 0 && /LUXTW001[^\n]*(SHA-256|checksum)/.test(bad.out) && !existsSync(cached), "tailwind: a modified cached binary is rejected offline and deleted, never run");
     }
 
     // The app serves it.
@@ -462,7 +462,7 @@ try {
       check(rclPublish.code === 0, "tailwind: dotnet publish --no-build of the razor class library itself succeeds");
       check(published.some((f) => /^site\.tailwind(\.[^./]+)?\.css$/.test(f)), "tailwind: the web project's stylesheet is published");
       check(published.some((f) => /^_content[/\\]Rcl[/\\]app(\.[^./]+)?\.css$/.test(f)), "tailwind: the library's stylesheet is published at _content/Rcl/app.css");
-      check(published.some((f) => /^_blux[/\\]fonts[/\\]blux\.fonts(\.[^./]+)?\.css$/.test(f)), "fonts: the stylesheet is published by publish --no-build too");
+      check(published.some((f) => /^_lux[/\\]fonts[/\\]lux\.fonts(\.[^./]+)?\.css$/.test(f)), "fonts: the stylesheet is published by publish --no-build too");
     }
     {
       const port = 20000 + Math.floor(Math.random() * 20000);
@@ -502,7 +502,7 @@ try {
     }
     // LuxTailwind=false: the feature adds nothing to the assets.
     const disabled = run("dotnet", ["build", "-c", "Release", "-p:LuxTailwind=false", "-p:LuxOffline=false", join(app, "Site", "Site.sln")], app, consumerEnv);
-    check(disabled.code === 0 && !readFileSync(manifestFile, "utf8").includes("blux/tailwind/site.tailwind.css"), "tailwind off: no generated stylesheet in the static web assets");
+    check(disabled.code === 0 && !readFileSync(manifestFile, "utf8").includes("lux/tailwind/site.tailwind.css"), "tailwind off: no generated stylesheet in the static web assets");
   }
 } catch (e) {
   failures.push(String(e.message ?? e));

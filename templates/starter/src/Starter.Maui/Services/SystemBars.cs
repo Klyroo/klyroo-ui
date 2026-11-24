@@ -11,7 +11,7 @@ namespace Starter.Maui.Services;
 /// </summary>
 public sealed class SystemBars : ISystemBars
 {
-    // --blux-bg of Blux: the page background in dark and light mode.
+    // --lux-bg of Lux: the page background in dark and light mode.
     private static readonly Color Dark = Color.FromArgb("#0a0b0c");
     private static readonly Color Light = Color.FromArgb("#f5f5f2");
 

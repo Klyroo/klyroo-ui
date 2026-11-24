@@ -129,7 +129,7 @@ public class FontProviderTests
         var spec = Spec("Geist", "400", "normal;italic", "latin;latin-ext");
         var network = new FakeNetwork();
         network.Texts[GoogleProvider.BuildUrl("https://fonts.googleapis.com/css2", spec)] = File.ReadAllText(FakeNetwork.Fixture("google-geist.css"));
-        var cache = Path.Combine(Path.GetTempPath(), "blux-fonts-" + Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(Path.GetTempPath(), "lux-fonts-" + Guid.NewGuid().ToString("N"));
         var faces = new GoogleProvider().Resolve(spec, new CachedDownloader(network, cache, TimeSpan.FromDays(1), _ => { }));
         Assert.All(faces, f => Assert.Contains(f.Subset, new[] { "latin", "latin-ext" }));
         Assert.Equal(6, faces.Count); // the saved answer also holds 700 upright, which the provider returned
@@ -143,7 +143,7 @@ public class FontProviderTests
         // The fixture holds 400 and 700 upright and 400 italic: ask for 700 italic.
         var italic = Spec("Geist", "400;700", "italic", "latin");
         network.Texts[GoogleProvider.BuildUrl("https://fonts.googleapis.com/css2", italic)] = File.ReadAllText(FakeNetwork.Fixture("google-geist.css"));
-        var cache = Path.Combine(Path.GetTempPath(), "blux-fonts-" + Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(Path.GetTempPath(), "lux-fonts-" + Guid.NewGuid().ToString("N"));
         var e = Assert.Throws<FontException>(() => new GoogleProvider().Resolve(italic, new CachedDownloader(network, cache, TimeSpan.FromDays(1), _ => { })));
         Assert.Contains("weight 700", e.Message);
         Assert.NotNull(spec);
@@ -155,7 +155,7 @@ public class FontProviderTests
         var spec = Spec("Geist", "400;700", "normal", "latin");
         var network = new FakeNetwork();
         network.Texts["https://api.fontsource.org/v1/fonts/geist"] = File.ReadAllText(FakeNetwork.Fixture("fontsource-geist.json"));
-        var cache = Path.Combine(Path.GetTempPath(), "blux-fonts-" + Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(Path.GetTempPath(), "lux-fonts-" + Guid.NewGuid().ToString("N"));
         var faces = new FontsourceProvider().Resolve(spec, new CachedDownloader(network, cache, TimeSpan.FromDays(1), _ => { }));
         Assert.Equal([400, 700], faces.Select(f => f.Weight.Min).OrderBy(w => w));
         Assert.All(faces, f => Assert.EndsWith("-normal.woff2", f.Url));
@@ -166,7 +166,7 @@ public class FontProviderTests
     public void An_unknown_fontsource_family_is_reported_as_not_found()
     {
         var network = new FakeNetwork();
-        var cache = Path.Combine(Path.GetTempPath(), "blux-fonts-" + Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(Path.GetTempPath(), "lux-fonts-" + Guid.NewGuid().ToString("N"));
         var e = Assert.Throws<FontException>(() => new FontsourceProvider().Resolve(Spec("Nope Sans"), new CachedDownloader(network, cache, TimeSpan.FromDays(1), _ => { })));
         Assert.Contains("not found at fontsource", e.Message);
     }
@@ -197,7 +197,7 @@ public class FontProviderTests
     [Fact]
     public void Local_provider_reads_a_folder_and_prefers_woff2()
     {
-        var dir = Path.Combine(Path.GetTempPath(), "blux-local-" + Guid.NewGuid().ToString("N"));
+        var dir = Path.Combine(Path.GetTempPath(), "lux-local-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(dir);
         foreach (var n in new[] { "Geist-400.woff2", "Geist-400.ttf", "Geist-700-italic.woff", "Other-400.woff2", "notes.txt" })
         {
@@ -269,7 +269,7 @@ public class FontMetricsTests
 
 public class FontBuilderTests : IDisposable
 {
-    private readonly string _dir = Path.Combine(Path.GetTempPath(), "blux-build-" + Guid.NewGuid().ToString("N"));
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lux-build-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {
@@ -306,12 +306,12 @@ public class FontBuilderTests : IDisposable
         Assert.Contains("font-display: swap;", css);
         Assert.Contains("unicode-range: U+0000-00FF", css);
         Assert.Contains("font-family: \"Geist Fallback\";", css);
-        Assert.Contains("--blux-font-sans: \"Geist\", \"Geist Fallback\", -apple-system", css);
+        Assert.Contains("--lux-font-sans: \"Geist\", \"Geist Fallback\", -apple-system", css);
         // The stylesheet refers to the files by name, next to it.
         Assert.Matches("url\\(\"Geist-400-normal-latin\\.[0-9a-f]{8}\\.woff2\"\\) format\\(\"woff2\"\\)", css);
 
-        Assert.Contains("\"css\":\"_blux/fonts/blux.fonts.css\"", result.ManifestJson);
-        var preload = System.Text.RegularExpressions.Regex.Matches(result.ManifestJson, "_blux/fonts/Geist-[^\"]+\\.woff2");
+        Assert.Contains("\"css\":\"_lux/fonts/lux.fonts.css\"", result.ManifestJson);
+        var preload = System.Text.RegularExpressions.Regex.Matches(result.ManifestJson, "_lux/fonts/Geist-[^\"]+\\.woff2");
         Assert.Single(preload);
         Assert.Contains("Geist-400-normal-latin.", preload[0].Value);
         Assert.All(result.Files.Where(f => f.EndsWith(".woff2")), f => Assert.True(File.Exists(Path.Combine(options.OutputDir, f))));
@@ -325,7 +325,7 @@ public class FontBuilderTests : IDisposable
         var options = Options(spec);
         var result = FontBuilder.Run(options, Network(spec));
         var css = File.ReadAllText(Path.Combine(options.OutputDir, FontBuilder.CssFileName));
-        Assert.DoesNotContain("--blux-font-", css);
+        Assert.DoesNotContain("--lux-font-", css);
         Assert.Contains("\"preload\":[]", result.ManifestJson);
     }
 
@@ -351,7 +351,7 @@ public class FontBuilderTests : IDisposable
         var again = FontBuilder.Run(options, network);
         Assert.True(again.UpToDate);
         Assert.Equal(requests, network.Requests.Count);
-        Assert.Contains("blux.fonts.css", again.Files);
+        Assert.Contains("lux.fonts.css", again.Files);
     }
 
     [Fact]
@@ -429,19 +429,19 @@ public class FontBuilderTests : IDisposable
         FontBuilder.Run(options, network);
         var css = File.ReadAllText(Path.Combine(options.OutputDir, FontBuilder.CssFileName));
         Assert.Contains("local(\"Courier New\")", css);
-        Assert.Contains("--blux-font-mono: \"Geist Mono\", \"Geist Mono Fallback\", ui-monospace", css);
+        Assert.Contains("--lux-font-mono: \"Geist Mono\", \"Geist Mono Fallback\", ui-monospace", css);
     }
 
     [Fact]
     public void The_default_stacks_are_the_ones_of_the_tokens()
     {
-        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Lux.UI", "styles", "blux.base.css"));
+        var root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "Lux.UI", "styles", "lux.base.css"));
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null && !File.Exists(root); dir = dir.Parent)
         {
-            root = Path.Combine(dir.FullName, "src", "Lux.UI", "styles", "blux.base.css");
+            root = Path.Combine(dir.FullName, "src", "Lux.UI", "styles", "lux.base.css");
         }
         var css = File.ReadAllText(root).Replace('\'', '"');
-        Assert.Contains("--blux-font-sans: " + FontBuilder.DefaultSans + ";", css);
-        Assert.Contains("--blux-font-mono: " + FontBuilder.DefaultMono + ";", css);
+        Assert.Contains("--lux-font-sans: " + FontBuilder.DefaultSans + ";", css);
+        Assert.Contains("--lux-font-mono: " + FontBuilder.DefaultMono + ";", css);
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI;
 
-/// <summary>Who wrote a <see cref="BxChatMessage"/>.</summary>
+/// <summary>Who wrote a <see cref="LxChatMessage"/>.</summary>
 public enum ChatRole
 {
     User,
@@ -65,7 +65,7 @@ public enum ChatAttachmentStatus
     Error,
 }
 
-/// <summary>What a <see cref="BxChatPrompt"/> tells the <see cref="BxChatPromptSubmit"/> inside it.</summary>
+/// <summary>What a <see cref="LxChatPrompt"/> tells the <see cref="LxChatPromptSubmit"/> inside it.</summary>
 internal sealed record ChatPromptContext(ChatStatus Status, bool Disabled);
 
 internal static class ChatValue
@@ -109,7 +109,7 @@ internal static class ChatValue
 
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatMessage"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatMessage"/> slots.</summary>
 public sealed record ChatMessageUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -137,7 +137,7 @@ public sealed record ChatMessageUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatMessages"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatMessages"/> slots.</summary>
 public sealed record ChatMessagesUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -165,7 +165,7 @@ public sealed record ChatMessagesUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatPrompt"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatPrompt"/> slots.</summary>
 public sealed record ChatPromptUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -189,7 +189,7 @@ public sealed record ChatPromptUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatPromptSubmit"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatPromptSubmit"/> slots.</summary>
 public sealed record ChatPromptSubmitUi : ISlotOverrides
 {
     public string? Base { get; init; }
@@ -205,7 +205,7 @@ public sealed record ChatPromptSubmitUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatPalette"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatPalette"/> slots.</summary>
 public sealed record ChatPaletteUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -221,7 +221,7 @@ public sealed record ChatPaletteUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatAttachment"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatAttachment"/> slots.</summary>
 public sealed record ChatAttachmentUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -249,7 +249,7 @@ public sealed record ChatAttachmentUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatReasoning"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatReasoning"/> slots.</summary>
 public sealed record ChatReasoningUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -275,7 +275,7 @@ public sealed record ChatReasoningUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatShimmer"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatShimmer"/> slots.</summary>
 public sealed record ChatShimmerUi : ISlotOverrides
 {
     public string? Base { get; init; }
@@ -283,7 +283,7 @@ public sealed record ChatShimmerUi : ISlotOverrides
     string? ISlotOverrides.For(string slot) => slot == "base" ? Base : null;
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChatTool"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChatTool"/> slots.</summary>
 public sealed record ChatToolUi : ISlotOverrides
 {
     public string? Root { get; init; }

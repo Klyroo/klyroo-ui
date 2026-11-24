@@ -8,9 +8,9 @@
 @if (_list is not null && !_list.Available)
 {
     <PageTitle>@SiteInfo.Title - @SiteInfo.Name</PageTitle>
-    <BxContainer Class="py-8 lg:py-12">
+    <LxContainer Class="py-8 lg:py-12">
         <ReleaseProblem List="_list" />
-    </BxContainer>
+    </LxContainer>
 }
 else if (_release is not null && _list is not null)
 {
@@ -20,50 +20,50 @@ else if (_release is not null && _list is not null)
         <link rel="alternate" type="application/atom+xml" title="@SiteInfo.FeedTitle" href="feed.xml" />
     </HeadContent>
 
-    <BxContainer Class="py-8 lg:py-12">
+    <LxContainer Class="py-8 lg:py-12">
         <ReleaseProblem List="_list" />
 
         <p class="@(_list.Status == ReleaseStatus.Stale ? "mt-8" : "")">
-            <a href="./" class="inline-flex items-center gap-1 rounded-sm text-sm text-(--blux-primary-text) underline underline-offset-4" data-testid="back">
-                <BxIcon Name="ph:arrow-left" Class="size-4" />
+            <a href="./" class="inline-flex items-center gap-1 rounded-sm text-sm text-(--lux-primary-text) underline underline-offset-4" data-testid="back">
+                <LxIcon Name="ph:arrow-left" Class="size-4" />
                 All releases
             </a>
         </p>
 
         <div class="mt-8 max-w-[46rem]">
-            <BxChangelogVersion Title="@_release.Title"
+            <LxChangelogVersion Title="@_release.Title"
                                 HeadingLevel="1"
                                 Indicator="false"
                                 Date="_release.PublishedAt"
                                 Badge="@(_release.Prerelease ? $"{_release.Tag} pre-release" : _release.Title == _release.Tag ? null : _release.Tag)"
-                                BadgeColor="@(_release.Prerelease ? BxColor.Warning : BxColor.Primary)"
+                                BadgeColor="@(_release.Prerelease ? LxColor.Warning : LxColor.Primary)"
                                 Authors="_authors"
                                 data-testid="release">
                 <ChildContent>
                     @if (Body.Render(_release, $"releases/{_release.Slug}", 2) is { Length: > 0 } html)
                     {
-                        <BxPageBody Class="markdown-body">@((MarkupString)html)</BxPageBody>
+                        <LxPageBody Class="markdown-body">@((MarkupString)html)</LxPageBody>
                     }
                     else
                     {
-                        <p class="text-(--blux-text-muted)">This release has no notes.</p>
+                        <p class="text-(--lux-text-muted)">This release has no notes.</p>
                     }
                 </ChildContent>
                 <Footer>
                     @if (_release.Url is { } url)
                     {
-                        <BxButton Label="View on GitHub" Href="@url" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Size="BxSize.Sm" />
+                        <LxButton Label="View on GitHub" Href="@url" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" Size="LxSize.Sm" />
                     }
                 </Footer>
-            </BxChangelogVersion>
+            </LxChangelogVersion>
         </div>
 
-        <nav aria-label="Other releases" class="mt-10 flex items-center justify-between gap-4 border-t border-(--blux-border) pt-6 max-w-[46rem]" data-testid="neighbours">
+        <nav aria-label="Other releases" class="mt-10 flex items-center justify-between gap-4 border-t border-(--lux-border) pt-6 max-w-[46rem]" data-testid="neighbours">
             @if (_newer is not null)
             {
-                <BxButton Label="@_newer.Title" Href="@($"releases/{_newer.Slug}")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" rel="prev" Class="max-w-[45%]">
-                    <LeadingIcon><BxIcon Name="ph:arrow-left" Class="size-4" /></LeadingIcon>
-                </BxButton>
+                <LxButton Label="@_newer.Title" Href="@($"releases/{_newer.Slug}")" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" rel="prev" Class="max-w-[45%]">
+                    <LeadingIcon><LxIcon Name="ph:arrow-left" Class="size-4" /></LeadingIcon>
+                </LxButton>
             }
             else
             {
@@ -71,16 +71,16 @@ else if (_release is not null && _list is not null)
             }
             @if (_older is not null)
             {
-                <BxButton Label="@_older.Title" Href="@($"releases/{_older.Slug}")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" rel="next" Class="max-w-[45%]">
-                    <TrailingIcon><BxIcon Name="ph:arrow-right" Class="size-4" /></TrailingIcon>
-                </BxButton>
+                <LxButton Label="@_older.Title" Href="@($"releases/{_older.Slug}")" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" rel="next" Class="max-w-[45%]">
+                    <TrailingIcon><LxIcon Name="ph:arrow-right" Class="size-4" /></TrailingIcon>
+                </LxButton>
             }
             else
             {
                 <span></span>
             }
         </nav>
-    </BxContainer>
+    </LxContainer>
 }
 
 @code {
@@ -88,7 +88,7 @@ else if (_release is not null && _list is not null)
     private ReleaseEntry? _release;
     private ReleaseEntry? _newer;
     private ReleaseEntry? _older;
-    private IReadOnlyList<BxPostAuthor> _authors = [];
+    private IReadOnlyList<LxPostAuthor> _authors = [];
 
     [CascadingParameter] private HttpContext? HttpContext { get; set; }
 
@@ -121,6 +121,6 @@ else if (_release is not null && _list is not null)
         var index = _list.Releases.ToList().FindIndex(r => ReferenceEquals(r, _release));
         _newer = index > 0 ? _list.Releases[index - 1] : null;
         _older = index < _list.Releases.Count - 1 ? _list.Releases[index + 1] : null;
-        _authors = _release.Author is { } author ? [new BxPostAuthor(author.Login) { AvatarSrc = author.AvatarUrl, Href = author.ProfileUrl }] : [];
+        _authors = _release.Author is { } author ? [new LxPostAuthor(author.Login) { AvatarSrc = author.AvatarUrl, Href = author.ProfileUrl }] : [];
     }
 }

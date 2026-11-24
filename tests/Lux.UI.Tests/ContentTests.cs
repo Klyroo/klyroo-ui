@@ -4,13 +4,13 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lux.UI.Tests;
 
 /// <summary>The "Content" family: ContentNavigation, ContentToc, ContentSurround, ContentSearch and ContentSearchButton.</summary>
-public class ContentTests : BluxTestContext
+public class ContentTests : LuxTestContext
 {
     private NavigationManager Navigation => Services.GetRequiredService<NavigationManager>();
 
     // ---- ContentNavigation
 
-    private static readonly BxContentNavigationItem[] Tree =
+    private static readonly LxContentNavigationItem[] Tree =
     [
         new("Getting started")
         {
@@ -34,7 +34,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_is_a_named_nav_of_nested_lists_with_links_and_group_buttons()
     {
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree));
 
         var nav = cut.Find("nav");
         Assert.Equal("Documentation", nav.GetAttribute("aria-label"));
@@ -53,7 +53,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_name_and_color_can_be_set()
     {
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree).Add(n => n.AriaLabel, "Guide").Add(n => n.Color, BxColor.Info));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree).Add(n => n.AriaLabel, "Guide").Add(n => n.Color, LxColor.Info));
 
         Assert.Equal("Guide", cut.Find("nav").GetAttribute("aria-label"));
         Assert.Equal("info", cut.Find("nav").GetAttribute("data-color"));
@@ -63,7 +63,7 @@ public class ContentTests : BluxTestContext
     public void Navigation_marks_the_current_page_and_opens_only_the_groups_that_hold_it()
     {
         Navigation.NavigateTo("/components/badge");
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree));
 
         Assert.Equal(["Badge"], cut.FindAll("a[aria-current=page]").Select(a => a.TextContent.Trim()));
         Assert.Single(cut.FindAll("[aria-current]"));
@@ -76,7 +76,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_follows_the_address()
     {
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree));
         Assert.Empty(cut.FindAll("[aria-current]"));
 
         Navigation.NavigateTo("/changelog");
@@ -88,13 +88,13 @@ public class ContentTests : BluxTestContext
     public void Navigation_exact_items_match_only_their_address_and_others_also_the_pages_below()
     {
         Navigation.NavigateTo("/docs/installation");
-        BxContentNavigationItem[] items =
+        LxContentNavigationItem[] items =
         [
             new("Docs") { Href = "/docs" },
             new("Docs exact") { Href = "/docs", Exact = true },
             new("Installation") { Href = "/docs/installation", Exact = true },
         ];
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, items));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, items));
 
         Assert.Equal(["Docs", "Installation"], cut.FindAll("a[aria-current=page]").Select(a => a.TextContent.Trim()));
     }
@@ -102,13 +102,13 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_active_can_be_forced_and_open_overrides_the_default()
     {
-        BxContentNavigationItem[] items =
+        LxContentNavigationItem[] items =
         [
             new("A") { Open = true, Children = [new("One") { Href = "/x", Active = false }] },
             new("B") { Children = [new("Two") { Href = "/two", Active = true }] },
             new("C") { Open = false, Children = [new("Three") { Href = "/three", Active = true }] },
         ];
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, items));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, items));
 
         Assert.Equal(["Two", "Three"], cut.FindAll("a[aria-current=page]").Select(a => a.TextContent.Trim()));
         var open = cut.FindAll("button").ToDictionary(b => b.TextContent.Trim(), b => b.GetAttribute("aria-expanded"));
@@ -118,12 +118,12 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_disabled_entries_are_not_links_and_disabled_groups_not_buttons_to_press()
     {
-        BxContentNavigationItem[] items =
+        LxContentNavigationItem[] items =
         [
             new("Archived") { Href = "/archived", Disabled = true },
             new("Locked") { Disabled = true, Children = [new("Inside") { Href = "/inside" }] },
         ];
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, items));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, items));
 
         var span = cut.Find("span[aria-disabled=true]");
         Assert.Equal("Archived", span.TextContent.Trim());
@@ -134,7 +134,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_shows_icons_and_badges()
     {
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree));
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree));
 
         var link = cut.FindAll("a").First(a => a.TextContent.Contains("Installation"));
         Assert.NotNull(link.QuerySelector("svg[aria-hidden=true][data-icon=download]"));
@@ -144,8 +144,8 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_external_links_open_safely()
     {
-        BxContentNavigationItem[] items = [new("GitHub") { Href = "https://github.com", Target = "_blank" }];
-        var cut = Render<BxContentNavigation>(p => p.Add(n => n.Items, items));
+        LxContentNavigationItem[] items = [new("GitHub") { Href = "https://github.com", Target = "_blank" }];
+        var cut = Render<LxContentNavigation>(p => p.Add(n => n.Items, items));
 
         var link = cut.Find("a");
         Assert.Equal("_blank", link.GetAttribute("target"));
@@ -155,7 +155,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Navigation_ui_and_class_override_slots()
     {
-        var cut = Render<BxContentNavigation>(p => p
+        var cut = Render<LxContentNavigation>(p => p
             .Add(n => n.Items, Tree)
             .Add(n => n.Class, "mine")
             .Add(n => n.Ui, new ContentNavigationUi { List = "gap-6" }));
@@ -167,7 +167,7 @@ public class ContentTests : BluxTestContext
 
     // ---- ContentToc
 
-    private static readonly BxContentTocLink[] Headings =
+    private static readonly LxContentTocLink[] Headings =
     [
         new("intro", "Introduction"),
         new("usage", "Usage"),
@@ -177,7 +177,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Toc_lists_the_headings_as_fragment_links_with_their_level()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings));
 
         var links = cut.FindAll("a");
         // Relative to the base address of the app, never absolute: a bare "#id" would resolve against the base href, the root, and an absolute address
@@ -188,7 +188,7 @@ public class ContentTests : BluxTestContext
         Assert.Equal(["Introduction", "Usage", "Props"], links.Select(a => a.TextContent.Trim()));
         Assert.Equal(["2", "2", "3"], links.Select(a => a.GetAttribute("data-level")));
         Assert.Equal("On this page", cut.Find("nav").GetAttribute("aria-label"));
-        Assert.Equal("primary", cut.Find("bx-content-toc").GetAttribute("data-color"));
+        Assert.Equal("primary", cut.Find("lx-content-toc").GetAttribute("data-color"));
     }
 
     [Theory]
@@ -199,7 +199,7 @@ public class ContentTests : BluxTestContext
     {
         // The address of the request is absolute (here http://localhost/): the links must not carry it, a proxy would turn it into an internal host.
         Navigation.NavigateTo(Navigation.BaseUri + path);
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, new BxContentTocLink[] { new("intro", "Introduction") }));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, new LxContentTocLink[] { new("intro", "Introduction") }));
 
         Assert.Equal(expected, cut.Find("a").GetAttribute("href"));
     }
@@ -207,7 +207,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Toc_leaves_the_active_state_to_the_browser()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings));
 
         Assert.Empty(cut.FindAll("[data-active], [aria-current]"));
         Assert.Null(cut.Find("[data-slot=content]").GetAttribute("data-state"));
@@ -216,7 +216,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Toc_collapses_behind_a_disclosure_button_below_the_breakpoint()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Title, "In this article"));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Title, "In this article"));
 
         var button = cut.Find("button[data-slot=trigger]");
         Assert.Equal("false", button.GetAttribute("aria-expanded"));
@@ -232,11 +232,11 @@ public class ContentTests : BluxTestContext
     }
 
     [Theory]
-    [InlineData(BxContentTocBreakpoint.Xl, "xl:")]
-    [InlineData(BxContentTocBreakpoint.Xxl, "min-[96rem]:")]
-    public void Toc_breakpoint_moves_where_it_stops_collapsing(BxContentTocBreakpoint breakpoint, string prefix)
+    [InlineData(LxContentTocBreakpoint.Xl, "xl:")]
+    [InlineData(LxContentTocBreakpoint.Xxl, "min-[96rem]:")]
+    public void Toc_breakpoint_moves_where_it_stops_collapsing(LxContentTocBreakpoint breakpoint, string prefix)
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Breakpoint, breakpoint));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Breakpoint, breakpoint));
 
         Assert.Contains(prefix + "hidden", cut.Find("button").ClassList);
         Assert.Contains(prefix + "block", cut.Find("[data-slot=content]").ClassList);
@@ -246,7 +246,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Toc_without_collapsing_has_no_button_and_always_shows_its_list()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Collapsible, false));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings).Add(t => t.Collapsible, false));
 
         Assert.Empty(cut.FindAll("button"));
         Assert.DoesNotContain("hidden", cut.Find("[data-slot=content]").ClassList);
@@ -256,35 +256,35 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Toc_clamps_levels_and_takes_color_ui_and_class()
     {
-        var cut = Render<BxContentToc>(p => p
-            .Add(t => t.Links, new BxContentTocLink[] { new("a", "A") { Level = 1 }, new("b", "B") { Level = 9 } })
-            .Add(t => t.Color, BxColor.Info)
+        var cut = Render<LxContentToc>(p => p
+            .Add(t => t.Links, new LxContentTocLink[] { new("a", "A") { Level = 1 }, new("b", "B") { Level = 9 } })
+            .Add(t => t.Color, LxColor.Info)
             .Add(t => t.Class, "mine")
             .Add(t => t.Ui, new ContentTocUi { List = "border-s-0" }));
 
         Assert.Equal(["2", "5"], cut.FindAll("a").Select(a => a.GetAttribute("data-level")));
-        Assert.Equal("info", cut.Find("bx-content-toc").GetAttribute("data-color"));
-        Assert.Contains("mine", cut.Find("bx-content-toc").ClassList);
+        Assert.Equal("info", cut.Find("lx-content-toc").GetAttribute("data-color"));
+        Assert.Contains("mine", cut.Find("lx-content-toc").ClassList);
         Assert.Contains("border-s-0", cut.Find("ul").ClassList);
     }
 
     [Fact]
     public void Toc_has_no_state_to_report_to_dotnet()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings));
 
-        Assert.False(cut.Find("bx-content-toc").HasAttribute("data-bx-seq"));
+        Assert.False(cut.Find("lx-content-toc").HasAttribute("data-lx-seq"));
     }
 
     // ---- ContentSurround
 
-    private static readonly BxContentSurroundLink Before = new("Installation", "/docs/installation") { Description = "Add the package." };
-    private static readonly BxContentSurroundLink After = new("Theming", "/docs/theming");
+    private static readonly LxContentSurroundLink Before = new("Installation", "/docs/installation") { Description = "Add the package." };
+    private static readonly LxContentSurroundLink After = new("Theming", "/docs/theming");
 
     [Fact]
     public void Surround_links_the_previous_and_next_pages_with_titles_and_descriptions()
     {
-        var cut = Render<BxContentSurround>(p => p.Add(s => s.Previous, Before).Add(s => s.Next, After));
+        var cut = Render<LxContentSurround>(p => p.Add(s => s.Previous, Before).Add(s => s.Next, After));
 
         Assert.Equal("Previous and next pages", cut.Find("nav").GetAttribute("aria-label"));
         var previous = cut.Find("a[rel=prev]");
@@ -303,7 +303,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Surround_with_only_a_next_page_keeps_it_in_the_second_column()
     {
-        var cut = Render<BxContentSurround>(p => p.Add(s => s.Next, After).Add(s => s.AriaLabel, "Pages"));
+        var cut = Render<LxContentSurround>(p => p.Add(s => s.Next, After).Add(s => s.AriaLabel, "Pages"));
 
         Assert.Empty(cut.FindAll("a[rel=prev]"));
         Assert.Contains("sm:col-start-2", cut.Find("a[rel=next]").ClassList);
@@ -313,7 +313,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Surround_renders_nothing_without_pages()
     {
-        var cut = Render<BxContentSurround>();
+        var cut = Render<LxContentSurround>();
 
         Assert.Empty(cut.FindAll("nav"));
         Assert.Equal("", cut.Markup.Trim());
@@ -321,7 +321,7 @@ public class ContentTests : BluxTestContext
 
     // ---- ContentSearch
 
-    private static readonly BxContentSearchPage[] Pages =
+    private static readonly LxContentSearchPage[] Pages =
     [
         new("Introduction", "/docs")
         {
@@ -337,22 +337,22 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_is_a_command_palette_in_a_modal_named_for_screen_readers()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
         var dialog = cut.Find("dialog");
         Assert.Equal("Search documentation", dialog.GetAttribute("aria-label"));
-        Assert.NotNull(cut.Find("bx-command-palette"));
-        Assert.Equal("Search documentation", cut.Find("bx-command-palette input").GetAttribute("aria-label"));
-        Assert.Equal("Search the documentation...", cut.Find("bx-command-palette input").GetAttribute("placeholder"));
-        Assert.True(dialog.HasAttribute("data-bx-content-search"));
-        Assert.Equal("", dialog.GetAttribute("data-bx-content-search"));
+        Assert.NotNull(cut.Find("lx-command-palette"));
+        Assert.Equal("Search documentation", cut.Find("lx-command-palette input").GetAttribute("aria-label"));
+        Assert.Equal("Search the documentation...", cut.Find("lx-command-palette input").GetAttribute("placeholder"));
+        Assert.True(dialog.HasAttribute("data-lx-content-search"));
+        Assert.Equal("", dialog.GetAttribute("data-lx-content-search"));
     }
 
     [Fact]
     public void A_heading_of_the_search_carries_its_own_words_and_the_title_of_its_page_but_not_the_text_of_the_page()
     {
-        var pages = new[] { new BxContentSearchPage("Install", "/install") { Group = "Start", Keywords = "unique-page-text more words here", Headings = [new("Linux", "linux")] } };
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, pages));
+        var pages = new[] { new LxContentSearchPage("Install", "/install") { Group = "Start", Keywords = "unique-page-text more words here", Headings = [new("Linux", "linux")] } };
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, pages));
 
         var page = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/install");
         var heading = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/install#linux");
@@ -363,22 +363,22 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_without_an_index_url_has_no_index_machinery()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
-        Assert.Null(cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
-        Assert.Empty(cut.FindAll("[data-bx-content-search-template], [data-bx-content-search-state]"));
+        Assert.Null(cut.Find("dialog").GetAttribute("data-lx-content-search-index"));
+        Assert.Empty(cut.FindAll("[data-lx-content-search-template], [data-lx-content-search-state]"));
     }
 
     [Fact]
     public void Search_with_an_index_url_names_it_and_carries_what_the_browser_needs_to_build_and_explain_the_list()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.IndexUrl, "search-index.json"));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.IndexUrl, "search-index.json"));
 
         // The address is written as given: the browser resolves it against <base href>.
-        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
+        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-lx-content-search-index"));
         // Nothing is listed: the options of the palette come from the file (the hidden template is outside the palette).
-        Assert.Empty(cut.FindAll("bx-command-palette [role=option]"));
-        var state = cut.Find("[data-bx-content-search-state]");
+        Assert.Empty(cut.FindAll("lx-command-palette [role=option]"));
+        var state = cut.Find("[data-lx-content-search-state]");
         Assert.True(state.HasAttribute("hidden"));
         Assert.Equal("Loading the search index...", state.QuerySelector("[data-loading-text]")!.GetAttribute("data-loading-text"));
         Assert.Equal("The search could not be loaded.", state.QuerySelector("[data-error-text]")!.GetAttribute("data-error-text"));
@@ -386,7 +386,7 @@ public class ContentTests : BluxTestContext
         Assert.True(state.QuerySelector("[data-slot=retry]")!.HasAttribute("hidden"));
         Assert.Equal("button", state.QuerySelector("[data-slot=retry]")!.GetAttribute("type"));
         // One page option, one heading option and one group, as the template for the options the browser makes.
-        var template = cut.Find("[data-bx-content-search-template]");
+        var template = cut.Find("[data-lx-content-search-template]");
         Assert.True(template.HasAttribute("hidden"));
         var options = template.QuerySelectorAll("[data-template]").ToList();
         Assert.Equal(["page", "heading"], options.Select(e => e.GetAttribute("data-template")));
@@ -403,16 +403,16 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void An_index_url_and_inline_pages_work_together()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.IndexUrl, "search-index.json"));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.IndexUrl, "search-index.json"));
 
-        Assert.Equal(6, cut.FindAll("bx-command-palette [role=option]").Count);
-        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-bx-content-search-index"));
+        Assert.Equal(6, cut.FindAll("lx-command-palette [role=option]").Count);
+        Assert.Equal("search-index.json", cut.Find("dialog").GetAttribute("data-lx-content-search-index"));
     }
 
     [Fact]
     public void Search_lists_pages_and_their_headings_under_their_group_in_order()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
         // Pages without a group come first, without a heading; then the groups in the order of their first page.
         var options = cut.FindAll("[role=option]");
@@ -427,7 +427,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_matches_keywords_and_group_and_the_page_of_a_heading()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
         var button = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/components/button");
         Assert.Contains("click", button.GetAttribute("data-search"));
@@ -435,35 +435,35 @@ public class ContentTests : BluxTestContext
         var heading = cut.FindAll("[role=option]").First(o => o.GetAttribute("href") == "/docs#why");
         Assert.Contains("Introduction", heading.GetAttribute("data-search"));
         // Selecting closes the modal without a round trip.
-        Assert.All(cut.FindAll("[role=option]"), o => Assert.True(o.HasAttribute("data-bx-close")));
+        Assert.All(cut.FindAll("[role=option]"), o => Assert.True(o.HasAttribute("data-lx-close")));
     }
 
     [Fact]
     public void Search_shortcut_is_a_fallback_handled_in_the_browser_after_the_pages_own_hotkeys()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
-        var trigger = cut.Find("[data-bx-content-hotkey]");
-        Assert.Equal("mod+k", trigger.GetAttribute("data-bx-content-hotkey"));
+        var trigger = cut.Find("[data-lx-content-hotkey]");
+        Assert.Equal("mod+k", trigger.GetAttribute("data-lx-content-hotkey"));
         Assert.True(trigger.HasAttribute("hidden"));
-        // data-bx-hotkey is the page-level registry: this search must not compete in it.
-        Assert.Empty(cut.FindAll("[data-bx-hotkey]"));
+        // data-lx-hotkey is the page-level registry: this search must not compete in it.
+        Assert.Empty(cut.FindAll("[data-lx-hotkey]"));
 
-        var custom = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.Shortcut, "alt+o").Add(s => s.Name, "docs"));
-        Assert.Equal("alt+o", custom.Find("[data-bx-content-hotkey]").GetAttribute("data-bx-content-hotkey"));
-        Assert.Equal("docs", custom.Find("dialog").GetAttribute("data-bx-content-search"));
+        var custom = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.Shortcut, "alt+o").Add(s => s.Name, "docs"));
+        Assert.Equal("alt+o", custom.Find("[data-lx-content-hotkey]").GetAttribute("data-lx-content-hotkey"));
+        Assert.Equal("docs", custom.Find("dialog").GetAttribute("data-lx-content-search"));
     }
 
     [Fact]
     public void Search_reports_the_selected_command()
     {
-        BxCommandItem? selected = null;
-        var cut = Render<BxContentSearch>(p => p
+        LxCommandItem? selected = null;
+        var cut = Render<LxContentSearch>(p => p
             .Add(s => s.Pages, Pages)
-            .Add(s => s.OnSelect, EventCallback.Factory.Create<BxCommandItem>(this, item => selected = item)));
+            .Add(s => s.OnSelect, EventCallback.Factory.Create<LxCommandItem>(this, item => selected = item)));
 
-        // The palette reports with bx-change; the handler is only attached when OnSelect is bound.
-        cut.Find("bx-command-palette").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "/docs#why", Sequence = 1 });
+        // The palette reports with lx-change; the handler is only attached when OnSelect is bound.
+        cut.Find("lx-command-palette").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "/docs#why", Sequence = 1 });
 
         Assert.Equal("Why another library", selected?.Label);
         Assert.Equal("/docs#why", selected?.Href);
@@ -472,18 +472,18 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_without_a_handler_attaches_none()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages));
 
-        Assert.False(cut.Find("bx-command-palette").HasAttribute("data-bx-seq"));
+        Assert.False(cut.Find("lx-command-palette").HasAttribute("data-lx-seq"));
     }
 
     [Fact]
     public void Search_label_and_placeholder_can_be_set()
     {
-        var cut = Render<BxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.Label, "Find").Add(s => s.Placeholder, "Type..."));
+        var cut = Render<LxContentSearch>(p => p.Add(s => s.Pages, Pages).Add(s => s.Label, "Find").Add(s => s.Placeholder, "Type..."));
 
         Assert.Equal("Find", cut.Find("dialog").GetAttribute("aria-label"));
-        Assert.Equal("Type...", cut.Find("bx-command-palette input").GetAttribute("placeholder"));
+        Assert.Equal("Type...", cut.Find("lx-command-palette input").GetAttribute("placeholder"));
     }
 
     // ---- ContentSearchButton
@@ -491,13 +491,13 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_button_is_an_icon_button_named_by_its_label_by_default()
     {
-        var cut = Render<BxContentSearchButton>();
+        var cut = Render<LxContentSearchButton>();
 
         var button = cut.Find("button");
         Assert.Equal("Search", button.GetAttribute("aria-label"));
         Assert.Equal("dialog", button.GetAttribute("aria-haspopup"));
         Assert.Equal("button", button.GetAttribute("type"));
-        Assert.Equal("", button.GetAttribute("data-bx-content-search-open"));
+        Assert.Equal("", button.GetAttribute("data-lx-content-search-open"));
         Assert.NotNull(button.QuerySelector("svg[aria-hidden=true]"));
         Assert.Empty(cut.FindAll("kbd"));
         Assert.Equal("neutral", button.GetAttribute("data-color"));
@@ -506,7 +506,7 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_button_expanded_shows_its_label_and_shortcut_keys()
     {
-        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Label, "Find a page").Add(b => b.Keys, ["Alt", "O"]));
+        var cut = Render<LxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Label, "Find a page").Add(b => b.Keys, ["Alt", "O"]));
 
         var button = cut.Find("button");
         Assert.Null(button.GetAttribute("aria-label"));
@@ -518,11 +518,11 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_button_default_hint_follows_the_platform_in_the_browser_and_announces_the_shortcut()
     {
-        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
+        var cut = Render<LxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
 
         var keys = cut.FindAll("kbd");
         Assert.Equal(2, keys.Count);
-        Assert.True(keys[0].HasAttribute("data-bx-mod"));
+        Assert.True(keys[0].HasAttribute("data-lx-mod"));
         Assert.Equal("Ctrl", keys[0].GetAttribute("data-label"));
         Assert.Equal("", keys[0].TextContent);
         Assert.Equal("K", keys[1].TextContent);
@@ -532,36 +532,36 @@ public class ContentTests : BluxTestContext
     [Fact]
     public void Search_button_hosts_the_platform_hint_in_its_own_element_so_no_global_observer_is_needed()
     {
-        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
+        var cut = Render<LxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
 
-        var host = cut.Find("bx-mod-keys");
+        var host = cut.Find("lx-mod-keys");
         Assert.Equal("true", host.GetAttribute("aria-hidden"));
         Assert.Equal(2, host.QuerySelectorAll("kbd").Length);
-        Assert.NotNull(host.QuerySelector("kbd[data-bx-mod]"));
+        Assert.NotNull(host.QuerySelector("kbd[data-lx-mod]"));
     }
 
     [Fact]
     public void Search_button_explicit_keys_are_shown_as_given_without_a_platform_hint()
     {
-        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Keys, ["Ctrl", "K"]));
+        var cut = Render<LxContentSearchButton>(p => p.Add(b => b.Collapsed, false).Add(b => b.Keys, ["Ctrl", "K"]));
 
         Assert.Equal(["Ctrl", "K"], cut.FindAll("kbd").Select(k => k.TextContent.Trim()));
-        Assert.Empty(cut.FindAll("[data-bx-mod]"));
+        Assert.Empty(cut.FindAll("[data-lx-mod]"));
         Assert.False(cut.Find("button").HasAttribute("aria-keyshortcuts"));
     }
 
     [Fact]
     public void Search_button_names_the_search_it_opens()
     {
-        var cut = Render<BxContentSearchButton>(p => p.Add(b => b.For, "docs").Add(b => b.Collapsed, false).Add(b => b.Variant, ButtonVariant.Soft));
+        var cut = Render<LxContentSearchButton>(p => p.Add(b => b.For, "docs").Add(b => b.Collapsed, false).Add(b => b.Variant, ButtonVariant.Soft));
 
-        Assert.Equal("docs", cut.Find("button").GetAttribute("data-bx-content-search-open"));
+        Assert.Equal("docs", cut.Find("button").GetAttribute("data-lx-content-search-open"));
     }
 
     [Fact]
     public void Search_button_forwards_attributes_and_class()
     {
-        var cut = Render<BxContentSearchButton>(p => p
+        var cut = Render<LxContentSearchButton>(p => p
             .Add(b => b.Class, "w-56")
             .AddUnmatched("data-testid", "open-search"));
 
@@ -576,25 +576,25 @@ public class ContentTests : BluxTestContext
     public void Texts_come_from_the_options_and_can_be_localized()
     {
         using var ctx = new Localized();
-        var nav = ctx.Render<BxContentNavigation>(p => p.Add(n => n.Items, Tree));
-        var toc = ctx.Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
-        var surround = ctx.Render<BxContentSurround>(p => p.Add(s => s.Next, After));
+        var nav = ctx.Render<LxContentNavigation>(p => p.Add(n => n.Items, Tree));
+        var toc = ctx.Render<LxContentToc>(p => p.Add(t => t.Links, Headings));
+        var surround = ctx.Render<LxContentSurround>(p => p.Add(s => s.Next, After));
 
         Assert.Equal("Documentation FR", nav.Find("nav").GetAttribute("aria-label"));
         Assert.Equal("Sur cette page", toc.Find("nav").GetAttribute("aria-label"));
         Assert.Contains("Suivant", surround.Find("a").TextContent);
     }
 
-    private sealed class Localized() : BluxTestContext(o =>
+    private sealed class Localized() : LuxTestContext(o =>
     {
-        o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { ContentNavigation = "Documentation FR", ContentToc = "Sur cette page", ContentNext = "Suivant" });
+        o.Locale = LxLocales.Extend(LxLocales.En, messages: m => m with { ContentNavigation = "Documentation FR", ContentToc = "Sur cette page", ContentNext = "Suivant" });
     });
 
 
     [Fact]
     public void Toc_links_follow_the_page_url_when_the_query_changes()
     {
-        var cut = Render<BxContentToc>(p => p.Add(t => t.Links, Headings));
+        var cut = Render<LxContentToc>(p => p.Add(t => t.Links, Headings));
         Assert.DoesNotContain("tab=2", cut.Find("a").GetAttribute("href"));
 
         // Only the location changes: the parent does not render, so no parameter is set again.

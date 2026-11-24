@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI.Tests;
 
-public class NavigationTests : BluxTestContext
+public class NavigationTests : LuxTestContext
 {
-    private static readonly BxTabItem[] Tabs =
+    private static readonly LxTabItem[] Tabs =
     [
         new("Account") { Value = "account" },
         new("Password") { Value = "password", Disabled = false },
@@ -13,7 +13,7 @@ public class NavigationTests : BluxTestContext
     [Fact]
     public void Tabs_select_the_first_tab_by_default_and_hide_other_panels()
     {
-        var cut = Render<BxTabs>(p => p.Add(t => t.Items, Tabs));
+        var cut = Render<LxTabs>(p => p.Add(t => t.Items, Tabs));
 
         var tabs = cut.FindAll("[role=tab]");
         Assert.Equal("true", tabs[0].GetAttribute("aria-selected"));
@@ -28,9 +28,9 @@ public class NavigationTests : BluxTestContext
     public void Tabs_bound_value_follows_the_browser()
     {
         string? value = "account";
-        var cut = Render<BxTabs>(p => p.Add(t => t.Items, Tabs).Add(t => t.Value, value).Add(t => t.ValueChanged, (string? v) => value = v));
+        var cut = Render<LxTabs>(p => p.Add(t => t.Items, Tabs).Add(t => t.Value, value).Add(t => t.ValueChanged, (string? v) => value = v));
 
-        cut.Find("bx-tabs").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "password", Sequence = 1 });
+        cut.Find("lx-tabs").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "password", Sequence = 1 });
 
         Assert.Equal("password", value);
         Assert.Equal("true", cut.FindAll("[role=tab]")[1].GetAttribute("aria-selected"));
@@ -39,8 +39,8 @@ public class NavigationTests : BluxTestContext
     [Fact]
     public void Accordion_renders_closed_panels_findable_and_open_ones_visible()
     {
-        BxAccordionItem[] items = [new("One") { Value = "one" }, new("Two") { Value = "two" }];
-        var cut = Render<BxAccordion>(p => p.Add(a => a.Items, items).Add(a => a.Value, ["two"]).Add(a => a.HeadingLevel, 4));
+        LxAccordionItem[] items = [new("One") { Value = "one" }, new("Two") { Value = "two" }];
+        var cut = Render<LxAccordion>(p => p.Add(a => a.Items, items).Add(a => a.Value, ["two"]).Add(a => a.HeadingLevel, 4));
 
         var triggers = cut.FindAll("[data-slot=trigger]");
         Assert.Equal("false", triggers[0].GetAttribute("aria-expanded"));
@@ -54,8 +54,8 @@ public class NavigationTests : BluxTestContext
     [Fact]
     public void Accordion_triggers_control_their_own_panels()
     {
-        BxAccordionItem[] items = [new("One"), new("Two"), new("Three")];
-        var cut = Render<BxAccordion>(p => p.Add(a => a.Items, items));
+        LxAccordionItem[] items = [new("One"), new("Two"), new("Three")];
+        var cut = Render<LxAccordion>(p => p.Add(a => a.Items, items));
 
         var triggers = cut.FindAll("[data-slot=trigger]");
         Assert.Equal(3, triggers.Select(t => t.Id).Distinct().Count());
@@ -72,10 +72,10 @@ public class NavigationTests : BluxTestContext
     public void Table_renders_registered_columns_and_sorts()
     {
         Person[] people = [new("Zoe", 31), new("Al", 45), new("Mia", 22)];
-        var cut = Render<BxTable<Person>>(p => p
+        var cut = Render<LxTable<Person>>(p => p
             .Add(t => t.Items, people).Add(t => t.Caption, "People")
-            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true))
-            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age)));
+            .AddChildContent<LxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true))
+            .AddChildContent<LxColumn<Person>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age)));
 
         Assert.Equal(["Name", "Age"], cut.FindAll("th").Select(th => th.TextContent.Trim()));
         Assert.Equal("none", cut.Find("th").GetAttribute("aria-sort"));
@@ -98,23 +98,23 @@ public class NavigationTests : BluxTestContext
         var showAge = false;
         RenderFragment Columns() => b =>
         {
-            b.OpenComponent<BxColumn<Person>>(0);
+            b.OpenComponent<LxColumn<Person>>(0);
             b.AddAttribute(1, "Title", "Name");
             b.AddAttribute(2, "Field", (Func<Person, object?>)(x => x.Name));
             b.CloseComponent();
             if (showAge)
             {
-                b.OpenComponent<BxColumn<Person>>(3);
+                b.OpenComponent<LxColumn<Person>>(3);
                 b.AddAttribute(4, "Title", "Age");
                 b.AddAttribute(5, "Field", (Func<Person, object?>)(x => x.Age));
                 b.CloseComponent();
             }
-            b.OpenComponent<BxColumn<Person>>(6);
+            b.OpenComponent<LxColumn<Person>>(6);
             b.AddAttribute(7, "Title", "Notes");
             b.AddAttribute(8, "Template", (RenderFragment<Person>)(x => t => t.AddContent(0, "-")));
             b.CloseComponent();
         };
-        var cut = Render<BxTable<Person>>(p => p.Add(t => t.Items, people).Add(t => t.ChildContent, Columns()));
+        var cut = Render<LxTable<Person>>(p => p.Add(t => t.Items, people).Add(t => t.ChildContent, Columns()));
         Assert.Equal(["Name", "Notes"], cut.FindAll("th").Select(th => th.TextContent.Trim()));
 
         showAge = true;
@@ -126,9 +126,9 @@ public class NavigationTests : BluxTestContext
     [Fact]
     public void Column_without_field_or_template_is_rejected()
     {
-        var ex = Assert.Throws<InvalidOperationException>(() => Render<BxTable<Person>>(p => p
+        var ex = Assert.Throws<InvalidOperationException>(() => Render<LxTable<Person>>(p => p
             .Add(t => t.Items, Array.Empty<Person>())
-            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Empty"))));
+            .AddChildContent<LxColumn<Person>>(c => c.Add(x => x.Title, "Empty"))));
 
         Assert.Contains("needs a Field or a Template", ex.Message);
     }
@@ -136,9 +136,9 @@ public class NavigationTests : BluxTestContext
     [Fact]
     public void Table_without_items_shows_the_empty_state()
     {
-        var cut = Render<BxTable<Person>>(p => p
+        var cut = Render<LxTable<Person>>(p => p
             .Add(t => t.Items, Array.Empty<Person>())
-            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name)));
+            .AddChildContent<LxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name)));
 
         Assert.Equal("No data", cut.Find("td").TextContent.Trim());
         Assert.Equal("1", cut.Find("td").GetAttribute("colspan"));

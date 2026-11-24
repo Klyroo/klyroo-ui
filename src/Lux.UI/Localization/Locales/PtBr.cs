@@ -1,10 +1,10 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>Português (Brasil) (pt-BR).</summary>
-    public static BxLocale PtBr { get; } = new("pt-BR", "Português (Brasil)", BxDirection.Ltr,
-        new BxMessages
+    public static LxLocale PtBr { get; } = new("pt-BR", "Português (Brasil)", LxDirection.Ltr,
+        new LxMessages
         {
             ChartLine = "Gráfico de linhas",
             ChartArea = "Gráfico de área",

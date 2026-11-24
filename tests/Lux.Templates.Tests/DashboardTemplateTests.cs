@@ -150,18 +150,18 @@ public class DashboardTemplateTests
     public async Task The_remote_directories_page_and_resolve()
     {
         PeopleDirectory.LatencyMs = 0;
-        var first = await PeopleDirectory.Search(new BxOptionsRequest("", 0, 8, null), CancellationToken.None);
+        var first = await PeopleDirectory.Search(new LxOptionsRequest("", 0, 8, null), CancellationToken.None);
         Assert.Equal(8, first.Items.Count);
         Assert.True(first.HasMore);
-        var second = await PeopleDirectory.Search(new BxOptionsRequest("", 8, 8, null), CancellationToken.None);
+        var second = await PeopleDirectory.Search(new LxOptionsRequest("", 8, 8, null), CancellationToken.None);
         Assert.Empty(first.Items.Select(i => i.Value).Intersect(second.Items.Select(i => i.Value)));
 
-        var found = await PeopleDirectory.Search(new BxOptionsRequest("ahlberg", 0, 50, null), CancellationToken.None);
+        var found = await PeopleDirectory.Search(new LxOptionsRequest("ahlberg", 0, 50, null), CancellationToken.None);
         Assert.NotEmpty(found.Items);
         Assert.All(found.Items, i => Assert.Contains("ahlberg", i.Label, StringComparison.OrdinalIgnoreCase));
         Assert.Equal(found.Items[0].Label, (await PeopleDirectory.Resolve([found.Items[0].Value], CancellationToken.None)).Single().Label);
 
-        var countries = await CountryDirectory.Search(new BxOptionsRequest("land", 0, 20, null), CancellationToken.None);
+        var countries = await CountryDirectory.Search(new LxOptionsRequest("land", 0, 20, null), CancellationToken.None);
         Assert.Contains(countries.Items, c => c.Label == "Finland");
         Assert.Equal("France", CountryDirectory.NameOf("FR"));
     }
@@ -196,14 +196,14 @@ public class DashboardTemplateTests
     }
 
     [Fact]
-    public void The_neutral_colors_on_offer_are_blux_or_tailwind_neutral_scales_that_the_contrast_tests_cover()
+    public void The_neutral_colors_on_offer_are_lux_or_tailwind_neutral_scales_that_the_contrast_tests_cover()
     {
-        Assert.True(AppearanceState.Neutrals[0].IsBlux);
+        Assert.True(AppearanceState.Neutrals[0].IsLux);
         Assert.Equal(["slate", "gray", "zinc", "neutral", "stone"], AppearanceState.Neutrals.Skip(1).Select(p => p.Name));
-        Assert.All(AppearanceState.Neutrals.Skip(1), p => Assert.Contains(p, BxPalette.TailwindPalettes));
+        Assert.All(AppearanceState.Neutrals.Skip(1), p => Assert.Contains(p, LxPalette.TailwindPalettes));
     }
 
-    private sealed class FakeCookies(string? pathBase, params (string Name, string Value)[] cookies) : IBxRequestCookies
+    private sealed class FakeCookies(string? pathBase, params (string Name, string Value)[] cookies) : ILxRequestCookies
     {
         public string? PathBase => pathBase;
 
@@ -232,17 +232,17 @@ public class DashboardTemplateTests
 
         Assert.Equal("emerald", state.Primary.Name);
         Assert.Equal("zinc", state.Neutral.Name);
-        Assert.Equal(BxPalette.Emerald, state.Colors.Primary);
-        Assert.Equal(BxPalette.Zinc, state.Colors.Neutral);
+        Assert.Equal(LxPalette.Emerald, state.Colors.Primary);
+        Assert.Equal(LxPalette.Zinc, state.Colors.Neutral);
         // No request (WebAssembly, MAUI): the defaults.
         var none = new AppearanceState(new MemoryStore());
-        Assert.True(none.Primary.IsBlux && none.Neutral.IsBlux);
+        Assert.True(none.Primary.IsLux && none.Neutral.IsLux);
     }
 
     [Fact]
-    public void The_cookies_are_scoped_to_the_path_base_like_the_other_cookies_of_blux()
+    public void The_cookies_are_scoped_to_the_path_base_like_the_other_cookies_of_lux()
     {
-        var scoped = BxPathScope.CookieName("dashboard-primary", "/demo/dashboard");
+        var scoped = LxPathScope.CookieName("dashboard-primary", "/demo/dashboard");
         Assert.NotEqual("dashboard-primary", scoped);
         Assert.Equal(scoped, AppearanceCookies.Name(AppearanceCookies.PrimaryKey, "/demo/dashboard"));
         Assert.Equal("dashboard-neutral", AppearanceCookies.Name(AppearanceCookies.NeutralKey, null));
@@ -255,19 +255,19 @@ public class DashboardTemplateTests
     [Theory]
     [InlineData("<script>")]
     [InlineData("red")]
-    [InlineData("blux; path=/")]
+    [InlineData("lux; path=/")]
     [InlineData("")]
     [InlineData("EMERALD")]
     public void A_cookie_that_is_not_the_name_of_an_offered_palette_is_ignored(string value)
     {
-        // "red" is a palette of Blux, but not one the dialog offers; the others are not palettes at all.
+        // "red" is a palette of Lux, but not one the dialog offers; the others are not palettes at all.
         var state = new AppearanceState(new MemoryStore(), new FakeCookies(null, ("dashboard-primary", value), ("dashboard-neutral", value)));
 
-        Assert.True(state.Primary.IsBlux);
-        Assert.True(state.Neutral.IsBlux);
+        Assert.True(state.Primary.IsLux);
+        Assert.True(state.Neutral.IsLux);
         // A neutral name is not a primary one and the other way round.
         var swapped = new AppearanceState(new MemoryStore(), new FakeCookies(null, ("dashboard-primary", "zinc"), ("dashboard-neutral", "emerald")));
-        Assert.True(swapped.Primary.IsBlux && swapped.Neutral.IsBlux);
+        Assert.True(swapped.Primary.IsLux && swapped.Neutral.IsLux);
     }
 
     [Fact]
@@ -278,10 +278,10 @@ public class DashboardTemplateTests
         var changes = 0;
         state.Changed += () => changes++;
 
-        await state.SetAsync(BxPalette.Violet, BxPalette.Stone);
+        await state.SetAsync(LxPalette.Violet, LxPalette.Stone);
         Assert.Equal(("violet", "stone"), store.Saved);
         Assert.Equal(1, changes);
-        await state.SetAsync(BxPalette.Rose);
+        await state.SetAsync(LxPalette.Rose);
         Assert.Equal(("rose", "stone"), store.Saved);
 
         // A new session reads what the store has, once, and says so only when it changed something.
@@ -300,10 +300,10 @@ public class DashboardTemplateTests
     }
 
     [Fact]
-    public void The_primary_colors_on_offer_are_blux_or_tailwind_palettes_that_the_contrast_tests_cover()
+    public void The_primary_colors_on_offer_are_lux_or_tailwind_palettes_that_the_contrast_tests_cover()
     {
-        Assert.True(AppearanceState.Palettes[0].IsBlux);
-        Assert.All(AppearanceState.Palettes.Skip(1), p => Assert.Contains(p, BxPalette.TailwindPalettes));
+        Assert.True(AppearanceState.Palettes[0].IsLux);
+        Assert.All(AppearanceState.Palettes.Skip(1), p => Assert.Contains(p, LxPalette.TailwindPalettes));
         Assert.Equal(AppearanceState.Palettes.Count, AppearanceState.Palettes.Select(p => p.Name).Distinct().Count());
     }
 }

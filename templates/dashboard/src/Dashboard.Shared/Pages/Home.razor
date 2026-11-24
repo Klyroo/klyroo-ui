@@ -5,20 +5,20 @@
 
 <AppPage Title="Home" TestId="home">
     <Toolbar>
-        <BxDashboardToolbar>
+        <LxDashboardToolbar>
             <Left>
                 @* The period is in the address (?period=month): a link works without a script and the view can be shared. *@
                 <nav aria-label="Period" class="flex items-center gap-1">
                     @foreach (var (period, label) in _periods)
                     {
                         var name = period.ToString().ToLowerInvariant();
-                        <BxButton Label="@label" Size="BxSize.Sm" Color="BxColor.Neutral" Href="@($"./?period={name}")"
+                        <LxButton Label="@label" Size="LxSize.Sm" Color="LxColor.Neutral" Href="@($"./?period={name}")"
                                   Variant="@(period == _period ? ButtonVariant.Soft : ButtonVariant.Ghost)"
                                   aria-current="@(period == _period ? "true" : null)" data-testid="@($"period-{name}")" />
                     }
                 </nav>
             </Left>
-        </BxDashboardToolbar>
+        </LxDashboardToolbar>
     </Toolbar>
     <ChildContent>
         <section aria-label="Key figures" class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -33,73 +33,73 @@
         </section>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <BxCard Class="xl:col-span-2" data-testid="revenue-card">
+            <LxCard Class="xl:col-span-2" data-testid="revenue-card">
                 <Header>
-                    <h2 class="font-semibold text-(--blux-text-highlighted)">Revenue</h2>
-                    <p class="text-sm text-(--blux-text-muted)">@PeriodLabel, compared with the period before.</p>
+                    <h2 class="font-semibold text-(--lux-text-highlighted)">Revenue</h2>
+                    <p class="text-sm text-(--lux-text-muted)">@PeriodLabel, compared with the period before.</p>
                 </Header>
                 <ChildContent>
-                    <BxChart TItem="RevenuePoint" Data="_revenue" Index="@(p => p.Label)" Categories="_categories" Type="BxChartType.Area" Curve="BxChartCurve.Monotone"
-                             Format="FormatMoney" Width="720" Height="300" AriaLabel="@($"Revenue, {PeriodLabel}, compared with the period before")" Table="BxChartTable.Toggle" data-testid="revenue-chart" />
+                    <LxChart TItem="RevenuePoint" Data="_revenue" Index="@(p => p.Label)" Categories="_categories" Type="LxChartType.Area" Curve="LxChartCurve.Monotone"
+                             Format="FormatMoney" Width="720" Height="300" AriaLabel="@($"Revenue, {PeriodLabel}, compared with the period before")" Table="LxChartTable.Toggle" data-testid="revenue-chart" />
                 </ChildContent>
-            </BxCard>
+            </LxCard>
 
-            <BxCard data-testid="channels-card">
+            <LxCard data-testid="channels-card">
                 <Header>
-                    <h2 class="font-semibold text-(--blux-text-highlighted)">Revenue by channel</h2>
-                    <p class="text-sm text-(--blux-text-muted)">Where the orders came from.</p>
+                    <h2 class="font-semibold text-(--lux-text-highlighted)">Revenue by channel</h2>
+                    <p class="text-sm text-(--lux-text-muted)">Where the orders came from.</p>
                 </Header>
                 <ChildContent>
-                    <BxChart TItem="ChannelShare" Data="_channels" Index="@(c => c.Channel)" Categories="_channelCategories" Type="BxChartType.Donut"
+                    <LxChart TItem="ChannelShare" Data="_channels" Index="@(c => c.Channel)" Categories="_channelCategories" Type="LxChartType.Donut"
                              Format="FormatMoney" Height="300" Thickness="40" data-testid="channels-chart">
                         <Center>
-                            <span class="text-xl font-semibold text-(--blux-text-highlighted)">@FormatMoney(_channels.Sum(c => c.Revenue))</span>
-                            <span class="text-xs text-(--blux-text-muted)">total</span>
+                            <span class="text-xl font-semibold text-(--lux-text-highlighted)">@FormatMoney(_channels.Sum(c => c.Revenue))</span>
+                            <span class="text-xs text-(--lux-text-muted)">total</span>
                         </Center>
-                    </BxChart>
+                    </LxChart>
                 </ChildContent>
-            </BxCard>
+            </LxCard>
         </div>
 
         <div class="grid gap-4 xl:grid-cols-3">
-            <BxCard Class="xl:col-span-2" data-testid="sales-card">
+            <LxCard Class="xl:col-span-2" data-testid="sales-card">
                 <Header>
                     <div class="flex items-center justify-between gap-3">
-                        <h2 class="font-semibold text-(--blux-text-highlighted)">Recent sales</h2>
-                        <BxButton Label="All customers" Href="customers" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" />
+                        <h2 class="font-semibold text-(--lux-text-highlighted)">Recent sales</h2>
+                        <LxButton Label="All customers" Href="customers" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Size="LxSize.Sm" />
                     </div>
                 </Header>
                 <ChildContent>
-                    <ul class="flex flex-col divide-y divide-(--blux-border)" aria-label="Recent sales">
+                    <ul class="flex flex-col divide-y divide-(--lux-border)" aria-label="Recent sales">
                         @foreach (var sale in SalesData.Recent)
                         {
                             <li class="flex items-center gap-3 py-3 first:pt-0 last:pb-0" data-testid="sale">
-                                <BxAvatar Alt="@sale.Customer.Name" Size="BxSize.Sm" />
+                                <LxAvatar Alt="@sale.Customer.Name" Size="LxSize.Sm" />
                                 <div class="min-w-0 flex-1">
-                                    <p class="truncate text-sm font-medium text-(--blux-text-highlighted)">@sale.Customer.Name</p>
-                                    <p class="truncate text-xs text-(--blux-text-muted)">@sale.Customer.Email</p>
+                                    <p class="truncate text-sm font-medium text-(--lux-text-highlighted)">@sale.Customer.Name</p>
+                                    <p class="truncate text-xs text-(--lux-text-muted)">@sale.Customer.Email</p>
                                 </div>
-                                <BxBadge Label="@sale.Status" Color="@StatusColor(sale.Status)" Variant="BxVariant.Subtle" Size="BxSize.Sm" class="max-sm:hidden" />
+                                <LxBadge Label="@sale.Status" Color="@StatusColor(sale.Status)" Variant="LxVariant.Subtle" Size="LxSize.Sm" class="max-sm:hidden" />
                                 <div class="text-end">
-                                    <p class="text-sm font-medium tabular-nums text-(--blux-text-highlighted)">@Dashboard.Shared.Data.Money.Format(sale.Amount, 2)</p>
-                                    <p class="text-xs text-(--blux-text-muted)">Today, @sale.At.ToString("HH:mm", CultureInfo.CurrentCulture)</p>
+                                    <p class="text-sm font-medium tabular-nums text-(--lux-text-highlighted)">@Dashboard.Shared.Data.Money.Format(sale.Amount, 2)</p>
+                                    <p class="text-xs text-(--lux-text-muted)">Today, @sale.At.ToString("HH:mm", CultureInfo.CurrentCulture)</p>
                                 </div>
                             </li>
                         }
                     </ul>
                 </ChildContent>
-            </BxCard>
+            </LxCard>
 
-            <BxCard data-testid="orders-card">
+            <LxCard data-testid="orders-card">
                 <Header>
-                    <h2 class="font-semibold text-(--blux-text-highlighted)">Orders per day</h2>
-                    <p class="text-sm text-(--blux-text-muted)">The last two weeks.</p>
+                    <h2 class="font-semibold text-(--lux-text-highlighted)">Orders per day</h2>
+                    <p class="text-sm text-(--lux-text-muted)">The last two weeks.</p>
                 </Header>
                 <ChildContent>
-                    <BxChart TItem="DayOrders" Data="_ordersByDay" Index="@(d => d.Day)" Categories="_orderCategories" Type="BxChartType.Bar"
-                             Legend="false" Width="420" Height="300" Table="BxChartTable.Toggle" data-testid="orders-chart" />
+                    <LxChart TItem="DayOrders" Data="_ordersByDay" Index="@(d => d.Day)" Categories="_orderCategories" Type="LxChartType.Bar"
+                             Legend="false" Width="420" Height="300" Table="LxChartTable.Toggle" data-testid="orders-chart" />
                 </ChildContent>
-            </BxCard>
+            </LxCard>
         </div>
     </ChildContent>
 </AppPage>
@@ -112,15 +112,15 @@
         (MetricsPeriod.Week, "7 days"), (MetricsPeriod.Month, "30 days"), (MetricsPeriod.Quarter, "12 weeks"), (MetricsPeriod.Year, "1 year"),
     ];
 
-    private static readonly BxChartCategory<RevenuePoint>[] _categories =
+    private static readonly LxChartCategory<RevenuePoint>[] _categories =
     [
         new("current", p => p.Current) { Label = "This period" },
-        new("previous", p => p.Previous) { Label = "Period before", Color = BxColor.Neutral },
+        new("previous", p => p.Previous) { Label = "Period before", Color = LxColor.Neutral },
     ];
 
-    private static readonly BxChartCategory<ChannelShare>[] _channelCategories = [new("revenue", c => c.Revenue) { Label = "Revenue" }];
+    private static readonly LxChartCategory<ChannelShare>[] _channelCategories = [new("revenue", c => c.Revenue) { Label = "Revenue" }];
 
-    private static readonly BxChartCategory<DayOrders>[] _orderCategories = [new("orders", d => d.Orders) { Label = "Orders" }];
+    private static readonly LxChartCategory<DayOrders>[] _orderCategories = [new("orders", d => d.Orders) { Label = "Orders" }];
 
     private MetricsPeriod _period = MetricsPeriod.Month;
     private MetricsSummary _summary = default!;
@@ -151,10 +151,10 @@
 
     private static double Change(double current, double previous) => previous == 0 ? 0 : (current - previous) / previous * 100;
 
-    private static BxColor StatusColor(string status) => status switch
+    private static LxColor StatusColor(string status) => status switch
     {
-        "Paid" => BxColor.Success,
-        "Pending" => BxColor.Warning,
-        _ => BxColor.Neutral,
+        "Paid" => LxColor.Success,
+        "Pending" => LxColor.Warning,
+        _ => LxColor.Neutral,
     };
 }

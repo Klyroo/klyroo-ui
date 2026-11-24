@@ -2,5 +2,5 @@
 @layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
-@import './blux.base.css';
+@import './lux.base.css';
 @source './generated/classes.txt';

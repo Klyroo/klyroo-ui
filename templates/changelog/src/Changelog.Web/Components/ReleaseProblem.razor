@@ -4,7 +4,7 @@
 @* Shown while the releases are the sample ones because no repository is set: a visitor must not take them for the real thing. *@
 @if (Options.Value.IsSample && List.Available)
 {
-    <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Class="mt-8" data-testid="sample-notice"
+    <LxAlert Color="LxColor.Info" Variant="LxVariant.Soft" Class="mt-8" data-testid="sample-notice"
              Title="Sample data"
              Description="These releases are made up. Set Changelog:Repository to owner/repo to show the releases of a GitHub repository." />
 }
@@ -14,21 +14,21 @@
 {
     @if (List.Status == ReleaseStatus.Stale)
     {
-        <BxAlert Color="BxColor.Warning" Variant="BxVariant.Soft" Class="mt-8" data-testid="releases-stale"
+        <LxAlert Color="LxColor.Warning" Variant="LxVariant.Soft" Class="mt-8" data-testid="releases-stale"
                  Title="These release notes may be out of date"
                  Description="@StaleText" />
     }
 }
 else
 {
-    <BxEmpty Title="@Title" Description="@Text" HeadingLevel="2" Class="mt-10" data-testid="releases-unavailable">
+    <LxEmpty Title="@Title" Description="@Text" HeadingLevel="2" Class="mt-10" data-testid="releases-unavailable">
         <Actions>
             @if (List.RepositoryUrl is { } repository)
             {
-                <BxButton Label="Open the releases on GitHub" Href="@($"{repository}/releases")" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+                <LxButton Label="Open the releases on GitHub" Href="@($"{repository}/releases")" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" />
             }
         </Actions>
-    </BxEmpty>
+    </LxEmpty>
 }
 
 @code {

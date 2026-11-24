@@ -4,7 +4,7 @@
  *
  * blazor.webview.js talks to the host through window.external.sendMessage / receiveMessage, which every platform's
  * web view provides and no browser does, so that pair tells a web view from a browser. The result is written once as
- * data-bx-host="webview" on <html>, which CSS can also use.
+ * data-lx-host="webview" on <html>, which CSS can also use.
  */
 export function detectWebView() {
   try {
@@ -17,10 +17,10 @@ export function detectWebView() {
 
 /** Marks <html> when the page runs in a web view. Idempotent. */
 export function markHost() {
-  if (detectWebView()) document.documentElement.setAttribute('data-bx-host', 'webview');
+  if (detectWebView()) document.documentElement.setAttribute('data-lx-host', 'webview');
 }
 
 /** True in a BlazorWebView. */
 export function isHybrid() {
-  return document.documentElement.getAttribute('data-bx-host') === 'webview';
+  return document.documentElement.getAttribute('data-lx-host') === 'webview';
 }

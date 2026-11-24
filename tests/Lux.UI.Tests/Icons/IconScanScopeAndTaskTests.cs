@@ -8,7 +8,7 @@ namespace Lux.UI.Tests.Icons;
 /// <summary>Which files the scan reads, and when the task does nothing because nothing changed.</summary>
 public sealed class IconSourceFinderTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "blux-icons-scan-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lux-icons-scan-" + Guid.NewGuid().ToString("N"));
 
     public IconSourceFinderTests() => Directory.CreateDirectory(_root);
 
@@ -100,14 +100,14 @@ public sealed class IconSourceFinderTests : IDisposable
 
 public sealed class LuxResolveIconsTaskTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "blux-icons-task-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lux-icons-task-" + Guid.NewGuid().ToString("N"));
     private readonly Engine _engine = new();
 
     public LuxResolveIconsTaskTests() => Directory.CreateDirectory(_root);
 
     public void Dispose() => Directory.Delete(_root, true);
 
-    private string Output => Path.Combine(_root, "obj", "blux", "icons", "LuxIcons.g.cs");
+    private string Output => Path.Combine(_root, "obj", "lux", "icons", "LuxIcons.g.cs");
 
     private LuxResolveIcons Task(bool collection = true) => new()
     {
@@ -142,7 +142,7 @@ public sealed class LuxResolveIconsTaskTests : IDisposable
     public void A_second_build_with_nothing_changed_reads_and_writes_nothing()
     {
         Svg("dot");
-        File.WriteAllText(Path.Combine(_root, "App.razor"), "<BxIcon Name=\"search\" />");
+        File.WriteAllText(Path.Combine(_root, "App.razor"), "<LxIcon Name=\"search\" />");
         Assert.True(Task().Execute());
         File.WriteAllText(Output, File.ReadAllText(Output) + "// marker\n");
 
@@ -159,11 +159,11 @@ public sealed class LuxResolveIconsTaskTests : IDisposable
     {
         Svg("dot");
         var source = Path.Combine(_root, "App.razor");
-        File.WriteAllText(source, "<BxIcon Name=\"search\" />");
+        File.WriteAllText(source, "<LxIcon Name=\"search\" />");
         Assert.True(Task().Execute());
         File.WriteAllText(Output, "// stale\n");
 
-        File.WriteAllText(source, "<BxIcon Name=\"search\" /> <!-- longer -->");
+        File.WriteAllText(source, "<LxIcon Name=\"search\" /> <!-- longer -->");
         Assert.True(Task().Execute());
         Assert.Contains("LuxIconBundle.Add(\"custom\", \"dot\"", File.ReadAllText(Output));
 
@@ -211,7 +211,7 @@ public sealed class LuxResolveIconsTaskTests : IDisposable
     public void A_build_with_a_problem_is_not_remembered_so_the_problem_is_reported_again()
     {
         Svg("dot");
-        File.WriteAllText(Path.Combine(_root, "App.razor"), "<BxIcon Name=\"custom:nope\" />");
+        File.WriteAllText(Path.Combine(_root, "App.razor"), "<LxIcon Name=\"custom:nope\" />");
         var first = Task();
         first.FailOnError = false;
         Assert.True(first.Execute());
@@ -230,7 +230,7 @@ public sealed class LuxResolveIconsTaskTests : IDisposable
     {
         Svg("dot");
         Directory.CreateDirectory(Path.Combine(_root, ".worktree"));
-        File.WriteAllText(Path.Combine(_root, ".worktree", "Other.razor"), "<BxIcon Name=\"custom:ghost\" />");
+        File.WriteAllText(Path.Combine(_root, ".worktree", "Other.razor"), "<LxIcon Name=\"custom:ghost\" />");
         var task = Task();
         task.FailOnError = true;
 

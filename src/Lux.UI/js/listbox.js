@@ -5,13 +5,13 @@ import { Typeahead, ValueModel, navigable } from './form2-shared.js';
  * Always-visible listbox (WAI-ARIA APG): the listbox element holds focus and announces the active option through
  * aria-activedescendant. Space and Enter select; letters jump to a matching option.
  *
- * <bx-listbox name="…" data-values="a" data-multiple>
+ * <lx-listbox name="…" data-values="a" data-multiple>
  *   <span data-slot="values" hidden></span>
  *   <div role="listbox" tabindex="0"><div role="option" data-value data-label aria-selected>…</div></div>
- * </bx-listbox>
+ * </lx-listbox>
  */
-export class BxListboxElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
+export class LxListboxElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-values', 'name', 'disabled'];
 
   #observer = null;
   #active = null;
@@ -124,4 +124,4 @@ export class BxListboxElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-listbox')) customElements.define('bx-listbox', BxListboxElement);
+if (!customElements.get('lx-listbox')) customElements.define('lx-listbox', LxListboxElement);

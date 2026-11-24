@@ -2,16 +2,16 @@ namespace Lux.UI.Theming;
 
 internal static partial class Themes
 {
-    private const string ControlFocus = "focus-visible:ring-2 focus-visible:ring-(--bx-color-text)";
-    private const string ControlInvalid = "aria-invalid:ring-2 aria-invalid:ring-(--blux-error)";
+    private const string ControlFocus = "focus-visible:ring-2 focus-visible:ring-(--lx-color-text)";
+    private const string ControlInvalid = "aria-invalid:ring-2 aria-invalid:ring-(--lux-error)";
 
     /// <summary>Text field look shared by Input, Textarea and the Select trigger.</summary>
     private static ComponentTheme FieldVariants(ComponentTheme t, string slot) => t
-        .Variant("variant", "outline", slot, "bg-(--blux-bg) text-(--blux-text) ring ring-inset ring-(--blux-border-accented) " + ControlFocus)
-        .Variant("variant", "soft", slot, "bg-(--blux-bg-elevated)/50 text-(--blux-text) hover:bg-(--blux-bg-elevated) focus:bg-(--blux-bg-elevated) " + ControlFocus)
-        .Variant("variant", "subtle", slot, "bg-(--blux-bg-elevated) text-(--blux-text) ring ring-inset ring-(--blux-border-accented) " + ControlFocus)
-        .Variant("variant", "ghost", slot, "bg-transparent text-(--blux-text) hover:bg-(--blux-bg-elevated) focus:bg-(--blux-bg-elevated) " + ControlFocus)
-        .Variant("variant", "none", slot, "bg-transparent text-(--blux-text)")
+        .Variant("variant", "outline", slot, "bg-(--lux-bg) text-(--lux-text) ring ring-inset ring-(--lux-border-accented) " + ControlFocus)
+        .Variant("variant", "soft", slot, "bg-(--lux-bg-elevated)/50 text-(--lux-text) hover:bg-(--lux-bg-elevated) focus:bg-(--lux-bg-elevated) " + ControlFocus)
+        .Variant("variant", "subtle", slot, "bg-(--lux-bg-elevated) text-(--lux-text) ring ring-inset ring-(--lux-border-accented) " + ControlFocus)
+        .Variant("variant", "ghost", slot, "bg-transparent text-(--lux-text) hover:bg-(--lux-bg-elevated) focus:bg-(--lux-bg-elevated) " + ControlFocus)
+        .Variant("variant", "none", slot, "bg-transparent text-(--lux-text)")
         .Variant("size", "xs", slot, "px-2 py-1 text-xs gap-1")
         .Variant("size", "sm", slot, "px-2.5 py-1.5 text-xs gap-1.5")
         .Variant("size", "md", slot, "px-2.5 py-1.5 text-sm gap-1.5")
@@ -24,12 +24,12 @@ internal static partial class Themes
     {
         var t = new ComponentTheme("input", "root", "base", "leading", "leadingIcon", "trailing", "trailingIcon")
             .Slot("root", "relative inline-flex w-full items-center")
-            .Slot("base", "w-full rounded-(--blux-radius) border-0 appearance-none placeholder:text-(--blux-text-dimmed) focus:outline-none " +
+            .Slot("base", "w-full rounded-(--lux-radius) border-0 appearance-none placeholder:text-(--lux-text-dimmed) focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
             .Slot("leading", "pointer-events-none absolute inset-y-0 start-0 flex items-center")
-            .Slot("leadingIcon", "shrink-0 text-(--blux-text-dimmed)")
+            .Slot("leadingIcon", "shrink-0 text-(--lux-text-dimmed)")
             .Slot("trailing", "pointer-events-none absolute inset-y-0 end-0 flex items-center")
-            .Slot("trailingIcon", "shrink-0 text-(--blux-text-dimmed)");
+            .Slot("trailingIcon", "shrink-0 text-(--lux-text-dimmed)");
         FieldVariants(t, "base");
         foreach (var (size, padding, icon, inset) in new[]
         {
@@ -55,7 +55,7 @@ internal static partial class Themes
     public static ComponentTheme Textarea()
     {
         var t = new ComponentTheme("textarea", "base")
-            .Slot("base", "block w-full rounded-(--blux-radius) border-0 appearance-none placeholder:text-(--blux-text-dimmed) focus:outline-none " +
+            .Slot("base", "block w-full rounded-(--lux-radius) border-0 appearance-none placeholder:text-(--lux-text-dimmed) focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors resize-y " + ControlInvalid)
             .Variant("autoresize", "true", "base", "field-sizing-content resize-none")
             .Default("autoresize", "false");
@@ -66,15 +66,15 @@ internal static partial class Themes
         new ComponentTheme("checkbox", "root", "container", "base", "icon", "indeterminateIcon", "wrapper", "label", "description")
             .Slot("root", "group relative flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
-            .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-[calc(var(--blux-radius)_-_2px)] bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) indeterminate:bg-(--bx-color) indeterminate:ring-(--bx-color-text) " +
+            .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-[calc(var(--lux-radius)_-_2px)] bg-(--lux-bg) ring ring-inset ring-(--lux-border-accented) transition-colors " +
+                          "checked:bg-(--lx-color) checked:ring-(--lx-color-text) indeterminate:bg-(--lx-color) indeterminate:ring-(--lx-color-text) " +
                           "disabled:cursor-not-allowed disabled:opacity-60 " +
-                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " + ControlInvalid)
-            .Slot("icon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-checked:opacity-100 peer-indeterminate:opacity-0")
-            .Slot("indeterminateIcon", "pointer-events-none absolute text-(--bx-color-contrast) opacity-0 peer-indeterminate:opacity-100")
+                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lx-color-text) " + ControlInvalid)
+            .Slot("icon", "pointer-events-none absolute text-(--lx-color-contrast) opacity-0 peer-checked:opacity-100 peer-indeterminate:opacity-0")
+            .Slot("indeterminateIcon", "pointer-events-none absolute text-(--lx-color-contrast) opacity-0 peer-indeterminate:opacity-100")
             .Slot("wrapper", "flex flex-col")
-            .Slot("label", "font-medium text-(--blux-text) cursor-pointer group-data-disabled:cursor-not-allowed group-data-disabled:opacity-60")
-            .Slot("description", "text-(--blux-text-muted)")
+            .Slot("label", "font-medium text-(--lux-text) cursor-pointer group-data-disabled:cursor-not-allowed group-data-disabled:opacity-60")
+            .Slot("description", "text-(--lux-text-muted)")
             .Variant("size", "xs", "base", "size-3").Variant("size", "xs", "icon", "size-2.5").Variant("size", "xs", "indeterminateIcon", "size-2.5").Variant("size", "xs", "wrapper", "text-xs").Variant("size", "xs", "container", "h-4")
             .Variant("size", "sm", "base", "size-3.5").Variant("size", "sm", "icon", "size-3").Variant("size", "sm", "indeterminateIcon", "size-3").Variant("size", "sm", "wrapper", "text-xs").Variant("size", "sm", "container", "h-4")
             .Variant("size", "md", "base", "size-4").Variant("size", "md", "icon", "size-3.5").Variant("size", "md", "indeterminateIcon", "size-3.5").Variant("size", "md", "wrapper", "text-sm").Variant("size", "md", "container", "h-5")
@@ -85,19 +85,19 @@ internal static partial class Themes
     public static ComponentTheme RadioGroup() =>
         new ComponentTheme("radioGroup", "root", "legend", "fieldset", "item", "container", "base", "indicator", "wrapper", "label", "description")
             .Slot("root", "group/radio relative")
-            .Slot("legend", "mb-1 block font-medium text-(--blux-text)")
+            .Slot("legend", "mb-1 block font-medium text-(--lux-text)")
             .Slot("fieldset", "flex flex-col gap-1.5")
             .Slot("item", "group flex items-start gap-2")
             .Slot("container", "relative flex shrink-0 items-center justify-center")
-            .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-full bg-(--blux-bg) ring ring-inset ring-(--blux-border-accented) transition-colors " +
-                          "checked:bg-(--bx-color) checked:ring-(--bx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
-                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--bx-color-text) " +
+            .Slot("base", "peer appearance-none shrink-0 cursor-pointer rounded-full bg-(--lux-bg) ring ring-inset ring-(--lux-border-accented) transition-colors " +
+                          "checked:bg-(--lx-color) checked:ring-(--lx-color-text) disabled:cursor-not-allowed disabled:opacity-60 " +
+                          "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lx-color-text) " +
                           // aria-invalid belongs to the radio group, not to each radio.
-                          "group-aria-invalid/radio:ring-2 group-aria-invalid/radio:ring-(--blux-error)")
-            .Slot("indicator", "pointer-events-none absolute rounded-full bg-(--bx-color-contrast) opacity-0 peer-checked:opacity-100")
+                          "group-aria-invalid/radio:ring-2 group-aria-invalid/radio:ring-(--lux-error)")
+            .Slot("indicator", "pointer-events-none absolute rounded-full bg-(--lx-color-contrast) opacity-0 peer-checked:opacity-100")
             .Slot("wrapper", "flex flex-col")
-            .Slot("label", "font-medium text-(--blux-text) cursor-pointer group-has-disabled:cursor-not-allowed group-has-disabled:opacity-60")
-            .Slot("description", "text-(--blux-text-muted)")
+            .Slot("label", "font-medium text-(--lux-text) cursor-pointer group-has-disabled:cursor-not-allowed group-has-disabled:opacity-60")
+            .Slot("description", "text-(--lux-text-muted)")
             .Variant("orientation", "horizontal", "fieldset", "flex-row flex-wrap gap-x-4")
             .Variant("size", "xs", "base", "size-3").Variant("size", "xs", "indicator", "size-1").Variant("size", "xs", "root", "text-xs").Variant("size", "xs", "container", "h-4")
             .Variant("size", "sm", "base", "size-3.5").Variant("size", "sm", "indicator", "size-1.5").Variant("size", "sm", "root", "text-xs").Variant("size", "sm", "container", "h-4")
@@ -111,13 +111,13 @@ internal static partial class Themes
         new ComponentTheme("formField", "root", "labelWrapper", "label", "hint", "description", "container", "error", "help")
             .Slot("root", "")
             .Slot("labelWrapper", "flex items-center justify-between gap-1")
-            .Slot("label", "block font-medium text-(--blux-text)")
-            .Slot("hint", "text-(--blux-text-muted)")
-            .Slot("description", "text-(--blux-text-muted)")
+            .Slot("label", "block font-medium text-(--lux-text)")
+            .Slot("hint", "text-(--lux-text-muted)")
+            .Slot("description", "text-(--lux-text-muted)")
             .Slot("container", "relative mt-1")
-            .Slot("error", "mt-2 text-(--blux-error-text)")
-            .Slot("help", "mt-2 text-(--blux-text-muted)")
-            .Variant("required", "true", "label", "after:ms-0.5 after:text-(--blux-error-text) after:content-['*']")
+            .Slot("error", "mt-2 text-(--lux-error-text)")
+            .Slot("help", "mt-2 text-(--lux-text-muted)")
+            .Variant("required", "true", "label", "after:ms-0.5 after:text-(--lux-error-text) after:content-['*']")
             .Variant("size", "xs", "root", "text-xs")
             .Variant("size", "sm", "root", "text-xs")
             .Variant("size", "md", "root", "text-sm")
@@ -130,16 +130,16 @@ internal static partial class Themes
     {
         var t = new ComponentTheme("select", "root", "base", "label", "trailingIcon", "content", "listbox", "item", "itemLabel", "itemIcon", "itemLeadingIcon", "itemCount", "group", "groupLabel", "leadingIcon")
             .Slot("root", "relative inline-flex w-full")
-            .Slot("base", "relative inline-flex w-full items-center rounded-(--blux-radius) text-start cursor-pointer focus:outline-none " +
+            .Slot("base", "relative inline-flex w-full items-center rounded-(--lux-radius) text-start cursor-pointer focus:outline-none " +
                           "disabled:cursor-not-allowed disabled:opacity-60 transition-colors " + ControlInvalid)
-            .Slot("label", "min-w-0 flex-1 truncate before:content-[attr(data-label)] data-placeholder:text-(--blux-text-dimmed)")
-            .Slot("trailingIcon", "ms-auto shrink-0 text-(--blux-text-dimmed)")
-            .Slot("content", "m-0 p-0 inset-auto max-h-60 overflow-y-auto rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-overlay) text-(--blux-text) shadow-lg")
+            .Slot("label", "min-w-0 flex-1 truncate before:content-[attr(data-label)] data-placeholder:text-(--lux-text-dimmed)")
+            .Slot("trailingIcon", "ms-auto shrink-0 text-(--lux-text-dimmed)")
+            .Slot("content", "m-0 p-0 inset-auto max-h-60 overflow-y-auto rounded-(--lux-radius) border border-(--lux-border) bg-(--lux-bg-overlay) text-(--lux-text) shadow-lg")
             .Slot("listbox", "p-1 focus:outline-none")
-            .Slot("item", "group relative flex cursor-pointer select-none items-center gap-1.5 rounded-[calc(var(--blux-radius)_-_2px)] px-2 py-1.5 text-sm " +
-                          "data-highlighted:bg-(--blux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60")
+            .Slot("item", "group relative flex cursor-pointer select-none items-center gap-1.5 rounded-[calc(var(--lux-radius)_-_2px)] px-2 py-1.5 text-sm " +
+                          "data-highlighted:bg-(--lux-bg-elevated) aria-disabled:cursor-not-allowed aria-disabled:opacity-60")
             .Slot("itemLabel", "truncate")
-            .Slot("itemIcon", "invisible ms-auto size-4 shrink-0 text-(--bx-color-text) group-aria-selected:visible group-data-has-count:ms-0")
+            .Slot("itemIcon", "invisible ms-auto size-4 shrink-0 text-(--lx-color-text) group-aria-selected:visible group-data-has-count:ms-0")
             .Slot("itemLeadingIcon", ListItemLeadingIcon)
             .Slot("itemCount", ListItemCount)
             .Slot("group", ListGroup)

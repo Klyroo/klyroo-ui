@@ -4,15 +4,15 @@ import { Reporter, observeChildren } from './shared.js';
  * Numeric field with increment and decrement buttons. The visible field shows the number formatted for the
  * element's locale; a hidden input carries the invariant value, so the number posts the same in every culture.
  *
- * <bx-input-number value="12.5" min max step="0.5" locale="fr-FR">
+ * <lx-input-number value="12.5" min max step="0.5" locale="fr-FR">
  *   <input type="hidden" data-slot="value" name="…" value="12.5">
  *   <button data-slot="decrement">…</button>
  *   <input data-slot="input" role="spinbutton">
  *   <button data-slot="increment">…</button>
- * </bx-input-number>
+ * </lx-input-number>
  */
-export class BxInputNumberElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value', 'min', 'max', 'step', 'locale'];
+export class LxInputNumberElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value', 'min', 'max', 'step', 'locale'];
 
   #reporter = new Reporter(this);
   #value = null;
@@ -36,7 +36,7 @@ export class BxInputNumberElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') {
+    if (name === 'data-lx-seq') {
       queueMicrotask(() => this.#applyRendered(true));
     } else {
       if (name === 'locale') this.#format = null;
@@ -145,7 +145,7 @@ export class BxInputNumberElement extends HTMLElement {
     this.#value = next;
     this.#show();
     this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value: next === null ? '' : String(next) });
+    this.#reporter.report('lx-change', { value: next === null ? '' : String(next) });
   }
 
   #nudge(direction, multiplier = 1) {
@@ -207,4 +207,4 @@ export class BxInputNumberElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('bx-input-number')) customElements.define('bx-input-number', BxInputNumberElement);
+if (!customElements.get('lx-input-number')) customElements.define('lx-input-number', LxInputNumberElement);

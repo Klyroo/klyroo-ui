@@ -1,0 +1,291 @@
+@namespace Lux.UI
+@using Lux.UI.Internal
+@inherits LxFieldBase<string>
+@implements IDisposable
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+    private string _id = default!;
+    private LxRemoteOptions? _remote;
+    private IReadOnlyList<LxSelectItem>? _items;
+    private bool _itemsPassed;
+    private object? _optionsKey;
+
+    /// <summary>
+    /// The suggestions, filtered by what is typed. Not needed when <see cref="OptionsProvider"/> loads them; given together with it,
+    /// these items are not listed but their labels are known (the label of a <see cref="Strict"/> value the provider has not returned yet).
+    /// The parameter must be passed when there is no provider, and a null value (<c>Items="@_list"</c> while the list is still loading) is an empty list, before and after it loads.
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<LxSelectItem> Items
+    {
+        get => _items ?? [];
+        set => _items = value;
+    }
+
+    /// <summary>
+    /// Loads the suggestions from a remote source, one page at a time, instead of listing <see cref="Items"/>. The browser stops filtering and
+    /// the field searches the source with what is typed: the text is trimmed, sent after <see cref="Debounce"/> milliseconds of quiet and only when it
+    /// has at least <see cref="MinLength"/> characters (an empty text lists the unfiltered suggestions; a <see cref="Strict"/> field searches the
+    /// empty text when it opens, as it always lists everything); an older request is cancelled and an older answer never replaces a newer one. The next
+    /// page loads as the list scrolls, a bit before its end, and by a "Load more" button. While loading the list is <c>aria-busy</c> and a polite
+    /// status says so; when the provider throws, the list shows a translated error with a Retry button (Enter in the field also retries).
+    /// <para>
+    /// Interactive only: a statically rendered page (and the prerender before the page becomes interactive) never calls the provider. A free text field
+    /// then works as a plain text field with no suggestions; a <see cref="Strict"/> field shows its value as it was given (read only, since no
+    /// suggestion can be chosen) and still posts it. A parent that renders again with an equal or a new delegate keeps the loaded state; give the
+    /// component a <c>@key</c> to start from scratch.
+    /// </para>
+    /// </summary>
+    [Parameter] public LxOptionsProvider? OptionsProvider { get; set; }
+
+    /// <summary>
+    /// With <see cref="OptionsProvider"/>: what the suggestions depend on besides the typed text (the country whose cities are suggested). When it changes
+    /// (<c>object.Equals</c>), the loaded pages, the search text, the cursor and the resolved label are forgotten, a <see cref="Strict"/> value is resolved again,
+    /// and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded. Without a key the source is assumed not to change.
+    /// </summary>
+    [Parameter] public object? OptionsKey { get; set; }
+
+    /// <summary>
+    /// With <see cref="OptionsProvider"/> and <see cref="Strict"/>: returns the option of the value when the loaded pages do not contain it (a value restored
+    /// from the address or a saved form), so the field shows its label. Called once for that value, as soon as the component is interactive.
+    /// Without it the field shows the raw value.
+    /// </summary>
+    [Parameter] public LxSelectedOptionsResolver? ResolveSelected { get; set; }
+
+    /// <summary>With <see cref="OptionsProvider"/>: the quiet time in milliseconds after typing before the source is searched.</summary>
+    [Parameter] public int Debounce { get; set; } = 250;
+
+    /// <summary>With <see cref="OptionsProvider"/>: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing.</summary>
+    [Parameter] public int MinLength { get; set; }
+
+    /// <summary>With <see cref="OptionsProvider"/>: the number of suggestions requested per page.</summary>
+    [Parameter] public int PageSize { get; set; } = LxRemoteOptions.DefaultPageSize;
+
+    /// <summary>
+    /// Only a suggestion is a valid value: <c>Value</c> is the chosen item's value and the field shows its label.
+    /// Otherwise (the default) the typed text is the value and suggestions only complete it.
+    /// </summary>
+    [Parameter] public bool Strict { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputMenuUi? Ui { get; set; }
+
+    // With a provider the suggestions are the loaded ones; a statically rendered page has none.
+    private bool Remote => _remote is not null;
+
+    // Only an interactive component can hear the browser and call the provider.
+    private bool RemoteActive => _remote is not null && RendererInfo.IsInteractive;
+
+    private IReadOnlyList<LxSelectItem> Listed => _remote is null ? Items : _remote.Items;
+
+    private string Text => !Strict ? Value ?? ""
+        : string.IsNullOrEmpty(Value) ? ""
+        : _remote is null ? Items.FirstOrDefault(i => i.Value == Value)?.Label ?? "" : _remote.LabelOf(Value);
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    public override Task SetParametersAsync(ParameterView parameters)
+    {
+        // Items passed as null (a list that is still loading) is a list with no items; only a component given neither Items nor a provider has nothing to show.
+        if (parameters.TryGetValue<IReadOnlyList<LxSelectItem>>(nameof(Items), out _)) _itemsPassed = true;
+        return base.SetParametersAsync(parameters);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (!_itemsPassed && OptionsProvider is null)
+        {
+            throw new InvalidOperationException($"{nameof(LxInputMenu)} needs its suggestions: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (suggestions loaded from a source).");
+        }
+        _id ??= NewId("inputmenu");
+        if (OptionsProvider is null)
+        {
+            _remote?.Dispose();
+            _remote = null;
+        }
+        else
+        {
+            if (_remote is null)
+            {
+                _remote = new LxRemoteOptions(OptionsProvider, OnRemoteChanged);
+                _optionsKey = OptionsKey;
+            }
+            else if (!Equals(_optionsKey, OptionsKey))
+            {
+                _optionsKey = OptionsKey;
+                _remote.Reset();
+            }
+            _remote.Provider = OptionsProvider;
+            _remote.PageSize = PageSize;
+            _remote.MinLength = Math.Max(0, MinLength);
+            _remote.StaticItems = Items;
+            if (Strict && !string.IsNullOrEmpty(Value)) _remote.RememberSelected([Value]);
+        }
+        _slots = ResolveSlots(Options.InputMenu, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["remote"] = RemoteActive ? "true" : "false",
+        }, Ui, "root");
+    }
+
+    protected override Task OnParametersSetAsync() =>
+        _remote is not null && Strict && ResolveSelected is not null && !string.IsNullOrEmpty(Value) && RendererInfo.IsInteractive
+            ? _remote.ResolveAsync([Value], ResolveSelected)
+            : Task.CompletedTask;
+
+    private void OnRemoteChanged()
+    {
+        if (Strict && !string.IsNullOrEmpty(Value)) _remote!.RememberSelected([Value]);
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => _remote?.Dispose();
+
+    private EventCallback<LxSearchEventArgs> SearchHandler =>
+        RemoteActive ? EventCallback.Factory.Create<LxSearchEventArgs>(this, OnSearch) : default;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxSearchEventArgs))]
+    private Task OnSearch(LxSearchEventArgs e)
+    {
+        // A strict field reports the empty text when it opens: its value gets another try if its resolution failed.
+        if (Strict && string.IsNullOrWhiteSpace(e.Value) && ResolveSelected is not null && !string.IsNullOrEmpty(Value)) _ = _remote!.ResolveAsync([Value], ResolveSelected, retryFailed: true);
+        return _remote!.SearchAsync(e.Value);
+    }
+
+    // The label of a strict value the browser cannot read from the list (it may no longer hold it): value, label.
+    // In every render mode: the browser must not replace the label a static render gave with the raw value.
+    private string? KnownLabels => Remote && Strict && !string.IsNullOrEmpty(Value) && ListValue.Join(_remote!.KnownLabels([Value])) is { Length: > 0 } known ? known : null;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = string.IsNullOrEmpty(e.Value) ? null : e.Value;
+        if (value == Value)
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> InputAttributes(EditBinding binding)
+    {
+        var attributes = ControlAttributes(_slots["base"]);
+        attributes.Remove("required");
+        if (Required || Field?.Required == true) attributes["aria-required"] = "true";
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
+        attributes["data-slot"] = "input";
+        attributes["type"] = "text";
+        attributes["role"] = "combobox";
+        attributes["autocomplete"] = "off";
+        attributes["aria-autocomplete"] = "list";
+        attributes["aria-expanded"] = "false";
+        if (Placeholder is not null) attributes["placeholder"] = Placeholder;
+        // Nothing to choose from before the page is interactive: a strict value cannot be changed, so the field says so.
+        if (Remote && Strict && !RendererInfo.IsInteractive) attributes["readonly"] = true;
+        return attributes;
+    }
+
+    private RenderFragment Option(LxSelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
+              aria-selected="@(Strict && item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+              data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
+
+    private RenderFragment ItemContent(LxSelectItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                @RenderIcon(item.Icon, _slots["itemLeadingIcon"])
+            }
+            <span class="@_slots["itemLabel"]">@item.Label</span>
+            @if (item.Count is { } count)
+            {
+                <span class="sr-only" data-slot="count-separator">, </span>
+                <span class="@_slots["itemCount"]" data-slot="count">@count.ToString("N0", FormatCulture)</span>
+            }
+            @RenderIcon(Options.Icons.Check, _slots["itemIcon"])
+        </text>;
+
+    private RenderFragment Listbox =>
+        @<div role="listbox" class="@_slots["listbox"]" tabindex="-1" aria-label="@Messages.InputMenuSuggestions"
+              aria-busy="@(RemoteActive && _remote!.Busy ? "true" : null)"
+              data-generation="@(RemoteActive ? _remote!.Generation.ToString() : null)"
+              hidden="@(Remote && Listed.Count == 0 ? true : null)">
+            @{ var sections = SelectSections.Of(Listed); }
+            @for (var s = 0; s < sections.Count; s++)
+            {
+                var section = sections[s];
+                if (section.Label is null)
+                {
+                    foreach (var item in section.Items)
+                    {
+                        @Option(item)
+                    }
+                }
+                else
+                {
+                    var groupId = _id + "-group-" + s;
+                    <div role="group" aria-labelledby="@groupId" class="@_slots["group"]" data-slot="group">
+                        <div id="@groupId" role="presentation" class="@_slots["groupLabel"]" data-slot="group-label">@section.Label</div>
+                        @foreach (var item in section.Items)
+                        {
+                            @Option(item)
+                        }
+                    </div>
+                }
+            }
+        </div>;
+
+    private RenderFragment Results =>
+        RemoteActive
+            ? RemoteOptionsView.Scroller(_remote!, _slots, _id + "-scroller", Messages, FormatCulture,
+                RenderIcon(Options.Icons.Loading, _slots["spinner"]), Messages.InputMenuNoResults, hideEmpty: false, this, Listbox)
+            : Listbox;
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<lx-input-menu data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                        value="@(Value ?? "")"
+                        data-strict="@(Strict ? "" : null)"
+                        data-remote="@(RemoteActive ? "" : null)"
+                        data-inert-list="@(Remote && !RemoteActive ? "" : null)"
+                        data-debounce="@(RemoteActive ? Math.Max(0, Debounce).ToString() : null)"
+                        data-known="@KnownLabels"
+                        data-epoch="@(Remote ? _remote!.Epoch.ToString() : null)"
+                        class="@_slots["root"]"
+                        data-color="@Color.Value"
+                        @onbxchange="ChangeHandler"
+                        @onbxchange:stopPropagation="true"
+                        @onbxsearch="SearchHandler"
+                        @onbxsearch:stopPropagation="true">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            <input value="@Text" @attributes="InputAttributes(binding)" />
+            <span class="@_slots["trailing"]" aria-hidden="true">@RenderIcon(Options.Icons.ChevronDown, _slots["trailingIcon"])</span>
+            <div popover="manual" class="@_slots["content"]" data-slot="content">
+                @Results
+                @if (!Remote)
+                {
+                    <p class="@_slots["empty"]" data-slot="empty" hidden>@Messages.InputMenuNoResults</p>
+                }
+            </div>
+        </lx-input-menu>;
+}

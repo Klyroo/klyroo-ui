@@ -77,13 +77,13 @@ A folder becomes a group in the navigation. Put a `_dir.yml` in it to set `title
 
 ## Search, navigation and table of contents
 
-The search is a Blux `BxContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. The list is not written into every page: the site serves it as `/search-index.json` (`MapSearchIndex` in `Program.cs`, with an `ETag`), and `BxContentSearch IndexUrl="search-index.json"` makes the browser fetch it the first time the search opens, with a loading message and a "Try again" button if the fetch fails. It filters in the browser, and the pages stay small however many there are. Raise or lower the amount of text with `SearchTextLimit` in the content options (`Program.cs`).
+The search is a Lux `LxContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. The list is not written into every page: the site serves it as `/search-index.json` (`MapSearchIndex` in `Program.cs`, with an `ETag`), and `LxContentSearch IndexUrl="search-index.json"` makes the browser fetch it the first time the search opens, with a loading message and a "Try again" button if the fetch fails. It filters in the browser, and the pages stay small however many there are. Raise or lower the amount of text with `SearchTextLimit` in the content options (`Program.cs`).
 
-The navigation tree, the table of contents (`h2` and `h3` of the page) and the previous and next links are Blux components fed by the same data, in the order of the navigation.
+The navigation tree, the table of contents (`h2` and `h3` of the page) and the previous and next links are Lux components fed by the same data, in the order of the navigation.
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode (Blux elements that need no .NET code) and the copy buttons (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`). A site with a Content-Security-Policy gives that script a nonce, or serves it as a file.
+Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode (Lux elements that need no .NET code) and the copy buttons (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`). A site with a Content-Security-Policy gives that script a nonce, or serves it as a file.
 
 If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only. The rest stays static.
 

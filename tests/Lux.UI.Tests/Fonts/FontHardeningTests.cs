@@ -7,7 +7,7 @@ namespace Lux.UI.Tests.Fonts;
 
 public class CachedDownloaderTests : IDisposable
 {
-    private readonly string _dir = Path.Combine(Path.GetTempPath(), "blux-dl-" + Guid.NewGuid().ToString("N"));
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lux-dl-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {
@@ -192,7 +192,7 @@ public class FontChecksTests
 
 public class FontHardeningBuildTests : IDisposable
 {
-    private readonly string _dir = Path.Combine(Path.GetTempPath(), "blux-harden-" + Guid.NewGuid().ToString("N"));
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lux-harden-" + Guid.NewGuid().ToString("N"));
 
     public void Dispose()
     {

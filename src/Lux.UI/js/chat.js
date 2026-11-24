@@ -5,22 +5,22 @@ const NEAR_BOTTOM = 48;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /**
- * <bx-chat-messages data-status data-auto-scroll="true">
- *   <div role="log" aria-live="off" tabindex="0" data-bx-chat-viewport>
- *     <div data-bx-chat-content-list>
- *       <article data-bx-chat-message data-role="assistant" data-streaming="true">…<div data-bx-chat-content>…</div></article>
+ * <lx-chat-messages data-status data-auto-scroll="true">
+ *   <div role="log" aria-live="off" tabindex="0" data-lx-chat-viewport>
+ *     <div data-lx-chat-content-list>
+ *       <article data-lx-chat-message data-role="assistant" data-streaming="true">…<div data-lx-chat-content>…</div></article>
  *     </div>
  *   </div>
- *   <button hidden data-bx-chat-jump>Jump to latest</button>
- *   <div role="status" data-bx-chat-announce></div>
- * </bx-chat-messages>
+ *   <button hidden data-lx-chat-jump>Jump to latest</button>
+ *   <div role="status" data-lx-chat-announce></div>
+ * </lx-chat-messages>
  *
  * Scroll: follows the end of the list while the user is at the bottom, stops as soon as they scroll up and shows the jump
  * button; sending a message (a new user message) follows again. The log is aria-live="off": an assistant message is announced
  * once, in the status region, when it stops streaming (or when it appears complete), never token by token. The text of the
  * region is written here; Blazor renders it empty.
  */
-export class BxChatMessagesElement extends HTMLElement {
+export class LxChatMessagesElement extends HTMLElement {
   #observer = null;
   #resize = null;
   #stick = true;
@@ -64,11 +64,11 @@ export class BxChatMessagesElement extends HTMLElement {
   }
 
   get #viewport() {
-    return this.querySelector(':scope > [data-bx-chat-viewport]');
+    return this.querySelector(':scope > [data-lx-chat-viewport]');
   }
 
   get #button() {
-    return this.querySelector(':scope > [data-bx-chat-jump]');
+    return this.querySelector(':scope > [data-lx-chat-jump]');
   }
 
   get #follows() {
@@ -79,7 +79,7 @@ export class BxChatMessagesElement extends HTMLElement {
     if (!this.isConnected || this.#ready) return;
     this.#ready = true;
     this.#scan();
-    const list = this.#viewport?.querySelector('[data-bx-chat-content-list]');
+    const list = this.#viewport?.querySelector('[data-lx-chat-content-list]');
     if (list && typeof ResizeObserver !== 'undefined') {
       this.#resize = new ResizeObserver(() => this.#onResize());
       this.#resize.observe(list);
@@ -128,7 +128,7 @@ export class BxChatMessagesElement extends HTMLElement {
   };
 
   #onClick = (event) => {
-    if (!event.target.closest?.('[data-bx-chat-jump]')) return;
+    if (!event.target.closest?.('[data-lx-chat-jump]')) return;
     this.#stick = true;
     this.#scrollToBottom(true);
     this.#viewport?.focus({ preventScroll: true });
@@ -149,12 +149,12 @@ export class BxChatMessagesElement extends HTMLElement {
         continue;
       }
       // Text and nodes inside a message are the answer being streamed: nothing to scan, the list only has to follow.
-      if (record.type !== 'childList' || record.target.closest?.('[data-bx-chat-message]')) continue;
+      if (record.type !== 'childList' || record.target.closest?.('[data-lx-chat-message]')) continue;
       for (const node of record.addedNodes) {
         if (node.nodeType !== Node.ELEMENT_NODE) continue;
         // The user sent something: show it, and the answer that follows.
         if (this.#isMessage(node, 'user')) this.#stick = true;
-        if (node.matches('[data-bx-chat-message]') || node.querySelector('[data-bx-chat-message]')) messages = true;
+        if (node.matches('[data-lx-chat-message]') || node.querySelector('[data-lx-chat-message]')) messages = true;
       }
     }
     if (messages) this.#scan();
@@ -170,11 +170,11 @@ export class BxChatMessagesElement extends HTMLElement {
   };
 
   #isMessage(node, role) {
-    return node.matches?.(`[data-bx-chat-message][data-role="${role}"]`) || node.querySelector?.(`[data-bx-chat-message][data-role="${role}"]`) !== null;
+    return node.matches?.(`[data-lx-chat-message][data-role="${role}"]`) || node.querySelector?.(`[data-lx-chat-message][data-role="${role}"]`) !== null;
   }
 
   #messages() {
-    return [...this.querySelectorAll('[data-bx-chat-message][data-role="assistant"]')].filter((m) => m.closest('bx-chat-messages') === this);
+    return [...this.querySelectorAll('[data-lx-chat-message][data-role="assistant"]')].filter((m) => m.closest('lx-chat-messages') === this);
   }
 
   /** Announces each assistant message once, when it is complete. Before the baseline nothing is announced. */
@@ -188,8 +188,8 @@ export class BxChatMessagesElement extends HTMLElement {
   }
 
   #announce(message) {
-    const region = this.querySelector(':scope > [data-bx-chat-announce]');
-    const text = (message.querySelector('[data-bx-chat-content]')?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const region = this.querySelector(':scope > [data-lx-chat-announce]');
+    const text = (message.querySelector('[data-lx-chat-content]')?.textContent ?? '').replace(/\s+/g, ' ').trim();
     if (!region || !text) return;
     // Emptied first so the same text twice in a row is read twice.
     region.textContent = '';
@@ -200,22 +200,22 @@ export class BxChatMessagesElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('bx-chat-messages')) customElements.define('bx-chat-messages', BxChatMessagesElement);
+if (!customElements.get('lx-chat-messages')) customElements.define('lx-chat-messages', LxChatMessagesElement);
 
 /**
- * <bx-chat-prompt data-status data-busy data-bx-live data-bx-post data-submit-on-enter="false" data-max-rows="6">
- *   <span hidden data-bx-chat-sink data-bx-seq @onbxchange></span>
- *   <form method="post"><div data-bx-chat-attachments>…</div><textarea data-bx-chat-input></textarea> … </form>
- * </bx-chat-prompt>
+ * <lx-chat-prompt data-status data-busy data-lx-live data-lx-post data-submit-on-enter="false" data-max-rows="6">
+ *   <span hidden data-lx-chat-sink data-lx-seq @onbxchange></span>
+ *   <form method="post"><div data-lx-chat-attachments>…</div><textarea data-lx-chat-input></textarea> … </form>
+ * </lx-chat-prompt>
  *
  * The textarea grows with its text up to data-max-rows. Enter submits (Shift+Enter adds a line; with data-submit-on-enter="false"
  * Ctrl or Cmd plus Enter submits); Enter while an IME is composing is never a submit. The submit event is handled here:
  * - nothing to send (empty, nothing attached), busy or disabled: cancelled;
- * - data-bx-live (interactive .NET listening): cancelled, and the text is reported with "bx-change" on the sink element, then cleared;
- * - data-bx-post: left to the browser, which posts the form (static server rendering);
+ * - data-lx-live (interactive .NET listening): cancelled, and the text is reported with "lx-change" on the sink element, then cleared;
+ * - data-lx-post: left to the browser, which posts the form (static server rendering);
  * - neither: cancelled, nothing could receive it.
  */
-export class BxChatPromptElement extends HTMLElement {
+export class LxChatPromptElement extends HTMLElement {
   #reporter = null;
   #reporterSink = null;
   #resizeObserver = null;
@@ -254,7 +254,7 @@ export class BxChatPromptElement extends HTMLElement {
   }
 
   get #input() {
-    return this.querySelector('[data-bx-chat-input]');
+    return this.querySelector('[data-lx-chat-input]');
   }
 
   get #form() {
@@ -262,7 +262,7 @@ export class BxChatPromptElement extends HTMLElement {
   }
 
   get #sink() {
-    return this.querySelector(':scope > [data-bx-chat-sink]');
+    return this.querySelector(':scope > [data-lx-chat-sink]');
   }
 
   get #report() {
@@ -291,7 +291,7 @@ export class BxChatPromptElement extends HTMLElement {
   }
 
   #hasAttachments() {
-    return this.querySelector('[data-bx-chat-attachments]')?.firstElementChild != null;
+    return this.querySelector('[data-lx-chat-attachments]')?.firstElementChild != null;
   }
 
   #blocked() {
@@ -329,34 +329,34 @@ export class BxChatPromptElement extends HTMLElement {
       event.stopPropagation();
       return;
     }
-    if (this.hasAttribute('data-bx-live')) {
+    if (this.hasAttribute('data-lx-live')) {
       // .NET gets the text over the sink and never sees the form event.
       event.preventDefault();
       event.stopPropagation();
-      this.#report.report('bx-change', { value: text });
+      this.#report.report('lx-change', { value: text });
       input.value = '';
       this.#grow();
       return;
     }
     // Static rendering: the browser posts the form. Without a form name there is nobody to receive it.
-    if (!this.hasAttribute('data-bx-post')) event.preventDefault();
+    if (!this.hasAttribute('data-lx-post')) event.preventDefault();
   };
 }
 
-if (!customElements.get('bx-chat-prompt')) customElements.define('bx-chat-prompt', BxChatPromptElement);
+if (!customElements.get('lx-chat-prompt')) customElements.define('lx-chat-prompt', LxChatPromptElement);
 
 /**
- * <bx-chat-disclosure open data-streaming="true" data-auto-open data-close-delay="500">
- *   <button data-bx-disclosure-trigger aria-expanded aria-controls>…</button>
- *   <div data-bx-disclosure-content hidden="until-found">…</div>
- * </bx-chat-disclosure>
+ * <lx-chat-disclosure open data-streaming="true" data-auto-open data-close-delay="500">
+ *   <button data-lx-disclosure-trigger aria-expanded aria-controls>…</button>
+ *   <div data-lx-disclosure-content hidden="until-found">…</div>
+ * </lx-chat-disclosure>
  *
- * A disclosure like <bx-collapsible> with one addition for streaming content (reasoning): with data-auto-open it opens when
+ * A disclosure like <lx-collapsible> with one addition for streaming content (reasoning): with data-auto-open it opens when
  * data-streaming appears and closes data-close-delay ms after it goes (0 keeps it open), unless the user toggled it in the
- * meantime. Changes, the automatic ones included, are reported with "bx-toggle".
+ * meantime. Changes, the automatic ones included, are reported with "lx-toggle".
  */
-export class BxChatDisclosureElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'open', 'data-streaming'];
+export class LxChatDisclosureElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'open', 'data-streaming'];
 
   #reporter = new Reporter(this);
   #ready = false;
@@ -381,8 +381,8 @@ export class BxChatDisclosureElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.#ready) return;
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyRendered(true));
     else if (name === 'open') this.#applyRendered(false);
     else this.#streamingChanged();
   }
@@ -395,11 +395,11 @@ export class BxChatDisclosureElement extends HTMLElement {
   }
 
   get #trigger() {
-    return this.querySelector(':scope > [data-bx-disclosure-trigger]');
+    return this.querySelector(':scope > [data-lx-disclosure-trigger]');
   }
 
   get #content() {
-    return this.querySelector(':scope > [data-bx-disclosure-content]');
+    return this.querySelector(':scope > [data-lx-disclosure-content]');
   }
 
   #isOpenRendered() {
@@ -436,7 +436,7 @@ export class BxChatDisclosureElement extends HTMLElement {
 
   #change(open) {
     this.#set(open);
-    this.#reporter.report('bx-toggle', { open });
+    this.#reporter.report('lx-toggle', { open });
   }
 
   #streamingChanged() {
@@ -464,7 +464,7 @@ export class BxChatDisclosureElement extends HTMLElement {
   }
 
   #onClick = (event) => {
-    const trigger = event.target.closest?.('[data-bx-disclosure-trigger]');
+    const trigger = event.target.closest?.('[data-lx-disclosure-trigger]');
     if (!trigger || trigger.disabled || trigger !== this.#trigger) return;
     this.#userToggled = true;
     clearTimeout(this.#timer);
@@ -476,4 +476,4 @@ export class BxChatDisclosureElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-chat-disclosure')) customElements.define('bx-chat-disclosure', BxChatDisclosureElement);
+if (!customElements.get('lx-chat-disclosure')) customElements.define('lx-chat-disclosure', LxChatDisclosureElement);

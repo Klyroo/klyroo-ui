@@ -4,14 +4,14 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lux.UI.Tests;
 
 /// <summary>A provider that makes the generated URLs readable: <c>/cdn{src}?w=..&amp;h=..&amp;q=..&amp;f=..&amp;fit=..</c>.</summary>
-internal sealed class EchoProvider(string name = "echo", bool validateDomains = false, bool blur = false) : IBxImageProvider
+internal sealed class EchoProvider(string name = "echo", bool validateDomains = false, bool blur = false) : ILxImageProvider
 {
     public string Name => name;
     public bool CanResize => true;
     public bool SupportsBlur => blur;
     public bool ValidateDomains => validateDomains;
 
-    public string GetUrl(string src, BxImageModifiers m)
+    public string GetUrl(string src, LxImageModifiers m)
     {
         var parts = new List<string>();
         if (m.Width is { } w) parts.Add($"w={w}");
@@ -25,7 +25,7 @@ internal sealed class EchoProvider(string name = "echo", bool validateDomains = 
     }
 }
 
-public class ImageTests : BluxTestContext
+public class ImageTests : LuxTestContext
 {
     public ImageTests() : base(o =>
     {
@@ -33,18 +33,18 @@ public class ImageTests : BluxTestContext
         o.Images.AddProvider(new EchoProvider("guarded", validateDomains: true));
         o.Images.AddProvider(new EchoProvider("blurry", blur: true));
         o.Images.Domains.Add("images.example.com");
-        o.Images.Presets["thumb"] = new BxImageOptions { Format = "webp", Quality = 60, Provider = "echo", Modifiers = new Dictionary<string, string> { ["a"] = "1", ["b"] = "2" } };
+        o.Images.Presets["thumb"] = new LxImageOptions { Format = "webp", Quality = 60, Provider = "echo", Modifiers = new Dictionary<string, string> { ["a"] = "1", ["b"] = "2" } };
     })
     {
     }
 
-    private BxImageSettings Images => Services.GetRequiredService<LuxOptions>().Images;
+    private LxImageSettings Images => Services.GetRequiredService<LuxOptions>().Images;
 
     [Fact]
     public void Sizes_follow_the_algorithm_of_Nuxt_Image_for_breakpoints_and_densities()
     {
         // "sm:50vw" is 50% of 640, "md:400px" is 400. Each entry applies from its breakpoint to the next one.
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Sizes = "sm:100vw md:50vw lg:400px", Densities = "x1 x2" });
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Sizes = "sm:100vw md:50vw lg:400px", Densities = "x1 x2" });
 
         Assert.Equal("(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px", resolved.Sizes);
         Assert.Equal(
@@ -56,7 +56,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void An_unprefixed_size_is_the_default_and_a_fluid_one_is_measured_against_the_first_breakpoint()
     {
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Sizes = "100vw sm:50vw md:400px", Densities = "x1 x2" });
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Sizes = "100vw sm:50vw md:400px", Densities = "x1 x2" });
 
         Assert.Equal("(max-width: 639px) 100vw, (max-width: 767px) 50vw, 400px", resolved.Sizes);
         Assert.Equal(
@@ -68,7 +68,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Sizes_keep_the_ratio_when_width_and_height_are_given_and_forward_format_and_quality()
     {
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Sizes = "sm:100px md:200px", Densities = "x1", Format = "webp", Quality = 70 }, 100, 50);
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Sizes = "sm:100px md:200px", Densities = "x1", Format = "webp", Quality = 70 }, 100, 50);
 
         Assert.Equal("(max-width: 767px) 100px, 200px", resolved.Sizes);
         Assert.Equal("/cdn/a.png?w=100&h=50&q=70&f=webp 100w, /cdn/a.png?w=200&h=100&q=70&f=webp 200w", resolved.SrcSet);
@@ -77,7 +77,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Densities_without_sizes_scale_the_width_and_the_height()
     {
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Densities = "x1 x2" }, 32, 32);
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Densities = "x1 x2" }, 32, 32);
 
         Assert.Equal("/cdn/a.png?w=32&h=32 1x, /cdn/a.png?w=64&h=64 2x", resolved.SrcSet);
         Assert.Equal("/cdn/a.png?w=32&h=32", resolved.Src);
@@ -87,7 +87,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Without_a_width_or_a_height_there_is_nothing_to_scale_so_no_srcset()
     {
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Format = "webp" });
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Format = "webp" });
 
         Assert.Equal("/cdn/a.png?f=webp", resolved.Src);
         Assert.Null(resolved.SrcSet);
@@ -105,15 +105,15 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Entries_with_unusable_sizes_or_densities_are_rejected_or_skipped()
     {
-        var skipped = Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Sizes = "sm:wide md:300px", Densities = "x1" });
+        var skipped = Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Sizes = "sm:wide md:300px", Densities = "x1" });
         Assert.Equal("300px", skipped.Sizes);
-        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new BxImageOptions { Provider = "echo", Densities = "x0" }, 10, 10));
+        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new LxImageOptions { Provider = "echo", Densities = "x0" }, 10, 10));
     }
 
     [Fact]
     public void Sources_without_a_leading_slash_get_one_and_srcset_urls_are_escaped()
     {
-        var resolved = Images.Resolve("img/a b.png", new BxImageOptions { Provider = "echo" }, 10, null);
+        var resolved = Images.Resolve("img/a b.png", new LxImageOptions { Provider = "echo" }, 10, null);
 
         Assert.Equal("/cdn/img/a%20b.png?w=10 1x, /cdn/img/a%20b.png?w=20 2x", resolved.SrcSet);
     }
@@ -121,7 +121,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void The_none_provider_returns_the_source_unchanged_without_srcset()
     {
-        var resolved = Images.Resolve("img/a.png", new BxImageOptions { Sizes = "100vw", Format = "webp" }, 100, 50);
+        var resolved = Images.Resolve("img/a.png", new LxImageOptions { Sizes = "100vw", Format = "webp" }, 100, 50);
 
         Assert.Equal("img/a.png", resolved.Src);
         Assert.Null(resolved.SrcSet);
@@ -131,7 +131,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Remote_sources_outside_the_allowlist_are_passed_through_when_the_provider_validates_domains()
     {
-        var options = new BxImageOptions { Provider = "guarded" };
+        var options = new LxImageOptions { Provider = "guarded" };
         var other = Images.Resolve("https://other.example.org/a.png", options, 100, null);
         var listed = Images.Resolve("https://IMAGES.example.com/a.png", options, 100, null);
         var local = Images.Resolve("/a.png", options, 100, null);
@@ -145,7 +145,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Presets_sit_below_explicit_options_and_merge_modifiers_key_by_key()
     {
-        var resolved = Images.Resolve("/a.png", new BxImageOptions { Preset = "thumb", Quality = 90, Modifiers = new Dictionary<string, string> { ["b"] = "3", ["c"] = "4" } }, 10, null);
+        var resolved = Images.Resolve("/a.png", new LxImageOptions { Preset = "thumb", Quality = 90, Modifiers = new Dictionary<string, string> { ["b"] = "3", ["c"] = "4" } }, 10, null);
 
         Assert.Equal("/cdn/a.png?w=10&q=90&f=webp&a=1&b=3&c=4", resolved.Src);
     }
@@ -153,8 +153,8 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Unknown_provider_or_preset_is_a_clear_error()
     {
-        Assert.Contains("nope", Assert.Throws<InvalidOperationException>(() => Images.Resolve("/a.png", new BxImageOptions { Provider = "nope" })).Message);
-        Assert.Contains("nope", Assert.Throws<InvalidOperationException>(() => Images.Resolve("/a.png", new BxImageOptions { Preset = "nope" })).Message);
+        Assert.Contains("nope", Assert.Throws<InvalidOperationException>(() => Images.Resolve("/a.png", new LxImageOptions { Provider = "nope" })).Message);
+        Assert.Contains("nope", Assert.Throws<InvalidOperationException>(() => Images.Resolve("/a.png", new LxImageOptions { Preset = "nope" })).Message);
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class ImageTests : BluxTestContext
 
         Assert.Throws<InvalidOperationException>(() => Images.Domains.Add("late.example.com"));
         Assert.Throws<InvalidOperationException>(() => Images.Screens["sm"] = 1);
-        Assert.Throws<InvalidOperationException>(() => Images.Presets["x"] = new BxImageOptions());
+        Assert.Throws<InvalidOperationException>(() => Images.Presets["x"] = new LxImageOptions());
         Assert.Throws<InvalidOperationException>(() => Images.AddProvider(new EchoProvider("late")));
         Assert.Throws<InvalidOperationException>(() => Images.DefaultProvider = "echo");
         Assert.Throws<InvalidOperationException>(() => Images.Densities = [1]);
@@ -173,14 +173,14 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Data_urls_and_empty_sources_are_left_alone()
     {
-        Assert.Equal("data:image/png;base64,AAAA", Images.Resolve("data:image/png;base64,AAAA", new BxImageOptions { Provider = "echo" }, 10, 10).Src);
+        Assert.Equal("data:image/png;base64,AAAA", Images.Resolve("data:image/png;base64,AAAA", new LxImageOptions { Provider = "echo" }, 10, 10).Src);
         Assert.Equal("", Images.Resolve(null).Src);
     }
 
     [Fact]
-    public void BxImage_renders_one_img_with_the_attributes_of_the_resolution()
+    public void LxImage_renders_one_img_with_the_attributes_of_the_resolution()
     {
-        var cut = Render<BxImage>(p => p
+        var cut = Render<LxImage>(p => p
             .Add(i => i.Src, "/a.png").Add(i => i.Alt, "A").Add(i => i.Width, 100).Add(i => i.Height, 50)
             .Add(i => i.Provider, "echo").Add(i => i.Format, "webp").Add(i => i.Class, "rounded"));
 
@@ -198,9 +198,9 @@ public class ImageTests : BluxTestContext
     }
 
     [Fact]
-    public void BxImage_with_the_default_provider_keeps_the_source_and_sets_size_and_loading()
+    public void LxImage_with_the_default_provider_keeps_the_source_and_sets_size_and_loading()
     {
-        var cut = Render<BxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 100).Add(i => i.Height, 50).Add(i => i.Sizes, "100vw"));
+        var cut = Render<LxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 100).Add(i => i.Height, 50).Add(i => i.Sizes, "100vw"));
 
         var img = cut.Find("img");
         Assert.Equal("/a.png", img.GetAttribute("src"));
@@ -212,19 +212,19 @@ public class ImageTests : BluxTestContext
     }
 
     [Fact]
-    public void BxImage_requires_alt()
+    public void LxImage_requires_alt()
     {
-        var error = Assert.ThrowsAny<Exception>(() => Render<BxImage>(p => p.Add(i => i.Src, "/a.png")));
+        var error = Assert.ThrowsAny<Exception>(() => Render<LxImage>(p => p.Add(i => i.Src, "/a.png")));
 
         Assert.Contains("Alt", error.ToString());
     }
 
     [Fact]
-    public void BxImage_parameters_override_ImageOptions()
+    public void LxImage_parameters_override_ImageOptions()
     {
-        var cut = Render<BxImage>(p => p
+        var cut = Render<LxImage>(p => p
             .Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 10)
-            .Add(i => i.ImageOptions, new BxImageOptions { Provider = "echo", Format = "avif", Quality = 40, Loading = BxImageLoading.Eager })
+            .Add(i => i.ImageOptions, new LxImageOptions { Provider = "echo", Format = "avif", Quality = 40, Loading = LxImageLoading.Eager })
             .Add(i => i.Format, "webp"));
 
         var img = cut.Find("img");
@@ -240,13 +240,13 @@ public class ImageTests : BluxTestContext
         {
             builder.OpenComponent<HeadOutlet>(0);
             builder.CloseComponent();
-            builder.OpenComponent<BxImage>(1);
-            builder.AddComponentParameter(2, nameof(BxImage.Src), "/hero.png");
-            builder.AddComponentParameter(3, nameof(BxImage.Alt), "Hero");
-            builder.AddComponentParameter(4, nameof(BxImage.Provider), "echo");
-            builder.AddComponentParameter(5, nameof(BxImage.Sizes), "sm:100vw md:50vw");
-            builder.AddComponentParameter(6, nameof(BxImage.Densities), "x1");
-            builder.AddComponentParameter(7, nameof(BxImage.Preload), (bool?)true);
+            builder.OpenComponent<LxImage>(1);
+            builder.AddComponentParameter(2, nameof(LxImage.Src), "/hero.png");
+            builder.AddComponentParameter(3, nameof(LxImage.Alt), "Hero");
+            builder.AddComponentParameter(4, nameof(LxImage.Provider), "echo");
+            builder.AddComponentParameter(5, nameof(LxImage.Sizes), "sm:100vw md:50vw");
+            builder.AddComponentParameter(6, nameof(LxImage.Densities), "x1");
+            builder.AddComponentParameter(7, nameof(LxImage.Preload), (bool?)true);
             builder.CloseComponent();
         });
 
@@ -264,9 +264,9 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Placeholder_true_asks_the_provider_for_a_tiny_blurred_version_and_a_url_is_used_as_is()
     {
-        var auto = Render<BxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 200).Add(i => i.Height, 100)
+        var auto = Render<LxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 200).Add(i => i.Height, 100)
             .Add(i => i.Provider, "blurry").Add(i => i.Placeholder, true));
-        var url = Render<BxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/tiny.png"));
+        var url = Render<LxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/tiny.png"));
 
         Assert.Contains("url(\"/cdn/a.png?w=10&h=5&q=50&blur=3\")", auto.Find("img").GetAttribute("style"));
         Assert.Contains("url(\"/tiny.png\")", url.Find("img").GetAttribute("style"));
@@ -275,7 +275,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void A_placeholder_url_cannot_break_out_of_the_style_and_a_style_of_the_caller_is_kept()
     {
-        var cut = Render<BxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/t.png\");color:red;x(\"")
+        var cut = Render<LxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/t.png\");color:red;x(\"")
             .AddUnmatched("style", "opacity:.5"));
 
         var style = cut.Find("img").GetAttribute("style")!;
@@ -284,13 +284,13 @@ public class ImageTests : BluxTestContext
     }
 
     [Theory]
-    [InlineData(BxSize.Xs, 24)]
-    [InlineData(BxSize.Md, 32)]
-    [InlineData(BxSize.Xl, 48)]
-    public void Avatar_passes_its_size_in_pixels_and_forwards_the_image_options(BxSize size, int pixels)
+    [InlineData(LxSize.Xs, 24)]
+    [InlineData(LxSize.Md, 32)]
+    [InlineData(LxSize.Xl, 48)]
+    public void Avatar_passes_its_size_in_pixels_and_forwards_the_image_options(LxSize size, int pixels)
     {
-        var cut = Render<BxAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada").Add(a => a.Size, size)
-            .Add(a => a.ImageOptions, new BxImageOptions { Provider = "echo", Format = "webp" }));
+        var cut = Render<LxAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada").Add(a => a.Size, size)
+            .Add(a => a.ImageOptions, new LxImageOptions { Provider = "echo", Format = "webp" }));
 
         var img = cut.Find("img");
         Assert.Equal($"/cdn/a.png?w={pixels}&h={pixels}&f=webp", img.GetAttribute("src"));
@@ -298,7 +298,7 @@ public class ImageTests : BluxTestContext
         Assert.Equal(pixels.ToString(), img.GetAttribute("width"));
         Assert.Equal(pixels.ToString(), img.GetAttribute("height"));
         Assert.Equal("", img.GetAttribute("alt"));
-        Assert.True(img.HasAttribute("data-bx-avatar-image"));
+        Assert.True(img.HasAttribute("data-lx-avatar-image"));
         Assert.Equal("Ada", cut.Find("span").GetAttribute("aria-label"));
         Assert.Contains("A", cut.Find("[aria-hidden=true]").TextContent);
     }
@@ -306,7 +306,7 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void Avatar_without_a_provider_keeps_its_source_and_gets_the_size()
     {
-        var cut = Render<BxAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada"));
+        var cut = Render<LxAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada"));
 
         var img = cut.Find("img");
         Assert.Equal("/a.png", img.GetAttribute("src"));
@@ -317,8 +317,8 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void ColorModeImage_renders_two_images_that_share_the_options_and_the_size_attributes()
     {
-        var cut = Render<BxColorModeImage>(p => p.Add(i => i.Light, "/l.png").Add(i => i.Dark, "/d.png").Add(i => i.Alt, "Logo")
-            .Add(i => i.ImageOptions, new BxImageOptions { Provider = "echo", Format = "webp" }).AddUnmatched("width", "40"));
+        var cut = Render<LxColorModeImage>(p => p.Add(i => i.Light, "/l.png").Add(i => i.Dark, "/d.png").Add(i => i.Alt, "Logo")
+            .Add(i => i.ImageOptions, new LxImageOptions { Provider = "echo", Format = "webp" }).AddUnmatched("width", "40"));
 
         var images = cut.FindAll("img");
         Assert.Equal(2, images.Count);
@@ -330,11 +330,11 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void BlogPost_ChangelogVersion_and_PageLogos_forward_the_image_options()
     {
-        var options = new BxImageOptions { Provider = "echo", Format = "webp", Sizes = "100vw sm:50vw", Densities = "x1" };
+        var options = new LxImageOptions { Provider = "echo", Format = "webp", Sizes = "100vw sm:50vw", Densities = "x1" };
 
-        var post = Render<BxBlogPost>(p => p.Add(b => b.Title, "T").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));
-        var version = Render<BxChangelogVersion>(p => p.Add(b => b.Title, "v1").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));
-        var logos = Render<BxPageLogos>(p => p.Add(b => b.Items, new[] { new PageLogoItem("P") { Src = "/p.png" } }).Add(b => b.ImageOptions, options));
+        var post = Render<LxBlogPost>(p => p.Add(b => b.Title, "T").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));
+        var version = Render<LxChangelogVersion>(p => p.Add(b => b.Title, "v1").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));
+        var logos = Render<LxPageLogos>(p => p.Add(b => b.Items, new[] { new PageLogoItem("P") { Src = "/p.png" } }).Add(b => b.ImageOptions, options));
 
         foreach (var cut in new[] { post.Find("img"), version.Find("img"), logos.Find("img") })
         {
@@ -346,18 +346,18 @@ public class ImageTests : BluxTestContext
     [Fact]
     public void ChatAttachment_card_preview_has_the_size_of_its_slot()
     {
-        var cut = Render<BxChatAttachment>(p => p.Add(a => a.Name, "a.png").Add(a => a.Type, "image/png").Add(a => a.Url, "/a.png")
-            .Add(a => a.ImageOptions, new BxImageOptions { Provider = "echo" }));
+        var cut = Render<LxChatAttachment>(p => p.Add(a => a.Name, "a.png").Add(a => a.Type, "image/png").Add(a => a.Url, "/a.png")
+            .Add(a => a.ImageOptions, new LxImageOptions { Provider = "echo" }));
 
         var img = cut.Find("img");
         Assert.Equal("/cdn/a.png?w=36&h=36", img.GetAttribute("src"));
-        Assert.True(img.HasAttribute("data-bx-avatar-image"));
+        Assert.True(img.HasAttribute("data-lx-avatar-image"));
     }
 
     [Fact]
     public void Unmatched_attributes_reach_the_img()
     {
-        var cut = Render<BxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").AddUnmatched("data-x", "1").AddUnmatched("title", "T"));
+        var cut = Render<LxImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").AddUnmatched("data-x", "1").AddUnmatched("title", "T"));
 
         Assert.Equal("1", cut.Find("img").GetAttribute("data-x"));
         Assert.Equal("T", cut.Find("img").GetAttribute("title"));

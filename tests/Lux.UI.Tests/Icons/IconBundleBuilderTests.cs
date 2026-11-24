@@ -5,7 +5,7 @@ namespace Lux.UI.Tests.Icons;
 
 public sealed class IconBundleBuilderTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "blux-icons-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lux-icons-" + Guid.NewGuid().ToString("N"));
     private string Cache => Path.Combine(_root, "cache");
 
     public IconBundleBuilderTests() => Directory.CreateDirectory(_root);
@@ -36,7 +36,7 @@ public sealed class IconBundleBuilderTests : IDisposable
         network.Texts[Url("ph", "house")] = Set("ph", 256, ("house", "<path d='M1 1'/>"));
         network.Texts[Url("mdi", "home")] = Set("mdi", 24, ("home", "<path d='M2 2'/>"));
 
-        var result = IconBundleBuilder.Run(Options("""<BxIcon Name="ph:house" /> <BxButton LeadingIcon="i-mdi-home" />"""), network);
+        var result = IconBundleBuilder.Run(Options("""<LxIcon Name="ph:house" /> <LxButton LeadingIcon="i-mdi-home" />"""), network);
 
         Assert.Empty(result.Problems);
         Assert.Equal(2, result.IconCount);
@@ -151,7 +151,7 @@ public sealed class IconBundleBuilderTests : IDisposable
         var network = Net();
         network.Texts[Url("ph", "nope")] = "{\"prefix\":\"ph\",\"width\":24,\"height\":24,\"icons\":{},\"not_found\":[\"nope\"]}";
 
-        var result = IconBundleBuilder.Run(Options("a\n<BxIcon Name=\"ph:nope\" />"), network);
+        var result = IconBundleBuilder.Run(Options("a\n<LxIcon Name=\"ph:nope\" />"), network);
 
         var problem = Assert.Single(result.Problems);
         Assert.True(problem.Fatal);
@@ -182,7 +182,7 @@ public sealed class IconBundleBuilderTests : IDisposable
         network.Texts[Url("lucide", "brand-thing")] = "{\"prefix\":\"lucide\",\"icons\":{},\"not_found\":[\"brand-thing\"]}";
         network.Texts[Url("ph", "ghost")] = "{\"prefix\":\"ph\",\"icons\":{},\"not_found\":[\"ghost\"]}";
 
-        var result = IconBundleBuilder.Run(Options("""<BxIcon Name="brand-thing" /> var s = "i-ph-ghost";"""), network);
+        var result = IconBundleBuilder.Run(Options("""<LxIcon Name="brand-thing" /> var s = "i-ph-ghost";"""), network);
 
         Assert.Equal(2, result.Problems.Count);
         Assert.All(result.Problems, p => Assert.False(p.Fatal));
@@ -202,7 +202,7 @@ public sealed class IconBundleBuilderTests : IDisposable
     public void A_name_with_an_unknown_prefix_in_the_sources_is_left_alone_it_may_be_registered_at_run_time()
     {
         var network = Net();
-        var result = IconBundleBuilder.Run(Options("""<BxIcon Name="brand:logo" />"""), network);
+        var result = IconBundleBuilder.Run(Options("""<LxIcon Name="brand:logo" />"""), network);
 
         // Attempted once, because it is a prefix:name literal, but never fatal.
         Assert.All(result.Problems, p => Assert.False(p.Fatal));
@@ -214,8 +214,8 @@ public sealed class IconBundleBuilderTests : IDisposable
         var network = Net();
         var result = IconBundleBuilder.Run(Options("""
             o.Icons.Register("brand:logo", "<g/>");
-            <BxIcon Name="brand:logo" />
-            <BxIcon Name="search" /> <BxIcon Name="lucide:chevron-down" /> <BxIcon Name="i-lucide-x" />
+            <LxIcon Name="brand:logo" />
+            <LxIcon Name="search" /> <LxIcon Name="lucide:chevron-down" /> <LxIcon Name="i-lucide-x" />
             """), network);
 
         Assert.Empty(network.Requests);
@@ -306,7 +306,7 @@ public sealed class IconBundleBuilderTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "Arrow Left.svg"), "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\"><path d=\"M1 1\"/></svg>");
         File.WriteAllText(Path.Combine(folder, "brand", "logo.svg"), "<svg width=\"40\" height=\"10\"><path d=\"M2 2\"/></svg>");
         File.WriteAllText(Path.Combine(folder, "notes.txt"), "ignored");
-        var options = Options("""<BxIcon Name="i-custom-arrow-left" /> <BxIcon Name="custom:missing" />""");
+        var options = Options("""<LxIcon Name="i-custom-arrow-left" /> <LxIcon Name="custom:missing" />""");
         options.Folders.Add(new IconFolder(folder, "custom"));
         var network = Net();
 

@@ -1,6 +1,6 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Lux.UI;
 
 namespace SaaS.Web.Site;
@@ -20,7 +20,7 @@ public sealed record Post(MarkdownPage Page, DateTimeOffset Date, string? Author
     /// <summary>The reading time, at 200 words a minute (English), never less than one minute.</summary>
     public int ReadingMinutes => Math.Max(1, (int)Math.Ceiling(Page.Text.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Length / 200.0));
 
-    public IReadOnlyList<BxPostAuthor> Authors => Author is null ? [] : [new BxPostAuthor(Author) { Description = AuthorRole }];
+    public IReadOnlyList<LxPostAuthor> Authors => Author is null ? [] : [new LxPostAuthor(Author) { Description = AuthorRole }];
 }
 
 /// <summary>A version of the changelog: the page <c>content/changelog/*.md</c>, its date and the version it announces.</summary>
@@ -42,7 +42,7 @@ public static class Library
     public const string BlogFolder = "blog";
     public const string ChangelogFolder = "changelog";
 
-    private sealed record Parts(IReadOnlyList<Post> Posts, IReadOnlyList<Release> Releases, IReadOnlyList<MarkdownPage> Docs, IReadOnlyList<BxContentNavigationItem> DocsNavigation, IReadOnlyList<MarkdownPage> Plain);
+    private sealed record Parts(IReadOnlyList<Post> Posts, IReadOnlyList<Release> Releases, IReadOnlyList<MarkdownPage> Docs, IReadOnlyList<LxContentNavigationItem> DocsNavigation, IReadOnlyList<MarkdownPage> Plain);
 
     // The parts are worked out once for each version of the content (a reload in development makes a new MarkdownSite).
     private static readonly ConditionalWeakTable<MarkdownSite, Parts> Cache = new();
@@ -58,11 +58,11 @@ public static class Library
     /// <summary>The pages of the documentation, in the order of its navigation: the order of the previous and next links.</summary>
     public static IReadOnlyList<MarkdownPage> DocsPages(this MarkdownSite site) => Of(site).Docs;
 
-    /// <summary>The tree of the documentation, for <see cref="BxContentNavigation"/>.</summary>
-    public static IReadOnlyList<BxContentNavigationItem> DocsNavigation(this MarkdownSite site) => Of(site).DocsNavigation;
+    /// <summary>The tree of the documentation, for <see cref="LxContentNavigation"/>.</summary>
+    public static IReadOnlyList<LxContentNavigationItem> DocsNavigation(this MarkdownSite site) => Of(site).DocsNavigation;
 
     /// <summary>The page before and the page after in the documentation only, not the posts or the versions that follow it in the whole site.</summary>
-    public static (BxContentSurroundLink? Previous, BxContentSurroundLink? Next) DocsSurround(this MarkdownSite site, MarkdownPage page)
+    public static (LxContentSurroundLink? Previous, LxContentSurroundLink? Next) DocsSurround(this MarkdownSite site, MarkdownPage page)
     {
         var docs = Of(site).Docs;
         var index = -1;
@@ -77,7 +77,7 @@ public static class Library
         {
             return (null, null);
         }
-        BxContentSurroundLink? Link(int i) => i >= 0 && i < docs.Count ? new BxContentSurroundLink(docs[i].Title, docs[i].Href) { Description = docs[i].Description } : null;
+        LxContentSurroundLink? Link(int i) => i >= 0 && i < docs.Count ? new LxContentSurroundLink(docs[i].Title, docs[i].Href) { Description = docs[i].Description } : null;
         return (Link(index - 1), Link(index + 1));
     }
 
@@ -122,10 +122,10 @@ public static class Library
     }
 
     // The folder "docs" of the content is one group of the navigation tree; the tree of the documentation is what is in it.
-    private static IReadOnlyList<BxContentNavigationItem> DocsTree(MarkdownSite site) =>
+    private static IReadOnlyList<LxContentNavigationItem> DocsTree(MarkdownSite site) =>
         [.. site.Navigation.Where(item => FirstHref(item)?.StartsWith(DocsFolder + "/", StringComparison.Ordinal) == true).SelectMany(item => item.Children ?? [])];
 
-    private static string? FirstHref(BxContentNavigationItem item) =>
+    private static string? FirstHref(LxContentNavigationItem item) =>
         item.Href ?? item.Children?.Select(FirstHref).FirstOrDefault(href => href is not null);
 
     private static Post ToPost(MarkdownPage page) =>

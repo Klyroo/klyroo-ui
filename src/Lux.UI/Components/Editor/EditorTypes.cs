@@ -51,7 +51,7 @@ public enum EditorToolbarLayout
     Bubble,
 }
 
-/// <summary>A button of <see cref="BxEditorToolbar"/>, or a separator between groups of buttons.</summary>
+/// <summary>A button of <see cref="LxEditorToolbar"/>, or a separator between groups of buttons.</summary>
 public sealed record EditorToolbarItem
 {
     public EditorToolbarItem(EditorAction action) => Action = action;
@@ -61,7 +61,7 @@ public sealed record EditorToolbarItem
     /// <summary>Heading level for <see cref="EditorAction.Heading"/>.</summary>
     public int Level { get; init; }
 
-    /// <summary>Accessible name and tooltip. Defaults to the text of <see cref="BxMessages"/> for the action.</summary>
+    /// <summary>Accessible name and tooltip. Defaults to the text of <see cref="LxMessages"/> for the action.</summary>
     public string? Label { get; init; }
 
     public bool IsSeparator { get; private init; }
@@ -92,7 +92,7 @@ public sealed record EditorToolbarItem
     ];
 }
 
-/// <summary>An entry of <see cref="BxEditorSuggestionMenu"/>: a block or a format the user can insert.</summary>
+/// <summary>An entry of <see cref="LxEditorSuggestionMenu"/>: a block or a format the user can insert.</summary>
 public sealed record EditorSuggestionItem
 {
     public EditorSuggestionItem(EditorAction action, string label)
@@ -113,13 +113,13 @@ public sealed record EditorSuggestionItem
     public bool Disabled { get; init; }
 
     /// <summary>The default entries in English. The menu itself uses <see cref="For"/> with the messages of the locale in effect.</summary>
-    public static IReadOnlyList<EditorSuggestionItem> Defaults { get; } = For(new BxMessages());
+    public static IReadOnlyList<EditorSuggestionItem> Defaults { get; } = For(new LxMessages());
 
     /// <summary>
     /// Text, headings, lists, quote, code block and divider, named and described by <paramref name="messages"/>: what the slash menu
     /// offers by default. The keywords are markup shorthands (h1, ul, hr) and stay the same in every language.
     /// </summary>
-    public static IReadOnlyList<EditorSuggestionItem> For(BxMessages messages) =>
+    public static IReadOnlyList<EditorSuggestionItem> For(LxMessages messages) =>
     [
         new(EditorAction.Paragraph, messages.EditorSuggestionText) { Description = messages.EditorDescriptionParagraph, Keywords = "paragraph p" },
         new(EditorAction.Heading, EditorActions.Label(messages, EditorAction.Heading, 1)) { Level = 1, Description = messages.EditorDescriptionHeading1, Keywords = "h1 title" },
@@ -133,7 +133,7 @@ public sealed record EditorSuggestionItem
     ];
 }
 
-/// <summary>An entry of <see cref="BxEditorMentionMenu"/>: someone or something that can be mentioned.</summary>
+/// <summary>An entry of <see cref="LxEditorMentionMenu"/>: someone or something that can be mentioned.</summary>
 public sealed record EditorMentionItem
 {
     public EditorMentionItem(string id, string label)
@@ -151,7 +151,7 @@ public sealed record EditorMentionItem
     public bool Disabled { get; init; }
 }
 
-/// <summary>An entry of <see cref="BxEditorEmojiMenu"/>.</summary>
+/// <summary>An entry of <see cref="LxEditorEmojiMenu"/>.</summary>
 public sealed record EditorEmojiItem
 {
     public EditorEmojiItem(string emoji, string name)
@@ -183,7 +183,7 @@ public sealed record EditorEmojiItem
     ];
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxEditor"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxEditor"/> slots.</summary>
 public sealed record EditorUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -207,7 +207,7 @@ public sealed record EditorUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxEditorToolbar"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxEditorToolbar"/> slots.</summary>
 public sealed record EditorToolbarUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -235,7 +235,7 @@ public sealed record EditorToolbarUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxEditorDragHandle"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxEditorDragHandle"/> slots.</summary>
 public sealed record EditorDragHandleUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -312,7 +312,7 @@ internal static class EditorActions
         EditorAction.Bold or EditorAction.Italic or EditorAction.Strike or EditorAction.Underline or EditorAction.Code or EditorAction.Heading or
         EditorAction.BulletList or EditorAction.OrderedList or EditorAction.TaskList or EditorAction.Blockquote or EditorAction.CodeBlock or EditorAction.Link;
 
-    public static string Label(BxMessages strings, EditorAction action, int level) => action switch
+    public static string Label(LxMessages strings, EditorAction action, int level) => action switch
     {
         EditorAction.Bold => strings.EditorBold,
         EditorAction.Italic => strings.EditorItalic,

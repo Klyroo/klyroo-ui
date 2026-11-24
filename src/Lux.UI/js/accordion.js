@@ -1,18 +1,18 @@
 import { Reporter } from './shared.js';
 
 /**
- * <bx-accordion type="single|multiple" collapsible>
+ * <lx-accordion type="single|multiple" collapsible>
  *   <div data-slot="item" data-value="a">
- *     <h3><button data-bx-accordion-trigger aria-expanded="false" aria-controls="…">…</button></h3>
- *     <div role="region" data-bx-accordion-content hidden="until-found">…</div>
+ *     <h3><button data-lx-accordion-trigger aria-expanded="false" aria-controls="…">…</button></h3>
+ *     <div role="region" data-lx-accordion-content hidden="until-found">…</div>
  *   </div>
- * </bx-accordion>
+ * </lx-accordion>
  *
  * WAI-ARIA accordion. hidden="until-found" keeps closed panels searchable with find-in-page, which opens them.
- * Changes are reported with "bx-change" (value: open item values joined by commas).
+ * Changes are reported with "lx-change" (value: open item values joined by commas).
  */
-export class BxAccordionElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+export class LxAccordionElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value'];
 
   #reporter = new Reporter(this);
 
@@ -27,8 +27,8 @@ export class BxAccordionElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -40,12 +40,12 @@ export class BxAccordionElement extends HTMLElement {
   }
 
   #items() {
-    return [...this.querySelectorAll('[data-slot="item"]')].filter((item) => item.closest('bx-accordion') === this);
+    return [...this.querySelectorAll('[data-slot="item"]')].filter((item) => item.closest('lx-accordion') === this);
   }
 
   #set(item, open) {
-    const trigger = item.querySelector('[data-bx-accordion-trigger]');
-    const content = item.querySelector('[data-bx-accordion-content]');
+    const trigger = item.querySelector('[data-lx-accordion-trigger]');
+    const content = item.querySelector('[data-lx-accordion-content]');
     trigger?.setAttribute('aria-expanded', String(open));
     item.dataset.state = open ? 'open' : 'closed';
     if (content) {
@@ -55,7 +55,7 @@ export class BxAccordionElement extends HTMLElement {
   }
 
   #isOpen(item) {
-    return item.querySelector('[data-bx-accordion-trigger]')?.getAttribute('aria-expanded') === 'true';
+    return item.querySelector('[data-lx-accordion-trigger]')?.getAttribute('aria-expanded') === 'true';
   }
 
   #toggle(item, open) {
@@ -64,21 +64,21 @@ export class BxAccordionElement extends HTMLElement {
     if (open && single) for (const other of this.#items()) if (other !== item) this.#set(other, false);
     this.#set(item, open);
     const value = this.#items().filter((i) => this.#isOpen(i)).map((i) => i.dataset.value).join(',');
-    this.#reporter.report('bx-change', { value });
+    this.#reporter.report('lx-change', { value });
   }
 
   #onClick = (event) => {
     // Only an item's own header button: buttons of components inside a panel (menus, selects) must not toggle it.
-    const trigger = event.target.closest?.('[data-bx-accordion-trigger]');
+    const trigger = event.target.closest?.('[data-lx-accordion-trigger]');
     const item = trigger?.closest('[data-slot="item"]');
-    if (!item || trigger.disabled || item.closest('bx-accordion') !== this) return;
+    if (!item || trigger.disabled || item.closest('lx-accordion') !== this) return;
     this.#toggle(item, !this.#isOpen(item));
   };
 
   #onBeforeMatch = (event) => {
     const item = event.target.closest?.('[data-slot="item"]');
-    if (item && item.closest('bx-accordion') === this && !this.#isOpen(item)) this.#toggle(item, true);
+    if (item && item.closest('lx-accordion') === this && !this.#isOpen(item)) this.#toggle(item, true);
   };
 }
 
-if (!customElements.get('bx-accordion')) customElements.define('bx-accordion', BxAccordionElement);
+if (!customElements.get('lx-accordion')) customElements.define('lx-accordion', LxAccordionElement);

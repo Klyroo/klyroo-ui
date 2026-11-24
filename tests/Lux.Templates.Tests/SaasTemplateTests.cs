@@ -1,4 +1,4 @@
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using SaaS.Web.Site;
 
 namespace Lux.Templates.Tests;

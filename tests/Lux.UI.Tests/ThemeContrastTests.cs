@@ -20,7 +20,7 @@ public partial class PaletteContrastTests
         "data-active", "data-selected", "checked",
     ];
 
-    private static readonly Regex ColorRing = new(@"^(?<kind>ring|border)-\(--bx-color(?<text>-text)?\)(?:/(?<alpha>\d+))?$");
+    private static readonly Regex ColorRing = new(@"^(?<kind>ring|border)-\(--lx-color(?<text>-text)?\)(?:/(?<alpha>\d+))?$");
 
     private static readonly IReadOnlyList<ComponentTheme> AllThemes = [.. new LuxOptions().AllThemes];
 
@@ -125,14 +125,14 @@ public partial class PaletteContrastTests
         foreach (var entry in AllEntries())
         {
             var tokens = Tokens(entry.Classes).ToList();
-            if (!tokens.Any(t => t.Prefixes.Length == 0 && t.Utility == "bg-(--bx-color)"))
+            if (!tokens.Any(t => t.Prefixes.Length == 0 && t.Utility == "bg-(--lx-color)"))
             {
                 continue;
             }
 
             solids++;
-            var edged = tokens.Any(t => t.Prefixes.Length == 0 && Regex.IsMatch(t.Utility, @"^(inset-)?ring(-\d+)?-\(--bx-color-text\)$"));
-            Assert.True(edged, $"{Describe(entry)} has a solid fill and no unprefixed ring-(--bx-color-text) edge: '{entry.Classes}'");
+            var edged = tokens.Any(t => t.Prefixes.Length == 0 && Regex.IsMatch(t.Utility, @"^(inset-)?ring(-\d+)?-\(--lx-color-text\)$"));
+            Assert.True(edged, $"{Describe(entry)} has a solid fill and no unprefixed ring-(--lx-color-text) edge: '{entry.Classes}'");
         }
 
         Assert.True(solids >= 8, $"Only {solids} solid fills found: the rule is not checking enough.");
@@ -147,15 +147,15 @@ public partial class PaletteContrastTests
             var tokens = Tokens(entry.Classes).ToList();
             foreach (var prefix in StatePrefixes)
             {
-                var fills = tokens.Where(t => t.Prefixes.Length == 1 && t.Prefixes[0] == prefix && Regex.IsMatch(t.Utility, @"^bg-\(--bx-color\)(/\d+)?$"));
+                var fills = tokens.Where(t => t.Prefixes.Length == 1 && t.Prefixes[0] == prefix && Regex.IsMatch(t.Utility, @"^bg-\(--lx-color\)(/\d+)?$"));
                 if (!fills.Any())
                 {
                     continue;
                 }
 
                 states++;
-                var edged = tokens.Any(t => t.Prefixes.Length == 1 && t.Prefixes[0] == prefix && Regex.IsMatch(t.Utility, @"^(inset-)?(ring|border)(-\d+)?-\(--bx-color-text\)(/([7-9]\d|100))?$"));
-                Assert.True(edged, $"{Describe(entry)}: '{prefix}:' fills with the color and has no '{prefix}:ring-(--bx-color-text)' or border edge");
+                var edged = tokens.Any(t => t.Prefixes.Length == 1 && t.Prefixes[0] == prefix && Regex.IsMatch(t.Utility, @"^(inset-)?(ring|border)(-\d+)?-\(--lx-color-text\)(/([7-9]\d|100))?$"));
+                Assert.True(edged, $"{Describe(entry)}: '{prefix}:' fills with the color and has no '{prefix}:ring-(--lx-color-text)' or border edge");
             }
         }
 
@@ -175,7 +175,7 @@ public partial class PaletteContrastTests
                     continue;
                 }
 
-                var bad = Regex.IsMatch(utility, @"^border(-[a-z])?-\(--bx-color\)$") || (utility.StartsWith("shadow-[") && utility.Contains("var(--bx-color)"));
+                var bad = Regex.IsMatch(utility, @"^border(-[a-z])?-\(--lx-color\)$") || (utility.StartsWith("shadow-[") && utility.Contains("var(--lx-color)"));
                 Assert.False(bad, $"{Describe(entry)}: '{string.Join(':', prefixes.Append(utility))}' draws the mark with the fill color");
             }
         }
@@ -185,8 +185,8 @@ public partial class PaletteContrastTests
     public void Content_navigation_marks_the_current_page_with_the_text_color()
     {
         var link = AllThemes.Single(t => t.Name == "contentNavigation").Slots["link"];
-        Assert.DoesNotContain("var(--bx-color)", link);
-        Assert.Contains("var(--bx-color-text)", link);
+        Assert.DoesNotContain("var(--lx-color)", link);
+        Assert.Contains("var(--lx-color-text)", link);
     }
 
     [Fact]
@@ -195,8 +195,8 @@ public partial class PaletteContrastTests
         foreach (var name in new[] { "stepper", "timeline" })
         {
             var separator = AllThemes.Single(t => t.Name == name).Slots["separator"] + " ";
-            Assert.DoesNotContain(":bg-(--bx-color) ", separator);
-            Assert.Contains(":bg-(--bx-color-text) ", separator);
+            Assert.DoesNotContain(":bg-(--lx-color) ", separator);
+            Assert.Contains(":bg-(--lx-color-text) ", separator);
         }
     }
 
@@ -204,7 +204,7 @@ public partial class PaletteContrastTests
     public void The_selected_pill_tab_is_edged_with_a_ring_that_reaches_3_to_1_on_its_track()
     {
         var trigger = AllThemes.Single(t => t.Name == "tabs").Variants["variant"]["pill"]["trigger"];
-        Assert.Contains("aria-selected:ring-(--blux-text-muted)", trigger);
+        Assert.Contains("aria-selected:ring-(--lux-text-muted)", trigger);
         foreach (var theme in new[] { "light", "dark" })
         {
             var ratio = Contrast(Token(theme, "text-muted"), Token(theme, "bg-elevated"));
@@ -220,8 +220,8 @@ public partial class PaletteContrastTests
         var tokens = Tokens(AllThemes.Single(t => t.Name == "switch").Slots["input"]).Select(t => string.Join(':', t.Prefixes.Append(t.Utility))).ToList();
         Assert.Contains("aria-invalid:ring-inset", tokens);
         Assert.Contains("aria-invalid:ring-2", tokens);
-        Assert.Contains("aria-invalid:ring-(--blux-error)", tokens);
+        Assert.Contains("aria-invalid:ring-(--lux-error)", tokens);
         Assert.Contains("checked:aria-invalid:ring-2", tokens);
-        Assert.Contains("checked:aria-invalid:ring-(--blux-error)", tokens);
+        Assert.Contains("checked:aria-invalid:ring-(--lux-error)", tokens);
     }
 }

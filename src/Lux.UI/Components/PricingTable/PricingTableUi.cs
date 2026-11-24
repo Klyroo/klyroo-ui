@@ -2,8 +2,8 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>A column of a <see cref="BxPricingTable"/>.</summary>
-public sealed record BxPricingTier(string Id, string Title)
+/// <summary>A column of a <see cref="LxPricingTable"/>.</summary>
+public sealed record LxPricingTier(string Id, string Title)
 {
     public string? Description { get; init; }
     public string? Price { get; init; }
@@ -19,14 +19,14 @@ public sealed record BxPricingTier(string Id, string Title)
     public bool Highlight { get; init; }
 }
 
-/// <summary>A group of rows of a <see cref="BxPricingTable"/>.</summary>
-public sealed record BxPricingSection(string Title, IReadOnlyList<BxPricingTableFeature> Features);
+/// <summary>A group of rows of a <see cref="LxPricingTable"/>.</summary>
+public sealed record LxPricingSection(string Title, IReadOnlyList<LxPricingTableFeature> Features);
 
 /// <summary>
-/// A row of a <see cref="BxPricingTable"/>. <see cref="Values"/> are the cells in the order of the tiers (or give
+/// A row of a <see cref="LxPricingTable"/>. <see cref="Values"/> are the cells in the order of the tiers (or give
 /// <see cref="ByTier"/>): <c>true</c> is a check mark, <c>false</c> or <c>null</c> a minus sign, anything else is shown as text.
 /// </summary>
-public sealed record BxPricingTableFeature(string Title, params object?[] Values)
+public sealed record LxPricingTableFeature(string Title, params object?[] Values)
 {
     /// <summary>Cells by tier id, instead of by position. A tier missing from it falls back to its position in <see cref="Values"/>.</summary>
     public IReadOnlyDictionary<string, object?>? ByTier { get; init; }

@@ -5,7 +5,7 @@ namespace Lux.UI.Internal;
 /// <summary>A size in bytes as a short text in the language and culture of a locale: "512 B", "1,5 Ko", "2 MB".</summary>
 internal static class FileSizeText
 {
-    public static string Format(long bytes, BxLocale locale, CultureInfo? culture = null)
+    public static string Format(long bytes, LxLocale locale, CultureInfo? culture = null)
     {
         culture ??= locale.Culture;
         var messages = locale.Messages;

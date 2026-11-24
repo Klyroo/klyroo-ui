@@ -1,0 +1,65 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+@* A list of events. Items up to and including Active are highlighted. Pure markup: works in every render mode. *@
+<ol data-color="@Color.Value" data-orientation="@_orientation" aria-label="@AriaLabel" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @for (var i = 0; i < Items.Count; i++)
+    {
+        var item = Items[i];
+        var state = Active is { } active && i <= active ? "active" : "inactive";
+        <li data-state="@state" aria-current="@(Active == i ? "step" : null)" class="@_slots["item"]">
+            <div class="@_slots["track"]">
+                <span aria-hidden="true" data-state="@state" class="@_slots["indicator"]">
+                    @if (item.Icon is not null)
+                    {
+                        <span class="@_slots["icon"]">@item.Icon</span>
+                    }
+                </span>
+                @if (i < Items.Count - 1)
+                {
+                    <span aria-hidden="true" data-state="@state" class="@_slots["separator"]"></span>
+                }
+            </div>
+            <div class="@_slots["text"]">
+                @if (item.Date is not null)
+                {
+                    <span class="@_slots["date"]">@item.Date</span>
+                }
+                <span class="@_slots["title"]">@item.Title</span>
+                @if (item.Description is not null)
+                {
+                    <span class="@_slots["description"]">@item.Description</span>
+                }
+            </div>
+        </li>
+    }
+</ol>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _orientation = "vertical";
+
+    [Parameter, EditorRequired] public IReadOnlyList<LxTimelineItem> Items { get; set; } = [];
+
+    /// <summary>Index of the last highlighted item. Null highlights none.</summary>
+    [Parameter] public int? Active { get; set; }
+    [Parameter] public LxOrientation Orientation { get; set; } = LxOrientation.Vertical;
+    [Parameter] public LxColor Color { get => _colorParameter ?? DefaultColor(LxColor.Primary); set => _colorParameter = value; }
+    private LxColor? _colorParameter;
+    [Parameter] public LxSize Size { get => _sizeParameter ?? DefaultSize(LxSize.Md); set => _sizeParameter = value; }
+    private LxSize? _sizeParameter;
+
+    /// <summary>Accessible name of the list.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public TimelineUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _orientation = Orientation == LxOrientation.Vertical ? "vertical" : "horizontal";
+        _slots = ResolveSlots(Options.Timeline, new Dictionary<string, string?>
+        {
+            ["orientation"] = _orientation,
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "root");
+    }
+}

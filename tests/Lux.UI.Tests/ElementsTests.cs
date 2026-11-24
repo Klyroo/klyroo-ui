@@ -3,23 +3,23 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lux.UI.Tests;
 
-public class ElementsTests : BluxTestContext
+public class ElementsTests : LuxTestContext
 {
     [Fact]
     public void Kbd_renders_a_kbd_element_with_variant_and_default_neutral_color()
     {
-        var cut = Render<BxKbd>(p => p.Add(k => k.Value, "Ctrl").Add(k => k.Variant, BxVariant.Solid));
+        var cut = Render<LxKbd>(p => p.Add(k => k.Value, "Ctrl").Add(k => k.Variant, LxVariant.Solid));
 
         var kbd = cut.Find("kbd");
         Assert.Equal("Ctrl", kbd.TextContent);
         Assert.Equal("neutral", kbd.GetAttribute("data-color"));
-        Assert.Contains("bg-(--bx-color)", kbd.ClassList);
+        Assert.Contains("bg-(--lx-color)", kbd.ClassList);
     }
 
     [Fact]
     public void Separator_without_content_is_a_horizontal_separator()
     {
-        var cut = Render<BxSeparator>();
+        var cut = Render<LxSeparator>();
 
         var separator = cut.Find("[role=separator]");
         Assert.False(separator.HasAttribute("aria-orientation"));
@@ -30,7 +30,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Separator_vertical_declares_its_orientation()
     {
-        var cut = Render<BxSeparator>(p => p.Add(s => s.Orientation, BxOrientation.Vertical));
+        var cut = Render<LxSeparator>(p => p.Add(s => s.Orientation, LxOrientation.Vertical));
 
         Assert.Equal("vertical", cut.Find("[role=separator]").GetAttribute("aria-orientation"));
     }
@@ -38,7 +38,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Separator_label_names_the_separator_and_its_copy_is_hidden()
     {
-        var cut = Render<BxSeparator>(p => p.Add(s => s.Label, "or"));
+        var cut = Render<LxSeparator>(p => p.Add(s => s.Label, "or"));
 
         Assert.Equal("or", cut.Find("[role=separator]").GetAttribute("aria-label"));
         var container = cut.Find("[aria-hidden=true]");
@@ -48,7 +48,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Skeleton_is_hidden_from_assistive_technology_and_pulses()
     {
-        var cut = Render<BxSkeleton>(p => p.Add(s => s.Class, "h-4 w-40"));
+        var cut = Render<LxSkeleton>(p => p.Add(s => s.Class, "h-4 w-40"));
 
         var skeleton = cut.Find("div");
         Assert.Equal("true", skeleton.GetAttribute("aria-hidden"));
@@ -59,7 +59,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Chip_dot_is_hidden_without_a_label()
     {
-        var cut = Render<BxChip>(p => p.AddChildContent("<b>child</b>"));
+        var cut = Render<LxChip>(p => p.AddChildContent("<b>child</b>"));
 
         var indicator = cut.Find("[data-slot=indicator]");
         Assert.Equal("true", indicator.GetAttribute("aria-hidden"));
@@ -71,7 +71,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Chip_with_a_label_is_an_image_named_by_it_and_shows_the_text()
     {
-        var cut = Render<BxChip>(p => p.Add(c => c.Text, "5").Add(c => c.Label, "5 notifications").Add(c => c.Position, BxChipPosition.BottomLeft));
+        var cut = Render<LxChip>(p => p.Add(c => c.Text, "5").Add(c => c.Label, "5 notifications").Add(c => c.Position, LxChipPosition.BottomLeft));
 
         var indicator = cut.Find("[data-slot=indicator]");
         Assert.Equal("img", indicator.GetAttribute("role"));
@@ -84,7 +84,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Chip_show_false_removes_the_indicator_but_keeps_the_child()
     {
-        var cut = Render<BxChip>(p => p.Add(c => c.Show, false).AddChildContent("<b>child</b>"));
+        var cut = Render<LxChip>(p => p.Add(c => c.Show, false).AddChildContent("<b>child</b>"));
 
         Assert.Empty(cut.FindAll("[data-slot=indicator]"));
         Assert.Equal("child", cut.Find("b").TextContent);
@@ -93,7 +93,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Chip_standalone_is_not_positioned()
     {
-        var cut = Render<BxChip>(p => p.Add(c => c.Standalone, true).Add(c => c.Text, "3"));
+        var cut = Render<LxChip>(p => p.Add(c => c.Standalone, true).Add(c => c.Text, "3"));
 
         var indicator = cut.Find("[data-slot=indicator]");
         Assert.DoesNotContain("absolute", indicator.ClassList);
@@ -105,11 +105,11 @@ public class ElementsTests : BluxTestContext
     {
         Services.GetRequiredService<NavigationManager>().NavigateTo("/docs/theming");
 
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/docs/theming").Add(l => l.Label, "Theming"));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/docs/theming").Add(l => l.Label, "Theming"));
 
         var link = cut.Find("a");
         Assert.Equal("page", link.GetAttribute("aria-current"));
-        Assert.Contains("text-(--blux-primary-text)", link.ClassList);
+        Assert.Contains("text-(--lux-primary-text)", link.ClassList);
     }
 
     [Fact]
@@ -117,9 +117,9 @@ public class ElementsTests : BluxTestContext
     {
         Services.GetRequiredService<NavigationManager>().NavigateTo("/docs/theming?tab=1#top");
 
-        var prefix = Render<BxLink>(p => p.Add(l => l.Href, "/docs"));
-        var exact = Render<BxLink>(p => p.Add(l => l.Href, "/docs").Add(l => l.Exact, true));
-        var sibling = Render<BxLink>(p => p.Add(l => l.Href, "/doc"));
+        var prefix = Render<LxLink>(p => p.Add(l => l.Href, "/docs"));
+        var exact = Render<LxLink>(p => p.Add(l => l.Href, "/docs").Add(l => l.Exact, true));
+        var sibling = Render<LxLink>(p => p.Add(l => l.Href, "/doc"));
 
         Assert.Equal("page", prefix.Find("a").GetAttribute("aria-current"));
         Assert.False(exact.Find("a").HasAttribute("aria-current"));
@@ -132,7 +132,7 @@ public class ElementsTests : BluxTestContext
         var nav = Services.GetRequiredService<NavigationManager>();
         nav.NavigateTo("/docs");
 
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/"));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/"));
         Assert.False(cut.Find("a").HasAttribute("aria-current"));
 
         nav.NavigateTo("/");
@@ -143,8 +143,8 @@ public class ElementsTests : BluxTestContext
     public void Link_ignores_other_hosts_and_follows_navigation()
     {
         var nav = Services.GetRequiredService<NavigationManager>();
-        var external = Render<BxLink>(p => p.Add(l => l.Href, "https://example.com/"));
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/pricing"));
+        var external = Render<LxLink>(p => p.Add(l => l.Href, "https://example.com/"));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/pricing"));
 
         Assert.False(external.Find("a").HasAttribute("aria-current"));
         Assert.False(cut.Find("a").HasAttribute("aria-current"));
@@ -159,8 +159,8 @@ public class ElementsTests : BluxTestContext
     {
         Services.GetRequiredService<NavigationManager>().NavigateTo("/a");
 
-        var active = Render<BxLink>(p => p.Add(l => l.Href, "/a").Add(l => l.ActiveClass, "is-active").Add(l => l.InactiveClass, "is-idle"));
-        var inactive = Render<BxLink>(p => p.Add(l => l.Href, "/b").Add(l => l.ActiveClass, "is-active").Add(l => l.InactiveClass, "is-idle"));
+        var active = Render<LxLink>(p => p.Add(l => l.Href, "/a").Add(l => l.ActiveClass, "is-active").Add(l => l.InactiveClass, "is-idle"));
+        var inactive = Render<LxLink>(p => p.Add(l => l.Href, "/b").Add(l => l.ActiveClass, "is-active").Add(l => l.InactiveClass, "is-idle"));
 
         Assert.Contains("is-active", active.Find("a").ClassList);
         Assert.DoesNotContain("is-idle", active.Find("a").ClassList);
@@ -170,7 +170,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Link_active_parameter_overrides_the_comparison()
     {
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/elsewhere").Add(l => l.Active, true));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/elsewhere").Add(l => l.Active, true));
 
         Assert.Equal("page", cut.Find("a").GetAttribute("aria-current"));
     }
@@ -178,7 +178,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Link_disabled_has_no_href_and_is_marked_disabled()
     {
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/x").Add(l => l.Disabled, true));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/x").Add(l => l.Disabled, true));
 
         var link = cut.Find("a");
         Assert.False(link.HasAttribute("href"));
@@ -189,7 +189,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Link_blank_target_gets_a_safe_rel()
     {
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, "_blank"));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, "_blank"));
 
         Assert.Equal("noopener noreferrer", cut.Find("a").GetAttribute("rel"));
     }
@@ -197,7 +197,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Icon_renders_a_builtin_icon_hidden_by_default()
     {
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "search"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "search"));
 
         var svg = cut.Find("svg");
         Assert.Equal("true", svg.GetAttribute("aria-hidden"));
@@ -208,7 +208,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Icon_with_a_label_is_an_image()
     {
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "check").Add(i => i.Label, "Done"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "check").Add(i => i.Label, "Done"));
 
         var svg = cut.Find("svg");
         Assert.Equal("img", svg.GetAttribute("role"));
@@ -219,7 +219,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Icon_unknown_name_renders_no_shape()
     {
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "no-such-icon"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "no-such-icon"));
 
         Assert.Empty(cut.FindAll("path"));
     }
@@ -227,7 +227,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Icon_helper_draws_a_builtin_icon_with_its_class()
     {
-        var named = Render(BxIcons.Named("bell", "size-4"));
+        var named = Render(LxIcons.Named("bell", "size-4"));
 
         Assert.NotEmpty(named.FindAll("svg path"));
         Assert.Equal("currentColor", named.Find("svg path").GetAttribute("stroke"));
@@ -239,7 +239,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Container_renders_the_requested_element_with_its_max_width()
     {
-        var cut = Render<BxContainer>(p => p.Add(c => c.As, "main").Add(c => c.Size, BxSize.Sm).AddChildContent("Hi"));
+        var cut = Render<LxContainer>(p => p.Add(c => c.As, "main").Add(c => c.Size, LxSize.Sm).AddChildContent("Hi"));
 
         var main = cut.Find("main");
         Assert.Contains("max-w-4xl", main.ClassList);
@@ -250,7 +250,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Progress_determinate_exposes_value_range_and_name()
     {
-        var cut = Render<BxProgress>(p => p.Add(b => b.Value, 40).Add(b => b.AriaLabel, "Upload").Add(b => b.Status, true));
+        var cut = Render<LxProgress>(p => p.Add(b => b.Value, 40).Add(b => b.AriaLabel, "Upload").Add(b => b.Status, true));
 
         var bar = cut.Find("[role=progressbar]");
         Assert.Equal("40", bar.GetAttribute("aria-valuenow"));
@@ -265,7 +265,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Progress_clamps_the_value_to_the_range()
     {
-        var cut = Render<BxProgress>(p => p.Add(b => b.Value, 150));
+        var cut = Render<LxProgress>(p => p.Add(b => b.Value, 150));
 
         Assert.Equal("100", cut.Find("[role=progressbar]").GetAttribute("aria-valuenow"));
     }
@@ -273,7 +273,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Progress_without_a_value_is_indeterminate_and_respects_reduced_motion()
     {
-        var cut = Render<BxProgress>();
+        var cut = Render<LxProgress>();
 
         var bar = cut.Find("[role=progressbar]");
         Assert.False(bar.HasAttribute("aria-valuenow"));
@@ -286,7 +286,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Progress_steps_label_the_bar_and_mark_the_current_step()
     {
-        var cut = Render<BxProgress>(p => p.Add(b => b.Value, 1).Add(b => b.Steps, new[] { "Cart", "Shipping", "Done" }));
+        var cut = Render<LxProgress>(p => p.Add(b => b.Value, 1).Add(b => b.Steps, new[] { "Cart", "Shipping", "Done" }));
 
         var bar = cut.Find("[role=progressbar]");
         Assert.Equal("2", bar.GetAttribute("aria-valuemax"));
@@ -298,9 +298,9 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Banner_renders_the_element_that_persists_its_dismissal()
     {
-        var cut = Render<BxBanner>(p => p.Add(b => b.Id, "launch").Add(b => b.Title, "Hello").Add(b => b.Close, true));
+        var cut = Render<LxBanner>(p => p.Add(b => b.Id, "launch").Add(b => b.Title, "Hello").Add(b => b.Close, true));
 
-        Assert.Equal("launch", cut.Find("bx-banner").GetAttribute("data-bx-banner-id"));
+        Assert.Equal("launch", cut.Find("lx-banner").GetAttribute("data-lx-banner-id"));
         Assert.Equal("Close", cut.Find("button[data-slot=close]").GetAttribute("aria-label"));
         Assert.Equal("Hello", cut.Find("[data-slot=title]").TextContent);
     }
@@ -308,7 +308,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Banner_with_a_link_makes_the_title_the_link()
     {
-        var cut = Render<BxBanner>(p => p.Add(b => b.Title, "Read").Add(b => b.Href, "/news"));
+        var cut = Render<LxBanner>(p => p.Add(b => b.Title, "Read").Add(b => b.Href, "/news"));
 
         var link = cut.Find("a[data-slot=title]");
         Assert.Equal("/news", link.GetAttribute("href"));
@@ -319,10 +319,10 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Empty_renders_icon_title_description_and_actions()
     {
-        var cut = Render<BxEmpty>(p => p
+        var cut = Render<LxEmpty>(p => p
             .Add(e => e.Title, "Nothing here")
             .Add(e => e.Description, "Add something")
-            .Add(e => e.Icon, BxIcons.Named("inbox"))
+            .Add(e => e.Icon, LxIcons.Named("inbox"))
             .Add(e => e.Actions, (RenderFragment)(b => b.AddMarkupContent(0, "<button>Add</button>"))));
 
         Assert.Equal("Nothing here", cut.Find("[data-slot=title]").TextContent);
@@ -334,7 +334,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void Empty_title_can_be_a_heading()
     {
-        var cut = Render<BxEmpty>(p => p.Add(e => e.Title, "Nothing").Add(e => e.HeadingLevel, 3));
+        var cut = Render<LxEmpty>(p => p.Add(e => e.Title, "Nothing").Add(e => e.HeadingLevel, 3));
 
         Assert.Equal("Nothing", cut.Find("h3").TextContent);
     }
@@ -342,7 +342,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void User_shows_a_decorative_avatar_with_the_name_and_description()
     {
-        var cut = Render<BxUser>(p => p.Add(u => u.Name, "Ada Lovelace").Add(u => u.Description, "Mathematician"));
+        var cut = Render<LxUser>(p => p.Add(u => u.Name, "Ada Lovelace").Add(u => u.Description, "Mathematician"));
 
         Assert.Equal("Ada Lovelace", cut.Find("[data-slot=name]").TextContent);
         Assert.Equal("Mathematician", cut.Find("[data-slot=description]").TextContent);
@@ -355,7 +355,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void User_with_an_href_is_a_link()
     {
-        var cut = Render<BxUser>(p => p.Add(u => u.Name, "Ada").Add(u => u.Href, "/ada"));
+        var cut = Render<LxUser>(p => p.Add(u => u.Name, "Ada").Add(u => u.Href, "/ada"));
 
         Assert.Equal("/ada", cut.Find("a").GetAttribute("href"));
     }
@@ -363,9 +363,9 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void AvatarGroup_collapses_the_overflow_into_a_named_plus_avatar()
     {
-        BxAvatarItem[] items = [new(Alt: "Ada"), new(Alt: "Grace"), new(Alt: "Alan"), new(Alt: "Edsger")];
+        LxAvatarItem[] items = [new(Alt: "Ada"), new(Alt: "Grace"), new(Alt: "Alan"), new(Alt: "Edsger")];
 
-        var cut = Render<BxAvatarGroup>(p => p.Add(g => g.Items, items).Add(g => g.Max, 2).Add(g => g.AriaLabel, "Team"));
+        var cut = Render<LxAvatarGroup>(p => p.Add(g => g.Items, items).Add(g => g.Max, 2).Add(g => g.AriaLabel, "Team"));
 
         Assert.Equal("Team", cut.Find("[role=group]").GetAttribute("aria-label"));
         var avatars = cut.FindAll("[role=img]");
@@ -377,9 +377,9 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void AvatarGroup_without_max_shows_everyone()
     {
-        BxAvatarItem[] items = [new(Alt: "Ada"), new(Alt: "Grace")];
+        LxAvatarItem[] items = [new(Alt: "Ada"), new(Alt: "Grace")];
 
-        var cut = Render<BxAvatarGroup>(p => p.Add(g => g.Items, items));
+        var cut = Render<LxAvatarGroup>(p => p.Add(g => g.Items, items));
 
         Assert.Equal(2, cut.FindAll("[role=img]").Count);
     }
@@ -387,7 +387,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void FieldGroup_is_a_group_whose_children_lose_their_inner_radii()
     {
-        var cut = Render<BxFieldGroup>(p => p.Add(g => g.AriaLabel, "Actions").AddChildContent("<button>a</button><button>b</button>"));
+        var cut = Render<LxFieldGroup>(p => p.Add(g => g.AriaLabel, "Actions").AddChildContent("<button>a</button><button>b</button>"));
 
         var group = cut.Find("[role=group]");
         Assert.Equal("Actions", group.GetAttribute("aria-label"));
@@ -398,7 +398,7 @@ public class ElementsTests : BluxTestContext
     [Fact]
     public void FieldGroup_vertical_removes_the_vertical_radii()
     {
-        var cut = Render<BxFieldGroup>(p => p.Add(g => g.Orientation, BxOrientation.Vertical));
+        var cut = Render<LxFieldGroup>(p => p.Add(g => g.Orientation, LxOrientation.Vertical));
 
         var group = cut.Find("[role=group]");
         Assert.Contains("flex-col", group.ClassList);
@@ -406,7 +406,7 @@ public class ElementsTests : BluxTestContext
     }
 }
 
-public class ElementsCustomIconTests() : BluxTestContext(o =>
+public class ElementsCustomIconTests() : LuxTestContext(o =>
 {
     o.Icons.Register("brand", "<path d=\"M1 1h22\"/>");
     o.Icons.Register("search", "<path d=\"M2 2h20\"/>");
@@ -415,22 +415,22 @@ public class ElementsCustomIconTests() : BluxTestContext(o =>
     [Fact]
     public void Registered_icons_replace_and_extend_the_builtin_set()
     {
-        var custom = Render<BxIcon>(p => p.Add(i => i.Name, "brand"));
-        var replaced = Render<BxIcon>(p => p.Add(i => i.Name, "search"));
+        var custom = Render<LxIcon>(p => p.Add(i => i.Name, "brand"));
+        var replaced = Render<LxIcon>(p => p.Add(i => i.Name, "search"));
 
         Assert.Equal("M1 1h22", custom.Find("path").GetAttribute("d"));
         Assert.Equal("M2 2h20", replaced.Find("path").GetAttribute("d"));
     }
 }
 
-public class ElementsStaticTests() : BluxTestContext(interactive: false)
+public class ElementsStaticTests() : LuxTestContext(interactive: false)
 {
     [Fact]
     public void Link_computes_the_active_state_in_static_rendering()
     {
         Services.GetRequiredService<NavigationManager>().NavigateTo("/docs/a");
 
-        var cut = Render<BxLink>(p => p.Add(l => l.Href, "/docs"));
+        var cut = Render<LxLink>(p => p.Add(l => l.Href, "/docs"));
 
         Assert.Equal("page", cut.Find("a").GetAttribute("aria-current"));
     }

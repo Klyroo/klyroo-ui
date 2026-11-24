@@ -44,7 +44,7 @@ public sealed record FetchOutcome(
 /// </summary>
 public sealed partial class GitHubReleaseClient(HttpClient http, ILogger<GitHubReleaseClient> logger)
 {
-    public const string UserAgent = "blux-template-changelog";
+    public const string UserAgent = "lux-template-changelog";
 
     /// <summary>The most requests one fetch makes, so a long chain of next links ends.</summary>
     private const int MaxPages = 10;

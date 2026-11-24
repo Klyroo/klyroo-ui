@@ -1,0 +1,106 @@
+@namespace Lux.UI
+@using System.Text.RegularExpressions
+@using Lux.UI.Internal
+@inherits LxFieldBase<string>
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>Accessible name of the picker when it is not inside a <see cref="LxFormField"/> with a label.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public ColorPickerUi? Ui { get; set; }
+
+    private string? Hex => Normalize(Value);
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ColorPicker, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    /// <summary>"#abc", "abc", "#AABBCC" and the like to "#aabbcc"; null when the text is not a hex color.</summary>
+    internal static string? Normalize(string? text)
+    {
+        var match = HexPattern.Match((text ?? "").Trim());
+        if (!match.Success)
+        {
+            return null;
+        }
+        var digits = match.Groups[1].Value;
+        if (digits.Length == 3)
+        {
+            digits = string.Concat(digits.Select(c => $"{c}{c}"));
+        }
+        return "#" + digits.ToLowerInvariant();
+    }
+
+    private static readonly Regex HexPattern = new("^#?([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$", RegexOptions.Compiled);
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = Normalize(e.Value);
+        if (value == Normalize(Value))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> HexAttributes(EditBinding binding)
+    {
+        var attributes = ControlAttributes(_slots["hex"]);
+        attributes["data-slot"] = "hex";
+        attributes.Remove("aria-describedby");
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<lx-color-picker data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                          value="@Hex"
+                          role="group"
+                          aria-label="@(Field?.LabelId is null ? AriaLabel : null)"
+                          aria-labelledby="@Field?.LabelId"
+                          aria-describedby="@Field?.DescribedBy"
+                          class="@_slots["root"]"
+                          data-color="@Color.Value"
+                          data-disabled="@(Disabled ? "" : null)"
+                          @onbxchange="ChangeHandler"
+                          @onbxchange:stopPropagation="true"
+                          @attributes="AdditionalAttributes">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@Hex" disabled="@Disabled" />
+            <div data-slot="area" class="@_slots["area"]">
+                <input type="range" min="0" max="100" data-slot="saturation" aria-label="@Messages.Saturation" class="@_slots["range"]" disabled="@Disabled" />
+                <input type="range" min="0" max="100" data-slot="brightness" aria-label="@Messages.Brightness" class="@_slots["range"]" disabled="@Disabled" />
+                <span data-slot="thumb" class="@_slots["areaThumb"]" aria-hidden="true"></span>
+            </div>
+            <input type="range" min="0" max="359" data-slot="hue" aria-label="@Messages.Hue" class="@_slots["hue"]" disabled="@Disabled" />
+            <div class="@_slots["preview"]">
+                <span data-slot="swatch" class="@_slots["swatch"]" aria-hidden="true"></span>
+                <input type="text" maxlength="7" spellcheck="false" autocomplete="off" aria-label="@Messages.HexColor" placeholder="#000000"
+                       @attributes="HexAttributes(binding)" />
+            </div>
+        </lx-color-picker>;
+}

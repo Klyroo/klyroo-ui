@@ -11,7 +11,7 @@ namespace Lux.UI.Images.Local.Tests;
 /// <summary>An app with a web root holding a generated 1000x500 PNG, a JPEG, an SVG and a secret file next to the root.</summary>
 public sealed class EndpointFixture : IAsyncLifetime
 {
-    public string Directory { get; } = Path.Combine(Path.GetTempPath(), "blux-images-test-" + Guid.NewGuid().ToString("N"));
+    public string Directory { get; } = Path.Combine(Path.GetTempPath(), "lux-images-test-" + Guid.NewGuid().ToString("N"));
     public string WebRoot => Path.Combine(Directory, "wwwroot");
     public string Cache => Path.Combine(Directory, "cache");
 
@@ -83,7 +83,7 @@ public sealed class EndpointFixture : IAsyncLifetime
         return ValueTask.CompletedTask;
     }
 
-    public async Task<(WebApplication App, HttpClient Client)> StartAsync(Action<BxLocalImagesOptions>? configure = null, string? pathBase = null)
+    public async Task<(WebApplication App, HttpClient Client)> StartAsync(Action<LxLocalImagesOptions>? configure = null, string? pathBase = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { WebRootPath = WebRoot, ContentRootPath = Directory, EnvironmentName = "Production" });
         builder.WebHost.UseTestServer();
@@ -114,13 +114,13 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
     {
         var (app, client) = await fixture.StartAsync(pathBase: "/sub");
         await using var _ = app;
-        var url = new BxLocalImageProvider().GetUrl("/img/photo.png", new BxImageModifiers(64, null, null, "webp", null, null));
+        var url = new LxLocalImageProvider().GetUrl("/img/photo.png", new LxImageModifiers(64, null, null, "webp", null, null));
 
         // What the browser does with <img src> under <base href="/sub/">.
         var resolved = new Uri(new Uri("http://localhost/sub/"), url);
         var response = await client.GetAsync(resolved.PathAndQuery);
 
-        Assert.Equal("/sub/_blux/img", resolved.AbsolutePath);
+        Assert.Equal("/sub/_lux/img", resolved.AbsolutePath);
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("image/webp", response.Content.Headers.ContentType!.MediaType);
     }
@@ -131,7 +131,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        var response = await client.GetAsync("/_blux/img?src=/img/photo.png&w=384&f=webp&q=80");
+        var response = await client.GetAsync("/_lux/img?src=/img/photo.png&w=384&f=webp&q=80");
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("image/webp", response.Content.Headers.ContentType!.MediaType);
@@ -149,8 +149,8 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        using var cover = Decode(await client.GetByteArrayAsync("/_blux/img?src=/img/photo.png&w=128&h=128&f=png"));
-        using var byHeight = Decode(await client.GetByteArrayAsync("/_blux/img?src=/img/photo.png&h=100&f=png"));
+        using var cover = Decode(await client.GetByteArrayAsync("/_lux/img?src=/img/photo.png&w=128&h=128&f=png"));
+        using var byHeight = Decode(await client.GetByteArrayAsync("/_lux/img?src=/img/photo.png&h=100&f=png"));
 
         Assert.Equal((128, 128), (cover.Width, cover.Height));
         Assert.Equal((200, 100), (byHeight.Width, byHeight.Height));
@@ -162,7 +162,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        var response = await client.GetAsync("/_blux/img?src=/img/photo.jpg&w=2048");
+        var response = await client.GetAsync("/_lux/img?src=/img/photo.jpg&w=2048");
 
         Assert.Equal("image/jpeg", response.Content.Headers.ContentType!.MediaType);
         using var image = Decode(await response.Content.ReadAsByteArrayAsync());
@@ -175,8 +175,8 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        var first = await client.GetAsync("/_blux/img?src=/img/photo.png&w=256&f=webp&v=abc");
-        var request = new HttpRequestMessage(HttpMethod.Get, "/_blux/img?src=/img/photo.png&w=256&f=webp&v=abc");
+        var first = await client.GetAsync("/_lux/img?src=/img/photo.png&w=256&f=webp&v=abc");
+        var request = new HttpRequestMessage(HttpMethod.Get, "/_lux/img?src=/img/photo.png&w=256&f=webp&v=abc");
         request.Headers.IfNoneMatch.Add(first.Headers.ETag!);
         var second = await client.SendAsync(request);
 
@@ -191,22 +191,22 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync(o => cache = o.CacheDirectory);
         await using var _ = app;
 
-        await client.GetByteArrayAsync("/_blux/img?src=/img/photo.png&w=256&f=webp");
+        await client.GetByteArrayAsync("/_lux/img?src=/img/photo.png&w=256&f=webp");
         var files = Directory.GetFiles(cache!, "*", SearchOption.AllDirectories);
         var written = File.GetLastWriteTimeUtc(files.Single());
         await Task.Delay(30);
-        await client.GetByteArrayAsync("/_blux/img?src=/img/photo.png&w=250&f=webp&q=78");
+        await client.GetByteArrayAsync("/_lux/img?src=/img/photo.png&w=250&f=webp&q=78");
 
         Assert.Equal(written, File.GetLastWriteTimeUtc(Directory.GetFiles(cache!, "*", SearchOption.AllDirectories).Single()));
     }
 
     [Theory]
-    [InlineData("/_blux/img?src=/../secret.png")]
-    [InlineData("/_blux/img?src=/img/../../secret.png")]
-    [InlineData("/_blux/img?src=%2e%2e%2fsecret.png")]
-    [InlineData("/_blux/img?src=..%5csecret.png")]
-    [InlineData("/_blux/img?src=%2F%2E%2E%2Fsecret.png")]
-    [InlineData("/_blux/img?src=//evil.example/a.png")]
+    [InlineData("/_lux/img?src=/../secret.png")]
+    [InlineData("/_lux/img?src=/img/../../secret.png")]
+    [InlineData("/_lux/img?src=%2e%2e%2fsecret.png")]
+    [InlineData("/_lux/img?src=..%5csecret.png")]
+    [InlineData("/_lux/img?src=%2F%2E%2E%2Fsecret.png")]
+    [InlineData("/_lux/img?src=//evil.example/a.png")]
     public async Task Path_traversal_is_a_400(string url)
     {
         var (app, client) = await fixture.StartAsync();
@@ -223,9 +223,9 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        Assert.Equal(HttpStatusCode.UnsupportedMediaType, (await client.GetAsync("/_blux/img?src=/app.json")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/_blux/img?src=/img/none.png")).StatusCode);
-        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/_blux/img?src=/img/.hidden.png")).StatusCode);
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, (await client.GetAsync("/_lux/img?src=/app.json")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/_lux/img?src=/img/none.png")).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/_lux/img?src=/img/.hidden.png")).StatusCode);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         });
         await using var _ = app;
 
-        var response = await client.GetAsync("/_blux/img?src=https://evil.test/a.png");
+        var response = await client.GetAsync("/_lux/img?src=https://evil.test/a.png");
 
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
         Assert.Equal(0, fetched);
@@ -263,8 +263,8 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         });
         await using var _ = app;
 
-        using var first = Decode(await client.GetByteArrayAsync("/_blux/img?src=https://images.test/a.png&w=256&f=webp"));
-        await client.GetByteArrayAsync("/_blux/img?src=https://images.test/a.png&w=256&f=webp");
+        using var first = Decode(await client.GetByteArrayAsync("/_lux/img?src=https://images.test/a.png&w=256&f=webp"));
+        await client.GetByteArrayAsync("/_lux/img?src=https://images.test/a.png&w=256&f=webp");
 
         Assert.Equal(256, first.Width);
         Assert.Equal(1, fetched);
@@ -298,11 +298,11 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         });
         await using var _ = app;
 
-        Assert.Equal(HttpStatusCode.BadGateway, (await client.GetAsync("/_blux/img?src=https://images.test/a.png")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadGateway, (await client.GetAsync("/_lux/img?src=https://images.test/a.png")).StatusCode);
         mode = "html";
-        Assert.Equal(HttpStatusCode.UnsupportedMediaType, (await client.GetAsync("/_blux/img?src=https://images.test/b.png")).StatusCode);
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, (await client.GetAsync("/_lux/img?src=https://images.test/b.png")).StatusCode);
         mode = "big";
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, (await client.GetAsync("/_blux/img?src=https://images.test/c.png")).StatusCode);
+        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, (await client.GetAsync("/_lux/img?src=https://images.test/c.png")).StatusCode);
     }
 
     [Fact]
@@ -311,8 +311,8 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         var (app, client) = await fixture.StartAsync(o => o.RasterizeSvg = true);
         await using var _ = app;
 
-        var plain = await client.GetAsync("/_blux/img?src=/img/logo.svg&w=640");
-        var raster = await client.GetAsync("/_blux/img?src=/img/logo.svg&w=128&f=png");
+        var plain = await client.GetAsync("/_lux/img?src=/img/logo.svg&w=640");
+        var raster = await client.GetAsync("/_lux/img?src=/img/logo.svg&w=128&f=png");
 
         Assert.Equal("image/svg+xml", plain.Content.Headers.ContentType!.MediaType);
         Assert.Contains("sandbox", plain.Headers.GetValues("Content-Security-Policy").Single());
@@ -333,9 +333,9 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         });
         await using var _ = app;
 
-        var slow = client.GetAsync("/_blux/img?src=/img/photo.png&w=16&f=webp");
+        var slow = client.GetAsync("/_lux/img?src=/img/photo.png&w=16&f=webp");
         await Task.Delay(300);
-        var busy = await client.GetAsync("/_blux/img?src=/img/photo.png&w=32&f=webp");
+        var busy = await client.GetAsync("/_lux/img?src=/img/photo.png&w=32&f=webp");
         gate.SetResult();
         await slow;
 
@@ -351,11 +351,11 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         using var provider = services.BuildServiceProvider();
         var images = provider.GetRequiredService<Lux.UI.LuxOptions>().Images;
 
-        var resolved = images.Resolve("/img/photo.png", new Lux.UI.BxImageOptions { Format = "webp" }, 300, null);
+        var resolved = images.Resolve("/img/photo.png", new Lux.UI.LxImageOptions { Format = "webp" }, 300, null);
 
         Assert.Equal("local", images.DefaultProvider);
         Assert.Contains("images.test", images.Domains);
-        Assert.StartsWith("_blux/img?src=%2Fimg%2Fphoto.png&w=384&f=webp&v=7", resolved.Src);
+        Assert.StartsWith("_lux/img?src=%2Fimg%2Fphoto.png&w=384&f=webp&v=7", resolved.Src);
     }
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler

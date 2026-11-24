@@ -9,45 +9,45 @@
         <meta name="description" content="@(_project.Description ?? SiteInfo.Description)" />
     </HeadContent>
 
-    <BxContainer Class="py-10 sm:py-14">
+    <LxContainer Class="py-10 sm:py-14">
         <div class="mx-auto max-w-3xl">
-            <BxBreadcrumb Items="_crumbs" />
+            <LxBreadcrumb Items="_crumbs" />
 
             <article data-testid="project-page" class="mt-8">
                 <header class="flex flex-col gap-6">
-                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--blux-text-highlighted) sm:text-4xl">@_project.Title</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--lux-text-highlighted) sm:text-4xl">@_project.Title</h1>
                     @if (_project.Description is not null)
                     {
-                        <p class="text-lg text-pretty text-(--blux-text-muted)">@_project.Description</p>
+                        <p class="text-lg text-pretty text-(--lux-text-muted)">@_project.Description</p>
                     }
 
-                    <dl class="m-0 grid grid-cols-1 gap-x-8 gap-y-4 border-y border-(--blux-border) py-6 text-sm sm:grid-cols-2" data-testid="project-facts">
+                    <dl class="m-0 grid grid-cols-1 gap-x-8 gap-y-4 border-y border-(--lux-border) py-6 text-sm sm:grid-cols-2" data-testid="project-facts">
                         <div>
-                            <dt class="font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)">Year</dt>
-                            <dd class="m-0 mt-1 text-(--blux-text-highlighted)">@_project.Year</dd>
+                            <dt class="font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)">Year</dt>
+                            <dd class="m-0 mt-1 text-(--lux-text-highlighted)">@_project.Year</dd>
                         </div>
                         @if (_project.Role is not null)
                         {
                             <div>
-                                <dt class="font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)">Role</dt>
-                                <dd class="m-0 mt-1 text-(--blux-text-highlighted)">@_project.Role</dd>
+                                <dt class="font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)">Role</dt>
+                                <dd class="m-0 mt-1 text-(--lux-text-highlighted)">@_project.Role</dd>
                             </div>
                         }
                         @if (_project.Client is not null)
                         {
                             <div>
-                                <dt class="font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)">Client</dt>
-                                <dd class="m-0 mt-1 text-(--blux-text-highlighted)">@_project.Client</dd>
+                                <dt class="font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)">Client</dt>
+                                <dd class="m-0 mt-1 text-(--lux-text-highlighted)">@_project.Client</dd>
                             </div>
                         }
                         @if (_project.Stack.Count > 0)
                         {
                             <div>
-                                <dt class="font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)">Built with</dt>
+                                <dt class="font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)">Built with</dt>
                                 <dd class="m-0 mt-1 flex flex-wrap gap-2">
                                     @foreach (var item in _project.Stack)
                                     {
-                                        <BxBadge Label="@item" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                                        <LxBadge Label="@item" Color="LxColor.Neutral" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
                                     }
                                 </dd>
                             </div>
@@ -60,9 +60,9 @@
                             @foreach (var link in _project.Links)
                             {
                                 <li>
-                                    <BxButton Label="@link.Label" Href="@link.Url" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Size="BxSize.Sm">
-                                        <TrailingIcon><BxIcon Name="ph:arrow-up-right" Class="size-4" /></TrailingIcon>
-                                    </BxButton>
+                                    <LxButton Label="@link.Label" Href="@link.Url" Color="LxColor.Neutral" Variant="ButtonVariant.Outline" Size="LxSize.Sm">
+                                        <TrailingIcon><LxIcon Name="ph:arrow-up-right" Class="size-4" /></TrailingIcon>
+                                    </LxButton>
                                 </li>
                             }
                         </ul>
@@ -71,27 +71,27 @@
 
                 @if (_project.Image is not null)
                 {
-                    <BxImage Src="@_project.Image" Alt="@(_project.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--blux-radius)*2)] object-cover ring ring-(--blux-border)" />
+                    <LxImage Src="@_project.Image" Alt="@(_project.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--lux-radius)*2)] object-cover ring ring-(--lux-border)" />
                 }
 
-                @* The prose styles of the Blux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
-                <BxPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_project.Page.Html)</BxPageBody>
+                @* The prose styles of the Lux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
+                <LxPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_project.Page.Html)</LxPageBody>
             </article>
 
             @if (_more.Count > 0)
             {
-                <section aria-labelledby="more-work" class="mt-6 border-t border-(--blux-border) pt-10">
-                    <h2 id="more-work" class="text-xl font-semibold text-(--blux-text-highlighted)">More work</h2>
-                    <BxPageGrid Columns="2" Class="mt-6 gap-6">
+                <section aria-labelledby="more-work" class="mt-6 border-t border-(--lux-border) pt-10">
+                    <h2 id="more-work" class="text-xl font-semibold text-(--lux-text-highlighted)">More work</h2>
+                    <LxPageGrid Columns="2" Class="mt-6 gap-6">
                         @foreach (var project in _more)
                         {
                             <ProjectCard Project="project" HeadingLevel="3" />
                         }
-                    </BxPageGrid>
+                    </LxPageGrid>
                 </section>
             }
         </div>
-    </BxContainer>
+    </LxContainer>
 }
 
 @code {
@@ -99,7 +99,7 @@
 
     private Project? _project;
     private IReadOnlyList<Project> _more = [];
-    private IReadOnlyList<BxBreadcrumbItem> _crumbs = [];
+    private IReadOnlyList<LxBreadcrumbItem> _crumbs = [];
 
     protected override void OnParametersSet()
     {

@@ -4,7 +4,7 @@ using System.Xml;
 
 // Shared by the build task (every icon body is sanitized when the bundle is generated) and by the library (LuxIconOptions.RegisterSvg),
 // like IconNames.cs and SvgImport.cs.
-#if BLUX_TASKS
+#if LUX_TASKS
 namespace Lux.UI.Build
 #else
 namespace Lux.UI.Internal

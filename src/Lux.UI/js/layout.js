@@ -3,10 +3,10 @@ import { isHybrid } from './host.js';
 import { appBasePath, appCookiePath, sidebarCookiePrefix } from './base-path.js';
 
 // The state is remembered in cookies, so the server can render it on the next request (the app reads them and passes
-// Collapsed): blux-sidebar-{id} is "1" when collapsed, blux-sidebar-{id}-width the width in pixels.
+// Collapsed): lux-sidebar-{id} is "1" when collapsed, lux-sidebar-{id}-width the width in pixels.
 // In a Blazor Hybrid web view there is no server to read them and cookies are unreliable there (WebKit's tracking
 // prevention on iOS and macOS), so the same names are kept in localStorage.
-// At the root the names are blux-sidebar-{id}; below a path base the base is part of the name (see base-path.js and BxPathScope), because
+// At the root the names are lux-sidebar-{id}; below a path base the base is part of the name (see base-path.js and LxPathScope), because
 // a server that reads the cookie keeps the last of two with the same name, and the cookie of another app on the origin can come after.
 const ONE_YEAR = 60 * 60 * 24 * 365;
 
@@ -49,16 +49,16 @@ function write(name, value) {
 }
 
 /**
- * <bx-sidebar data-bx-sidebar-id="app" collapsed resizable data-bx-width="256" data-bx-min-width="192" data-bx-max-width="448" style="--bx-sidebar-width:256px">
+ * <lx-sidebar data-lx-sidebar-id="app" collapsed resizable data-lx-width="256" data-lx-min-width="192" data-lx-max-width="448" style="--lx-sidebar-width:256px">
  *   <aside data-slot="root" data-state="expanded">
- *     <button data-bx-sidebar-toggle aria-pressed="false">…</button> … <div role="separator" data-slot="handle"></div>
+ *     <button data-lx-sidebar-toggle aria-pressed="false">…</button> … <div role="separator" data-slot="handle"></div>
  *   </aside>
  *   <div>…the button that opens the panel…</div>
- * </bx-sidebar>
+ * </lx-sidebar>
  *
- * Owns the collapsed state (data-state on the aside, aria-pressed on the toggles) and the width (the --bx-sidebar-width
+ * Owns the collapsed state (data-state on the aside, aria-pressed on the toggles) and the width (the --lx-sidebar-width
  * variable on this element). Both are remembered in cookies under the id, except that a bound collapsed state
- * (data-bx-seq) is never read from storage: .NET owns it. A change of the collapsed state is reported with "bx-toggle",
+ * (data-lx-seq) is never read from storage: .NET owns it. A change of the collapsed state is reported with "lx-toggle",
  * where open means expanded.
  *
  * Below the lg breakpoint the aside is the off-canvas panel: a popover="auto" element that a button with popovertarget opens.
@@ -71,8 +71,8 @@ function write(name, value) {
 const WIDE = '(min-width: 64rem)';
 const TABBABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), summary, [contenteditable=""], [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
 
-export class BxSidebarElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'collapsed'];
+export class LxSidebarElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'collapsed'];
 
   #reporter = new Reporter(this);
   #collapsed = false;
@@ -109,8 +109,8 @@ export class BxSidebarElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.#ready) return;
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered(false);
   }
 
@@ -129,7 +129,7 @@ export class BxSidebarElement extends HTMLElement {
   }
 
   get #key() {
-    const id = this.getAttribute('data-bx-sidebar-id');
+    const id = this.getAttribute('data-lx-sidebar-id');
     return id ? sidebarCookiePrefix(appBasePath()) + encodeURIComponent(id) : null;
   }
 
@@ -147,15 +147,15 @@ export class BxSidebarElement extends HTMLElement {
   }
 
   get #min() {
-    return this.#number('data-bx-min-width', 192);
+    return this.#number('data-lx-min-width', 192);
   }
 
   get #max() {
-    return this.#number('data-bx-max-width', 448);
+    return this.#number('data-lx-max-width', 448);
   }
 
   get #default() {
-    return this.#number('data-bx-width', 256);
+    return this.#number('data-lx-width', 256);
   }
 
   #clamp(width) {
@@ -198,26 +198,26 @@ export class BxSidebarElement extends HTMLElement {
     const state = this.#collapsed && this.#wide.matches ? 'collapsed' : 'expanded';
     const aside = this.#aside;
     if (aside && aside.dataset.state !== state) aside.dataset.state = state;
-    for (const toggle of this.querySelectorAll('[data-bx-sidebar-toggle]')) {
-      if (toggle.closest('bx-sidebar') === this) toggle.setAttribute('aria-pressed', String(this.#collapsed));
+    for (const toggle of this.querySelectorAll('[data-lx-sidebar-toggle]')) {
+      if (toggle.closest('lx-sidebar') === this) toggle.setAttribute('aria-pressed', String(this.#collapsed));
     }
     this.#renderWidth();
     this.syncControls();
   }
 
   /**
-   * Collapse and open buttons placed outside the sidebar (BxDashboardSidebarCollapse, BxDashboardSidebarToggle) carry
+   * Collapse and open buttons placed outside the sidebar (LxDashboardSidebarCollapse, LxDashboardSidebarToggle) carry
    * aria-controls and aria-expanded set here, since the state lives in the browser.
    */
   syncControls() {
     if (!this.#ready) return;
     const aside = this.#aside;
-    for (const button of document.querySelectorAll('[data-bx-sidebar-collapse]')) {
+    for (const button of document.querySelectorAll('[data-lx-sidebar-collapse]')) {
       if (sidebarFor(button) !== this || !aside) continue;
       button.setAttribute('aria-controls', ensureId(aside, 'sidebar'));
       button.setAttribute('aria-expanded', String(!this.#collapsed));
     }
-    for (const button of document.querySelectorAll('[data-bx-sidebar-open]')) {
+    for (const button of document.querySelectorAll('[data-lx-sidebar-open]')) {
       if (sidebarFor(button) !== this || !aside) continue;
       // The native invoker: the browser toggles the popover, with no script in the way.
       if (button.popoverTargetElement !== aside) {
@@ -353,7 +353,7 @@ export class BxSidebarElement extends HTMLElement {
 
   #renderWidth() {
     const width = this.#width ?? this.#default;
-    this.style.setProperty('--bx-sidebar-width', `${width}px`);
+    this.style.setProperty('--lx-sidebar-width', `${width}px`);
     const handle = this.#handle;
     if (handle) {
       handle.setAttribute('aria-valuemin', String(this.#min));
@@ -366,7 +366,7 @@ export class BxSidebarElement extends HTMLElement {
     this.#collapsed = collapsed;
     this.#render();
     if (!this.#reporter.bound) write(this.#key, collapsed ? '1' : '0');
-    this.#reporter.report('bx-toggle', { open: !collapsed });
+    this.#reporter.report('lx-toggle', { open: !collapsed });
   }
 
   #setWidth(width, persist) {
@@ -383,8 +383,8 @@ export class BxSidebarElement extends HTMLElement {
       if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) aside.hidePopover();
       return;
     }
-    const toggle = event.target instanceof Element ? event.target.closest('[data-bx-sidebar-toggle]') : null;
-    if (!toggle || toggle.closest('bx-sidebar') !== this) return;
+    const toggle = event.target instanceof Element ? event.target.closest('[data-lx-sidebar-toggle]') : null;
+    if (!toggle || toggle.closest('lx-sidebar') !== this) return;
     this.#setCollapsed(!this.#collapsed);
   };
 
@@ -454,23 +454,23 @@ export class BxSidebarElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-sidebar')) customElements.define('bx-sidebar', BxSidebarElement);
+if (!customElements.get('lx-sidebar')) customElements.define('lx-sidebar', LxSidebarElement);
 
-/** The sidebar a control outside it belongs to: data-bx-sidebar-for names it, else the one of the same dashboard. */
+/** The sidebar a control outside it belongs to: data-lx-sidebar-for names it, else the one of the same dashboard. */
 function sidebarFor(button) {
-  const own = button.closest('bx-sidebar');
+  const own = button.closest('lx-sidebar');
   if (own) return own;
-  const id = button.getAttribute('data-bx-sidebar-for');
-  const selector = id ? `bx-sidebar[data-bx-sidebar-id="${CSS.escape(id)}"]` : 'bx-sidebar';
-  return button.closest('bx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
+  const id = button.getAttribute('data-lx-sidebar-for');
+  const selector = id ? `lx-sidebar[data-lx-sidebar-id="${CSS.escape(id)}"]` : 'lx-sidebar';
+  return button.closest('lx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
 }
 
 document.addEventListener('click', (event) => {
-  const button = event.target instanceof Element ? event.target.closest('[data-bx-sidebar-collapse], [data-bx-sidebar-open]') : null;
+  const button = event.target instanceof Element ? event.target.closest('[data-lx-sidebar-collapse], [data-lx-sidebar-open]') : null;
   if (!button || button.disabled) return;
   const sidebar = sidebarFor(button);
   if (!sidebar) return;
-  if (button.hasAttribute('data-bx-sidebar-collapse')) {
+  if (button.hasAttribute('data-lx-sidebar-collapse')) {
     sidebar.toggleCollapsed();
   } else if (!button.popoverTargetElement) {
     // A button rendered after the sidebar was set up: not wired yet, so do what the native invoker would. It is wired once the panel toggles.
@@ -481,18 +481,18 @@ document.addEventListener('click', (event) => {
 // Following a link closes the sidebar panel: the page may stay (enhanced navigation) and the panel would keep it inert.
 document.addEventListener('click', (event) => {
   const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
-  const panel = link?.closest('bx-sidebar > [popover]:popover-open');
+  const panel = link?.closest('lx-sidebar > [popover]:popover-open');
   if (panel) panel.hidePopover();
 });
 
 // So does a form submitted in it: the page behind is about to change (an enhanced submit would leave the panel open over it).
 document.addEventListener('submit', (event) => {
-  const panel = event.target instanceof Element ? event.target.closest('bx-sidebar > [popover]:popover-open') : null;
+  const panel = event.target instanceof Element ? event.target.closest('lx-sidebar > [popover]:popover-open') : null;
   if (panel) panel.hidePopover();
 }, true);
 
-// ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-bx-layout-menu.
-const MENU = 'dialog[data-bx-layout-menu]';
+// ---- Mobile panels of the header and the sidebar: real modal dialogs marked data-lx-layout-menu.
+const MENU = 'dialog[data-lx-layout-menu]';
 
 // Following a link closes the panel: the page may stay (enhanced navigation) and a modal dialog would keep it inert.
 document.addEventListener('click', (event) => {
@@ -507,21 +507,21 @@ matchMedia('(min-width: 64rem)').addEventListener('change', (event) => {
   for (const dialog of document.querySelectorAll(`${MENU}[open]`)) dialog.close();
 });
 
-// ---- BxLocaleSelect: writes the ASP.NET Core culture cookie, then reloads so the server renders the new culture.
-document.addEventListener('bx-change', (event) => {
-  const host = event.target instanceof Element ? event.target.closest('[data-bx-locale-select]') : null;
+// ---- LxLocaleSelect: writes the ASP.NET Core culture cookie, then reloads so the server renders the new culture.
+document.addEventListener('lx-change', (event) => {
+  const host = event.target instanceof Element ? event.target.closest('[data-lx-locale-select]') : null;
   const culture = event.detail?.value;
   if (!host || !culture) return;
-  // In a Blazor Hybrid app there is no ASP.NET Core to read the cookie: BxLocaleSelect keeps the choice in an IBxCultureStore (.NET side).
+  // In a Blazor Hybrid app there is no ASP.NET Core to read the cookie: LxLocaleSelect keeps the choice in an ILxCultureStore (.NET side).
   if (isHybrid()) return;
-  const name = host.getAttribute('data-bx-cookie') || '.AspNetCore.Culture';
+  const name = host.getAttribute('data-lx-cookie') || '.AspNetCore.Culture';
   // One culture for the whole origin, so the default path is "/": a language chosen in one app applies to the others.
-  const path = host.getAttribute('data-bx-cookie-path') || '/';
+  const path = host.getAttribute('data-lx-cookie-path') || '/';
   const secure = location.protocol === 'https:' ? '; secure' : '';
   try {
     document.cookie = `${name}=${encodeURIComponent(`c=${culture}|uic=${culture}`)}; path=${path}; max-age=31536000; samesite=lax${secure}`;
   } catch {
     // Cookies blocked: nothing to remember.
   }
-  if (host.hasAttribute('data-bx-reload')) location.reload();
+  if (host.hasAttribute('data-lx-reload')) location.reload();
 });

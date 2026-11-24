@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxUser"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxUser"/> slots.</summary>
 public sealed record UserUi : ISlotOverrides
 {
     public string? Root { get; init; }

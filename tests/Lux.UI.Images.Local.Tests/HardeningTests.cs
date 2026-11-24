@@ -7,7 +7,7 @@ namespace Lux.UI.Images.Local.Tests;
 /// <summary>The endpoint is open to the internet: availability, geometry, source handling and cache behavior.</summary>
 public class HardeningTests(EndpointFixture fixture) : IClassFixture<EndpointFixture>
 {
-    private const string Url = "/_blux/img?src=";
+    private const string Url = "/_lux/img?src=";
 
     private static Image Decode(byte[] bytes) => Image.NewFromBuffer(bytes);
 
@@ -45,9 +45,9 @@ public class HardeningTests(EndpointFixture fixture) : IClassFixture<EndpointFix
     [Fact]
     public void Remote_urls_are_canonical_whatever_the_port_spelling_or_fragment()
     {
-        var options = new BxLocalImagesOptions();
+        var options = new LxLocalImagesOptions();
         options.AllowedRemoteHosts.Add("images.test");
-        string Source(string src) => BxImageRequestParser.Parse(k => k == "src" ? src : null, options).Request!.Source;
+        string Source(string src) => LxImageRequestParser.Parse(k => k == "src" ? src : null, options).Request!.Source;
 
         Assert.Equal(Source("https://images.test/a.png"), Source("https://IMAGES.test:443/a.png#top"));
         Assert.Equal(Source("http://images.test/a.png"), Source("http://images.test:80/a.png"));
@@ -246,11 +246,11 @@ public class HardeningTests(EndpointFixture fixture) : IClassFixture<EndpointFix
     [Fact]
     public void Remote_urls_only_use_default_ports_unless_the_allowlist_names_one()
     {
-        BxImageParseResult Parse(string src, string allowed)
+        LxImageParseResult Parse(string src, string allowed)
         {
-            var options = new BxLocalImagesOptions();
+            var options = new LxLocalImagesOptions();
             options.AllowedRemoteHosts.Add(allowed);
-            return BxImageRequestParser.Parse(k => k == "src" ? src : null, options);
+            return LxImageRequestParser.Parse(k => k == "src" ? src : null, options);
         }
 
         Assert.Equal(403, Parse("https://images.test:8443/a.png", "images.test").Status);
@@ -338,7 +338,7 @@ public class HardeningTests(EndpointFixture fixture) : IClassFixture<EndpointFix
         await using var _ = app;
         await using var __ = rasterizing;
 
-        Assert.False(new BxLocalImagesOptions().RasterizeSvg);
+        Assert.False(new LxLocalImagesOptions().RasterizeSvg);
         Assert.Equal(HttpStatusCode.BadRequest, (await client.GetAsync($"{Url}/img/logo.svg&w=128&f=png")).StatusCode);
         var response = await rasterClient.GetAsync($"{Url}/img/logo.svg&w=128&f=png");
         Assert.Equal("image/png", response.Content.Headers.ContentType!.MediaType);
@@ -447,9 +447,9 @@ public class HardeningTests(EndpointFixture fixture) : IClassFixture<EndpointFix
     [Fact]
     public void When_the_server_changes_the_width_the_height_is_scaled_by_the_same_factor()
     {
-        var options = new BxLocalImagesOptions { Widths = [100, 200, 400] };
+        var options = new LxLocalImagesOptions { Widths = [100, 200, 400] };
 
-        var request = BxImageRequestParser.Parse(k => k switch { "src" => "/a.png", "w" => "150", "h" => "75", _ => null }, options).Request!;
+        var request = LxImageRequestParser.Parse(k => k switch { "src" => "/a.png", "w" => "150", "h" => "75", _ => null }, options).Request!;
 
         Assert.Equal(200, request.Width);
         Assert.Equal(100, request.Height);

@@ -11,12 +11,12 @@
         <meta name="description" content="@(_page.Description ?? SiteInfo.Description)" />
     </HeadContent>
 
-    <BxContainer Class="py-10 sm:py-14">
+    <LxContainer Class="py-10 sm:py-14">
         <article class="mx-auto max-w-3xl" data-testid="plain-page">
-            <BxPageHeader Title="@_page.Title" Description="@_page.Description" />
-            <BxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</BxPageBody>
+            <LxPageHeader Title="@_page.Title" Description="@_page.Description" />
+            <LxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</LxPageBody>
         </article>
-    </BxContainer>
+    </LxContainer>
 }
 
 @code {

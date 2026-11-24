@@ -7,25 +7,25 @@ let enginePromise = null;
 const loadEngine = () => (enginePromise ??= import(new URL('./lux-editor.js', import.meta.url).href));
 
 const IDLE_MS = 400;
-const PARTS = 'bx-editor-toolbar, bx-editor-drag-handle, bx-editor-menu';
+const PARTS = 'lx-editor-toolbar, lx-editor-drag-handle, lx-editor-menu';
 
 /**
- * <bx-editor data-value="<p>…</p>" data-placeholder data-readonly disabled data-label data-labelledby data-describedby data-invalid
+ * <lx-editor data-value="<p>…</p>" data-placeholder data-readonly disabled data-label data-labelledby data-describedby data-invalid
  *            data-max-length="N" data-image-schemes="https" data-link-schemes="https http mailto">
  *   <input type="hidden" data-slot="value" name="…">          the posted HTML, kept in sync
- *   <bx-editor-toolbar>, <bx-editor-drag-handle>, <bx-editor-menu> …   parts, wired when the engine is ready
+ *   <lx-editor-toolbar>, <lx-editor-drag-handle>, <lx-editor-menu> …   parts, wired when the engine is ready
  *   <div data-slot="fallback">…</div>                          server-rendered HTML, shown until the engine is ready
  *   <div data-slot="editor" data-permanent></div>              empty: the editable surface is appended here
- * </bx-editor>
+ * </lx-editor>
  *
- * The value is HTML. Changes are reported as bx-change after IDLE_MS without typing and on blur, only when bound.
+ * The value is HTML. Changes are reported as lx-change after IDLE_MS without typing and on blur, only when bound.
  * With data-max-length, a value longer than that many characters is never reported: the element carries data-over-limit, marks the text invalid and reports
- * bx-limit ({ exceeded, length, max }) when it goes over, while it keeps changing over the limit, and when it is back within it.
+ * lx-limit ({ exceeded, length, max }) when it goes over, while it keeps changing over the limit, and when it is back within it.
  * The engine's dom is created by TipTap, so the surface carries data-permanent: an enhanced navigation leaves it alone.
  */
-export class BxEditorElement extends HTMLElement {
+export class LxEditorElement extends HTMLElement {
   static observedAttributes = [
-    'data-bx-seq', 'data-value', 'data-readonly', 'disabled', 'data-placeholder',
+    'data-lx-seq', 'data-value', 'data-readonly', 'disabled', 'data-placeholder',
     'data-label', 'data-labelledby', 'data-describedby', 'data-invalid', 'data-required',
   ];
 
@@ -59,7 +59,7 @@ export class BxEditorElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') {
+    if (name === 'data-lx-seq') {
       queueMicrotask(() => {
         this.#apply(true);
         this.#syncInput();
@@ -167,7 +167,7 @@ export class BxEditorElement extends HTMLElement {
       this.#wire();
       this.#notify();
     } catch (error) {
-      console.error('Blux: the editor could not be loaded.', error);
+      console.error('Lux: the editor could not be loaded.', error);
       this.setAttribute('data-error', '');
       enginePromise = null;
     } finally {
@@ -228,7 +228,7 @@ export class BxEditorElement extends HTMLElement {
     if (html === this.#lastReported) return;
     this.#lastReported = html;
     this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value: html });
+    this.#reporter.report('lx-change', { value: html });
   }
 
   /**
@@ -243,7 +243,7 @@ export class BxEditorElement extends HTMLElement {
     this.#overLength = length;
     this.toggleAttribute('data-over-limit', length > 0);
     this.#applyAria();
-    if (wasOver || length > 0) this.dispatchEvent(new CustomEvent('bx-limit', { bubbles: true, detail: { exceeded: length > 0, length: length || html.length, max } }));
+    if (wasOver || length > 0) this.dispatchEvent(new CustomEvent('lx-limit', { bubbles: true, detail: { exceeded: length > 0, length: length || html.length, max } }));
     return length === 0;
   }
 
@@ -263,7 +263,7 @@ export class BxEditorElement extends HTMLElement {
   #onKeyDown = (event) => {
     // Alt+F10 moves focus to a toolbar, as in other rich text editors.
     if (event.altKey && event.key === 'F10' && event.target === this.engine?.dom) {
-      const toolbar = [...this.querySelectorAll('bx-editor-toolbar')].find((t) => !t.hidden && t.matches(':not([popover]), :popover-open'));
+      const toolbar = [...this.querySelectorAll('lx-editor-toolbar')].find((t) => !t.hidden && t.matches(':not([popover]), :popover-open'));
       if (toolbar) {
         event.preventDefault();
         toolbar.focusTool();
@@ -296,12 +296,12 @@ export class BxEditorElement extends HTMLElement {
  * Toolbar of buttons (data-action, data-level) following the WAI-ARIA toolbar pattern: one tab stop, arrow keys move.
  * Layout "bubble" is a manual popover that shows above a non-empty selection.
  *
- * <bx-editor-toolbar role="toolbar" data-layout="fixed|bubble" [popover="manual"]>
+ * <lx-editor-toolbar role="toolbar" data-layout="fixed|bubble" [popover="manual"]>
  *   <button type="button" data-action="bold" data-toggle>…</button> …
  *   <div data-slot="link-form" hidden><input data-slot="link-input"><button data-link="apply"> <button data-link="remove"></div>
- * </bx-editor-toolbar>
+ * </lx-editor-toolbar>
  */
-export class BxEditorToolbarElement extends HTMLElement {
+export class LxEditorToolbarElement extends HTMLElement {
   #host = null;
   #stop = null;
   #observer = null;
@@ -577,7 +577,7 @@ export class BxEditorToolbarElement extends HTMLElement {
 }
 
 /** A button that drags the block next to it; the engine places and wires it. */
-export class BxEditorDragHandleElement extends HTMLElement {
+export class LxEditorDragHandleElement extends HTMLElement {
   #detach = null;
 
   attach(host) {
@@ -601,14 +601,14 @@ export class BxEditorDragHandleElement extends HTMLElement {
  * Suggestion menu opened by a trigger character typed in the editor. Items are rendered by Blazor as options
  * (data-value, data-label, data-keywords, data-action, data-level); filtering and keys run here.
  *
- * <bx-editor-menu data-char="/" data-kind="suggestion|mention|emoji" data-min-query="0" data-limit="42">
+ * <lx-editor-menu data-char="/" data-kind="suggestion|mention|emoji" data-min-query="0" data-limit="42">
  *   <div popover="manual" data-slot="content">
  *     <div role="listbox" aria-label="…"><div role="option" …></div></div>
  *     <p data-slot="empty" hidden>No results</p>
  *   </div>
- * </bx-editor-menu>
+ * </lx-editor-menu>
  */
-export class BxEditorMenuElement extends HTMLElement {
+export class LxEditorMenuElement extends HTMLElement {
   #host = null;
   #unregister = null;
   #context = null;
@@ -771,10 +771,10 @@ export class BxEditorMenuElement extends HTMLElement {
 }
 
 for (const [name, element] of [
-  ['bx-editor', BxEditorElement],
-  ['bx-editor-toolbar', BxEditorToolbarElement],
-  ['bx-editor-drag-handle', BxEditorDragHandleElement],
-  ['bx-editor-menu', BxEditorMenuElement],
+  ['lx-editor', LxEditorElement],
+  ['lx-editor-toolbar', LxEditorToolbarElement],
+  ['lx-editor-drag-handle', LxEditorDragHandleElement],
+  ['lx-editor-menu', LxEditorMenuElement],
 ]) {
   if (!customElements.get(name)) customElements.define(name, element);
 }

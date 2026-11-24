@@ -4,11 +4,11 @@ namespace Lux.UI.Theming;
 internal static partial class Themes
 {
     private const string ContentFocus =
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)";
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)";
 
     private const string ContentLink =
-        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--blux-text-muted) transition-colors " +
-        "hover:bg-(--blux-bg-muted) hover:text-(--blux-text-highlighted) " + ContentFocus;
+        "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-(--lux-text-muted) transition-colors " +
+        "hover:bg-(--lux-bg-muted) hover:text-(--lux-text-highlighted) " + ContentFocus;
 
     public static ComponentTheme ContentNavigation() =>
         new ComponentTheme("contentNavigation", "root", "list", "item", "link", "disabled", "trigger", "section", "sectionList", "icon", "label", "badge", "chevron", "group", "groupList")
@@ -17,32 +17,32 @@ internal static partial class Themes
             .Slot("item", "min-w-0")
             // The mark of the current page is an inset line on the start edge: one utility instead of a pseudo-element.
             .Slot("link", ContentLink + " " +
-                          "aria-[current=page]:bg-(--blux-bg-muted) aria-[current=page]:font-medium aria-[current=page]:text-(--blux-text-highlighted) " +
-                          "aria-[current=page]:shadow-[inset_2px_0_0_var(--bx-color-text)]")
+                          "aria-[current=page]:bg-(--lux-bg-muted) aria-[current=page]:font-medium aria-[current=page]:text-(--lux-text-highlighted) " +
+                          "aria-[current=page]:shadow-[inset_2px_0_0_var(--lx-color-text)]")
             .Slot("disabled", "cursor-not-allowed opacity-60")
             .Slot("trigger", ContentLink + " group/trigger text-start disabled:cursor-not-allowed disabled:opacity-60")
-            .Slot("section", "group/trigger flex w-full items-center gap-2 rounded-md px-2 py-1 text-start font-mono text-[11px] uppercase tracking-[0.14em] text-(--blux-text-muted) " +
-                             "hover:text-(--blux-text-highlighted) disabled:cursor-not-allowed disabled:opacity-60 " + ContentFocus)
+            .Slot("section", "group/trigger flex w-full items-center gap-2 rounded-md px-2 py-1 text-start font-mono text-[11px] uppercase tracking-[0.14em] text-(--lux-text-muted) " +
+                             "hover:text-(--lux-text-highlighted) disabled:cursor-not-allowed disabled:opacity-60 " + ContentFocus)
             .Slot("sectionList", "mt-1 flex flex-col gap-0.5")
             .Slot("icon", "size-4 shrink-0")
             .Slot("label", "min-w-0 flex-1 truncate")
             .Slot("badge", "shrink-0")
             .Slot("chevron", "ms-auto size-4 shrink-0 transition-transform duration-200 group-aria-expanded/trigger:rotate-180 motion-reduce:transition-none")
             .Slot("group", "w-full")
-            .Slot("groupList", "ms-3 mt-0.5 flex flex-col gap-0.5 border-s border-(--blux-border) ps-2");
+            .Slot("groupList", "ms-3 mt-0.5 flex flex-col gap-0.5 border-s border-(--lux-border) ps-2");
 
     public static ComponentTheme ContentToc() =>
         new ComponentTheme("contentToc", "root", "trigger", "title", "chevron", "content", "list", "item", "link")
             .Slot("root", "text-sm")
-            .Slot("trigger", "group/trigger flex w-full items-center justify-between gap-2 rounded-sm py-2 text-start text-sm font-semibold text-(--blux-text-highlighted) " + ContentFocus)
-            .Slot("title", "py-2 text-sm font-semibold text-(--blux-text-highlighted)")
+            .Slot("trigger", "group/trigger flex w-full items-center justify-between gap-2 rounded-sm py-2 text-start text-sm font-semibold text-(--lux-text-highlighted) " + ContentFocus)
+            .Slot("title", "py-2 text-sm font-semibold text-(--lux-text-highlighted)")
             .Slot("chevron", "size-4 shrink-0 transition-transform duration-200 group-aria-expanded/trigger:rotate-180 motion-reduce:transition-none")
             .Slot("content", "")
-            .Slot("list", "flex flex-col border-s border-(--blux-border)")
+            .Slot("list", "flex flex-col border-s border-(--lux-border)")
             .Slot("item", "min-w-0")
-            .Slot("link", "-ms-px block border-s-2 border-transparent py-1 ps-3 text-(--blux-text-muted) transition-colors " +
-                          "hover:text-(--blux-text-highlighted) data-[level=3]:ps-6 data-[level=4]:ps-9 data-[level=5]:ps-12 " +
-                          "data-active:border-(--bx-color-text) data-active:font-medium data-active:text-(--bx-color-text) " + ContentFocus)
+            .Slot("link", "-ms-px block border-s-2 border-transparent py-1 ps-3 text-(--lux-text-muted) transition-colors " +
+                          "hover:text-(--lux-text-highlighted) data-[level=3]:ps-6 data-[level=4]:ps-9 data-[level=5]:ps-12 " +
+                          "data-active:border-(--lx-color-text) data-active:font-medium data-active:text-(--lx-color-text) " + ContentFocus)
             // The title and the content show below the breakpoint as a collapsible block, above it always.
             .Variant("breakpoint", "lg", "trigger", "lg:hidden")
             .Variant("breakpoint", "lg", "title", "hidden lg:block")
@@ -62,12 +62,12 @@ internal static partial class Themes
     public static ComponentTheme ContentSurround() =>
         new ComponentTheme("contentSurround", "root", "link", "caption", "icon", "title", "description")
             .Slot("root", "grid gap-4 sm:grid-cols-2")
-            .Slot("link", "group/link flex min-w-0 flex-col gap-1 rounded-(--blux-radius) border border-(--blux-border) p-4 transition-colors " +
-                          "hover:border-(--blux-border-accented) hover:bg-(--blux-bg-muted) " + ContentFocus)
-            .Slot("caption", "flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)")
+            .Slot("link", "group/link flex min-w-0 flex-col gap-1 rounded-(--lux-radius) border border-(--lux-border) p-4 transition-colors " +
+                          "hover:border-(--lux-border-accented) hover:bg-(--lux-bg-muted) " + ContentFocus)
+            .Slot("caption", "flex items-center gap-1.5 font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)")
             .Slot("icon", "size-4 shrink-0 transition-transform motion-reduce:transition-none")
-            .Slot("title", "font-medium text-(--blux-text-highlighted)")
-            .Slot("description", "line-clamp-2 text-sm text-(--blux-text-muted)")
+            .Slot("title", "font-medium text-(--lux-text-highlighted)")
+            .Slot("description", "line-clamp-2 text-sm text-(--lux-text-muted)")
             .Variant("direction", "previous", "link", "items-start text-start")
             .Variant("direction", "previous", "icon", "group-hover/link:-translate-x-0.5 rtl:group-hover/link:translate-x-0.5")
             .Variant("direction", "next", "link", "items-end text-end sm:col-start-2")
@@ -79,8 +79,8 @@ internal static partial class Themes
         new ComponentTheme("contentSearchButton", "root", "buttonLabel", "label", "kbds")
             .Slot("root", "min-w-0")
             .Slot("buttonLabel", "flex min-w-0 flex-1 items-center gap-2")
-            .Slot("label", "min-w-0 flex-1 truncate text-start text-(--blux-text-muted)")
-            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5 [&>kbd[data-bx-mod]]:before:content-[attr(data-label)]")
+            .Slot("label", "min-w-0 flex-1 truncate text-start text-(--lux-text-muted)")
+            .Slot("kbds", "ms-auto flex shrink-0 items-center gap-0.5 [&>kbd[data-lx-mod]]:before:content-[attr(data-label)]")
             .Variant("collapsed", "false", "root", "gap-2 pe-1.5")
             .Default("collapsed", "true");
 }

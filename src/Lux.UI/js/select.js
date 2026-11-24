@@ -5,18 +5,18 @@ import { syncSelectedIcon } from './form2-shared.js';
  * Select-only combobox (WAI-ARIA APG): focus stays on the button, the active option is announced through
  * aria-activedescendant. A hidden input carries the value, so the select posts in a plain HTML form.
  *
- * <bx-select value="b">
+ * <lx-select value="b">
  *   <input type="hidden" data-slot="value" name="…" value="b">
  *   <button type="button" role="combobox" data-slot="trigger"><span data-slot="label" data-label="Option B"></span>…</button>
  *   <div popover="auto" data-slot="content"><div role="listbox">
  *     <div role="option" data-value="a" data-label="Option A" aria-selected="false">…</div> …
  *   </div></div>
- * </bx-select>
+ * </lx-select>
  *
  * The visible label is CSS generated content from data-label, so the script never replaces nodes Blazor owns.
  */
-export class BxSelectElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+export class LxSelectElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value'];
 
   #observer = null;
   #stopFloating = null;
@@ -37,8 +37,8 @@ export class BxSelectElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyValue());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyValue());
     else this.#applyValue();
   }
 
@@ -120,7 +120,7 @@ export class BxSelectElement extends HTMLElement {
     syncSelectedIcon(this, option);
     if (changed && report) {
       input?.dispatchEvent(new Event('change', { bubbles: true }));
-      this.#reporter.report('bx-change', { value });
+      this.#reporter.report('lx-change', { value });
     }
   }
 
@@ -214,4 +214,4 @@ export class BxSelectElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-select')) customElements.define('bx-select', BxSelectElement);
+if (!customElements.get('lx-select')) customElements.define('lx-select', LxSelectElement);

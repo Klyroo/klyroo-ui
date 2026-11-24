@@ -9,14 +9,14 @@ public static class LuxCulture
 {
     /// <summary>
     /// Gives a WebAssembly client the culture the server rendered with, instead of the language of the browser, so the
-    /// prerender and the client pick the same <see cref="BxLocale"/> (and format dates and numbers the same way) for the same user.
+    /// prerender and the client pick the same <see cref="LxLocale"/> (and format dates and numbers the same way) for the same user.
     /// The client has no request, so it reads what the server left in the page, in this order:
-    /// 1. the <c>blux-culture</c> meta element rendered by <see cref="BxCultureMeta"/> in <c>&lt;head&gt;</c>: the exact culture and UI culture of the request,
+    /// 1. the <c>lux-culture</c> meta element rendered by <see cref="LxCultureMeta"/> in <c>&lt;head&gt;</c>: the exact culture and UI culture of the request,
     /// whatever provider chose them (query string, cookie or <c>Accept-Language</c>);
-    /// 2. the ASP.NET Core culture cookie (<c>c=fr|uic=fr</c>, written by <see cref="BxLocaleSelect"/> and read by <c>UseRequestLocalization</c>);
+    /// 2. the ASP.NET Core culture cookie (<c>c=fr|uic=fr</c>, written by <see cref="LxLocaleSelect"/> and read by <c>UseRequestLocalization</c>);
     /// 3. the <c>lang</c> attribute of the <c>html</c> element, which the server wrote from the locale it resolved
-    /// (<c>&lt;html lang="@BxLocales.Resolve().Code"&gt;</c>), so a culture the server picked from <c>Accept-Language</c> reaches the client even without the meta element.
-    /// Render <see cref="BxCultureMeta"/> to get the regional culture too ("en-GB" for dates and clocks); the cookie and the attribute only carry what they hold.
+    /// (<c>&lt;html lang="@LxLocales.Resolve().Code"&gt;</c>), so a culture the server picked from <c>Accept-Language</c> reaches the client even without the meta element.
+    /// Render <see cref="LxCultureMeta"/> to get the regional culture too ("en-GB" for dates and clocks); the cookie and the attribute only carry what they hold.
     /// Call it in the <c>Program.cs</c> of the client, after <c>Build()</c> and before <c>RunAsync()</c>. Nothing changes when none of them is present.
     /// </summary>
     /// <param name="services">The services of the client host.</param>
@@ -26,7 +26,7 @@ public static class LuxCulture
     /// Omit it to accept any culture the runtime knows.
     /// </param>
     /// <param name="cookieName">The name of the culture cookie.</param>
-    /// <example><c>var host = builder.Build(); await host.Services.ApplyServerCultureAsync(BxLocales.All.Select(l =&gt; l.Code)); await host.RunAsync();</c></example>
+    /// <example><c>var host = builder.Build(); await host.Services.ApplyServerCultureAsync(LxLocales.All.Select(l =&gt; l.Code)); await host.RunAsync();</c></example>
     public static async Task ApplyServerCultureAsync(this IServiceProvider services, IEnumerable<string>? supportedCultures = null, string cookieName = ".AspNetCore.Culture")
     {
         ArgumentNullException.ThrowIfNull(services);
@@ -34,11 +34,11 @@ public static class LuxCulture
         string?[] source;
         try
         {
-            source = await js.InvokeAsync<string?[]>("Blux.serverCulture", cookieName);
+            source = await js.InvokeAsync<string?[]>("Lux.serverCulture", cookieName);
         }
         catch (JSException)
         {
-            // The browser side of Blux is not loaded yet: keep the culture of the browser.
+            // The browser side of Lux is not loaded yet: keep the culture of the browser.
             return;
         }
 

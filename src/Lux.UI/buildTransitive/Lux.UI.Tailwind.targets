@@ -6,16 +6,16 @@
 
     The LuxResolveTailwind task finds the official standalone Tailwind CLI for the machine that builds (downloaded once from the GitHub
     release into the cache, checked against a SHA-256 embedded in the package, executable bit set on Unix), then the CLI compiles the
-    project's stylesheet. The stylesheet is the usual Tailwind v4 entry, which imports Tailwind and the Blux theme that
-    Lux.UI.targets copies to obj/blux/lux.theme.css (the theme also lists the classes the Blux components use, so they are
+    project's stylesheet. The stylesheet is the usual Tailwind v4 entry, which imports Tailwind and the Lux theme that
+    Lux.UI.targets copies to obj/lux/lux.theme.css (the theme also lists the classes the Lux components use, so they are
     generated too):
 
       @import "tailwindcss";
-      @import "../obj/blux/lux.theme.css";
+      @import "../obj/lux/lux.theme.css";
 
     The CLI finds the project's .razor, .cs and .html files itself (from the project folder, skipping what .gitignore ignores); use
     @source in the stylesheet for anything else. The result is not written into the source tree: it is generated into
-    obj/<config>/<tfm>/blux/tailwind/ and added to the static web assets, so it is served at app.css from a Web project and at
+    obj/<config>/<tfm>/lux/tailwind/ and added to the static web assets, so it is served at app.css from a Web project and at
     _content/<Rcl>/app.css from a Razor class library (StaticWebAssetBasePath), for any host that references it (Web, MAUI Blazor Hybrid).
 
       LuxTailwind=true            turns the feature on (default false).
@@ -24,8 +24,8 @@
       LuxTailwindMinify           minifies the CSS (default: true in Release).
       LuxTailwindExecutable       a Tailwind binary to use instead of the download (no download, no checksum).
       LuxTailwindVersion          the release to download (default 4.3.5, the only one with embedded checksums).
-      LuxTailwindCacheDir         the cache of binaries (default: one per user, shared by every project: ~/.blux/tailwind on Linux and
-                                   macOS, %LOCALAPPDATA%\Blux\tailwind on Windows). A binary is hashed once; a stamp (size and modification time)
+      LuxTailwindCacheDir         the cache of binaries (default: one per user, shared by every project: ~/.lux/tailwind on Linux and
+                                   macOS, %LOCALAPPDATA%\Lux\tailwind on Windows). A binary is hashed once; a stamp (size and modification time)
                                    lets later builds skip the hash, and a file that changed since is hashed again and deleted if it differs.
       LuxOffline=true             never download: the binary must already be in the cache or LuxTailwindExecutable.
 
@@ -62,16 +62,16 @@
   <Target Name="_LuxTailwindPaths" Condition="'$(LuxTailwind)' == 'true'">
     <PropertyGroup>
       <_LuxTailwindInputFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(LuxTailwindInput)))</_LuxTailwindInputFile>
-      <LuxTailwindOutputDir Condition="'$(LuxTailwindOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, tailwind))</LuxTailwindOutputDir>
+      <LuxTailwindOutputDir Condition="'$(LuxTailwindOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), lux, tailwind))</LuxTailwindOutputDir>
       <_LuxTailwindOutputFile>$(LuxTailwindOutputDir)$([System.IO.Path]::GetFileName($(LuxTailwindAssetPath)))</_LuxTailwindOutputFile>
-      <_LuxTailwindThemeFile>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))lux.theme.css</_LuxTailwindThemeFile>
+      <_LuxTailwindThemeFile>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))lux.theme.css</_LuxTailwindThemeFile>
       <_LuxTailwindMinifyArg Condition="'$(LuxTailwindMinify)' == 'true'"> --minify</_LuxTailwindMinifyArg>
     </PropertyGroup>
   </Target>
 
   <Target Name="LuxTailwindResolve" DependsOnTargets="_LuxTailwindPaths" Condition="'$(LuxTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
     <!-- The Blazor project template ships wwwroot/app.css: two assets at one route is a build error of the SDK that does not say why. -->
-    <Error Code="BLUXTW004" Condition="Exists('$(MSBuildProjectDirectory)/wwwroot/$(LuxTailwindAssetPath)')"
+    <Error Code="LUXTW004" Condition="Exists('$(MSBuildProjectDirectory)/wwwroot/$(LuxTailwindAssetPath)')"
            Text="LuxTailwind would serve the generated stylesheet at '$(LuxTailwindAssetPath)', but the project already has wwwroot/$(LuxTailwindAssetPath). Delete that file (and move its CSS into $(LuxTailwindInput)), or set LuxTailwindAssetPath to another name." />
     <LuxResolveTailwind Executable="$(LuxTailwindExecutable)"
                          Version="$(LuxTailwindVersion)"
@@ -91,8 +91,8 @@
           Condition="'$(LuxTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'"
           Inputs="@(_LuxTailwindInput)"
           Outputs="$(_LuxTailwindOutputFile)">
-    <Error Code="BLUXTW003" Condition="!Exists('$(_LuxTailwindInputFile)')"
-           Text="LuxTailwind is on but the stylesheet '$(_LuxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/blux/lux.theme.css&quot;;  or set LuxTailwindInput to your stylesheet." />
+    <Error Code="LUXTW003" Condition="!Exists('$(_LuxTailwindInputFile)')"
+           Text="LuxTailwind is on but the stylesheet '$(_LuxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/lux/lux.theme.css&quot;;  or set LuxTailwindInput to your stylesheet." />
     <MakeDir Directories="$(LuxTailwindOutputDir)" />
     <Exec Command="&quot;$(_LuxTailwindExe)&quot; --input &quot;$(_LuxTailwindWrapper)&quot; --output &quot;$(_LuxTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_LuxTailwindMinifyArg)"
           WorkingDirectory="$(MSBuildProjectDirectory)"
@@ -120,12 +120,12 @@
     -->
     <PropertyGroup>
       <_LuxTailwindState>minify=$(LuxTailwindMinify) binary=$(_LuxTailwindExe)</_LuxTailwindState>
-      <_LuxTailwindWrapper>$(LuxTailwindOutputDir)blux.tailwind.input.css</_LuxTailwindWrapper>
+      <_LuxTailwindWrapper>$(LuxTailwindOutputDir)lux.tailwind.input.css</_LuxTailwindWrapper>
       <_LuxTailwindRelImport>$([MSBuild]::MakeRelative($(LuxTailwindOutputDir), $(_LuxTailwindInputFile)).Replace('\', '/'))</_LuxTailwindRelImport>
       <_LuxTailwindRelObj>$([MSBuild]::MakeRelative($(LuxTailwindOutputDir), $(_LuxTailwindObj)).Replace('\', '/'))</_LuxTailwindRelObj>
       <_LuxTailwindRelBin>$([MSBuild]::MakeRelative($(LuxTailwindOutputDir), $(_LuxTailwindBin)).Replace('\', '/'))</_LuxTailwindRelBin>
-      <!-- A sister package that has no precompiled stylesheet (Lux.UI.Tools) sets BluxToolsPresent: its theme (the classes of its components) is imported here, so the app only adds the package. -->
-      <_LuxTailwindToolsImport Condition="'$(BluxToolsPresent)' == 'true'">;@import &quot;$([MSBuild]::MakeRelative($(LuxTailwindOutputDir), $(_LuxTailwindObj)blux/blux-tools.theme.css).Replace('\', '/'))&quot;%3B</_LuxTailwindToolsImport>
+      <!-- A sister package that has no precompiled stylesheet (Lux.UI.Tools) sets LuxToolsPresent: its theme (the classes of its components) is imported here, so the app only adds the package. -->
+      <_LuxTailwindToolsImport Condition="'$(LuxToolsPresent)' == 'true'">;@import &quot;$([MSBuild]::MakeRelative($(LuxTailwindOutputDir), $(_LuxTailwindObj)lux/lux-tools.theme.css).Replace('\', '/'))&quot;%3B</_LuxTailwindToolsImport>
     </PropertyGroup>
     <WriteLinesToFile File="$(_LuxTailwindWrapper)"
                       Lines="/* Generated by Lux.UI: the app's stylesheet, with obj and bin left out of the class scan. $(_LuxTailwindState) */;@import &quot;$(_LuxTailwindRelImport)&quot;%3B$(_LuxTailwindToolsImport);@source not &quot;$(_LuxTailwindRelObj)&quot;%3B;@source not &quot;$(_LuxTailwindRelBin)&quot;%3B"
@@ -135,7 +135,7 @@
       <_LuxTailwindInput Include="$(MSBuildProjectDirectory)/**/*.razor;$(MSBuildProjectDirectory)/**/*.cs;$(MSBuildProjectDirectory)/**/*.cshtml;$(MSBuildProjectDirectory)/**/*.html;$(MSBuildProjectDirectory)/**/*.css"
                           Exclude="$(_LuxTailwindObj)**;$(_LuxTailwindBin)**;$(MSBuildProjectDirectory)/node_modules/**" />
       <_LuxTailwindInput Include="$(_LuxTailwindThemeFile)" Condition="Exists('$(_LuxTailwindThemeFile)')" />
-      <_LuxTailwindInput Include="$(_LuxTailwindObj)blux/blux-tools.theme.css" Condition="'$(BluxToolsPresent)' == 'true' And Exists('$(_LuxTailwindObj)blux/blux-tools.theme.css')" />
+      <_LuxTailwindInput Include="$(_LuxTailwindObj)lux/lux-tools.theme.css" Condition="'$(LuxToolsPresent)' == 'true' And Exists('$(_LuxTailwindObj)lux/lux-tools.theme.css')" />
       <!-- The wrapper holds the minify setting and the binary: changing either rewrites it, which makes it newer than the output. -->
       <_LuxTailwindInput Include="$(_LuxTailwindExe);$(_LuxTailwindWrapper);$(MSBuildProjectFullPath);$(MSBuildThisFileFullPath)" />
       <!-- The stylesheet may live outside the project folder, and so may what it reads (LuxTailwindAdditionalInput). -->
@@ -155,8 +155,8 @@
     nothing else runs: no static web assets, no compile.
   -->
   <Target Name="LuxTailwindWatch" DependsOnTargets="LuxTailwindResolve;_LuxTailwindCollectInputs" Condition="'$(LuxTailwind)' == 'true'">
-    <Error Code="BLUXTW003" Condition="!Exists('$(_LuxTailwindInputFile)')"
-           Text="LuxTailwind is on but the stylesheet '$(_LuxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/blux/lux.theme.css&quot;;  or set LuxTailwindInput to your stylesheet." />
+    <Error Code="LUXTW003" Condition="!Exists('$(_LuxTailwindInputFile)')"
+           Text="LuxTailwind is on but the stylesheet '$(_LuxTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/lux/lux.theme.css&quot;;  or set LuxTailwindInput to your stylesheet." />
     <Message Importance="high" Text="Tailwind is watching $(MSBuildProjectName); the CSS is regenerated into $(_LuxTailwindOutputFile). Reload the page after an edit. Ctrl+C stops it." />
     <Exec Command="&quot;$(_LuxTailwindExe)&quot; --input &quot;$(_LuxTailwindWrapper)&quot; --output &quot;$(_LuxTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_LuxTailwindMinifyArg) --watch=always"
           WorkingDirectory="$(MSBuildProjectDirectory)"

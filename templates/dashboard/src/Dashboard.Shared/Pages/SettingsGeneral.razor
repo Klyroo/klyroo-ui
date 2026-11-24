@@ -5,64 +5,64 @@
 <PageTitle>General settings</PageTitle>
 
 <SettingsPage Heading="General" Description="Your profile and the language of the app." TestId="settings-general">
-    <BxCard>
+    <LxCard>
         <Header>
-            <h2 class="font-semibold text-(--blux-text-highlighted)">Profile</h2>
-            <p class="text-sm text-(--blux-text-muted)">This is what your teammates see.</p>
+            <h2 class="font-semibold text-(--lux-text-highlighted)">Profile</h2>
+            <p class="text-sm text-(--lux-text-muted)">This is what your teammates see.</p>
         </Header>
         <ChildContent>
-            <BxForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
+            <LxForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
                 <div class="flex items-center gap-4">
-                    <BxAvatar Alt="@Model!.Name" Size="BxSize.Xl" />
-                    <p class="text-sm text-(--blux-text-muted)">The avatar shows your initials until you upload a picture.</p>
+                    <LxAvatar Alt="@Model!.Name" Size="LxSize.Xl" />
+                    <p class="text-sm text-(--lux-text-muted)">The avatar shows your initials until you upload a picture.</p>
                 </div>
-                <BxFormField Label="Name" Required For="() => Model!.Name">
-                    <BxInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
-                </BxFormField>
-                <BxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => Model!.Email">
-                    <BxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
-                </BxFormField>
-                <BxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => Model!.Username">
-                    <BxInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
-                </BxFormField>
-                <BxFormField Label="Bio" For="() => Model!.Bio">
-                    <BxTextarea @bind-Value="Model!.Bio" Rows="4" />
-                </BxFormField>
+                <LxFormField Label="Name" Required For="() => Model!.Name">
+                    <LxInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
+                </LxFormField>
+                <LxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => Model!.Email">
+                    <LxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
+                </LxFormField>
+                <LxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => Model!.Username">
+                    <LxInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
+                </LxFormField>
+                <LxFormField Label="Bio" For="() => Model!.Bio">
+                    <LxTextarea @bind-Value="Model!.Bio" Rows="4" />
+                </LxFormField>
                 <div class="flex items-center justify-end gap-3">
-                    <p role="status" class="text-sm text-(--blux-success-text)" data-testid="profile-status">@_status</p>
-                    <BxButton Label="Save changes" Type="submit" data-testid="profile-save" />
+                    <p role="status" class="text-sm text-(--lux-success-text)" data-testid="profile-status">@_status</p>
+                    <LxButton Label="Save changes" Type="submit" data-testid="profile-save" />
                 </div>
-            </BxForm>
+            </LxForm>
         </ChildContent>
-    </BxCard>
+    </LxCard>
 
-    <BxCard>
+    <LxCard>
         <Header>
-            <h2 class="font-semibold text-(--blux-text-highlighted)">Language</h2>
-            <p class="text-sm text-(--blux-text-muted)">The built-in texts of the components follow it, and the choice is remembered in this browser.</p>
+            <h2 class="font-semibold text-(--lux-text-highlighted)">Language</h2>
+            <p class="text-sm text-(--lux-text-muted)">The built-in texts of the components follow it, and the choice is remembered in this browser.</p>
         </Header>
         <ChildContent>
-            <BxLocaleSelect />
+            <LxLocaleSelect />
         </ChildContent>
-    </BxCard>
+    </LxCard>
 
-    <BxCard Class="border-(--blux-error-text)/40">
+    <LxCard Class="border-(--lux-error-text)/40">
         <Header>
-            <h2 class="font-semibold text-(--blux-error-text)">Delete account</h2>
-            <p class="text-sm text-(--blux-text-muted)">All your data would be removed. This sample app has no backend, so nothing is deleted.</p>
+            <h2 class="font-semibold text-(--lux-error-text)">Delete account</h2>
+            <p class="text-sm text-(--lux-text-muted)">All your data would be removed. This sample app has no backend, so nothing is deleted.</p>
         </Header>
         <ChildContent>
-            <BxButton Label="Delete account" Color="BxColor.Error" Variant="ButtonVariant.Soft" OnClick="@(() => _confirm = true)" data-testid="delete-account" />
+            <LxButton Label="Delete account" Color="LxColor.Error" Variant="ButtonVariant.Soft" OnClick="@(() => _confirm = true)" data-testid="delete-account" />
         </ChildContent>
-    </BxCard>
+    </LxCard>
 </SettingsPage>
 
-<BxModal @bind-Open="_confirm" Title="Delete your account?" Description="This cannot be undone." data-testid="delete-account-dialog">
+<LxModal @bind-Open="_confirm" Title="Delete your account?" Description="This cannot be undone." data-testid="delete-account-dialog">
     <Footer>
-        <BxButton Label="Keep my account" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
-        <BxButton Label="Delete" Color="BxColor.Error" OnClick="Deleted" data-bx-close />
+        <LxButton Label="Keep my account" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
+        <LxButton Label="Delete" Color="LxColor.Error" OnClick="Deleted" data-lx-close />
     </Footer>
-</BxModal>
+</LxModal>
 
 @code {
     // Bound to the posted form, so that a form submitted before the page is interactive (a static post) is validated and handled like an interactive one.
@@ -77,11 +77,11 @@
     private async Task SaveAsync()
     {
         _status = "Profile saved.";
-        await Toasts.ToastAsync(RendererInfo.IsInteractive, new BxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = BxColor.Success });
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new LxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = LxColor.Success });
     }
 
     private async Task Deleted() =>
-        await Toasts.Add(new BxToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = BxColor.Info });
+        await Toasts.Add(new LxToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = LxColor.Info });
 
     private sealed class Profile
     {

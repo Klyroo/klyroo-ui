@@ -9,7 +9,7 @@ public class LibvipsTests(EndpointFixture fixture) : IClassFixture<EndpointFixtu
     {
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
-        await client.GetAsync("/_blux/img?src=/img/photo.png&w=16&f=webp");   // the processor is created: the loaders are restricted
+        await client.GetAsync("/_lux/img?src=/img/photo.png&w=16&f=webp");   // the processor is created: the loaders are restricted
 
         var png = EndpointFixture.Png(20, 20);
         foreach (var (bytes, loader) in new[]
@@ -34,8 +34,8 @@ public class LibvipsTests(EndpointFixture fixture) : IClassFixture<EndpointFixtu
         var (app, client) = await fixture.StartAsync();
         await using var _ = app;
 
-        var same = await client.GetAsync("/_blux/img?src=/img/photo.avif&w=64");
-        var png = await client.GetAsync("/_blux/img?src=/img/photo.avif&w=64&f=png");
+        var same = await client.GetAsync("/_lux/img?src=/img/photo.avif&w=64");
+        var png = await client.GetAsync("/_lux/img?src=/img/photo.avif&w=64&f=png");
 
         Assert.Equal("image/avif", same.Content.Headers.ContentType!.MediaType);
         Assert.Equal("image/png", png.Content.Headers.ContentType!.MediaType);

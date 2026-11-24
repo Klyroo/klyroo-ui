@@ -5,48 +5,48 @@
 @inject NavigationManager Navigation
 @inject PersistentComponentState ApplicationState
 
-@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<BxHead />
+<LxHead />
 <SystemBars />
 
 @* The primary color of the appearance dialog. The colors of AddLuxUi (the default ones here) are the base; this style replaces them for the page. *@
-<BxThemeStyle Colors="Appearance.Colors" Scope=":root" />
+<LxThemeStyle Colors="Appearance.Colors" Scope=":root" />
 
-<BxApp>
-    <BxSkipLink />
+<LxApp>
+    <LxSkipLink />
 
     @* The group fills its parent, so the parent needs a height: the page itself. It is the main landmark, so the sidebar, the panels and their resize handles are all
        inside a landmark (the sidebar is a div: its navigation is a landmark of its own, and a complementary one may not sit in main). Each page puts one or more
        panels next to the sidebar. *@
-    <BxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
-        <BxDashboardGroup StorageKey="dashboard">
+    <LxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
+        <LxDashboardGroup StorageKey="dashboard">
             @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-            <BxDashboardSidebar As="div" Resizable Width="260" MinWidth="208" MaxWidth="360" AriaLabel="Main" MobileTitle="Menu" data-testid="sidebar">
+            <LxDashboardSidebar As="div" Resizable Width="260" MinWidth="208" MaxWidth="360" AriaLabel="Main" MobileTitle="Menu" data-testid="sidebar">
                 <Header>
                     <TeamMenu />
                 </Header>
                 <ChildContent>
-                    <BxDashboardSearchButton data-testid="search-button" />
-                    <BxNavigationMenu Items="_items" Orientation="BxOrientation.Vertical" AriaLabel="Pages" Ui="_navUi" />
+                    <LxDashboardSearchButton data-testid="search-button" />
+                    <LxNavigationMenu Items="_items" Orientation="LxOrientation.Vertical" AriaLabel="Pages" Ui="_navUi" />
                 </ChildContent>
                 <Footer>
                     <UserMenu />
                 </Footer>
-            </BxDashboardSidebar>
+            </LxDashboardSidebar>
 
             @Body
 
-            <BxDashboardSearch Groups="_groups" OnSelect="OnCommand" />
-        </BxDashboardGroup>
-    </BxMain>
+            <LxDashboardSearch Groups="_groups" OnSelect="OnCommand" />
+        </LxDashboardGroup>
+    </LxMain>
 
     @* Says how the page renders (Static until it is interactive, then Server or WebAssembly): what the browser tests wait for before they click. *@
     <span class="sr-only" aria-hidden="true" data-testid="renderer">@RendererInfo.Name</span>
 
     <NotificationsSlideover />
     <AppearanceDialog />
-</BxApp>
+</LxApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
     An unhandled error has occurred.
@@ -60,43 +60,43 @@
     // In a collapsed sidebar the labels stay for screen readers and the icons are all that shows.
     private static readonly NavigationMenuUi _navUi = new() { Label = "group-data-[state=collapsed]/sidebar:sr-only" };
 
-    private static readonly BxNavigationItem[] _items =
+    private static readonly LxNavigationItem[] _items =
     [
-        new("Home") { Href = "./", Exact = true, Icon = BxIcons.Named("home", "size-5") },
-        new("Inbox") { Href = "inbox", Icon = BxIcons.Named("inbox", "size-5") },
-        new("Customers") { Href = "customers", Icon = BxIcons.Named("lucide:users", "size-5") },
-        new("Settings") { Href = "settings", Icon = BxIcons.Named("lucide:settings", "size-5") },
+        new("Home") { Href = "./", Exact = true, Icon = LxIcons.Named("home", "size-5") },
+        new("Inbox") { Href = "inbox", Icon = LxIcons.Named("inbox", "size-5") },
+        new("Customers") { Href = "customers", Icon = LxIcons.Named("lucide:users", "size-5") },
+        new("Settings") { Href = "settings", Icon = LxIcons.Named("lucide:settings", "size-5") },
     ];
 
     // Ctrl+K (Cmd+K) opens it. Links navigate on their own; the commands without a link come to OnCommand.
-    private static readonly BxCommandGroup[] _groups =
+    private static readonly LxCommandGroup[] _groups =
     [
         new("Go to",
         [
-            new() { Label = "Home", Href = "./", Keywords = "overview revenue sales stats", Icon = BxIcons.Named("home", "size-4") },
-            new() { Label = "Inbox", Href = "inbox", Keywords = "mail messages", Icon = BxIcons.Named("inbox", "size-4") },
-            new() { Label = "Customers", Href = "customers", Keywords = "people accounts table", Icon = BxIcons.Named("lucide:users", "size-4") },
-            new() { Label = "General settings", Href = "settings", Keywords = "profile account", Icon = BxIcons.Named("lucide:settings", "size-4") },
-            new() { Label = "Members", Href = "settings/members", Keywords = "team invite roles", Icon = BxIcons.Named("lucide:user-plus", "size-4") },
-            new() { Label = "Notification settings", Href = "settings/notifications", Keywords = "email alerts", Icon = BxIcons.Named("bell", "size-4") },
-            new() { Label = "Security", Href = "settings/security", Keywords = "password sessions two-factor", Icon = BxIcons.Named("lock", "size-4") },
+            new() { Label = "Home", Href = "./", Keywords = "overview revenue sales stats", Icon = LxIcons.Named("home", "size-4") },
+            new() { Label = "Inbox", Href = "inbox", Keywords = "mail messages", Icon = LxIcons.Named("inbox", "size-4") },
+            new() { Label = "Customers", Href = "customers", Keywords = "people accounts table", Icon = LxIcons.Named("lucide:users", "size-4") },
+            new() { Label = "General settings", Href = "settings", Keywords = "profile account", Icon = LxIcons.Named("lucide:settings", "size-4") },
+            new() { Label = "Members", Href = "settings/members", Keywords = "team invite roles", Icon = LxIcons.Named("lucide:user-plus", "size-4") },
+            new() { Label = "Notification settings", Href = "settings/notifications", Keywords = "email alerts", Icon = LxIcons.Named("bell", "size-4") },
+            new() { Label = "Security", Href = "settings/security", Keywords = "password sessions two-factor", Icon = LxIcons.Named("lock", "size-4") },
         ]),
         new("Customers",
         [
-            .. CustomerData.All.OrderByDescending(c => c.TotalSpent).Take(5).Select(c => new BxCommandItem
+            .. CustomerData.All.OrderByDescending(c => c.TotalSpent).Take(5).Select(c => new LxCommandItem
             {
                 Label = c.Name,
                 Description = c.Company,
                 Href = $"customers?q={Uri.EscapeDataString(c.Name)}",
                 Keywords = c.Email,
-                Icon = BxIcons.Named("user", "size-4"),
+                Icon = LxIcons.Named("user", "size-4"),
             }),
         ]),
         new("Actions",
         [
-            new() { Label = "Open notifications", Value = "notifications", Keywords = "bell alerts", Icon = BxIcons.Named("bell", "size-4") },
-            new() { Label = "Change the appearance", Value = "appearance", Keywords = "theme color primary dark light", Icon = BxIcons.Named("lucide:palette", "size-4") },
-            new() { Label = "Log out", Value = "logout", Keywords = "sign out", Icon = BxIcons.Named("log-out", "size-4") },
+            new() { Label = "Open notifications", Value = "notifications", Keywords = "bell alerts", Icon = LxIcons.Named("bell", "size-4") },
+            new() { Label = "Change the appearance", Value = "appearance", Keywords = "theme color primary dark light", Icon = LxIcons.Named("lucide:palette", "size-4") },
+            new() { Label = "Log out", Value = "logout", Keywords = "sign out", Icon = LxIcons.Named("log-out", "size-4") },
         ]),
     ];
 
@@ -127,7 +127,7 @@
 
     private void OnAppearanceChanged() => _ = InvokeAsync(StateHasChanged);
 
-    private async Task OnCommand(BxCommandItem item)
+    private async Task OnCommand(LxCommandItem item)
     {
         switch (item.Value ?? item.Label)
         {
@@ -138,7 +138,7 @@
                 App.OpenAppearance();
                 break;
             case "logout":
-                await Toasts.Add(new BxToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = BxColor.Info });
+                await Toasts.Add(new LxToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = LxColor.Info });
                 break;
         }
     }

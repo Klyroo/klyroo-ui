@@ -73,7 +73,7 @@ public class TemplateLaunchTests
             ["PATH"] = "/usr/bin", ["HOME"] = "/home/x", ["LANG"] = "fr_FR.UTF-8", ["LC_ALL"] = "C", ["TZ"] = "UTC", ["TMPDIR"] = "/tmp",
             ["DOTNET_ROOT"] = "/usr/share/dotnet", ["DOTNET_gcServer"] = "0",
             ["Kestrel__Endpoints__Https__Url"] = "https://*:443", ["ASPNETCORE_Kestrel__Certificates__Default__Password"] = "hunter2",
-            ["ASPNETCORE_URLS"] = "http://*:80", ["Blux__Templates__PublishRoot"] = "/srv", ["Blux__Ai__Key"] = "secret",
+            ["ASPNETCORE_URLS"] = "http://*:80", ["Lux__Templates__PublishRoot"] = "/srv", ["Lux__Ai__Key"] = "secret",
             ["ConnectionStrings__Main"] = "Server=db", ["GITHUB_TOKEN"] = "ghp_x", ["PathBase"] = "/sub",
             ["DOTNET_URLS"] = "http://*:81", ["DOTNET_ENVIRONMENT"] = "Staging", ["DOTNET_STARTUP_HOOKS"] = "/evil.dll",
         };
@@ -87,8 +87,8 @@ public class TemplateLaunchTests
         Assert.Equal("UTC", env["TZ"]);
         Assert.Equal("/usr/share/dotnet", env["DOTNET_ROOT"]);
         Assert.Equal("0", env["DOTNET_gcServer"]);
-        string[] leaked = ["Kestrel__Endpoints__Https__Url", "ASPNETCORE_Kestrel__Certificates__Default__Password", "ASPNETCORE_URLS", "Blux__Templates__PublishRoot",
-            "Blux__Ai__Key", "ConnectionStrings__Main", "GITHUB_TOKEN", "PathBase", "DOTNET_URLS", "DOTNET_ENVIRONMENT", "DOTNET_STARTUP_HOOKS"];
+        string[] leaked = ["Kestrel__Endpoints__Https__Url", "ASPNETCORE_Kestrel__Certificates__Default__Password", "ASPNETCORE_URLS", "Lux__Templates__PublishRoot",
+            "Lux__Ai__Key", "ConnectionStrings__Main", "GITHUB_TOKEN", "PathBase", "DOTNET_URLS", "DOTNET_ENVIRONMENT", "DOTNET_STARTUP_HOOKS"];
         Assert.All(leaked, name => Assert.DoesNotContain(name, env.Keys));
     }
 
@@ -103,8 +103,8 @@ public class TemplateLaunchTests
         Assert.Equal("5", env["DOTNET_GCConserveMemory"]);
         Assert.Equal("20000000", env["DOTNET_GCHeapHardLimit"]);
         Assert.Equal("/app/Lux.Stack.Site.DemoWatchdog.dll", env["DOTNET_STARTUP_HOOKS"]);
-        Assert.Equal("1", env["BLUX_WATCHDOG_STDIN"]);
-        Assert.Equal("4242", env["BLUX_WATCHDOG_PARENT_PID"]);
+        Assert.Equal("1", env["LUX_WATCHDOG_STDIN"]);
+        Assert.Equal("4242", env["LUX_WATCHDOG_PARENT_PID"]);
         Assert.Equal("Development", Env(host, mode: TemplateRunMode.Development)["ASPNETCORE_ENVIRONMENT"]);
     }
 
@@ -115,8 +115,8 @@ public class TemplateLaunchTests
 
         Assert.DoesNotContain("DOTNET_GCHeapHardLimit", env.Keys);
         Assert.DoesNotContain("DOTNET_STARTUP_HOOKS", env.Keys);
-        Assert.DoesNotContain("BLUX_WATCHDOG_STDIN", env.Keys);
-        Assert.DoesNotContain("BLUX_WATCHDOG_PARENT_PID", env.Keys);
+        Assert.DoesNotContain("LUX_WATCHDOG_STDIN", env.Keys);
+        Assert.DoesNotContain("LUX_WATCHDOG_PARENT_PID", env.Keys);
     }
 
     [Fact]
@@ -311,8 +311,8 @@ public class TemplateLaunchTests
         var starter = TemplateRegistry.Find("starter")!;
 
         Assert.True(settings.IsPublished);
-        Assert.Equal("https://github.com/acme/blux-template-starter", settings.SourceUrl(starter));
-        Assert.Equal("acme/blux-template-starter", settings.GitHubTemplate(starter));
+        Assert.Equal("https://github.com/acme/lux-template-starter", settings.SourceUrl(starter));
+        Assert.Equal("acme/lux-template-starter", settings.GitHubTemplate(starter));
     }
 
     [Fact]
@@ -321,7 +321,7 @@ public class TemplateLaunchTests
         var settings = new TemplateSettings("https://git.example.com/team");
         var starter = TemplateRegistry.Find("starter")!;
 
-        Assert.Equal("https://git.example.com/team/blux-template-starter", settings.SourceUrl(starter));
+        Assert.Equal("https://git.example.com/team/lux-template-starter", settings.SourceUrl(starter));
         Assert.Null(settings.GitHubTemplate(starter));
     }
 }

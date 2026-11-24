@@ -50,7 +50,7 @@ src/SaaS.Web/
 
 - Change the name, links and words in `Site/SiteInfo.cs`, and the plans, prices and questions in `Site/PricingInfo.cs`. The label of the yearly option ("Yearly, 2 months free") is worked out from the prices. `ContactUrl`, `StatusUrl` and the two sign-in addresses are placeholders on example.com: point them at your own.
 - Reorder, remove or add a section of the home page in `Components/Pages/Home.razor`. A section is a component, so a new one is a new file in `Components/Sections`.
-- The text is English only. The language select translates what Blux itself writes (labels, menus, the messages of the forms) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteInfo` or move the strings to resource files.
+- The text is English only. The language select translates what Lux itself writes (labels, menus, the messages of the forms) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteInfo` or move the strings to resource files.
 - Tailwind is compiled by the build from `Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `SaaS.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
 - Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
 
@@ -104,13 +104,13 @@ The search covers the documentation, the blog and the changelog, in one index th
 
 ## Authentication is UI only
 
-`Components/Pages/Login.razor`, `Signup.razor` and `ForgotPassword.razor` use Blux's `BxAuthForm`, posted to the server with a form name, so the pages need no circuit. The form checks the required fields, the format of the email and, on the sign-up page, a password of at least 8 characters. When everything is valid it calls `SignInAsync`, `SignUpAsync` or `ResetAsync`, which only remember the email so that the page can say "the form is valid" and that nothing was stored. **Nobody is signed in, no account is created and no email is sent.** The pages carry no other notice: this README is where it is written down.
+`Components/Pages/Login.razor`, `Signup.razor` and `ForgotPassword.razor` use Lux's `LxAuthForm`, posted to the server with a form name, so the pages need no circuit. The form checks the required fields, the format of the email and, on the sign-up page, a password of at least 8 characters. When everything is valid it calls `SignInAsync`, `SignUpAsync` or `ResetAsync`, which only remember the email so that the page can say "the form is valid" and that nothing was stored. **Nobody is signed in, no account is created and no email is sent.** The pages carry no other notice: this README is where it is written down.
 
 The "Continue with GitHub (demo)" and "Continue with Google (demo)" buttons are placeholders: their labels say so, and they lead to example.com addresses in `SiteInfo.cs` (`GitHubSignInUrl`, `GoogleSignInUrl`). To wire a real provider, replace the address with the sign-in endpoint of your authentication (for ASP.NET Core, the challenge endpoint of the provider you added with `AddAuthentication().AddGitHub(...)`, `AddGoogle(...)` or `AddOpenIdConnect(...)`), drop "(demo)" from the label in `Login.razor` and `Signup.razor`, or delete the `Providers` of the form if you only want email and password.
 
 To make it real, you need an identity system (ASP.NET Core Identity, an OpenID Connect provider such as Entra ID, Auth0 or Keycloak, or your own API) and these changes:
 
-- Check the credentials in `SignInAsync` and put a message in `_error` when they are wrong; create the account in `SignUpAsync` and answer an email that is taken with the `FieldErrors` parameter of `BxAuthForm`.
+- Check the credentials in `SignInAsync` and put a message in `_error` when they are wrong; create the account in `SignUpAsync` and answer an email that is taken with the `FieldErrors` parameter of `LxAuthForm`.
 - Sign the user in (a cookie) and redirect with `NavigationManager.NavigateTo`. Add `UseAuthentication()` and `UseAuthorization()` to `Program.cs`.
 - Send the reset link in `ResetAsync` (the same answer whether or not the address has an account), and add the page that takes the new password.
 - Add rate limiting to the three pages.
@@ -120,7 +120,7 @@ The app that sits behind the sign-in (a dashboard, say) is not part of this temp
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode, the language select and the accordion are Blux elements that need no .NET code, the copy buttons are a few lines of JavaScript (`Content/CodeCopy.cs`, written into `App.razor`), and the monthly and yearly switch of the pricing page is two radio buttons and CSS (`:has()`), so it works with the keyboard and does not wait for a connection. The cost is that the plans are written twice in the HTML, one copy hidden. The forms are ordinary form posts.
+Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode, the language select and the accordion are Lux elements that need no .NET code, the copy buttons are a few lines of JavaScript (`Content/CodeCopy.cs`, written into `App.razor`), and the monthly and yearly switch of the pricing page is two radio buttons and CSS (`:has()`), so it works with the keyboard and does not wait for a connection. The cost is that the plans are written twice in the HTML, one copy hidden. The forms are ordinary form posts.
 
 If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only. The rest stays static.
 

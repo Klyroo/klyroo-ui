@@ -8,7 +8,7 @@ namespace Dashboard.Shared.Components;
 /// </summary>
 public static class Feedback
 {
-    public static async Task ToastAsync(this IToastService toasts, bool interactive, BxToast toast)
+    public static async Task ToastAsync(this IToastService toasts, bool interactive, LxToast toast)
     {
         if (interactive) await toasts.Add(toast);
     }

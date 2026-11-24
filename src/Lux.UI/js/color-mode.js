@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'blux-color-mode';
+const STORAGE_KEY = 'lux-color-mode';
 const media = matchMedia('(prefers-color-scheme: dark)');
 
 function storedMode() {
@@ -16,7 +16,7 @@ export function applyColorMode() {
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
   // Controls that show the mode (switch, select) listen to this to stay in sync.
-  document.dispatchEvent(new CustomEvent('bx-color-mode', { detail: { mode, dark } }));
+  document.dispatchEvent(new CustomEvent('lx-color-mode', { detail: { mode, dark } }));
 }
 
 /** @param {'light' | 'dark' | 'system'} mode */

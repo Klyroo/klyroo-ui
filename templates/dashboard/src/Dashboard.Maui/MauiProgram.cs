@@ -27,9 +27,9 @@ public static class MauiProgram
         // No request in the app, so no cookie to read: the web view keeps the color choice in its local storage. Registered before AddDashboardUi, which would add the cookie one.
         builder.Services.AddScoped<IAppearanceStore, LocalStorageAppearanceStore>();
         builder.Services.AddDashboardUi();
-        // Where BxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
+        // Where LxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
-        builder.Services.AddSingleton<IBxCultureStore, PreferencesCultureStore>();
+        builder.Services.AddSingleton<ILxCultureStore, PreferencesCultureStore>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -40,7 +40,7 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// A .NET process takes its culture from the device. The language the user picked in BxLocaleSelect is read here, before anything
+    /// A .NET process takes its culture from the device. The language the user picked in LxLocaleSelect is read here, before anything
     /// renders, and becomes the default culture of every thread.
     /// </summary>
     private static void ApplyStoredCulture()

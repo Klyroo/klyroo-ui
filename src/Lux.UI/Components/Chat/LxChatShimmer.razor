@@ -1,0 +1,29 @@
+@namespace Lux.UI
+@using System.Globalization
+@inherits LxComponentBase
+
+@* A sweeping highlight over the text, done in CSS. With reduced motion the text is plain and muted. *@
+<span class="@_slots["base"]" style="@_style" data-lx-chat-shimmer @attributes="AdditionalAttributes">@Text</span>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _style = default!;
+
+    /// <summary>The text to shimmer.</summary>
+    [Parameter, EditorRequired] public string Text { get; set; } = "";
+
+    /// <summary>Seconds one sweep takes.</summary>
+    [Parameter] public double Duration { get; set; } = 2;
+
+    /// <summary>Width of the highlight, relative to the text: 2 by default, bigger is a wider band.</summary>
+    [Parameter] public double Spread { get; set; } = 2;
+    [Parameter] public ChatShimmerUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(Options.ChatShimmer, new Dictionary<string, string?>(), Ui, "base");
+        var size = (50 + Math.Max(Spread, 0.5) * 100).ToString("0.##", CultureInfo.InvariantCulture);
+        var duration = Math.Max(Duration, 0.1).ToString("0.##", CultureInfo.InvariantCulture);
+        _style = $"animation-duration:{duration}s;background-size:{size}% 100%";
+    }
+}

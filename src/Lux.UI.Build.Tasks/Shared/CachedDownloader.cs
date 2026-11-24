@@ -86,7 +86,7 @@ namespace Lux.UI.Build
     }
 
     /// <summary>
-    /// The conventions every Blux build task that downloads follows:
+    /// The conventions every Lux build task that downloads follows:
     /// <list type="bullet">
     /// <item>answers of an API go to <c>meta/</c> in the cache folder and are reused for <c>maxAge</c>; when the network fails the
     /// cached answer is used however old it is;</item>

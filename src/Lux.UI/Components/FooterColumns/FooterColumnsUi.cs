@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxFooterColumns"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxFooterColumns"/> slots.</summary>
 public sealed record FooterColumnsUi : ISlotOverrides
 {
     public string? Root { get; init; }

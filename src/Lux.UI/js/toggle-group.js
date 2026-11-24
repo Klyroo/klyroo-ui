@@ -5,13 +5,13 @@ import { ValueModel } from './form2-shared.js';
  * Group of toggle buttons, one or several pressed (data-multiple). Roving tabindex: one item is in the tab order,
  * arrow keys move focus between items, Space and Enter press.
  *
- * <bx-toggle-group role="group" name="…" data-values="a" data-multiple data-orientation="horizontal">
+ * <lx-toggle-group role="group" name="…" data-values="a" data-multiple data-orientation="horizontal">
  *   <span data-slot="values" hidden></span>
  *   <button type="button" data-value="a" aria-pressed="true">…</button> …
- * </bx-toggle-group>
+ * </lx-toggle-group>
  */
-export class BxToggleGroupElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
+export class LxToggleGroupElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-values', 'name', 'disabled'];
 
   #observer = null;
   #stop = null;
@@ -98,4 +98,4 @@ export class BxToggleGroupElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-toggle-group')) customElements.define('bx-toggle-group', BxToggleGroupElement);
+if (!customElements.get('lx-toggle-group')) customElements.define('lx-toggle-group', LxToggleGroupElement);

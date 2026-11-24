@@ -37,11 +37,11 @@ public sealed partial class LuxOptions
     public ComponentTheme Accordion { get; } = Themes.Accordion();
     public ComponentTheme Table { get; } = Themes.Table();
 
-    /// <summary>Palettes of the semantic colors (<c>Primary</c>, <c>Neutral</c>…) and extra semantic colors. Render <see cref="BxThemeStyle"/> in <c>&lt;head&gt;</c> to deliver them.</summary>
-    public BxColorOptions Colors { get; } = new();
+    /// <summary>Palettes of the semantic colors (<c>Primary</c>, <c>Neutral</c>…) and extra semantic colors. Render <see cref="LxThemeStyle"/> in <c>&lt;head&gt;</c> to deliver them.</summary>
+    public LxColorOptions Colors { get; } = new();
 
     /// <summary>Default <c>Color</c> and <c>Size</c> of the components, when a parameter is not set.</summary>
-    public BxDefaults Defaults { get; } = new();
+    public LxDefaults Defaults { get; } = new();
 
     private readonly Lazy<string?> _themeCss;
 
@@ -51,21 +51,21 @@ public sealed partial class LuxOptions
         _themeCss = new Lazy<string?>(() =>
         {
             Colors.Freeze();
-            return BxThemeTokens.Compute(Colors).ToCss(Colors);
+            return LxThemeTokens.Compute(Colors).ToCss(Colors);
         }, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     /// <summary>
     /// The stylesheet of <see cref="Colors"/>, resolved once (the colors become read-only), or null when they are the defaults.
     /// Throws <see cref="InvalidOperationException"/> when a palette cannot meet the contrast rules and
-    /// <see cref="BxColorOptions.AllowLowContrast"/> is off.
+    /// <see cref="LxColorOptions.AllowLowContrast"/> is off.
     /// </summary>
     internal string? ThemeCss => _themeCss.Value;
 
-    private IReadOnlyList<BxLocale> _locales = BxLocales.All;
-    private BxLocale? _locale;
+    private IReadOnlyList<LxLocale> _locales = LxLocales.All;
+    private LxLocale? _locale;
     private volatile bool _localesFrozen;
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, BxLocale> _resolved = new(StringComparer.OrdinalIgnoreCase);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, LxLocale> _resolved = new(StringComparer.OrdinalIgnoreCase);
 
     private void ThrowIfLocalesFrozen(string name)
     {
@@ -76,12 +76,12 @@ public sealed partial class LuxOptions
     }
 
     /// <summary>
-    /// The locale every component uses unless a <see cref="BxApp"/> (or a <c>CascadingValue</c> of <see cref="BxLocale"/>)
+    /// The locale every component uses unless a <see cref="LxApp"/> (or a <c>CascadingValue</c> of <see cref="LxLocale"/>)
     /// above it sets one. Leave it unset to follow the culture of the user: the locale is then picked from
     /// <see cref="Locales"/> by <see cref="System.Globalization.CultureInfo.CurrentUICulture"/>.
     /// Like the themes, it becomes read-only the first time a locale is resolved: set it in <c>AddLuxUi</c>.
     /// </summary>
-    public BxLocale? Locale
+    public LxLocale? Locale
     {
         get => _locale;
         set
@@ -92,14 +92,14 @@ public sealed partial class LuxOptions
     }
 
     /// <summary>
-    /// The locales the automatic selection chooses from, and that <see cref="BxLocaleSelect"/> offers by default.
-    /// Defaults to <see cref="BxLocales.All"/>; assign a new list to choose fewer or to add your own, for example
-    /// <c>o.Locales = [.. BxLocales.All, australian]</c>. The list is copied when assigned, so changing the original
+    /// The locales the automatic selection chooses from, and that <see cref="LxLocaleSelect"/> offers by default.
+    /// Defaults to <see cref="LxLocales.All"/>; assign a new list to choose fewer or to add your own, for example
+    /// <c>o.Locales = [.. LxLocales.All, australian]</c>. The list is copied when assigned, so changing the original
     /// afterwards has no effect, and it becomes read-only the first time a locale is resolved (a later assignment throws
     /// <see cref="InvalidOperationException"/>).
     /// English (code "en"), or the first locale when there is none, is the fallback of an unmatched culture.
     /// </summary>
-    public IReadOnlyList<BxLocale> Locales
+    public IReadOnlyList<LxLocale> Locales
     {
         get => _locales;
         set
@@ -114,16 +114,16 @@ public sealed partial class LuxOptions
 
     /// <summary>
     /// The locale for a culture: <see cref="Locale"/> when set, otherwise the match in <see cref="Locales"/>
-    /// (see <see cref="BxLocales.Resolve"/>). The result of each culture is cached, and the first call makes
+    /// (see <see cref="LxLocales.Resolve"/>). The result of each culture is cached, and the first call makes
     /// <see cref="Locale"/> and <see cref="Locales"/> read-only.
     /// </summary>
-    public BxLocale ResolveLocale(System.Globalization.CultureInfo culture)
+    public LxLocale ResolveLocale(System.Globalization.CultureInfo culture)
     {
         _localesFrozen = true;
         if (_locale is { } fixedLocale) return fixedLocale;
         return _resolved.TryGetValue(culture.Name, out var cached)
             ? cached
-            : _resolved.GetOrAdd(culture.Name, _ => BxLocales.Resolve(culture, _locales));
+            : _resolved.GetOrAdd(culture.Name, _ => LxLocales.Resolve(culture, _locales));
     }
 
     private const System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes ExtensionMembers =
@@ -158,7 +158,7 @@ public sealed partial class LuxOptions
     /// }
     /// </code>
     /// A component of the package reads <c>Options.Extension&lt;AcmeOptions&gt;().Gauge</c> and resolves it with the protected <c>ResolveSlots</c> of
-    /// <see cref="BxComponentBase"/>; an app overrides it with <c>services.AddAcme(a =&gt; a.Gauge.Slot("root", "..."))</c>.
+    /// <see cref="LxComponentBase"/>; an app overrides it with <c>services.AddAcme(a =&gt; a.Gauge.Slot("root", "..."))</c>.
     /// </example>
     public T Extension<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] T>() where T : class, new() => (T)Extension(typeof(T));
 
@@ -238,7 +238,7 @@ public static class LuxServiceCollectionExtensions
         services.TryAddSingleton<IClassMerger, TailwindClassMerger>();
         services.TryAddSingleton<ThemeResolver>();
         services.TryAddScoped<IToastService, ToastService>();
-        services.TryAddScoped<IBxCultureStore, BxLocalStorageCultureStore>();
+        services.TryAddScoped<ILxCultureStore, LxLocalStorageCultureStore>();
         return services;
     }
 }

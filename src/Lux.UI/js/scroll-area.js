@@ -1,12 +1,12 @@
 import { observeChildren } from './shared.js';
 
 /**
- * <bx-scroll-area><div data-bx-scroll-viewport>…</div></bx-scroll-area>
+ * <lx-scroll-area><div data-lx-scroll-viewport>…</div></lx-scroll-area>
  *
  * A scroll container that can only be scrolled with a pointer is out of reach for keyboard users: while the viewport
  * overflows, it is made focusable (tabindex 0) so arrow keys and Page Up/Down scroll it.
  */
-export class BxScrollAreaElement extends HTMLElement {
+export class LxScrollAreaElement extends HTMLElement {
   #resize = null;
   #observer = null;
 
@@ -26,7 +26,7 @@ export class BxScrollAreaElement extends HTMLElement {
   }
 
   get #viewport() {
-    return this.querySelector(':scope > [data-bx-scroll-viewport]');
+    return this.querySelector(':scope > [data-lx-scroll-viewport]');
   }
 
   #watch() {
@@ -47,4 +47,4 @@ export class BxScrollAreaElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('bx-scroll-area')) customElements.define('bx-scroll-area', BxScrollAreaElement);
+if (!customElements.get('lx-scroll-area')) customElements.define('lx-scroll-area', LxScrollAreaElement);

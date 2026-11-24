@@ -1,10 +1,10 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>日本語 (ja).</summary>
-    public static BxLocale Ja { get; } = new("ja", "日本語", BxDirection.Ltr,
-        new BxMessages
+    public static LxLocale Ja { get; } = new("ja", "日本語", LxDirection.Ltr,
+        new LxMessages
         {
             ChartLine = "折れ線グラフ",
             ChartArea = "面グラフ",

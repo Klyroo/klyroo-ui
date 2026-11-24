@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { pruneBlank } from '../../src/Lux.UI.Tools/js/prune-blank.js';
 
 // A form whose marked fields are the ones in the list.
-const formOf = (fields) => ({ querySelectorAll: (selector) => (selector === '[data-bx-prune]' ? fields : []) });
+const formOf = (fields) => ({ querySelectorAll: (selector) => (selector === '[data-lx-prune]' ? fields : []) });
 
 test('a blank marked field is switched off for the submit and back on afterwards', () => {
   const blank = { value: '', disabled: false };

@@ -8,7 +8,7 @@ namespace Lux.UI.Images.Local.Tests;
 /// <summary>Rate limiting, eviction order, cancellation and coalescing, observed through the processing hook.</summary>
 public class ConcurrencyTests(EndpointFixture fixture) : IClassFixture<EndpointFixture>
 {
-    private const string Url = "/_blux/img?src=";
+    private const string Url = "/_lux/img?src=";
 
     private sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
     {
@@ -161,7 +161,7 @@ public class ConcurrencyTests(EndpointFixture fixture) : IClassFixture<EndpointF
     {
         var (app, client) = await fixture.StartAsync(o => o.MaxCacheBytes = 12000);
         await using var _ = app;
-        var processor = app.Services.GetRequiredService<BxImageProcessor>();
+        var processor = app.Services.GetRequiredService<LxImageProcessor>();
 
         foreach (var width in new[] { 16, 32, 48, 64, 96, 128, 256 })
         {
@@ -180,7 +180,7 @@ public class ConcurrencyTests(EndpointFixture fixture) : IClassFixture<EndpointF
         string? cache = null;
         var (app, client) = await fixture.StartAsync(o => { cache = o.CacheDirectory; o.MaxCacheBytes = 4000; });
         await using var _ = app;
-        var processor = app.Services.GetRequiredService<BxImageProcessor>();
+        var processor = app.Services.GetRequiredService<LxImageProcessor>();
         var directory = Path.Combine(cache!, "0123456789abcdef0123456789abcdef");
         Directory.CreateDirectory(directory);
         var fresh = Path.Combine(directory, "a.png.0001.tmp");

@@ -1,43 +1,43 @@
 @inherits LayoutComponentBase
 
-@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<BxHead />
+<LxHead />
 <SystemBars />
 
-<BxApp>
-    <BxSkipLink />
+<LxApp>
+    <LxSkipLink />
 
     @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-    <BxHeader Items="_items" AriaLabel="Main" MenuTitle="Menu">
+    <LxHeader Items="_items" AriaLabel="Main" MenuTitle="Menu">
         <Left>
-            <a href="./" class="flex items-center gap-2 font-semibold text-(--blux-text-highlighted)">
-                <BxIcon Name="ph:stack" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 font-semibold text-(--lux-text-highlighted)">
+                <LxIcon Name="ph:stack" Class="size-6" />
                 <span>Starter</span>
             </a>
         </Left>
         <Right>
-            <BxLocaleSelect Size="BxSize.Sm" />
-            <BxColorModeButton Size="BxSize.Sm" />
+            <LxLocaleSelect Size="LxSize.Sm" />
+            <LxColorModeButton Size="LxSize.Sm" />
         </Right>
-    </BxHeader>
+    </LxHeader>
 
-    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+    <LxMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </BxMain>
+    </LxMain>
 
-    <BxFooter>
+    <LxFooter>
         <Left>
-            <p class="text-sm text-(--blux-text-muted)">&copy; @DateTime.UtcNow.Year Starter. Built with Lux.UI.</p>
+            <p class="text-sm text-(--lux-text-muted)">&copy; @DateTime.UtcNow.Year Starter. Built with Lux.UI.</p>
         </Left>
         <Right>
             <nav aria-label="Footer" class="flex gap-4 text-sm">
-                <a href="./" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Home</a>
-                <a href="about" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">About</a>
+                <a href="./" class="text-(--lux-text-muted) hover:text-(--lux-text-highlighted)">Home</a>
+                <a href="about" class="text-(--lux-text-muted) hover:text-(--lux-text-highlighted)">About</a>
             </nav>
         </Right>
-    </BxFooter>
-</BxApp>
+    </LxFooter>
+</LxApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
     An unhandled error has occurred.
@@ -46,7 +46,7 @@
 </div>
 
 @code {
-    private static readonly BxNavigationItem[] _items =
+    private static readonly LxNavigationItem[] _items =
     [
         new("Home") { Href = "./", Exact = true },
         new("Features") { Href = "./#features", Active = false },

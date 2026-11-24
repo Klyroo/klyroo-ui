@@ -4,13 +4,13 @@ import { Reporter } from './shared.js';
  * One box per character. Typing moves to the next box, Backspace to the previous one, pasting fills every box.
  * A hidden input carries the joined value, so the pin posts in a plain HTML form.
  *
- * <bx-pin-input value="1234" data-type="numeric|alphanumeric">
+ * <lx-pin-input value="1234" data-type="numeric|alphanumeric">
  *   <input type="hidden" data-slot="value" name="…" value="1234">
  *   <input data-slot="cell" maxlength="1"> …
- * </bx-pin-input>
+ * </lx-pin-input>
  */
-export class BxPinInputElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+export class LxPinInputElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value'];
 
   #reporter = new Reporter(this);
   #last = null;
@@ -25,7 +25,7 @@ export class BxPinInputElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered();
   }
 
@@ -85,7 +85,7 @@ export class BxPinInputElement extends HTMLElement {
     if (value === this.#last) return;
     this.#last = value;
     this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value });
+    this.#reporter.report('lx-change', { value });
   }
 
   #onInput = (event) => {
@@ -150,4 +150,4 @@ export class BxPinInputElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-pin-input')) customElements.define('bx-pin-input', BxPinInputElement);
+if (!customElements.get('lx-pin-input')) customElements.define('lx-pin-input', LxPinInputElement);

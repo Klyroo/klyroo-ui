@@ -1,10 +1,10 @@
 import { FOCUSABLE, ensureId, float, observeChildren } from './shared.js';
 
 /**
- * <bx-tooltip delay="300" placement="top">
+ * <lx-tooltip delay="300" placement="top">
  *   <span data-slot="trigger">…focusable element…</span>
  *   <div popover="manual" role="tooltip">…</div>
- * </bx-tooltip>
+ * </lx-tooltip>
  *
  * Shows on hover (after a delay) and on keyboard focus, stays while the pointer is over the tooltip,
  * hides on Escape, blur or leave (WCAG 1.4.13). Purely visual: never reported to .NET.
@@ -12,7 +12,7 @@ import { FOCUSABLE, ensureId, float, observeChildren } from './shared.js';
 const LONG_PRESS = 500;
 const TOUCH_LINGER = 2500;
 
-export class BxTooltipElement extends HTMLElement {
+export class LxTooltipElement extends HTMLElement {
   #content = null;
   #timer = 0;
   #pressTimer = 0;
@@ -135,4 +135,4 @@ export class BxTooltipElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-tooltip')) customElements.define('bx-tooltip', BxTooltipElement);
+if (!customElements.get('lx-tooltip')) customElements.define('lx-tooltip', LxTooltipElement);

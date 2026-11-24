@@ -1,0 +1,398 @@
+/*
+ * Lux.UI design tokens. Shared by both modes:
+ * - without Tailwind in the app, compiled into lux.css;
+ * - with Tailwind v4 in the app, imported through lux.theme.css.
+ * Override any --lux-* variable in your own CSS to rebrand.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Tailwind utilities that follow the runtime tokens (hence `inline`: the utility reads var(--lux-*) at the element, so
+ * .dark and overrides apply). text-default, text-muted, bg-elevated, border-accented, bg-primary, text-primary… exist in
+ * both modes, and rounded-* are computed from --lux-radius at the element, so --lux-radius set on a subtree resizes them
+ * there. Custom semantic colors need their own mapping, see the Theming guide.
+ */
+@theme inline {
+  --color-primary: var(--lux-primary);
+  --color-secondary: var(--lux-secondary);
+  --color-success: var(--lux-success);
+  --color-info: var(--lux-info);
+  --color-warning: var(--lux-warning);
+  --color-error: var(--lux-error);
+  --color-neutral: var(--lux-neutral);
+
+  --text-color-dimmed: var(--lux-text-dimmed);
+  --text-color-muted: var(--lux-text-muted);
+  --text-color-toned: var(--lux-text-toned);
+  --text-color-default: var(--lux-text);
+  --text-color-highlighted: var(--lux-text-highlighted);
+  --text-color-inverted: var(--lux-text-inverted);
+
+  --background-color-default: var(--lux-bg);
+  --background-color-muted: var(--lux-bg-muted);
+  --background-color-elevated: var(--lux-bg-elevated);
+  --background-color-accented: var(--lux-bg-accented);
+  --background-color-inverted: var(--lux-bg-inverted);
+
+  --border-color-default: var(--lux-border);
+  --border-color-muted: var(--lux-border-muted);
+  --border-color-accented: var(--lux-border-accented);
+  --border-color-inverted: var(--lux-border-inverted);
+
+  --ring-color-default: var(--lux-border);
+  --ring-color-muted: var(--lux-border-muted);
+  --ring-color-accented: var(--lux-border-accented);
+  --ring-color-inverted: var(--lux-border-inverted);
+
+  --divide-color-default: var(--lux-border);
+  --divide-color-muted: var(--lux-border-muted);
+  --divide-color-accented: var(--lux-border-accented);
+  --divide-color-inverted: var(--lux-border-inverted);
+
+  --outline-color-default: var(--lux-border);
+  --outline-color-accented: var(--lux-border-accented);
+  --outline-color-inverted: var(--lux-border-inverted);
+
+  /* font-sans and font-mono (and the page's default font) follow the font tokens, which LxFonts and the LuxFont items set. */
+  --font-sans: var(--lux-font-sans);
+  --font-mono: var(--lux-font-mono);
+  --default-font-family: var(--lux-font-sans);
+  --default-mono-font-family: var(--lux-font-mono);
+
+  --radius-xs: calc(var(--lux-radius) * 0.25);
+  --radius-sm: calc(var(--lux-radius) * 0.5);
+  --radius-md: calc(var(--lux-radius) * 0.75);
+  --radius-lg: var(--lux-radius);
+  --radius-xl: calc(var(--lux-radius) * 1.5);
+  --radius-2xl: calc(var(--lux-radius) * 2);
+  --radius-3xl: calc(var(--lux-radius) * 3);
+}
+
+@layer base {
+  :root {
+    /* Native controls, scrollbars and the canvas follow the mode too (light here, dark below). */
+    color-scheme: light;
+    --lux-radius: 0.5rem;
+    /* Maximum width of LxContainer, the header and the footer. */
+    --lux-container: 80rem;
+    /*
+     * Height of LxHeader, which LxMain subtracts from the viewport. Components read var(--lx-header-height, var(--lux-header-height))
+     * at the element, so either name set on a subtree applies there (--lx-header-height wins when both are set).
+     */
+    --lux-header-height: 4rem;
+
+    /*
+     * Safe area insets (notch, rounded corners, system bars, gesture bar), which a page only gets when it draws under them:
+     * <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> on iOS, and a Blazor Hybrid
+     * web view that extends edge to edge. They are 0 everywhere else. The header, main, footer, dashboard, panels and toaster
+     * keep their content inside them; set --lx-safe-top (and the others) on a subtree to override.
+     */
+    --lx-safe-top: env(safe-area-inset-top, 0px);
+    --lx-safe-right: env(safe-area-inset-right, 0px);
+    --lx-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --lx-safe-left: env(safe-area-inset-left, 0px);
+
+    /*
+     * Fonts. The defaults are Tailwind's stacks, so nothing changes until a font is declared: a <LuxFont Role="sans"> item of
+     * the project makes the build self-host the font and write these two variables (lux.fonts.css, loaded by LxFonts). Set them
+     * by hand to use any other stack.
+     */
+    --lux-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --lux-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+    /* Each color: a fill, the text color to use on light surfaces (-text), and the text color on the fill (-contrast). */
+    --lux-primary: #ffd23f;
+    --lux-primary-text: #7a5800;
+    --lux-primary-contrast: #151100;
+    --lux-secondary: #1a5e68;
+    --lux-secondary-text: #1a5e68;
+    --lux-secondary-contrast: #ffffff;
+    --lux-success: #146439;
+    --lux-success-text: #136238;
+    --lux-success-contrast: #ffffff;
+    --lux-info: #2555a0;
+    --lux-info-text: #23549e;
+    --lux-info-contrast: #ffffff;
+    --lux-warning: #d86010;
+    --lux-warning-text: #9c3d08;
+    --lux-warning-contrast: #1a0a00;
+    --lux-error: #a53125;
+    --lux-error-text: #9d2c1a;
+    --lux-error-contrast: #ffffff;
+    --lux-neutral: #0b0c0d;
+    --lux-neutral-text: #23272a;
+    --lux-neutral-contrast: #ffffff;
+
+    --lux-text: #23272a;
+    --lux-text-highlighted: #0b0c0d;
+    --lux-text-toned: #43484b;
+    --lux-text-muted: #5b6165;
+    --lux-text-dimmed: #73797d;
+    /* Text on --lux-bg-inverted. */
+    --lux-text-inverted: #ffffff;
+    --lux-bg: #f5f5f2;
+    --lux-bg-muted: #eeeeea;
+    --lux-bg-elevated: #e9e9e4;
+    --lux-bg-accented: #dfdfda;
+    --lux-bg-overlay: #ffffff;
+    /* The opposite of the page: dark in light mode, light in dark mode. */
+    --lux-bg-inverted: #0b0c0d;
+    --lux-border: #d8d8d3;
+    --lux-border-muted: #d8d8d3;
+    /* Boundaries of form controls: at least 3:1 against the page (WCAG 1.4.11). */
+    --lux-border-accented: #85898c;
+    --lux-border-inverted: #0b0c0d;
+    /* Unchecked track of switches: at least 3:1 against the page and against a white thumb. */
+    --lux-control: #85898c;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --lux-primary: #ffd23f;
+    --lux-primary-text: #ffd23f;
+    --lux-primary-contrast: #151100;
+    --lux-secondary: #64c3cf;
+    --lux-secondary-text: #64c3cf;
+    --lux-secondary-contrast: #06181b;
+    --lux-success: #7bd88f;
+    --lux-success-text: #7bd88f;
+    --lux-success-contrast: #08180c;
+    --lux-info: #7fb2ff;
+    --lux-info-text: #7fb2ff;
+    --lux-info-contrast: #07101f;
+    --lux-warning: #ff8a4c;
+    --lux-warning-text: #ff8a4c;
+    --lux-warning-contrast: #1a0a00;
+    --lux-error: #ff6b4a;
+    --lux-error-text: #ff6e4d;
+    --lux-error-contrast: #1f0700;
+    --lux-neutral: #edefef;
+    --lux-neutral-text: #d5d9db;
+    --lux-neutral-contrast: #0a0b0c;
+
+    --lux-text: #d5d9db;
+    --lux-text-highlighted: #f2f4f4;
+    --lux-text-toned: #aeb4b8;
+    --lux-text-muted: #8a9196;
+    --lux-text-dimmed: #6f767b;
+    --lux-text-inverted: #0a0b0c;
+    --lux-bg: #0a0b0c;
+    --lux-bg-muted: #111315;
+    --lux-bg-elevated: #1a1d20;
+    --lux-bg-accented: #23272a;
+    --lux-bg-overlay: #131618;
+    --lux-bg-inverted: #edefef;
+    --lux-border: #272b2f;
+    --lux-border-muted: #2e3337;
+    --lux-border-accented: #5c6369;
+    --lux-border-inverted: #edefef;
+    --lux-control: #5c6369;
+  }
+
+  /*
+   * The page itself: background and text color from the tokens, so a page with no styles of its own is readable in both modes, and so an
+   * accessibility scan sees the real background. :where() gives it no specificity at all: any rule of the app, a utility on <body> included, wins.
+   */
+  :where(body) {
+    background-color: var(--lux-bg);
+    color: var(--lux-text);
+  }
+
+  /* data-color sets the three variables every themed component reads. */
+  [data-color='primary'] { --lx-color: var(--lux-primary); --lx-color-text: var(--lux-primary-text); --lx-color-contrast: var(--lux-primary-contrast); }
+  [data-color='secondary'] { --lx-color: var(--lux-secondary); --lx-color-text: var(--lux-secondary-text); --lx-color-contrast: var(--lux-secondary-contrast); }
+  [data-color='success'] { --lx-color: var(--lux-success); --lx-color-text: var(--lux-success-text); --lx-color-contrast: var(--lux-success-contrast); }
+  [data-color='info'] { --lx-color: var(--lux-info); --lx-color-text: var(--lux-info-text); --lx-color-contrast: var(--lux-info-contrast); }
+  [data-color='warning'] { --lx-color: var(--lux-warning); --lx-color-text: var(--lux-warning-text); --lx-color-contrast: var(--lux-warning-contrast); }
+  [data-color='error'] { --lx-color: var(--lux-error); --lx-color-text: var(--lux-error-text); --lx-color-contrast: var(--lux-error-contrast); }
+  [data-color='neutral'] { --lx-color: var(--lux-neutral); --lx-color-text: var(--lux-neutral-text); --lx-color-contrast: var(--lux-neutral-contrast); }
+
+  /*
+   * Series colors of LxChart, in order: chart-1 follows the primary color. --lux-chart-N (and -text, -contrast) are not
+   * defined by default: the rules fall back to the semantic colors at the element, so a palette or a --lux-primary set on a
+   * subtree reaches the charts inside it. Set --lux-chart-N globally or on a subtree to give the charts their own colors.
+   */
+  [data-color='chart-1'] { --lx-color: var(--lux-chart-1, var(--lux-primary)); --lx-color-text: var(--lux-chart-1-text, var(--lux-primary-text)); --lx-color-contrast: var(--lux-chart-1-contrast, var(--lux-primary-contrast)); }
+  [data-color='chart-2'] { --lx-color: var(--lux-chart-2, var(--lux-secondary)); --lx-color-text: var(--lux-chart-2-text, var(--lux-secondary-text)); --lx-color-contrast: var(--lux-chart-2-contrast, var(--lux-secondary-contrast)); }
+  [data-color='chart-3'] { --lx-color: var(--lux-chart-3, var(--lux-info)); --lx-color-text: var(--lux-chart-3-text, var(--lux-info-text)); --lx-color-contrast: var(--lux-chart-3-contrast, var(--lux-info-contrast)); }
+  [data-color='chart-4'] { --lx-color: var(--lux-chart-4, var(--lux-error)); --lx-color-text: var(--lux-chart-4-text, var(--lux-error-text)); --lx-color-contrast: var(--lux-chart-4-contrast, var(--lux-error-contrast)); }
+  [data-color='chart-5'] { --lx-color: var(--lux-chart-5, var(--lux-success)); --lx-color-text: var(--lux-chart-5-text, var(--lux-success-text)); --lx-color-contrast: var(--lux-chart-5-contrast, var(--lux-success-contrast)); }
+  [data-color='chart-6'] { --lx-color: var(--lux-chart-6, var(--lux-warning)); --lx-color-text: var(--lux-chart-6-text, var(--lux-warning-text)); --lx-color-contrast: var(--lux-chart-6-contrast, var(--lux-warning-contrast)); }
+
+  /* Structural wrappers of custom elements must not affect layout. */
+  lx-popover,
+  lx-modal,
+  lx-tooltip,
+  lx-toaster,
+  :is(lx-popover, lx-modal, lx-tooltip) > [data-slot='trigger'] {
+    display: contents;
+  }
+
+  lx-tabs,
+  lx-accordion,
+  lx-select,
+  lx-collapsible,
+  lx-tree,
+  lx-splitter,
+  lx-scroll-area {
+    display: block;
+  }
+
+  /* Marquee: two copies of the content slide by their own length, so the loop has no seam. */
+  [data-lx-marquee] {
+    --lx-gap: 1rem;
+  }
+  [data-lx-marquee][data-overlay='true'][data-orientation='horizontal'] {
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-lx-marquee][data-overlay='true'][data-orientation='vertical'] {
+    mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-lx-marquee] > [data-lx-marquee-group] {
+    animation: lx-marquee-x var(--lx-marquee-duration, 30s) linear infinite;
+  }
+  [data-lx-marquee][data-orientation='vertical'] > [data-lx-marquee-group] {
+    animation-name: lx-marquee-y;
+  }
+  [data-lx-marquee][data-reverse='true'] > [data-lx-marquee-group] {
+    animation-direction: reverse;
+  }
+  /* Right to left: the copies sit side by side from the right edge, so a horizontal marquee slides the other way. */
+  :dir(rtl) [data-lx-marquee][data-orientation='horizontal'] > [data-lx-marquee-group] {
+    animation-direction: reverse;
+  }
+  :dir(rtl) [data-lx-marquee][data-orientation='horizontal'][data-reverse='true'] > [data-lx-marquee-group] {
+    animation-direction: normal;
+  }
+  [data-lx-marquee][data-pause-on-hover='true']:is(:hover, :focus-within) > [data-lx-marquee-group] {
+    animation-play-state: paused;
+  }
+  @keyframes lx-marquee-x {
+    to { transform: translateX(calc(-100% - var(--lx-gap))); }
+  }
+  @keyframes lx-marquee-y {
+    to { transform: translateY(calc(-100% - var(--lx-gap))); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-lx-marquee] { overflow: auto; mask-image: none !important; }
+    [data-lx-marquee] > [data-lx-marquee-group] { animation: none; }
+    [data-lx-marquee] > [data-lx-marquee-group][aria-hidden='true'] { display: none; }
+  }
+
+  lx-banner {
+    display: block;
+  }
+
+  /* A dismissed banner: the element sets [hidden], which the rule above would otherwise override. */
+  lx-banner[hidden] {
+    display: none;
+  }
+
+  /*
+   * Touch screens: controls get a hit area of at least 44 x 44 CSS pixels (WCAG 2.5.5, Apple HIG; 2.5.8 asks for 24). Only a
+   * coarse primary pointer: a mouse keeps the compact sizes. The control keeps its size and its place in the layout: an
+   * invisible ::after reaches out from its box, centered, to 44px on each axis where the box is smaller (it never shrinks
+   * the hit area of a box that is already larger). Inline links in text are exempt, so anchors are not listed, and so are
+   * rows of a list (menu items, options), which touch each other: their own height is what counts. A native select, input
+   * or textarea cannot have a ::after and keeps its size; the switch is wrapped in a label for that reason.
+   * data-lx-compact opts an element (a dense table action, say) out. --lx-hit-x and --lx-hit-y set the reach on one axis:
+   * the number stepper reaches sideways only (its two halves share the height), the remove button of a tag chip reaches 24px
+   * (WCAG 2.5.8) so it stays inside the chip, and a calendar day does not reach at all.
+   */
+  @media (pointer: coarse) {
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-lx-compact], [hidden]) {
+      position: relative;
+    }
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-lx-compact], [hidden])::after {
+      content: '';
+      position: absolute;
+      inset-inline: min(0px, calc((100% - var(--lx-hit-x, 2.75rem)) / 2));
+      inset-block: min(0px, calc((100% - var(--lx-hit-y, 2.75rem)) / 2));
+    }
+    /*
+     * A hit area is painted after the controls before it, so it would cover the right edge of the previous control of a row
+     * (two 24px buttons 4px apart: a tap 4px inside the first one went to the second). Nothing in CSS knows how far the
+     * neighbours are, so a control that shares its parent with others, or sits alone in a wrapper (a list item, a tooltip
+     * trigger) that does, gets no reach along the row: it keeps its own box. The reach across the row (above and below) stays,
+     * which is where a row has free space. Rows that wrap or stack (a vertical group, data-lx-tight on a wrapping list of small
+     * buttons such as the pagination and the editor toolbar) have no free space on either axis and keep their boxes.
+     */
+    :where(:is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(:only-child), :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child, :not(:only-child) > :only-child > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --lx-hit-x: 100%;
+    }
+    :where([data-lx-tight], [data-lx-tight] *) {
+      --lx-hit-x: 100%;
+      --lx-hit-y: 100%;
+    }
+    :where(:where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])),
+    :where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --lx-hit-y: 100%;
+    }
+    /* The items of a list stack, wherever the control sits inside the item (a menu entry, a collapsible's trigger). */
+    :where(li:not(:only-child) :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch']))) {
+      --lx-hit-y: 100%;
+    }
+    [data-slot='increment'], [data-slot='decrement'] { --lx-hit-y: 0px; }
+    [data-remove] { --lx-hit-x: 1.5rem; --lx-hit-y: 1.5rem; }
+    [data-date] { --lx-hit-x: 0px; --lx-hit-y: 0px; }
+    /* Checkboxes and radios are small boxes: the label next to them is the target, so give it room. */
+    /* Not the label that wraps a switch track: its ::after already reaches 44px, and growing it would push the track
+       below the switch's text. */
+    :where(label):has(> input:is([type='checkbox'], [type='radio']):not([role='switch'])) {
+      min-block-size: 2.75rem;
+    }
+  }
+
+  /*
+   * TV mode (experimental): <html data-lx-tv>, set by <LxApp SpatialNavigation="true"> or Lux.setSpatialNavigation(true).
+   * Everything grows to the 10 foot scale (--lx-tv-scale, 1.25 by default: all rem sizes follow), the content stays
+   * inside the overscan safe area, and the focus is hard to miss from the couch. The margin is the 5% Android recommends
+   * (48dp on the sides and 27dp at the top and bottom of a 960 x 540dp screen, developer.android.com/design/ui/tv/guides/styles/layouts):
+   * --lx-tv-safe is the side margin (5vw); the top and bottom margins are 9/16 of it, the same 5% of a 16:9 screen's height.
+   * --lx-tv-inset is what both vertical margins take from the viewport height, which LxMain subtracts from its minimum height.
+   */
+  html[data-lx-tv] {
+    --lx-tv-scale: 1.25;
+    --lx-tv-safe: 5vw;
+    --lx-tv-inset: calc(var(--lx-tv-safe) * 9 / 8);
+    font-size: calc(100% * var(--lx-tv-scale));
+    padding-inline: var(--lx-tv-safe);
+    padding-block: calc(var(--lx-tv-safe) * 9 / 16);
+    box-sizing: border-box;
+    scroll-padding: 4rem;
+  }
+  html[data-lx-tv] :is(:focus, :focus-visible) {
+    outline: 0.3rem solid var(--lx-color-text, var(--lux-primary-text)) !important;
+    outline-offset: 0.2rem !important;
+    transition: transform 120ms ease-out, outline-offset 120ms ease-out;
+  }
+  html[data-lx-tv] :is(button, a[href], summary, [role='button'], [role='tab'], [role='menuitem'], [role='option'], [role='switch']):is(:focus, :focus-visible) {
+    transform: scale(1.06);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html[data-lx-tv] :is(:focus, :focus-visible) { transition: none; transform: none !important; }
+  }
+  lx-spatial { display: none; }
+
+  /* A modal dialog makes the page inert; stop it from scrolling behind. */
+  html:has(lx-modal > dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+/* Indeterminate progress bars (LxProgress): the bar is 40% wide and travels along the track. */
+@keyframes lx-progress-carousel {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@keyframes lx-progress-swing {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(150%); }
+}
+
+/* Shimmering text (LxChatShimmer): the highlight of a wide gradient travels across the text. */
+@keyframes lx-chat-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}

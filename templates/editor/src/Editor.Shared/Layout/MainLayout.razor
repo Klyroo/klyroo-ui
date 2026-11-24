@@ -1,23 +1,23 @@
 @inherits LayoutComponentBase
 
-@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<BxHead />
+<LxHead />
 <SystemBars />
 
-<BxApp Toaster="false">
-    <BxSkipLink />
+<LxApp Toaster="false">
+    <LxSkipLink />
 
     @* The group fills its parent, so the parent needs a height: the page itself. It is the main landmark, so the sidebar and the document are both inside it
        (the sidebar is a div: its navigation is a landmark of its own, and a complementary one may not sit in main). *@
-    <BxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
-        <BxDashboardGroup StorageKey="editor">
+    <LxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
+        <LxDashboardGroup StorageKey="editor">
             @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-            <BxDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Documents" MobileTitle="Documents" data-testid="sidebar">
+            <LxDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Documents" MobileTitle="Documents" data-testid="sidebar">
                 <Header>
-                    <a href="./" class="flex items-center gap-2 rounded-(--blux-radius) p-1.5 font-semibold text-(--blux-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)" data-testid="brand">
-                        <span class="flex size-7 items-center justify-center rounded-(--blux-radius) bg-(--blux-primary) text-(--blux-primary-contrast)" aria-hidden="true">
-                            @BxIcons.Named("lucide:file-text", "size-4")
+                    <a href="./" class="flex items-center gap-2 rounded-(--lux-radius) p-1.5 font-semibold text-(--lux-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)" data-testid="brand">
+                        <span class="flex size-7 items-center justify-center rounded-(--lux-radius) bg-(--lux-primary) text-(--lux-primary-contrast)" aria-hidden="true">
+                            @LxIcons.Named("lucide:file-text", "size-4")
                         </span>
                         <span>Editor</span>
                     </a>
@@ -28,11 +28,11 @@
                 <Footer>
                     <StorageNote />
                 </Footer>
-            </BxDashboardSidebar>
+            </LxDashboardSidebar>
 
             @Body
-        </BxDashboardGroup>
-    </BxMain>
+        </LxDashboardGroup>
+    </LxMain>
 
     @* Says how the page renders (Static until it is interactive, then Server or WebAssembly): what the browser tests wait for before they click. *@
     <span class="sr-only" aria-hidden="true" data-testid="renderer">@RendererInfo.Name</span>
@@ -41,8 +41,8 @@
     <DocumentDialogs />
 
     @* The toasts sit at the top, in the middle, away from the text the user is typing. *@
-    <BxToaster Ui="_toastUi" />
-</BxApp>
+    <LxToaster Ui="_toastUi" />
+</LxApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
     An unhandled error has occurred.
@@ -51,5 +51,5 @@
 </div>
 
 @code {
-    private static readonly ToastUi _toastUi = new() { Viewport = "top-[max(1rem,var(--bx-safe-top))] bottom-auto start-1/2 end-auto -translate-x-1/2 rtl:translate-x-1/2" };
+    private static readonly ToastUi _toastUi = new() { Viewport = "top-[max(1rem,var(--lx-safe-top))] bottom-auto start-1/2 end-auto -translate-x-1/2 rtl:translate-x-1/2" };
 }

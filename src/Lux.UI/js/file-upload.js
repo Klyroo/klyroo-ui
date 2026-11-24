@@ -40,16 +40,16 @@ function matchesAccept(file, accept) {
 /**
  * Drop zone, file list and limits around a native file input.
  *
- * <bx-file-upload multiple accept="image/*,.pdf" max-size="2097152" max-files="5">
+ * <lx-file-upload multiple accept="image/*,.pdf" max-size="2097152" max-files="5">
  *   <label data-slot="dropzone"><input type="file" name="…"></label>
  *   <ul data-slot="files"></ul> <p data-slot="error" aria-live="polite"></p>
- * </bx-file-upload>
+ * </lx-file-upload>
  *
  * The input stays the source of truth: dropped files and removals rewrite input.files (through DataTransfer) and
  * fire "change", so a static form posts exactly the files shown and a bound InputFile sees the same list.
  * The "change" listener runs in the capture phase, before Blazor's own, so files refused by the limits never reach .NET.
  */
-export class BxFileUploadElement extends HTMLElement {
+export class LxFileUploadElement extends HTMLElement {
   #observer = null;
   #rendered = false;
 
@@ -208,4 +208,4 @@ export class BxFileUploadElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-file-upload')) customElements.define('bx-file-upload', BxFileUploadElement);
+if (!customElements.get('lx-file-upload')) customElements.define('lx-file-upload', LxFileUploadElement);

@@ -5,18 +5,18 @@ const LONG_PRESS_MS = 500;
 const LONG_PRESS_SLOP = 10;
 
 /**
- * <bx-context-menu open disabled>
+ * <lx-context-menu open disabled>
  *   <div data-slot="trigger" tabindex="0">…area…</div>
  *   <div popover="manual" role="menu" data-slot="content">…menuitems…</div>
- * </bx-context-menu>
+ * </lx-context-menu>
  *
  * Opens the menu at the pointer on right click, on a touch long press, and on Shift+F10 or the ContextMenu key
  * (at the focused element). The menu is positioned with Floating UI on a virtual point. It is a manual popover
  * because a menu opened by the press that is still going on must not be light-dismissed by its release: this element
- * dismisses it on an outside press, Escape, Tab, scroll and resize. Every change is reported with "bx-toggle".
+ * dismisses it on an outside press, Escape, Tab, scroll and resize. Every change is reported with "lx-toggle".
  */
-export class BxContextMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'open'];
+export class LxContextMenuElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'open'];
 
   #observer = null;
   #stopFloating = null;
@@ -60,8 +60,8 @@ export class BxContextMenuElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else if (name === 'open') this.#apply();
   }
 
@@ -104,7 +104,7 @@ export class BxContextMenuElement extends HTMLElement {
   }
 
   #items() {
-    return [...(this.#menu?.querySelectorAll(MENU_ITEMS) ?? [])].filter((item) => item.closest('bx-context-menu') === this);
+    return [...(this.#menu?.querySelectorAll(MENU_ITEMS) ?? [])].filter((item) => item.closest('lx-context-menu') === this);
   }
 
   #openAt(x, y) {
@@ -133,7 +133,7 @@ export class BxContextMenuElement extends HTMLElement {
 
   #owns(event) {
     const area = this.#area;
-    return !!area && area.contains(event.target) && event.target.closest?.('bx-context-menu') === this;
+    return !!area && area.contains(event.target) && event.target.closest?.('lx-context-menu') === this;
   }
 
   #onContextMenu = (event) => {
@@ -215,8 +215,8 @@ export class BxContextMenuElement extends HTMLElement {
       const active = document.activeElement;
       if (!active || active === document.body || menu.contains(active)) target?.focus({ preventScroll: true });
     }
-    this.#reporter.report('bx-toggle', { open });
+    this.#reporter.report('lx-toggle', { open });
   };
 }
 
-if (!customElements.get('bx-context-menu')) customElements.define('bx-context-menu', BxContextMenuElement);
+if (!customElements.get('lx-context-menu')) customElements.define('lx-context-menu', LxContextMenuElement);

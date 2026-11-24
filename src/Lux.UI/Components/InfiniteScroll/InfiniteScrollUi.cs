@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxInfiniteScroll"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxInfiniteScroll"/> slots.</summary>
 public sealed record InfiniteScrollUi : ISlotOverrides
 {
     public string? Root { get; init; }

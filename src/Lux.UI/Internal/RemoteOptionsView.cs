@@ -6,22 +6,22 @@ using Microsoft.AspNetCore.Components.Web;
 namespace Lux.UI.Internal;
 
 /// <summary>
-/// The scrolled area of a menu whose options come from an <see cref="BxOptionsProvider"/>: the listbox, then the states of the
-/// load (loading, no results, text too short, error with a retry button) and <see cref="BxInfiniteScroll"/>, whose sentinel watches
+/// The scrolled area of a menu whose options come from an <see cref="LxOptionsProvider"/>: the listbox, then the states of the
+/// load (loading, no results, text too short, error with a retry button) and <see cref="LxInfiniteScroll"/>, whose sentinel watches
 /// this area and asks for the next page before the end is reached. The states sit beside the listbox, not in it: a listbox
 /// may only own options and groups. One polite status carries what a screen reader should hear.
-/// Shared by <see cref="BxSelectMenu"/> and <see cref="BxInputMenu"/>, which pass their own slots and texts.
+/// Shared by <see cref="LxSelectMenu"/> and <see cref="LxInputMenu"/>, which pass their own slots and texts.
 /// </summary>
 internal static class RemoteOptionsView
 {
     /// <summary>What the browser side needs to find the area: it scrolls here, and the sentinel is watched against it.</summary>
     public static string Selector(string scrollerId) => "#" + scrollerId;
 
-    public static string Announcement(BxRemoteOptions source, BxMessages messages, CultureInfo culture, string emptyText, bool hideEmpty) => source.Status switch
+    public static string Announcement(LxRemoteOptions source, LxMessages messages, CultureInfo culture, string emptyText, bool hideEmpty) => source.Status switch
     {
-        BxRemoteStatus.Loading => messages.RemoteOptionsLoading,
-        BxRemoteStatus.TooShort => string.Format(culture, messages.RemoteOptionsMinLength, source.MinLength),
-        BxRemoteStatus.Loaded when source.Items.Count == 0 && !hideEmpty => emptyText,
+        LxRemoteStatus.Loading => messages.RemoteOptionsLoading,
+        LxRemoteStatus.TooShort => string.Format(culture, messages.RemoteOptionsMinLength, source.MinLength),
+        LxRemoteStatus.Loaded when source.Items.Count == 0 && !hideEmpty => emptyText,
         _ => "",
     };
 
@@ -29,7 +29,7 @@ internal static class RemoteOptionsView
     // themed. emptyText: the "no results" text of the menu. hideEmpty: something else is offered when nothing matches (the option that
     // creates the typed value), so "no results" would contradict it.
     public static RenderFragment Scroller(
-        BxRemoteOptions source, SlotSet slots, string scrollerId, BxMessages messages, CultureInfo culture,
+        LxRemoteOptions source, SlotSet slots, string scrollerId, LxMessages messages, CultureInfo culture,
         RenderFragment spinner, string emptyText, bool hideEmpty, IHandleEvent receiver, RenderFragment listbox) => builder =>
     {
         builder.OpenElement(0, "div");
@@ -47,7 +47,7 @@ internal static class RemoteOptionsView
         builder.AddContent(11, Announcement(source, messages, culture, emptyText, hideEmpty));
         builder.CloseElement();
 
-        if (source.Status == BxRemoteStatus.Loading && source.Items.Count == 0)
+        if (source.Status == LxRemoteStatus.Loading && source.Items.Count == 0)
         {
             builder.OpenElement(12, "div");
             builder.AddAttribute(13, "class", slots["loading"]);
@@ -60,7 +60,7 @@ internal static class RemoteOptionsView
             builder.CloseElement();
             builder.CloseElement();
         }
-        else if (source.Status == BxRemoteStatus.TooShort)
+        else if (source.Status == LxRemoteStatus.TooShort)
         {
             builder.OpenElement(19, "p");
             builder.AddAttribute(20, "class", slots["empty"]);
@@ -68,7 +68,7 @@ internal static class RemoteOptionsView
             builder.AddContent(22, string.Format(culture, messages.RemoteOptionsMinLength, source.MinLength));
             builder.CloseElement();
         }
-        else if (source.Status == BxRemoteStatus.Loaded && source.Items.Count == 0 && !hideEmpty)
+        else if (source.Status == LxRemoteStatus.Loaded && source.Items.Count == 0 && !hideEmpty)
         {
             builder.OpenElement(23, "p");
             builder.AddAttribute(24, "class", slots["empty"]);
@@ -77,7 +77,7 @@ internal static class RemoteOptionsView
             builder.CloseElement();
         }
 
-        if (source.Status == BxRemoteStatus.Error)
+        if (source.Status == LxRemoteStatus.Error)
         {
             builder.OpenElement(27, "div");
             builder.AddAttribute(28, "role", "alert");
@@ -86,9 +86,9 @@ internal static class RemoteOptionsView
             builder.OpenElement(31, "span");
             builder.AddContent(32, messages.RemoteOptionsError);
             builder.CloseElement();
-            builder.OpenComponent<BxButton>(33);
+            builder.OpenComponent<LxButton>(33);
             builder.AddAttribute(34, "Variant", ButtonVariant.Outline);
-            builder.AddAttribute(35, "Size", BxSize.Xs);
+            builder.AddAttribute(35, "Size", LxSize.Xs);
             builder.AddAttribute(36, "Label", messages.RemoteOptionsRetry);
             builder.AddAttribute(37, "OnClick", EventCallback.Factory.Create<MouseEventArgs>(receiver, () => source.RetryAsync()));
             builder.AddAttribute(38, "data-slot", "retry");
@@ -96,11 +96,11 @@ internal static class RemoteOptionsView
             builder.CloseElement();
         }
 
-        if (source.Items.Count > 0 && source.Status is BxRemoteStatus.Loaded or BxRemoteStatus.LoadingMore)
+        if (source.Items.Count > 0 && source.Status is LxRemoteStatus.Loaded or LxRemoteStatus.LoadingMore)
         {
-            builder.OpenComponent<BxInfiniteScroll>(39);
+            builder.OpenComponent<LxInfiniteScroll>(39);
             builder.AddAttribute(40, "HasMore", source.HasMore);
-            builder.AddAttribute(41, "Loading", source.Status == BxRemoteStatus.LoadingMore);
+            builder.AddAttribute(41, "Loading", source.Status == LxRemoteStatus.LoadingMore);
             builder.AddAttribute(42, "OnLoadMore", EventCallback.Factory.Create(receiver, () => source.LoadMoreAsync()));
             builder.AddAttribute(43, "Root", Selector(scrollerId));
             // Starts the next page one list height before the end.

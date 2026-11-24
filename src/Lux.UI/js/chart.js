@@ -1,12 +1,12 @@
 /**
- * <bx-chart>
+ * <lx-chart>
  *   <div data-slot="plot" tabindex="0">
  *     <svg>… <g data-hit data-index="0">…</g> …</svg>
  *     <div data-slot="tooltip" aria-hidden="true"></div>
  *     <div role="status" data-slot="status"></div>
  *     <div hidden data-slot="tips"><div data-tip="0" data-text="January: Desktop 186">…</div>…</div>
  *   </div>
- * </bx-chart>
+ * </lx-chart>
  *
  * The server draws the whole chart; this element only shows a tooltip. Hovering a hit area (or a donut slice) shows the
  * hidden tip of its row next to the pointer; with the chart focused, the arrow keys, Home and End move between rows and
@@ -15,7 +15,7 @@
  * The tooltip is filled by cloning the tip into an element the server renders empty, and the active row is only marked
  * with an attribute the server does not render (data-active), so a render never fights it.
  */
-export class BxChartElement extends HTMLElement {
+export class LxChartElement extends HTMLElement {
   #active = null;
   #shown = null;
 
@@ -152,4 +152,4 @@ export class BxChartElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-chart')) customElements.define('bx-chart', BxChartElement);
+if (!customElements.get('lx-chart')) customElements.define('lx-chart', LxChartElement);

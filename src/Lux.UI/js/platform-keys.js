@@ -1,7 +1,7 @@
 import { observeChildren } from './shared.js';
 
 /**
- * <bx-mod-keys><kbd data-bx-mod data-label="Ctrl"></kbd><kbd>K</kbd></bx-mod-keys>: the hint of the "mod" key of a
+ * <lx-mod-keys><kbd data-lx-mod data-label="Ctrl"></kbd><kbd>K</kbd></lx-mod-keys>: the hint of the "mod" key of a
  * shortcut. Blazor renders the kbd empty with a label in an attribute, shown with before:content-[attr(data-label)]; this
  * element sets the label of the platform ("⌘" on Apple devices, which is what mod+k means there, "Ctrl" elsewhere) on the
  * kbd it hosts. Elsewhere the label Blazor rendered (the localized "Ctrl") stays. Only an attribute is touched, never a text node, so a render of Blazor cannot fight it. Each element
@@ -11,7 +11,7 @@ import { observeChildren } from './shared.js';
 const APPLE = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 const APPLE_LABEL = '⌘';
 
-export class BxModKeysElement extends HTMLElement {
+export class LxModKeysElement extends HTMLElement {
   #children = null;
 
   connectedCallback() {
@@ -25,10 +25,10 @@ export class BxModKeysElement extends HTMLElement {
 
   refresh() {
     if (!APPLE) return;
-    for (const kbd of this.querySelectorAll('kbd[data-bx-mod]')) {
+    for (const kbd of this.querySelectorAll('kbd[data-lx-mod]')) {
       if (kbd.getAttribute('data-label') !== APPLE_LABEL) kbd.setAttribute('data-label', APPLE_LABEL);
     }
   }
 }
 
-if (!customElements.get('bx-mod-keys')) customElements.define('bx-mod-keys', BxModKeysElement);
+if (!customElements.get('lx-mod-keys')) customElements.define('lx-mod-keys', LxModKeysElement);

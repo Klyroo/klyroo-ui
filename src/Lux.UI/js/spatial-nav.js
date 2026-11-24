@@ -4,25 +4,25 @@ import { editKind, wantsKeyboard, enterLeaves, stepOf, caretAfter } from './tv-e
 
 /**
  * Remote control (D-pad) navigation for TV screens. Experimental and opt in: it runs only while <html> carries
- * data-bx-tv, which <BxApp SpatialNavigation="true">, the <bx-spatial> element or Blux.setSpatialNavigation(true) set.
+ * data-lx-tv, which <LxApp SpatialNavigation="true">, the <lx-spatial> element or Lux.setSpatialNavigation(true) set.
  *
  * - The arrow keys move focus to the nearest focusable element in that direction (see spatial-core.js). Widgets that
  *   already use the arrows (open menus, tabs, listboxes, sliders) call preventDefault, so their own navigation wins.
  *   A field never keeps the arrows by itself: a forwarded key has no default action, so a text field, a textarea, a
- *   select or a number would trap the focus. Select/Enter puts a field in editing mode (data-bx-editing): text
- *   fields get the caret (and the soft keyboard, see Blux.tvTextEditing), number, range and native selects take the
+ *   select or a number would trap the focus. Select/Enter puts a field in editing mode (data-lx-editing): text
+ *   fields get the caret (and the soft keyboard, see Lux.tvTextEditing), number, range and native selects take the
  *   arrows as value changes. Back, or Enter in a single line field, leaves it.
  * - Inside the topmost modal dialog, or an open popover holding the focus, focus stays in it.
  * - A web view on Android TV may not receive the D-pad as key events: the app forwards them from the Activity with
- *   Blux.tvKey('ArrowLeft'), which dispatches a synthetic keydown. Synthetic Enter clicks the focused element and
+ *   Lux.tvKey('ArrowLeft'), which dispatches a synthetic keydown. Synthetic Enter clicks the focused element and
  *   synthetic Escape (the Back button) leaves editing mode or closes the topmost overlay, because untrusted events
  *   have no default action.
- * - Blux.tvBack() leaves editing mode, else closes the topmost overlay (the one opened last; a modal that is not
+ * - Lux.tvBack() leaves editing mode, else closes the topmost overlay (the one opened last; a modal that is not
  *   dismissible swallows Back), else goes back in the history. It returns false when there is nothing left, so the
  *   app can leave the screen.
  */
-const ATTRIBUTE = 'data-bx-tv';
-const EDITING = 'data-bx-editing';
+const ATTRIBUTE = 'data-lx-tv';
+const EDITING = 'data-lx-editing';
 const FOCUSABLE_TV =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), ' +
   '[tabindex]:not([tabindex="-1"]), summary, [contenteditable="true"]';
@@ -170,15 +170,15 @@ function placeCaretAtEnd(element) {
 }
 
 /**
- * Tells the host app that a field entered or left editing mode: a "bx-tv-edit" event on the document (detail.editing,
- * detail.keyboard) and the optional Blux.onEditField(editing, keyboard) callback. The Android TV sample uses it to show
+ * Tells the host app that a field entered or left editing mode: a "lx-tv-edit" event on the document (detail.editing,
+ * detail.keyboard) and the optional Lux.onEditField(editing, keyboard) callback. The Android TV sample uses it to show
  * and hide the soft keyboard, which a script focus alone may not open.
  */
 function announce(on, element = editing) {
   const keyboard = on && element ? wantsKeyboard(kindOf(element), element.type) : false;
-  document.dispatchEvent(new CustomEvent('bx-tv-edit', { detail: { editing: on, keyboard, element } }));
+  document.dispatchEvent(new CustomEvent('lx-tv-edit', { detail: { editing: on, keyboard, element } }));
   try {
-    globalThis.Blux?.onEditField?.(on, keyboard);
+    globalThis.Lux?.onEditField?.(on, keyboard);
   } catch {
     // An app callback must not break navigation.
   }
@@ -216,7 +216,7 @@ function move(direction, target) {
 
 /** A visible tooltip goes through its own hide path (it keeps its state), as a side effect of Back. */
 function hideTooltips() {
-  for (const tooltip of document.querySelectorAll('bx-tooltip[data-state="open"]')) tooltip.hide?.();
+  for (const tooltip of document.querySelectorAll('lx-tooltip[data-state="open"]')) tooltip.hide?.();
 }
 
 /**
@@ -229,7 +229,7 @@ function closeOverlay() {
   if (!top) return null;
   const element = top.element;
   if (element instanceof HTMLDialogElement) {
-    // The "cancel" a close request (Escape) raises: <bx-modal> cancels it unless it is dismissible.
+    // The "cancel" a close request (Escape) raises: <lx-modal> cancels it unless it is dismissible.
     const request = new Event('cancel', { cancelable: true });
     element.dispatchEvent(request);
     if (request.defaultPrevented) return 'blocked';
@@ -394,9 +394,9 @@ export function tvBack() {
 }
 
 /**
- * <bx-spatial></bx-spatial>: rendered by <BxApp SpatialNavigation="true">. Turns TV mode on while it is in the page.
+ * <lx-spatial></lx-spatial>: rendered by <LxApp SpatialNavigation="true">. Turns TV mode on while it is in the page.
  */
-export class BxSpatialElement extends HTMLElement {
+export class LxSpatialElement extends HTMLElement {
   connectedCallback() {
     owners++;
     setSpatialNavigation(true);
@@ -411,7 +411,7 @@ export class BxSpatialElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('bx-spatial')) customElements.define('bx-spatial', BxSpatialElement);
+if (!customElements.get('lx-spatial')) customElements.define('lx-spatial', LxSpatialElement);
 
-// A page that ships <html data-bx-tv> (a TV app's index.html) is in TV mode from the start.
+// A page that ships <html data-lx-tv> (a TV app's index.html) is in TV mode from the start.
 if (isSpatialNavigationOn()) start();

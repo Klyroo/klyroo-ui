@@ -6,5 +6,5 @@ public sealed partial class LuxOptions
     /// How images are resized and delivered: providers, breakpoints, densities, allowed remote hosts and presets,
     /// global image provider and preset configuration. Read-only once an image was resolved.
     /// </summary>
-    public BxImageSettings Images { get; } = new();
+    public LxImageSettings Images { get; } = new();
 }

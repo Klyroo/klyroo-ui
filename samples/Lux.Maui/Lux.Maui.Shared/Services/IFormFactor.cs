@@ -8,6 +8,6 @@ public interface IFormFactor
 
     string GetPlatform();
 
-    /// <summary>True on a TV screen: the shared layout turns on the remote control mode of Blux.</summary>
+    /// <summary>True on a TV screen: the shared layout turns on the remote control mode of Lux.</summary>
     bool IsTv => GetFormFactor() == "TV";
 }

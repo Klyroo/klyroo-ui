@@ -55,9 +55,9 @@ else
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-// Reads the query string, the culture cookie that BxLocaleSelect writes and Accept-Language. Blux components follow the UI culture
+// Reads the query string, the culture cookie that LxLocaleSelect writes and Accept-Language. Lux components follow the UI culture
 // on their own: the supported UI cultures are the codes of the built-in locales.
-var cultures = BxLocales.All.Select(locale => locale.Code).ToArray();
+var cultures = LxLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(cultures)

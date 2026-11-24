@@ -7,25 +7,25 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 ## Rules that are not negotiable
 
 1. **Every render mode.** Each component works in Interactive Server, WebAssembly, Auto and static server rendering.
-   What can only work with interactivity must say so in its XML docs and degrade honestly (a `BxButton` with
+   What can only work with interactivity must say so in its XML docs and degrade honestly (a `LxButton` with
    `OnClick` renders disabled until the page is interactive).
 2. **UI state lives in the browser.** Opening, closing, focus, keyboard navigation, highlighting and selection run in
    a custom element (`src/Lux.UI/js/<name>.js`). .NET only hears about state that is bound
    (`ValueChanged.HasDelegate` / `OpenChanged.HasDelegate`); unbound, no handler is attached at all.
-3. **The JS/.NET protocol.** A custom element reports changes with `bx-toggle` (`open`) or `bx-change` (`value`),
+3. **The JS/.NET protocol.** A custom element reports changes with `lx-toggle` (`open`) or `lx-change` (`value`),
    through `Reporter` from `js/shared.js`, which adds a sequence number. The component:
-   - renders `data-bx-seq="@(Bound ? _sequence : null)"` as the **first** attribute of the custom element;
+   - renders `data-lx-seq="@(Bound ? _sequence : null)"` as the **first** attribute of the custom element;
    - stores `e.Sequence` in its handler before anything else;
    - adds `@onbx...:stopPropagation="true"` so nested components don't trigger each other;
-   - puts `[DynamicDependency(PublicConstructors | PublicProperties, typeof(BxChangeEventArgs))]` (or the toggle args)
+   - puts `[DynamicDependency(PublicConstructors | PublicProperties, typeof(LxChangeEventArgs))]` (or the toggle args)
      on the handler, or trimming removes the event args.
-   The element observes `data-bx-seq` and its state attribute, ignores renders older than its last report
-   (`reporter.isStale()`), and re-applies the rendered state in a `queueMicrotask` when `data-bx-seq` changes.
-   Reuse `bx-change` / `bx-toggle`; a new event type needs registering in `js/index.js` and `EventHandlers.cs`.
+   The element observes `data-lx-seq` and its state attribute, ignores renders older than its last report
+   (`reporter.isStale()`), and re-applies the rendered state in a `queueMicrotask` when `data-lx-seq` changes.
+   Reuse `lx-change` / `lx-toggle`; a new event type needs registering in `js/index.js` and `EventHandlers.cs`.
    Read the rendered value with `reporter.take(attr)`: it returns it only when the attribute changed or a bound render
    arrived, so an **unbound** element never undoes the user when Blazor re-renders or children change.
    Give the element a `refresh()` that calls `reporter.adopt()` and re-applies what an enhanced-navigation merge resets
-   (attributes it set, tabindex, hidden inputs); every `bx-*` element with `refresh()` is called after `enhancedload`.
+   (attributes it set, tabindex, hidden inputs); every `lx-*` element with `refresh()` is called after `enhancedload`.
 4. **Never fight Blazor over the DOM.** The element may set attributes Blazor does not render, and may change
    attributes Blazor rendered only when Blazor would render the same value afterwards (bound) or never re-render them
    (unbound). It never replaces text nodes or elements Blazor rendered: put a label in an attribute and show it with
@@ -34,15 +34,15 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 5. **Accessibility.** Follow the WAI-ARIA Authoring Practices pattern of the component; native elements first
    (`<dialog>`, `popover`, `<input>`, `<details>` only for disclosure). Text at least 4.5:1, control boundaries and
    state indicators at least 3:1, in light and dark. Every page must pass axe.
-6. **Theme through tokens only.** Colors come from `--blux-*` tokens and the `data-color` variables
-   (`--bx-color`, `--bx-color-text`, `--bx-color-contrast`); no Tailwind palette colors in themes. Focus outlines use
-   `outline-(--bx-color-text)` or `outline-(--blux-primary-text)`. Sizes are `BxSize` (xs to xl) where they apply. A color token added to `blux.base.css` also goes into the default
-   tables of `Theming/BxThemeTokens.cs` (a test compares them), and a solid fill must keep 4.5:1 for its `-contrast` text at
+6. **Theme through tokens only.** Colors come from `--lux-*` tokens and the `data-color` variables
+   (`--lx-color`, `--lx-color-text`, `--lx-color-contrast`); no Tailwind palette colors in themes. Focus outlines use
+   `outline-(--lx-color-text)` or `outline-(--lux-primary-text)`. Sizes are `LxSize` (xs to xl) where they apply. A color token added to `lux.base.css` also goes into the default
+   tables of `Theming/LxThemeTokens.cs` (a test compares them), and a solid fill must keep 4.5:1 for its `-contrast` text at
    the `/90` and `/80` hover and pressed states.
 7. **Static ids and loops.** Ids come from `NewId(...)`. In a Razor `for` loop, copy the index into a local before any
    child component content or lambda uses it.
 8. **No text in components.** Every text a person reads or hears (labels, placeholders, announcements, units, key names) is a
-   `BxMessages` property read as `Messages.X` (and `CurrentLocale` for the culture), never a literal. Browser code gets texts through
+   `LxMessages` property read as `Messages.X` (and `CurrentLocale` for the culture), never a literal. Browser code gets texts through
    `data-*` attributes rendered by .NET; a JS default is a last resort. Date and number formatting defaults to
    `CurrentLocale.Culture`, an explicit `Culture` parameter wins. Use logical utilities (`ms-`, `pe-`, `start-`, `rounded-s`) and give
    arrows and chevrons an `rtl:` variant. The tests fail when a locale lacks a message or changes its placeholders.
@@ -52,20 +52,20 @@ Read `PLAN.md` for the design decisions; this file is the checklist.
 
 | What | Where |
 |---|---|
-| Component | `src/Lux.UI/Components/<Name>/Bx<Name>.razor` (+ `.razor.cs`), item records next to it |
+| Component | `src/Lux.UI/Components/<Name>/Lx<Name>.razor` (+ `.razor.cs`), item records next to it |
 | Slot overrides | `<Name>Ui` record implementing `ISlotOverrides`, in the component folder |
 | Theme | `src/Lux.UI/Theming/Themes.<Family>.cs`: `internal static partial class Themes` |
 | Options | `src/Lux.UI/Theming/LuxOptions.<Family>.cs`: `public sealed partial class LuxOptions` (theme properties) |
-| Texts | `src/Lux.UI/Localization/Messages/BxMessages.<Family>.cs`: `public sealed partial record BxMessages` (init-only strings, English defaults) |
+| Texts | `src/Lux.UI/Localization/Messages/LxMessages.<Family>.cs`: `public sealed partial record LxMessages` (init-only strings, English defaults) |
 | Translations | one file per language in `src/Lux.UI/Localization/Locales/<Code>.cs`: add every new message to all twelve |
 | Browser behavior | `src/Lux.UI/js/<name>.js`, imported in `js/index.js`; use `js/shared.js` helpers |
-| Docs examples | `playground/Blux.Playground/Blux.Playground.Client/Examples/<Name><What>Example.razor` (unique names) |
+| Docs examples | `playground/Lux.Playground/Lux.Playground.Client/Examples/<Name><What>Example.razor` (unique names) |
 | Docs catalog | `Docs/Catalog.<Family>.cs`: `public static partial class Catalog { private static readonly ComponentDoc[] <Family> = [...]; }`, then add `.. <Family>` to `Components` in `Catalog.cs` |
-| Unit tests | `tests/Lux.UI.Tests/<Family>Tests.cs`, deriving from `BluxTestContext` |
+| Unit tests | `tests/Lux.UI.Tests/<Family>Tests.cs`, deriving from `LuxTestContext` |
 | E2E tests | `tests/Lux.UI.E2E/<Family>Tests.cs`: an axe theory over the family's slugs in all four modes, plus behavior tests, **bound and unbound**, and after an enhanced navigation for elements that set attributes |
 
-Form controls derive from `BxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
-uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-popover>` / `<bx-modal>` patterns.
+Form controls derive from `LxFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
+uses `EditBridge` and a hidden input, like `LxSelect`. Overlays build on `<lx-popover>` / `<lx-modal>` patterns.
 
 ## Adding a component to Lux.UI.Tools
 
@@ -73,29 +73,29 @@ uses `EditBridge` and a hidden input, like `BxSelect`. Overlays build on `<bx-po
 
 | What | Where |
 |---|---|
-| Component | `src/Lux.UI.Tools/Components/<Family>/Bx<Name>.razor`, deriving from `BxToolsComponentBase` (it adds `ToolsOptions` and `ToolsMessages` to `BxComponentBase`) |
-| Theme | `Theming/Themes.<Family>.cs` (`internal static partial class ToolsThemes`) and a `ComponentTheme` property in `Theming/BluxToolsOptions.<Family>.cs`. The docs bundle finds the theme a component uses by the `ToolsOptions.<Property>` access in its source, so the property need not be named after the component. |
-| Resolving a theme | `ResolveSlots(ToolsOptions.<Name>, variants, Ui, "root")`: the same call as a core component, so `Class`, `Ui`, `BxTheme` scopes and the freeze of themes behave the same |
-| Texts | `Localization/BxToolsMessages.<Family>.cs`, and the value in each of the twelve `Localization/Locales/<Code>.cs` files (the codes are those of `BxLocales.All`; a test fails when one is missing or a placeholder changes). English and French are reviewed; the other ten are drafts, marked with a comment and absent from `BxToolsLocales.ReviewedCodes`, until a native speaker reviews them. |
+| Component | `src/Lux.UI.Tools/Components/<Family>/Lx<Name>.razor`, deriving from `LxToolsComponentBase` (it adds `ToolsOptions` and `ToolsMessages` to `LxComponentBase`) |
+| Theme | `Theming/Themes.<Family>.cs` (`internal static partial class ToolsThemes`) and a `ComponentTheme` property in `Theming/LuxToolsOptions.<Family>.cs`. The docs bundle finds the theme a component uses by the `ToolsOptions.<Property>` access in its source, so the property need not be named after the component. |
+| Resolving a theme | `ResolveSlots(ToolsOptions.<Name>, variants, Ui, "root")`: the same call as a core component, so `Class`, `Ui`, `LxTheme` scopes and the freeze of themes behave the same |
+| Texts | `Localization/LxToolsMessages.<Family>.cs`, and the value in each of the twelve `Localization/Locales/<Code>.cs` files (the codes are those of `LxLocales.All`; a test fails when one is missing or a placeholder changes). English and French are reviewed; the other ten are drafts, marked with a comment and absent from `LxToolsLocales.ReviewedCodes`, until a native speaker reviews them. |
 | Icons | add the Lucide name to `build/tools-icons.json`; `npm run icons` writes `Icons/ToolsIcons.g.cs`, registered through `LuxIconBundle` (an icon Lux.UI already has needs no entry) |
-| Browser behavior | `js/index.js` (the second JS initializer, bundled to `wwwroot/Lux.UI.Tools.lib.module.js`). Report through the `bx-change` and `bx-toggle` events of Lux.UI; register no event type of your own. Helpers of `src/Lux.UI/js/shared.js` can be imported by relative path. |
-| CSS | `npm run build` extracts the classes of the Tools themes (`classes:tools`) into `styles/generated/classes.txt` and `wwwroot/blux-tools.theme.css` (one `@source inline(...)`). Both are committed. There is no precompiled `blux-tools.css`: see below. |
+| Browser behavior | `js/index.js` (the second JS initializer, bundled to `wwwroot/Lux.UI.Tools.lib.module.js`). Report through the `lx-change` and `lx-toggle` events of Lux.UI; register no event type of your own. Helpers of `src/Lux.UI/js/shared.js` can be imported by relative path. |
+| CSS | `npm run build` extracts the classes of the Tools themes (`classes:tools`) into `styles/generated/classes.txt` and `wwwroot/lux-tools.theme.css` (one `@source inline(...)`). Both are committed. There is no precompiled `lux-tools.css`: see below. |
 | Docs | `Docs/Catalog.DataList.cs` (or a new `Catalog.<Family>.cs`), examples as usual. The bundle gives the component a `Package` of `Lux.UI.Tools`, and the tools, `llms.txt` and the skill reference say `dotnet add package Lux.UI.Tools`. |
-| Tests | `tests/Lux.UI.Tools.Tests` (bUnit, deriving from `BluxToolsTestContext`), and E2E in `tests/Lux.UI.E2E` as for core |
+| Tests | `tests/Lux.UI.Tools.Tests` (bUnit, deriving from `LuxToolsTestContext`), and E2E in `tests/Lux.UI.E2E` as for core |
 
-`BxDataListEmpty` is the smallest example of all of this. Two rules for every sister package:
+`LxDataListEmpty` is the smallest example of all of this. Two rules for every sister package:
 
 - **Tailwind only.** A sister package ships no precompiled stylesheet. A second sheet loaded after `lux.css` repeats base utilities (`flex-col`, `px-6`...) in its own
   `@layer utilities`, so later rules beat the `lg:` and `dark:` variants of `lux.css`, and no load order is safe. The package ships `wwwroot/<package>.theme.css` (only an `@source inline(...)`),
-  copied to `obj/blux/` by its `buildTransitive` targets, which set `BluxToolsPresent`-style property (`Blux<Name>Present`) so the Tailwind entry generated by `LuxTailwind=true`
-  imports it (see `Lux.UI.Tailwind.targets`), and which warn (`BLUX<NAME>001`) when neither `LuxTailwind` nor the package's `Blux<Name>OwnTailwind` is set.
-- **Version lockstep.** Import `build/ExactProjectReferences.targets` in the csproj: the nuspec then depends on `[x.y.z]` of Lux.UI and of the other Blux packages, not on a minimum.
+  copied to `obj/lux/` by its `buildTransitive` targets, which set `LuxToolsPresent`-style property (`Lux<Name>Present`) so the Tailwind entry generated by `LuxTailwind=true`
+  imports it (see `Lux.UI.Tailwind.targets`), and which warn (`LUX<NAME>001`) when neither `LuxTailwind` nor the package's `Lux<Name>OwnTailwind` is set.
+- **Version lockstep.** Import `build/ExactProjectReferences.targets` in the csproj: the nuspec then depends on `[x.y.z]` of Lux.UI and of the other Lux packages, not on a minimum.
   Give the `Lux.UI` reference `PrivateAssets="contentfiles;analyzers"` so its build assets still flow to the app. `build/verify-package.mjs` checks both.
 
 ## Documentation site
 
 The documentation site lives in `playground/`. Run it with
-`ASPNETCORE_ENVIRONMENT=Development dotnet run --project playground/Blux.Playground/Blux.Playground`, then open `/`.
+`ASPNETCORE_ENVIRONMENT=Development dotnet run --project playground/Lux.Playground/Lux.Playground`, then open `/`.
 Component pages are at `/components/{name}` (Auto mode) and `/{ssr|server|wasm|auto}/components/{name}`.
 The site compiles its own Tailwind (`npm run site:css`), so it exercises the "Tailwind in the app" mode.
 Generated files (`src/Lux.UI/wwwroot`, `src/Lux.UI/styles/generated`, the same two folders of `src/Lux.UI.Tools`, `src/Lux.UI.Tools/Icons`, the site's `wwwroot/site.css`) are committed;
@@ -103,10 +103,10 @@ CI fails if `npm run build` changes them.
 
 ## Images
 
-`BxImage` and the provider abstraction (`IBxImageProvider`, `BxImageSettings`, in `src/Lux.UI/Images`) live in the library. Components that show a
-picture render a `BxImage` and expose `ImageOptions`; never write an `img` by hand. `src/Lux.UI.Images` holds the CDN providers
+`LxImage` and the provider abstraction (`ILxImageProvider`, `LxImageSettings`, in `src/Lux.UI/Images`) live in the library. Components that show a
+picture render a `LxImage` and expose `ImageOptions`; never write an `img` by hand. `src/Lux.UI.Images` holds the CDN providers
 (read the vendor's documentation, cite its page in the XML comment, and test against the examples of that page) and `src/Lux.UI.Images.Local` the
-endpoint, whose limits are part of its security: a new parameter must be clamped, snapped or rejected in `BxImageRequestParser` with a test. Both
+endpoint, whose limits are part of its security: a new parameter must be clamped, snapped or rejected in `LxImageRequestParser` with a test. Both
 packages share the version of `build/Version.props` and are packed by CI and the release workflow.
 
 ## AI tooling
@@ -120,10 +120,10 @@ guide pages. Nothing generated is committed, except the skill's component refere
 - After changing components or the catalog, refresh `skills/lux-ui/references/components.md` with
   `dotnet run --project build/Lux.UI.DocsBundle -- --skill-reference`; a test fails while it is stale.
 - Every Razor sample in `skills/lux-ui` is checked against the library by `tests/Lux.UI.Mcp.Tests`, so a renamed parameter shows up there.
-- The docs site serves `/mcp`, `/llms.txt` and `/llms-full.txt` (`playground/.../AiEndpoints.cs`). In production set `Blux:SiteUrl` (env `Blux__SiteUrl`)
+- The docs site serves `/mcp`, `/llms.txt` and `/llms-full.txt` (`playground/.../AiEndpoints.cs`). In production set `Lux:SiteUrl` (env `Lux__SiteUrl`)
   to the public address: the links then never come from the request's `Host` header and the text is generated once. Behind a TLS proxy the
-  forwarded headers (`X-Forwarded-Proto/Host/For`) are honoured from loopback and from the IPs in `Blux:KnownProxies`. `/mcp` is limited per client IP
-  (`Blux:Ai:RequestsPerMinute`, default 120) and times out after `Blux:Ai:RequestTimeoutSeconds` (default 30). Input to the search is capped
+  forwarded headers (`X-Forwarded-Proto/Host/For`) are honoured from loopback and from the IPs in `Lux:KnownProxies`. `/mcp` is limited per client IP
+  (`Lux:Ai:RequestsPerMinute`, default 120) and times out after `Lux:Ai:RequestTimeoutSeconds` (default 30). Input to the search is capped
   (`DocsService.MaxQueryLength`, `MaxQueryTokens`) so a long query cannot cost more CPU than a short one.
 - Document parameters with XML comments: they are the descriptions the tools return.
 
@@ -157,11 +157,11 @@ live in each project file, like the output of `dotnet new`, and it refers to the
 
 ### Live demos in the docs deployment
 
-The docs host runs every available template as a child process and proxies `/templates/<name>/demo/` to it (`playground/Blux.Playground/Blux.Playground/Templates/`).
+The docs host runs every available template as a child process and proxies `/templates/<name>/demo/` to it (`playground/Lux.Playground/Lux.Playground/Templates/`).
 A template is expected to honour the `PathBase` setting and to write `<base href="{PathBase}/">` in its pages: the host uses that line to tell its demo from
 another program on the port.
 
-Settings, under `Blux:Templates` (environment variables `Blux__Templates__...`):
+Settings, under `Lux:Templates` (environment variables `Lux__Templates__...`):
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
@@ -172,25 +172,25 @@ Settings, under `Blux:Templates` (environment variables `Blux__Templates__...`):
 | `LivenessIntervalSeconds` | `30` | A running demo is asked for its home page this often; two answers in a row that are not the demo's restart it. |
 | `MemoryLimitMegabytes` | `512` | Managed heap limit of each demo (`DOTNET_GCHeapHardLimit`; `0` for none). `DOTNET_GCConserveMemory=5` is always set. |
 | `RepositoryBase` | none | Where the "Source" buttons point (`https://github.com/<org>`); unset, the gallery says the repositories are not published. |
-| `Demos:<name>:...` | none | Settings of one demo, with the keys its app reads: `Demos:changelog:Changelog:Repository` (environment variable `Blux__Templates__Demos__changelog__Changelog__Repository`). They reach the demo as environment variables (`Changelog__Repository`), not on its command line, and never replace what the host decides (environment name, memory limit, watchdog). The `appsettings.json` of the docs host sets the Changelog demo to `Source=GitHub`, `Repository=dotnet/aspnetcore` (a public repository with many releases, until lux-ui has its own); `appsettings.Development.json` and the E2E fixture (`PlaygroundServer`) set `Source=File` with the sample releases, so the tests need no network. A token for a busier demo is `Blux__Templates__Demos__changelog__Changelog__GitHubToken`. |
+| `Demos:<name>:...` | none | Settings of one demo, with the keys its app reads: `Demos:changelog:Changelog:Repository` (environment variable `Lux__Templates__Demos__changelog__Changelog__Repository`). They reach the demo as environment variables (`Changelog__Repository`), not on its command line, and never replace what the host decides (environment name, memory limit, watchdog). The `appsettings.json` of the docs host sets the Changelog demo to `Source=GitHub`, `Repository=dotnet/aspnetcore` (a public repository with many releases, until lux-ui has its own); `appsettings.Development.json` and the E2E fixture (`PlaygroundServer`) set `Source=File` with the sample releases, so the tests need no network. A token for a busier demo is `Lux__Templates__Demos__changelog__Changelog__GitHubToken`. |
 
 What the host guarantees, whatever supervises it:
 
-- A demo gets a minimal environment (`PATH`, `HOME`, locale, time zone, `DOTNET_*`), not the host's: `Kestrel__*`, `Blux__*` and secrets never reach it.
+- A demo gets a minimal environment (`PATH`, `HOME`, locale, time zone, `DOTNET_*`), not the host's: `Kestrel__*`, `Lux__*` and secrets never reach it.
 - When the host stops normally, crashes or gets SIGTERM, it kills the demos' process trees. When it is killed outright (SIGKILL, the out of memory killer), each
-  demo ends by itself within seconds: the host injects a startup hook (`Blux.Playground.DemoWatchdog`, via `DOTNET_STARTUP_HOOKS`) that exits the demo when
+  demo ends by itself within seconds: the host injects a startup hook (`Lux.Playground.DemoWatchdog`, via `DOTNET_STARTUP_HOOKS`) that exits the demo when
   the pipe on its standard input closes, with a check of the host's process id as a fallback. The demos need no code for this.
 - In a container, run the host under an init process (`docker run --init`, or `tini` as the entry point): .NET as PID 1 only reaps its own children, and an
   init also forwards SIGTERM. Under systemd keep `KillMode=control-group` (the default) so a stop reaches the demos too.
-- `GET /_blux/health` is the health check of the site (the host is up). `GET /_blux/templates/status` and `/_blux/templates/ready` are for the operator and
+- `GET /_lux/health` is the health check of the site (the host is up). `GET /_lux/templates/status` and `/_lux/templates/ready` are for the operator and
   the E2E fixture: they answer loopback clients only (404 behind a proxy), and `ready` is 200 once every demo that can be started answers; a demo that is
   not built or published is `unavailable` and does not hold it back. Do not use them as the health check: a restarting demo must not take the site out.
 - While a demo restarts, its address answers 503 with a small page that reloads itself; a demo's own 404 is never replaced by the docs' page.
 
 Tests of the shared content code and of the copies: `tests/Lux.Templates.Tests`.
 
-Tests: `tests/Blux.Playground.Tests` (supervisor, proxy, environment and watchdog with a fake demo, `tests/Lux.UI.FakeDemo`), `TemplatesTests`,
-`TemplatesPathBaseTests` and `TemplateWatchdogTests` in the E2E project. Set `BLUX_TEMPLATES_PUBLISHED` to a publish root to run the demos published.
+Tests: `tests/Lux.Playground.Tests` (supervisor, proxy, environment and watchdog with a fake demo, `tests/Lux.UI.FakeDemo`), `TemplatesTests`,
+`TemplatesPathBaseTests` and `TemplateWatchdogTests` in the E2E project. Set `LUX_TEMPLATES_PUBLISHED` to a publish root to run the demos published.
 In CI (`CI` set) a run whose demos cannot start fails instead of skipping.
 
 ## Commands

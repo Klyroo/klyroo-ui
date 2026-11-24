@@ -1,18 +1,18 @@
 import { Reporter, observeChildren } from './shared.js';
 
 /**
- * <bx-splitter orientation="horizontal" sizes="30,70" step="5">
- *   <div data-bx-panel data-min="0" data-max="100">…</div>
+ * <lx-splitter orientation="horizontal" sizes="30,70" step="5">
+ *   <div data-lx-panel data-min="0" data-max="100">…</div>
  *   <div role="separator" tabindex="0" aria-valuenow="30" …></div>
- *   <div data-bx-panel>…</div>
- * </bx-splitter>
+ *   <div data-lx-panel>…</div>
+ * </lx-splitter>
  *
  * WAI-ARIA window splitter. aria-valuenow of a separator is the size, in percent, of the panel before it.
  * Arrow keys (left/right for side by side panels, up/down for stacked ones), Home and End resize; so does dragging.
- * The new sizes are reported with "bx-change" (value: sizes joined by commas) when a gesture ends.
+ * The new sizes are reported with "lx-change" (value: sizes joined by commas) when a gesture ends.
  */
-export class BxSplitterElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'sizes'];
+export class LxSplitterElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'sizes'];
 
   #sizes = [];
   #observer = null;
@@ -43,8 +43,8 @@ export class BxSplitterElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -55,7 +55,7 @@ export class BxSplitterElement extends HTMLElement {
   }
 
   #panels() {
-    return [...this.querySelectorAll(':scope > [data-bx-panel]')];
+    return [...this.querySelectorAll(':scope > [data-lx-panel]')];
   }
 
   #handles() {
@@ -109,7 +109,7 @@ export class BxSplitterElement extends HTMLElement {
   }
 
   #report() {
-    this.#reporter.report('bx-change', { value: this.#sizes.map((s) => +s.toFixed(2)).join(',') });
+    this.#reporter.report('lx-change', { value: this.#sizes.map((s) => +s.toFixed(2)).join(',') });
   }
 
   #onKeyDown = (event) => {
@@ -166,4 +166,4 @@ function horizontalPos(event, drag) {
   return drag.horizontal ? event.clientX : event.clientY;
 }
 
-if (!customElements.get('bx-splitter')) customElements.define('bx-splitter', BxSplitterElement);
+if (!customElements.get('lx-splitter')) customElements.define('lx-splitter', LxSplitterElement);

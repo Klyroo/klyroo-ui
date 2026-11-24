@@ -12,30 +12,30 @@
 
 @* The conversation: the navbar with its title, the messages (or the greeting of a new conversation) and the prompt. The address says which conversation is open: / is a new
    one, /c/{id} one from the list. Leaving a conversation while an answer arrives stops the answer and keeps what arrived. *@
-<BxDashboardPanel data-testid="conversation-panel">
+<LxDashboardPanel data-testid="conversation-panel">
     <ChildContent>
-        <BxDashboardNavbar Title="@Title">
+        <LxDashboardNavbar Title="@Title">
             <Leading>
-                <BxDashboardSidebarCollapse />
+                <LxDashboardSidebarCollapse />
             </Leading>
             <Right>
                 @if (_conversation is not null && Conversations.Items.Contains(_conversation))
                 {
-                    <BxDropdownMenu Items="_menu" OnSelect="OnMenu" Placement="bottom-end">
-                        <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Conversation options" data-testid="conversation-options">
-                            <LeadingIcon>@BxIcons.Named("lucide:ellipsis")</LeadingIcon>
-                        </BxButton>
-                    </BxDropdownMenu>
+                    <LxDropdownMenu Items="_menu" OnSelect="OnMenu" Placement="bottom-end">
+                        <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Conversation options" data-testid="conversation-options">
+                            <LeadingIcon>@LxIcons.Named("lucide:ellipsis")</LeadingIcon>
+                        </LxButton>
+                    </LxDropdownMenu>
                 }
-                <BxColorModeButton />
+                <LxColorModeButton />
             </Right>
-        </BxDashboardNavbar>
+        </LxDashboardNavbar>
 
         @if (!_ready && Id is not null)
         {
             <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-6" aria-hidden="true">
-                <BxSkeleton Class="h-10 w-2/3 self-end" />
-                <BxSkeleton Class="h-24 w-full" />
+                <LxSkeleton Class="h-10 w-2/3 self-end" />
+                <LxSkeleton Class="h-24 w-full" />
             </div>
         }
         else if (_conversation is null || _conversation.Messages.Count == 0)
@@ -46,7 +46,7 @@
         }
         else
         {
-            <BxChatMessages Status="_status" Ui="_messagesUi" Label="Conversation" data-testid="messages">
+            <LxChatMessages Status="_status" Ui="_messagesUi" Label="Conversation" data-testid="messages">
                 <ChildContent>
                     @foreach (var message in _conversation.Messages)
                     {
@@ -55,35 +55,35 @@
                     }
                 </ChildContent>
                 <Error>@_error</Error>
-            </BxChatMessages>
+            </LxChatMessages>
         }
 
         <div class="shrink-0 px-3 pb-3 sm:px-6 sm:pb-4">
             <div class="mx-auto flex w-full max-w-3xl flex-col gap-2">
                 @if (_notice is not null)
                 {
-                    <BxAlert Color="BxColor.Warning" Variant="BxVariant.Soft" Title="The assistant is not available" Description="@_notice" data-testid="notice" />
+                    <LxAlert Color="LxColor.Warning" Variant="LxVariant.Soft" Title="The assistant is not available" Description="@_notice" data-testid="notice" />
                 }
-                <BxChatPrompt Status="_status" OnSubmit="SendAsync" OnStop="StopAsync" OnReload="RegenerateAsync" Disabled="@(_model is null)"
+                <LxChatPrompt Status="_status" OnSubmit="SendAsync" OnStop="StopAsync" OnReload="RegenerateAsync" Disabled="@(_model is null)"
                               Placeholder="Ask anything" Autofocus data-testid="prompt">
                     <Footer>
                         @if (_modelItems.Count > 0)
                         {
-                            <BxSelect Items="_modelItems" Value="@_model" ValueChanged="OnModel" Size="BxSize.Xs" Variant="FieldVariant.Ghost" aria-label="Model" data-testid="model" />
+                            <LxSelect Items="_modelItems" Value="@_model" ValueChanged="OnModel" Size="LxSize.Xs" Variant="FieldVariant.Ghost" aria-label="Model" data-testid="model" />
                         }
                     </Footer>
-                </BxChatPrompt>
-                <p class="text-center text-xs text-(--blux-text-muted)">Answers can be wrong: check what matters.</p>
+                </LxChatPrompt>
+                <p class="text-center text-xs text-(--lux-text-muted)">Answers can be wrong: check what matters.</p>
             </div>
         </div>
     </ChildContent>
-</BxDashboardPanel>
+</LxDashboardPanel>
 
 @code {
-    private static readonly BxMenuItem[] _menu =
+    private static readonly LxMenuItem[] _menu =
     [
-        new() { Label = "Rename", Value = "rename", Icon = BxIcons.Named("lucide:pencil", "size-4") },
-        new() { Label = "Delete", Value = "delete", Icon = BxIcons.Named("lucide:trash-2", "size-4"), Color = BxColor.Error },
+        new() { Label = "Rename", Value = "rename", Icon = LxIcons.Named("lucide:pencil", "size-4") },
+        new() { Label = "Delete", Value = "delete", Icon = LxIcons.Named("lucide:trash-2", "size-4"), Color = LxColor.Error },
     ];
 
     // The messages are centered in a column that reads well: the viewport scrolls across the whole width, the text does not.
@@ -93,7 +93,7 @@
     private ChatStatus _status;
     private string? _error;
     private string? _notice;
-    private IReadOnlyList<BxSelectItem> _modelItems = [];
+    private IReadOnlyList<LxSelectItem> _modelItems = [];
     private HashSet<string> _modelIds = [];
     private string? _model;
     private bool _ready;
@@ -154,7 +154,7 @@
         try
         {
             var models = await Provider.GetModelsAsync();
-            _modelItems = [.. models.Select(m => new BxSelectItem(m.Id, m.Name))];
+            _modelItems = [.. models.Select(m => new LxSelectItem(m.Id, m.Name))];
             _modelIds = [.. models.Select(m => m.Id)];
             _notice = null;
         }
@@ -192,7 +192,7 @@
         var found = Conversations.Find(Id);
         if (found is null)
         {
-            _ = Toasts.Add(new BxToast { Title = "Not found", Description = "That conversation is not in this browser.", Color = BxColor.Info });
+            _ = Toasts.Add(new LxToast { Title = "Not found", Description = "That conversation is not in this browser.", Color = LxColor.Info });
             Navigation.NavigateTo("./", replace: true);
             return;
         }
@@ -217,14 +217,14 @@
         if (text.Length == 0 || Busy || _model is null) return;
         if (text.Length > ConversationLimits.MaxPromptCharacters)
         {
-            await Toasts.Add(new BxToast { Title = "Message too long", Description = $"A message holds at most {ConversationLimits.MaxPromptCharacters:N0} characters.", Color = BxColor.Warning });
+            await Toasts.Add(new LxToast { Title = "Message too long", Description = $"A message holds at most {ConversationLimits.MaxPromptCharacters:N0} characters.", Color = LxColor.Warning });
             return;
         }
         var conversation = _conversation ?? new Conversation();
         // A question and its answer are two messages: the conversation must still fit its cap once the answer is in, and fit what the host accepts (the same constants).
         if (conversation.Messages.Count + 2 > ConversationLimits.MaxMessages || conversation.Characters + text.Length > ConversationLimits.MaxConversationCharacters)
         {
-            await Toasts.Add(new BxToast { Title = "This conversation is full", Description = "Start a new conversation to keep going.", Color = BxColor.Warning });
+            await Toasts.Add(new LxToast { Title = "This conversation is full", Description = "Start a new conversation to keep going.", Color = LxColor.Warning });
             return;
         }
 
@@ -362,7 +362,7 @@
         if (!await Conversations.SaveAsync(conversation) && !_warnedStorage)
         {
             _warnedStorage = true;
-            await Toasts.Add(new BxToast { Title = "Not saved", Description = "This browser did not keep the conversation (its storage is full or blocked): it stays for this visit only.", Color = BxColor.Warning });
+            await Toasts.Add(new LxToast { Title = "Not saved", Description = "This browser did not keep the conversation (its storage is full or blocked): it stays for this visit only.", Color = LxColor.Warning });
         }
     }
 
@@ -378,7 +378,7 @@
         }
     }
 
-    private void OnMenu(BxMenuItem item)
+    private void OnMenu(LxMenuItem item)
     {
         if (_conversation is null) return;
         if (item.Value == "rename") Conversations.RequestRename(_conversation);

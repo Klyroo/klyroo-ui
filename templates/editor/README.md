@@ -13,7 +13,7 @@ This repository is a GitHub template. After you create your repository from it, 
 dotnet run rename.cs MyApp
 ```
 
-`rename.cs` is a .NET 10 file-based app. It renames the solution, the projects and their folders, the namespaces, the MAUI application title and id, and every other occurrence of the template name, then deletes itself. The new name is one identifier: letters and digits, starting with a letter. What Lux.UI names with "Editor" (`BxEditor`, `EditorAction`, `bx-editor`) is not the template name and is left alone.
+`rename.cs` is a .NET 10 file-based app. It renames the solution, the projects and their folders, the namespaces, the MAUI application title and id, and every other occurrence of the template name, then deletes itself. The new name is one identifier: letters and digits, starting with a letter. What Lux.UI names with "Editor" (`LxEditor`, `EditorAction`, `lx-editor`) is not the template name and is left alone.
 
 <!-- rename:end -->
 ## Run
@@ -47,7 +47,7 @@ The hub is raised to `DocumentLimits.MaxReceiveMessageBytes` = **512 KB** (`Prog
 
 `DocumentJson.TransferBytes` counts the second one exactly as the browser writes it, and a save that would pass it is refused like one that is too long, so no stored document is one the app could not read back. A document of 150,000 characters that is all quotes or backslashes is the one case this refuses before the character limit; control characters, which the allow-list drops, are the one input that can still make the editor's own message bigger than the bound (the connection then closes and the circuit starts again). The WebAssembly and MAUI hosts have no such limit; this one is for the Server renderer.
 
-The editor never sends a text past the limit: `BxEditor MaxLength="@DocumentLimits.MaxHtmlCharacters"` keeps it on the page, marks it invalid and the status bar says "Not saved: this document is too long (N of 150,000 characters)". The stored text is the last one that fitted.
+The editor never sends a text past the limit: `LxEditor MaxLength="@DocumentLimits.MaxHtmlCharacters"` keeps it on the page, marks it invalid and the status bar says "Not saved: this document is too long (N of 150,000 characters)". The stored text is the last one that fitted.
 
 ### Other tabs
 

@@ -1,24 +1,24 @@
 @inherits LayoutComponentBase
 @inject IFormFactor FormFactor
 
-@* BxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<BxHead />
+<LxHead />
 <SystemBars />
 
-<BxApp SpatialNavigation="@FormFactor.IsTv">
-    <BxHeader Title="Blux on MAUI" Items="_items" AriaLabel="Main" MenuTitle="Menu">
+<LxApp SpatialNavigation="@FormFactor.IsTv">
+    <LxHeader Title="Lux on MAUI" Items="_items" AriaLabel="Main" MenuTitle="Menu">
         <Right>
-            <BxLocaleSelect Size="BxSize.Sm" />
-            <BxColorModeButton Size="BxSize.Sm" />
+            <LxLocaleSelect Size="LxSize.Sm" />
+            <LxColorModeButton Size="LxSize.Sm" />
         </Right>
-    </BxHeader>
-    <BxMain>
+    </LxHeader>
+    <LxMain>
         <div class="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6">
             @Body
         </div>
-    </BxMain>
-</BxApp>
+    </LxMain>
+</LxApp>
 
 <div id="blazor-error-ui" data-nosnippet>
     An unhandled error has occurred.
@@ -27,7 +27,7 @@
 </div>
 
 @code {
-    private static readonly BxNavigationItem[] _items =
+    private static readonly LxNavigationItem[] _items =
     [
         new("Home") { Href = "/", Exact = true },
         new("Forms") { Href = "/forms" },

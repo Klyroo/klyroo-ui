@@ -40,7 +40,7 @@ test('no Secure on http, and nothing is written again for the same zone', () => 
 test('below a path base the name carries the slug and the path is the base', () => {
   const doc = fakeDocument('https://example.com/sub/');
   storeTimeZone(doc, 'Europe/Paris', 'https:');
-  assert.ok(doc.writes[0].startsWith('blux-timezone.sub~~=Europe/Paris; path=/sub;'));
+  assert.ok(doc.writes[0].startsWith('lux-timezone.sub~~=Europe/Paris; path=/sub;'));
 });
 
 test('a missing zone or one that is not safe in a cookie is not written', () => {

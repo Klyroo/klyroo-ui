@@ -3,12 +3,12 @@ import { observeChildren, shortcutState } from './shared.js';
 /**
  * The "Content" family: documentation components.
  *
- * <bx-content-toc>
+ * <lx-content-toc>
  *   <nav>
  *     <button data-slot="trigger" aria-expanded="false" aria-controls="c">On this page</button>
  *     <div id="c" data-slot="content"><ul><li><a href="#intro" data-level="2">Intro</a></li>…</ul></div>
  *   </nav>
- * </bx-content-toc>
+ * </lx-content-toc>
  *
  * Scroll-spy: an IntersectionObserver watches the headings the links point at and wakes the element when one crosses
  * the top quarter of the viewport; the heading being read is the last one above that line (or the first one in view,
@@ -16,7 +16,7 @@ import { observeChildren, shortcutState } from './shared.js';
  * opens and closes the content (data-state, aria-expanded); the server renders neither attribute, so a render never
  * undoes them. Purely visual: never reported to .NET.
  */
-export class BxContentTocElement extends HTMLElement {
+export class LxContentTocElement extends HTMLElement {
   #observer = null;
   #children = null;
   #targets = [];
@@ -133,23 +133,23 @@ export class BxContentTocElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-content-toc')) customElements.define('bx-content-toc', BxContentTocElement);
+if (!customElements.get('lx-content-toc')) customElements.define('lx-content-toc', LxContentTocElement);
 
-// BxContentSearchButton opens the BxContentSearch it names (the unnamed one by default) by clicking the hidden trigger
+// LxContentSearchButton opens the LxContentSearch it names (the unnamed one by default) by clicking the hidden trigger
 // of its modal, so the modal returns focus to the button when it closes.
 document.addEventListener('click', (event) => {
-  const button = event.target instanceof Element ? event.target.closest('[data-bx-content-search-open]') : null;
+  const button = event.target instanceof Element ? event.target.closest('[data-lx-content-search-open]') : null;
   if (!button || button.disabled) return;
-  openSearch(button.getAttribute('data-bx-content-search-open') ?? '');
+  openSearch(button.getAttribute('data-lx-content-search-open') ?? '');
 });
 
 function openSearch(name) {
-  const dialog = [...document.querySelectorAll('dialog[data-bx-content-search]')].find((d) => d.getAttribute('data-bx-content-search') === name);
-  dialog?.closest('bx-modal')?.querySelector(':scope > [data-slot="trigger"] button')?.click();
+  const dialog = [...document.querySelectorAll('dialog[data-lx-content-search]')].find((d) => d.getAttribute('data-lx-content-search') === name);
+  dialog?.closest('lx-modal')?.querySelector(':scope > [data-slot="trigger"] button')?.click();
 }
 
-// The shortcut of a BxContentSearch ("mod+k"). It is registered after js/hotkey.js, so a page that gives the same
-// combination to its own data-bx-hotkey element has already handled the key (defaultPrevented) and wins.
+// The shortcut of a LxContentSearch ("mod+k"). It is registered after js/hotkey.js, so a page that gives the same
+// combination to its own data-lx-hotkey element has already handled the key (defaultPrevented) and wins.
 const APPLE = /Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent);
 
 function parse(combo) {
@@ -168,8 +168,8 @@ function parse(combo) {
 
 document.addEventListener('keydown', (event) => {
   if (event.defaultPrevented || event.repeat || event.isComposing || typeof event.key !== 'string') return;
-  for (const element of document.querySelectorAll('[data-bx-content-hotkey]')) {
-    const combo = parse(element.getAttribute('data-bx-content-hotkey'));
+  for (const element of document.querySelectorAll('[data-lx-content-hotkey]')) {
+    const combo = parse(element.getAttribute('data-lx-content-hotkey'));
     const isTyping = event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])') !== null;
     if (
       event.key.toLowerCase() !== combo.key ||
@@ -190,14 +190,14 @@ document.addEventListener('keydown', (event) => {
   }
 });
 
-// A BxContentSearch with an IndexUrl does not carry its pages: the first time its dialog opens, the JSON file is fetched and the options are built
+// A LxContentSearch with an IndexUrl does not carry its pages: the first time its dialog opens, the JSON file is fetched and the options are built
 // from the markup of the hidden element that the component rendered (so they have the classes of the palette). A page keeps the result: opening the
 // search again, or a second search that names the same file, does not fetch again. A failed fetch says so in a live region and offers a retry.
 const indexRequests = new Map();
 let groupCounter = 0;
 
 function indexAddress(dialog) {
-  const url = new URL(dialog.getAttribute('data-bx-content-search-index'), document.baseURI);
+  const url = new URL(dialog.getAttribute('data-lx-content-search-index'), document.baseURI);
   // Same origin only: the file is the page's own data, and the options it makes are links the visitor will follow.
   if (url.origin !== location.origin) throw new Error('The search index must be on the same origin as the page.');
   return url.href;
@@ -232,14 +232,14 @@ function isSafeHref(href) {
 }
 
 function buildIndex(dialog, pages) {
-  const listbox = dialog.querySelector('bx-command-palette [role="listbox"]');
-  const template = dialog.querySelector('[data-bx-content-search-template]');
+  const listbox = dialog.querySelector('lx-command-palette [role="listbox"]');
+  const template = dialog.querySelector('[data-lx-content-search-template]');
   if (!listbox || !template) return;
   const pageOption = template.querySelector('[data-template="page"]');
   const headingOption = template.querySelector('[data-template="heading"]');
   const groupTemplate = template.querySelector('[role="group"]');
 
-  // Pages without a group come first, then the groups in the order of their first page, as BxContentSearch does for Pages.
+  // Pages without a group come first, then the groups in the order of their first page, as LxContentSearch does for Pages.
   const ungrouped = [];
   const groups = new Map();
   for (const page of pages) {
@@ -285,7 +285,7 @@ function buildIndex(dialog, pages) {
     const group = groupTemplate.cloneNode(true);
     const labelElement = group.firstElementChild;
     labelElement.textContent = label;
-    labelElement.id = `bx-content-search-group-${++groupCounter}`;
+    labelElement.id = `lx-content-search-group-${++groupCounter}`;
     group.setAttribute('aria-labelledby', labelElement.id);
     addPages(group, list, label);
     fragment.append(group);
@@ -297,7 +297,7 @@ async function loadIndex(dialog) {
   const state = dialog.dataset.bxIndexState;
   if (state === 'loading' || state === 'loaded') return;
   dialog.dataset.bxIndexState = 'loading';
-  const box = dialog.querySelector('[data-bx-content-search-state]');
+  const box = dialog.querySelector('[data-lx-content-search-state]');
   const message = box?.querySelector('[data-slot="message"]');
   const retry = box?.querySelector('[data-slot="retry"]');
   const texts = box?.querySelector('[data-loading-text]');
@@ -327,6 +327,6 @@ async function loadIndex(dialog) {
 new MutationObserver((records) => {
   for (const record of records) {
     const dialog = record.target;
-    if (dialog instanceof HTMLDialogElement && dialog.open && dialog.hasAttribute('data-bx-content-search-index')) loadIndex(dialog);
+    if (dialog instanceof HTMLDialogElement && dialog.open && dialog.hasAttribute('data-lx-content-search-index')) loadIndex(dialog);
   }
 }).observe(document, { subtree: true, attributes: true, attributeFilter: ['open'] });

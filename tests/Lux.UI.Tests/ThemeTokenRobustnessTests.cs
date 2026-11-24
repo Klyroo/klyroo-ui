@@ -7,7 +7,7 @@ namespace Lux.UI.Tests;
 /// <summary>A palette every shade of which is the same mid gray: no text, fill or border can meet the contrast rules with it.</summary>
 internal static class FlatPalette
 {
-    public static BxPalette Gray { get; } = BxPalette.Custom("flat-gray", [.. Enumerable.Repeat("#888888", 11)]);
+    public static LxPalette Gray { get; } = LxPalette.Custom("flat-gray", [.. Enumerable.Repeat("#888888", 11)]);
 }
 
 public class ContrastFailureTests
@@ -15,9 +15,9 @@ public class ContrastFailureTests
     [Fact]
     public void A_palette_that_cannot_meet_the_rules_throws_naming_the_role_the_palette_and_the_rule()
     {
-        var colors = new BxColorOptions { Primary = FlatPalette.Gray };
+        var colors = new LxColorOptions { Primary = FlatPalette.Gray };
 
-        var error = Assert.Throws<InvalidOperationException>(() => BxThemeTokens.Compute(colors));
+        var error = Assert.Throws<InvalidOperationException>(() => LxThemeTokens.Compute(colors));
 
         Assert.Contains("primary", error.Message);
         Assert.Contains("flat-gray", error.Message);
@@ -28,12 +28,12 @@ public class ContrastFailureTests
     [Fact]
     public void An_extra_color_and_a_neutral_palette_that_cannot_meet_the_rules_throw_too()
     {
-        var extra = new BxColorOptions();
+        var extra = new LxColorOptions();
         extra.Add("tertiary", FlatPalette.Gray);
-        Assert.Contains("tertiary", Assert.Throws<InvalidOperationException>(() => BxThemeTokens.Compute(extra)).Message);
+        Assert.Contains("tertiary", Assert.Throws<InvalidOperationException>(() => LxThemeTokens.Compute(extra)).Message);
 
-        var neutral = new BxColorOptions { Neutral = FlatPalette.Gray };
-        var error = Assert.Throws<InvalidOperationException>(() => BxThemeTokens.Compute(neutral));
+        var neutral = new LxColorOptions { Neutral = FlatPalette.Gray };
+        var error = Assert.Throws<InvalidOperationException>(() => LxThemeTokens.Compute(neutral));
         Assert.Contains("neutral", error.Message);
         Assert.Contains("flat-gray", error.Message);
     }
@@ -42,18 +42,18 @@ public class ContrastFailureTests
     public void A_color_left_at_the_default_that_cannot_be_repaired_on_another_neutral_throws()
     {
         // Surfaces that are all the same mid gray leave the default colors no way to reach their ratios.
-        var gray = BxPalette.Custom("mid", [.. Enumerable.Repeat("#808080", 11)]);
-        var error = Assert.Throws<InvalidOperationException>(() => BxThemeTokens.Compute(new BxColorOptions { Neutral = gray }));
+        var gray = LxPalette.Custom("mid", [.. Enumerable.Repeat("#808080", 11)]);
+        var error = Assert.Throws<InvalidOperationException>(() => LxThemeTokens.Compute(new LxColorOptions { Neutral = gray }));
         Assert.Contains("mid", error.Message);
     }
 
     [Fact]
     public void AllowLowContrast_keeps_the_best_effort_instead()
     {
-        var colors = new BxColorOptions { Primary = FlatPalette.Gray, Neutral = FlatPalette.Gray, AllowLowContrast = true };
+        var colors = new LxColorOptions { Primary = FlatPalette.Gray, Neutral = FlatPalette.Gray, AllowLowContrast = true };
         colors.Add("tertiary", FlatPalette.Gray);
 
-        var tokens = BxThemeTokens.Compute(colors);
+        var tokens = LxThemeTokens.Compute(colors);
 
         Assert.Equal("#888888", tokens.Light["primary"]);
         Assert.Contains("tertiary", tokens.ExtraColors);
@@ -62,13 +62,13 @@ public class ContrastFailureTests
     [Fact]
     public void AllowLowContrast_is_off_by_default_and_read_only_once_frozen()
     {
-        var colors = new BxColorOptions();
+        var colors = new LxColorOptions();
         Assert.False(colors.AllowLowContrast);
         colors.Freeze();
         Assert.Throws<InvalidOperationException>(() => colors.AllowLowContrast = true);
     }
 
-    private sealed class Ctx : BluxTestContext
+    private sealed class Ctx : LuxTestContext
     {
         public Ctx(Action<LuxOptions> configure) : base(configure) { }
     }
@@ -77,16 +77,16 @@ public class ContrastFailureTests
     public void The_failure_surfaces_when_the_theme_stylesheet_is_first_resolved()
     {
         using var ctx = new Ctx(o => o.Colors.Primary = FlatPalette.Gray);
-        Assert.ThrowsAny<Exception>(() => ctx.Render<BxThemeStyle>());
+        Assert.ThrowsAny<Exception>(() => ctx.Render<LxThemeStyle>());
 
         using var allowed = new Ctx(o => { o.Colors.Primary = FlatPalette.Gray; o.Colors.AllowLowContrast = true; });
-        Assert.Contains("--blux-primary:#888888", allowed.Render<BxThemeStyle>().Find("style").TextContent);
+        Assert.Contains("--lux-primary:#888888", allowed.Render<LxThemeStyle>().Find("style").TextContent);
     }
 }
 
 public class OklchParsingTests
 {
-    private static (int, int, int) P(string css) => BxColorMath.Parse(css);
+    private static (int, int, int) P(string css) => LxColorMath.Parse(css);
 
     [Fact]
     public void A_percentage_chroma_is_scaled_so_that_100_percent_is_0_4()
@@ -140,7 +140,7 @@ public class OklchParsingTests
     public void A_palette_rejects_it_with_an_argument_exception_naming_the_palette_and_the_value(string value)
     {
         var shades = Enumerable.Repeat("#808080", 10).Append(value).ToArray();
-        var error = Assert.Throws<ArgumentException>(() => BxPalette.Custom("brand", shades));
+        var error = Assert.Throws<ArgumentException>(() => LxPalette.Custom("brand", shades));
         Assert.Contains("brand", error.Message);
         Assert.Contains(value, error.Message);
     }
@@ -160,9 +160,9 @@ public class OklchParsingTests
     }
 }
 
-public class ScopedPreviewTests : BluxTestContext
+public class ScopedPreviewTests : LuxTestContext
 {
-    private static readonly string[] AllTokens = [.. BxThemeTokens.Defaults.Light.Keys];
+    private static readonly string[] AllTokens = [.. LxThemeTokens.Defaults.Light.Keys];
 
     private static string Between(string css, string start, string end)
     {
@@ -175,48 +175,48 @@ public class ScopedPreviewTests : BluxTestContext
     [Fact]
     public void A_scope_with_the_default_colors_writes_the_complete_token_set_in_light_and_dark()
     {
-        var css = Render<BxThemeStyle>(p => p.Add(s => s.Colors, new BxColorOptions()).Add(s => s.Scope, "#preview")).Find("style").TextContent;
+        var css = Render<LxThemeStyle>(p => p.Add(s => s.Colors, new LxColorOptions()).Add(s => s.Scope, "#preview")).Find("style").TextContent;
 
         var light = Between(css, "#preview{", "}");
         var dark = Between(css, ".dark #preview,#preview.dark{", "}");
         foreach (var token in AllTokens)
         {
-            Assert.Contains($"--blux-{token}:{BxThemeTokens.Defaults.Light[token]}", light);
-            Assert.Contains($"--blux-{token}:{BxThemeTokens.Defaults.Dark[token]}", dark);
+            Assert.Contains($"--lux-{token}:{LxThemeTokens.Defaults.Light[token]}", light);
+            Assert.Contains($"--lux-{token}:{LxThemeTokens.Defaults.Dark[token]}", dark);
         }
     }
 
     [Fact]
     public void A_scope_with_a_configured_palette_writes_every_token_too()
     {
-        var colors = new BxColorOptions { Primary = BxPalette.Red };
-        var css = Render<BxThemeStyle>(p => p.Add(s => s.Colors, colors).Add(s => s.Scope, "#preview")).Find("style").TextContent;
+        var colors = new LxColorOptions { Primary = LxPalette.Red };
+        var css = Render<LxThemeStyle>(p => p.Add(s => s.Colors, colors).Add(s => s.Scope, "#preview")).Find("style").TextContent;
 
         var light = Between(css, "#preview{", "}");
         var dark = Between(css, ".dark #preview,#preview.dark{", "}");
         foreach (var token in AllTokens)
         {
-            Assert.Contains($"--blux-{token}:", light);
-            Assert.Contains($"--blux-{token}:", dark);
+            Assert.Contains($"--lux-{token}:", light);
+            Assert.Contains($"--lux-{token}:", dark);
         }
-        Assert.Contains($"--blux-primary:{BxThemeTokens.Compute(colors).Light["primary"]}", light);
+        Assert.Contains($"--lux-primary:{LxThemeTokens.Compute(colors).Light["primary"]}", light);
     }
 
     [Fact]
     public void A_scope_without_colors_previews_the_options_of_the_app_completely()
     {
-        var css = Render<BxThemeStyle>(p => p.Add(s => s.Scope, ".demo")).Find("style").TextContent;
-        Assert.StartsWith(".demo{--blux-", css);
-        Assert.Contains(".dark .demo,.demo.dark{--blux-", css);
+        var css = Render<LxThemeStyle>(p => p.Add(s => s.Scope, ".demo")).Find("style").TextContent;
+        Assert.StartsWith(".demo{--lux-", css);
+        Assert.Contains(".dark .demo,.demo.dark{--lux-", css);
     }
 
     [Fact]
     public void Without_a_scope_the_page_still_renders_only_what_differs()
     {
-        Assert.Equal("", Render<BxThemeStyle>().Markup);
-        var colors = new BxColorOptions { Secondary = BxPalette.Violet };
-        var css = Render<BxThemeStyle>(p => p.Add(s => s.Colors, colors)).Find("style").TextContent;
-        Assert.DoesNotContain("--blux-primary:", css);
+        Assert.Equal("", Render<LxThemeStyle>().Markup);
+        var colors = new LxColorOptions { Secondary = LxPalette.Violet };
+        var css = Render<LxThemeStyle>(p => p.Add(s => s.Colors, colors)).Find("style").TextContent;
+        Assert.DoesNotContain("--lux-primary:", css);
     }
 
     [Theory]
@@ -227,23 +227,23 @@ public class ScopedPreviewTests : BluxTestContext
     [InlineData("a{}b")]
     public void The_scope_must_be_a_simple_selector_without_a_trailing_newline(string scope)
     {
-        Assert.ThrowsAny<Exception>(() => Render<BxThemeStyle>(p => p.Add(s => s.Scope, scope)));
+        Assert.ThrowsAny<Exception>(() => Render<LxThemeStyle>(p => p.Add(s => s.Scope, scope)));
     }
 }
 
 public class LightDarkSymmetryTests
 {
-    private static IEnumerable<BxColorOptions> Configurations()
+    private static IEnumerable<LxColorOptions> Configurations()
     {
-        foreach (var neutral in BxPalette.TailwindPalettes)
+        foreach (var neutral in LxPalette.TailwindPalettes)
         {
-            yield return new BxColorOptions { Neutral = neutral };
-            yield return new BxColorOptions { Neutral = neutral, Primary = BxPalette.Blue };
+            yield return new LxColorOptions { Neutral = neutral };
+            yield return new LxColorOptions { Neutral = neutral, Primary = LxPalette.Blue };
         }
-        foreach (var palette in BxPalette.TailwindPalettes)
+        foreach (var palette in LxPalette.TailwindPalettes)
         {
-            yield return new BxColorOptions { Primary = palette };
-            yield return new BxColorOptions { Error = palette, Warning = palette };
+            yield return new LxColorOptions { Primary = palette };
+            yield return new LxColorOptions { Error = palette, Warning = palette };
         }
     }
 
@@ -253,7 +253,7 @@ public class LightDarkSymmetryTests
         var checkedConfigurations = 0;
         foreach (var colors in Configurations())
         {
-            var tokens = BxThemeTokens.Compute(colors);
+            var tokens = LxThemeTokens.Compute(colors);
             Assert.Equal(tokens.LightChanges.Keys.Order(StringComparer.Ordinal), tokens.DarkChanges.Keys.Order(StringComparer.Ordinal));
             foreach (var (name, value) in tokens.DarkChanges)
             {
@@ -273,10 +273,10 @@ public class LightDarkSymmetryTests
     {
         foreach (var colors in Configurations())
         {
-            var css = BxThemeTokens.Compute(colors).ToCss(colors)!;
+            var css = LxThemeTokens.Compute(colors).ToCss(colors)!;
             var root = Regex.Match(css, @"^:root\{(?<b>[^}]*)\}").Groups["b"].Value;
             var dark = Regex.Match(css, @"\.dark\{(?<b>[^}]*)\}").Groups["b"].Value;
-            string[] Names(string block) => [.. Regex.Matches(block, @"--blux-([a-z0-9-]+):").Select(m => m.Groups[1].Value).Order(StringComparer.Ordinal)];
+            string[] Names(string block) => [.. Regex.Matches(block, @"--lux-([a-z0-9-]+):").Select(m => m.Groups[1].Value).Order(StringComparer.Ordinal)];
             Assert.Equal(Names(root), Names(dark));
         }
     }
@@ -284,7 +284,7 @@ public class LightDarkSymmetryTests
 
 public class ThemeCssTests
 {
-    private sealed class Ctx : BluxTestContext
+    private sealed class Ctx : LuxTestContext
     {
         public Ctx(Action<LuxOptions>? configure) : base(configure) { }
     }
@@ -292,21 +292,21 @@ public class ThemeCssTests
     [Fact]
     public void Concurrent_first_resolutions_share_one_result_and_freeze_the_colors()
     {
-        using var ctx = new Ctx(o => o.Colors.Primary = BxPalette.Blue);
+        using var ctx = new Ctx(o => o.Colors.Primary = LxPalette.Blue);
         var options = ctx.Services.GetRequiredService<LuxOptions>();
 
         var results = Enumerable.Range(0, 16).AsParallel().WithDegreeOfParallelism(8).Select(_ => options.ThemeCss).ToArray();
 
         Assert.NotNull(results[0]);
         Assert.All(results, r => Assert.Same(results[0], r));
-        Assert.Throws<InvalidOperationException>(() => options.Colors.Primary = BxPalette.Red);
+        Assert.Throws<InvalidOperationException>(() => options.Colors.Primary = LxPalette.Red);
     }
 
     [Fact]
     public async Task The_stylesheet_does_not_lock_on_the_public_colors_object()
     {
         var token = Xunit.TestContext.Current.CancellationToken;
-        using var ctx = new Ctx(o => o.Colors.Primary = BxPalette.Blue);
+        using var ctx = new Ctx(o => o.Colors.Primary = LxPalette.Blue);
         var options = ctx.Services.GetRequiredService<LuxOptions>();
 
         // Someone holding a lock on the public object must not block the resolution (or deadlock with it).

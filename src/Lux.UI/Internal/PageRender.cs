@@ -26,7 +26,7 @@ public sealed class SectionHeading : ComponentBase
 internal static class PageRender
 {
     /// <summary>The links as a row of buttons; nothing when there are none.</summary>
-    public static RenderFragment Buttons(IReadOnlyList<PageLinkItem>? links, string? @class, BxSize size = BxSize.Lg, LuxIconOptions? icons = null) => builder =>
+    public static RenderFragment Buttons(IReadOnlyList<PageLinkItem>? links, string? @class, LxSize size = LxSize.Lg, LuxIconOptions? icons = null) => builder =>
     {
         if (links is not { Count: > 0 })
         {
@@ -37,19 +37,19 @@ internal static class PageRender
         builder.AddAttribute(2, "data-slot", "links");
         foreach (var link in links)
         {
-            builder.OpenComponent<BxButton>(3);
-            builder.AddComponentParameter(4, nameof(BxButton.Label), link.Label);
-            builder.AddComponentParameter(5, nameof(BxButton.Href), link.Href);
-            builder.AddComponentParameter(6, nameof(BxButton.Target), link.Target);
+            builder.OpenComponent<LxButton>(3);
+            builder.AddComponentParameter(4, nameof(LxButton.Label), link.Label);
+            builder.AddComponentParameter(5, nameof(LxButton.Href), link.Href);
+            builder.AddComponentParameter(6, nameof(LxButton.Target), link.Target);
             if (link.Color is { } color)
             {
-                builder.AddComponentParameter(7, nameof(BxButton.Color), color);
+                builder.AddComponentParameter(7, nameof(LxButton.Color), color);
             }
-            builder.AddComponentParameter(8, nameof(BxButton.Variant), link.Variant);
-            builder.AddComponentParameter(9, nameof(BxButton.Size), size);
-            builder.AddComponentParameter(10, nameof(BxButton.Disabled), link.Disabled);
-            builder.AddComponentParameter(11, nameof(BxButton.LeadingIcon), link.Icon is null ? null : IconRender.Fragment(icons, link.Icon, "size-full"));
-            builder.AddComponentParameter(12, nameof(BxButton.TrailingIcon), link.TrailingIcon is null ? null : IconRender.Fragment(icons, link.TrailingIcon, "size-full"));
+            builder.AddComponentParameter(8, nameof(LxButton.Variant), link.Variant);
+            builder.AddComponentParameter(9, nameof(LxButton.Size), size);
+            builder.AddComponentParameter(10, nameof(LxButton.Disabled), link.Disabled);
+            builder.AddComponentParameter(11, nameof(LxButton.LeadingIcon), link.Icon is null ? null : IconRender.Fragment(icons, link.Icon, "size-full"));
+            builder.AddComponentParameter(12, nameof(LxButton.TrailingIcon), link.TrailingIcon is null ? null : IconRender.Fragment(icons, link.TrailingIcon, "size-full"));
             builder.CloseComponent();
         }
         builder.CloseElement();

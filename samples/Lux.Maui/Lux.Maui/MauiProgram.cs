@@ -26,10 +26,10 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISystemBars, SystemBars>();
 
         builder.Services.AddMauiBlazorWebView();
-        builder.Services.AddSampleBlux();
-        // Where BxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
+        builder.Services.AddSampleLux();
+        // Where LxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
-        builder.Services.AddSingleton<IBxCultureStore, PreferencesCultureStore>();
+        builder.Services.AddSingleton<ILxCultureStore, PreferencesCultureStore>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -40,8 +40,8 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// A .NET process takes its culture from the device. The language the user picked in BxLocaleSelect is read here, before anything
-    /// renders, and becomes the default culture of every thread. BxApp (ApplyStoredCulture="false" in the layout would turn its own
+    /// A .NET process takes its culture from the device. The language the user picked in LxLocaleSelect is read here, before anything
+    /// renders, and becomes the default culture of every thread. LxApp (ApplyStoredCulture="false" in the layout would turn its own
     /// lookup off) then finds the culture already in place.
     /// </summary>
     private static void ApplyStoredCulture()

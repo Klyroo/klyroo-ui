@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxContextMenu"/> slots. <c>Trigger</c> is the area around the content.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxContextMenu"/> slots. <c>Trigger</c> is the area around the content.</summary>
 public sealed record ContextMenuUi : ISlotOverrides
 {
     public string? Root { get; init; }

@@ -47,12 +47,12 @@ namespace Lux.UI.Build
             }
             catch (BuildToolException e)
             {
-                Log.LogError(subcategory: null, errorCode: "BLUXTW001", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: e.Message);
+                Log.LogError(subcategory: null, errorCode: "LUXTW001", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: e.Message);
                 return false;
             }
             catch (Exception e) when (!(e is OutOfMemoryException || e is StackOverflowException))
             {
-                Log.LogError(subcategory: null, errorCode: "BLUXTW002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not get the Tailwind CLI: " + e.GetType().Name + ": " + e.Message + " Set LuxTailwindExecutable to a Tailwind binary, or LuxTailwind=false to turn the feature off.");
+                Log.LogError(subcategory: null, errorCode: "LUXTW002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not get the Tailwind CLI: " + e.GetType().Name + ": " + e.Message + " Set LuxTailwindExecutable to a Tailwind binary, or LuxTailwind=false to turn the feature off.");
                 return false;
             }
         }

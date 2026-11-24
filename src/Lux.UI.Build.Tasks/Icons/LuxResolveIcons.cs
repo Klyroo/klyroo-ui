@@ -60,7 +60,7 @@ namespace Lux.UI.Build
             catch (Exception e) when (!(e is OutOfMemoryException || e is StackOverflowException))
             {
                 // Whatever goes wrong (an unreadable file, a malformed answer) is a diagnostic of ours, never an MSB4018 crash trace.
-                Log.LogError(subcategory: null, errorCode: "BLUXICON003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not bundle the icons: " + e.GetType().Name + ": " + e.Message + " LuxIcons=false turns the feature off.");
+                Log.LogError(subcategory: null, errorCode: "LUXICON003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not bundle the icons: " + e.GetType().Name + ": " + e.Message + " LuxIcons=false turns the feature off.");
                 return false;
             }
         }
@@ -69,7 +69,7 @@ namespace Lux.UI.Build
         {
             if (!Uri.TryCreate(Api, UriKind.Absolute, out var api) || api.Scheme != Uri.UriSchemeHttps)
             {
-                Log.LogError(subcategory: null, errorCode: "BLUXICON002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "LuxIconsApi must be an absolute https address (it is \"" + Api + "\").");
+                Log.LogError(subcategory: null, errorCode: "LUXICON002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "LuxIconsApi must be an absolute https address (it is \"" + Api + "\").");
                 return false;
             }
             var project = ProjectDirectory.Length > 0 ? ProjectDirectory : Directory.GetCurrentDirectory();
@@ -79,7 +79,7 @@ namespace Lux.UI.Build
                 Api = Api,
                 Offline = Offline,
                 CacheMaxAge = TimeSpan.FromDays(Math.Max(0, CacheDays)),
-                Info = m => Log.LogMessage(MessageImportance.Normal, "Blux icons: " + m),
+                Info = m => Log.LogMessage(MessageImportance.Normal, "Lux icons: " + m),
             };
             foreach (var item in Icons) options.Explicit.Add(item.ItemSpec);
             foreach (var item in Collections)
@@ -94,7 +94,7 @@ namespace Lux.UI.Build
                 var skip = new HashSet<string>(ExcludeDirectories.Select(d => IconSourceFinder.Normalize(d.ItemSpec)), StringComparer.Ordinal);
                 var roots = new List<string> { project };
                 roots.AddRange(ScanDirectories.Select(d => Path.GetFullPath(Path.Combine(project, d.ItemSpec))));
-                sources = IconSourceFinder.Find(roots, skip, m => Log.LogMessage(MessageImportance.Low, "Blux icons: " + m));
+                sources = IconSourceFinder.Find(roots, skip, m => Log.LogMessage(MessageImportance.Low, "Lux icons: " + m));
             }
 
             // Nothing that decides the bundle changed since the last build that came out clean: the files are not even read.
@@ -103,7 +103,7 @@ namespace Lux.UI.Build
             if (ReadStamp(stamp, out var stampKey, out var stampHasIcons) && stampKey == key && stampHasIcons == File.Exists(OutputFile))
             {
                 HasIcons = stampHasIcons;
-                Log.LogMessage(MessageImportance.Low, "Blux icons: nothing changed since the last build, the bundle is up to date.");
+                Log.LogMessage(MessageImportance.Low, "Lux icons: nothing changed since the last build, the bundle is up to date.");
                 return true;
             }
 
@@ -116,7 +116,7 @@ namespace Lux.UI.Build
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
                 {
                     // A file being written by another tool, or one we may not read: it is scanned by the next build.
-                    Log.LogMessage(MessageImportance.Low, "Blux icons: {0} could not be read ({1}) and is not scanned.", source.Path, e.Message);
+                    Log.LogMessage(MessageImportance.Low, "Lux icons: {0} could not be read ({1}) and is not scanned.", source.Path, e.Message);
                 }
             }
 
@@ -127,7 +127,7 @@ namespace Lux.UI.Build
             }
             catch (Exception e) when (e is BuildToolException || e is IOException || e is UnauthorizedAccessException)
             {
-                Log.LogError(subcategory: null, errorCode: "BLUXICON003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not bundle the icons: " + e.Message);
+                Log.LogError(subcategory: null, errorCode: "LUXICON003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not bundle the icons: " + e.Message);
                 return false;
             }
 
@@ -135,23 +135,23 @@ namespace Lux.UI.Build
             {
                 if (!problem.Fatal)
                 {
-                    Log.LogMessage(MessageImportance.Low, "Blux icons: " + problem.Message);
+                    Log.LogMessage(MessageImportance.Low, "Lux icons: " + problem.Message);
                     continue;
                 }
                 var message = problem.Message + " Icons are bundled at build time (LuxIcons=false turns the feature off, see the Icons guide).";
                 if (FailOnError)
                 {
-                    Log.LogError(subcategory: null, errorCode: "BLUXICON001", helpKeyword: null, file: problem.File, lineNumber: problem.Line, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message);
+                    Log.LogError(subcategory: null, errorCode: "LUXICON001", helpKeyword: null, file: problem.File, lineNumber: problem.Line, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message);
                 }
                 else
                 {
-                    Log.LogWarning(subcategory: null, warningCode: "BLUXICON001", helpKeyword: null, file: problem.File, lineNumber: problem.Line, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message + " (an error in a Release build)");
+                    Log.LogWarning(subcategory: null, warningCode: "LUXICON001", helpKeyword: null, file: problem.File, lineNumber: problem.Line, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message + " (an error in a Release build)");
                 }
             }
 
             if (result.CacheWarning != null)
             {
-                Log.LogWarning(subcategory: null, warningCode: "BLUXICON004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: result.CacheWarning);
+                Log.LogWarning(subcategory: null, warningCode: "LUXICON004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: result.CacheWarning);
             }
 
             HasIcons = result.IconCount > 0;
@@ -168,7 +168,7 @@ namespace Lux.UI.Build
                 // No icon left: the file goes (a leftover would keep registering icons nobody asks for), and the targets drop it from the compilation.
                 File.Delete(OutputFile);
             }
-            Log.LogMessage(MessageImportance.Normal, "Blux icons: {0} icon(s) bundled, {1} downloaded.", result.IconCount, result.Downloaded);
+            Log.LogMessage(MessageImportance.Normal, "Lux icons: {0} icon(s) bundled, {1} downloaded.", result.IconCount, result.Downloaded);
 
             // Only a clean run is remembered: a problem is reported again by the next build until it is fixed.
             if (!Log.HasLoggedErrors && result.CacheWarning == null && !result.Problems.Any(p => p.Fatal))

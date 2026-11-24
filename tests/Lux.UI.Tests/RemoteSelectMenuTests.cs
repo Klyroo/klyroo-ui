@@ -3,20 +3,20 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI.Tests;
 
-/// <summary>BxSelectMenu with an OptionsProvider: the markup of each state, what the browser's events do, and static rendering.</summary>
-public class RemoteSelectMenuTests : BluxTestContext
+/// <summary>LxSelectMenu with an OptionsProvider: the markup of each state, what the browser's events do, and static rendering.</summary>
+public class RemoteSelectMenuTests : LuxTestContext
 {
     private static readonly char Sep = '\u001f';
 
     private sealed class Fake
     {
-        public List<BxOptionsRequest> Requests { get; } = [];
+        public List<LxOptionsRequest> Requests { get; } = [];
         public List<TaskCompletionSource> Gates { get; } = [];
         public bool Hold { get; set; }
         public bool Fail { get; set; }
         public int Total { get; set; } = 40;
 
-        public async ValueTask<BxOptionsResult> Load(BxOptionsRequest request, CancellationToken ct)
+        public async ValueTask<LxOptionsResult> Load(LxOptionsRequest request, CancellationToken ct)
         {
             Requests.Add(request);
             if (Hold)
@@ -30,22 +30,22 @@ public class RemoteSelectMenuTests : BluxTestContext
             var matches = Enumerable.Range(1, Total).Select(i => $"Item {i}")
                 .Where(l => request.Search.Length == 0 || l.Contains(request.Search, StringComparison.OrdinalIgnoreCase)).ToList();
             var page = matches.Skip(request.Skip).Take(request.Take)
-                .Select(l => new BxSelectItem("i" + l[5..], l) { Icon = request.Search == "icon" ? "star" : null }).ToList();
-            return new BxOptionsResult(page, HasMore: request.Skip + page.Count < matches.Count);
+                .Select(l => new LxSelectItem("i" + l[5..], l) { Icon = request.Search == "icon" ? "star" : null }).ToList();
+            return new LxOptionsResult(page, HasMore: request.Skip + page.Count < matches.Count);
         }
     }
 
-    private IRenderedComponent<BxSelectMenu> Open(Fake fake, Action<ComponentParameterCollectionBuilder<BxSelectMenu>>? more = null) =>
-        Render<BxSelectMenu>(p =>
+    private IRenderedComponent<LxSelectMenu> Open(Fake fake, Action<ComponentParameterCollectionBuilder<LxSelectMenu>>? more = null) =>
+        Render<LxSelectMenu>(p =>
         {
             p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.PageSize, 10);
             more?.Invoke(p);
         });
 
-    private static Task Search(IRenderedComponent<BxSelectMenu> cut, string text) =>
-        cut.Find("bx-select-menu").TriggerEventAsync("onbxsearch", new BxSearchEventArgs { Value = text, Sequence = 1 });
+    private static Task Search(IRenderedComponent<LxSelectMenu> cut, string text) =>
+        cut.Find("lx-select-menu").TriggerEventAsync("onbxsearch", new LxSearchEventArgs { Value = text, Sequence = 1 });
 
-    private static string[] Labels(IRenderedComponent<BxSelectMenu> cut) => [.. cut.FindAll("[role=option]:not([data-slot=create])").Select(o => o.GetAttribute("data-label")!)];
+    private static string[] Labels(IRenderedComponent<LxSelectMenu> cut) => [.. cut.FindAll("[role=option]:not([data-slot=create])").Select(o => o.GetAttribute("data-label")!)];
 
     [Fact]
     public void Nothing_is_requested_before_the_list_opens_and_the_browser_is_told_it_is_remote()
@@ -54,7 +54,7 @@ public class RemoteSelectMenuTests : BluxTestContext
         var cut = Open(fake);
 
         Assert.Empty(fake.Requests);
-        var host = cut.Find("bx-select-menu");
+        var host = cut.Find("lx-select-menu");
         Assert.True(host.HasAttribute("data-remote"));
         Assert.Equal("250", host.GetAttribute("data-debounce"));
         Assert.Empty(cut.FindAll("[role=option]"));
@@ -79,12 +79,12 @@ public class RemoteSelectMenuTests : BluxTestContext
         // The scrolled area holds the listbox and, beside it, the sentinel the next page is loaded by.
         var scroller = cut.Find("[data-slot=scroller]");
         Assert.NotNull(scroller.QuerySelector("[role=listbox]"));
-        var more = scroller.QuerySelector("bx-infinite-scroll");
+        var more = scroller.QuerySelector("lx-infinite-scroll");
         Assert.NotNull(more);
         Assert.Equal("#" + scroller.Id, more.GetAttribute("data-root"));
         Assert.Equal("0px 0px 100% 0px", more.GetAttribute("data-root-margin"));
         Assert.True(more.HasAttribute("data-has-more"));
-        Assert.Empty(cut.Find("[role=listbox]").QuerySelectorAll("bx-infinite-scroll"));
+        Assert.Empty(cut.Find("[role=listbox]").QuerySelectorAll("lx-infinite-scroll"));
         Assert.Equal("1", cut.Find("[role=listbox]").GetAttribute("data-generation"));
     }
 
@@ -135,7 +135,7 @@ public class RemoteSelectMenuTests : BluxTestContext
         Assert.Equal("No results", cut.Find("[data-slot=announcer]").TextContent);
         Assert.True(cut.Find("[role=listbox]").HasAttribute("hidden"));
         // Nothing is left to load.
-        Assert.Empty(cut.FindAll("bx-infinite-scroll"));
+        Assert.Empty(cut.FindAll("lx-infinite-scroll"));
     }
 
     [Fact]
@@ -197,16 +197,16 @@ public class RemoteSelectMenuTests : BluxTestContext
         var cut = Open(fake);
         await Search(cut, "");
 
-        await cut.Find("bx-infinite-scroll").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "more", Sequence = 1 });
+        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
         Assert.Equal(20, Labels(cut).Length);
-        Assert.Equal(new BxOptionsRequest("", 10, 10, null), fake.Requests[1]);
+        Assert.Equal(new LxOptionsRequest("", 10, 10, null), fake.Requests[1]);
 
-        await cut.Find("bx-infinite-scroll").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "more", Sequence = 2 });
+        await cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
         Assert.Equal(25, Labels(cut).Length);
 
-        var end = cut.Find("bx-infinite-scroll");
+        var end = cut.Find("lx-infinite-scroll");
         Assert.False(end.HasAttribute("data-has-more"));
-        Assert.Equal("No more items", cut.Find("bx-infinite-scroll [data-slot=status]").TextContent);
+        Assert.Equal("No more items", cut.Find("lx-infinite-scroll [data-slot=status]").TextContent);
     }
 
     [Fact]
@@ -234,29 +234,29 @@ public class RemoteSelectMenuTests : BluxTestContext
         var cut = Open(fake, p => p.Add(s => s.Value, value).Add(s => s.ValueChanged, (IReadOnlyList<string>? v) => value = v ?? []));
         // Not listed yet: the raw value.
         Assert.Equal("i3", cut.Find("[data-slot=label]").GetAttribute("data-label"));
-        Assert.Null(cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Null(cut.Find("lx-select-menu").GetAttribute("data-known"));
 
         await Search(cut, "");
         Assert.Equal("Item 3", cut.Find("[data-slot=label]").GetAttribute("data-label"));
-        Assert.Equal("i3" + Sep + "Item 3", cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Equal("i3" + Sep + "Item 3", cut.Find("lx-select-menu").GetAttribute("data-known"));
 
         await Search(cut, "Item 4");
         Assert.DoesNotContain("Item 3", Labels(cut));
         Assert.Equal("Item 3", cut.Find("[data-slot=label]").GetAttribute("data-label"));
-        Assert.Equal("i3" + Sep + "Item 3", cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Equal("i3" + Sep + "Item 3", cut.Find("lx-select-menu").GetAttribute("data-known"));
     }
 
     [Fact]
     public void ResolveSelected_names_values_that_were_never_listed_when_the_component_is_interactive()
     {
         var asked = new List<string[]>();
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load)
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load)
             .Add(s => s.Multiple, true)
             .Add(s => s.Value, ["i7", "i9"])
             .Add(s => s.ResolveSelected, (values, _) =>
             {
                 asked.Add([.. values]);
-                return new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item seven")]);
+                return new ValueTask<IReadOnlyList<LxSelectItem>>([new LxSelectItem("i7", "Item seven")]);
             }));
 
         cut.WaitForAssertion(() => Assert.Equal("Item seven, i9", cut.Find("[data-slot=label]").GetAttribute("data-label")));
@@ -267,23 +267,23 @@ public class RemoteSelectMenuTests : BluxTestContext
     [Fact]
     public void Static_Items_name_a_value_without_listing_it()
     {
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load)
-            .Add(s => s.Items, [new BxSelectItem("x", "Known label")]).Add(s => s.Value, ["x"]));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load)
+            .Add(s => s.Items, [new LxSelectItem("x", "Known label")]).Add(s => s.Value, ["x"]));
 
         Assert.Equal("Known label", cut.Find("[data-slot=label]").GetAttribute("data-label"));
         Assert.Empty(cut.FindAll("[role=option]"));
-        Assert.Equal("x" + Sep + "Known label", cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Equal("x" + Sep + "Known label", cut.Find("lx-select-menu").GetAttribute("data-known"));
     }
 
     [Fact]
     public async Task Icons_group_headings_and_counts_of_loaded_options_render_like_static_ones()
     {
-        var provider = new BxOptionsProvider((_, _) => new ValueTask<BxOptionsResult>(new BxOptionsResult(
+        var provider = new LxOptionsProvider((_, _) => new ValueTask<LxOptionsResult>(new LxOptionsResult(
         [
-            new BxSelectItem("a", "Alpha") { Group = "Letters", Count = 1200, Icon = "star" },
-            new BxSelectItem("b", "Beta") { Group = "Letters" },
+            new LxSelectItem("a", "Alpha") { Group = "Letters", Count = 1200, Icon = "star" },
+            new LxSelectItem("b", "Beta") { Group = "Letters" },
         ])));
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, provider));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, provider));
 
         await Search(cut, "");
 
@@ -297,11 +297,11 @@ public class RemoteSelectMenuTests : BluxTestContext
     public async Task Debounce_and_PageSize_reach_the_browser_and_the_provider()
     {
         var fake = new Fake();
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Debounce, 400).Add(s => s.PageSize, 7));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Debounce, 400).Add(s => s.PageSize, 7));
 
         await Search(cut, "");
 
-        Assert.Equal("400", cut.Find("bx-select-menu").GetAttribute("data-debounce"));
+        Assert.Equal("400", cut.Find("lx-select-menu").GetAttribute("data-debounce"));
         Assert.Equal(7, fake.Requests[0].Take);
         Assert.Equal(7, Labels(cut).Length);
     }
@@ -313,7 +313,7 @@ public class RemoteSelectMenuTests : BluxTestContext
         var cut = Open(fake);
         await Search(cut, "");
 
-        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.Placeholder, "Pick"));
+        cut.Render(p => p.Add(s => s.OptionsProvider, new LxOptionsProvider(fake.Load)).Add(s => s.Placeholder, "Pick"));
 
         Assert.Equal(10, Labels(cut).Length);
         Assert.Single(fake.Requests);
@@ -338,9 +338,9 @@ public class RemoteSelectMenuTests : BluxTestContext
     [Fact]
     public void Without_a_provider_nothing_changes_the_list_scrolls_by_itself_and_the_browser_filters()
     {
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.Items, [new BxSelectItem("a", "Alpha")]));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.Items, [new LxSelectItem("a", "Alpha")]));
 
-        var host = cut.Find("bx-select-menu");
+        var host = cut.Find("lx-select-menu");
         Assert.False(host.HasAttribute("data-remote"));
         Assert.False(host.HasAttribute("data-debounce"));
         Assert.False(host.HasAttribute("data-known"));
@@ -355,12 +355,12 @@ public class RemoteSelectMenuTests : BluxTestContext
     {
         SetRendererInfo(new RendererInfo("Static", false));
         var fake = new Fake();
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Name, "pick")
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Name, "pick")
             .Add(s => s.Value, ["i3"]).Add(s => s.Placeholder, "Pick"));
 
         // The provider is never called without a runtime to hear the browser.
         Assert.Empty(fake.Requests);
-        var host = cut.Find("bx-select-menu");
+        var host = cut.Find("lx-select-menu");
         Assert.False(host.HasAttribute("data-remote"));
         Assert.Equal("i3", host.GetAttribute("data-values"));
         Assert.Equal("pick", host.GetAttribute("name"));
@@ -376,7 +376,7 @@ public class RemoteSelectMenuTests : BluxTestContext
     public void Statically_rendered_without_a_provider_the_trigger_stays_enabled()
     {
         SetRendererInfo(new RendererInfo("Static", false));
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.Items, [new BxSelectItem("a", "Alpha")]));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.Items, [new LxSelectItem("a", "Alpha")]));
 
         Assert.False(cut.Find("[data-slot=trigger]").HasAttribute("disabled"));
     }
@@ -384,10 +384,10 @@ public class RemoteSelectMenuTests : BluxTestContext
     [Fact]
     public void Without_Items_or_OptionsProvider_the_first_render_throws_and_names_both_parameters()
     {
-        var error = Assert.ThrowsAny<Exception>(() => Render<BxSelectMenu>());
+        var error = Assert.ThrowsAny<Exception>(() => Render<LxSelectMenu>());
 
         var message = (error.InnerException ?? error).Message;
-        Assert.Contains("BxSelectMenu", message);
+        Assert.Contains("LxSelectMenu", message);
         Assert.Contains("Items", message);
         Assert.Contains("OptionsProvider", message);
     }
@@ -395,21 +395,21 @@ public class RemoteSelectMenuTests : BluxTestContext
     [Fact]
     public void An_empty_Items_list_is_a_set_Items()
     {
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.Items, []));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.Items, []));
 
-        Assert.NotNull(cut.Find("bx-select-menu"));
+        Assert.NotNull(cut.Find("lx-select-menu"));
     }
 
     [Fact]
     public void Statically_rendered_the_labels_of_Items_travel_to_the_browser_too()
     {
         SetRendererInfo(new RendererInfo("Static", false));
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new BxSelectItem("fr", "France")]).Add(s => s.Value, ["fr"]));
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new LxSelectItem("fr", "France")]).Add(s => s.Value, ["fr"]));
 
         // The browser paints from data-known, so it keeps France instead of writing the raw value over it.
-        Assert.Equal("fr" + Sep + "France", cut.Find("bx-select-menu").GetAttribute("data-known"));
+        Assert.Equal("fr" + Sep + "France", cut.Find("lx-select-menu").GetAttribute("data-known"));
         Assert.Equal("France", cut.Find("[data-slot=label]").GetAttribute("data-label"));
-        Assert.Equal("0", cut.Find("bx-select-menu").GetAttribute("data-epoch"));
+        Assert.Equal("0", cut.Find("lx-select-menu").GetAttribute("data-epoch"));
     }
 
     [Fact]
@@ -429,10 +429,10 @@ public class RemoteSelectMenuTests : BluxTestContext
     {
         var fake = new Fake();
         var resolved = 0;
-        BxSelectedOptionsResolver resolver = (values, _) =>
+        LxSelectedOptionsResolver resolver = (values, _) =>
         {
             resolved++;
-            return new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item seven")]);
+            return new ValueTask<IReadOnlyList<LxSelectItem>>([new LxSelectItem("i7", "Item seven")]);
         };
         var cut = Open(fake, p => p.Add(s => s.OptionsKey, "fr").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
         cut.WaitForAssertion(() => Assert.Equal("Item seven", cut.Find("[data-slot=label]").GetAttribute("data-label")));
@@ -440,15 +440,15 @@ public class RemoteSelectMenuTests : BluxTestContext
         Assert.Equal(10, Labels(cut).Length);
         Assert.Equal(1, resolved);
 
-        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "fr").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
+        cut.Render(p => p.Add(s => s.OptionsProvider, new LxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "fr").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
         Assert.Equal(10, Labels(cut).Length);
         Assert.Equal(1, resolved);
-        var epoch = cut.Find("bx-select-menu").GetAttribute("data-epoch");
+        var epoch = cut.Find("lx-select-menu").GetAttribute("data-epoch");
 
-        cut.Render(p => p.Add(s => s.OptionsProvider, new BxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "de").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
+        cut.Render(p => p.Add(s => s.OptionsProvider, new LxOptionsProvider(fake.Load)).Add(s => s.OptionsKey, "de").Add(s => s.ResolveSelected, resolver).Add(s => s.Value, ["i7"]));
 
         Assert.Empty(Labels(cut));
-        Assert.NotEqual(epoch, cut.Find("bx-select-menu").GetAttribute("data-epoch"));
+        Assert.NotEqual(epoch, cut.Find("lx-select-menu").GetAttribute("data-epoch"));
         cut.WaitForAssertion(() => Assert.Equal(2, resolved));
         var requests = fake.Requests.Count;
         await Search(cut, "");
@@ -460,11 +460,11 @@ public class RemoteSelectMenuTests : BluxTestContext
     public void A_resolution_that_threw_is_tried_again_when_the_list_opens()
     {
         var calls = 0;
-        var cut = Render<BxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Value, ["i7"])
+        var cut = Render<LxSelectMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Value, ["i7"])
             .Add(s => s.ResolveSelected, (_, _) =>
             {
                 calls++;
-                return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item seven")]);
+                return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<LxSelectItem>>([new LxSelectItem("i7", "Item seven")]);
             }));
         cut.WaitForAssertion(() => Assert.Equal(1, calls));
         Assert.Equal("i7", cut.Find("[data-slot=label]").GetAttribute("data-label"));

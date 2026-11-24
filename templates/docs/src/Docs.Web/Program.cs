@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Lux.UI;
 using Docs.Web.Components;
 

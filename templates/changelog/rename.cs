@@ -17,13 +17,13 @@ const string StateFile = ".rename-state";
 
 var skippedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".git", ".vs", "bin", "obj", "node_modules" };
 
-// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Blux...), collide with a folder or a namespace of the
+// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Lux...), collide with a folder or a namespace of the
 // template itself (Web, Shared, Layout...), or are the name of the template.
 var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
     Template,
     // Namespaces and frameworks.
-    "System", "Microsoft", "Blux", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
+    "System", "Microsoft", "Lux", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
     // Types of the framework the pages and hosts use unqualified.
     "Task", "Tasks", "Object", "String", "Boolean", "Byte", "SByte", "Char", "Decimal", "Double", "Single", "Float", "Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "IntPtr", "Void",
     "Action", "Func", "Type", "Exception", "Attribute", "Enum", "Guid", "DateTime", "TimeSpan", "Environment", "Console", "Math", "Convert", "File", "Path", "Directory", "Stream", "Thread", "Timer",
@@ -56,7 +56,7 @@ if (!Regex.IsMatch(name, "^[A-Za-z][A-Za-z0-9]*$") || name.Length > 40)
 }
 if (reserved.Contains(name) || csharpKeywords.Contains(name))
 {
-    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Blux...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
+    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Lux...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
 }
 
 var root = Directory.GetCurrentDirectory();
@@ -68,14 +68,14 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
 }
 
 // One pass over the three spellings, so a new name that contains the template name is never replaced again. The components of Lux.UI that have the
-// template name in theirs (BxChangelogVersions, BxChangelogVersion) are not the template name: "Changelog" after "Bx" is left alone.
+// template name in theirs (LxChangelogVersions, LxChangelogVersion) are not the template name: "Changelog" after "Lx" is left alone.
 var spellings = new Dictionary<string, string>
 {
     [Template] = name,
     [Template.ToLowerInvariant()] = name.ToLowerInvariant(),
     [Template.ToUpperInvariant()] = name.ToUpperInvariant(),
 };
-var spellingPattern = new Regex(string.Join("|", spellings.Keys.Select(key => key == Template ? "(?<!Bx)" + Regex.Escape(key) : Regex.Escape(key))));
+var spellingPattern = new Regex(string.Join("|", spellings.Keys.Select(key => key == Template ? "(?<!Lx)" + Regex.Escape(key) : Regex.Escape(key))));
 string Replace(string text) => spellingPattern.Replace(text, match => spellings[match.Value]);
 
 string Relative(string path) => Path.GetRelativePath(root, path).Replace('\\', '/');

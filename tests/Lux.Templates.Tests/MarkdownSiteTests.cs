@@ -1,4 +1,4 @@
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Lux.UI;
 
 namespace Lux.Templates.Tests;
@@ -102,7 +102,7 @@ public class FrontMatterTests
 
 public class MarkdownSiteTests
 {
-    private static string[] Titles(IEnumerable<BxContentNavigationItem> items) => [.. items.Select(i => i.Title)];
+    private static string[] Titles(IEnumerable<LxContentNavigationItem> items) => [.. items.Select(i => i.Title)];
 
     [Fact]
     public void A_page_carries_the_front_matter_keys_the_site_added_and_a_page_built_by_hand_has_none()
@@ -309,7 +309,7 @@ public class MarkdownSiteTests
     [Fact]
     public void A_missing_folder_is_refused()
     {
-        var error = Assert.Throws<ContentException>(() => MarkdownSite.Load(new ContentOptions { Root = Path.Combine(Path.GetTempPath(), "blux-no-such-folder") }));
+        var error = Assert.Throws<ContentException>(() => MarkdownSite.Load(new ContentOptions { Root = Path.Combine(Path.GetTempPath(), "lux-no-such-folder") }));
 
         Assert.Contains("does not exist", error.Message);
     }
@@ -428,6 +428,6 @@ public class MarkdownStoreTests
     [Fact]
     public void A_bad_folder_stops_the_start()
     {
-        Assert.Throws<ContentException>(() => new MarkdownStore(new ContentOptions { Root = Path.Combine(Path.GetTempPath(), "blux-no-such-folder") }));
+        Assert.Throws<ContentException>(() => new MarkdownStore(new ContentOptions { Root = Path.Combine(Path.GetTempPath(), "lux-no-such-folder") }));
     }
 }

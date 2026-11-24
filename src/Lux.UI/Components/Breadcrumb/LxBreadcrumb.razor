@@ -1,0 +1,53 @@
+@namespace Lux.UI
+@using Lux.UI.Internal
+@inherits LxComponentBase
+
+@* A nav landmark with an ordered list. The last item is the current page. Pure markup: works in every render mode. *@
+<nav aria-label="@(AriaLabel ?? Messages.Breadcrumb)" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <ol class="@_slots["list"]">
+        @for (var i = 0; i < Items.Count; i++)
+        {
+            var item = Items[i];
+            var last = i == Items.Count - 1;
+            <li class="@_slots["item"]">
+                @if (item.Href is not null)
+                {
+                    <a href="@item.Href" aria-current="@(last ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
+                }
+                else
+                {
+                    <span aria-current="@(last ? "page" : null)" class="@_slots["link"]">@Inner(item)</span>
+                }
+                @if (!last)
+                {
+                    <span aria-hidden="true" class="@_slots["separator"]">@(Separator ?? RenderIcon(Options.Icons.ChevronRight, _slots["separatorIcon"]))</span>
+                }
+            </li>
+        }
+    </ol>
+</nav>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<LxBreadcrumbItem> Items { get; set; } = [];
+
+    /// <summary>Replaces the chevron between items. Decorative: it is hidden from assistive technology.</summary>
+    [Parameter] public RenderFragment? Separator { get; set; }
+
+    /// <summary>Accessible name of the landmark. Defaults to <see cref="LxMessages.Breadcrumb"/>.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public BreadcrumbUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Breadcrumb, new Dictionary<string, string?>(), Ui, "root");
+
+    private RenderFragment Inner(LxBreadcrumbItem item) =>
+        @<text>
+            @if (item.Icon is not null)
+            {
+                <span class="@_slots["icon"]" aria-hidden="true">@item.Icon</span>
+            }
+            <span class="@_slots["label"]">@item.Label</span>
+        </text>;
+}

@@ -6,10 +6,10 @@ namespace Lux.UI.Server.Tests;
 
 public class RequestCookiesTests
 {
-    private static (IBxRequestCookies Cookies, IHttpContextAccessor Accessor) Create()
+    private static (ILxRequestCookies Cookies, IHttpContextAccessor Accessor) Create()
     {
         var provider = new ServiceCollection().AddLuxServer().BuildServiceProvider();
-        return (provider.GetRequiredService<IBxRequestCookies>(), provider.GetRequiredService<IHttpContextAccessor>());
+        return (provider.GetRequiredService<ILxRequestCookies>(), provider.GetRequiredService<IHttpContextAccessor>());
     }
 
     private static HttpContext Request(string? cookie, string? pathBase = null)
@@ -26,7 +26,7 @@ public class RequestCookiesTests
         var services = new ServiceCollection().AddLuxServer();
 
         Assert.Contains(services, d => d.ServiceType == typeof(IHttpContextAccessor));
-        Assert.Contains(services, d => d.ServiceType == typeof(IBxRequestCookies));
+        Assert.Contains(services, d => d.ServiceType == typeof(ILxRequestCookies));
     }
 
     [Fact]
@@ -34,7 +34,7 @@ public class RequestCookiesTests
     {
         var services = new ServiceCollection().AddLuxServer().AddLuxServer();
 
-        Assert.Single(services, d => d.ServiceType == typeof(IBxRequestCookies));
+        Assert.Single(services, d => d.ServiceType == typeof(ILxRequestCookies));
         Assert.Single(services, d => d.ServiceType == typeof(IHttpContextAccessor));
     }
 
@@ -42,13 +42,13 @@ public class RequestCookiesTests
     public void A_registration_of_the_app_wins_over_the_default()
     {
         var services = new ServiceCollection();
-        services.AddSingleton<IBxRequestCookies, Fake>();
+        services.AddSingleton<ILxRequestCookies, Fake>();
         services.AddLuxServer();
 
-        Assert.IsType<Fake>(services.BuildServiceProvider().GetRequiredService<IBxRequestCookies>());
+        Assert.IsType<Fake>(services.BuildServiceProvider().GetRequiredService<ILxRequestCookies>());
     }
 
-    private sealed class Fake : IBxRequestCookies
+    private sealed class Fake : ILxRequestCookies
     {
         public string? PathBase => null;
 
@@ -59,9 +59,9 @@ public class RequestCookiesTests
     public void It_reads_the_cookies_of_the_current_request()
     {
         var (cookies, accessor) = Create();
-        accessor.HttpContext = Request("blux-timezone=Asia/Tokyo; other=1");
+        accessor.HttpContext = Request("lux-timezone=Asia/Tokyo; other=1");
 
-        Assert.Equal("Asia/Tokyo", cookies.Get("blux-timezone"));
+        Assert.Equal("Asia/Tokyo", cookies.Get("lux-timezone"));
         Assert.Equal("1", cookies.Get("other"));
         Assert.Null(cookies.Get("missing"));
     }
@@ -80,7 +80,7 @@ public class RequestCookiesTests
     {
         var (cookies, _) = Create();
 
-        Assert.Null(cookies.Get("blux-timezone"));
+        Assert.Null(cookies.Get("lux-timezone"));
         Assert.Null(cookies.PathBase);
     }
 
@@ -102,9 +102,9 @@ public class RequestCookiesTests
     public void The_scoped_cookie_name_of_a_path_base_finds_the_cookie_of_that_base()
     {
         var (cookies, accessor) = Create();
-        accessor.HttpContext = Request("blux-timezone=Asia/Tokyo; blux-timezone.sub~~=Europe/Paris", "/sub");
+        accessor.HttpContext = Request("lux-timezone=Asia/Tokyo; lux-timezone.sub~~=Europe/Paris", "/sub");
 
-        Assert.Equal("Europe/Paris", cookies.Get(BxPathScope.CookieName("blux-timezone", cookies.PathBase)));
+        Assert.Equal("Europe/Paris", cookies.Get(LxPathScope.CookieName("lux-timezone", cookies.PathBase)));
     }
 
     [Fact]
@@ -114,12 +114,12 @@ public class RequestCookiesTests
         var http = Request(null);
         accessor.HttpContext = http;
 
-        Assert.Null(cookies.Get("blux-timezone"));
+        Assert.Null(cookies.Get("lux-timezone"));
         Assert.Equal("private", http.Response.Headers.CacheControl.ToString());
         Assert.Equal("Cookie", http.Response.Headers.Vary.ToString());
 
         // Reading another cookie on the same request does not duplicate the directives.
-        Assert.Null(cookies.Get("blux-dl-cols"));
+        Assert.Null(cookies.Get("lux-dl-cols"));
         Assert.Equal("private", http.Response.Headers.CacheControl.ToString());
         Assert.Equal("Cookie", http.Response.Headers.Vary.ToString());
     }
@@ -129,25 +129,25 @@ public class RequestCookiesTests
     {
         var (cookies, accessor) = Create();
 
-        var withMaxAge = Request("blux-timezone=UTC");
+        var withMaxAge = Request("lux-timezone=UTC");
         withMaxAge.Response.Headers.CacheControl = "max-age=60";
         withMaxAge.Response.Headers.Vary = "Accept-Encoding";
         accessor.HttpContext = withMaxAge;
-        cookies.Get("blux-timezone");
+        cookies.Get("lux-timezone");
         Assert.Equal("private, max-age=60", withMaxAge.Response.Headers.CacheControl.ToString());
         Assert.Equal("Accept-Encoding, Cookie", withMaxAge.Response.Headers.Vary.ToString());
 
-        var withPublic = Request("blux-timezone=UTC");
+        var withPublic = Request("lux-timezone=UTC");
         withPublic.Response.Headers.CacheControl = "public, max-age=120";
         accessor.HttpContext = withPublic;
-        cookies.Get("blux-timezone");
+        cookies.Get("lux-timezone");
         Assert.Equal("private, max-age=120", withPublic.Response.Headers.CacheControl.ToString());
 
-        var withNoStore = Request("blux-timezone=UTC");
+        var withNoStore = Request("lux-timezone=UTC");
         withNoStore.Response.Headers.CacheControl = "no-store, no-cache";
         withNoStore.Response.Headers.Vary = "*";
         accessor.HttpContext = withNoStore;
-        cookies.Get("blux-timezone");
+        cookies.Get("lux-timezone");
         Assert.Equal("no-store, no-cache", withNoStore.Response.Headers.CacheControl.ToString());
         Assert.Equal("*", withNoStore.Response.Headers.Vary.ToString());
     }
@@ -156,12 +156,12 @@ public class RequestCookiesTests
     public void SetCacheHeaders_false_leaves_response_headers_untouched()
     {
         var provider = new ServiceCollection().AddLuxServer(o => o.SetCacheHeaders = false).BuildServiceProvider();
-        var cookies = provider.GetRequiredService<IBxRequestCookies>();
+        var cookies = provider.GetRequiredService<ILxRequestCookies>();
         var accessor = provider.GetRequiredService<IHttpContextAccessor>();
-        var http = Request("blux-timezone=UTC");
+        var http = Request("lux-timezone=UTC");
         accessor.HttpContext = http;
 
-        Assert.Equal("UTC", cookies.Get("blux-timezone"));
+        Assert.Equal("UTC", cookies.Get("lux-timezone"));
         Assert.Empty(http.Response.Headers.CacheControl.ToString());
         Assert.Empty(http.Response.Headers.Vary.ToString());
     }

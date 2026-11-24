@@ -3,24 +3,24 @@ import { Reporter, observeChildren } from './shared.js';
 const ITEM = '[role="treeitem"]';
 
 /**
- * <bx-tree value="a">
+ * <lx-tree value="a">
  *   <ul role="tree">
  *     <li role="none">
  *       <div role="treeitem" data-slot="row" aria-expanded="true" aria-owns="g" aria-selected="false" data-value="a">…</div>
  *       <ul id="g" role="group">…<li role="none">…</li></ul>
  *     </li>
  *   </ul>
- * </bx-tree>
+ * </lx-tree>
  *
  * WAI-ARIA tree view with a roving tabindex: Up/Down move through visible items, Right expands or enters a node,
  * Left collapses or goes to the parent, Home/End jump, Enter selects (and follows a link, and toggles a node),
  * Space selects, "*" expands the siblings, letters jump by first letter.
  * The item is its own row and mirrors the state (data-selected, data-expanded); its group is a sibling inside the
  * same list item (so the item's name never has to cover its children) and is tied to it with aria-owns.
- * Selection is reported with "bx-change".
+ * Selection is reported with "lx-change".
  */
-export class BxTreeElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+export class LxTreeElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value'];
 
   #observer = null;
   #reporter = new Reporter(this);
@@ -45,8 +45,8 @@ export class BxTreeElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -58,7 +58,7 @@ export class BxTreeElement extends HTMLElement {
   }
 
   #items() {
-    return [...this.querySelectorAll(ITEM)].filter((item) => item.closest('bx-tree') === this);
+    return [...this.querySelectorAll(ITEM)].filter((item) => item.closest('lx-tree') === this);
   }
 
   #visible() {
@@ -75,7 +75,7 @@ export class BxTreeElement extends HTMLElement {
 
   #parent(item) {
     const parent = item.parentElement.parentElement.closest('[role="group"]')?.parentElement.querySelector(':scope > ' + ITEM);
-    return parent && parent.closest('bx-tree') === this ? parent : null;
+    return parent && parent.closest('lx-tree') === this ? parent : null;
   }
 
   #syncTabIndex() {
@@ -100,7 +100,7 @@ export class BxTreeElement extends HTMLElement {
   #select(item) {
     const changed = item.getAttribute('aria-selected') !== 'true';
     this.#mark(item);
-    if (changed) this.#reporter.report('bx-change', { value: item.dataset.value });
+    if (changed) this.#reporter.report('lx-change', { value: item.dataset.value });
   }
 
   #setExpanded(item, expanded) {
@@ -121,13 +121,13 @@ export class BxTreeElement extends HTMLElement {
 
   #onFocusIn = (event) => {
     const item = event.target.closest?.(ITEM);
-    if (!item || item.closest('bx-tree') !== this) return;
+    if (!item || item.closest('lx-tree') !== this) return;
     for (const other of this.#items()) other.tabIndex = other === item ? 0 : -1;
   };
 
   #onClick = (event) => {
     const item = event.target.closest?.(ITEM);
-    if (!item || item.closest('bx-tree') !== this || item.getAttribute('aria-disabled') === 'true') return;
+    if (!item || item.closest('lx-tree') !== this || item.getAttribute('aria-disabled') === 'true') return;
     this.#select(item);
     if (this.#group(item)) this.#setExpanded(item, item.getAttribute('aria-expanded') !== 'true');
   };
@@ -135,7 +135,7 @@ export class BxTreeElement extends HTMLElement {
   #onKeyDown = (event) => {
     if (event.altKey || event.ctrlKey || event.metaKey) return;
     const item = event.target.closest?.(ITEM);
-    if (!item || item.closest('bx-tree') !== this) return;
+    if (!item || item.closest('lx-tree') !== this) return;
     const visible = this.#visible();
     const index = visible.indexOf(item);
     const hasChildren = !!this.#group(item);
@@ -202,4 +202,4 @@ export class BxTreeElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-tree')) customElements.define('bx-tree', BxTreeElement);
+if (!customElements.get('lx-tree')) customElements.define('lx-tree', LxTreeElement);

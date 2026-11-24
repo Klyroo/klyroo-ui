@@ -1,14 +1,14 @@
 /**
- * <bx-toaster data-close-label="Close" data-duration="5000" data-ui-root="…" data-ui-title="…" …>
+ * <lx-toaster data-close-label="Close" data-duration="5000" data-ui-root="…" data-ui-title="…" …>
  *   <ol data-slot="viewport" class="…"></ol>
- * </bx-toaster>
+ * </lx-toaster>
  *
  * Toasts are created here, not by Blazor: the same toaster then serves .NET code running on the server or in
  * WebAssembly (they get different service instances in Auto mode), and plain scripts.
  */
 const MAX_TOASTS = 5;
 
-export class BxToasterElement extends HTMLElement {
+export class LxToasterElement extends HTMLElement {
   get #viewport() {
     return this.querySelector('[data-slot="viewport"]');
   }
@@ -91,19 +91,19 @@ export class BxToasterElement extends HTMLElement {
   }
 }
 
-if (!customElements.get('bx-toaster')) customElements.define('bx-toaster', BxToasterElement);
+if (!customElements.get('lx-toaster')) customElements.define('lx-toaster', LxToasterElement);
 
 /**
- * Shows a toast in the page's <bx-toaster> (rendered by the BxToaster component).
+ * Shows a toast in the page's <lx-toaster> (rendered by the LxToaster component).
  * Takes an options object, or (title, description, color, duration) as .NET passes them.
  */
 export function toast(options, description, color, duration) {
   if (typeof options !== 'object' || options === null) {
     options = { title: options, description, color, duration: duration ?? undefined };
   }
-  const toaster = document.querySelector('bx-toaster');
+  const toaster = document.querySelector('lx-toaster');
   if (!toaster) {
-    console.warn('Blux.toast: no <BxToaster /> in the page.');
+    console.warn('Lux.toast: no <LxToaster /> in the page.');
     return;
   }
   toaster.add(options);

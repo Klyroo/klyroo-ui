@@ -1,4 +1,4 @@
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 
 namespace Changelog.Web.ReleaseNotes;
 

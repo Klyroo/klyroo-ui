@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace Lux.UI.Internal;
 
 /// <summary>
-/// Infrastructure of Blux form controls; not meant to be used directly.
+/// Infrastructure of Lux form controls; not meant to be used directly.
 /// <see cref="EditBridge"/> for values that are not strings (lists, numbers, booleans).
 /// </summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

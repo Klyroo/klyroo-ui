@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Portfolio.Web.Site;
 
 namespace Lux.Templates.Tests;
@@ -293,7 +293,7 @@ public class PortfolioTemplateTests
         using var folder = new ContentFolder()
             .Page("work/a.md", "A", extra: "year: 2024\nimage: /img/work/nope.svg\n")
             .Page("writing/b.md", "B", extra: "date: 2026-01-01\nimage: img/writing/nope.svg\n");
-        var webRoot = Directory.CreateTempSubdirectory("blux-web-").FullName;
+        var webRoot = Directory.CreateTempSubdirectory("lux-web-").FullName;
         try
         {
             var warnings = Library.Validate(folder.Load(), webRoot).ToList();

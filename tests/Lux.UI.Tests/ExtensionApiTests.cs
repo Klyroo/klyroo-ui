@@ -27,34 +27,34 @@ public sealed class OtherExtensionOptions
     public ComponentTheme Other { get; } = new ComponentTheme("other", "root").Slot("root", "gap-9");
 }
 
-/// <summary>A component that would live in another assembly: it only uses what <see cref="BxComponentBase"/> offers to subclasses.</summary>
-public sealed class TestGauge : BxComponentBase
+/// <summary>A component that would live in another assembly: it only uses what <see cref="LxComponentBase"/> offers to subclasses.</summary>
+public sealed class TestGauge : LxComponentBase
 {
     [Parameter] public string Tone { get; set; } = "calm";
-    [Parameter] public BxSize? Size { get; set; }
+    [Parameter] public LxSize? Size { get; set; }
 
     public string Id { get; private set; } = "";
-    public BxColor Color { get; private set; } = BxColor.Primary;
-    public BxSize EffectiveSize { get; private set; } = BxSize.Md;
+    public LxColor Color { get; private set; } = LxColor.Primary;
+    public LxSize EffectiveSize { get; private set; } = LxSize.Md;
 
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         var slots = ResolveSlots(Options.Extension<GaugeOptions>().Gauge, new Dictionary<string, string?> { ["tone"] = Tone }, null, "root");
         Id = NewId("gauge");
-        Color = DefaultColor(BxColor.Primary);
-        EffectiveSize = Size ?? DefaultSize(BxSize.Md);
+        Color = DefaultColor(LxColor.Primary);
+        EffectiveSize = Size ?? DefaultSize(LxSize.Md);
         builder.OpenElement(0, "div");
         builder.AddAttribute(1, "id", Id);
         builder.AddAttribute(2, "class", slots["root"]);
         builder.OpenElement(3, "span");
         builder.AddAttribute(4, "class", slots["needle"]);
         builder.CloseElement();
-        builder.AddContent(5, RenderIcon("close", "bx-test-icon"));
+        builder.AddContent(5, RenderIcon("close", "lx-test-icon"));
         builder.CloseElement();
     }
 }
 
-public class ExtensionApiTests : BluxTestContext
+public class ExtensionApiTests : LuxTestContext
 {
     public ExtensionApiTests() : base(o => o.Extension<GaugeOptions>().Gauge.Slot("root", "p-9")) { }
 
@@ -68,20 +68,20 @@ public class ExtensionApiTests : BluxTestContext
         Assert.Contains("p-9", root.ClassList);
         Assert.Contains("mine", root.ClassList);
         Assert.Contains("bg-red-500", cut.Find("span").ClassList);
-        Assert.StartsWith("bx-gauge-", root.Id);
-        Assert.NotNull(cut.Find(".bx-test-icon"));
+        Assert.StartsWith("lx-gauge-", root.Id);
+        Assert.NotNull(cut.Find(".lx-test-icon"));
     }
 
     [Fact]
     public void Defaults_of_the_app_reach_the_protected_helpers()
     {
         var options = Services.GetRequiredService<LuxOptions>();
-        options.Defaults.Size = BxSize.Lg;
+        options.Defaults.Size = LxSize.Lg;
 
         var cut = Render<TestGauge>();
 
-        Assert.Equal(BxSize.Lg, cut.Instance.EffectiveSize);
-        Assert.Equal(BxColor.Primary, cut.Instance.Color);
+        Assert.Equal(LxSize.Lg, cut.Instance.EffectiveSize);
+        Assert.Equal(LxColor.Primary, cut.Instance.Color);
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class ExtensionApiTests : BluxTestContext
         const BindingFlags all = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly;
         foreach (var name in new[] { "ResolveSlots", "RenderIcon", "NewId", "DefaultColor", "DefaultSize" })
         {
-            var method = Assert.Single(typeof(BxComponentBase).GetMethods(all), m => m.Name == name);
+            var method = Assert.Single(typeof(LxComponentBase).GetMethods(all), m => m.Name == name);
             Assert.True(method.IsFamily, $"{name} must be protected, not private protected");
         }
         Assert.True(typeof(SlotSet).IsPublic);
@@ -124,7 +124,7 @@ public class ExtensionApiTests : BluxTestContext
         const BindingFlags all = BindingFlags.Instance | BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.DeclaredOnly;
         foreach (var name in new[] { "ResolveSlots", "RenderIcon", "NewId", "DefaultColor", "DefaultSize" })
         {
-            var method = Assert.Single(typeof(BxComponentBase).GetMethods(all), m => m.Name == name);
+            var method = Assert.Single(typeof(LxComponentBase).GetMethods(all), m => m.Name == name);
             foreach (var type in method.GetParameters().Select(p => p.ParameterType).Append(method.ReturnType))
             {
                 AssertPublic(type, name);
@@ -216,7 +216,7 @@ public class ExtensionOptionsTests
 
         Assert.Throws<ArgumentException>(() => options.Extension(typeof(LuxOptions)));
         Assert.Throws<ArgumentException>(() => options.Extension<LuxOptions>());
-        Assert.Throws<ArgumentException>(() => options.Extension(typeof(BxRadioGroup<>)));
+        Assert.Throws<ArgumentException>(() => options.Extension(typeof(LxRadioGroup<>)));
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class ExtensionOptionsTests
 
 public class LocaleCodeResolutionTests
 {
-    private static readonly string[] AllCodes = [.. BxLocales.All.Select(l => l.Code)];
+    private static readonly string[] AllCodes = [.. LxLocales.All.Select(l => l.Code)];
 
     [Fact]
     public void Every_builtin_code_resolves_to_itself()
@@ -246,7 +246,7 @@ public class LocaleCodeResolutionTests
         Assert.Equal(12, AllCodes.Length);
         foreach (var code in AllCodes)
         {
-            Assert.Equal(code, BxLocales.ResolveCode(code, AllCodes));
+            Assert.Equal(code, LxLocales.ResolveCode(code, AllCodes));
         }
     }
 
@@ -274,25 +274,25 @@ public class LocaleCodeResolutionTests
     [InlineData("xx-YY-zz", "en")]
     public void A_code_picks_the_exact_code_then_its_parents_then_English_like_core(string code, string expected)
     {
-        Assert.Equal(expected, BxLocales.ResolveCode(code, AllCodes));
-        Assert.Equal(BxLocales.Resolve(CultureInfo.GetCultureInfo(code.StartsWith("xx", StringComparison.Ordinal) ? "" : code)).Code, expected);
+        Assert.Equal(expected, LxLocales.ResolveCode(code, AllCodes));
+        Assert.Equal(LxLocales.Resolve(CultureInfo.GetCultureInfo(code.StartsWith("xx", StringComparison.Ordinal) ? "" : code)).Code, expected);
     }
 
     [Fact]
     public void A_parent_never_reaches_a_region_and_the_first_code_is_the_last_fallback()
     {
-        Assert.Equal("pt", BxLocales.ResolveCode("pt-BR", ["en", "pt"]));
-        Assert.Equal("en", BxLocales.ResolveCode("pt", ["en", "pt-BR"]));
-        Assert.Equal("de", BxLocales.ResolveCode("sv", ["de", "fr"]));
-        Assert.Equal("fr", BxLocales.ResolveCode("fr-CA", ["de", "fr"]));
+        Assert.Equal("pt", LxLocales.ResolveCode("pt-BR", ["en", "pt"]));
+        Assert.Equal("en", LxLocales.ResolveCode("pt", ["en", "pt-BR"]));
+        Assert.Equal("de", LxLocales.ResolveCode("sv", ["de", "fr"]));
+        Assert.Equal("fr", LxLocales.ResolveCode("fr-CA", ["de", "fr"]));
     }
 
     [Fact]
     public void The_result_keeps_the_spelling_of_the_available_code_and_an_empty_list_is_rejected()
     {
-        Assert.Equal("PT-br", BxLocales.ResolveCode("pt-BR", ["en", "PT-br"]));
-        Assert.Throws<ArgumentException>(() => BxLocales.ResolveCode("fr", []));
-        Assert.Throws<ArgumentNullException>(() => BxLocales.ResolveCode(null!, ["en"]));
+        Assert.Equal("PT-br", LxLocales.ResolveCode("pt-BR", ["en", "PT-br"]));
+        Assert.Throws<ArgumentException>(() => LxLocales.ResolveCode("fr", []));
+        Assert.Throws<ArgumentNullException>(() => LxLocales.ResolveCode(null!, ["en"]));
     }
 
     [Fact]
@@ -300,6 +300,6 @@ public class LocaleCodeResolutionTests
     {
         var tables = new Dictionary<string, int> { ["en"] = 1, ["fr"] = 2, ["zh-Hans"] = 3 };
 
-        Assert.Equal(3, tables[BxLocales.ResolveCode("zh-CN", tables.Keys)]);
+        Assert.Equal(3, tables[LxLocales.ResolveCode("zh-CN", tables.Keys)]);
     }
 }

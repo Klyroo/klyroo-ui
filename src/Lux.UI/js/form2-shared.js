@@ -1,6 +1,6 @@
 import { Reporter } from './shared.js';
 
-/** Separates the values of a list in attributes and in bx-change events, where they travel as one string. */
+/** Separates the values of a list in attributes and in lx-change events, where they travel as one string. */
 export const SEP = '\u001f';
 
 export const parseList = (text) => (text ? text.split(SEP) : []);
@@ -10,8 +10,8 @@ export const parseList = (text) => (text ? text.split(SEP) : []);
  *
  * The rendered state is the host's data-values attribute. The model owns a list of hidden inputs in
  * <span data-slot="values" hidden>, which Blazor renders empty, so the values post in a plain HTML form.
- * Reports changes as bx-change, and ignores renders older than the last report (see Reporter). The rendered values are
- * taken when data-values or data-bx-seq change, never because children changed.
+ * Reports changes as lx-change, and ignores renders older than the last report (see Reporter). The rendered values are
+ * taken when data-values or data-lx-seq change, never because children changed.
  */
 export class ValueModel {
   #host;
@@ -37,9 +37,9 @@ export class ValueModel {
     this.render();
   }
 
-  /** An observed attribute changed: data-bx-seq and data-values mean a render, anything else only repaints. */
+  /** An observed attribute changed: data-lx-seq and data-values mean a render, anything else only repaints. */
   attributeChanged(name) {
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply(true));
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply(true));
     else if (name === 'data-values') this.#apply(false);
     else this.render();
   }
@@ -75,7 +75,7 @@ export class ValueModel {
     this.render();
     if (report) {
       this.#host.dispatchEvent(new Event('change', { bubbles: true }));
-      this.reporter.report('bx-change', { value: values.join(SEP) });
+      this.reporter.report('lx-change', { value: values.join(SEP) });
     }
   }
 

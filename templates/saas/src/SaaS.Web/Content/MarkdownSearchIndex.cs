@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Net.Http.Headers;
 
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>
-/// The search index of the site as a JSON file, for <c>BxContentSearch IndexUrl</c>: the browser fetches it the first time the search opens, so the
+/// The search index of the site as a JSON file, for <c>LxContentSearch IndexUrl</c>: the browser fetches it the first time the search opens, so the
 /// pages of the site do not each carry a copy. The file is the list of pages of <see cref="MarkdownSite.Search"/>, built once per version of the content
 /// and sent with an <c>ETag</c>, so a visitor who has it asks only whether it changed.
 /// </summary>

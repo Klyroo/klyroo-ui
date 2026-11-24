@@ -25,7 +25,7 @@ public sealed class AppState
 /// <remarks>
 /// Where the choice is kept is the business of an <see cref="IAppearanceStore"/>: a cookie on the web (written by the browser, read by the server while it renders, so the
 /// first paint already has the colors) and the local storage of the web view in the MAUI app. A render that has a request (a static render, a prerender) reads the cookie
-/// through <see cref="IBxRequestCookies"/> when the constructor runs; the layout hands the result to the interactive render (<see cref="Restore"/>) so that it does not start
+/// through <see cref="ILxRequestCookies"/> when the constructor runs; the layout hands the result to the interactive render (<see cref="Restore"/>) so that it does not start
 /// from the defaults, and <see cref="LoadAsync"/> reads the store once the browser is there. A value that is not the name of an offered palette is ignored.
 /// </remarks>
 public sealed class AppearanceState
@@ -33,15 +33,15 @@ public sealed class AppearanceState
     private readonly IAppearanceStore _store;
     private bool _loaded;
 
-    /// <summary>The palettes the dialog offers, the first one is the default (the Blux colors).</summary>
-    public static IReadOnlyList<BxPalette> Palettes { get; } = [BxPalette.Lux, BxPalette.Blue, BxPalette.Emerald, BxPalette.Violet, BxPalette.Rose, BxPalette.Orange];
+    /// <summary>The palettes the dialog offers, the first one is the default (the Lux colors).</summary>
+    public static IReadOnlyList<LxPalette> Palettes { get; } = [LxPalette.Lux, LxPalette.Blue, LxPalette.Emerald, LxPalette.Violet, LxPalette.Rose, LxPalette.Orange];
 
-    /// <summary>The neutral palettes the dialog offers, the first one is the default (the Blux neutrals).</summary>
-    public static IReadOnlyList<BxPalette> Neutrals { get; } = [BxPalette.Lux, BxPalette.Slate, BxPalette.Gray, BxPalette.Zinc, BxPalette.Neutral, BxPalette.Stone];
+    /// <summary>The neutral palettes the dialog offers, the first one is the default (the Lux neutrals).</summary>
+    public static IReadOnlyList<LxPalette> Neutrals { get; } = [LxPalette.Lux, LxPalette.Slate, LxPalette.Gray, LxPalette.Zinc, LxPalette.Neutral, LxPalette.Stone];
 
     /// <param name="store">Where the choice is kept.</param>
     /// <param name="cookies">The cookies of the request, when there is one (the web host calls <c>AddLuxServer()</c>); null in WebAssembly and in the MAUI app.</param>
-    public AppearanceState(IAppearanceStore store, IBxRequestCookies? cookies = null)
+    public AppearanceState(IAppearanceStore store, ILxRequestCookies? cookies = null)
     {
         _store = store;
         if (cookies is not null)
@@ -50,17 +50,17 @@ public sealed class AppearanceState
         }
     }
 
-    public BxPalette Primary { get; private set; } = Palettes[0];
+    public LxPalette Primary { get; private set; } = Palettes[0];
 
-    public BxPalette Neutral { get; private set; } = Neutrals[0];
+    public LxPalette Neutral { get; private set; } = Neutrals[0];
 
     /// <summary>The semantic colors with the chosen palettes. A new object on each choice, because the options of a render freeze.</summary>
-    public BxColorOptions Colors { get; private set; } = Build(Palettes[0], Neutrals[0]);
+    public LxColorOptions Colors { get; private set; } = Build(Palettes[0], Neutrals[0]);
 
     /// <summary>Raised after the colors changed.</summary>
     public event Action? Changed;
 
-    private static BxColorOptions Build(BxPalette primary, BxPalette neutral) => new() { Primary = primary, Neutral = neutral };
+    private static LxColorOptions Build(LxPalette primary, LxPalette neutral) => new() { Primary = primary, Neutral = neutral };
 
     /// <summary>
     /// Takes the names of the palettes as they were read from a cookie or handed over by a prerender. A name that is not on offer (a cookie that was edited) leaves that color
@@ -91,10 +91,10 @@ public sealed class AppearanceState
         }
     }
 
-    public Task SetAsync(BxPalette primary) => SetAsync(primary, Neutral);
+    public Task SetAsync(LxPalette primary) => SetAsync(primary, Neutral);
 
     /// <summary>Applies both colors and keeps them in the store.</summary>
-    public async Task SetAsync(BxPalette primary, BxPalette neutral)
+    public async Task SetAsync(LxPalette primary, LxPalette neutral)
     {
         Primary = primary;
         Neutral = neutral;

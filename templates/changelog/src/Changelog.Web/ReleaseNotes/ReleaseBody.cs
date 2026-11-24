@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 
 namespace Changelog.Web.ReleaseNotes;
 

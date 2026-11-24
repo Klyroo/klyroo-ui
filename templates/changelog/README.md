@@ -13,7 +13,7 @@ This repository is a GitHub template. After you create your repository from it, 
 dotnet run rename.cs MyApp
 ```
 
-`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Lux.UI components that contain the template name (`BxChangelogVersions`) are left alone.
+`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Lux.UI components that contain the template name (`LxChangelogVersions`) are left alone.
 
 <!-- rename:end -->
 ## Run
@@ -69,7 +69,7 @@ src/Changelog.Web/
 
 `GitHubReleaseClient` is a typed `HttpClient` (registered with `AddHttpClient`, so connections are pooled and recycled) for `GET /repos/{owner}/{repo}/releases?per_page=100`.
 
-- **What is sent.** A generic `User-Agent` (`blux-template-changelog`, GitHub requires one) and nothing about you or your site; the `Accept` and `X-GitHub-Api-Version` headers; `Authorization: Bearer` only when a token is set. The token is not logged and is not in any page.
+- **What is sent.** A generic `User-Agent` (`lux-template-changelog`, GitHub requires one) and nothing about you or your site; the `Accept` and `X-GitHub-Api-Version` headers; `Authorization: Bearer` only when a token is set. The token is not logged and is not in any page.
 - **Pagination.** The client follows the `Link: rel="next"` header, up to `MaxReleases` and at most ten pages, and only to the host it was configured for and over `https`: a link to another host is ignored, so the token cannot follow it.
 - **Cache.** `ReleaseService` keeps the list in memory (`IMemoryCache`) for `CacheDuration`. Visitors who arrive while the first read runs share it. After the hour the next visitor gets the saved copy at once and a refresh runs in the background, so nobody waits for GitHub.
 - **Conditional requests.** The refresh sends the `ETag` of the first page as `If-None-Match`. A `304` costs no rate limit and only renews the copy. Releases older than the first page are therefore refreshed when the first page changes, not before.
@@ -118,7 +118,7 @@ When `Changelog:SiteUrl` is not set, the links of the feed are built from the `H
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the color mode (a Blux element that needs no .NET code) and the copy buttons of the code blocks (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`; a site with a Content-Security-Policy gives that script a nonce, or serves it as a file). If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only.
+Everything that moves runs in the browser: the color mode (a Lux element that needs no .NET code) and the copy buttons of the code blocks (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`; a site with a Content-Security-Policy gives that script a nonce, or serves it as a file). If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only.
 
 ## Develop
 

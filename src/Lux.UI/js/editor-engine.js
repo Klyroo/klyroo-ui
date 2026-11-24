@@ -1,4 +1,4 @@
-// The TipTap side of <bx-editor>: bundled apart (lux-editor.js) and loaded with a dynamic import by js/editor.js,
+// The TipTap side of <lx-editor>: bundled apart (lux-editor.js) and loaded with a dynamic import by js/editor.js,
 // only when an editor element connects. Everything that needs ProseMirror lives here; the elements in editor.js
 // only deal with the DOM that Blazor renders.
 import { Editor, Extension } from '@tiptap/core';
@@ -84,7 +84,7 @@ export function createEngine({ element, html, editable, placeholder, attributes,
         },
       }),
       Placeholder.configure({ placeholder: () => placeholder(), showOnlyCurrent: true }),
-      MentionNode.configure({ HTMLAttributes: { class: 'bx-mention' } }),
+      MentionNode.configure({ HTMLAttributes: { class: 'lx-mention' } }),
       TaskList,
       TaskItem.configure({ nested: true, a11y: { checkboxLabel: (node) => (taskLabel ? taskLabel(node.textContent) : `Task: ${node.textContent}`) } }),
       imageNode(acceptsImage).configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy', referrerpolicy: 'no-referrer' } }),
@@ -241,7 +241,7 @@ export function createEngine({ element, html, editable, placeholder, attributes,
    * onKeyDown(event). Returns the function that removes it.
    */
   function registerSuggestion(spec) {
-    const key = new PluginKey(`bx-${spec.id}`);
+    const key = new PluginKey(`lx-${spec.id}`);
     const context = (props) => ({ query: props.query, rect: () => props.clientRect?.() ?? null, select: (choice) => props.command(choice) });
     const plugin = Suggestion({
       editor,

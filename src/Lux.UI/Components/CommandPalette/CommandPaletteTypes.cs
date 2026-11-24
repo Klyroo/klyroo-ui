@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Components.Rendering;
 
 namespace Lux.UI;
 
-/// <summary>A command of <see cref="BxCommandPalette"/>: an action, or a link when <see cref="Href"/> is set.</summary>
-public sealed record BxCommandItem
+/// <summary>A command of <see cref="LxCommandPalette"/>: an action, or a link when <see cref="Href"/> is set.</summary>
+public sealed record LxCommandItem
 {
     public string Label { get; init; } = "";
 
-    /// <summary>Identifies the command in <see cref="BxCommandPalette.OnSelect"/>. Defaults to the label.</summary>
+    /// <summary>Identifies the command in <see cref="LxCommandPalette.OnSelect"/>. Defaults to the label.</summary>
     public string? Value { get; init; }
     public string? Description { get; init; }
 
@@ -27,9 +27,9 @@ public sealed record BxCommandItem
 }
 
 /// <summary>A headed set of commands. Without a <see cref="Label"/> the commands are listed with no heading.</summary>
-public sealed record BxCommandGroup(string? Label, IReadOnlyList<BxCommandItem> Items);
+public sealed record LxCommandGroup(string? Label, IReadOnlyList<LxCommandItem> Items);
 
-/// <summary>Per-instance class overrides of <see cref="BxCommandPalette"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxCommandPalette"/> slots.</summary>
 public sealed record CommandPaletteUi : ISlotOverrides
 {
     public string? Root { get; init; }

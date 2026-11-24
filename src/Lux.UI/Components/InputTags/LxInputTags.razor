@@ -1,0 +1,59 @@
+@namespace Lux.UI
+@using Lux.UI.Internal
+@inherits LxListFieldBase
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="IReadOnlyList<string>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Most tags allowed. Past it, typed text is ignored. Zero means no limit.</summary>
+    [Parameter] public int Max { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputTagsUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputTags, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    private Dictionary<string, object> InputAttributes(EditBinding binding)
+    {
+        var attributes = PartAttributes(_slots["input"], binding);
+        attributes["data-slot"] = "input";
+        attributes["type"] = "text";
+        attributes["autocomplete"] = "off";
+        if (Placeholder is not null) attributes["placeholder"] = Placeholder;
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<lx-input-tags data-lx-seq="@SequenceAttribute"
+                        name="@binding.Name"
+                        data-values="@DataValues"
+                        data-max="@(Max > 0 ? Max : null)"
+                        data-tag-class="@_slots["tag"]"
+                        data-remove-class="@_slots["remove"]"
+                        data-remove-label="@Messages.InputTagsRemove"
+                        data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "")"
+                        disabled="@Disabled"
+                        class="@_slots["root"]"
+                        data-color="@Color.Value"
+                        @onbxchange="ChangeHandler"
+                        @onbxchange:stopPropagation="true">
+            <span data-slot="values" hidden></span>
+            <span data-slot="tags" class="@_slots["tags"]"></span>
+            <input @attributes="InputAttributes(binding)" />
+        </lx-input-tags>;
+}

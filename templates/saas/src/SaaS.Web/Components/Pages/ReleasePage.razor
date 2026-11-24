@@ -10,36 +10,36 @@
         <meta name="description" content="@(_release.Page.Description ?? SiteInfo.ChangelogDescription)" />
     </HeadContent>
 
-    <BxContainer Class="py-10 sm:py-14">
+    <LxContainer Class="py-10 sm:py-14">
         <div class="mx-auto max-w-3xl">
-            <BxBreadcrumb Items="_crumbs" />
+            <LxBreadcrumb Items="_crumbs" />
             <article data-testid="release-page" class="mt-8">
                 <header class="flex flex-col gap-3">
-                    <div class="flex flex-wrap items-center gap-3 text-sm text-(--blux-text-muted)">
-                        <time datetime="@BxDates.Iso(_release.Date)">@BxDates.Format(_release.Date)</time>
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-(--lux-text-muted)">
+                        <time datetime="@LxDates.Iso(_release.Date)">@LxDates.Format(_release.Date)</time>
                         @if (_release.Badge is not null)
                         {
-                            <BxBadge Label="@_release.Badge" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                            <LxBadge Label="@_release.Badge" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
                         }
                     </div>
-                    <h1 class="text-3xl font-semibold tracking-tight text-(--blux-text-highlighted)">@_release.Version</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight text-(--lux-text-highlighted)">@_release.Version</h1>
                     @if (_release.Page.Description is not null)
                     {
-                        <p class="text-lg text-pretty text-(--blux-text-muted)">@_release.Page.Description</p>
+                        <p class="text-lg text-pretty text-(--lux-text-muted)">@_release.Page.Description</p>
                     }
                 </header>
-                <BxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_release.Page.Html)</BxPageBody>
+                <LxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_release.Page.Html)</LxPageBody>
             </article>
-            <BxButton Label="All versions" Href="@SiteInfo.ChangelogHref" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" />
+            <LxButton Label="All versions" Href="@SiteInfo.ChangelogHref" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" />
         </div>
-    </BxContainer>
+    </LxContainer>
 }
 
 @code {
     [Parameter] public string? Slug { get; set; }
 
     private Release? _release;
-    private IReadOnlyList<BxBreadcrumbItem> _crumbs = [];
+    private IReadOnlyList<LxBreadcrumbItem> _crumbs = [];
 
     protected override void OnParametersSet()
     {

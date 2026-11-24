@@ -7,7 +7,7 @@ namespace Lux.UI.Build
 {
     /// <summary>
     /// Resolves the <c>LuxFont</c> items of a project: asks the providers, downloads the files into a cache, and writes the
-    /// self-hosted files, <c>blux.fonts.css</c> and the manifest into <see cref="OutputDir"/>. See the Fonts guide.
+    /// self-hosted files, <c>lux.fonts.css</c> and the manifest into <see cref="OutputDir"/>. See the Fonts guide.
     /// </summary>
     public sealed class LuxResolveFonts : Microsoft.Build.Utilities.Task
     {
@@ -33,15 +33,15 @@ namespace Lux.UI.Build
         public bool Offline { get; set; }
 
         /// <summary>Route of the files in the site.</summary>
-        public string UrlBase { get; set; } = "_blux/fonts";
+        public string UrlBase { get; set; } = "_lux/fonts";
 
         /// <summary>How long a provider's answer is reused before it is asked again.</summary>
         public int CacheDays { get; set; } = 7;
 
-        /// <summary>C# file that receives the manifest as an assembly attribute, read by BxFonts.</summary>
+        /// <summary>C# file that receives the manifest as an assembly attribute, read by LxFonts.</summary>
         public string ManifestSourceFile { get; set; } = "";
 
-        /// <summary>Every generated file, with the file name inside the output folder in the metadata <c>BluxFile</c> (not RelativePath, which the static web assets would take as the route).</summary>
+        /// <summary>Every generated file, with the file name inside the output folder in the metadata <c>LuxFile</c> (not RelativePath, which the static web assets would take as the route).</summary>
         [Output] public ITaskItem[] GeneratedFiles { get; set; } = Array.Empty<ITaskItem>();
 
         public override bool Execute()
@@ -60,7 +60,7 @@ namespace Lux.UI.Build
                 }
                 catch (FontException e)
                 {
-                    Log.LogError(subcategory: null, errorCode: "BLUXFONT001", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: e.Message);
+                    Log.LogError(subcategory: null, errorCode: "LUXFONT001", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: e.Message);
                 }
             }
             if (Log.HasLoggedErrors) return false;
@@ -74,8 +74,8 @@ namespace Lux.UI.Build
                 UrlBase = UrlBase.Trim('/'),
                 CacheMaxAge = TimeSpan.FromDays(Math.Max(0, CacheDays)),
                 Offline = Offline,
-                Info = m => Log.LogMessage(MessageImportance.Normal, "Blux fonts: " + m),
-                Warn = m => Log.LogWarning(subcategory: null, warningCode: "BLUXFONT002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: m),
+                Info = m => Log.LogMessage(MessageImportance.Normal, "Lux fonts: " + m),
+                Warn = m => Log.LogWarning(subcategory: null, warningCode: "LUXFONT002", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: m),
             };
 
             FontBuildResult result;
@@ -87,7 +87,7 @@ namespace Lux.UI.Build
             {
                 // Whatever the cause, it is reported as a diagnostic of the task rather than as an MSB4018 crash.
                 var detail = e is BuildToolException || e is IOException || e is UnauthorizedAccessException ? e.Message : e.GetType().Name + ": " + e.Message;
-                Log.LogError(subcategory: null, errorCode: "BLUXFONT003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not generate the fonts: " + detail);
+                Log.LogError(subcategory: null, errorCode: "LUXFONT003", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: "Could not generate the fonts: " + detail);
                 return false;
             }
 
@@ -96,11 +96,11 @@ namespace Lux.UI.Build
                 var message = error + " Fonts are self-hosted: they are downloaded at build time, so a build without network needs them in the cache (" + CacheDir + "). Set LuxFonts=false to turn the feature off.";
                 if (FailOnError)
                 {
-                    Log.LogError(subcategory: null, errorCode: "BLUXFONT004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message);
+                    Log.LogError(subcategory: null, errorCode: "LUXFONT004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message);
                 }
                 else
                 {
-                    Log.LogWarning(subcategory: null, warningCode: "BLUXFONT004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message + " (an error in a Release build)");
+                    Log.LogWarning(subcategory: null, warningCode: "LUXFONT004", helpKeyword: null, file: null, lineNumber: 0, columnNumber: 0, endLineNumber: 0, endColumnNumber: 0, message: message + " (an error in a Release build)");
                 }
             }
 
@@ -117,7 +117,7 @@ namespace Lux.UI.Build
             GeneratedFiles = result.Files.Select(name =>
             {
                 var item = new TaskItem(Path.Combine(OutputDir, name));
-                item.SetMetadata("BluxFile", name);
+                item.SetMetadata("LuxFile", name);
                 return (ITaskItem)item;
             }).ToArray();
             return !Log.HasLoggedErrors;

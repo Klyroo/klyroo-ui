@@ -18,7 +18,7 @@ namespace Lux.Maui;
 public class MainActivity : MauiAppCompatActivity
 {
     private bool IsTv =>
-#if BLUX_TV
+#if LUX_TV
         true;
 #else
         DeviceInfo.Idiom == DeviceIdiom.TV;
@@ -26,7 +26,7 @@ public class MainActivity : MauiAppCompatActivity
 
     /// <summary>
     /// Android TV: a web view does not reliably get the D-pad as key events, and Chromium has no legacy focus navigation for it.
-    /// The remote's keys are caught here, sent into the page as Blux.tvKey('ArrowLeft'), and Blux moves the focus (spatial navigation).
+    /// The remote's keys are caught here, sent into the page as Lux.tvKey('ArrowLeft'), and Lux moves the focus (spatial navigation).
     /// Back is not a key event here: see OnCreate.
     /// </summary>
     public override bool DispatchKeyEvent(KeyEvent? e)
@@ -54,11 +54,11 @@ public class MainActivity : MauiAppCompatActivity
             {
                 if (key == "Enter")
                 {
-                    webView.EvaluateJavascript("(function(){window.Blux&&Blux.tvKey&&Blux.tvKey('Enter');return window.Blux&&Blux.tvTextEditing&&Blux.tvTextEditing()?1:0;})()", new KeyboardSync(this, webView, 0));
+                    webView.EvaluateJavascript("(function(){window.Lux&&Lux.tvKey&&Lux.tvKey('Enter');return window.Lux&&Lux.tvTextEditing&&Lux.tvTextEditing()?1:0;})()", new KeyboardSync(this, webView, 0));
                 }
                 else
                 {
-                    webView.EvaluateJavascript($"window.Blux&&Blux.tvKey&&Blux.tvKey('{key}')", null);
+                    webView.EvaluateJavascript($"window.Lux&&Lux.tvKey&&Lux.tvKey('{key}')", null);
                 }
             }
             return true;
@@ -69,7 +69,7 @@ public class MainActivity : MauiAppCompatActivity
 
     /// <summary>
     /// Back, on a phone (button or gesture) and on a TV remote. Since Android 13 it reaches the app through the back dispatcher, not as a
-    /// key event, and with no callback the system leaves the app. The page is asked first (Blux.tvBack closes the topmost overlay,
+    /// key event, and with no callback the system leaves the app. The page is asked first (Lux.tvBack closes the topmost overlay,
     /// else goes back in the history); the app only goes to the background when the page had nothing left to close.
     /// </summary>
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -85,7 +85,7 @@ public class MainActivity : MauiAppCompatActivity
             if (MainPage.Current?.WebView.Handler?.PlatformView is Android.Webkit.WebView webView)
             {
                 // The page answers 1 when it used Back (it left editing, closed an overlay or went back), plus 2 while a text field is still edited.
-                webView.EvaluateJavascript("(function(){if(!window.Blux||!Blux.tvBack)return 0;var used=Blux.tvBack();return (used?1:0)+(Blux.tvTextEditing&&Blux.tvTextEditing()?2:0);})()", new KeyboardSync(activity, webView, 1));
+                webView.EvaluateJavascript("(function(){if(!window.Lux||!Lux.tvBack)return 0;var used=Lux.tvBack();return (used?1:0)+(Lux.tvTextEditing&&Lux.tvTextEditing()?2:0);})()", new KeyboardSync(activity, webView, 1));
             }
             else
             {

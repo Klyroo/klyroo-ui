@@ -2,19 +2,19 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI.Tests;
 
-/// <summary>Count, Icon and Group of <see cref="BxSelectItem"/> in every component that lists them, and the markup staying as it was without them.</summary>
-public class SelectItemTests : BluxTestContext
+/// <summary>Count, Icon and Group of <see cref="LxSelectItem"/> in every component that lists them, and the markup staying as it was without them.</summary>
+public class SelectItemTests : LuxTestContext
 {
     public static TheoryData<string> Kinds => new("select", "selectmenu", "inputmenu", "listbox");
 
-    private static readonly BxSelectItem[] Plain = [new("a", "Alpha"), new("b", "Beta") { Disabled = true }, new("c", "Gamma")];
+    private static readonly LxSelectItem[] Plain = [new("a", "Alpha"), new("b", "Beta") { Disabled = true }, new("c", "Gamma")];
 
-    private IRenderedComponent<IComponent> RenderList(string kind, IReadOnlyList<BxSelectItem> items) => kind switch
+    private IRenderedComponent<IComponent> RenderList(string kind, IReadOnlyList<LxSelectItem> items) => kind switch
     {
-        "select" => Render<BxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "selectmenu" => Render<BxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "inputmenu" => Render<BxInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "listbox" => Render<BxListbox>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "select" => Render<LxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "selectmenu" => Render<LxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "inputmenu" => Render<LxInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "listbox" => Render<LxListbox>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -70,15 +70,15 @@ public class SelectItemTests : BluxTestContext
     [Fact]
     public void Count_follows_the_locale_of_the_app()
     {
-        var cut = Render<BxApp>(p => p.Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, (RenderFragment)(b =>
+        var cut = Render<LxApp>(p => p.Add(a => a.Locale, LxLocales.Fr).Add(a => a.ChildContent, (RenderFragment)(b =>
         {
-            b.OpenComponent<BxListbox>(0);
-            b.AddAttribute(1, nameof(BxListbox.Items), (IReadOnlyList<BxSelectItem>)[new("a", "Alpha") { Count = 1204 }]);
+            b.OpenComponent<LxListbox>(0);
+            b.AddAttribute(1, nameof(LxListbox.Items), (IReadOnlyList<LxSelectItem>)[new("a", "Alpha") { Count = 1204 }]);
             b.CloseComponent();
         })));
 
         // A narrow no-break space in French, not a comma.
-        Assert.Equal(1204.ToString("N0", BxLocales.Fr.Culture), cut.Find("[data-slot=count]").TextContent);
+        Assert.Equal(1204.ToString("N0", LxLocales.Fr.Culture), cut.Find("[data-slot=count]").TextContent);
         Assert.NotEqual("1,204", cut.Find("[data-slot=count]").TextContent);
     }
 
@@ -93,7 +93,7 @@ public class SelectItemTests : BluxTestContext
         var icon = options[0].Children[0];
         Assert.Equal("true", icon.GetAttribute("aria-hidden"));
         Assert.Contains("size-4", icon.GetAttribute("class"));
-        Assert.False(icon.HasAttribute("data-bx-missing-icon"));
+        Assert.False(icon.HasAttribute("data-lx-missing-icon"));
         // The row is still named by its label.
         Assert.Equal("Alpha", options[0].GetAttribute("data-label"));
         Assert.Equal(["SPAN", "svg"], options[1].Children.Select(c => c.TagName).ToArray());
@@ -140,7 +140,7 @@ public class SelectItemTests : BluxTestContext
     [MemberData(nameof(Kinds))]
     public void Group_ids_are_unique_across_instances(string kind)
     {
-        BxSelectItem[] items = [new("a", "Alpha") { Group = "One" }, new("b", "Beta") { Group = "Two" }];
+        LxSelectItem[] items = [new("a", "Alpha") { Group = "One" }, new("b", "Beta") { Group = "Two" }];
         var first = RenderList(kind, items);
         var second = RenderList(kind, items);
 
@@ -151,24 +151,24 @@ public class SelectItemTests : BluxTestContext
     [Fact]
     public void Group_slots_take_classes_from_Ui()
     {
-        BxSelectItem[] items = [new("a", "Alpha") { Group = "One", Count = 1, Icon = "star" }];
+        LxSelectItem[] items = [new("a", "Alpha") { Group = "One", Count = 1, Icon = "star" }];
 
-        var select = Render<BxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectUi { Group = "g-1", GroupLabel = "gl-1", ItemCount = "ic-1", ItemLeadingIcon = "il-1" }));
+        var select = Render<LxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectUi { Group = "g-1", GroupLabel = "gl-1", ItemCount = "ic-1", ItemLeadingIcon = "il-1" }));
         Assert.Contains("g-1", select.Find("[role=group]").ClassName);
         Assert.Contains("gl-1", select.Find("[data-slot=group-label]").ClassName);
         Assert.Contains("ic-1", select.Find("[data-slot=count]").ClassName);
         Assert.Contains("il-1", select.Find("[role=option] svg").GetAttribute("class"));
 
-        var menu = Render<BxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectMenuUi { Group = "g-2", GroupLabel = "gl-2", ItemCount = "ic-2", ItemLeadingIcon = "il-2" }));
+        var menu = Render<LxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectMenuUi { Group = "g-2", GroupLabel = "gl-2", ItemCount = "ic-2", ItemLeadingIcon = "il-2" }));
         Assert.Contains("g-2", menu.Find("[role=group]").ClassName);
         Assert.Contains("gl-2", menu.Find("[data-slot=group-label]").ClassName);
         Assert.Contains("ic-2", menu.Find("[data-slot=count]").ClassName);
 
-        var input = Render<BxInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new InputMenuUi { Group = "g-3", GroupLabel = "gl-3", ItemCount = "ic-3", ItemLeadingIcon = "il-3" }));
+        var input = Render<LxInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new InputMenuUi { Group = "g-3", GroupLabel = "gl-3", ItemCount = "ic-3", ItemLeadingIcon = "il-3" }));
         Assert.Contains("g-3", input.Find("[role=group]").ClassName);
         Assert.Contains("ic-3", input.Find("[data-slot=count]").ClassName);
 
-        var list = Render<BxListbox>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new ListboxUi { Group = "g-4", GroupLabel = "gl-4", ItemCount = "ic-4", ItemLeadingIcon = "il-4" }));
+        var list = Render<LxListbox>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new ListboxUi { Group = "g-4", GroupLabel = "gl-4", ItemCount = "ic-4", ItemLeadingIcon = "il-4" }));
         Assert.Contains("g-4", list.Find("[role=group]").ClassName);
         Assert.Contains("gl-4", list.Find("[data-slot=group-label]").ClassName);
     }
@@ -176,13 +176,13 @@ public class SelectItemTests : BluxTestContext
     [Fact]
     public void Selected_state_and_the_hidden_values_do_not_depend_on_groups()
     {
-        BxSelectItem[] items = [new("a", "Alpha") { Group = "One" }, new("b", "Beta") { Group = "Two" }];
+        LxSelectItem[] items = [new("a", "Alpha") { Group = "One" }, new("b", "Beta") { Group = "Two" }];
 
-        var select = Render<BxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Value, "b").Add(s => s.Name, "n"));
+        var select = Render<LxSelect>(p => p.Add(s => s.Items, items).Add(s => s.Value, "b").Add(s => s.Name, "n"));
         Assert.Equal(["false", "true"], select.FindAll("[role=option]").Select(o => o.GetAttribute("aria-selected")));
         Assert.Equal("Beta", select.Find("[data-slot=label]").GetAttribute("data-label"));
 
-        var menu = Render<BxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Value, (IReadOnlyList<string>)["a"]).Add(s => s.Multiple, true).Add(s => s.Create, true));
+        var menu = Render<LxSelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Value, (IReadOnlyList<string>)["a"]).Add(s => s.Multiple, true).Add(s => s.Create, true));
         Assert.Equal(["true", "false"], menu.FindAll("[role=option]:not([data-slot=create])").Select(o => o.GetAttribute("aria-selected")));
         // The create option is a child of the listbox, not of a group.
         Assert.Equal("listbox", menu.Find("[data-slot=create]").ParentElement!.GetAttribute("role"));
@@ -191,9 +191,9 @@ public class SelectItemTests : BluxTestContext
     [Fact]
     public void CommandPalette_shows_a_count_before_the_shortcut_and_does_not_search_it()
     {
-        var cut = Render<BxCommandPalette>(p => p.Add(c => c.Groups, (IReadOnlyList<BxCommandGroup>)
+        var cut = Render<LxCommandPalette>(p => p.Add(c => c.Groups, (IReadOnlyList<LxCommandGroup>)
         [
-            new("Mailboxes", [new BxCommandItem { Label = "Inbox", Count = 1204, Shortcut = "G I" }, new BxCommandItem { Label = "Starred" }]),
+            new("Mailboxes", [new LxCommandItem { Label = "Inbox", Count = 1204, Shortcut = "G I" }, new LxCommandItem { Label = "Starred" }]),
         ]));
 
         var options = cut.FindAll("[role=option]");
@@ -206,8 +206,8 @@ public class SelectItemTests : BluxTestContext
         Assert.DoesNotContain("1204", options[0].GetAttribute("data-search"));
         Assert.Contains("tabular-nums", count.ClassName);
 
-        var ui = Render<BxCommandPalette>(p => p
-            .Add(c => c.Groups, (IReadOnlyList<BxCommandGroup>)[new(null, [new BxCommandItem { Label = "Inbox", Count = 3 }])])
+        var ui = Render<LxCommandPalette>(p => p
+            .Add(c => c.Groups, (IReadOnlyList<LxCommandGroup>)[new(null, [new LxCommandItem { Label = "Inbox", Count = 3 }])])
             .Add(c => c.Ui, new CommandPaletteUi { ItemCount = "mine" }));
         Assert.Contains("mine", ui.Find("[data-slot=count]").ClassName);
     }
@@ -215,28 +215,28 @@ public class SelectItemTests : BluxTestContext
     [Fact]
     public void Select_and_SelectMenu_get_an_empty_trigger_slot_for_the_icon_of_the_selected_item_only_when_an_item_has_an_icon()
     {
-        BxSelectItem[] withIcon = [new("a", "Alpha") { Icon = "star" }, new("b", "Beta")];
+        LxSelectItem[] withIcon = [new("a", "Alpha") { Icon = "star" }, new("b", "Beta")];
 
-        var select = Render<BxSelect>(p => p.Add(s => s.Items, withIcon).Add(s => s.Value, "a"));
+        var select = Render<LxSelect>(p => p.Add(s => s.Items, withIcon).Add(s => s.Value, "a"));
         var slot = select.Find("[role=combobox] [data-slot=selectedIcon]");
         // The browser fills it (Blazor renders no children there, so there is nothing to diff); the options say which have an icon.
         Assert.Empty(slot.Children);
         Assert.Equal("true", slot.GetAttribute("aria-hidden"));
         Assert.Equal(["", null], select.FindAll("[role=option]").Select(o => o.GetAttribute("data-has-icon")));
 
-        var menu = Render<BxSelectMenu>(p => p.Add(s => s.Items, withIcon));
+        var menu = Render<LxSelectMenu>(p => p.Add(s => s.Items, withIcon));
         Assert.Empty(menu.Find("button [data-slot=selectedIcon]").Children);
 
-        Assert.Empty(Render<BxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
-        Assert.Empty(Render<BxSelectMenu>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
-        Assert.Empty(Render<BxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-has-icon]"));
+        Assert.Empty(Render<LxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<LxSelectMenu>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<LxSelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-has-icon]"));
     }
 
     [Fact]
     public void An_item_record_without_the_new_properties_equals_the_one_that_it_was()
     {
         // The new properties default to null, so existing items keep their equality and their markup.
-        Assert.Equal(new BxSelectItem("a", "A") { Disabled = true }, new BxSelectItem("a", "A") { Disabled = true, Count = null, Icon = null, Group = null });
-        Assert.NotEqual(new BxSelectItem("a", "A"), new BxSelectItem("a", "A") { Count = 0 });
+        Assert.Equal(new LxSelectItem("a", "A") { Disabled = true }, new LxSelectItem("a", "A") { Disabled = true, Count = null, Icon = null, Group = null });
+        Assert.NotEqual(new LxSelectItem("a", "A"), new LxSelectItem("a", "A") { Count = 0 });
     }
 }

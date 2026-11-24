@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.Components.Forms;
 
 namespace Lux.UI.Tests;
 
-public class SwitchTests : BluxTestContext
+public class SwitchTests : LuxTestContext
 {
     [Fact]
     public void Standalone_renders_a_checkbox_with_switch_role()
     {
-        var cut = Render<BxSwitch>(p => p.Add(s => s.Value, true).Add(s => s.Name, "notify").Add(s => s.Label, "Notify me"));
+        var cut = Render<LxSwitch>(p => p.Add(s => s.Value, true).Add(s => s.Name, "notify").Add(s => s.Label, "Notify me"));
 
         var input = cut.Find("input");
         Assert.Equal("checkbox", input.GetAttribute("type"));
@@ -24,7 +24,7 @@ public class SwitchTests : BluxTestContext
     public void Change_updates_the_bound_value()
     {
         var value = false;
-        var cut = Render<BxSwitch>(p => p
+        var cut = Render<LxSwitch>(p => p
             .Add(s => s.Value, value)
             .Add(s => s.ValueChanged, (bool v) => value = v));
 
@@ -36,7 +36,7 @@ public class SwitchTests : BluxTestContext
     [Fact]
     public void Unbound_switch_attaches_no_change_handler()
     {
-        var cut = Render<BxSwitch>(p => p.Add(s => s.Value, true));
+        var cut = Render<LxSwitch>(p => p.Add(s => s.Value, true));
 
         Assert.Throws<MissingEventHandlerException>(() => cut.Find("input").Change(false));
     }
@@ -44,7 +44,7 @@ public class SwitchTests : BluxTestContext
     [Fact]
     public void Description_is_linked_to_the_input()
     {
-        var cut = Render<BxSwitch>(p => p.Add(s => s.Description, "Sent weekly"));
+        var cut = Render<LxSwitch>(p => p.Add(s => s.Description, "Sent weekly"));
 
         var describedBy = cut.Find("input").GetAttribute("aria-describedby");
         Assert.Equal("Sent weekly", cut.Find($"#{describedBy}").TextContent);
@@ -53,7 +53,7 @@ public class SwitchTests : BluxTestContext
     [Fact]
     public void Disabled_marks_input_and_root()
     {
-        var cut = Render<BxSwitch>(p => p.Add(s => s.Disabled, true));
+        var cut = Render<LxSwitch>(p => p.Add(s => s.Disabled, true));
 
         Assert.True(cut.Find("input").HasAttribute("disabled"));
         Assert.True(cut.Find("div").HasAttribute("data-disabled"));
@@ -69,10 +69,10 @@ public class SwitchTests : BluxTestContext
             {
                 b.OpenComponent<DataAnnotationsValidator>(0);
                 b.CloseComponent();
-                b.OpenComponent<BxSwitch>(1);
-                b.AddAttribute(2, nameof(BxSwitch.Value), model.AcceptTerms);
-                b.AddAttribute(3, nameof(BxSwitch.ValueChanged), EventCallback.Factory.Create<bool>(this, v => model.AcceptTerms = v));
-                b.AddAttribute(4, nameof(BxSwitch.ValueExpression), (System.Linq.Expressions.Expression<Func<bool>>)(() => model.AcceptTerms));
+                b.OpenComponent<LxSwitch>(1);
+                b.AddAttribute(2, nameof(LxSwitch.Value), model.AcceptTerms);
+                b.AddAttribute(3, nameof(LxSwitch.ValueChanged), EventCallback.Factory.Create<bool>(this, v => model.AcceptTerms = v));
+                b.AddAttribute(4, nameof(LxSwitch.ValueExpression), (System.Linq.Expressions.Expression<Func<bool>>)(() => model.AcceptTerms));
                 b.CloseComponent();
             })));
 

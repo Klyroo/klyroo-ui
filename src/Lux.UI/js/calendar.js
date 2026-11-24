@@ -24,17 +24,17 @@ const sameMonth = (a, b) => a.getUTCFullYear() === b.getUTCFullYear() && a.getUT
  * handling run here; the grid is built into the empty [data-slot=body] element Blazor renders, so Blazor and
  * this script never touch the same nodes. Classes of the generated elements come from data-cls-* attributes.
  *
- * <bx-calendar mode="single|multiple|range" value="2026-11-19" min max disabled-dates="a,b" week-start="1"
+ * <lx-calendar mode="single|multiple|range" value="2026-11-19" min max disabled-dates="a,b" week-start="1"
  *              months="January|…" weekdays="Su|…" weekdays-long="Sunday|…" data-locale="en-US">
  *   <input type="hidden" data-slot="value" name="…" value="2026-11-19">
  *   <div data-slot="body"></div>
- * </bx-calendar>
+ * </lx-calendar>
  *
  * Values are ISO dates. Multiple joins them with ",", range is "start/end" (end empty while pending).
  * Keys on a day: arrows move by day or week, Home/End to the week's edges, PageUp/PageDown by month (Shift: year).
  */
-export class BxCalendarElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value', 'mode', 'min', 'max', 'disabled-dates', 'disabled', 'week-start', 'data-locale', 'name'];
+export class LxCalendarElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value', 'mode', 'min', 'max', 'disabled-dates', 'disabled', 'week-start', 'data-locale', 'name'];
 
   #observer = null;
   #reporter = new Reporter(this);
@@ -44,7 +44,7 @@ export class BxCalendarElement extends HTMLElement {
   #body = null;
   #scheduled = false;
   #forced = false;
-  #headingId = `bx-calendar-${++counter}`;
+  #headingId = `lx-calendar-${++counter}`;
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
@@ -60,8 +60,8 @@ export class BxCalendarElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') this.#forced = true;
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
@@ -373,7 +373,7 @@ export class BxCalendarElement extends HTMLElement {
 
   #report(value) {
     (this.querySelector(':scope > input[data-slot="value"]') ?? this).dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value });
+    this.#reporter.report('lx-change', { value });
   }
 
   #showMonth(date, focusTarget) {
@@ -431,4 +431,4 @@ export class BxCalendarElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-calendar')) customElements.define('bx-calendar', BxCalendarElement);
+if (!customElements.get('lx-calendar')) customElements.define('lx-calendar', LxCalendarElement);

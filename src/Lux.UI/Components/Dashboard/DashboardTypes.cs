@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>The slots the sidebars of one <see cref="BxDashboardGroup"/> occupy, shared by every <see cref="DashboardContext"/> the group hands out.</summary>
+/// <summary>The slots the sidebars of one <see cref="LxDashboardGroup"/> occupy, shared by every <see cref="DashboardContext"/> the group hands out.</summary>
 internal sealed class SidebarSlots
 {
     private readonly HashSet<int> _taken = [];
@@ -19,7 +19,7 @@ internal sealed class SidebarSlots
 }
 
 /// <summary>
-/// What a <see cref="BxDashboardGroup"/> tells the components inside it. The group hands out a new instance when its key
+/// What a <see cref="LxDashboardGroup"/> tells the components inside it. The group hands out a new instance when its key
 /// changes, so the sidebars and the controls that read it render again with the new key.
 /// </summary>
 internal sealed class DashboardContext(string? key, SidebarSlots slots)
@@ -40,7 +40,7 @@ internal sealed class DashboardContext(string? key, SidebarSlots slots)
     public string? SidebarId(int slot) => slot == 1 || Key is null ? Key : $"{Key}-{slot}";
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardGroup"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardGroup"/> slots.</summary>
 public sealed record DashboardGroupUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -48,7 +48,7 @@ public sealed record DashboardGroupUi : ISlotOverrides
     string? ISlotOverrides.For(string slot) => slot == "root" ? Root : null;
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardPanel"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardPanel"/> slots.</summary>
 public sealed record DashboardPanelUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -66,7 +66,7 @@ public sealed record DashboardPanelUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardResizeHandle"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardResizeHandle"/> slots.</summary>
 public sealed record DashboardResizeHandleUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -74,7 +74,7 @@ public sealed record DashboardResizeHandleUi : ISlotOverrides
     string? ISlotOverrides.For(string slot) => slot == "root" ? Root : null;
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardNavbar"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardNavbar"/> slots.</summary>
 public sealed record DashboardNavbarUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -94,7 +94,7 @@ public sealed record DashboardNavbarUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardToolbar"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardToolbar"/> slots.</summary>
 public sealed record DashboardToolbarUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -112,7 +112,7 @@ public sealed record DashboardToolbarUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDashboardSearchButton"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDashboardSearchButton"/> slots.</summary>
 public sealed record DashboardSearchButtonUi : ISlotOverrides
 {
     public string? Root { get; init; }

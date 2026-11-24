@@ -1,10 +1,10 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>简体中文, code zh-Hans: zh-CN, zh-SG and zh-Hans-* reach it through their parent culture, like on the server.</summary>
-    public static BxLocale ZhCn { get; } = new("zh-Hans", "简体中文", BxDirection.Ltr,
-        new BxMessages
+    public static LxLocale ZhCn { get; } = new("zh-Hans", "简体中文", LxDirection.Ltr,
+        new LxMessages
         {
             ChartLine = "折线图",
             ChartArea = "面积图",

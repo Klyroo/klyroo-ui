@@ -8,7 +8,7 @@
     for the source of this repository. The nearest Directory.Packages.props is the one of the template, so its package versions are the ones used.
   -->
   <PropertyGroup>
-    <BluxRepoRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..'))</BluxRepoRoot>
+    <LuxRepoRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..'))</LuxRepoRoot>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 </Project>

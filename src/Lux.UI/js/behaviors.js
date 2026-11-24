@@ -345,7 +345,7 @@ export function createInlineEdit(context, { key = 'value', onCommit = null, onCa
 }
 
 /**
- * Defines a composable primitive that wires state, live DOM updates, behaviors, slots, and the Blux.agent bridge.
+ * Defines a composable primitive that wires state, live DOM updates, behaviors, slots, and the Lux.agent bridge.
  */
 export function definePrimitive(definition) {
   const { name, state: createInitialState, api: createApi, slots: createSlots, agent: agentConfig } = definition;
@@ -394,14 +394,14 @@ export function definePrimitive(definition) {
 
       if (rootElement) {
         rootElement.__bxPrimitive = instance;
-        rootElement.setAttribute('data-bx-primitive', name);
+        rootElement.setAttribute('data-lx-primitive', name);
       }
       return instance;
     },
   };
 }
 
-export const BluxBehaviors = {
+export const LuxBehaviors = {
   announce,
   createUndoStack,
   createRovingFocus,

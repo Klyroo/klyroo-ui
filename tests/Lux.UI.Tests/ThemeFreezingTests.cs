@@ -179,18 +179,18 @@ public class ThemeFreezingServiceTests
     }
 }
 
-public class ThemeFreezingRenderingTests : BluxTestContext
+public class ThemeFreezingRenderingTests : LuxTestContext
 {
     [Fact]
     public void Rendering_freezes_the_theme_and_keeps_rendering_every_selection()
     {
         var options = Services.GetRequiredService<LuxOptions>();
 
-        var first = Render<BxButton>(p => p.Add(b => b.Label, "One"));
+        var first = Render<LxButton>(p => p.Add(b => b.Label, "One"));
 
         Assert.Throws<InvalidOperationException>(() => options.Button.Slot("base", "font-bold"));
 
-        var second = Render<BxButton>(p => p.Add(b => b.Label, "Two").Add(b => b.Size, BxSize.Lg));
+        var second = Render<LxButton>(p => p.Add(b => b.Label, "Two").Add(b => b.Size, LxSize.Lg));
         Assert.Equal("Two", second.Find("button").TextContent.Trim());
         Assert.Equal("One", first.Find("button").TextContent.Trim());
     }
@@ -198,10 +198,10 @@ public class ThemeFreezingRenderingTests : BluxTestContext
     [Fact]
     public void A_scope_keeps_working_with_frozen_themes()
     {
-        var cut = Render<BxTheme>(p => p
-            .Add(t => t.For, typeof(BxButton))
+        var cut = Render<LxTheme>(p => p
+            .Add(t => t.For, typeof(LxButton))
             .Add(t => t.Ui, new ButtonUi { Base = "rounded-none" })
-            .AddChildContent<BxButton>());
+            .AddChildContent<LxButton>());
 
         Assert.Contains("rounded-none", cut.Find("button").ClassList);
         Assert.Throws<InvalidOperationException>(() => Services.GetRequiredService<LuxOptions>().Button.Slot("base", "p-9"));

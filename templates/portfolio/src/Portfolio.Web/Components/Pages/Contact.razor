@@ -7,64 +7,64 @@
     <meta name="description" content="@SiteInfo.ContactDescription" />
 </HeadContent>
 
-@* UI only. The form is Blux's BxForm, posted to the server with FormName (no circuit): the server checks the fields with the rules of ContactMessage and,
+@* UI only. The form is Lux's LxForm, posted to the server with FormName (no circuit): the server checks the fields with the rules of ContactMessage and,
    when they are valid, calls SendAsync below, which sends nothing. There is no mail service, no database and no queue: the message is not stored, not
    logged and not forwarded, and it is not echoed back. A valid post redirects to /contact?sent=1 (Post/Redirect/Get). To make it real, send the message in SendAsync (an SMTP client, an email API or a
    form service), return a message in _error when that fails, and add a way to stop bots (a hidden field, a rate limit, or a check such as Turnstile). *@
-<BxContainer Class="py-10 sm:py-14">
-    <BxPageHeader Title="@SiteInfo.ContactTitle" Description="@SiteInfo.ContactDescription" />
+<LxContainer Class="py-10 sm:py-14">
+    <LxPageHeader Title="@SiteInfo.ContactTitle" Description="@SiteInfo.ContactDescription" />
 
     <div class="mt-10 grid gap-12 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div class="flex flex-col gap-6">
             @if (Sent == "1")
             {
-                <BxAlert Color="BxColor.Info" Variant="BxVariant.Soft" Title="The form is valid" role="status" data-testid="contact-result"
+                <LxAlert Color="LxColor.Info" Variant="LxVariant.Soft" Title="The form is valid" role="status" data-testid="contact-result"
                          Description="@($"Thank you. This template has no mail service: nothing was sent and nothing was stored. Write to {SiteInfo.Email} to reach me.")" />
             }
             @if (_error is not null)
             {
-                <BxAlert Color="BxColor.Error" Variant="BxVariant.Soft" Title="@_error" role="alert" />
+                <LxAlert Color="LxColor.Error" Variant="LxVariant.Soft" Title="@_error" role="alert" />
             }
 
-            <BxForm Model="Model" FormName="contact" OnValidSubmit="SendAsync" class="flex flex-col gap-5" data-testid="contact-form">
+            <LxForm Model="Model" FormName="contact" OnValidSubmit="SendAsync" class="flex flex-col gap-5" data-testid="contact-form">
                 <div class="grid gap-5 sm:grid-cols-2">
-                    <BxFormField Label="Name" Required For="() => Model!.Name">
-                        <BxInput @bind-Value="Model!.Name" autocomplete="name" />
-                    </BxFormField>
-                    <BxFormField Label="Email" Required For="() => Model!.Email">
-                        <BxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" Placeholder="you@company.com" />
-                    </BxFormField>
+                    <LxFormField Label="Name" Required For="() => Model!.Name">
+                        <LxInput @bind-Value="Model!.Name" autocomplete="name" />
+                    </LxFormField>
+                    <LxFormField Label="Email" Required For="() => Model!.Email">
+                        <LxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" Placeholder="you@company.com" />
+                    </LxFormField>
                 </div>
-                <BxFormField Label="What is this about?" Required For="() => Model!.Topic">
+                <LxFormField Label="What is this about?" Required For="() => Model!.Topic">
                     @* Radio buttons post natively: the form works with JavaScript off. *@
-                    <BxRadioGroup TValue="string" @bind-Value="Model!.Topic" Items="SiteInfo.Topics" />
-                </BxFormField>
-                <BxFormField Label="Message" Required For="() => Model!.Message" Help="@($"Up to {ContactMessage.MaxMessageLength} characters.")">
-                    <BxTextarea @bind-Value="Model!.Message" Rows="7" />
-                </BxFormField>
+                    <LxRadioGroup TValue="string" @bind-Value="Model!.Topic" Items="SiteInfo.Topics" />
+                </LxFormField>
+                <LxFormField Label="Message" Required For="() => Model!.Message" Help="@($"Up to {ContactMessage.MaxMessageLength} characters.")">
+                    <LxTextarea @bind-Value="Model!.Message" Rows="7" />
+                </LxFormField>
                 <div>
-                    <BxButton Type="submit" Label="Send the message" Size="BxSize.Lg" />
+                    <LxButton Type="submit" Label="Send the message" Size="LxSize.Lg" />
                 </div>
-            </BxForm>
+            </LxForm>
         </div>
 
         <aside aria-label="Other ways to reach me" class="flex flex-col gap-6 text-sm">
             <div>
-                <h2 class="text-sm font-semibold text-(--blux-text-highlighted)">Email</h2>
-                <p class="mt-1 text-(--blux-text-muted)"><a href="mailto:@SiteInfo.Email" class="font-medium text-(--blux-primary-text) underline underline-offset-4">@SiteInfo.Email</a></p>
+                <h2 class="text-sm font-semibold text-(--lux-text-highlighted)">Email</h2>
+                <p class="mt-1 text-(--lux-text-muted)"><a href="mailto:@SiteInfo.Email" class="font-medium text-(--lux-primary-text) underline underline-offset-4">@SiteInfo.Email</a></p>
             </div>
             <div>
-                <h2 class="text-sm font-semibold text-(--blux-text-highlighted)">Based in</h2>
-                <p class="mt-1 text-(--blux-text-muted)">@SiteInfo.Location</p>
+                <h2 class="text-sm font-semibold text-(--lux-text-highlighted)">Based in</h2>
+                <p class="mt-1 text-(--lux-text-muted)">@SiteInfo.Location</p>
             </div>
             <div>
-                <h2 class="text-sm font-semibold text-(--blux-text-highlighted)">Elsewhere</h2>
+                <h2 class="text-sm font-semibold text-(--lux-text-highlighted)">Elsewhere</h2>
                 <ul class="m-0 mt-2 flex list-none flex-col gap-2 p-0">
                     @foreach (var link in SiteInfo.Social.Where(l => l.Label != "Email"))
                     {
                         <li>
-                            <a href="@link.Href" class="inline-flex items-center gap-2 text-(--blux-text-muted) underline-offset-4 hover:text-(--blux-text-highlighted) hover:underline">
-                                <BxIcon Name="@link.Icon" Class="size-4" />
+                            <a href="@link.Href" class="inline-flex items-center gap-2 text-(--lux-text-muted) underline-offset-4 hover:text-(--lux-text-highlighted) hover:underline">
+                                <LxIcon Name="@link.Icon" Class="size-4" />
                                 <span>@link.Label</span>
                             </a>
                         </li>
@@ -73,7 +73,7 @@
             </div>
         </aside>
     </div>
-</BxContainer>
+</LxContainer>
 
 @code {
     // Bound to the posted form: a static post is validated by the server like an interactive one, and the page that answers it carries the errors.

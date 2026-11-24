@@ -1,0 +1,73 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+@*
+    The root of a dashboard: a row of a LxDashboardSidebar and LxDashboardPanels. <lx-dashboard-group> (js/dashboard.js)
+    owns the panel sizes in the browser and remembers them under StorageKey; the sidebar keeps its collapsed state and
+    width in cookies under the same key (js/layout.js). .NET hears about sizes only when Sizes is bound.
+    It fills its parent, so the parent needs a height: a frame with a fixed height, or the page itself.
+*@
+<CascadingValue Value="_context">
+    <lx-dashboard-group data-lx-seq="@(SizesChanged.HasDelegate ? _sequence : null)"
+                        class="@_slots["root"]"
+                        data-lx-dashboard-id="@StorageKey"
+                        sizes="@(Sizes is null ? null : string.Join(',', Sizes.Select(s => s.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))))"
+                        @attributes="AdditionalAttributes">
+        @* The listener is on a childless element, so the lx-change of a component inside the group is never read as sizes. *@
+        <span hidden data-lx-dashboard-sink
+              @onbxchange="ChangeHandler"
+              @onbxchange:stopPropagation="true"></span>
+        @ChildContent
+    </lx-dashboard-group>
+</CascadingValue>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly SidebarSlots _sidebarSlots = new();
+    private DashboardContext _context = default!;
+    private int _sequence;
+
+    /// <summary>The sidebar, the panels and anything else of the dashboard, laid out in a row.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Key under which the dashboard remembers its state (sidebar in cookies, panel sizes in localStorage): the collapsed state and the width of its
+    /// sidebar (cookies "lux-sidebar-" followed by the key, see LxSidebar.Id and LxPathScope.SidebarCookieName for an app below a path base) and the sizes of its panels ("lux:dashboard:" key ":panels").
+    /// Without a key nothing is remembered. Use a different key for each dashboard of the app.
+    /// </summary>
+    [Parameter] public string? StorageKey { get; set; }
+
+    /// <summary>
+    /// Sizes of the panels in percent, one per panel in document order. Bind it to follow resizing from .NET; unbound,
+    /// resizing stays in the browser. Bound sizes are not restored from storage: your state wins.
+    /// </summary>
+    [Parameter] public IReadOnlyList<double>? Sizes { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<double>> SizesChanged { get; set; }
+    [Parameter] public DashboardGroupUi? Ui { get; set; }
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        SizesChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet()
+    {
+        if (_context is null || _context.Key != StorageKey) _context = new DashboardContext(StorageKey, _sidebarSlots);
+        _slots = ResolveSlots(Options.DashboardGroup, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        var parts = (e.Value ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries);
+        var sizes = new double[parts.Length];
+        for (var i = 0; i < parts.Length; i++)
+        {
+            if (!double.TryParse(parts[i], System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out sizes[i])) return;
+        }
+        if (sizes.Length == 0) return;
+        _sequence = e.Sequence;
+        Sizes = sizes;
+        await SizesChanged.InvokeAsync(sizes);
+    }
+}

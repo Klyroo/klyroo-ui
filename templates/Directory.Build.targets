@@ -4,64 +4,64 @@
     package is swapped for the source of the library, so a change to a component shows in the templates without a pack:
 
       - the PackageReference to Lux.UI (and Lux.UI.Images, Lux.UI.Images.Local, Lux.UI.Tools, Lux.UI.Tools.Query, Lux.UI.Server) becomes a ProjectReference;
-      - the Blux build features (self-hosted fonts, bundled icons, Tailwind) come from buildTransitive/*.targets of the library, imported by hand
+      - the Lux build features (self-hosted fonts, bundled icons, Tailwind) come from buildTransitive/*.targets of the library, imported by hand
         into every project that uses the Razor SDK, which is what the package does through NuGet (buildTransitive reaches the projects that only
         reference the one that has the package);
-      - lux.theme.css is copied to obj/blux/, which buildTransitive/Lux.UI.targets does from a path that exists only in the package;
+      - lux.theme.css is copied to obj/lux/, which buildTransitive/Lux.UI.targets does from a path that exists only in the package;
       - a template whose Directory.Packages.props lists Lux.UI.Tools gets buildTransitive/Lux.UI.Tools.targets in every project of the Razor SDK, as the
-        package delivers it to every project that reaches it (BluxToolsPresent, the BLUXTOOLS001 check, the Tools Tailwind theme), and blux-tools.theme.css is
-        copied to obj/blux/ from the source folder of the library, where the package has it under staticwebassets/.
+        package delivers it to every project that reaches it (LuxToolsPresent, the LUXTOOLS001 check, the Tools Tailwind theme), and lux-tools.theme.css is
+        copied to obj/lux/ from the source folder of the library, where the package has it under staticwebassets/.
 
     The exported repository (build/export-template.mjs) has none of this: it is verified against a packed Lux.UI by build/verify-templates.mjs.
   -->
   <ItemGroup>
-    <_BluxUi Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI'))" />
-    <_BluxImages Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images'))" />
-    <_BluxImagesLocal Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images.Local'))" />
-    <_BluxServer Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Server'))" />
-    <_BluxTools Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools'))" />
-    <_BluxToolsQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools.Query'))" />
+    <_LuxUi Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI'))" />
+    <_LuxImages Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images'))" />
+    <_LuxImagesLocal Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images.Local'))" />
+    <_LuxServer Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Server'))" />
+    <_LuxTools Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools'))" />
+    <_LuxToolsQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools.Query'))" />
     <_LuxTable Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.Table'))" />
     <_LuxQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.Query'))" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Remove="Lux.UI;Lux.UI.Images;Lux.UI.Images.Local;Lux.UI.Tools;Lux.UI.Tools.Query;Lux.UI.Server;Lux.Table;Lux.Query" />
-    <ProjectReference Include="$(BluxRepoRoot)src/Lux.UI/Lux.UI.csproj" Condition="'@(_BluxUi)' != ''" />
-    <ProjectReference Include="$(BluxRepoRoot)src/Lux.UI.Images/Lux.UI.Images.csproj" Condition="'@(_BluxImages)' != ''" />
-    <ProjectReference Include="$(BluxRepoRoot)src/Lux.UI.Images.Local/Lux.UI.Images.Local.csproj" Condition="'@(_BluxImagesLocal)' != ''" />
-    <ProjectReference Include="$(BluxRepoRoot)src/Lux.UI.Server/Lux.UI.Server.csproj" Condition="'@(_BluxServer)' != ''" />
-    <ProjectReference Include="$(BluxRepoRoot)../lux-table/src/Lux.Table/Lux.Table.csproj" Condition="'@(_BluxTools)' != '' Or '@(_LuxTable)' != ''" />
-    <ProjectReference Include="$(BluxRepoRoot)../lux-query/src/Lux.Query/Lux.Query.csproj" Condition="'@(_BluxToolsQuery)' != '' Or '@(_LuxQuery)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI/Lux.UI.csproj" Condition="'@(_LuxUi)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Images/Lux.UI.Images.csproj" Condition="'@(_LuxImages)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Images.Local/Lux.UI.Images.Local.csproj" Condition="'@(_LuxImagesLocal)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Server/Lux.UI.Server.csproj" Condition="'@(_LuxServer)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)../lux-table/src/Lux.Table/Lux.Table.csproj" Condition="'@(_LuxTools)' != '' Or '@(_LuxTable)' != ''" />
+    <ProjectReference Include="$(LuxRepoRoot)../lux-query/src/Lux.Query/Lux.Query.csproj" Condition="'@(_LuxToolsQuery)' != '' Or '@(_LuxQuery)' != ''" />
   </ItemGroup>
 
   <!-- The build features, for the projects of the Razor SDK (web hosts, class libraries, MAUI Blazor heads, WebAssembly projects). -->
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
     <!-- Built first; the task assembly is loaded from its output folder, not referenced. -->
-    <ProjectReference Include="$(BluxRepoRoot)src/Lux.UI.Build.Tasks/Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Build.Tasks/Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <PropertyGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <LuxBuildTasksAssembly>$(BluxRepoRoot)src/Lux.UI.Build.Tasks/bin/$(Configuration)/netstandard2.0/Lux.UI.Build.Tasks.dll</LuxBuildTasksAssembly>
+    <LuxBuildTasksAssembly>$(LuxRepoRoot)src/Lux.UI.Build.Tasks/bin/$(Configuration)/netstandard2.0/Lux.UI.Build.Tasks.dll</LuxBuildTasksAssembly>
   </PropertyGroup>
-  <Import Project="$(BluxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tasks.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(BluxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Fonts.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(BluxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Icons.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(BluxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tailwind.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tasks.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Fonts.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Icons.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tailwind.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
 
   <PropertyGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true' And Exists('$(DirectoryPackagesPropsPath)')">
-    <_BluxPackagesText>$([System.IO.File]::ReadAllText('$(DirectoryPackagesPropsPath)'))</_BluxPackagesText>
-    <_BluxTemplateUsesTools Condition="$(_BluxPackagesText.Contains('Include=&quot;Lux.UI.Tools&quot;')) Or $(_BluxPackagesText.Contains('Include=&quot;Lux.Table&quot;'))">true</_BluxTemplateUsesTools>
+    <_LuxPackagesText>$([System.IO.File]::ReadAllText('$(DirectoryPackagesPropsPath)'))</_LuxPackagesText>
+    <_LuxTemplateUsesTools Condition="$(_LuxPackagesText.Contains('Include=&quot;Lux.UI.Tools&quot;')) Or $(_LuxPackagesText.Contains('Include=&quot;Lux.Table&quot;'))">true</_LuxTemplateUsesTools>
   </PropertyGroup>
 
-  <Target Name="BluxToolsCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(_BluxTemplateUsesTools)' == 'true'">
-    <Copy SourceFiles="$(BluxRepoRoot)../lux-table/src/Lux.Table/wwwroot/lux-table.theme.css"
-          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))"
+  <Target Name="LuxToolsCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(_LuxTemplateUsesTools)' == 'true'">
+    <Copy SourceFiles="$(LuxRepoRoot)../lux-table/src/Lux.Table/wwwroot/lux-table.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))"
           SkipUnchangedFiles="true" />
   </Target>
 
   <Target Name="LuxCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <Copy SourceFiles="$(BluxRepoRoot)src/Lux.UI/wwwroot/lux.theme.css"
-          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))"
+    <Copy SourceFiles="$(LuxRepoRoot)src/Lux.UI/wwwroot/lux.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))"
           SkipUnchangedFiles="true" />
   </Target>
 </Project>

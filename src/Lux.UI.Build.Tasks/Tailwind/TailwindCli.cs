@@ -251,14 +251,14 @@ namespace Lux.UI.Build
         }
 
         /// <summary>
-        /// The cache shared by every project and solution of the user: <c>%LOCALAPPDATA%\Blux\tailwind</c> on Windows (local, not roaming:
-        /// the binary is for this machine), <c>~/.blux/tailwind</c> elsewhere (LocalApplicationData would be ~/.local/share there, and the
+        /// The cache shared by every project and solution of the user: <c>%LOCALAPPDATA%\Lux\tailwind</c> on Windows (local, not roaming:
+        /// the binary is for this machine), <c>~/.lux/tailwind</c> elsewhere (LocalApplicationData would be ~/.local/share there, and the
         /// folder of a tool is easier to find and delete under one dot folder). Null when the profile folder is unknown.
         /// </summary>
         public static string? DefaultCacheDir(bool windows, string? localAppData, string? home)
         {
-            if (windows) return string.IsNullOrEmpty(localAppData) ? null : Path.Combine(localAppData, "Blux", "tailwind");
-            return string.IsNullOrEmpty(home) ? null : Path.Combine(home, ".blux", "tailwind");
+            if (windows) return string.IsNullOrEmpty(localAppData) ? null : Path.Combine(localAppData, "Lux", "tailwind");
+            return string.IsNullOrEmpty(home) ? null : Path.Combine(home, ".lux", "tailwind");
         }
 
         public static string? DefaultCacheDir()

@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxPageGrid"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxPageGrid"/> slots.</summary>
 public sealed record PageGridUi : ISlotOverrides
 {
     public string? Root { get; init; }

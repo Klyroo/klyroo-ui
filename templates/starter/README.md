@@ -35,7 +35,7 @@ src/
 ```
 
 - Replace `Pages/Home.razor` with your own home page and edit `Layout/MainLayout.razor` for the header, the footer and the navigation.
-- `StarterServices.cs` configures Blux for the three hosts in one place (colors, locales, default sizes).
+- `StarterServices.cs` configures Lux for the three hosts in one place (colors, locales, default sizes).
 - Tailwind is compiled by the build from `src/Starter.Shared/Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `Starter.Shared.csproj`), with no Node and no `package.json`. The result is served at `_content/Starter.Shared/app.css`, which both the web host and the MAUI app link.
 - Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
 

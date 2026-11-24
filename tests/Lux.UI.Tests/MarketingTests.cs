@@ -4,17 +4,17 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lux.UI.Tests;
 
-public class MarketingTests : BluxTestContext
+public class MarketingTests : LuxTestContext
 {
-    private static readonly BxAuthField[] SignInFields =
+    private static readonly LxAuthField[] SignInFields =
     [
         new("email", "email") { Label = "Email", Required = true },
         new("password", "password") { Label = "Password", Required = true },
         new("remember", "checkbox") { Label = "Remember me" },
     ];
 
-    private IRenderedComponent<BxAuthForm> RenderAuth(Action<ComponentParameterCollectionBuilder<BxAuthForm>>? configure = null, IReadOnlyList<BxAuthField>? fields = null) =>
-        Render<BxAuthForm>(p =>
+    private IRenderedComponent<LxAuthForm> RenderAuth(Action<ComponentParameterCollectionBuilder<LxAuthForm>>? configure = null, IReadOnlyList<LxAuthField>? fields = null) =>
+        Render<LxAuthForm>(p =>
         {
             p.Add(f => f.Fields, fields ?? SignInFields).Add(f => f.FormName, "sign-in").Add(f => f.Title, "Welcome back");
             configure?.Invoke(p);
@@ -44,12 +44,12 @@ public class MarketingTests : BluxTestContext
     {
         var cut = RenderAuth();
 
-        var button = cut.Find("bx-password button[data-slot=toggle]");
+        var button = cut.Find("lx-password button[data-slot=toggle]");
         Assert.Equal("Show password", button.GetAttribute("aria-label"));
         Assert.Equal("false", button.GetAttribute("aria-pressed"));
         Assert.Equal("button", button.GetAttribute("type"));
-        Assert.Equal("password", cut.Find("bx-password input").GetAttribute("type"));
-        Assert.Equal("current-password", cut.Find("bx-password input").GetAttribute("autocomplete"));
+        Assert.Equal("password", cut.Find("lx-password input").GetAttribute("type"));
+        Assert.Equal("current-password", cut.Find("lx-password input").GetAttribute("autocomplete"));
         Assert.Equal("true", button.QuerySelector("svg")!.GetAttribute("aria-hidden"));
     }
 
@@ -76,12 +76,12 @@ public class MarketingTests : BluxTestContext
             values["password"] is { Length: < 8 } ? new Dictionary<string, string> { ["password"] = "Too short." } : null));
 
         cut.Find("input[type=email]").Change("nope");
-        cut.Find("bx-password input").Change("longenough1");
+        cut.Find("lx-password input").Change("longenough1");
         cut.Find("form").Submit();
         Assert.Equal("Enter a valid email address.", cut.Find("p[data-slot=error]").TextContent.Trim());
 
         cut.Find("input[type=email]").Change("ada@example.com");
-        cut.Find("bx-password input").Change("short");
+        cut.Find("lx-password input").Change("short");
         cut.Find("form").Submit();
         Assert.Equal("Too short.", cut.Find("p[data-slot=error]").TextContent.Trim());
     }
@@ -91,7 +91,7 @@ public class MarketingTests : BluxTestContext
     {
         var cut = RenderAuth();
         cut.Find("input[type=email]").Change("a@" + new string('.', 50_000) + "@");
-        cut.Find("bx-password input").Change("longenough1");
+        cut.Find("lx-password input").Change("longenough1");
 
         var watch = System.Diagnostics.Stopwatch.StartNew();
         cut.Find("form").Submit();
@@ -107,8 +107,8 @@ public class MarketingTests : BluxTestContext
     public async Task AuthForm_only_keeps_posted_values_of_declared_fields()
     {
         IReadOnlyDictionary<string, string?>? submitted = null;
-        var form = new BxAuthForm();
-        typeof(BxAuthForm).GetProperty("Posted", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+        var form = new LxAuthForm();
+        typeof(LxAuthForm).GetProperty("Posted", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .SetValue(form, new Dictionary<string, string?>
             {
                 ["__form"] = "sign-in",
@@ -116,9 +116,9 @@ public class MarketingTests : BluxTestContext
                 ["password"] = "longenough1",
                 ["isAdmin"] = "true",
             });
-        ComponentFactories.Add(t => t == typeof(BxAuthForm), _ => form);
+        ComponentFactories.Add(t => t == typeof(LxAuthForm), _ => form);
 
-        var cut = Render<BxAuthForm>(p => p.Add(f => f.Fields, SignInFields).Add(f => f.FormName, "sign-in")
+        var cut = Render<LxAuthForm>(p => p.Add(f => f.Fields, SignInFields).Add(f => f.FormName, "sign-in")
             .Add(f => f.OnValidSubmit, (IReadOnlyDictionary<string, string?> values) => submitted = values));
         await cut.InvokeAsync(() => (Task)form.GetType().GetMethod("HandleSubmit", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
             .Invoke(form, [null])!);
@@ -133,8 +133,8 @@ public class MarketingTests : BluxTestContext
     public void AuthForm_separator_comes_from_the_strings()
     {
         using var localized = new LocalizedContext();
-        var cut = localized.Render<BxAuthForm>(p => p.Add(f => f.Fields, SignInFields)
-            .Add(f => f.Providers, [new BxAuthProvider("GitHub", "https://example.com/o")]));
+        var cut = localized.Render<LxAuthForm>(p => p.Add(f => f.Fields, SignInFields)
+            .Add(f => f.Providers, [new LxAuthProvider("GitHub", "https://example.com/o")]));
 
         var markup = cut.Markup.Replace(" ", "").Replace("\n", "");
         Assert.Contains(">ou</span>", markup);
@@ -150,7 +150,7 @@ public class MarketingTests : BluxTestContext
         Assert.Equal(2, cut.FindAll("p[data-slot=error]").Count);
 
         cut.Find("input[type=email]").Change("ada@example.com");
-        cut.Find("bx-password input").Change("longenough1");
+        cut.Find("lx-password input").Change("longenough1");
         cut.Find("input[type=checkbox]").Change(true);
         cut.Find("form").Submit();
 
@@ -167,7 +167,7 @@ public class MarketingTests : BluxTestContext
         var gate = new TaskCompletionSource();
         var cut = RenderAuth(p => p.Add(f => f.OnValidSubmit, (IReadOnlyDictionary<string, string?> _) => gate.Task));
         cut.Find("input[type=email]").Change("ada@example.com");
-        cut.Find("bx-password input").Change("longenough1");
+        cut.Find("lx-password input").Change("longenough1");
 
         var submit = cut.InvokeAsync(() => cut.Find("form").Submit());
         cut.WaitForAssertion(() =>
@@ -186,7 +186,7 @@ public class MarketingTests : BluxTestContext
     public void AuthForm_providers_are_links_and_a_separator_names_the_split()
     {
         var cut = RenderAuth(p => p
-            .Add(f => f.Providers, [new BxAuthProvider("Continue with GitHub", "/auth/github") { Icon = "code" }])
+            .Add(f => f.Providers, [new LxAuthProvider("Continue with GitHub", "/auth/github") { Icon = "code" }])
             .Add(f => f.Error, "Wrong password."));
 
         var link = cut.Find("a[href='/auth/github']");
@@ -200,14 +200,14 @@ public class MarketingTests : BluxTestContext
     {
         var cut = RenderAuth(fields:
         [
-            new BxAuthField("role", "select") { Label = "Role", Items = [new("dev", "Developer")], Value = "dev" },
-            new BxAuthField("code", "otp") { Label = "Code", Length = 4 },
-            new BxAuthField("terms", "checkbox") { Label = "I agree", Required = true },
+            new LxAuthField("role", "select") { Label = "Role", Items = [new("dev", "Developer")], Value = "dev" },
+            new LxAuthField("code", "otp") { Label = "Code", Length = 4 },
+            new LxAuthField("terms", "checkbox") { Label = "I agree", Required = true },
         ]);
 
         Assert.Equal("dev", cut.Find("input[type=hidden][name='Posted[role]']").GetAttribute("value"));
-        Assert.Equal("Posted[code]", cut.Find("bx-pin-input input[type=hidden]").GetAttribute("name"));
-        Assert.Equal(4, cut.FindAll("bx-pin-input input[data-slot=cell]").Count);
+        Assert.Equal("Posted[code]", cut.Find("lx-pin-input input[type=hidden]").GetAttribute("name"));
+        Assert.Equal(4, cut.FindAll("lx-pin-input input[data-slot=cell]").Count);
         Assert.Equal("Posted[terms]", cut.Find("input[type=checkbox]").GetAttribute("name"));
 
         cut.Find("form").Submit();
@@ -220,10 +220,10 @@ public class MarketingTests : BluxTestContext
     public void AuthForm_incomplete_code_is_reported_and_server_field_errors_are_shown()
     {
         var cut = RenderAuth(p => p.Add(f => f.FieldErrors, new Dictionary<string, string> { ["code"] = "That code is not right." }),
-            fields: [new BxAuthField("code", "otp") { Label = "Code", Length = 6 }]);
+            fields: [new LxAuthField("code", "otp") { Label = "Code", Length = 6 }]);
         Assert.Equal("That code is not right.", cut.Find("p[data-slot=error]").TextContent.Trim());
 
-        cut.Find("bx-pin-input").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "12", Sequence = 1 });
+        cut.Find("lx-pin-input").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "12", Sequence = 1 });
         cut.Find("form").Submit();
 
         Assert.Equal("Enter all 6 characters.", cut.Find("p[data-slot=error]").TextContent.Trim());
@@ -233,8 +233,8 @@ public class MarketingTests : BluxTestContext
     public void AuthForm_does_not_echo_a_password_in_static_rendering()
     {
         using var staticContext = new StaticContext();
-        var cut = staticContext.Render<BxAuthForm>(p => p.Add(f => f.Fields,
-            [new BxAuthField("password", "password") { Label = "Password", Value = "hunter2" }]));
+        var cut = staticContext.Render<LxAuthForm>(p => p.Add(f => f.Fields,
+            [new LxAuthField("password", "password") { Label = "Password", Value = "hunter2" }]));
 
         Assert.False(cut.Find("input[type=password]").HasAttribute("value"));
     }
@@ -243,9 +243,9 @@ public class MarketingTests : BluxTestContext
     public void AuthForm_texts_come_from_the_strings()
     {
         using var localized = new LocalizedContext();
-        var cut = localized.Render<BxAuthForm>(p => p.Add(f => f.Fields, SignInFields));
+        var cut = localized.Render<LxAuthForm>(p => p.Add(f => f.Fields, SignInFields));
 
-        Assert.Equal("Afficher le mot de passe", cut.Find("bx-password button").GetAttribute("aria-label"));
+        Assert.Equal("Afficher le mot de passe", cut.Find("lx-password button").GetAttribute("aria-label"));
         Assert.Equal("Continuer", cut.Find("button[type=submit]").TextContent.Trim());
     }
 
@@ -254,9 +254,9 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingPlan_renders_title_price_features_and_a_link_button()
     {
-        var cut = Render<BxPricingPlan>(p => p
+        var cut = Render<LxPricingPlan>(p => p
             .Add(c => c.Title, "Pro").Add(c => c.Price, "$29").Add(c => c.BillingCycle, "/month").Add(c => c.Description, "For teams.")
-            .Add(c => c.Features, ["Unlimited projects", new BxPricingFeature("Fast") { Icon = "zap" }])
+            .Add(c => c.Features, ["Unlimited projects", new LxPricingFeature("Fast") { Icon = "zap" }])
             .Add(c => c.ButtonLabel, "Get Pro").Add(c => c.ButtonHref, "/buy"));
 
         Assert.Equal("H3", cut.Find("h3").TagName);
@@ -272,7 +272,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingPlan_discount_strikes_the_original_and_spells_both_prices_out()
     {
-        var cut = Render<BxPricingPlan>(p => p.Add(c => c.Price, "$120").Add(c => c.Discount, "$96"));
+        var cut = Render<LxPricingPlan>(p => p.Add(c => c.Price, "$120").Add(c => c.Discount, "$96"));
 
         var original = cut.Find("del");
         Assert.Contains("Original price", original.TextContent);
@@ -286,14 +286,14 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingPlan_heading_level_highlight_scale_and_solid_variant_follow_parameters()
     {
-        var cut = Render<BxPricingPlan>(p => p.Add(c => c.Title, "Team").Add(c => c.HeadingLevel, 2).Add(c => c.Highlight, true)
-            .Add(c => c.Scale, true).Add(c => c.Variant, BxVariant.Solid).Add(c => c.ButtonLabel, "Contact").Add(c => c.ButtonHref, "/c"));
+        var cut = Render<LxPricingPlan>(p => p.Add(c => c.Title, "Team").Add(c => c.HeadingLevel, 2).Add(c => c.Highlight, true)
+            .Add(c => c.Scale, true).Add(c => c.Variant, LxVariant.Solid).Add(c => c.ButtonLabel, "Contact").Add(c => c.ButtonHref, "/c"));
 
         Assert.Equal("H2", cut.Find("h2").TagName);
         var root = cut.Find("[data-color]");
         Assert.Contains("ring-2", root.ClassList);
         Assert.Contains("lg:scale-105", root.ClassList);
-        Assert.Contains("bg-(--bx-color)", root.ClassList);
+        Assert.Contains("bg-(--lx-color)", root.ClassList);
         // The primary button would vanish on a primary background.
         Assert.Equal("neutral", cut.Find("a").GetAttribute("data-color"));
     }
@@ -302,35 +302,35 @@ public class MarketingTests : BluxTestContext
     public void PricingPlan_button_click_waits_for_interactivity()
     {
         var clicked = 0;
-        var cut = Render<BxPricingPlan>(p => p.Add(c => c.ButtonLabel, "Choose").Add(c => c.OnButtonClick, () => clicked++));
+        var cut = Render<LxPricingPlan>(p => p.Add(c => c.ButtonLabel, "Choose").Add(c => c.OnButtonClick, () => clicked++));
 
         cut.Find("button").Click();
 
         Assert.Equal(1, clicked);
         using var staticContext = new StaticContext();
-        var inert = staticContext.Render<BxPricingPlan>(p => p.Add(c => c.ButtonLabel, "Choose").Add(c => c.OnButtonClick, () => { }));
+        var inert = staticContext.Render<LxPricingPlan>(p => p.Add(c => c.ButtonLabel, "Choose").Add(c => c.OnButtonClick, () => { }));
         Assert.True(inert.Find("button").HasAttribute("disabled"));
     }
 
     [Fact]
     public void PricingPlans_lay_plans_out_by_orientation()
     {
-        var grid = Render<BxPricingPlans>(p => p.AddChildContent("<p>x</p>"));
+        var grid = Render<LxPricingPlans>(p => p.AddChildContent("<p>x</p>"));
         Assert.Contains("grid", grid.Find("div").ClassList);
 
-        var stack = Render<BxPricingPlans>(p => p.Add(c => c.Orientation, BxOrientation.Vertical).AddChildContent("<p>x</p>"));
+        var stack = Render<LxPricingPlans>(p => p.Add(c => c.Orientation, LxOrientation.Vertical).AddChildContent("<p>x</p>"));
         Assert.Contains("flex-col", stack.Find("div").ClassList);
     }
 
     // PricingTable
 
-    private static readonly BxPricingTier[] Tiers =
+    private static readonly LxPricingTier[] Tiers =
     [
         new("starter", "Starter") { Price = "$0", ButtonLabel = "Start", ButtonHref = "/s" },
         new("pro", "Pro") { Price = "$29", Highlight = true, Badge = "Popular" },
     ];
 
-    private static readonly BxPricingSection[] Sections =
+    private static readonly LxPricingSection[] Sections =
     [
         new("Usage",
         [
@@ -344,7 +344,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingTable_is_a_real_table_with_a_caption_and_headers_scoped_to_their_cells()
     {
-        var cut = Render<BxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections).Add(c => c.Caption, "Compare plans"));
+        var cut = Render<LxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections).Add(c => c.Caption, "Compare plans"));
 
         Assert.Equal("Compare plans", cut.Find("caption").TextContent);
         Assert.Contains("sr-only", cut.Find("caption").ClassList);
@@ -364,7 +364,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingTable_cells_say_included_or_not_included_in_text_and_show_values()
     {
-        var cut = Render<BxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections));
+        var cut = Render<LxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections));
 
         var rows = cut.FindAll("tbody tr[class*=row], tbody tr").Where(r => r.QuerySelector("th[scope=row]") is not null).ToList();
         var projects = rows[0].QuerySelectorAll("td");
@@ -385,10 +385,10 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void PricingTable_sticky_header_is_optional()
     {
-        var sticky = Render<BxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections));
+        var sticky = Render<LxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections));
         Assert.Contains("md:sticky", sticky.Find("thead th[scope=col]:nth-child(2)").ClassList);
 
-        var plain = Render<BxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections).Add(c => c.Sticky, false));
+        var plain = Render<LxPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections).Add(c => c.Sticky, false));
         Assert.DoesNotContain("md:sticky", plain.Find("thead th[scope=col]:nth-child(2)").ClassList);
     }
 
@@ -397,8 +397,8 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPost_has_exactly_one_link_through_its_title()
     {
-        var cut = Render<BxBlogPost>(p => p.Add(c => c.Title, "Four modes").Add(c => c.Description, "How.").Add(c => c.Href, "/blog/four-modes")
-            .Add(c => c.Badge, "Engineering").Add(c => c.Image, "/img/a.png").Add(c => c.Authors, [new BxPostAuthor("Ada") { Href = "/u/ada" }]));
+        var cut = Render<LxBlogPost>(p => p.Add(c => c.Title, "Four modes").Add(c => c.Description, "How.").Add(c => c.Href, "/blog/four-modes")
+            .Add(c => c.Badge, "Engineering").Add(c => c.Image, "/img/a.png").Add(c => c.Authors, [new LxPostAuthor("Ada") { Href = "/u/ada" }]));
 
         var links = cut.FindAll("a");
         Assert.Single(links);
@@ -414,7 +414,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPost_without_href_has_no_link_and_keeps_author_links()
     {
-        var cut = Render<BxBlogPost>(p => p.Add(c => c.Title, "Notes").Add(c => c.Authors, [new BxPostAuthor("Ada") { Href = "/u/ada" }]));
+        var cut = Render<LxBlogPost>(p => p.Add(c => c.Title, "Notes").Add(c => c.Authors, [new LxPostAuthor("Ada") { Href = "/u/ada" }]));
 
         Assert.Equal("/u/ada", cut.Find("a").GetAttribute("href"));
         Assert.Equal("Notes", cut.Find("h3").TextContent.Trim());
@@ -429,15 +429,15 @@ public class MarketingTests : BluxTestContext
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("en-US");
-            var english = Render<BxBlogPost>(p => p.Add(c => c.Date, date));
+            var english = Render<LxBlogPost>(p => p.Add(c => c.Date, date));
             Assert.Equal("2026-11-12", english.Find("time").GetAttribute("datetime"));
             Assert.Equal("November 12, 2026", english.Find("time").TextContent);
 
             CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("fr-FR");
-            var french = Render<BxBlogPost>(p => p.Add(c => c.Date, date));
+            var french = Render<LxBlogPost>(p => p.Add(c => c.Date, date));
             Assert.Equal("12 novembre 2026", french.Find("time").TextContent);
 
-            var custom = Render<BxBlogPost>(p => p.Add(c => c.Date, date).Add(c => c.DateFormat, "yyyy/MM/dd"));
+            var custom = Render<LxBlogPost>(p => p.Add(c => c.Date, date).Add(c => c.DateFormat, "yyyy/MM/dd"));
             Assert.Equal("2026/11/12", custom.Find("time").TextContent);
         }
         finally
@@ -450,7 +450,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPost_several_authors_become_a_named_avatar_group()
     {
-        var cut = Render<BxBlogPost>(p => p.Add(c => c.Title, "T").Add(c => c.Authors, [new BxPostAuthor("Ada"), new BxPostAuthor("Grace")]));
+        var cut = Render<LxBlogPost>(p => p.Add(c => c.Title, "T").Add(c => c.Authors, [new LxPostAuthor("Ada"), new LxPostAuthor("Grace")]));
 
         var group = cut.Find("[role=group]");
         Assert.Equal("Ada, Grace", group.GetAttribute("aria-label"));
@@ -460,7 +460,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPost_heading_level_orientation_and_variant_follow_parameters()
     {
-        var cut = Render<BxBlogPost>(p => p.Add(c => c.Title, "T").Add(c => c.HeadingLevel, 2).Add(c => c.Orientation, BxOrientation.Horizontal)
+        var cut = Render<LxBlogPost>(p => p.Add(c => c.Title, "T").Add(c => c.HeadingLevel, 2).Add(c => c.Orientation, LxOrientation.Horizontal)
             .Add(c => c.Variant, BlogPostVariant.Naked).Add(c => c.Image, "/a.png").Add(c => c.ImageAlt, "A chart"));
 
         Assert.Equal("H2", cut.Find("h2").TagName);
@@ -472,8 +472,8 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPosts_is_a_grid_or_a_stack()
     {
-        Assert.Contains("grid", Render<BxBlogPosts>().Find("div").ClassList);
-        Assert.Contains("flex-col", Render<BxBlogPosts>(p => p.Add(c => c.Orientation, BxOrientation.Vertical)).Find("div").ClassList);
+        Assert.Contains("grid", Render<LxBlogPosts>().Find("div").ClassList);
+        Assert.Contains("flex-col", Render<LxBlogPosts>(p => p.Add(c => c.Orientation, LxOrientation.Vertical)).Find("div").ClassList);
     }
 
     // ChangelogVersion and ChangelogVersions
@@ -481,9 +481,9 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void ChangelogVersion_renders_version_date_badge_rich_content_and_authors()
     {
-        var cut = Render<BxChangelogVersion>(p => p.Add(c => c.Title, "v1.2.0").Add(c => c.Badge, "Latest").Add(c => c.Description, "Summary.")
+        var cut = Render<LxChangelogVersion>(p => p.Add(c => c.Title, "v1.2.0").Add(c => c.Badge, "Latest").Add(c => c.Description, "Summary.")
             .Add(c => c.Date, new DateTimeOffset(2026, 11, 18, 0, 0, 0, TimeSpan.Zero))
-            .Add(c => c.Authors, [new BxPostAuthor("Ada")]).AddChildContent("<ul><li>Fixed</li></ul>"));
+            .Add(c => c.Authors, [new LxPostAuthor("Ada")]).AddChildContent("<ul><li>Fixed</li></ul>"));
 
         Assert.Equal("v1.2.0", cut.Find("h3").TextContent.Trim());
         Assert.Equal("2026-11-18", cut.Find("time").GetAttribute("datetime"));
@@ -496,7 +496,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void ChangelogVersion_indicator_can_be_hidden_and_the_title_can_link()
     {
-        var cut = Render<BxChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Indicator, false).Add(c => c.Href, "/v2"));
+        var cut = Render<LxChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Indicator, false).Add(c => c.Href, "/v2"));
 
         Assert.Empty(cut.FindAll("[data-slot=indicator]"));
         Assert.Equal("/v2", cut.Find("h3 a").GetAttribute("href"));
@@ -510,8 +510,8 @@ public class MarketingTests : BluxTestContext
         try
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
-            var post = Render<BxBlogPost>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
-            var version = Render<BxChangelogVersion>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
+            var post = Render<LxBlogPost>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
+            var version = Render<LxChangelogVersion>(p => p.Add(c => c.Date, date).Add(c => c.Culture, new CultureInfo("fr-FR")));
 
             Assert.Equal("12 novembre 2026", post.Find("time").TextContent);
             Assert.Equal("12 novembre 2026", version.Find("time").TextContent);
@@ -525,8 +525,8 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void BlogPost_and_ChangelogVersion_links_that_open_a_new_tab_say_so_to_screen_readers()
     {
-        var post = Render<BxBlogPost>(p => p.Add(c => c.Title, "Post").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
-        var version = Render<BxChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
+        var post = Render<LxBlogPost>(p => p.Add(c => c.Title, "Post").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
+        var version = Render<LxChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
 
         Assert.Equal("(opens in a new tab)", post.Find("h3 a span.sr-only").TextContent.Trim());
         Assert.Equal("(opens in a new tab)", version.Find("h3 a span.sr-only").TextContent.Trim());
@@ -535,7 +535,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void ChangelogVersions_wraps_the_versions()
     {
-        var cut = Render<BxChangelogVersions>(p => p.AddChildContent("<article>one</article>"));
+        var cut = Render<LxChangelogVersions>(p => p.AddChildContent("<article>one</article>"));
 
         Assert.Single(cut.FindAll("div > article"));
     }
@@ -545,7 +545,7 @@ public class MarketingTests : BluxTestContext
     [Fact]
     public void Ui_and_Class_reach_the_marketing_slots()
     {
-        var cut = Render<BxPricingPlan>(p => p.Add(c => c.Title, "Pro").Add(c => c.Class, "w-80")
+        var cut = Render<LxPricingPlan>(p => p.Add(c => c.Title, "Pro").Add(c => c.Class, "w-80")
             .Add(c => c.Ui, new PricingPlanUi { Title = "text-2xl" }));
 
         Assert.Contains("w-80", cut.Find("[data-color]").ClassList);
@@ -567,7 +567,7 @@ public class MarketingTests : BluxTestContext
         {
             Services.AddLuxUi(o =>
             {
-                o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { AuthFormShowPassword = "Afficher le mot de passe", AuthFormSubmit = "Continuer", AuthFormSeparator = "ou" });
+                o.Locale = LxLocales.Extend(LxLocales.En, messages: m => m with { AuthFormShowPassword = "Afficher le mot de passe", AuthFormSubmit = "Continuer", AuthFormSeparator = "ou" });
             });
             SetRendererInfo(new RendererInfo("Server", true));
         }

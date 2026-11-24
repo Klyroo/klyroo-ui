@@ -27,7 +27,7 @@ import { basename, dirname, join, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { exportTemplate } from "./export-template.mjs";
 
-// What each template promises: its web project, and a Tailwind utility that only its own pages use (it is in no precompiled Blux stylesheet).
+// What each template promises: its web project, and a Tailwind utility that only its own pages use (it is in no precompiled Lux stylesheet).
 const templates = [
   {
     name: "starter",
@@ -50,8 +50,8 @@ const templates = [
     toolsProbe: "webkit-search-cancel-button",
     pages: ["/", "/customers", "/inbox", "/inbox/3", "/settings", "/settings/members", "/settings/notifications", "/settings/security"],
     services: true,
-    // Blux's own components (BxDashboardGroup, BxDashboardSidebar...) are not the template name: rename.cs leaves them alone.
-    keep: /BxDashboard[A-Za-z]*/g,
+    // Lux's own components (LxDashboardGroup, LxDashboardSidebar...) are not the template name: rename.cs leaves them alone.
+    keep: /LxDashboard[A-Za-z]*/g,
     browserClass: "Lux.UI.E2E.DashboardTemplateTests",
   },
   {
@@ -99,8 +99,8 @@ const templates = [
     pages: ["/", "/?page=2", "/releases/v1.4.0", "/feed.xml"],
     // No network: the releases are the sample ones of the template, with a repository for the links to point at.
     env: { Changelog__Source: "File", Changelog__Repository: "tern-cli/tern" },
-    // Blux's own components (BxChangelogVersions) are not the template name: rename.cs leaves them alone.
-    keep: /Bx(?:Changelog)Version(?:s)?/g,
+    // Lux's own components (LxChangelogVersions) are not the template name: rename.cs leaves them alone.
+    keep: /Lx(?:Changelog)Version(?:s)?/g,
     browserClass: "Lux.UI.E2E.ChangelogTemplateTests",
   },
   {
@@ -113,8 +113,8 @@ const templates = [
     services: true,
     // The simulated provider: no key, no network. (The template itself defaults to a real service that needs a key.)
     env: { Assistant__Provider: "Simulated" },
-    // Blux's own chat components, types and element attributes (BxChatMessages, ChatRole, ChatMessagesUi, data-bx-chat-input) are not the template name: rename.cs leaves them alone.
-    keep: /chat\/completions|(?:Bx)?Chat(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)[A-Za-z]*|bx-chat-[a-z-]*|data-bx-chat[a-z-]*/g,
+    // Lux's own chat components, types and element attributes (LxChatMessages, ChatRole, ChatMessagesUi, data-lx-chat-input) are not the template name: rename.cs leaves them alone.
+    keep: /chat\/completions|(?:Lx)?Chat(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)[A-Za-z]*|lx-chat-[a-z-]*|data-lx-chat[a-z-]*/g,
     browserClass: "Lux.UI.E2E.ChatTemplateTests",
   },
   {
@@ -126,8 +126,8 @@ const templates = [
     probe: { utility: "max-w-[34rem]", css: "max-width:34rem" },
     pages: ["/", "/d/0123456789abcdef0123456789abcdef"],
     services: true,
-    // Blux's own editor components, types and elements (BxEditor, EditorAction, EditorToolbarItem, bx-editor) are not the template name: rename.cs leaves them alone.
-    keep: /Sanitize(?=Editor)Editor[A-Za-z]*|(?<!Add)(?:Bx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Bx(?:Editor)[A-Za-z]*|bx-editor[a-z-]*/g,
+    // Lux's own editor components, types and elements (LxEditor, EditorAction, EditorToolbarItem, lx-editor) are not the template name: rename.cs leaves them alone.
+    keep: /Sanitize(?=Editor)Editor[A-Za-z]*|(?<!Add)(?:Lx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Lx(?:Editor)[A-Za-z]*|lx-editor[a-z-]*/g,
     browserClass: "Lux.UI.E2E.EditorTemplateTests",
   },
 ];
@@ -187,7 +187,7 @@ const keep = process.argv.includes("--keep");
 const browser = !process.argv.includes("--no-browser");
 const wanted = process.argv.slice(2).filter((a) => !a.startsWith("--"));
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const work = mkdtempSync(join(tmpdir(), "blux-templates-"));
+const work = mkdtempSync(join(tmpdir(), "lux-templates-"));
 const feed = join(work, "feed");
 const failures = [];
 const check = (ok, what) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if (!ok) failures.push(what); return ok; };
@@ -285,14 +285,14 @@ try {
     const packed = run("dotnet", ["pack", project, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(packed.code === 0, `dotnet pack ${project} -c Release succeeds without warnings`)) console.log(packed.out);
   }
-  const nupkg = readdirSync(feed).find((f) => /^Blux\.UI\.\d.*\.nupkg$/.test(f));
+  const nupkg = readdirSync(feed).find((f) => /^Lux\.UI\.\d.*\.nupkg$/.test(f));
   if (!check(!!nupkg, ".nupkg produced")) throw new Error("pack produced no package");
-  const version = nupkg.replace(/^Blux\.UI\./, "").replace(/\.nupkg$/, "");
+  const version = nupkg.replace(/^Lux\.UI\./, "").replace(/\.nupkg$/, "");
   check(version === expectedVersion, `the packed library has the version of build/Version.props (${version} / ${expectedVersion})`);
 
   // The sources: the feed for Lux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
-  const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Lux.UI" /><package pattern="Lux.UI.Tools" /><package pattern="Lux.UI.Tools.Query" /><package pattern="Lux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+  const nugetConfig = `<configuration><packageSources><clear /><add key="lux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
+    `<packageSourceMapping><packageSource key="lux-feed"><package pattern="Lux.UI" /><package pattern="Lux.UI.Tools" /><package pattern="Lux.UI.Tools.Query" /><package pattern="Lux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -307,12 +307,12 @@ try {
     }
     check(readdirSync(repo).some((f) => f.endsWith(".slnx")), `${template.name}: the export has a .slnx solution`);
     const forbidden = [
-      [/src[\\/]Blux\.UI/, "a path into the library source (src/Lux.UI)"],
-      [/BluxRepoRoot/, "BluxRepoRoot"],
+      [/src[\\/]Lux\.UI/, "a path into the library source (src/Lux.UI)"],
+      [/LuxRepoRoot/, "LuxRepoRoot"],
       [/\.\.[\\/]\.\.[\\/]\.\./, "a path three levels up (..\\..\\..)"],
       [new RegExp(`(^|[^\\w.])(/home/|/Users/|[A-Za-z]:\\\\)`), "an absolute path"],
       [new RegExp(root.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), "the path of this repository"],
-      [new RegExp(tmpdir().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[\\\\/]blux"), "a temp path"],
+      [new RegExp(tmpdir().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "[\\\\/]lux"), "a temp path"],
     ];
     const texts = textFiles(repo);
     for (const [pattern, what] of forbidden) {
@@ -320,11 +320,11 @@ try {
       check(hits.length === 0, `${template.name}: no file has ${what}${hits.length ? ` (${hits.join(", ")})` : ""}`);
     }
     const packages = readFileSync(join(repo, "Directory.Packages.props"), "utf8");
-    const pinned = /<PackageVersion Include="Blux\.UI" Version="([^"]+)"/.exec(packages)?.[1];
+    const pinned = /<PackageVersion Include="Lux\.UI" Version="([^"]+)"/.exec(packages)?.[1];
     check(pinned === expectedVersion, `${template.name}: Lux.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
-    const serverPinned = /<PackageVersion Include="Blux\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
+    const serverPinned = /<PackageVersion Include="Lux\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
     if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Lux.UI.Server is pinned to the version of build/Version.props, the one of Lux.UI (${serverPinned} / ${expectedVersion})`);
-    const toolsPinned = /<PackageVersion Include="Blux\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
+    const toolsPinned = /<PackageVersion Include="Lux\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
     if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Lux.UI.Tools is pinned to the version of build/Version.props, the one of Lux.UI (${toolsPinned} / ${expectedVersion})`);
 
     // 3. Restore, build (Release, warnings as errors), run.
@@ -358,7 +358,7 @@ try {
             const body = await cssRes.text();
             check(cssRes.ok, `${template.name}: the stylesheet is served ${label} (${cssRes.status})`);
             check(body.includes(css), `${template.name}: the stylesheet contains ${utility}, a utility only the template uses ${label}`);
-            check(body.includes("--blux-primary"), `${template.name}: the stylesheet has the Blux theme ${label}`);
+            check(body.includes("--lux-primary"), `${template.name}: the stylesheet has the Lux theme ${label}`);
             if (template.toolsProbe) check(body.includes(template.toolsProbe), `${template.name}: the stylesheet has the classes of Lux.UI.Tools (${template.toolsProbe}) ${label}`);
           }
         } finally {
@@ -402,7 +402,7 @@ try {
       }
       if (browser) {
         // A real browser: the E2E project of this repository, pointed at the published folder.
-        const e2e = { BLUX_TEMPLATE_PUBLISHED: published, BLUX_TEMPLATE_ASSEMBLY: `${basename(template.web)}.dll`, BLUX_TEMPLATE_PROBE: template.probe.css };
+        const e2e = { LUX_TEMPLATE_PUBLISHED: published, LUX_TEMPLATE_ASSEMBLY: `${basename(template.web)}.dll`, LUX_TEMPLATE_PROBE: template.probe.css };
         const e2eBuild = runPlain("dotnet", ["build", "tests/Lux.UI.E2E"], root);
         if (!check(e2eBuild.code === 0, `${template.name}: tests/Lux.UI.E2E builds`)) console.log(e2eBuild.out);
         if (e2eBuild.code === 0) {
@@ -416,7 +416,7 @@ try {
 
     // 5. Rename. Names the script must refuse change nothing.
     const refused = exportTemplate(template.name, join(work, template.name, "refused"));
-    for (const bad of ["System", "Task", "Microsoft", "Blux", "my_app", "9lives", "Web", "class", template.name_in_files]) {
+    for (const bad of ["System", "Task", "Microsoft", "Lux", "my_app", "9lives", "Web", "class", template.name_in_files]) {
       const r = run("dotnet", ["run", "rename.cs", bad], refused);
       const untouched = spawnSync("git", ["status", "--porcelain"], { cwd: refused, encoding: "utf8" }).stdout.trim() === "";
       check(r.code !== 0 && /rename: /.test(r.out) && untouched && existsSync(join(refused, "rename.cs")), `${template.name}: rename.cs refuses '${bad}' and changes nothing`);

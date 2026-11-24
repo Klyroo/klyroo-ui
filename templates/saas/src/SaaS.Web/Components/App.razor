@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     @* The site can be served below a path base (see Program.cs): every relative URL, the stylesheet and the framework included, follows this. *@
     <base href="@_baseHref" />
-    <BxColorModeScript />
-    <BxCultureMeta />
-    <BxThemeStyle />
+    <LxColorModeScript />
+    <LxCultureMeta />
+    <LxThemeStyle />
     @* Self-hosted at build time from the LuxFont items of SaaS.Web.csproj: no third-party request. *@
-    <BxFonts />
+    <LxFonts />
     <ResourcePreloader />
-    @* Compiled by the build from Styles/app.css (Tailwind, with the Blux theme). *@
+    @* Compiled by the build from Styles/app.css (Tailwind, with the Lux theme). *@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <ImportMap />
@@ -21,7 +21,7 @@
 
 <body>
     @* No render mode: every page is rendered once by the server and sent as HTML. The menu, the search, the table of contents, the navigation groups,
-       the color mode, the language select, the accordion and the billing switch run in the browser (Blux's own script, or plain CSS), and the copy
+       the color mode, the language select, the accordion and the billing switch run in the browser (Lux's own script, or plain CSS), and the copy
        buttons of the code blocks run on the small script below. The login and sign-up forms are posted to the server, which renders the answer. So
        there is no circuit and no WebAssembly to download. *@
     <Routes />
@@ -38,9 +38,9 @@
     // The PathBase setting as configured, normalized to "/x/": the root when there is none.
     private string _baseHref => Configuration["PathBase"] is { Length: > 0 } pathBase ? "/" + pathBase.Trim('/') + "/" : "/";
 
-    private BxLocale _locale = BxLocales.En;
+    private LxLocale _locale = LxLocales.En;
 
     // lang and dir of the page follow the culture of the request, like the components do.
     protected override void OnParametersSet() =>
-        _locale = BxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
+        _locale = LxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
 }

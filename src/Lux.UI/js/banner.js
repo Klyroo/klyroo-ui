@@ -1,18 +1,18 @@
 import { appStorageKey } from './base-path.js';
 
-const STORAGE_PREFIX = 'blux:banner:';
+const STORAGE_PREFIX = 'lux:banner:';
 
 /**
- * <bx-banner data-bx-banner-id="launch">
+ * <lx-banner data-lx-banner-id="launch">
  *   <div>… <button data-slot="close">…</button></div>
- * </bx-banner>
+ * </lx-banner>
  *
  * The close button hides the element (the "hidden" attribute, which Blazor never renders) and remembers the id in
  * localStorage, so the banner stays hidden on later visits, on static pages too. Purely browser side: never reported
  * to .NET. Storage can be unavailable (private windows): then a dismissal lasts until the page is reloaded.
  */
-export class BxBannerElement extends HTMLElement {
-  static observedAttributes = ['data-bx-banner-id'];
+export class LxBannerElement extends HTMLElement {
+  static observedAttributes = ['data-lx-banner-id'];
 
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
@@ -33,7 +33,7 @@ export class BxBannerElement extends HTMLElement {
   }
 
   #key() {
-    const id = this.getAttribute('data-bx-banner-id');
+    const id = this.getAttribute('data-lx-banner-id');
     return id ? appStorageKey(STORAGE_PREFIX + id) : null;
   }
 
@@ -61,4 +61,4 @@ export class BxBannerElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-banner')) customElements.define('bx-banner', BxBannerElement);
+if (!customElements.get('lx-banner')) customElements.define('lx-banner', LxBannerElement);

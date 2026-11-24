@@ -10,7 +10,7 @@ builder.Services.AddRazorComponents()
 
 // Device specific services used by the shared project.
 builder.Services.AddSingleton<IFormFactor, FormFactor>();
-builder.Services.AddSampleBlux();
+builder.Services.AddSampleLux();
 builder.Services.AddSingleton<ISystemBars, NoSystemBars>();
 
 var app = builder.Build();

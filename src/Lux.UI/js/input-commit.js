@@ -2,24 +2,24 @@ import { Reporter, isTvMode } from './shared.js';
 import { createDebouncer, parseDelay, holdsTypedText } from './debounce.js';
 
 /**
- * Browser-side commit of a BxInput that asks for it (data-bx-debounce and/or data-bx-clear-on-escape on the native
- * <input>; a plain BxInput has neither and none of this runs):
+ * Browser-side commit of a LxInput that asks for it (data-lx-debounce and/or data-lx-clear-on-escape on the native
+ * <input>; a plain LxInput has neither and none of this runs):
  *
- * - data-bx-debounce="400": the value is reported once, 400 ms after the last keystroke ("0": on every input). Without
+ * - data-lx-debounce="400": the value is reported once, 400 ms after the last keystroke ("0": on every input). Without
  *   the attribute the value is reported when it is committed (blur, Enter), like a plain input.
  * - Enter reports at once. Blur does too. Neither happens while an IME composition is in progress: the report waits for
  *   its end.
- * - data-bx-clear-on-escape: Escape empties a non-empty field and reports the empty value; on an empty field it is left to
+ * - data-lx-clear-on-escape: Escape empties a non-empty field and reports the empty value; on an empty field it is left to
  *   the page (a modal still closes).
  *
- * - SetValueAsync (BxInput, from .NET) renders a new data-bx-force with the value in data-bx-set: whatever is pending is
+ * - SetValueAsync (LxInput, from .NET) renders a new data-lx-force with the value in data-lx-set: whatever is pending is
  *   dropped, the text is replaced, and the sequence restarts from the one .NET rendered.
  *
- * The report is the bx-change event of every other Blux element, dispatched on the input with an increasing sequence;
- * .NET renders the last one back in data-bx-seq. Blazor writes the rendered Value into the input's `value` property, so
+ * The report is the lx-change event of every other Lux element, dispatched on the input with an increasing sequence;
+ * .NET renders the last one back in data-lx-seq. Blazor writes the rendered Value into the input's `value` property, so
  * the property of each input in use is guarded: a write that would undo typed text is ignored (see holdsTypedText).
  */
-const SELECTOR = 'input[data-bx-debounce], input[data-bx-clear-on-escape]';
+const SELECTOR = 'input[data-lx-debounce], input[data-lx-clear-on-escape]';
 const valueProperty = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
 const states = new WeakMap();
 
@@ -54,7 +54,7 @@ function commit(input) {
   if (!state.dirty) return;
   state.dirty = false;
   if (!input.isConnected) return;
-  state.reporter.report('bx-change', { value: read(input) });
+  state.reporter.report('lx-change', { value: read(input) });
 }
 
 const target = (event) =>
@@ -62,7 +62,7 @@ const target = (event) =>
 
 /** Starts the wait for the quiet period after the text changed (or reports at once for a delay of 0). */
 function typed(input, state) {
-  const delay = parseDelay(input.getAttribute('data-bx-debounce'));
+  const delay = parseDelay(input.getAttribute('data-lx-debounce'));
   if (delay === null) return;
   if (delay === 0) commit(input);
   else state.debouncer.schedule(delay);
@@ -108,7 +108,7 @@ document.addEventListener('focusout', (event) => {
   if (state.dirty && !state.composing) commit(input);
 });
 
-// SetValueAsync: a render with a new data-bx-force replaces the text, even text still waiting to be reported.
+// SetValueAsync: a render with a new data-lx-force replaces the text, even text still waiting to be reported.
 new MutationObserver((records) => {
   for (const record of records) {
     const input = record.target;
@@ -118,9 +118,9 @@ new MutationObserver((records) => {
     state.dirty = false;
     state.composing = false;
     state.reporter.adopt();
-    valueProperty.set.call(input, input.getAttribute('data-bx-set') ?? '');
+    valueProperty.set.call(input, input.getAttribute('data-lx-set') ?? '');
   }
-}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['data-bx-force'] });
+}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['data-lx-force'] });
 
 // The native change event: blur, or Enter. Whatever is still waiting is reported now.
 document.addEventListener('change', (event) => {
@@ -144,8 +144,8 @@ window.addEventListener(
   (event) => {
     if (event.key !== 'Escape' || event.isComposing) return;
     const input = target(event);
-    if (!input || !input.hasAttribute('data-bx-clear-on-escape') || input.readOnly) return;
-    if (isTvMode() && input.hasAttribute('data-bx-editing')) return;
+    if (!input || !input.hasAttribute('data-lx-clear-on-escape') || input.readOnly) return;
+    if (isTvMode() && input.hasAttribute('data-lx-editing')) return;
     const state = stateOf(input);
     if (state.composing) return;
     if (read(input) === '') {

@@ -2,29 +2,29 @@
 @inject IToastService Toasts
 
 @* The signed-in user at the bottom of the sidebar. There is no sign-in in this template: the user is a sample one. *@
-<BxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="top-start">
+<LxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="top-start">
     <button type="button"
-            class="flex w-full min-w-0 items-center gap-2 rounded-(--blux-radius) p-1.5 text-start transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)"
+            class="flex w-full min-w-0 items-center gap-2 rounded-(--lux-radius) p-1.5 text-start transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)"
             data-testid="user-menu">
         @* The avatar repeats the name next to it: hidden, so the button is named by the visible text. *@
-        <BxAvatar Alt="Maren Albrecht" Size="BxSize.Sm" aria-hidden="true" />
-        <span class="min-w-0 flex-1 truncate text-sm font-medium text-(--blux-text-highlighted) group-data-[state=collapsed]/sidebar:sr-only">Maren Albrecht</span>
-        <BxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--blux-text-muted) group-data-[state=collapsed]/sidebar:hidden" />
+        <LxAvatar Alt="Maren Albrecht" Size="LxSize.Sm" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate text-sm font-medium text-(--lux-text-highlighted) group-data-[state=collapsed]/sidebar:sr-only">Maren Albrecht</span>
+        <LxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--lux-text-muted) group-data-[state=collapsed]/sidebar:hidden" />
     </button>
-</BxDropdownMenu>
+</LxDropdownMenu>
 
 @code {
-    private static readonly BxMenuItem[] _items =
+    private static readonly LxMenuItem[] _items =
     [
-        BxMenuItem.Heading("maren@example.com"),
-        new() { Label = "Profile", Href = "settings", Icon = BxIcons.Named("user", "size-4") },
-        new() { Label = "Notifications", Value = "notifications", Icon = BxIcons.Named("bell", "size-4") },
-        new() { Label = "Appearance", Value = "appearance", Icon = BxIcons.Named("lucide:palette", "size-4") },
-        BxMenuItem.Separator(),
-        new() { Label = "Log out", Value = "logout", Icon = BxIcons.Named("log-out", "size-4"), Color = BxColor.Error },
+        LxMenuItem.Heading("maren@example.com"),
+        new() { Label = "Profile", Href = "settings", Icon = LxIcons.Named("user", "size-4") },
+        new() { Label = "Notifications", Value = "notifications", Icon = LxIcons.Named("bell", "size-4") },
+        new() { Label = "Appearance", Value = "appearance", Icon = LxIcons.Named("lucide:palette", "size-4") },
+        LxMenuItem.Separator(),
+        new() { Label = "Log out", Value = "logout", Icon = LxIcons.Named("log-out", "size-4"), Color = LxColor.Error },
     ];
 
-    private async Task OnSelect(BxMenuItem item)
+    private async Task OnSelect(LxMenuItem item)
     {
         switch (item.Value ?? item.Label)
         {
@@ -35,7 +35,7 @@
                 App.OpenAppearance();
                 break;
             case "logout":
-                await Toasts.Add(new BxToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = BxColor.Info });
+                await Toasts.Add(new LxToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = LxColor.Info });
                 break;
         }
     }

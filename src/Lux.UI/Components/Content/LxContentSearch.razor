@@ -1,0 +1,136 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+@*
+    A documentation search: a LxCommandPalette in a LxModal over a list of pages and their headings, opened by a
+    keyboard shortcut or by a LxContentSearchButton. Filtering, highlighting, activation and the shortcut run in the
+    browser (js/content.js and the command palette), so it works in static rendering. The shortcut is a fallback: a
+    page that registers the same combination with data-lx-hotkey (a dashboard search) takes it first.
+
+    The pages come inline (Pages), or from a JSON file the browser fetches the first time the search opens (IndexUrl), so
+    a large index is not part of every page. The fetch, the state messages and the building of the list are js/content.js.
+*@
+<LxModal Open="Open" OpenChanged="OpenChanged" AriaLabel="@(Label ?? Messages.ContentSearch)" Close="false" Ui="_modalUi"
+         data-lx-content-search="@Name" data-lx-content-search-index="@IndexUrl">
+    <ChildContent>
+        <button type="button" hidden tabindex="-1" data-lx-content-hotkey="@Shortcut"></button>
+    </ChildContent>
+    <Body>
+        @if (IndexUrl is not null)
+        {
+            @* What js/content.js needs to show the state of the fetch and to build the options of the index: the markup of one of each, with the
+               classes of the palette (the theme and the Ui overrides), and the texts in the language of the page. *@
+            <div data-lx-content-search-state hidden class="@_palette["groupLabel"]">
+                <span data-slot="message" role="status"></span>
+                <button type="button" data-slot="retry" hidden class="@_palette["groupLabel"] underline">@Messages.ContentSearchRetry</button>
+                <span hidden data-loading-text="@Messages.ContentSearchLoading" data-error-text="@Messages.ContentSearchError"></span>
+            </div>
+            @* A hidden element, not a <template>: when the page turns interactive Blazor puts the children of a template in the element, not in its content. *@
+            <div hidden data-lx-content-search-template>
+                <div role="group" class="@_palette["group"]" data-slot="group"><div role="presentation" class="@_palette["groupLabel"]"></div></div>
+                @Template(Options.Icons.File)
+                @Template(Options.Icons.Hash)
+            </div>
+        }
+        <LxCommandPalette Groups="_groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Messages.ContentSearch)"
+                          Placeholder="@(Placeholder ?? Messages.ContentSearchPlaceholder)" Ui="Ui" />
+    </Body>
+</LxModal>
+
+@code {
+    private ModalUi _modalUi = new() { Body = "p-0 sm:p-0" };
+    private IReadOnlyList<LxCommandGroup> _groups = [];
+    private SlotSet _palette = default!;
+
+    /// <summary>The pages to search, written into the page. A page is listed with its headings, under the heading of its <c>Group</c>. For a long list use <see cref="IndexUrl"/> instead.</summary>
+    [Parameter] public IReadOnlyList<LxContentSearchPage> Pages { get; set; } = [];
+
+    /// <summary>
+    /// The address of a JSON file with the pages to search, instead of (or in addition to) <see cref="Pages"/>: an array of
+    /// <c>{"title", "href", "description"?, "group"?, "keywords"?, "headings"?: [{"text", "id"}]}</c>, the fields of <see cref="LxContentSearchPage"/>.
+    /// The browser fetches it the first time the search opens, shows a loading message, keeps the result for the page and, when
+    /// the fetch fails, says so in a live region with a button to try again. It is resolved against <c>&lt;base href&gt;</c>, so a relative
+    /// address works below a path base, and it must be on the same origin as the page. Works in every render mode, because the browser does it.
+    /// </summary>
+    [Parameter] public string? IndexUrl { get; set; }
+
+    /// <summary>Called with the activated command. Pages and headings navigate as well. The search closes in either case.</summary>
+    [Parameter] public EventCallback<LxCommandItem> OnSelect { get; set; }
+
+    /// <summary>
+    /// The keyboard shortcut that opens the search: "mod+k" by default, where mod is Cmd on Apple platforms and Ctrl
+    /// elsewhere. Ctrl, meta, alt and shift are accepted too.
+    /// </summary>
+    [Parameter] public string Shortcut { get; set; } = "mod+k";
+
+    /// <summary>
+    /// Names this search so that a <see cref="LxContentSearchButton"/> with the same <c>For</c> opens it. Needed only
+    /// when a page has more than one search; the unnamed one is the default.
+    /// </summary>
+    [Parameter] public string Name { get; set; } = "";
+
+    /// <summary>Open state. Use <c>@bind-Open</c>; the browser opens and closes the search on its own.</summary>
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible name of the dialog and the search field. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Slot overrides of the command palette.</summary>
+    [Parameter] public CommandPaletteUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _groups = ToGroups(Pages);
+        _palette = ResolveSlots(Options.CommandPalette, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    // One option, as js/content.js clones it for each page (the file icon) and each heading (the hash icon) of the index.
+    private RenderFragment Template(string icon) =>
+        @<a role="option" tabindex="-1" class="@_palette["item"]" data-lx-close data-template="@(icon == Options.Icons.Hash ? "heading" : "page")">
+            <span class="@_palette["itemIcon"]" aria-hidden="true">@RenderIcon(icon, "size-5")</span>
+            <span class="@_palette["itemWrapper"]">
+                <span class="@_palette["itemLabel"]" data-slot="label"></span>
+                <span class="@_palette["itemDescription"]" data-slot="description"></span>
+            </span>
+        </a>;
+
+    // Groups keep the order of their first page; inside a group, a page comes right before its headings.
+    private IReadOnlyList<LxCommandGroup> ToGroups(IReadOnlyList<LxContentSearchPage> pages)
+    {
+        var order = new List<string?>();
+        var items = new Dictionary<string, List<LxCommandItem>>(StringComparer.Ordinal);
+        var ungrouped = new List<LxCommandItem>();
+        foreach (var page in pages)
+        {
+            var list = page.Group is null ? ungrouped : items.TryGetValue(page.Group, out var existing) ? existing : items[page.Group] = [];
+            if (page.Group is not null && !order.Contains(page.Group)) order.Add(page.Group);
+            list.Add(new LxCommandItem
+            {
+                Label = page.Title,
+                Value = page.Href,
+                Description = page.Description,
+                Keywords = page.Keywords,
+                Href = page.Href,
+                Icon = page.Icon == "" ? null : RenderIcon(page.Icon ?? Options.Icons.File, "size-5"),
+            });
+            foreach (var heading in page.Headings ?? [])
+            {
+                var href = $"{page.Href}#{heading.Id}";
+                list.Add(new LxCommandItem
+                {
+                    Label = heading.Text,
+                    Value = href,
+                    Description = page.Title,
+                    Href = href,
+                    Icon = RenderIcon(Options.Icons.Hash, "size-5"),
+                });
+            }
+        }
+        var groups = new List<LxCommandGroup>();
+        if (ungrouped.Count > 0) groups.Add(new LxCommandGroup(null, ungrouped));
+        groups.AddRange(order.Select(group => new LxCommandGroup(group, items[group!])));
+        return groups;
+    }
+}

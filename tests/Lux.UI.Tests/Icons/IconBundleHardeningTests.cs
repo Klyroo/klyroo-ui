@@ -8,7 +8,7 @@ namespace Lux.UI.Tests.Icons;
 /// <summary>What the bundle does with the answers of a third party: sanitizes them, tells a typo from an outage, and never lets the cache cost an icon.</summary>
 public sealed class IconBundleHardeningTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "blux-icons-hard-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lux-icons-hard-" + Guid.NewGuid().ToString("N"));
     private string Cache => Path.Combine(_root, "cache");
 
     public IconBundleHardeningTests() => Directory.CreateDirectory(_root);

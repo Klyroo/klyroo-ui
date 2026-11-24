@@ -5,34 +5,34 @@
 <PageTitle>Editor</PageTitle>
 
 @* The home page: what there is to do when no document is open. The list is read from the browser after the first render. *@
-<BxDashboardPanel data-testid="home-panel">
+<LxDashboardPanel data-testid="home-panel">
     <ChildContent>
-        <BxDashboardNavbar Title="Editor">
+        <LxDashboardNavbar Title="Editor">
             <Leading>
-                <BxDashboardSidebarCollapse />
+                <LxDashboardSidebarCollapse />
             </Leading>
             <Right>
-                <BxColorModeButton />
+                <LxColorModeButton />
             </Right>
-        </BxDashboardNavbar>
+        </LxDashboardNavbar>
 
         <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-8 p-4 sm:p-6" data-testid="empty-state">
             <div class="flex flex-col items-center gap-3 text-center">
-                <span class="flex size-12 items-center justify-center rounded-full bg-(--blux-primary) text-(--blux-primary-contrast)" aria-hidden="true">
-                    @BxIcons.Named("lucide:file-text", "size-6")
+                <span class="flex size-12 items-center justify-center rounded-full bg-(--lux-primary) text-(--lux-primary-contrast)" aria-hidden="true">
+                    @LxIcons.Named("lucide:file-text", "size-6")
                 </span>
-                <p class="text-2xl font-semibold text-(--blux-text-highlighted)">Write something</p>
-                <p class="max-w-[34rem] text-sm text-(--blux-text-muted)">Start a document, or open one from the list. Your documents stay in this browser and are saved as you type.</p>
+                <p class="text-2xl font-semibold text-(--lux-text-highlighted)">Write something</p>
+                <p class="max-w-[34rem] text-sm text-(--lux-text-muted)">Start a document, or open one from the list. Your documents stay in this browser and are saved as you type.</p>
             </div>
             <div class="flex flex-wrap justify-center gap-3">
-                <BxButton Label="New document" OnClick="NewAsync" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-new">
-                    <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
-                </BxButton>
-                <BxButton Label="Open the guide" OnClick="GuideAsync" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-guide" />
+                <LxButton Label="New document" OnClick="NewAsync" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-new">
+                    <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
+                </LxButton>
+                <LxButton Label="Open the guide" OnClick="GuideAsync" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" Disabled="@(!Documents.Loaded || _busy)" data-testid="home-guide" />
             </div>
         </div>
     </ChildContent>
-</BxDashboardPanel>
+</LxDashboardPanel>
 
 @code {
     private bool _busy;

@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>
 /// What a link or an image in a page may point at, and how a link written in Markdown becomes a link of the site.
