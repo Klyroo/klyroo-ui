@@ -1,4 +1,6 @@
 @inherits LayoutComponentBase
+@implements IDisposable
+@using Blux.Playground.Client.Docs
 @inject NavigationManager Navigation
 
 <BxSkipLink />
@@ -10,14 +12,45 @@
                 <Logo Class="size-7" />
                 <span>lux<span class="text-(--blux-text-dimmed)">/</span>stack</span>
             </a>
-            <span class="hidden rounded-md border border-(--blux-border) px-1.5 py-0.5 font-mono text-[11px] text-(--blux-text-muted) sm:inline">v0.1-alpha</span>
+            @if (_activeProduct is not null)
+            {
+                <span class="hidden text-(--blux-border-accented) sm:inline" aria-hidden="true">/</span>
+                <a href="@($"/{_activeProduct.Slug}")" class="hidden items-center gap-1.5 font-mono text-sm font-semibold text-(--blux-text-highlighted) sm:inline-flex">
+                    <span class="size-2 rounded-full" style="@($"background:{_activeProduct.AccentHex}")" aria-hidden="true"></span>
+                    <span>@_activeProduct.Name</span>
+                </a>
+            }
+            else
+            {
+                <span class="hidden rounded-md border border-(--blux-border) px-1.5 py-0.5 font-mono text-[11px] text-(--blux-text-muted) sm:inline">v0.1-alpha</span>
+            }
+
             <nav aria-label="Main" class="ms-6 hidden items-center gap-6 text-sm md:flex">
-                <a href="/" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Libraries</a>
-                <a href="/docs" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
-                <a href="@($"{_prefix}/components/button")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Components</a>
-                <a href="/docs/theming" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Theming</a>
-                <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
+                @if (_activeProduct is null)
+                {
+                    @* LuxStack Hub navigation: ecosystem-level only, no Lux.UI docs/components leak *@
+                    <a href="/#libraries" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Libraries</a>
+                    <a href="/#redirections" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Catalog</a>
+                    <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
+                }
+                else if (_activeProduct.Slug == "ui")
+                {
+                    @* Lux.UI scoped navigation *@
+                    <a href="/ui" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Overview</a>
+                    <a href="/ui/docs" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
+                    <a href="@($"{_prefix}/components/button")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Components</a>
+                    <a href="/docs/theming" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Theming</a>
+                    <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
+                }
+                else
+                {
+                    @* Scoped navigation for Lux.Query, Lux.Table, Lux.Form, Lux.Dashboard, Lux.Display, Lux.Spreadsheet, Lux.Agent *@
+                    <a href="@($"/{_activeProduct.Slug}")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Overview</a>
+                    <a href="@_activeProduct.DocsHref" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
+                    <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
+                }
             </nav>
+
             <div class="ms-auto flex items-center gap-1">
                 <BxContentSearchButton Collapsed="false" Class="me-1 min-w-0 sm:w-56" />
                 <ColorModeButton />
@@ -50,11 +83,27 @@
 
 @code {
     private string _prefix = "";
+    private LuxProductInfo? _activeProduct;
 
     protected override void OnInitialized()
     {
-        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        UpdateContext();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateContext();
+        StateHasChanged();
+    }
+
+    private void UpdateContext()
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
         var mode = PlaygroundServices.ModeFromPath(path);
         _prefix = mode is null ? "" : "/" + mode;
+        _activeProduct = LuxStackProducts.ResolveFromPath(path);
     }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 }

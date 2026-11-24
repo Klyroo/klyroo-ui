@@ -17,14 +17,47 @@ public static class DocsNavigation
     /// component links keep it, so the reader stays in the mode they chose and the current page is found by address
     /// (the guides exist only in the default mode).
     /// </summary>
-    public static IReadOnlyList<BxContentNavigationItem> Sidebar(string prefix)
+    public static IReadOnlyList<BxContentNavigationItem> Sidebar(string prefix, string? activeLibrarySlug = null)
     {
-        var items = new List<BxContentNavigationItem>();
-        items.AddRange(Catalog.Guides.Select(g => g.Section).Distinct().Select(section => new BxContentNavigationItem(section)
+        // Non-UI LuxStack libraries get a clean, library-focused sidebar (no Lux.UI components leak).
+        if (activeLibrarySlug is not null && !string.Equals(activeLibrarySlug, "ui", StringComparison.OrdinalIgnoreCase))
         {
-            Open = true,
-            Children = [.. Catalog.Guides.Where(g => g.Section == section).Select(g => new BxContentNavigationItem(g.Title) { Href = g.Href, Exact = true })],
-        }));
+            var current = LuxStackProducts.Find(activeLibrarySlug);
+            var libItems = new List<BxContentNavigationItem>();
+            if (current is not null)
+            {
+                libItems.Add(new BxContentNavigationItem(current.Name)
+                {
+                    Open = true,
+                    Children =
+                    [
+                        new BxContentNavigationItem("Overview") { Href = $"/{current.Slug}", Exact = true },
+                        new BxContentNavigationItem("Documentation & API") { Href = current.DocsHref, Exact = true },
+                    ],
+                });
+            }
+            libItems.Add(new BxContentNavigationItem("LuxStack Libraries")
+            {
+                Open = true,
+                Children =
+                [
+                    .. LuxStackProducts.All.Select(p => new BxContentNavigationItem(p.Name) { Href = p.DocsHref, Exact = true }),
+                ],
+            });
+            return libItems;
+        }
+
+        // Lux.UI documentation sidebar: full Lux.UI guides + all 125+ components.
+        var items = new List<BxContentNavigationItem>();
+        items.AddRange(Catalog.Guides
+            .Where(g => g.Section != "LuxStack Libraries")
+            .Select(g => g.Section)
+            .Distinct()
+            .Select(section => new BxContentNavigationItem(section)
+            {
+                Open = true,
+                Children = [.. Catalog.Guides.Where(g => g.Section == section).Select(g => new BxContentNavigationItem(g.Title) { Href = g.Href, Exact = true })],
+            }));
         items.AddRange(Catalog.Groups.Where(group => Catalog.Components.Any(c => c.Group == group)).Select(group => new BxContentNavigationItem(group)
         {
             Open = true,
