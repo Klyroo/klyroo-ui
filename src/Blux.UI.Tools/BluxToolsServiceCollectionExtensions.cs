@@ -27,6 +27,8 @@ public static class BluxToolsServiceCollectionExtensions
         services.TryAddScoped<FilePreviewService>();
         // Programmatic schema-driven overlay form service for BxFormProvider.
         services.TryAddScoped<FormService>();
+        // Semantic Agent Bridge (snapshot, query, act, observe) inspired by ui-sdk.dev.
+        services.TryAddScoped<AgentBridgeService>();
         // How a Queryable source runs its queries: blocking by default, replaced by an adapter package (AddBluxUiToolsEntityFrameworkAdapter).
         services.TryAddSingleton<IDataListQueryExecutor>(SynchronousDataListQueryExecutor.Instance);
         // A static or prerendered list reads the time zone cookie through IBxRequestCookies (Blux.UI.Server); without it, one warning in Development.
