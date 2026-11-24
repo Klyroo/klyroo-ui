@@ -68,38 +68,60 @@ public static class DocsNavigation
         return items;
     }
 
-    private static readonly Dictionary<string, IReadOnlyList<BxContentSearchPage>> SearchPagesByPrefix = [];
+    private static readonly Dictionary<string, IReadOnlyList<BxContentSearchPage>> SearchPagesByKey = [];
 
     /// <summary>
-    /// The pages the header search finds: the guides and every component, grouped like the sidebar. <paramref name="prefix"/> is
-    /// the render mode prefix of the page, as for <see cref="Sidebar"/>: component links keep it, and the guides, which exist
-    /// only in the default mode, stay as they are.
+    /// Header search pages. When browsing a specific LuxStack library, search is strictly scoped to that library
+    /// (zero leakage of Lux.UI components into Lux.Query, Lux.Table, Lux.Form, etc.).
     /// </summary>
-    public static IReadOnlyList<BxContentSearchPage> SearchPages(string prefix)
+    public static IReadOnlyList<BxContentSearchPage> SearchPages(string prefix, string? activeLibrarySlug = null)
     {
-        lock (SearchPagesByPrefix)
+        var cacheKey = $"{prefix}|{activeLibrarySlug ?? "hub"}";
+        lock (SearchPagesByKey)
         {
-            if (!SearchPagesByPrefix.TryGetValue(prefix, out var pages))
+            if (!SearchPagesByKey.TryGetValue(cacheKey, out var pages))
             {
-                SearchPagesByPrefix[prefix] = pages =
-                [
-                    new BxContentSearchPage("LuxStack Ecosystem Hub", "/") { Group = "LuxStack", Icon = "", Keywords = "luxstack hub tanstack suite maui blazor" },
-                    .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Overview", $"/{p.Slug}") { Group = p.Name, Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
-                    .. LuxLibraryDocs.All.SelectMany(lib => lib.Pages.Select(p => new BxContentSearchPage($"{lib.LibraryName}: {p.Title}", LuxLibraryDocs.PageHref(lib.LibrarySlug, p.Slug))
-                    {
-                        Group = lib.LibraryName,
-                        Icon = "",
-                        Keywords = $"{lib.LibrarySlug} {p.Group} {p.Lead}",
-                    })),
-                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = $"Lux.UI · {g.Section}", Icon = "" }),
-                    new BxContentSearchPage("Templates", "templates") { Group = "Gallery", Icon = "", Keywords = "starter dashboard landing live demo" },
-                    .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
-                    {
-                        Group = $"Lux.UI · {c.Group}",
-                        Icon = "",
-                        Keywords = c.Slug.Replace('-', ' '),
-                    }),
-                ];
+                if (activeLibrarySlug is not null && !string.Equals(activeLibrarySlug, "ui", StringComparison.OrdinalIgnoreCase))
+                {
+                    var lib = LuxLibraryDocs.FindLibrary(activeLibrarySlug);
+                    pages = lib is null
+                        ? []
+                        : [
+                            new BxContentSearchPage($"{lib.LibraryName} Overview", $"/{lib.LibrarySlug}") { Group = lib.LibraryName, Icon = "" },
+                            .. lib.Pages.Select(p => new BxContentSearchPage(p.Title, LuxLibraryDocs.PageHref(lib.LibrarySlug, p.Slug))
+                            {
+                                Group = p.Group,
+                                Icon = "",
+                                Keywords = $"{p.Slug} {p.Lead}",
+                            }),
+                        ];
+                }
+                else if (string.Equals(activeLibrarySlug, "ui", StringComparison.OrdinalIgnoreCase))
+                {
+                    pages =
+                    [
+                        new BxContentSearchPage("Lux.UI Overview", "/ui") { Group = "Lux.UI", Icon = "" },
+                        .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = g.Section, Icon = "" }),
+                        new BxContentSearchPage("Templates", "templates") { Group = "Gallery", Icon = "", Keywords = "starter dashboard landing live demo" },
+                        .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
+                        {
+                            Group = c.Group,
+                            Icon = "",
+                            Keywords = c.Slug.Replace('-', ' '),
+                        }),
+                    ];
+                }
+                else
+                {
+                    pages =
+                    [
+                        new BxContentSearchPage("LuxStack Hub", "/") { Group = "LuxStack", Icon = "", Keywords = "luxstack hub libraries" },
+                        .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Overview", $"/{p.Slug}") { Group = "Libraries", Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
+                        .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Documentation", p.DocsHref) { Group = "Documentation", Icon = "", Keywords = $"{p.Slug} docs reference" }),
+                    ];
+                }
+
+                SearchPagesByKey[cacheKey] = pages;
             }
             return pages;
         }

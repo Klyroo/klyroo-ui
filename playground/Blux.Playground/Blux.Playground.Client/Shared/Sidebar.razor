@@ -2,12 +2,13 @@
 @using Blux.Playground.Client.Docs
 @inject NavigationManager Navigation
 
-@* The documentation sidebar is scoped to the active LuxStack library (Lux.UI vs Query/Table/Form/Dashboard/Display/Spreadsheet/Agent). *@
-<BxContentNavigation Items="_items" AriaLabel="Documentation" Ui="_ui" data-testid="docs-sidebar" />
+@* Keyed by active library slug so switching between independent library docs always mounts a fresh navigation tree. *@
+<BxContentNavigation @key="@(_activeSlug ?? "ui")" Items="_items" AriaLabel="Documentation" Ui="_ui" data-testid="docs-sidebar" />
 
 @code {
     private static readonly ContentNavigationUi _ui = new() { List = "gap-6" };
 
+    private string? _activeSlug;
     private IReadOnlyList<BxContentNavigationItem> _items = [];
 
     protected override void OnInitialized()
@@ -26,8 +27,8 @@
     {
         var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
         var mode = PlaygroundServices.ModeFromPath(path);
-        var activeSlug = LuxStackProducts.ResolveFromPath(path)?.Slug;
-        _items = DocsNavigation.Sidebar(mode is null ? "" : "/" + mode, activeSlug);
+        _activeSlug = LuxStackProducts.ResolveFromPath(path)?.Slug;
+        _items = DocsNavigation.Sidebar(mode is null ? "" : "/" + mode, _activeSlug);
     }
 
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;

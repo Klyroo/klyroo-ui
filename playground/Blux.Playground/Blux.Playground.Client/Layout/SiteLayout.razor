@@ -28,14 +28,13 @@
             <nav aria-label="Main" class="ms-6 hidden items-center gap-6 text-sm md:flex">
                 @if (_activeProduct is null)
                 {
-                    @* LuxStack Hub navigation: ecosystem-level only, no Lux.UI docs/components leak *@
+                    @* LuxStack Hub navigation: ecosystem-level only *@
                     <a href="/#libraries" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Libraries</a>
                     <a href="/#redirections" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Catalog</a>
-                    <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
                 }
                 else if (_activeProduct.Slug == "ui")
                 {
-                    @* Lux.UI scoped navigation *@
+                    @* Lux.UI independent navigation *@
                     <a href="/ui" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Overview</a>
                     <a href="/ui/docs" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
                     <a href="@($"{_prefix}/components/button")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Components</a>
@@ -44,10 +43,10 @@
                 }
                 else
                 {
-                    @* Scoped navigation for Lux.Query, Lux.Table, Lux.Form, Lux.Dashboard, Lux.Display, Lux.Spreadsheet, Lux.Agent *@
+                    @* Independent navigation strictly for the active library *@
                     <a href="@($"/{_activeProduct.Slug}")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Overview</a>
-                    <a href="@_activeProduct.DocsHref" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
-                    <a href="templates" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Templates</a>
+                    <a href="@($"/{_activeProduct.Slug}/docs")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">Docs</a>
+                    <a href="@($"/{_activeProduct.Slug}/docs/api")" class="text-(--blux-text-muted) hover:text-(--blux-text-highlighted)">API</a>
                 }
             </nav>
 
@@ -60,15 +59,14 @@
     <LuxStackBar />
 </header>
 
-@* The search of the whole site, over the catalog and all LuxStack libraries: Ctrl+K (Cmd+K on a Mac). *@
-<BxContentSearch Pages="Blux.Playground.Client.Docs.DocsNavigation.SearchPages(_prefix)" />
+@* Search is scoped strictly to the active library when browsing a library, or global on the LuxStack Hub. *@
+<BxContentSearch @key="@(_activeProduct?.Slug ?? "hub")" Pages="Blux.Playground.Client.Docs.DocsNavigation.SearchPages(_prefix, _activeProduct?.Slug)" />
 
-@* The page puts its own main landmark in Body (MainLayout, DocsLayout), so the skip link can jump over what comes before it. *@
 @Body
 
 <footer class="border-t border-(--blux-border)">
     <div class="mx-auto flex max-w-(--breakpoint-2xl) flex-col gap-2 px-4 py-8 text-sm text-(--blux-text-muted) sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-        <p class="font-mono text-xs uppercase tracking-widest">LuxStack · 8 Headless &amp; UI Libraries · MIT</p>
+        <p class="font-mono text-xs uppercase tracking-widest">@(_activeProduct is null ? "LuxStack · 8 Headless & UI Libraries · MIT" : $"{_activeProduct.Name} · LuxStack · MIT")</p>
         <p>Built for .NET 10, Blazor Web, .NET MAUI Blazor Hybrid &amp; NativeAOT.</p>
     </div>
 </footer>
