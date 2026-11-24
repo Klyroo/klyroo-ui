@@ -4,7 +4,7 @@ namespace Blux.UI.Tools.Query;
 
 /// <summary>
 /// Compares two field values for sorting. Strings use a natural order that ignores case and accents and reads digit runs as numbers
-/// (<c>item2</c> before <c>item10</c>), like <c>localeCompare(..., { numeric: true, sensitivity: 'base' })</c> in the Nuxt UI table; every culture
+/// (<c>item2</c> before <c>item10</c>), using culture-aware numeric natural sorting; every culture
 /// rule is the invariant one. Numbers and dates compare by value, <see langword="false"/> before <see langword="true"/>.
 /// </summary>
 internal sealed class SortValueComparer(bool descending) : IComparer<object?>

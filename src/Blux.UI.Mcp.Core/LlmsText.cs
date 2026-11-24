@@ -11,7 +11,7 @@ namespace Blux.UI.Mcp;
 public static class LlmsText
 {
     public const string Summary =
-        "Accessible, themable Blazor components styled with Tailwind CSS v4, inspired by Nuxt UI. " +
+        "Accessible, themable Blazor components styled with Tailwind CSS v4. " +
         "Every component works in Interactive Server, WebAssembly, Auto and static server rendering: UI state (open, focus, keyboard navigation) runs in the browser, and .NET only hears about state you bind. " +
         "They also run in .NET MAUI Blazor Hybrid apps (BlazorWebView): Android is tested on an emulator, iOS 17 or later, Windows and macOS (Mac Catalyst) have CI build jobs that have not run yet and are untested on devices, Android TV is experimental, Tizen is not supported.";
 

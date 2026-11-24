@@ -23,7 +23,7 @@
     /// <summary>Text alternative. Leave empty for a decorative image.</summary>
     [Parameter] public string? Alt { get; set; }
 
-    /// <summary>Image settings forwarded to both images, like the <c>:image</c> object of Nuxt UI's color mode image.</summary>
+    /// <summary>Image settings forwarded to both light and dark images.</summary>
     [Parameter] public BxImageOptions? ImageOptions { get; set; }
 
     protected override void OnParametersSet()

@@ -250,14 +250,14 @@ internal sealed class BxThemeTokens
     {
         var surfaces = Surfaces.Select(s => tokens[s]).ToArray();
         var isNeutral = role == "neutral";
-        // Nuxt UI uses 500 in light and 400 in dark; the neutral color is its inverted surface (dark in light, light in dark).
+        // Uses 500 in light and 400 in dark; the neutral color is its inverted surface (dark in light, light in dark).
         var fillTarget = isNeutral ? (mode == Mode.Light ? 9 : 1) : (mode == Mode.Light ? 5 : 4);
         // The signal-yellow rule: the light primary fill may be too light for 3:1, its -text color then outlines the indicators.
         var fillMayBeFaint = mode == Mode.Light && role == "primary";
 
         var textTarget = isNeutral ? (mode == Mode.Light ? 8 : 2) : (mode == Mode.Light ? 6 : 4);
 
-        // The first fill (nearest to Nuxt's choice) whose rules hold and that leaves a text color that holds too.
+        // The first fill (nearest to the target shade) whose rules hold and that leaves a text color that holds too.
         Triplet? best = null;
         var bestScore = double.MinValue;
         foreach (var index in Nearest(fillTarget, mode))
@@ -353,7 +353,7 @@ internal sealed class BxThemeTokens
     }
 
     /// <summary>
-    /// The text, background and border tokens from a neutral palette, with Nuxt UI's mapping (text 700, muted 500, bg white,
+    /// The text, background and border tokens derived from a neutral palette (text 700, muted 500, bg white,
     /// bg-muted 50, border 200 … in light), moved toward more contrast where a rule needs it.
     /// </summary>
     private static IEnumerable<KeyValuePair<string, string>> NeutralFamily(BxPalette p, Mode mode, bool allowLowContrast)
@@ -362,7 +362,7 @@ internal sealed class BxThemeTokens
         var result = new List<KeyValuePair<string, string>>();
         void Add(string name, string value) => result.Add(new(name, value));
 
-        // Surfaces. Dark mode goes one step below Nuxt UI's 900 page so the elevations keep four distinct steps.
+        // Surfaces. Dark mode steps down from 900 so the elevations keep four distinct steps.
         var bg = light ? White : p.Hex(10);
         var bgMuted = p.Hex(light ? 0 : 9);
         var bgElevated = p.Hex(light ? 1 : 8);
@@ -410,7 +410,7 @@ internal sealed class BxThemeTokens
         Add("bg-overlay", bgOverlay);
         Add("bg-inverted", bgInverted);
 
-        // Hairlines: Nuxt UI's 200 (light) and 800 (dark, one step above the 900 page), moved toward more contrast until they
+        // Hairlines: starts at 200 (light) and 800 (dark), moved toward more contrast until they
         // stay visible on every surface (overlay and muted are 900 and elevated is 800 here, so 800 itself would vanish).
         Add("border", PickText("border", 2, 8, BorderRatio));
         Add("border-muted", PickText("border-muted", 2, 7, BorderRatio));

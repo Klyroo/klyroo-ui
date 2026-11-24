@@ -16,7 +16,7 @@ internal readonly record struct BxGeometryPlan(BxPlanKind Kind, int Width, int H
 
 /// <summary>
 /// The output size of every fit, decided from the (oriented) source size before libvips does any work, so the result can never exceed the
-/// configured maximum whatever the ratio of the source. Follows sharp, which Nuxt Image's ipx uses: with both sides given, <c>cover</c>,
+/// configured maximum whatever the ratio of the source. Follows sharp resize semantics: with both sides given, <c>cover</c>,
 /// <c>outside</c>, <c>contain</c> and <c>fill</c> produce the box (or cover it) even from a smaller source, <c>inside</c> never enlarges;
 /// with one side the ratio is kept and the image is never enlarged.
 /// </summary>

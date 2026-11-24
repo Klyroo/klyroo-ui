@@ -5,7 +5,7 @@
 <div class="pg-prose">
     <p class="pg-eyebrow">Getting started</p>
     <h1>Design system</h1>
-    <p class="pg-lead">Seven semantic colors that you map to palettes, a neutral palette behind the text, background and border tokens, and defaults for color and size, like Nuxt UI's design system. The default look is Blux's own, tuned by hand for contrast.</p>
+    <p class="pg-lead">Seven semantic colors that you map to palettes, a neutral palette behind the text, background and border tokens, and global defaults for color and size. The default look is tuned by hand for contrast.</p>
 
     <h2>Semantic colors</h2>
     <p>Components take a <code>Color</code> by role, never by shade. Each role is a triplet of CSS variables (<a href="/docs/css-variables">the full list</a>) that components read through <code>data-color</code>.</p>
@@ -13,7 +13,7 @@
         <table class="w-full min-w-xl text-start text-sm">
             <caption class="sr-only">Semantic colors</caption>
             <thead class="bg-muted text-highlighted">
-                <tr><th scope="col" class="px-3 py-2 text-start">Color</th><th scope="col" class="px-3 py-2 text-start">Used for</th><th scope="col" class="px-3 py-2 text-start">Blux default</th><th scope="col" class="px-3 py-2 text-start">Nuxt UI default</th></tr>
+                <tr><th scope="col" class="px-3 py-2 text-start">Color</th><th scope="col" class="px-3 py-2 text-start">Used for</th><th scope="col" class="px-3 py-2 text-start">Default palette</th></tr>
             </thead>
             <tbody>
                 @foreach (var row in Roles)
@@ -21,8 +21,7 @@
                     <tr class="border-t border-default">
                         <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
                         <td class="px-3 py-2 text-muted">@row.Use</td>
-                        <td class="px-3 py-2 text-muted">@row.Blux</td>
-                        <td class="px-3 py-2 font-mono text-xs text-muted">@row.Nuxt</td>
+                        <td class="px-3 py-2 text-muted">@row.Default</td>
                     </tr>
                 }
             </tbody>
@@ -38,10 +37,10 @@
     <h2>How the tokens are picked</h2>
     <p>A palette has 11 shades and a component needs three tokens that stay readable, so Blux picks them from the shades and checks the result with the same rules its own palette passes: the fill reaches 3:1 on the page and the surfaces (except the light primary, whose <code>-text</code> color outlines it, as the signal yellow does), the text on the fill 4.5:1, also at the 90% and 80% of the hover and pressed states, and the <code>-text</code> color 4.5:1 on the page and over soft tints.</p>
     <ul>
-        <li>The <strong>fill</strong> is the shade nearest to 500 in light mode and 400 in dark mode, like Nuxt UI, that satisfies the rules; a pale palette such as yellow moves a step or two.</li>
+        <li>The <strong>fill</strong> is the shade nearest to 500 in light mode and 400 in dark mode that satisfies the rules; a pale palette such as yellow moves a step or two.</li>
         <li>The <strong>contrast</strong> color is white or the palette's shade 950, whichever reaches 4.5:1 (white first).</li>
         <li>The <strong>text</strong> color is the nearest shade to 600 (light) or 400 (dark) that holds on every surface.</li>
-        <li>The <strong>neutral</strong> palette also drives the text, background and border variables from its shades, with Nuxt UI's mapping (700 for text, 500 muted, 50 for <code>bg-muted</code>…), and a color left at the default is nudged where the new surfaces need it. Borders start at 200 in light mode and 800 in dark mode and move toward more contrast until they differ by at least 1.15:1 from the page, the overlay, the muted and the elevated surfaces, so a border never disappears on a popover or a card (the Blux defaults reach 1.17:1 in light and 1.19:1 in dark).</li>
+        <li>The <strong>neutral</strong> palette also drives the text, background and border variables from its shades (700 for text, 500 muted, 50 for <code>bg-muted</code>…), and a color left at the default is nudged where the new surfaces need it. Borders start at 200 in light mode and 800 in dark mode and move toward more contrast until they differ by at least 1.15:1 from the page, the overlay, the muted and the elevated surfaces, so a border never disappears on a popover or a card (the Blux defaults reach 1.17:1 in light and 1.19:1 in dark).</li>
     </ul>
 
     <h2>Your own palette</h2>
@@ -50,7 +49,7 @@
     <p>When no combination of shades can meet the contrast rules, for example with a palette whose shades are all the same gray, resolving the theme (the first <code>BxThemeStyle</code> render) throws an <code>InvalidOperationException</code> naming the color, the palette and the rule that fails, instead of shipping a low-contrast theme. Set <code>o.Colors.AllowLowContrast = true</code> to keep the best combination found anyway.</p>
 
     <h2>Extra semantic colors</h2>
-    <p>Register a name, like <code>theme.colors</code> in Nuxt UI, and use it as a <code>Color</code>. <code>BxThemeStyle</code> writes its three variables and its <code>[data-color='tertiary']</code> rule: no hand-written CSS.</p>
+    <p>Register any custom semantic role name and use it as a <code>Color</code>. <code>BxThemeStyle</code> writes its three variables and its <code>[data-color='tertiary']</code> rule automatically — no hand-written CSS required.</p>
     <CodeBlock Title="Program.cs" Code="@Extra" />
     <CodeBlock Code="@ExtraUse" />
 
@@ -79,17 +78,17 @@
 </div>
 
 @code {
-    private sealed record Role(string Name, string Use, string Blux, string Nuxt);
+    private sealed record Role(string Name, string Use, string Default);
 
     private static readonly Role[] Roles =
     [
-        new("primary", "Main actions, focus, selected state.", "Signal yellow", "green"),
-        new("secondary", "Secondary actions.", "Teal", "blue"),
-        new("success", "Success states.", "Green", "green"),
-        new("info", "Informational states.", "Blue", "blue"),
-        new("warning", "Warnings.", "Orange", "yellow"),
-        new("error", "Errors, destructive actions.", "Red", "red"),
-        new("neutral", "Text, backgrounds, borders and neutral components.", "Cool gray", "slate"),
+        new("primary", "Main actions, focus, selected state.", "Signal yellow"),
+        new("secondary", "Secondary actions.", "Teal"),
+        new("success", "Success states.", "Green"),
+        new("info", "Informational states.", "Blue"),
+        new("warning", "Warnings.", "Orange"),
+        new("error", "Errors, destructive actions.", "Red"),
+        new("neutral", "Text, backgrounds, borders and neutral components.", "Cool gray"),
     ];
 
     private const string Configure = """

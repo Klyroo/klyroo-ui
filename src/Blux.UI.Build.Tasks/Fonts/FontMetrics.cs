@@ -356,7 +356,7 @@ namespace Blux.UI.Build.Fonts
     {
         /// <summary>
         /// A <c>@font-face</c> for "Family Fallback": the system font, resized and re-spaced so text set in it takes the same
-        /// room as in the web font, which keeps the page from jumping when the web font replaces it (what fontaine does for Nuxt).
+        /// room as in the web font, which keeps the page from jumping when the web font replaces it.
         /// </summary>
         public static string Css(string family, FontMetrics m, SystemFont system)
         {

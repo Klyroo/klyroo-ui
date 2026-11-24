@@ -1,7 +1,7 @@
 namespace Blux.UI;
 
 /// <summary>
-/// Image settings that a component forwards to <see cref="BxImage"/>, like the <c>:image</c> object of Nuxt UI
+/// Image settings that a component forwards to <see cref="BxImage"/>
 /// (<c>:image="{ src, format: 'webp', quality: 80 }"</c>). The same shape describes the entries of <see cref="BxImageSettings.Presets"/>.
 /// Every value left null falls through to the preset, then to the global defaults.
 /// </summary>
@@ -20,7 +20,7 @@ public sealed record BxImageOptions
     public string? Preset { get; init; }
 
     /// <summary>
-    /// Responsive sizes in the syntax of Nuxt Image: space separated entries, an unprefixed one for the default and prefixed ones for the
+    /// Responsive sizes: space-separated entries, an unprefixed one for the default and prefixed ones for the
     /// breakpoints of <see cref="BxImageSettings.Screens"/>, each applying from its breakpoint upward: <c>"100vw sm:50vw md:400px"</c>.
     /// </summary>
     public string? Sizes { get; init; }

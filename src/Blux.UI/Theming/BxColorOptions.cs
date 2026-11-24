@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Blux.UI;
 
 /// <summary>
-/// Maps the semantic colors to palettes, like <c>ui.colors</c> in Nuxt UI:
+/// Maps the semantic colors to palettes:
 /// <c>AddBluxUi(o =&gt; { o.Colors.Primary = BxPalette.Blue; o.Colors.Neutral = BxPalette.Zinc; o.Colors.Add("tertiary", BxPalette.Indigo); })</c>.
 /// </summary>
 /// <remarks>
@@ -34,7 +34,7 @@ public sealed class BxColorOptions
     public BxPalette Warning { get => Get("warning"); set => Set("warning", value); }
     public BxPalette Error { get => Get("error"); set => Set("error", value); }
 
-    /// <summary>Drives the text, background and border tokens too, like Nuxt UI's neutral palette.</summary>
+    /// <summary>Drives the text, background and border tokens as well.</summary>
     public BxPalette Neutral { get => Get("neutral"); set => Set("neutral", value); }
 
     /// <summary>
@@ -67,7 +67,7 @@ public sealed class BxColorOptions
         }
     }
 
-    /// <summary>Registers an extra semantic color, like <c>theme.colors: [..., 'tertiary']</c> in Nuxt UI.</summary>
+    /// <summary>Registers an extra semantic color role (e.g. 'tertiary').</summary>
     /// <exception cref="InvalidOperationException">A component already rendered with these options.</exception>
     public void Add(string name, BxPalette palette)
     {
@@ -147,7 +147,7 @@ public sealed class BxColorOptions
 }
 
 /// <summary>
-/// Default <c>Color</c> and <c>Size</c> of the components, like <c>theme.defaultVariants</c> in Nuxt UI.
+/// Default <c>Color</c> and <c>Size</c> applied across components.
 /// </summary>
 /// <remarks>
 /// A component whose built-in default is <see cref="BxColor.Primary"/> uses <see cref="Color"/> when the parameter is not set;

@@ -3,7 +3,7 @@ using ModelContextProtocol.Server;
 namespace Blux.UI.Mcp;
 
 /// <summary>
-/// Restricts the tools a server exposes, like the <c>X-MCP-Tools</c> header of the Nuxt UI server: a comma-separated list of
+/// Restricts the tools a server exposes via the <c>X-MCP-Tools</c> header: a comma-separated list of
 /// tool names. The HTTP endpoint reads the header on every request; the stdio tool reads <c>--tools</c>.
 /// </summary>
 public static class ToolFilter

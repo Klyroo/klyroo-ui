@@ -41,7 +41,7 @@
     /// <summary>Largest value. Ignored when <see cref="Steps"/> is set: the maximum is then the index of the last step.</summary>
     [Parameter] public double Max { get; set; } = 100;
 
-    /// <summary>Labels of the steps, shown under the bar like Nuxt UI's array <c>max</c>. <see cref="Value"/> is the current step's index.</summary>
+    /// <summary>Labels of the steps shown under the progress bar. <see cref="Value"/> is the current step's index.</summary>
     [Parameter] public IReadOnlyList<string>? Steps { get; set; }
 
     /// <summary>Shows the percentage above the bar.</summary>

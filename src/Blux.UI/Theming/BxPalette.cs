@@ -5,7 +5,7 @@ namespace Blux.UI;
 
 /// <summary>
 /// A palette of 11 shades (50, 100, 200 … 900, 950) that a semantic color is mapped to, like the palettes of Tailwind CSS
-/// or Nuxt UI. Use the Tailwind v4 defaults (<see cref="Blue"/>, <see cref="Zinc"/> …), <see cref="Custom(string, IReadOnlyDictionary{int, string})"/>
+/// Use the Tailwind v4 defaults (<see cref="Blue"/>, <see cref="Zinc"/> …), <see cref="Custom(string, IReadOnlyDictionary{int, string})"/>
 /// for your own, or <see cref="Blux"/>, the hand-tuned colors Blux UI ships with.
 /// </summary>
 /// <remarks>

@@ -5,12 +5,12 @@
 <div class="pg-prose">
     <p class="pg-eyebrow">Getting started</p>
     <h1>Icons</h1>
-    <p class="pg-lead">Any icon of any Iconify collection works by name, and the icons components draw can be replaced by name. The build bundles the icons your app uses into the app, so nothing is requested from a third party when the page runs. It works like the icon system of Nuxt UI, with MSBuild in place of the Nuxt module.</p>
+    <p class="pg-lead">Any icon of any Iconify collection works by name, and the icons components draw can be replaced by name. The build bundles the icons your app uses into the app via MSBuild, so nothing is requested from a third party when the page runs.</p>
 
     <h2>Names</h2>
     <p>Three forms name an icon, and <code>BxIcon</code> accepts all of them wherever a name is expected (<code>Name</code>, <code>Icon</code>, <code>LeadingIcon</code> of items, <code>BluxOptions.Icons</code>):</p>
     <ul>
-        <li><code>i-{collection}-{name}</code> is the form of Nuxt UI: <code>i-lucide-lightbulb</code>, <code>i-ph-house</code>, <code>i-simple-icons-github</code>.</li>
+        <li><code>i-{collection}-{name}</code> prefixed shorthand: <code>i-lucide-lightbulb</code>, <code>i-ph-house</code>, <code>i-simple-icons-github</code>.</li>
         <li><code>{collection}:{name}</code> is the form of Iconify itself: <code>lucide:lightbulb</code>, <code>ph:house</code>, <code>simple-icons:github</code>.</li>
         <li>A bare name is a Lucide icon, as it always was: <code>lightbulb</code>, <code>chevron-down</code>.</li>
     </ul>
@@ -33,7 +33,7 @@
     <p>The scan reads the files below the project folder and the <code>BluxIconScanDirectory</code> folders, except <code>bin</code>, <code>obj</code>, <code>node_modules</code>, <code>wwwroot</code>, every folder whose name starts with a dot (<code>.git</code>, <code>.vs</code>, <code>.claude</code>, <code>.idea</code>), folders and files that are links, and files over 1 MiB. When no source, item, option or icon file changed since the last clean build, the task reads nothing and leaves the generated file as it is.</p>
 
     <h2>Explicit icons</h2>
-    <p><code>BluxIcon</code> items are the equivalent of <code>clientBundle.icons</code> in Nuxt: names the scan cannot see, bundled whatever the sources say. <code>BluxIconScanDirectory</code> adds a folder outside the project to the scan.</p>
+    <p><code>BluxIcon</code> items declare names the source scanner cannot statically see, bundling them unconditionally. <code>BluxIconScanDirectory</code> adds a folder outside the project to the scan.</p>
     <CodeBlock Title="Site.csproj" Code="@Explicit" />
     <p>The <code>Icon</code> example of the components below builds its names at runtime and relies on exactly this.</p>
 
@@ -44,7 +44,7 @@
     <CodeBlock Title="Program.cs" Code="@Register" />
 
     <h2>Icons of the components</h2>
-    <p>Components draw their icons from <code>BluxOptions.Icons</code>, as <code>ui.icons</code> of Nuxt UI does. Each property is an icon name with a Lucide default. Set one in <code>AddBluxUi</code> and every component that uses it follows, in every render mode (register the options from code shared by the server and the client):</p>
+    <p>Components draw their icons from <code>BluxOptions.Icons</code>. Each property is an icon name with a Lucide default. Set one in <code>AddBluxUi</code> and every component that uses it follows, in every render mode (register the options from code shared by the server and the client):</p>
     <CodeBlock Title="Program.cs" Code="@AppIcons" />
     <p>A name that is not a built-in Lucide icon is bundled because the assignment is a literal. Setting the value from a variable needs a <code>BluxIcon</code> item. The values become read-only once a component has drawn an icon.</p>
     <div class="not-prose overflow-x-auto rounded-xl border border-default" data-testid="icon-keys">
@@ -59,7 +59,7 @@
                     <tr class="border-t border-default">
                         <th scope="row" class="px-3 py-2 text-start font-mono text-xs font-medium text-highlighted">@row.Name</th>
                         <td class="px-3 py-2 font-mono text-xs text-muted">@row.Default</td>
-                        <td class="px-3 py-2 text-muted">@row.Meaning@(row.Extra ? " (not a key of Nuxt UI)" : "")</td>
+                        <td class="px-3 py-2 text-muted">@row.Meaning</td>
                     </tr>
                 }
             </tbody>
@@ -89,7 +89,7 @@
     <p>The markup of an icon is now stored whole, so the stroke is part of the icon instead of part of the component: give a registered path its own <code>fill</code> or <code>stroke</code>.</p>
 
     <h2>Modes</h2>
-    <p>Icons are drawn as inline <code>&lt;svg&gt;</code> elements. Nuxt UI's CSS mode (an icon as a mask in a class) is not implemented: it brings no capability the inline mode lacks for Blazor, and multicolor icons would need the SVG anyway.</p>
+    <p>Icons are drawn as inline <code>&lt;svg&gt;</code> elements. CSS mask mode is intentionally omitted: inline SVG gives full Blazor control, crisp scaling, and native multicolor icon support with zero extra stylesheet rules.</p>
 </div>
 
 @code {

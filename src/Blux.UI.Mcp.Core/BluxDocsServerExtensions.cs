@@ -35,7 +35,7 @@ public static class BluxDocsServerExtensions
         {
             server.ServerInfo = new() { Name = "blux-ui", Version = bundle.Version };
             server.ServerInstructions =
-                "Documentation of Blux UI, a Blazor component library inspired by Nuxt UI. " +
+                "Documentation of Blux UI, an accessible, themable Blazor component library styled with Tailwind CSS v4. " +
                 "Start with search-components (by name, family or intent) and get-component (usage, examples, api, theme); " +
                 "use get-component-metadata for the exact parameters before writing markup, and get-installation-guide for setup. " +
                 "Never invent a parameter: every one returned by these tools exists in the library.";

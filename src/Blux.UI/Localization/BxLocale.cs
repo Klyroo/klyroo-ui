@@ -5,7 +5,7 @@ namespace Blux.UI;
 
 /// <summary>
 /// A language of the UI: its code, its name, its writing direction and every text the components render.
-/// Equivalent of the locale object of Nuxt UI. Use a built-in one from <see cref="BxLocales"/>, derive one with
+/// Locale definition for component labels and text direction. Use a built-in one from <see cref="BxLocales"/>, derive one with
 /// <see cref="BxLocales.Extend"/>, or create it with <c>new BxLocale(...)</c>.
 /// </summary>
 /// <param name="Code">A culture name such as "fr" or "pt-BR". It is the value written to the culture cookie by <see cref="BxLocaleSelect"/>, the <c>lang</c> attribute of the page, and the culture used to format dates and numbers.</param>

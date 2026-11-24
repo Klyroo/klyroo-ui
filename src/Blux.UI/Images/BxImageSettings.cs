@@ -6,7 +6,7 @@ using System.Text.RegularExpressions;
 namespace Blux.UI;
 
 /// <summary>
-/// Global image configuration (<c>BluxOptions.Images</c>), the counterpart of the <c>image</c> key of Nuxt Image:
+/// Global image configuration (<c>BluxOptions.Images</c>):
 /// <c>AddBluxUi(o =&gt; { o.Images.Domains.Add("images.example.com"); o.Images.AddProvider(new MyProvider()); o.Images.DefaultProvider = "my"; })</c>.
 /// </summary>
 /// <remarks>
@@ -34,7 +34,7 @@ public sealed class BxImageSettings
         Domains = new GuardedSet(this);
     }
 
-    /// <summary>Breakpoints of the <c>Sizes</c> syntax, in pixels. Defaults to Tailwind's: sm 640, md 768, lg 1024, xl 1280, 2xl 1536 (like <c>image.screens</c> in Nuxt Image).</summary>
+    /// <summary>Breakpoints of the <c>Sizes</c> syntax, in pixels. Defaults to Tailwind's: sm 640, md 768, lg 1024, xl 1280, 2xl 1536.</summary>
     public IDictionary<string, int> Screens { get; }
 
     /// <summary>Named bundles of image options, selected with the <c>Preset</c> parameter (like <c>image.presets</c>).</summary>
@@ -43,7 +43,7 @@ public sealed class BxImageSettings
     /// <summary>
     /// Hosts of the remote images a provider with <see cref="IBxImageProvider.ValidateDomains"/> may process (<c>"images.example.com"</c>;
     /// a full URL is reduced to its host). Only the default port of the scheme matches unless the entry names a port (<c>"images.example.com:8443"</c>).
-    /// A remote <c>src</c> from any other host is passed through untouched, like Nuxt Image does.
+    /// A remote <c>src</c> from any other host is passed through untouched.
     /// </summary>
     public ICollection<string> Domains { get; }
 
@@ -110,7 +110,7 @@ public sealed class BxImageSettings
     }
 
     /// <summary>
-    /// The <c>src</c>, <c>srcset</c> and <c>sizes</c> of an image, computed like <c>$img.getSizes</c> of Nuxt Image. Use it to render your own
+    /// The resolved <c>src</c>, <c>srcset</c> and <c>sizes</c> of an image. Use it to render your own
     /// <c>img</c> or <c>picture</c>; <see cref="BxImage"/> calls it.
     /// </summary>
     /// <param name="src">A root-relative path ("/img/a.png") or an absolute URL.</param>
@@ -209,7 +209,7 @@ public sealed class BxImageSettings
             if (TryParseVariant(key, size, height, hwRatio, out var variant)) parsed.Add(variant);
         }
 
-        // The unprefixed entry applies below the first breakpoint. Nuxt Image computes its width from a 1px viewport, which produces
+        // The unprefixed entry applies below the first breakpoint. Computed against the first breakpoint rather than a 1px viewport, which would otherwise produce
         // a 1px candidate for "100vw"; here a fluid default is measured against the first breakpoint, or against the widest screen when
         // there is none, so the candidates are usable.
         var widest = Screens.Count > 0 ? Screens.Values.Max() : 1536;
@@ -302,7 +302,7 @@ public sealed class BxImageSettings
 
     private static readonly Regex SizesSeparator = new(@"[\s,]+", RegexOptions.Compiled);
 
-    // "100vw sm:50vw md:400px": an entry without a prefix is the default, stored under the key "1px" like Nuxt Image does.
+    // "100vw sm:50vw md:400px": an entry without a prefix is the default, stored under the default key "1px".
     private static List<KeyValuePair<string, string>> ParseSizes(string? input)
     {
         var result = new List<KeyValuePair<string, string>>();
