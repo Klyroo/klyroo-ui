@@ -1,0 +1,438 @@
+@page "/stack/{Slug}"
+@using Blux.Playground.Client.Docs
+@using Blux.UI.Tools.Query
+
+<PageTitle>@(Product is null ? "LuxStack" : $"{Product.Name} · {Product.Tagline}")</PageTitle>
+
+@* Top Ecosystem Product Switcher (TanStack style) *@
+<div class="border-b border-(--blux-border) bg-(--blux-bg-muted)/70 backdrop-blur">
+    <div class="mx-auto flex max-w-(--breakpoint-2xl) items-center gap-2 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
+        <a href="/stack" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-(--blux-border) bg-(--blux-bg) px-3 py-1 font-mono text-xs text-(--blux-text-muted) hover:border-(--blux-border-accented) hover:text-(--blux-text-highlighted)">
+            <span class="size-2 rounded-full bg-(--blux-primary)"></span>
+            <span>LuxStack</span>
+        </a>
+        <span class="text-(--blux-border-accented)" aria-hidden="true">/</span>
+        @foreach (var p in LuxStackProducts.All)
+        {
+            var active = string.Equals(p.Slug, Slug, StringComparison.OrdinalIgnoreCase);
+            <a href="@($"/stack/{p.Slug}")"
+               class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs transition-colors @(active ? "bg-(--blux-bg) font-semibold text-(--blux-text-highlighted)" : "border-(--blux-border) bg-(--blux-bg) text-(--blux-text-muted) hover:text-(--blux-text-highlighted)")"
+               style="@(active ? $"border-color:{p.AccentHex}" : "")">
+                <span class="size-2 rounded-full" style="@($"background:{p.AccentHex}")"></span>
+                <span>@p.Name</span>
+            </a>
+        }
+    </div>
+</div>
+
+@if (Product is null)
+{
+    <div class="mx-auto max-w-3xl px-4 py-24 text-center">
+        <h1 class="text-3xl font-semibold text-(--blux-text-highlighted)">Unknown LuxStack product</h1>
+        <p class="mt-2 text-(--blux-text-muted)">Return to the LuxStack ecosystem hub to pick one of the 8 libraries.</p>
+        <div class="mt-6">
+            <BxButton Label="Back to LuxStack Hub" Href="/stack" />
+        </div>
+    </div>
+}
+else
+{
+    @* Product Hero *@
+    <section class="relative isolate overflow-hidden border-b border-(--blux-border)">
+        <div class="pg-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" aria-hidden="true"></div>
+        <div class="mx-auto grid max-w-(--breakpoint-2xl) gap-10 px-4 pt-16 pb-14 sm:px-6 sm:pt-24 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)] lg:items-end lg:px-8">
+            <div>
+                <div class="flex flex-wrap items-center gap-2.5">
+                    <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs font-semibold text-(--blux-text-highlighted)"
+                          style="@($"border-color:{Product.AccentHex}")">
+                        <span class="size-2 rounded-full" style="@($"background:{Product.AccentHex}")"></span>
+                        @Product.Name
+                    </span>
+                    <BxBadge Label="Headless Core + Blazor/MAUI UI" Color="@Product.BadgeColor" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                    <span class="font-mono text-xs text-(--blux-text-muted)">@Product.RepoPath</span>
+                </div>
+
+                <h1 class="mt-6 text-5xl font-semibold leading-[0.95] tracking-[-0.055em] text-(--blux-text-highlighted) sm:text-7xl">
+                    @Product.HeroHeadline<br />
+                    <span style="@($"color:{Product.AccentHex}")">@Product.HeroAccent</span>
+                </h1>
+            </div>
+
+            <div class="lg:pb-2">
+                <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty">
+                    @Product.Description
+                </p>
+
+                <div class="mt-6 flex flex-col gap-2.5">
+                    <button type="button" data-copy-text="@($"dotnet add package {Product.UiPackage}")"
+                            class="group flex items-center justify-between gap-3 rounded-xl border border-(--blux-border-accented) bg-(--blux-bg) px-4 py-2.5 font-mono text-xs text-(--blux-text-highlighted) hover:border-(--blux-primary-text)">
+                        <span><span class="text-(--blux-text-muted)">$</span> dotnet add package @Product.UiPackage <span class="text-(--blux-text-muted)"># Blazor + MAUI Hybrid</span></span>
+                        <span class="uppercase tracking-wider text-(--blux-text-muted) group-hover:text-(--blux-primary-text)" data-copy-label>Copy</span>
+                    </button>
+                    <button type="button" data-copy-text="@($"dotnet add package {Product.CorePackage}")"
+                            class="group flex items-center justify-between gap-3 rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/50 px-4 py-2 font-mono text-xs text-(--blux-text) hover:border-(--blux-border-accented)">
+                        <span><span class="text-(--blux-text-muted)">$</span> dotnet add package @Product.CorePackage <span class="text-(--blux-text-muted)"># 100% Headless C# / NativeAOT</span></span>
+                        <span class="uppercase tracking-wider text-(--blux-text-muted)" data-copy-label>Copy</span>
+                    </button>
+                </div>
+
+                <div class="mt-5 flex flex-wrap gap-1.5">
+                    @foreach (var platform in Product.Platforms)
+                    {
+                        <span class="rounded-md border border-(--blux-border) bg-(--blux-bg-muted) px-2.5 py-1 font-mono text-[11px] text-(--blux-text-muted)">
+                            @platform
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        @* Live Interactive Product Showcase inside the Hero *@
+        <div class="mx-auto max-w-(--breakpoint-2xl) px-4 pb-16 sm:px-6 lg:px-8">
+            <div class="overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg)"
+                 style="@($"border-top: 3px solid {Product.AccentHex}")">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-(--blux-border) bg-(--blux-bg-muted)/60 px-5 py-3">
+                    <div class="flex items-center gap-2 font-mono text-xs text-(--blux-text-highlighted)">
+                        <span class="size-2 rounded-full" style="@($"background:{Product.AccentHex}")"></span>
+                        <span>LIVE INTERACTIVE DEMO · @Product.Name</span>
+                    </div>
+                    <span class="font-mono text-xs text-(--blux-text-muted)">Running live in Blazor</span>
+                </div>
+
+                <div class="p-6">
+                    @switch (Product.Slug)
+                    {
+                        case "display":
+                            <div class="grid gap-6 lg:grid-cols-2">
+                                <div class="flex flex-col gap-4">
+                                    <BxDisplay Kind="DisplayKind.Stat" Title="Monthly Recurring Revenue" Value="€148,900" Delta="+14.2%" Trend="@([102.0, 118.0, 131.0, 148.9])" />
+                                    <BxDisplay Kind="DisplayKind.Code" Variant="secret" Title="Production API Key" Value="sk_live_luxstack_9981" VisibleChars="4" Copy="true" />
+                                </div>
+                                <div class="flex flex-col gap-4">
+                                    <BxDisplay Kind="DisplayKind.Meter" Title="Storage Quota" MeterValue="82" MeterMax="100" WarningThreshold="75" ErrorThreshold="90" />
+                                    <BxAudioPlayer Src="/media/sample.mp3" Title="Certification Audio Clip (10s–40s · MaxPlays=2 · Seek Locked)" Start="10" End="40" MaxPlays="2" Seekable="false" />
+                                </div>
+                            </div>
+                            break;
+
+                        case "dashboard":
+                            <div class="flex flex-col gap-6">
+                                <BxDashboardStats Title="Live Executive Metrics" Items="@DemoStats" />
+                                <div class="grid gap-4 lg:grid-cols-2">
+                                    <BxDashboardGauge Title="Q4 ARR Goal" Value="86" Max="100" Target="90" Format="DashboardFormatPreset.Percent" Caption="86% reached" />
+                                    <BxDashboardBars Title="Sessions by Platform" Items="@DemoBars" Format="DashboardFormatPreset.Compact" />
+                                </div>
+                            </div>
+                            break;
+
+                        case "form":
+                            <div class="mx-auto max-w-2xl">
+                                <BxFormEngine Form="@_demoForm" SubmitLabel="Validate & Deploy" ShowReset="true" />
+                            </div>
+                            break;
+
+                        case "spreadsheet":
+                            <BxSpreadsheetImport Importer="@_demoImporter" Title="Import Rates (CSV / Paste)" Wizard="true" />
+                            break;
+
+                        case "table":
+                            <BxDataList TItem="DemoTableRow" Schema="@DemoTableSchema" Items="@DemoRows" UrlSync="false">
+                                <BxDataListTable TItem="DemoTableRow" HeaderMenu="true" Summaries="@(new DataListSummaries<DemoTableRow>())">
+                                    <BxDataListColumn TItem="DemoTableRow" Field="pkg" Title="Package" />
+                                    <BxDataListColumn TItem="DemoTableRow" Field="layer" Title="Architecture" />
+                                    <BxDataListColumn TItem="DemoTableRow" Field="size" Title="Assemblies" Summary="DataListSummaryKind.Sum" />
+                                </BxDataListTable>
+                            </BxDataList>
+                            break;
+
+                        case "query":
+                            <div class="flex flex-col gap-4">
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <div class="w-64">
+                                        <BxInput Value="@_querySearch" ValueChanged="@RunLiveQuery" Placeholder="Search products (e.g. M)..." aria-label="Search query" />
+                                    </div>
+                                    <BxButton Label="@(_queryDesc ? "Sort: Price DESC" : "Sort: Price ASC")" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" OnClick="@ToggleQuerySort" />
+                                    <span class="font-mono text-xs text-(--blux-text-muted)">Matched @_queryResult.TotalCount items via DataListSchema.ExecuteInMemory</span>
+                                </div>
+                                <div class="grid gap-2 sm:grid-cols-3">
+                                    @foreach (var item in _queryResult.Items)
+                                    {
+                                        <div class="flex items-center justify-between rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 px-4 py-3 font-mono text-xs">
+                                            <span class="font-semibold text-(--blux-text-highlighted)">@item.Name</span>
+                                            <span style="color:#ff4154">€@item.Price</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                            break;
+
+                        case "agent":
+                            <div class="grid gap-4 lg:grid-cols-2">
+                                <div class="rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 p-4">
+                                    <div class="flex items-center justify-between">
+                                        <p class="font-mono text-xs uppercase text-(--blux-text-muted)">AgentBridgeService · Live Snapshot &amp; Act</p>
+                                        <span class="font-mono text-xs text-(--blux-primary-text)">CanUndo: @_undoStack.CanUndo · CanRedo: @_undoStack.CanRedo</span>
+                                    </div>
+                                    <p class="mt-2 font-mono text-sm text-(--blux-text-highlighted)">Current State: "@_undoStack.Current"</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <BxButton Label="Run Agent ActAsync" Size="BxSize.Sm" OnClick="@RunLiveAgentAct" />
+                                        <BxButton Label="Undo" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Disabled="@(!_undoStack.CanUndo)" OnClick="@(() => _undoStack.Undo())" />
+                                        <BxButton Label="Redo" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Disabled="@(!_undoStack.CanRedo)" OnClick="@(() => _undoStack.Redo())" />
+                                    </div>
+                                </div>
+                                <div class="rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/40 p-4 font-mono text-xs">
+                                    <p class="uppercase text-(--blux-text-muted)">Semantic Snapshot (Password Auto-Redacted)</p>
+                                    <ul class="mt-2 space-y-1">
+                                        @foreach (var s in _liveAgent.Snapshot())
+                                        {
+                                            <li class="flex items-center justify-between gap-2 text-(--blux-text)">
+                                                <span><span class="text-(--blux-primary-text)">@s.Ref</span> · @s.Label (@s.Component)</span>
+                                                <span class="font-semibold text-(--blux-text-highlighted)">@(s.Value?.ToString() ?? "null")</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                            break;
+
+                        default:
+                            <div class="flex flex-wrap items-center gap-4">
+                                <BxButton Label="Primary Action" />
+                                <BxButton Label="Outline" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" />
+                                <BxSwitch Value="true" Label="Zero-roundtrip toggle" />
+                                <BxBadge Label="60fps Web Component" Color="BxColor.Success" Variant="BxVariant.Subtle" />
+                            </div>
+                            break;
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    @* Why Lux.<Product>? (4 Feature Pillars) *@
+    <section aria-labelledby="features-heading" class="border-b border-(--blux-border)">
+        <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8">
+            <p class="pg-eyebrow-mono">Why @Product.Name</p>
+            <h2 id="features-heading" class="mt-2 text-3xl font-semibold tracking-tight text-(--blux-text-highlighted) sm:text-5xl">
+                Built for scale, headless first.
+            </h2>
+
+            <div class="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach (var (title, desc, tag) in Product.Features)
+                {
+                    <div class="flex flex-col rounded-2xl border border-(--blux-border) bg-(--blux-bg) p-6">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="rounded-md border border-(--blux-border) bg-(--blux-bg-muted) px-2 py-0.5 font-mono text-[11px]"
+                                  style="@($"color:{Product.AccentHex}")">@tag</span>
+                        </div>
+                        <h3 class="mt-4 text-lg font-semibold text-(--blux-text-highlighted)">@title</h3>
+                        <p class="mt-2 flex-1 text-sm leading-relaxed text-(--blux-text-muted)">@desc</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+
+    @* Side-by-Side Architecture Split: Headless C# Core vs Blazor & MAUI UI *@
+    <section aria-labelledby="architecture-heading" class="border-b border-(--blux-border)">
+        <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8">
+            <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
+                <div>
+                    <p class="pg-eyebrow-mono">Two-Layer TanStack Architecture</p>
+                    <h2 id="architecture-heading" class="mt-2 text-3xl font-semibold tracking-tight text-(--blux-text-highlighted) sm:text-5xl">
+                        Headless C# Core.<br />
+                        <span style="@($"color:{Product.AccentHex}")">Declarative Razor UI.</span>
+                    </h2>
+                </div>
+                <p class="text-base text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
+                    Use <code class="font-mono text-sm text-(--blux-text-highlighted)">@Product.CorePackage</code> directly in C# ViewModels, Console workers or NativeAOT services, or pair it with
+                    <code class="font-mono text-sm text-(--blux-text-highlighted)">@Product.UiPackage</code> in Blazor Web and .NET MAUI Blazor Hybrid.
+                </p>
+            </div>
+
+            <div class="mt-12 grid gap-6 lg:grid-cols-2">
+                <CodeBlock Title="@Product.CoreCodeTitle" Code="@Product.CoreCode" Class="rounded-2xl border border-(--blux-border)" />
+                <CodeBlock Title="@Product.UiCodeTitle" Code="@Product.UiCode" Class="rounded-2xl border border-(--blux-border)" />
+            </div>
+        </div>
+    </section>
+
+    @* Exported Components & Redirections *@
+    <section aria-labelledby="exports-heading">
+        <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8">
+            <div class="flex flex-wrap items-end justify-between gap-4">
+                <div>
+                    <p class="pg-eyebrow-mono">Exports &amp; Playground Links</p>
+                    <h2 id="exports-heading" class="mt-2 text-3xl font-semibold tracking-tight text-(--blux-text-highlighted)">
+                        Included in @Product.Name
+                    </h2>
+                </div>
+                <BxButton Label="View all 8 LuxStack libraries" Href="/stack" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg" />
+            </div>
+
+            <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach (var comp in Product.Components)
+                {
+                    <a href="@comp.Href" class="group flex flex-col justify-between rounded-xl border border-(--blux-border) bg-(--blux-bg) p-5 transition-colors hover:border-(--blux-border-accented)">
+                        <div>
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-mono text-base font-semibold text-(--blux-text-highlighted) group-hover:underline">@comp.Name</span>
+                                <BxBadge Label="@comp.Layer" Color="@(comp.Layer == "Core" ? BxColor.Info : BxColor.Success)" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                            </div>
+                            <p class="mt-2 text-sm text-(--blux-text-muted)">@comp.Description</p>
+                        </div>
+                        <p class="mt-4 font-mono text-xs text-(--blux-text-muted)">
+                            Package: <span class="text-(--blux-text-highlighted)">@(comp.Layer == "Core" ? Product.CorePackage : Product.UiPackage)</span> →
+                        </p>
+                    </a>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+
+    private LuxProductInfo? Product => LuxStackProducts.Find(Slug);
+
+    // Dashboard live demo
+    private static readonly IReadOnlyList<DashboardStatsItem> DemoStats =
+    [
+        new("mrr", "Monthly Recurring Revenue", 148900, DashboardFormatPreset.Compact, Delta: 14.2, Progress: 0.86),
+        new("hit", "Cache Hit Ratio", 0.984, DashboardFormatPreset.Ratio, Delta: 4.3, Progress: 0.98),
+        new("sessions", "Web & MAUI Sessions", 24850, DashboardFormatPreset.Compact, Delta: 17.2)
+    ];
+
+    private static readonly IReadOnlyList<DashboardBarItem> DemoBars =
+    [
+        new("Blazor WebAssembly & Server", 14200, Tag: "Web"),
+        new(".NET MAUI iOS & Android", 7850, Tag: "Mobile"),
+        new(".NET MAUI Windows & macOS", 2800, Tag: "Desktop")
+    ];
+
+    // Form live demo
+    private readonly FormController _demoForm = new(
+        new FormSchema
+        {
+            FormKey = "lux-workspace",
+            Title = "Create LuxStack Workspace",
+            Fields =
+            [
+                new FormFieldSchema { Key = "name", Label = "Workspace Name", Required = true, DefaultValue = "LuxStack Enterprise" },
+                new FormFieldSchema
+                {
+                    Key = "plan",
+                    Label = "Subscription Tier",
+                    Kind = FormFieldKind.Select,
+                    DefaultValue = "pro",
+                    Options = [new("starter", "Starter"), new("pro", "Pro (Core + UI)"), new("enterprise", "Enterprise")]
+                },
+                new FormFieldSchema { Key = "maui", Label = "Enable .NET MAUI Blazor Hybrid", Kind = FormFieldKind.Switch, DefaultValue = true }
+            ]
+        });
+
+    // Spreadsheet live demo
+    private readonly SpreadsheetImporter _demoImporter;
+
+    // Table live demo
+    private sealed record DemoTableRow(string Id, string Package, string Layer, int Assemblies);
+    private static readonly DataListSchema<DemoTableRow> DemoTableSchema = DataListSchema.For<DemoTableRow>(s => s
+        .RowKey(r => r.Id)
+        .Field(r => r.Package, f => f.Key("pkg").Sortable())
+        .Field(r => r.Layer, f => f.Key("layer").Sortable())
+        .Field(r => r.Assemblies, f => f.Key("size").Sortable()));
+
+    private static readonly IReadOnlyList<DemoTableRow> DemoRows =
+    [
+        new("1", "Lux.Query.Core", "Headless NativeAOT AST & Codecs", 1),
+        new("2", "Lux.Table.Core", "Headless NativeAOT Tree Hierarchy", 1),
+        new("3", "Lux.Form.Core", "Headless NativeAOT Form Engine", 1),
+        new("4", "Lux.Agent.Core", "Headless NativeAOT Agent Models", 1)
+    ];
+
+    // Query live demo
+    private sealed record DemoQueryProduct(int Id, string Name, decimal Price);
+    private static readonly DemoQueryProduct[] QueryProducts =
+    [
+        new(1, "Mechanical Keyboard", 120m),
+        new(2, "Ergonomic Mouse", 45m),
+        new(3, "4K Studio Monitor", 350m),
+        new(4, "USB-C Microphone", 140m),
+        new(5, "MAUI Test Phone", 599m),
+        new(6, "Mesh Desk Mat", 29m)
+    ];
+
+    private static readonly DataListSchema<DemoQueryProduct> QuerySchema = DataListSchema.For<DemoQueryProduct>(s => s
+        .RowKey(p => p.Id)
+        .Search(p => p.Name)
+        .Field(p => p.Price, f => f.Key("price").Sortable()));
+
+    private string _querySearch = "";
+    private bool _queryDesc = true;
+    private DataListResult<DemoQueryProduct> _queryResult = default!;
+
+    private void RunLiveQuery(string search)
+    {
+        _querySearch = search;
+        ExecuteQuery();
+    }
+
+    private void ToggleQuerySort()
+    {
+        _queryDesc = !_queryDesc;
+        ExecuteQuery();
+    }
+
+    private void ExecuteQuery()
+    {
+        var req = new DataListRequest(
+            new DataListPaging.Offset(0, 10),
+            [new DataListSort("price", Descending: _queryDesc)],
+            DataListFilterGroup.Empty,
+            string.IsNullOrWhiteSpace(_querySearch) ? null : new DataListSearch(_querySearch));
+        _queryResult = QuerySchema.ExecuteInMemory(QueryProducts, req);
+    }
+
+    // Agent live demo
+    private readonly AgentBridgeService _liveAgent = new();
+    private readonly FormController _agentForm = new(
+        new FormSchema
+        {
+            FormKey = "agent-demo",
+            Title = "Agent Demo",
+            Fields =
+            [
+                new FormFieldSchema { Key = "project", Label = "Project", DefaultValue = "Apollo" },
+                new FormFieldSchema { Key = "secret", Label = "API Token", Kind = FormFieldKind.Password, DefaultValue = "sk_live_secret_99" }
+            ]
+        });
+    private readonly UndoStack<string> _undoStack = new("Initial Project = Apollo");
+    private int _agentStep = 1;
+
+    private async Task RunLiveAgentAct()
+    {
+        _agentStep++;
+        var nextName = _agentStep % 2 == 0 ? "Atlas" : "Orion";
+        await _liveAgent.ActAsync([new AgentActStep("Project", "setValue", [nextName])]);
+        _undoStack.Record($"Agent set Project = {nextName} (Step #{_agentStep})");
+    }
+
+    public LuxProductPage()
+    {
+        ExecuteQuery();
+        _liveAgent.RegisterForm(_agentForm);
+
+        _demoImporter = new SpreadsheetImporter(new SpreadsheetSchema
+        {
+            Key = "rates",
+            Columns =
+            [
+                new SpreadsheetColumnSchema { Key = "code", Label = "Code", Required = true },
+                new SpreadsheetColumnSchema { Key = "price", Label = "Unit Price", Kind = SpreadsheetColumnKind.Number, DecimalSeparator = ',', Required = true, Rules = [SpreadsheetRule.Min(0)] },
+                new SpreadsheetColumnSchema { Key = "currency", Label = "Currency", Kind = SpreadsheetColumnKind.Select, Required = true, Options = [new("EUR", "Euro", ["€", "EUR"]), new("USD", "US Dollar", ["$", "USD"])] }
+            ]
+        });
+        _demoImporter.LoadText("Export 2026;;\nCode;Amount;Currency\nA1;12,50;€\nA2;45,00;USD", "rates.csv");
+    }
+}
