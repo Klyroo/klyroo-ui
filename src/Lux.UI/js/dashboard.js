@@ -27,7 +27,7 @@ function parse(text, count) {
 
 /**
  * <lx-dashboard-group data-lx-dashboard-id="app" sizes="30,70">
- *   <span hidden data-lx-dashboard-sink @onbxchange></span>
+ *   <span hidden data-lx-dashboard-sink @onlxchange></span>
  *   <lx-sidebar>…</lx-sidebar>
  *   <div data-lx-dash-panel data-size="30" data-min="20" data-max="60">… <div role="separator" data-lx-dash-handle></div></div>
  *   <div data-lx-dash-panel>…</div>

@@ -273,10 +273,10 @@ else
                         data-epoch="@(Remote ? _remote!.Epoch.ToString() : null)"
                         class="@_slots["root"]"
                         data-color="@Color.Value"
-                        @onbxchange="ChangeHandler"
-                        @onbxchange:stopPropagation="true"
-                        @onbxsearch="SearchHandler"
-                        @onbxsearch:stopPropagation="true">
+                        @onlxchange="ChangeHandler"
+                        @onlxchange:stopPropagation="true"
+                        @onlxsearch="SearchHandler"
+                        @onlxsearch:stopPropagation="true">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
             <input value="@Text" @attributes="InputAttributes(binding)" />
             <span class="@_slots["trailing"]" aria-hidden="true">@RenderIcon(Options.Icons.ChevronDown, _slots["trailingIcon"])</span>

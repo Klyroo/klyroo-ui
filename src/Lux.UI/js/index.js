@@ -112,19 +112,19 @@ let eventsRegistered = false;
 function registerEvents(blazor) {
   if (eventsRegistered) return;
   eventsRegistered = true;
-  blazor.registerCustomEventType('bxtoggle', {
+  blazor.registerCustomEventType('lxtoggle', {
     browserEventName: 'lx-toggle',
     createEventArgs: (event) => ({ open: event.detail.open, sequence: event.detail.sequence }),
   });
-  blazor.registerCustomEventType('bxchange', {
+  blazor.registerCustomEventType('lxchange', {
     browserEventName: 'lx-change',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });
-  blazor.registerCustomEventType('bxlimit', {
+  blazor.registerCustomEventType('lxlimit', {
     browserEventName: 'lx-limit',
     createEventArgs: (event) => ({ exceeded: event.detail.exceeded, length: event.detail.length, max: event.detail.max }),
   });
-  blazor.registerCustomEventType('bxsearch', {
+  blazor.registerCustomEventType('lxsearch', {
     browserEventName: 'lx-search',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });

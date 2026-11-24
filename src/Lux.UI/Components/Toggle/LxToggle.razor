@@ -71,8 +71,8 @@ else
                     disabled="@Disabled"
                     class="@binding.CssClass"
                     data-color="@Color.Value"
-                    @onbxchange="ChangeHandler"
-                    @onbxchange:stopPropagation="true">
+                    @onlxchange="ChangeHandler"
+                    @onlxchange:stopPropagation="true">
             @if (binding.Name is not null)
             {
                 <input type="hidden" data-slot="value" name="@binding.Name" value="true" disabled="@(!Value || Disabled)" />

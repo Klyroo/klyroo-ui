@@ -38,7 +38,7 @@ public class PopoverTests : LuxTestContext
             .Add(x => x.Open, open)
             .Add(x => x.OpenChanged, (bool v) => open = v));
 
-        cut.Find("lx-popover").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false });
+        cut.Find("lx-popover").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false });
 
         Assert.False(open);
     }
@@ -52,7 +52,7 @@ public class PopoverTests : LuxTestContext
             .Add(x => x.OpenChanged, (bool v) => open = v));
         Assert.Equal("0", cut.Find("lx-popover").GetAttribute("data-lx-seq"));
 
-        cut.Find("lx-popover").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = true, Sequence = 3 });
+        cut.Find("lx-popover").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = true, Sequence = 3 });
 
         Assert.Equal("3", cut.Find("lx-popover").GetAttribute("data-lx-seq"));
     }
@@ -71,6 +71,6 @@ public class PopoverTests : LuxTestContext
         var cut = Render<LxPopover>();
 
         Assert.Throws<MissingEventHandlerException>(() =>
-            cut.Find("lx-popover").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = true }));
+            cut.Find("lx-popover").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = true }));
     }
 }

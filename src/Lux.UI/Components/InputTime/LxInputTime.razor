@@ -107,8 +107,8 @@ else
                         data-color="@Color.Value"
                         data-disabled="@(Disabled ? "" : null)"
                         data-invalid="@(binding.Invalid ? "" : null)"
-                        @onbxchange="ChangeHandler"
-                        @onbxchange:stopPropagation="true"
+                        @onlxchange="ChangeHandler"
+                        @onlxchange:stopPropagation="true"
                         @attributes="AdditionalAttributes">
             <input type="hidden" data-slot="value" name="@binding.Name" value="@Iso.Time(Value)" disabled="@Disabled" />
             <span @attributes="HourAttributes(binding)"></span>

@@ -32,7 +32,7 @@ public class OverlayTests : LuxTestContext
         var open = true;
         var cut = Render<LxModal>(p => p.Add(m => m.Open, open).Add(m => m.OpenChanged, (bool v) => open = v));
 
-        cut.Find("lx-modal").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 2 });
+        cut.Find("lx-modal").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false, Sequence = 2 });
 
         Assert.False(open);
     }

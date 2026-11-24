@@ -50,7 +50,7 @@ public class Overlay2Tests : LuxTestContext
         var bound = Render<LxDrawer>(p => p.Add(d => d.Open, open).Add(d => d.OpenChanged, (bool v) => open = v));
         Assert.True(bound.Find("lx-modal").HasAttribute("data-lx-seq"));
 
-        bound.Find("lx-modal").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 3 });
+        bound.Find("lx-modal").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false, Sequence = 3 });
 
         Assert.False(open);
         Assert.Equal("3", bound.Find("lx-modal").GetAttribute("data-lx-seq"));
@@ -89,7 +89,7 @@ public class Overlay2Tests : LuxTestContext
         var open = true;
         var cut = Render<LxSlideover>(p => p.Add(s => s.Open, open).Add(s => s.OpenChanged, (bool v) => open = v));
 
-        cut.Find("lx-modal").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 1 });
+        cut.Find("lx-modal").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false, Sequence = 1 });
 
         Assert.False(open);
     }
@@ -154,7 +154,7 @@ public class Overlay2Tests : LuxTestContext
         var cut = Render<LxContextMenu>(p => p.Add(c => c.Items, new LxMenuItem[] { new() { Label = "Open" } })
             .Add(c => c.Open, open).Add(c => c.OpenChanged, (bool v) => open = v));
 
-        cut.Find("lx-context-menu").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 4 });
+        cut.Find("lx-context-menu").TriggerEvent("onlxtoggle", new LxToggleEventArgs { Open = false, Sequence = 4 });
 
         Assert.False(open);
     }
@@ -204,12 +204,12 @@ public class Overlay2Tests : LuxTestContext
         LxCommandItem? selected = null;
         var bound = Render<LxCommandPalette>(p => p.Add(c => c.Groups, Commands).Add(c => c.OnSelect, (LxCommandItem i) => selected = i));
 
-        bound.Find("lx-command-palette").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "New file", Sequence = 1 });
+        bound.Find("lx-command-palette").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "New file", Sequence = 1 });
 
         Assert.Equal("New file", selected?.Label);
         Assert.Throws<MissingEventHandlerException>(() =>
             Render<LxCommandPalette>(p => p.Add(c => c.Groups, Commands)).Find("lx-command-palette")
-                .TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "Open" }));
+                .TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "Open" }));
     }
 
     [Fact]

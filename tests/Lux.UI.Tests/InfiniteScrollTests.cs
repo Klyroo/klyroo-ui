@@ -125,10 +125,10 @@ public class InfiniteScrollTests : LuxTestContext
         var host = cut.Find("lx-infinite-scroll");
         Assert.Equal("0", host.GetAttribute("data-loads"));
 
-        _ = host.TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
+        _ = host.TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
         // The load is running and shown as such, even though the parent never set Loading.
         cut.WaitForAssertion(() => Assert.True(cut.Find("lx-infinite-scroll").HasAttribute("data-loading")));
-        _ = cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
+        _ = cut.Find("lx-infinite-scroll").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
 
         Assert.Equal(1, calls);
 
@@ -142,7 +142,7 @@ public class InfiniteScrollTests : LuxTestContext
         });
         Assert.Equal(1, calls);
 
-        cut.Find("lx-infinite-scroll").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 3 });
+        cut.Find("lx-infinite-scroll").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 3 });
         Assert.Equal(2, calls);
     }
 
@@ -156,7 +156,7 @@ public class InfiniteScrollTests : LuxTestContext
             throw new InvalidOperationException("boom");
         })));
 
-        await Assert.ThrowsAnyAsync<Exception>(() => cut.Find("lx-infinite-scroll").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 }));
+        await Assert.ThrowsAnyAsync<Exception>(() => cut.Find("lx-infinite-scroll").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 }));
 
         // Not stuck loading; the count that tells the browser a load is over still moved, and the browser decides whether to ask again.
         var host = cut.Find("lx-infinite-scroll");
@@ -171,12 +171,12 @@ public class InfiniteScrollTests : LuxTestContext
         var calls = 0;
         var cut = Render<LxInfiniteScroll>(p => p.Add(s => s.Loading, true).Add(s => s.OnLoadMore, EventCallback.Factory.Create(this, () => { calls++; })));
 
-        cut.Find("lx-infinite-scroll").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
+        cut.Find("lx-infinite-scroll").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 1 });
         Assert.Equal(0, calls);
 
         cut.Render(p => p.Add(s => s.Loading, false).Add(s => s.HasMore, false));
         // The element is still there, so a late report can still arrive.
-        cut.Find("lx-infinite-scroll").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
+        cut.Find("lx-infinite-scroll").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "more", Sequence = 2 });
         Assert.Equal(0, calls);
     }
 

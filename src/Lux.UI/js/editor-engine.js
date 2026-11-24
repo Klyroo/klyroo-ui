@@ -89,7 +89,7 @@ export function createEngine({ element, html, editable, placeholder, attributes,
       TaskItem.configure({ nested: true, a11y: { checkboxLabel: (node) => (taskLabel ? taskLabel(node.textContent) : `Task: ${node.textContent}`) } }),
       imageNode(acceptsImage).configure({ allowBase64: false, HTMLAttributes: { loading: 'lazy', referrerpolicy: 'no-referrer' } }),
       Extension.create({
-        name: 'bxMoveBlock',
+        name: 'lxMoveBlock',
         addKeyboardShortcuts: () => ({
           'Alt-ArrowUp': () => moveSelection(-1),
           'Alt-ArrowDown': () => moveSelection(1),

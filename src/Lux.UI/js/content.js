@@ -294,9 +294,9 @@ function buildIndex(dialog, pages) {
 }
 
 async function loadIndex(dialog) {
-  const state = dialog.dataset.bxIndexState;
+  const state = dialog.dataset.lxIndexState;
   if (state === 'loading' || state === 'loaded') return;
-  dialog.dataset.bxIndexState = 'loading';
+  dialog.dataset.lxIndexState = 'loading';
   const box = dialog.querySelector('[data-lx-content-search-state]');
   const message = box?.querySelector('[data-slot="message"]');
   const retry = box?.querySelector('[data-slot="retry"]');
@@ -311,10 +311,10 @@ async function loadIndex(dialog) {
   show(texts?.getAttribute('data-loading-text') ?? '', false);
   try {
     buildIndex(dialog, await fetchIndex(indexAddress(dialog)));
-    dialog.dataset.bxIndexState = 'loaded';
+    dialog.dataset.lxIndexState = 'loaded';
     show('', false);
   } catch {
-    dialog.dataset.bxIndexState = 'error';
+    dialog.dataset.lxIndexState = 'error';
     show(texts?.getAttribute('data-error-text') ?? '', true);
     if (retry) {
       retry.hidden = false;

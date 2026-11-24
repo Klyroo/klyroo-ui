@@ -40,7 +40,7 @@ public class IconIdTests : LuxTestContext
 
         var ids = Ids(result);
         Assert.Equal(2, ids.Length);
-        Assert.All(ids, i => Assert.Matches(@"^(g|c)-bx[0-9a-f]+$", i));
+        Assert.All(ids, i => Assert.Matches(@"^(g|c)-lx[0-9a-f]+$", i));
         Assert.All(References(result), r => Assert.Contains(r, ids));
         Assert.Equal(2, References(result).Length);
     }
@@ -73,7 +73,7 @@ public class IconIdTests : LuxTestContext
 
         var result = Unique(body);
 
-        var suffix = Regex.Match(Ids(result)[0], "-bx[0-9a-f]+$").Value;
+        var suffix = Regex.Match(Ids(result)[0], "-lx[0-9a-f]+$").Value;
         Assert.Contains("xlink:href=\"#a" + suffix + "\"", result);
         Assert.Contains("<use href=\"#b" + suffix + "\"/>", result);
         Assert.Contains("begin=\"0;x1" + suffix + ".end-0.1s\"", result);
@@ -96,7 +96,7 @@ public class IconIdTests : LuxTestContext
         var result = Unique("<linearGradient id='g'/><path fill='url(#g)'/>");
 
         var id = Regex.Match(result, "id='([^']+)'").Groups[1].Value;
-        Assert.Matches("^g-bx[0-9a-f]+$", id);
+        Assert.Matches("^g-lx[0-9a-f]+$", id);
         Assert.Contains("fill='url(#" + id + ")'", result);
     }
 
@@ -133,7 +133,7 @@ public class IconIdTests : LuxTestContext
     {
         var cut = Render<LxIcon>(p => p.Add(i => i.Name, "search"));
 
-        Assert.DoesNotContain("-bx", cut.Markup);
+        Assert.DoesNotContain("-lx", cut.Markup);
     }
 
     [Fact]

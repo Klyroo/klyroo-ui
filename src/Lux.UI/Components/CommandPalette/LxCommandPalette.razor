@@ -8,8 +8,8 @@
 *@
 <lx-command-palette class="@_slots["root"]"
                     data-results-text="@Messages.CommandResults"
-                    @onbxchange="ChangeHandler"
-                    @onbxchange:stopPropagation="true"
+                    @onlxchange="ChangeHandler"
+                    @onlxchange:stopPropagation="true"
                     @attributes="AdditionalAttributes">
     <div class="@_slots["inputWrapper"]" data-slot="inputWrapper">
         @RenderIcon(Options.Icons.Search, _slots["inputIcon"])

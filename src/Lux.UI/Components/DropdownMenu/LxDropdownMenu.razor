@@ -7,8 +7,8 @@
             open="@Open"
             placement="@Placement"
             offset="4"
-            @onbxtoggle="ToggleHandler"
-            @onbxtoggle:stopPropagation="true">
+            @onlxtoggle="ToggleHandler"
+            @onlxtoggle:stopPropagation="true">
     <span data-slot="trigger">@ChildContent</span>
     <div popover="auto" role="menu" class="@_slots["content"]" data-slot="content" @attributes="AdditionalAttributes">
         @Entries(Items, "")

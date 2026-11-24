@@ -15,7 +15,7 @@ const SELECTOR = '[data-lx-color-mode]';
 const isDark = () => document.documentElement.classList.contains('dark');
 
 function syncControl(control) {
-  switch (control.dataset.bxColorMode) {
+  switch (control.dataset.lxColorMode) {
     case 'toggle':
       control.setAttribute('aria-pressed', String(isDark()));
       break;
@@ -45,8 +45,8 @@ document.addEventListener('click', (event) => {
 document.addEventListener('change', (event) => {
   const control = event.target;
   if (!(control instanceof Element) || !control.matches(SELECTOR)) return;
-  if (control.dataset.bxColorMode === 'switch') setColorMode(control.checked ? 'dark' : 'light');
-  else if (control.dataset.bxColorMode === 'select') setColorMode(control.value);
+  if (control.dataset.lxColorMode === 'switch') setColorMode(control.checked ? 'dark' : 'light');
+  else if (control.dataset.lxColorMode === 'select') setColorMode(control.value);
 });
 
 document.addEventListener('lx-color-mode', syncAll);

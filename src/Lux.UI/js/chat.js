@@ -204,7 +204,7 @@ if (!customElements.get('lx-chat-messages')) customElements.define('lx-chat-mess
 
 /**
  * <lx-chat-prompt data-status data-busy data-lx-live data-lx-post data-submit-on-enter="false" data-max-rows="6">
- *   <span hidden data-lx-chat-sink data-lx-seq @onbxchange></span>
+ *   <span hidden data-lx-chat-sink data-lx-seq @onlxchange></span>
  *   <form method="post"><div data-lx-chat-attachments>…</div><textarea data-lx-chat-input></textarea> … </form>
  * </lx-chat-prompt>
  *

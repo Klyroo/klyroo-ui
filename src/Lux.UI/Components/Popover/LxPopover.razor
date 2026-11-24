@@ -11,8 +11,8 @@
             open="@Open"
             placement="@Placement"
             offset="@Offset"
-            @onbxtoggle="ToggleHandler"
-            @onbxtoggle:stopPropagation="true"
+            @onlxtoggle="ToggleHandler"
+            @onlxtoggle:stopPropagation="true"
             @attributes="AdditionalAttributes">
     <span data-slot="trigger">@ChildContent</span>
     <div id="@_id" popover="auto" role="@Role" tabindex="-1" aria-label="@(Role is null ? null : AriaLabel)" class="@_slots["content"]" data-slot="content">

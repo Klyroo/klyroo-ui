@@ -186,7 +186,7 @@ public class FormTests : LuxTestContext
         Assert.Equal("Choose", label.GetAttribute("data-label"));
         Assert.True(label.HasAttribute("data-placeholder"));
 
-        cut.Find("lx-select").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "de", Sequence = 1 });
+        cut.Find("lx-select").TriggerEvent("onlxchange", new LxChangeEventArgs { Value = "de", Sequence = 1 });
 
         Assert.Equal("de", value);
         Assert.Equal("1", cut.Find("lx-select").GetAttribute("data-lx-seq"));

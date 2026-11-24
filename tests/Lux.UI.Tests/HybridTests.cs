@@ -145,7 +145,7 @@ public class HybridTests : LuxTestContext
             .Add(l => l.OnLocaleChange, EventCallback.Factory.Create<string>(this, code => raised = code)));
 
         Assert.False(cut.Find("[data-lx-locale-select]").HasAttribute("data-lx-reload"));
-        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
+        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
 
         var call = JSInterop.VerifyInvoke("Lux.setStoredCulture");
         Assert.Equal(["lux-culture", "fr"], call.Arguments.Select(a => a?.ToString()));
@@ -159,7 +159,7 @@ public class HybridTests : LuxTestContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         UseWebView();
         var cut = Render<LxLocaleSelect>(p => p.Add(l => l.Locales, [LxLocales.En, LxLocales.Fr, LxLocales.De]).Add(l => l.Value, "en"));
-        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
+        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onlxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
 
         // An OnLocaleChange handler that renders the parent again hands the same parameters back: the culture in effect is
         // still the old one (the choice applies at the next start), but the select must not snap back to it.

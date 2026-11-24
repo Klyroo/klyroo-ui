@@ -176,7 +176,7 @@
                 data-lx-set="@(_force > 0 ? Value ?? "" : null)"
                 name="@binding.Name"
                 value="@Value"
-                @onbxchange="ChangeHandler"
-                @onbxchange:stopPropagation="true"
+                @onlxchange="ChangeHandler"
+                @onlxchange:stopPropagation="true"
                 @attributes="Attributes(binding)" />;
 }

@@ -393,7 +393,7 @@ export function definePrimitive(definition) {
       };
 
       if (rootElement) {
-        rootElement.__bxPrimitive = instance;
+        rootElement.__lxPrimitive = instance;
         rootElement.setAttribute('data-lx-primitive', name);
       }
       return instance;

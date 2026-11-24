@@ -47,8 +47,8 @@ public sealed class LxLimitEventArgs : EventArgs
 }
 
 /// <summary>Custom events, registered on the browser side by <c>Lux.UI.lib.module.js</c>.</summary>
-[EventHandler("onbxtoggle", typeof(LxToggleEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
-[EventHandler("onbxchange", typeof(LxChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
-[EventHandler("onbxsearch", typeof(LxSearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
-[EventHandler("onbxlimit", typeof(LxLimitEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onlxtoggle", typeof(LxToggleEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onlxchange", typeof(LxChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onlxsearch", typeof(LxSearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onlxlimit", typeof(LxLimitEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 public static class EventHandlers;

@@ -197,7 +197,7 @@ internal static class IconResolver
 
 /// <summary>
 /// An id of an icon (a gradient, a clip path, an animation another one starts after) is global to the page, so two icons that use the same id
-/// would draw each other's gradient. Every drawing of an icon gets its own ids: <c>id="a"</c> becomes <c>id="a-bx1"</c>, with every reference to it
+/// would draw each other's gradient. Every drawing of an icon gets its own ids: <c>id="a"</c> becomes <c>id="a-lx1"</c>, with every reference to it
 /// (<c>url(#a)</c>, <c>href="#a"</c>, <c>begin="a.end"</c>) rewritten. A body with no id (the Lucide icons, most Iconify icons) is returned as it is.
 /// </summary>
 internal static class IconIds
@@ -210,7 +210,7 @@ internal static class IconIds
     private static readonly Regex Timing = new(@"(?<pre>\b(?:begin|end)\s*=\s*)(?<q>[""'])(?<value>[^""']*)\k<q>", RegexOptions.Compiled);
 
     /// <summary>A suffix no other drawing has.</summary>
-    public static string NextSuffix() => "-bx" + Interlocked.Increment(ref _counter).ToString("x", CultureInfo.InvariantCulture);
+    public static string NextSuffix() => "-lx" + Interlocked.Increment(ref _counter).ToString("x", CultureInfo.InvariantCulture);
 
     /// <summary>The body with its ids made unique; <paramref name="suffix"/> is taken from <see cref="NextSuffix"/> the first time it is needed and kept, so a component that draws again keeps its ids.</summary>
     public static string Uniquify(string body, ref string? suffix)
