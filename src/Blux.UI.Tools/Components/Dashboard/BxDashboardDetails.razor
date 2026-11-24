@@ -1,0 +1,62 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(VisibleItems.Count == 0)" Skeleton="DashboardSkeletonKind.Details"
+                 Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
+    <dl class="m-0 grid grid-cols-1 gap-3 sm:grid-cols-2" data-slot="dashboard-details">
+        @foreach (var item in VisibleItems)
+        {
+            <div class="flex flex-col gap-0.5 @(item.FullSpan ? "sm:col-span-2" : "")" data-slot="dashboard-details-item" data-key="@item.Key">
+                <dt class="text-xs font-medium text-(--blux-text-muted)">@item.Label</dt>
+                <dd class="m-0 flex items-center gap-1.5 text-sm @(item.Mono ? "font-mono" : "font-medium") text-(--blux-text-highlighted)">
+                    @if (string.IsNullOrWhiteSpace(item.Value))
+                    {
+                        <span class="text-(--blux-text-dimmed)">@DashboardFormat.MissingValue</span>
+                    }
+                    else if (!string.IsNullOrEmpty(item.Href))
+                    {
+                        <a href="@item.Href" class="text-(--blux-primary-text) hover:underline">@item.Value</a>
+                    }
+                    else
+                    {
+                        <span>@item.Value</span>
+                    }
+                </dd>
+                @if (!string.IsNullOrEmpty(item.Hint))
+                {
+                    <span class="text-xs text-(--blux-text-muted)">@item.Hint</span>
+                }
+            </div>
+        }
+    </dl>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<DashboardDetailsItem>? Items { get; set; }
+    [Parameter] public int Span { get; set; } = 6;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private IReadOnlyList<DashboardDetailsItem> VisibleItems =>
+        Items?.Where(i => !i.Hidden).ToList() ?? [];
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("label", "Label"),
+            new("value", "Value"),
+        };
+        var rows = VisibleItems.Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
+        {
+            ["label"] = i.Label,
+            ["value"] = i.Value,
+        }).ToList();
+        return new DashboardDataTable(cols, rows);
+    }
+}

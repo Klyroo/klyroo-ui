@@ -1,0 +1,284 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+
+@if (Phase != DashboardBlockPhase.Idle || Source?.State != DashboardResourceState.Disabled)
+{
+    <section class="@RootClass"
+             style="@SpanStyle"
+             aria-busy="@(Phase == DashboardBlockPhase.Loading || (Source?.Fetching ?? false) ? "true" : null)"
+             data-slot="dashboard-card"
+             data-phase="@Phase.ToString().ToLowerInvariant()"
+             @attributes="AdditionalAttributes">
+        @* Thin fetching progress bar *@
+        @if (Source?.Fetching == true)
+        {
+            <div class="h-0.5 w-full animate-pulse bg-(--blux-primary)" data-slot="dashboard-card-progress" data-progress="true"></div>
+        }
+
+        @* Header *@
+        @if (!string.IsNullOrEmpty(Title) || !string.IsNullOrEmpty(Subtitle) || HeaderRight is not null || EffectiveMenu)
+        {
+            <header class="flex items-start justify-between gap-2 px-4 pt-4" data-slot="dashboard-card-header">
+                <div class="flex min-w-0 flex-col gap-0.5">
+                    @if (!string.IsNullOrEmpty(Title))
+                    {
+                        <h3 class="m-0 truncate text-sm font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-card-title">@Title</h3>
+                    }
+                    @if (!string.IsNullOrEmpty(Subtitle))
+                    {
+                        <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="dashboard-card-subtitle">@Subtitle</p>
+                    }
+                </div>
+
+                <div class="flex shrink-0 items-center gap-1.5" data-slot="dashboard-card-tools">
+                    @if (HeaderRight is not null)
+                    {
+                        @HeaderRight
+                    }
+                    @if (EffectiveMenu && Phase == DashboardBlockPhase.Content)
+                    {
+                        @if (ViewAsTable && Tabulate is not null)
+                        {
+                            <button type="button"
+                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    aria-pressed="@(_showingTable ? "true" : "false")"
+                                    data-slot="dashboard-card-table-toggle"
+                                    @onclick="@(() => _showingTable = !_showingTable)">
+                                @(_showingTable ? "Hide table" : "View as table")
+                            </button>
+                        }
+                        @if (Tabulate is not null)
+                        {
+                            <button type="button"
+                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    data-slot="dashboard-card-csv"
+                                    @onclick="OnExportCsvAsync">
+                                Download CSV
+                            </button>
+                        }
+                        @if (Expandable)
+                        {
+                            <button type="button"
+                                    class="inline-flex h-7 items-center rounded-(--blux-radius) px-2 text-xs font-medium text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                    aria-expanded="@(_expanded ? "true" : "false")"
+                                    data-slot="dashboard-card-expand"
+                                    @onclick="@(() => _expanded = !_expanded)">
+                                @(_expanded ? "Collapse" : "Expand")
+                            </button>
+                        }
+                    }
+                </div>
+            </header>
+        }
+
+        @* Drill-down filter chips *@
+        @if (Filters is { Count: > 0 })
+        {
+            var activeFilters = Filters.Where(f => f.Changed && f.Enabled).ToList();
+            @if (activeFilters.Count > 0)
+            {
+                <div class="flex flex-wrap items-center gap-1.5 px-4 pt-2" data-slot="dashboard-card-chips">
+                    @foreach (var f in activeFilters)
+                    {
+                        <span class="inline-flex items-center gap-1 rounded-full bg-(--blux-bg-muted) px-2.5 py-0.5 text-xs font-medium text-(--blux-text)"
+                              data-slot="dashboard-card-chip">
+                            <span>@f.Label: @f.Display</span>
+                            <button type="button"
+                                    class="inline-flex size-4 items-center justify-center rounded-full text-(--blux-text-muted) hover:text-(--blux-text)"
+                                    aria-label="@($"Remove {f.Label}")"
+                                    @onclick="f.Reset">✕</button>
+                        </span>
+                    }
+                </div>
+            }
+        }
+
+        @* Phase body *@
+        <div class="flex flex-1 flex-col justify-between gap-3 p-4" data-slot="dashboard-card-body">
+            @switch (Phase)
+            {
+                case DashboardBlockPhase.Idle:
+                case DashboardBlockPhase.Loading:
+                    <div class="flex flex-col gap-2.5" data-slot="dashboard-skeleton" data-kind="@Skeleton.ToString().ToLowerInvariant()">
+                        @if (Skeleton == DashboardSkeletonKind.Stat)
+                        {
+                            <BxSkeleton Class="h-8 w-28" />
+                            <BxSkeleton Class="h-4 w-20" />
+                        }
+                        else if (Skeleton == DashboardSkeletonKind.Bars || Skeleton == DashboardSkeletonKind.Lines)
+                        {
+                            <div class="flex h-32 items-end gap-2">
+                                <BxSkeleton Class="h-1/2 flex-1" />
+                                <BxSkeleton Class="h-3/4 flex-1" />
+                                <BxSkeleton Class="h-2/3 flex-1" />
+                                <BxSkeleton Class="h-full flex-1" />
+                            </div>
+                        }
+                        else
+                        {
+                            <BxSkeleton Class="h-4 w-3/4" />
+                            <BxSkeleton Class="h-4 w-full" />
+                            <BxSkeleton Class="h-4 w-2/3" />
+                        }
+                    </div>
+                    break;
+
+                case DashboardBlockPhase.Error:
+                    <div class="flex flex-col items-start gap-2 rounded-(--blux-radius) border border-(--blux-error)/30 bg-(--blux-error)/10 p-3 text-xs"
+                         role="alert" data-slot="dashboard-error">
+                        <p class="m-0 font-semibold text-(--blux-error-text)">This data could not be loaded</p>
+                        <p class="m-0 text-(--blux-text-muted)">@(Source?.Error ?? "The rest of the dashboard is unaffected. Try again in a moment.")</p>
+                        @if (Source is not null)
+                        {
+                            <button type="button"
+                                    class="rounded-(--blux-radius) bg-(--blux-bg) px-2.5 py-1 font-semibold text-(--blux-text-highlighted) shadow-2xs hover:bg-(--blux-bg-muted)"
+                                    data-slot="dashboard-retry"
+                                    @onclick="Source.RefreshAsync">
+                                Retry
+                            </button>
+                        }
+                    </div>
+                    break;
+
+                case DashboardBlockPhase.Empty:
+                    <div class="flex flex-col items-center justify-center gap-1 py-6 text-center text-xs text-(--blux-text-muted)" data-slot="dashboard-empty">
+                        <p class="m-0 font-semibold text-(--blux-text-highlighted)">@(EmptyTitle ?? "No data for this period")</p>
+                        @if (!string.IsNullOrEmpty(EmptyDescription))
+                        {
+                            <p class="m-0">@EmptyDescription</p>
+                        }
+                    </div>
+                    break;
+
+                case DashboardBlockPhase.Content:
+                    @if (_showingTable && Tabulate is not null)
+                    {
+                        var table = Tabulate();
+                        <div class="overflow-x-auto" data-slot="dashboard-data-table">
+                            <table class="min-w-full text-xs">
+                                <thead class="border-b border-(--blux-border) font-semibold text-(--blux-text-muted)">
+                                    <tr>
+                                        @foreach (var col in table.Columns)
+                                        {
+                                            <th scope="col" class="px-2.5 py-1.5 @(col.Numeric ? "text-end" : "text-start")">@col.Label</th>
+                                        }
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-(--blux-border)">
+                                    @foreach (var row in table.Rows)
+                                    {
+                                        <tr>
+                                            @foreach (var col in table.Columns)
+                                            {
+                                                row.TryGetValue(col.Key, out var val);
+                                                <td class="px-2.5 py-1.5 @(col.Numeric ? "text-end tabular-nums" : "text-start")">@(val ?? DashboardFormat.MissingValue)</td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        @ChildContent
+                    }
+                    break;
+            }
+
+            @if (Footer is not null || (EffectiveFreshness && Phase == DashboardBlockPhase.Content && Source?.UpdatedAt is not null))
+            {
+                <footer class="flex items-center justify-between gap-2 border-t border-(--blux-border) pt-2 text-xs text-(--blux-text-muted)" data-slot="dashboard-card-footer">
+                    @if (Footer is not null)
+                    {
+                        @Footer
+                    }
+                    @if (EffectiveFreshness && Phase == DashboardBlockPhase.Content && Source?.UpdatedAt is { } updatedAt)
+                    {
+                        <time datetime="@updatedAt.ToString("O")" data-slot="dashboard-card-freshness">
+                            Updated @DashboardFormat.FormatRelativeTime(updatedAt)
+                        </time>
+                    }
+                </footer>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    private bool _showingTable;
+    private bool _expanded;
+
+    [CascadingParameter] private BxDashboardGrid? ParentGrid { get; set; }
+
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public int Span { get; set; } = 12;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool IsEmpty { get; set; }
+    [Parameter] public string? EmptyTitle { get; set; }
+    [Parameter] public string? EmptyDescription { get; set; }
+    [Parameter] public DashboardSkeletonKind Skeleton { get; set; } = DashboardSkeletonKind.Rows;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+    [Parameter] public bool ViewAsTable { get; set; } = true;
+    [Parameter] public bool Expandable { get; set; } = true;
+    [Parameter] public Func<DashboardDataTable>? Tabulate { get; set; }
+    [Parameter] public IReadOnlyList<DashboardFilterControl>? Filters { get; set; }
+    [Parameter] public EventCallback<string> OnCsvExported { get; set; }
+    [Parameter] public RenderFragment? HeaderRight { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool EffectiveMenu => Menu ?? ParentGrid?.Menu ?? false;
+    private bool EffectiveFreshness => Freshness ?? ParentGrid?.Freshness ?? false;
+
+    public DashboardBlockPhase Phase
+    {
+        get
+        {
+            if (Source is null) return IsEmpty ? DashboardBlockPhase.Empty : DashboardBlockPhase.Content;
+            return Source.State switch
+            {
+                DashboardResourceState.Disabled or DashboardResourceState.Idle => DashboardBlockPhase.Idle,
+                DashboardResourceState.Loading => DashboardBlockPhase.Loading,
+                DashboardResourceState.Error => DashboardBlockPhase.Error,
+                _ => IsEmpty ? DashboardBlockPhase.Empty : DashboardBlockPhase.Content,
+            };
+        }
+    }
+
+    private string SpanStyle => $"grid-column: span {Math.Clamp(Span, 1, 12)} / span {Math.Clamp(Span, 1, 12)}";
+
+    private string RootClass
+    {
+        get
+        {
+            var isPanel = string.Equals(ParentGrid?.Variant, "panels", StringComparison.OrdinalIgnoreCase);
+            var surface = !Card ? ""
+                : isPanel ? "bg-(--blux-bg)"
+                : "rounded-(--blux-radius-md) border border-(--blux-border) bg-(--blux-bg) shadow-2xs";
+            var expandCls = _expanded ? "fixed inset-4 z-50 overflow-auto shadow-2xl" : "relative flex min-w-0 flex-col overflow-hidden";
+            return $"{expandCls} {surface} {Class}".Trim();
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Source is { Stage: DashboardQueryStage.Deferred, Active: false })
+        {
+            await Source.ActivateAsync();
+        }
+    }
+
+    private async Task OnExportCsvAsync()
+    {
+        if (Tabulate is null) return;
+        var csv = DashboardFormat.ExportCsv(Tabulate(), FormatCulture);
+        if (OnCsvExported.HasDelegate)
+        {
+            await OnCsvExported.InvokeAsync(csv);
+        }
+    }
+}

@@ -1,0 +1,108 @@
+@namespace Blux.UI.Tools
+@using System.Globalization
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(Categories is not { Count: > 0 } || Series is not { Count: > 0 })"
+                 Skeleton="@(Type == "donut" ? DashboardSkeletonKind.Donut : Type == "line" ? DashboardSkeletonKind.Lines : DashboardSkeletonKind.Bars)"
+                 Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
+    <div class="flex flex-col gap-3" data-slot="dashboard-chart" data-type="@Type">
+        @if (Categories is { Count: > 0 } && Series is { Count: > 0 })
+        {
+            var maxVal = Math.Max(1.0, Series.SelectMany(s => s.Values).DefaultIfEmpty(1.0).Max());
+
+            @if (ShowLegend)
+            {
+                <div class="flex flex-wrap items-center gap-3 text-xs" data-slot="dashboard-chart-legend">
+                    @foreach (var s in Series)
+                    {
+                        <span class="inline-flex items-center gap-1.5" data-slot="dashboard-legend-item">
+                            <span class="inline-block size-2.5 rounded-full @(s.IsComparison ? "border border-dashed border-(--blux-text-muted)" : "bg-(--blux-primary)")"></span>
+                            <span class="text-(--blux-text-muted)">@s.Label</span>
+                        </span>
+                    }
+                </div>
+            }
+
+            <div class="flex items-end gap-2 pt-2" style="@($"height:{Height}px")" data-slot="dashboard-chart-canvas">
+                @for (var i = 0; i < Categories.Count; i++)
+                {
+                    var cat = Categories[i];
+                    var val = i < Series[0].Values.Count ? Series[0].Values[i] : 0;
+                    var pct = Math.Clamp(val / maxVal * 100.0, 4, 100).ToString("0.#", CultureInfo.InvariantCulture);
+                    <div class="flex h-full flex-1 flex-col items-center justify-end gap-1"
+                         title="@($"{cat}: {DashboardFormat.Format(val, Format, FormatCulture)}")"
+                         data-slot="dashboard-chart-column">
+                        @if (ShowLabels)
+                        {
+                            <span class="text-[10px] font-semibold tabular-nums text-(--blux-text-muted)">
+                                @DashboardFormat.Format(val, Format, FormatCulture)
+                            </span>
+                        }
+                        <div class="w-full rounded-t-sm bg-(--blux-primary)" style="@($"height:{pct}%")" data-slot="dashboard-chart-bar"></div>
+                        <span class="max-w-full truncate text-[11px] text-(--blux-text-muted)" data-slot="dashboard-chart-label">@cat</span>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Totals))
+            {
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-(--blux-border) pt-2 text-xs" data-slot="dashboard-chart-totals">
+                    @foreach (var s in Series.Where(s => !s.IsComparison))
+                    {
+                        var totalVal = string.Equals(Totals, "average", StringComparison.OrdinalIgnoreCase) && s.Values.Count > 0
+                            ? s.Values.Average()
+                            : s.Values.Sum();
+                        <div class="flex items-baseline gap-1.5" data-slot="dashboard-chart-total">
+                            <span class="text-(--blux-text-muted)">@s.Label:</span>
+                            <span class="font-bold tabular-nums text-(--blux-text-highlighted)">
+                                @DashboardFormat.Format(totalVal, Format, FormatCulture)
+                            </span>
+                        </div>
+                    }
+                </div>
+            }
+        }
+    </div>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string Type { get; set; } = "bar";
+    [Parameter] public IReadOnlyList<string>? Categories { get; set; }
+    [Parameter] public IReadOnlyList<DashboardChartSeries>? Series { get; set; }
+    [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    [Parameter] public int Height { get; set; } = 220;
+    [Parameter] public bool ShowLegend { get; set; } = true;
+    [Parameter] public bool ShowLabels { get; set; }
+    [Parameter] public string? Totals { get; set; }
+    [Parameter] public int Span { get; set; } = 8;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn> { new("category", "Category") };
+        foreach (var s in Series ?? [])
+        {
+            cols.Add(new DashboardDataColumn(s.Key, s.Label, Numeric: true));
+        }
+
+        var rows = new List<IReadOnlyDictionary<string, string?>>();
+        var cats = Categories ?? [];
+        for (var i = 0; i < cats.Count; i++)
+        {
+            var row = new Dictionary<string, string?> { ["category"] = cats[i] };
+            foreach (var s in Series ?? [])
+            {
+                var v = i < s.Values.Count ? (double?)s.Values[i] : null;
+                row[s.Key] = DashboardFormat.Format(v, Format, FormatCulture);
+            }
+            rows.Add(row);
+        }
+        return new DashboardDataTable(cols, rows);
+    }
+}

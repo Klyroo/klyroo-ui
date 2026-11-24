@@ -1,0 +1,87 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Rows"
+                 Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
+    <div class="divide-y divide-(--blux-border)" data-slot="dashboard-list">
+        @if (Items is { Count: > 0 })
+        {
+            var visible = Limit is > 0 ? Items.Take(Limit.Value).ToList() : Items;
+            @foreach (var item in visible)
+            {
+                <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
+                     data-slot="dashboard-list-row" data-selected="@(item.Selected ? "true" : null)">
+                    <div class="flex min-w-0 items-center gap-2.5">
+                        @if (!string.IsNullOrEmpty(item.LeadingText))
+                        {
+                            <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-muted) text-xs font-semibold text-(--blux-text-highlighted)"
+                                  data-slot="dashboard-list-leading">@item.LeadingText</span>
+                        }
+                        <div class="flex min-w-0 flex-col">
+                            @if (!string.IsNullOrEmpty(item.Href))
+                            {
+                                <a href="@item.Href" class="truncate text-xs font-semibold text-(--blux-text-highlighted) hover:underline">@item.Label</a>
+                            }
+                            else
+                            {
+                                <span class="truncate text-xs font-semibold text-(--blux-text-highlighted)">@item.Label</span>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Description))
+                            {
+                                <span class="truncate text-[11px] text-(--blux-text-muted)">@item.Description</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="flex shrink-0 items-center gap-2 text-xs tabular-nums">
+                        @if (item.Percent is { } pct)
+                        {
+                            <span class="text-(--blux-text-muted)" data-slot="dashboard-list-percent">@DashboardFormat.Format(pct, DashboardFormatPreset.Percent, FormatCulture)</span>
+                        }
+                        @if (item.Delta is { } delta)
+                        {
+                            <span class="font-semibold @(delta >= 0 ? "text-(--blux-success-text)" : "text-(--blux-error-text)")" data-slot="dashboard-list-delta">
+                                @DashboardFormat.Format(delta, DashboardFormatPreset.Delta, FormatCulture)
+                            </span>
+                        }
+                        @if (item.Value.HasValue)
+                        {
+                            <span class="font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-list-value">
+                                @DashboardFormat.Format(item.Value, Format, FormatCulture)
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<DashboardListItem>? Items { get; set; }
+    [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    [Parameter] public int? Limit { get; set; }
+    [Parameter] public int Span { get; set; } = 6;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("label", "Label"),
+            new("value", "Value", Numeric: true),
+        };
+        var rows = (Items ?? []).Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
+        {
+            ["label"] = i.Label,
+            ["value"] = DashboardFormat.Format(i.Value, Format, FormatCulture),
+        }).ToList();
+        return new DashboardDataTable(cols, rows);
+    }
+}

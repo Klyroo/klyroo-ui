@@ -1,0 +1,74 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(Items is not { Count: > 0 })" EmptyTitle="Nothing needs attention"
+                 Skeleton="DashboardSkeletonKind.Rows" Menu="@Menu" Freshness="@Freshness" Class="@Class">
+    <div class="divide-y divide-(--blux-border)" data-slot="dashboard-alerts">
+        @foreach (var item in OrderedItems)
+        {
+            var sevColor = item.Severity switch
+            {
+                DashboardAlertSeverity.Error => BxColor.Error,
+                DashboardAlertSeverity.Warning => BxColor.Warning,
+                DashboardAlertSeverity.Success => BxColor.Success,
+                _ => BxColor.Info,
+            };
+            var sevLabel = item.Severity switch
+            {
+                DashboardAlertSeverity.Error => "Critical",
+                DashboardAlertSeverity.Warning => "Warning",
+                DashboardAlertSeverity.Success => "Resolved",
+                _ => "Info",
+            };
+            <div class="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
+                 data-slot="dashboard-alert-row" data-severity="@item.Severity.ToString().ToLowerInvariant()">
+                <div class="flex min-w-0 items-center gap-2.5">
+                    <BxBadge Label="@sevLabel" Color="sevColor" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                    <div class="flex min-w-0 flex-col">
+                        <span class="truncate text-xs font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-alert-label">@item.Label</span>
+                        @if (!string.IsNullOrEmpty(item.Description))
+                        {
+                            <span class="truncate text-[11px] text-(--blux-text-muted)">@item.Description</span>
+                        }
+                    </div>
+                </div>
+                <div class="flex shrink-0 items-center gap-2 text-xs">
+                    @if (!string.IsNullOrEmpty(item.Value))
+                    {
+                        <span class="font-semibold tabular-nums text-(--blux-text-highlighted)">@item.Value</span>
+                    }
+                    @if (!string.IsNullOrEmpty(item.ActionLabel))
+                    {
+                        <a href="@(item.ActionHref ?? "#")" class="font-medium text-(--blux-primary-text) hover:underline">@item.ActionLabel</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<DashboardAlertItem>? Items { get; set; }
+    [Parameter] public string Order { get; set; } = "severity";
+    [Parameter] public int? Limit { get; set; }
+    [Parameter] public int Span { get; set; } = 6;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private IReadOnlyList<DashboardAlertItem> OrderedItems
+    {
+        get
+        {
+            if (Items is not { Count: > 0 }) return [];
+            var sorted = string.Equals(Order, "severity", StringComparison.OrdinalIgnoreCase)
+                ? Items.OrderBy(i => (int)i.Severity).ToList()
+                : Items.ToList();
+            return Limit is > 0 ? sorted.Take(Limit.Value).ToList() : sorted;
+        }
+    }
+}

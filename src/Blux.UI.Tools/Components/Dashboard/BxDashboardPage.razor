@@ -1,0 +1,232 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+@implements IDisposable
+
+<div class="@RootClass" data-slot="dashboard-page" @attributes="AdditionalAttributes">
+    @* Page header *@
+    <header class="flex flex-wrap items-start justify-between gap-4 border-b border-(--blux-border) bg-(--blux-bg) px-4 py-4 lg:px-7" data-slot="dashboard-header">
+        <div class="flex min-w-0 flex-col gap-1">
+            @if (!string.IsNullOrEmpty(Title))
+            {
+                <h1 class="m-0 truncate text-xl font-bold text-(--blux-text-highlighted)" data-slot="dashboard-title">@Title</h1>
+            }
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="dashboard-description">@Description</p>
+            }
+            else if (Dashboard?.UpdatedAt is { } updatedAt)
+            {
+                <p class="m-0 text-xs text-(--blux-text-muted)" data-slot="dashboard-freshness">
+                    Updated @DashboardFormat.FormatRelativeTime(updatedAt)
+                </p>
+            }
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2" data-slot="dashboard-actions">
+            @if (Actions is not null)
+            {
+                @Actions
+            }
+            @if (ShowRefresh && Dashboard is not null)
+            {
+                <button type="button"
+                        class="inline-flex h-8 items-center gap-1.5 rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg) px-3 text-xs font-medium text-(--blux-text) hover:bg-(--blux-bg-muted) disabled:opacity-50"
+                        disabled="@Dashboard.Refreshing"
+                        aria-label="Refresh"
+                        data-slot="dashboard-refresh"
+                        @onclick="OnRefreshAsync">
+                    <span>@(Dashboard.Refreshing ? "Refreshing…" : "Refresh")</span>
+                </button>
+            }
+        </div>
+    </header>
+
+    @* Sticky Views + Filter bar *@
+    @if (Dashboard is not null && ((ShowTabs && Dashboard.Views.Count >= 2) || (ShowFilters && VisibleControls.Count > 0)))
+    {
+        <div class="@(Sticky ? "sticky top-0 z-20" : "") flex flex-col gap-2 border-b border-(--blux-border) bg-(--blux-bg)/95 px-4 py-2.5 backdrop-blur lg:px-7"
+             data-slot="dashboard-toolbar">
+            @if (ShowTabs && Dashboard.Views.Count >= 2)
+            {
+                <nav class="flex items-center gap-2 overflow-x-auto border-b border-(--blux-border) pb-2" aria-label="Views" data-slot="dashboard-view-tabs">
+                    @foreach (var view in Dashboard.Views)
+                    {
+                        var isActive = string.Equals(Dashboard.CurrentView, view.Key, StringComparison.Ordinal);
+                        <button type="button"
+                                class="inline-flex items-center gap-1.5 rounded-(--blux-radius) px-3 py-1.5 text-xs font-semibold transition-colors @(isActive ? "bg-(--blux-bg-muted) text-(--blux-text-highlighted)" : "text-(--blux-text-muted) hover:text-(--blux-text)")"
+                                aria-current="@(isActive ? "page" : null)"
+                                data-slot="dashboard-view-tab"
+                                data-view="@view.Key"
+                                @onclick="@(() => Dashboard.CurrentView = view.Key)">
+                            <span>@view.Label</span>
+                            @if (!string.IsNullOrEmpty(view.Badge) && view.Badge != "0")
+                            {
+                                <span class="rounded-full bg-(--blux-primary)/15 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-(--blux-primary-text)"
+                                      data-slot="dashboard-view-badge">@view.Badge</span>
+                            }
+                        </button>
+                    }
+                </nav>
+            }
+
+            @if (ShowFilters && VisibleControls.Count > 0)
+            {
+                <div class="flex flex-wrap items-center gap-2" role="toolbar" aria-label="Filters" data-slot="dashboard-filters">
+                    @foreach (var filter in VisibleControls)
+                    {
+                        <div class="relative inline-flex items-center" data-slot="dashboard-filter" data-key="@filter.Key" data-active="@(filter.Changed ? "true" : null)">
+                            <button type="button"
+                                    class="inline-flex h-8 items-center gap-1.5 rounded-full border px-3 text-xs font-medium @(filter.Changed ? "border-(--blux-primary-text) bg-(--blux-primary)/10 text-(--blux-text-highlighted)" : "border-(--blux-border) bg-(--blux-bg) text-(--blux-text) hover:bg-(--blux-bg-muted)")"
+                                    aria-expanded="@(filter.Open ? "true" : "false")"
+                                    data-slot="dashboard-filter-pill"
+                                    @onclick="@(() => ToggleFilterMenu(filter))">
+                                <span class="text-(--blux-text-muted)">@filter.Label:</span>
+                                <span class="font-semibold" data-slot="dashboard-filter-display">@filter.Display</span>
+                            </button>
+                            @if (filter.Changed)
+                            {
+                                <button type="button"
+                                        class="ms-1 inline-flex size-6 items-center justify-center rounded-full text-xs text-(--blux-text-muted) hover:bg-(--blux-bg-muted) hover:text-(--blux-text)"
+                                        aria-label="@($"Clear {filter.Label}")"
+                                        data-slot="dashboard-filter-clear"
+                                        @onclick="filter.Reset">
+                                    ✕
+                                </button>
+                            }
+
+                            @if (filter.Open && (filter.Items.Count > 0 || filter.Presets.Count > 0))
+                            {
+                                <div class="absolute start-0 top-full z-30 mt-1.5 flex w-60 flex-col gap-1.5 rounded-(--blux-radius-md) border border-(--blux-border) bg-(--blux-bg-elevated) p-2 shadow-lg"
+                                     data-slot="dashboard-filter-menu">
+                                    @if (filter.Searchable)
+                                    {
+                                        <input type="search"
+                                               value="@filter.Search"
+                                               placeholder="Search…"
+                                               aria-label="@($"Search {filter.Label}")"
+                                               class="h-7 w-full rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg) px-2 text-xs text-(--blux-text)"
+                                               data-slot="dashboard-filter-search"
+                                               @oninput="@(e => filter.Search = e.Value?.ToString() ?? "")" />
+                                    }
+                                    @if (filter.Presets.Count > 0)
+                                    {
+                                        <div class="flex flex-wrap gap-1 border-b border-(--blux-border) pb-1.5" data-slot="dashboard-filter-presets">
+                                            @foreach (var preset in filter.Presets)
+                                            {
+                                                <button type="button"
+                                                        class="rounded-(--blux-radius) bg-(--blux-bg-muted) px-2 py-0.5 text-[11px] font-medium text-(--blux-text) hover:text-(--blux-text-highlighted)"
+                                                        data-slot="dashboard-filter-preset"
+                                                        @onclick="@(() => filter.ApplyPreset(preset))">
+                                                    @preset.Label
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+                                    <div class="flex max-h-52 flex-col gap-0.5 overflow-y-auto"
+                                         role="listbox"
+                                         aria-label="@filter.Label"
+                                         aria-multiselectable="@(filter.Multiple ? "true" : null)">
+                                        @foreach (var opt in filter.FilteredItems)
+                                        {
+                                            var selected = filter.IsSelected(opt.Value);
+                                            var maxReached = filter.Multiple && !selected && filter.Max is { } m && filter.Values.Count >= m;
+                                            <button type="button"
+                                                    role="option"
+                                                    disabled="@(opt.Disabled || maxReached)"
+                                                    aria-selected="@(selected ? "true" : "false")"
+                                                    class="flex w-full items-center justify-between gap-2 rounded-(--blux-radius) px-2 py-1.5 text-start text-xs @(selected ? "bg-(--blux-bg-muted) font-semibold text-(--blux-text-highlighted)" : "text-(--blux-text) hover:bg-(--blux-bg-muted)") disabled:opacity-40"
+                                                    data-slot="dashboard-filter-option"
+                                                    data-value="@opt.Value"
+                                                    @onclick="@(() => filter.Toggle(opt.Value))">
+                                                <span class="truncate">@opt.Label</span>
+                                                @if (selected)
+                                                {
+                                                    <span aria-hidden="true">✓</span>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @if (Dashboard.Filtered)
+                    {
+                        <button type="button"
+                                class="inline-flex h-8 items-center rounded-(--blux-radius) px-2.5 text-xs font-medium text-(--blux-primary-text) hover:underline"
+                                data-slot="dashboard-filters-reset"
+                                @onclick="Dashboard.ResetFilters">
+                            Reset
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+    @* Dashboard Body *@
+    <CascadingValue Value="Dashboard">
+        <div class="flex flex-1 flex-col gap-4 p-4 lg:p-7" data-slot="dashboard-body">
+            @ChildContent
+        </div>
+    </CascadingValue>
+</div>
+
+@code {
+    [Parameter] public DashboardController? Dashboard { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public bool ShowRefresh { get; set; } = true;
+    [Parameter] public bool ShowTabs { get; set; } = true;
+    [Parameter] public bool ShowFilters { get; set; } = true;
+    [Parameter] public bool Sticky { get; set; } = true;
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private DashboardController? _subscribed;
+
+    private IReadOnlyList<DashboardFilterControl> VisibleControls =>
+        Dashboard?.Controls.Where(c => c.Enabled && !c.Headless).ToList() ?? [];
+
+    private string RootClass =>
+        $"flex min-h-0 w-full flex-col bg-(--blux-bg-muted) text-(--blux-text) {Class}".Trim();
+
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(_subscribed, Dashboard))
+        {
+            if (_subscribed is not null) _subscribed.Changed -= OnDashboardChanged;
+            _subscribed = Dashboard;
+            if (_subscribed is not null) _subscribed.Changed += OnDashboardChanged;
+        }
+    }
+
+    private void OnDashboardChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private void ToggleFilterMenu(DashboardFilterControl target)
+    {
+        if (Dashboard is null) return;
+        foreach (var ctrl in Dashboard.Controls)
+        {
+            if (!ReferenceEquals(ctrl, target)) ctrl.Open = false;
+        }
+        target.Open = !target.Open;
+    }
+
+    private async Task OnRefreshAsync()
+    {
+        if (Dashboard is not null)
+        {
+            await Dashboard.RefreshAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_subscribed is not null)
+        {
+            _subscribed.Changed -= OnDashboardChanged;
+        }
+    }
+}
