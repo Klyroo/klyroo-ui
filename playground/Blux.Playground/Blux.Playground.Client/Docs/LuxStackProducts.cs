@@ -209,10 +209,10 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/table/docs", "Core"),
-                new("BxDataList<TItem>", "Full-featured enterprise datagrid with table, grid, filter bar & pagination.", "/components/data-list", "UI"),
-                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/table/docs", "UI"),
-                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/table/docs", "UI")
+                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/table/docs/tree", "Core"),
+                new("BxDataList<TItem>", "Full-featured enterprise datagrid with table, grid, filter bar & pagination.", "/table/docs/data-list", "UI"),
+                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/table/docs/columns", "UI"),
+                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/table/docs/mobile-summary", "UI")
             ]),
 
         new(
@@ -512,7 +512,8 @@ public static class LuxStackProducts
     {
         if (string.IsNullOrWhiteSpace(path)) return null;
         var clean = path.Split('?', '#')[0].Trim('/');
-        if (clean.Length == 0 || clean is "stack" or "templates") return null;
+        if (clean.Length == 0 || clean is "stack") return null;
+        if (clean == "templates") return Find("ui");
 
         var segs = clean.Split('/', StringSplitOptions.RemoveEmptyEntries);
         if (segs.Length == 0) return null;
