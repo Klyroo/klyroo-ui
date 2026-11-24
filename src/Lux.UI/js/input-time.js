@@ -5,17 +5,17 @@ const pad = (n) => String(n).padStart(2, '0');
 /**
  * Time field made of spinbutton segments (hour, minute and, in 12-hour mode, AM/PM). Typing digits, the arrow keys,
  * Home/End and Backspace edit the focused segment; Left/Right move between segments. The value is HH:mm, carried by
- * the hidden input so the field posts in a plain form, and reported with "bx-change" when it becomes complete or empty.
+ * the hidden input so the field posts in a plain form, and reported with "lx-change" when it becomes complete or empty.
  *
- * <bx-input-time value="14:30" hour12 step="5" data-label-am="AM" data-label-pm="PM">
+ * <lx-input-time value="14:30" hour12 step="5" data-label-am="AM" data-label-pm="PM">
  *   <input type="hidden" data-slot="value" name="…" value="14:30">
  *   <span role="spinbutton" data-segment="hour" data-label="02" tabindex="0" aria-label="Hours"></span> …
- * </bx-input-time>
+ * </lx-input-time>
  *
  * Segment text is CSS generated content from data-label, so the script never replaces nodes Blazor owns.
  */
-export class BxInputTimeElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value', 'hour12', 'step'];
+export class LxInputTimeElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value', 'hour12', 'step'];
 
   #hour = null; // 0-23
   #minute = null; // 0-59
@@ -42,8 +42,8 @@ export class BxInputTimeElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') this.#forced = true;
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
@@ -151,7 +151,7 @@ export class BxInputTimeElement extends HTMLElement {
       input.setAttribute('value', value);
       input.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    this.#reporter.report('bx-change', { value });
+    this.#reporter.report('lx-change', { value });
   }
 
   #setHour(displayHour) {
@@ -280,4 +280,4 @@ export class BxInputTimeElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-input-time')) customElements.define('bx-input-time', BxInputTimeElement);
+if (!customElements.get('lx-input-time')) customElements.define('lx-input-time', LxInputTimeElement);

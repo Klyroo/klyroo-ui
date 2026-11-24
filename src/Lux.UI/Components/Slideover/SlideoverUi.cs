@@ -10,7 +10,7 @@ public enum SlideoverSide
     Bottom,
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxSlideover"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxSlideover"/> slots.</summary>
 public sealed record SlideoverUi : ISlotOverrides
 {
     public string? Content { get; init; }

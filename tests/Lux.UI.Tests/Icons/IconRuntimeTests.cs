@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Lux.UI.Tests.Icons;
 
-public class IconNameRenderingTests : BluxTestContext
+public class IconNameRenderingTests : LuxTestContext
 {
     [Theory]
     [InlineData("search")]
@@ -11,11 +11,11 @@ public class IconNameRenderingTests : BluxTestContext
     [InlineData("i-lucide-search")]
     public void Every_form_of_a_builtin_name_draws_the_same_icon(string name)
     {
-        var expected = Render<BxIcon>(p => p.Add(i => i.Name, "search")).Find("svg").InnerHtml;
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, name));
+        var expected = Render<LxIcon>(p => p.Add(i => i.Name, "search")).Find("svg").InnerHtml;
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, name));
 
         Assert.Equal(expected, cut.Find("svg").InnerHtml);
-        Assert.False(cut.Find("svg").HasAttribute("data-bx-missing-icon"));
+        Assert.False(cut.Find("svg").HasAttribute("data-lx-missing-icon"));
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class IconNameRenderingTests : BluxTestContext
 
         foreach (var name in new[] { "testset:dot", "i-testset-dot" })
         {
-            var cut = Render<BxIcon>(p => p.Add(i => i.Name, name));
+            var cut = Render<LxIcon>(p => p.Add(i => i.Name, name));
             Assert.Equal("0 0 8 8", cut.Find("svg").GetAttribute("viewBox"));
             Assert.Equal("3", cut.Find("svg circle").GetAttribute("r"));
         }
@@ -34,10 +34,10 @@ public class IconNameRenderingTests : BluxTestContext
     [Fact]
     public void An_unknown_name_renders_an_empty_icon_that_can_be_found_in_the_page()
     {
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "ph:no-such-icon"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "ph:no-such-icon"));
 
         var svg = cut.Find("svg");
-        Assert.Equal("ph:no-such-icon", svg.GetAttribute("data-bx-missing-icon"));
+        Assert.Equal("ph:no-such-icon", svg.GetAttribute("data-lx-missing-icon"));
         Assert.Empty(svg.Children);
         Assert.Equal("0 0 24 24", svg.GetAttribute("viewBox"));
     }
@@ -45,9 +45,9 @@ public class IconNameRenderingTests : BluxTestContext
     [Fact]
     public void The_render_fragment_helper_marks_a_missing_icon_too()
     {
-        var cut = Render(BxIcons.Named("i-ph-no-such-icon", "size-4"));
+        var cut = Render(LxIcons.Named("i-ph-no-such-icon", "size-4"));
 
-        Assert.Equal("i-ph-no-such-icon", cut.Find("svg").GetAttribute("data-bx-missing-icon"));
+        Assert.Equal("i-ph-no-such-icon", cut.Find("svg").GetAttribute("data-lx-missing-icon"));
         Assert.Contains("size-4", cut.Find("svg").ClassList);
     }
 
@@ -176,7 +176,7 @@ public class AppIconOptionsTests
     }
 }
 
-public class AppIconsInComponentsTests() : BluxTestContext(o =>
+public class AppIconsInComponentsTests() : LuxTestContext(o =>
 {
     o.Icons.Register("app:one", "<path d=\"M1 1\"/>", 8, 8);
     o.Icons.Register("app:two", "<path d=\"M2 2\"/>", 9, 9);
@@ -191,7 +191,7 @@ public class AppIconsInComponentsTests() : BluxTestContext(o =>
     [Fact]
     public void Alert_close_uses_the_close_icon_of_the_app()
     {
-        var cut = Render<BxAlert>(p => p.Add(a => a.Title, "x").Add(a => a.Close, true));
+        var cut = Render<LxAlert>(p => p.Add(a => a.Title, "x").Add(a => a.Close, true));
 
         var svg = cut.Find("button svg");
         Assert.Equal("0 0 8 8", svg.GetAttribute("viewBox"));
@@ -201,7 +201,7 @@ public class AppIconsInComponentsTests() : BluxTestContext(o =>
     [Fact]
     public void Select_trigger_uses_the_up_down_icon_of_the_app()
     {
-        var cut = Render<BxSelect>(p => p.Add(s => s.Items, [new BxSelectItem("a", "A")]));
+        var cut = Render<LxSelect>(p => p.Add(s => s.Items, [new LxSelectItem("a", "A")]));
 
         Assert.Equal("0 0 9 9", cut.Find("button svg").GetAttribute("viewBox"));
     }
@@ -209,7 +209,7 @@ public class AppIconsInComponentsTests() : BluxTestContext(o =>
     [Fact]
     public void Loading_button_uses_the_loading_icon_of_the_app()
     {
-        var cut = Render<BxButton>(p => p.Add(b => b.Label, "Save").Add(b => b.Loading, true));
+        var cut = Render<LxButton>(p => p.Add(b => b.Label, "Save").Add(b => b.Loading, true));
 
         var svg = cut.Find("[data-slot=leadingIcon] svg");
         Assert.Equal("0 0 10 10", svg.GetAttribute("viewBox"));
@@ -218,32 +218,32 @@ public class AppIconsInComponentsTests() : BluxTestContext(o =>
     [Fact]
     public void Checkbox_and_rating_use_their_icons()
     {
-        var checkbox = Render<BxCheckbox>(p => p.Add(c => c.Label, "x"));
+        var checkbox = Render<LxCheckbox>(p => p.Add(c => c.Label, "x"));
         Assert.Contains(checkbox.FindAll("svg"), s => s.GetAttribute("viewBox") == "0 0 8 8");
 
-        var rating = Render<BxInputRating>(p => p.Add(r => r.Max, 3));
+        var rating = Render<LxInputRating>(p => p.Add(r => r.Max, 3));
         Assert.Equal(3, rating.FindAll("svg").Count(s => s.GetAttribute("viewBox") == "0 0 9 9"));
     }
 
     [Fact]
     public void The_icons_that_script_draws_are_handed_over_as_attributes()
     {
-        var toaster = Render<BxToaster>();
-        var icon = toaster.Find("bx-toaster").GetAttribute("data-icon-close")!;
+        var toaster = Render<LxToaster>();
+        var icon = toaster.Find("lx-toaster").GetAttribute("data-icon-close")!;
         Assert.StartsWith("<svg viewBox=\"0 0 8 8\"", icon);
         Assert.Contains("<path d=\"M1 1\"/>", icon);
 
-        var tags = Render<BxInputTags>();
-        Assert.StartsWith("<svg viewBox=\"0 0 8 8\"", tags.Find("bx-input-tags").GetAttribute("data-icon-close"));
+        var tags = Render<LxInputTags>();
+        Assert.StartsWith("<svg viewBox=\"0 0 8 8\"", tags.Find("lx-input-tags").GetAttribute("data-icon-close"));
     }
 }
 
-public class DefaultAppIconsInComponentsTests : BluxTestContext
+public class DefaultAppIconsInComponentsTests : LuxTestContext
 {
     [Fact]
     public void Components_draw_lucide_icons_by_default()
     {
-        var alert = Render<BxAlert>(p => p.Add(a => a.Title, "x").Add(a => a.Close, true));
+        var alert = Render<LxAlert>(p => p.Add(a => a.Title, "x").Add(a => a.Close, true));
 
         Assert.Equal("0 0 24 24", alert.Find("button svg").GetAttribute("viewBox"));
         Assert.Equal("M18 6L6 18M6 6l12 12", alert.Find("button svg path").GetAttribute("d"));
@@ -252,7 +252,7 @@ public class DefaultAppIconsInComponentsTests : BluxTestContext
     [Fact]
     public void A_button_that_loads_draws_the_spinner_in_its_leading_slot()
     {
-        var cut = Render<BxButton>(p => p.Add(b => b.Label, "Save").Add(b => b.Loading, true));
+        var cut = Render<LxButton>(p => p.Add(b => b.Label, "Save").Add(b => b.Loading, true));
 
         Assert.Single(cut.FindAll("[data-slot=leadingIcon] svg"));
     }
@@ -260,10 +260,10 @@ public class DefaultAppIconsInComponentsTests : BluxTestContext
     [Fact]
     public void The_calendar_navigation_icons_come_from_dotnet()
     {
-        var cut = Render<BxCalendar>();
+        var cut = Render<LxCalendar>();
 
-        Assert.StartsWith("<svg", cut.Find("bx-calendar").GetAttribute("data-icon-prev"));
-        Assert.StartsWith("<svg", cut.Find("bx-calendar").GetAttribute("data-icon-next"));
+        Assert.StartsWith("<svg", cut.Find("lx-calendar").GetAttribute("data-icon-prev"));
+        Assert.StartsWith("<svg", cut.Find("lx-calendar").GetAttribute("data-icon-next"));
     }
 }
 
@@ -298,7 +298,7 @@ public class NoDuplicateIconTests
             .Order()
             .ToList();
 
-        Assert.Equal(["BxIcon.razor", "IconRuntime.cs"], offenders);
+        Assert.Equal(["IconRuntime.cs", "LxIcon.razor"], offenders);
     }
 
     [Fact]
@@ -322,6 +322,6 @@ public class NoDuplicateIconTests
             .Order()
             .ToList();
 
-        Assert.Equal(["BuiltinIcons", "BxIcons"], classes);
+        Assert.Equal(["BuiltinIcons", "LxIcons"], classes);
     }
 }

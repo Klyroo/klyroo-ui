@@ -37,7 +37,7 @@ src/
 | Page | What it shows |
 | --- | --- |
 | `Pages/Home.razor` | Four figures with their change since the period before, a revenue chart, a donut by channel, recent sales and a bar chart. The period is in the address (`?period=week`). |
-| `Pages/Customers.razor` | A `BxDataList` of 240 customers: search, text, option, number, date and yes/no filters, sortable columns, pages, a ticked selection that survives the next page, a menu of actions per row and a form for a new customer (the country is searched in a remote source). |
+| `Pages/Customers.razor` | A `LxDataList` of 240 customers: search, text, option, number, date and yes/no filters, sortable columns, pages, a ticked selection that survives the next page, a menu of actions per row and a form for a new customer (the country is searched in a remote source). |
 | `Pages/Inbox.razor` | A list of messages and a reading pane side by side, with a resizable divider; on a phone one panel at a time. Opening a message reads it, and it can be answered and archived. |
 | `Pages/Settings*.razor` | General (profile form, language), Members (roles, an invitation from a searched directory), Notifications (switches) and Security (password form, two-step sign-in, signed-in devices). |
 | `Layout/` | The sidebar, the team switcher, the user menu, the notifications slideover, the appearance dialog (primary color and color mode) and the command palette. |
@@ -45,7 +45,7 @@ src/
 ## Replace the sample data
 
 - `Data/` holds the sample data, built from a fixed seed so that the server and the browser agree. The pages read it through the services of `Services/AppStores.cs` (`CustomerStore`, `MailStore`, `NotificationStore`, `MemberStore`), registered in `DashboardServices.cs`: change what they do and the pages follow.
-- The customer table is `BxDataList` from `Lux.UI.Tools`. `CustomerData.Schema` says which fields search, sort and filter. It is given the rows in memory (`Items`); give it a `Provider` or a `Queryable` instead to read a page at a time from an API or a database (see the package README), and the schema stays as it is.
+- The customer table is `LxDataList` from `Lux.UI.Tools`. `CustomerData.Schema` says which fields search, sort and filter. It is given the rows in memory (`Items`); give it a `Provider` or a `Queryable` instead to read a page at a time from an API or a database (see the package README), and the schema stays as it is.
 - `AppearanceState` keeps the chosen primary color in the browser. The other colors, the locales and the size of the components are configured once, in `DashboardServices.cs`.
 
 ## Develop

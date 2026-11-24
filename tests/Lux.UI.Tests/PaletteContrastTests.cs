@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 namespace Lux.UI.Tests;
 
 /// <summary>
-/// Guards the palette in <c>blux.base.css</c> against contrast regressions (WCAG 2.x relative luminance), in both themes:
+/// Guards the palette in <c>lux.base.css</c> against contrast regressions (WCAG 2.x relative luminance), in both themes:
 /// solid fills used as the only cue of a state (switch track, checkbox, progress, slider) reach 3:1 against the page
 /// surfaces (1.4.11), text on a fill reaches 4.5:1, and the text color reaches 4.5:1 on the page and on soft backgrounds.
 /// </summary>
@@ -38,7 +38,7 @@ public partial class PaletteContrastTests
     public void Solid_fill_reaches_3_to_1_against_the_page_surfaces_or_is_outlined_by_the_text_color(string theme, string color)
     {
         // The signal yellow is too light to reach 3:1 as a fill in the light theme; its indicators are outlined with
-        // the -text color instead (checked:ring-(--bx-color-text) and friends), which must then reach 3:1.
+        // the -text color instead (checked:ring-(--lx-color-text) and friends), which must then reach 3:1.
         var indicator = theme == "light" && color == "primary" ? Token(theme, color + "-text") : Token(theme, color);
 
         foreach (var surface in Surfaces)
@@ -75,7 +75,7 @@ public partial class PaletteContrastTests
     private static double HighestTintAlpha() =>
         new LuxOptions().AllThemes
             .SelectMany(t => t.AllClassTokens())
-            .Select(token => Regex.Match(token, @"(?:^|:)bg-\(--bx-color\)/(?<alpha>\d+)$"))
+            .Select(token => Regex.Match(token, @"(?:^|:)bg-\(--lx-color\)/(?<alpha>\d+)$"))
             .Where(m => m.Success && int.Parse(m.Groups["alpha"].Value) <= 50)
             .Select(m => int.Parse(m.Groups["alpha"].Value) / 100.0)
             .DefaultIfEmpty(0.10)
@@ -93,7 +93,7 @@ public partial class PaletteContrastTests
 
     private static Dictionary<string, Dictionary<string, string>> Load()
     {
-        var css = File.ReadAllText(Path.Combine(FindLibraryRoot(), "styles", "blux.base.css"));
+        var css = File.ReadAllText(Path.Combine(FindLibraryRoot(), "styles", "lux.base.css"));
         return new()
         {
             ["light"] = Parse(Regex.Match(css, @":root\s*\{(?<body>[^}]*)\}").Groups["body"].Value),
@@ -104,7 +104,7 @@ public partial class PaletteContrastTests
     private static Dictionary<string, string> Parse(string body) =>
         TokenPattern().Matches(body).ToDictionary(m => m.Groups["name"].Value, m => m.Groups["hex"].Value);
 
-    [GeneratedRegex(@"--blux-(?<name>[a-z-]+):\s*(?<hex>#[0-9a-fA-F]{6})\s*;")]
+    [GeneratedRegex(@"--lux-(?<name>[a-z-]+):\s*(?<hex>#[0-9a-fA-F]{6})\s*;")]
     private static partial Regex TokenPattern();
 
     private static (double R, double G, double B) Rgb(string hex) =>

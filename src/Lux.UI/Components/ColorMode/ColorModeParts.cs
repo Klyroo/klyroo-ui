@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxColorModeSwitch"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxColorModeSwitch"/> slots.</summary>
 public sealed record ColorModeSwitchUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -30,7 +30,7 @@ public sealed record ColorModeSwitchUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxColorModeSelect"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxColorModeSelect"/> slots.</summary>
 public sealed record ColorModeSelectUi : ISlotOverrides
 {
     public string? Root { get; init; }

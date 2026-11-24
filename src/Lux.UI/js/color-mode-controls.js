@@ -3,14 +3,14 @@ import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
 /**
  * Behavior of the color mode controls, wired by attribute so that it works on static pages, before and without a .NET
  * runtime, and for any number of instances on a page:
- *   [data-bx-color-mode="toggle"]  button: switches between light and dark
- *   [data-bx-color-mode="switch"]  checkbox: checked in dark mode
- *   [data-bx-color-mode="select"]  select: system, light or dark
+ *   [data-lx-color-mode="toggle"]  button: switches between light and dark
+ *   [data-lx-color-mode="switch"]  checkbox: checked in dark mode
+ *   [data-lx-color-mode="select"]  select: system, light or dark
  * The visuals that only depend on light or dark (icons, images, the switch thumb) use the "dark" class in CSS.
  * What CSS cannot know (the checked state, the select value, aria-pressed) is written here every time the mode
- * changes, whoever changed it: a control, Blux.setColorMode, the system preference, another tab or enhanced navigation.
+ * changes, whoever changed it: a control, Lux.setColorMode, the system preference, another tab or enhanced navigation.
  */
-const SELECTOR = '[data-bx-color-mode]';
+const SELECTOR = '[data-lx-color-mode]';
 
 const isDark = () => document.documentElement.classList.contains('dark');
 
@@ -38,7 +38,7 @@ function syncWithin(root) {
 const syncAll = () => syncWithin(document);
 
 document.addEventListener('click', (event) => {
-  if (!event.target.closest?.('[data-bx-color-mode="toggle"]')) return;
+  if (!event.target.closest?.('[data-lx-color-mode="toggle"]')) return;
   setColorMode(isDark() ? 'light' : 'dark');
 });
 
@@ -49,10 +49,10 @@ document.addEventListener('change', (event) => {
   else if (control.dataset.bxColorMode === 'select') setColorMode(control.value);
 });
 
-document.addEventListener('bx-color-mode', syncAll);
+document.addEventListener('lx-color-mode', syncAll);
 // localStorage changed in another tab: apply the stored mode here too, which then syncs the controls.
 window.addEventListener('storage', (event) => {
-  if (event.key !== 'blux-color-mode') return;
+  if (event.key !== 'lux-color-mode') return;
   applyColorMode();
 });
 

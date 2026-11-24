@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>
 /// Holds the content of the site in memory. It is read once at startup (a content file that cannot be used stops the startup, with the file named)

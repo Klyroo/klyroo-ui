@@ -3,83 +3,83 @@
 
 <PageTitle>Overlays</PageTitle>
 
-<h1 class="text-2xl font-semibold text-(--blux-text-highlighted)">Overlays</h1>
-<p class="text-(--blux-text-muted)">Native dialogs and popovers (iOS 17 or later), driven by the browser in the web view.</p>
+<h1 class="text-2xl font-semibold text-(--lux-text-highlighted)">Overlays</h1>
+<p class="text-(--lux-text-muted)">Native dialogs and popovers (iOS 17 or later), driven by the browser in the web view.</p>
 
 <div class="flex flex-wrap items-center gap-3">
-    <BxModal @bind-Open="_modal" Title="Edit profile" Description="Changes are saved when you close the dialog.">
-        <ChildContent><BxButton Label="Modal" Variant="ButtonVariant.Outline" data-testid="modal-trigger" /></ChildContent>
+    <LxModal @bind-Open="_modal" Title="Edit profile" Description="Changes are saved when you close the dialog.">
+        <ChildContent><LxButton Label="Modal" Variant="ButtonVariant.Outline" data-testid="modal-trigger" /></ChildContent>
         <Body>
             <div class="flex flex-col gap-4">
-                <BxFormField Label="Name"><BxInput Value="Ada Lovelace" /></BxFormField>
+                <LxFormField Label="Name"><LxInput Value="Ada Lovelace" /></LxFormField>
             </div>
         </Body>
         <Footer>
-            <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close />
-            <BxButton Label="Save" data-bx-close data-testid="modal-save" />
+            <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close />
+            <LxButton Label="Save" data-lx-close data-testid="modal-save" />
         </Footer>
-    </BxModal>
+    </LxModal>
 
-    <BxModal Title="Delete project?" Description="Back and Escape do nothing here: choose a button." Dismissible="false" Close="false" Size="BxSize.Sm">
-        <ChildContent><BxButton Label="Confirm modal" Variant="ButtonVariant.Outline" data-testid="confirm-trigger" /></ChildContent>
+    <LxModal Title="Delete project?" Description="Back and Escape do nothing here: choose a button." Dismissible="false" Close="false" Size="LxSize.Sm">
+        <ChildContent><LxButton Label="Confirm modal" Variant="ButtonVariant.Outline" data-testid="confirm-trigger" /></ChildContent>
         <Footer>
-            <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-bx-close />
-            <BxButton Label="Delete" Color="BxColor.Error" data-bx-close />
+            <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Outline" data-lx-close />
+            <LxButton Label="Delete" Color="LxColor.Error" data-lx-close />
         </Footer>
-    </BxModal>
+    </LxModal>
 
-    <BxModal Title="Shipping" Description="Back closes the open list first, then the modal.">
-        <ChildContent><BxButton Label="Modal with select" Variant="ButtonVariant.Outline" data-testid="modal-select-trigger" /></ChildContent>
+    <LxModal Title="Shipping" Description="Back closes the open list first, then the modal.">
+        <ChildContent><LxButton Label="Modal with select" Variant="ButtonVariant.Outline" data-testid="modal-select-trigger" /></ChildContent>
         <Body>
-            <BxFormField Label="Country">
-                <BxSelect @bind-Value="_country" Items="_countries" Placeholder="Choose a country" />
-            </BxFormField>
+            <LxFormField Label="Country">
+                <LxSelect @bind-Value="_country" Items="_countries" Placeholder="Choose a country" />
+            </LxFormField>
         </Body>
-        <Footer><BxButton Label="Close" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close /></Footer>
-    </BxModal>
+        <Footer><LxButton Label="Close" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close /></Footer>
+    </LxModal>
 
-    <BxSlideover Title="Settings" Description="A panel docked to an edge.">
-        <ChildContent><BxButton Label="Slideover" Variant="ButtonVariant.Outline" data-testid="slideover-trigger" /></ChildContent>
-        <Body><p class="text-sm text-(--blux-text-muted)">The panel keeps clear of the notch and the gesture bar.</p></Body>
-    </BxSlideover>
+    <LxSlideover Title="Settings" Description="A panel docked to an edge.">
+        <ChildContent><LxButton Label="Slideover" Variant="ButtonVariant.Outline" data-testid="slideover-trigger" /></ChildContent>
+        <Body><p class="text-sm text-(--lux-text-muted)">The panel keeps clear of the notch and the gesture bar.</p></Body>
+    </LxSlideover>
 
-    <BxDropdownMenu Items="_items" OnSelect="item => _last = item.Label">
-        <BxButton Label="Menu" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="menu-trigger" />
-    </BxDropdownMenu>
+    <LxDropdownMenu Items="_items" OnSelect="item => _last = item.Label">
+        <LxButton Label="Menu" Color="LxColor.Neutral" Variant="ButtonVariant.Outline" data-testid="menu-trigger" />
+    </LxDropdownMenu>
 
-    <BxPopover Placement="bottom-start">
-        <ChildContent><BxButton Label="Popover" Variant="ButtonVariant.Outline" data-testid="popover-trigger" /></ChildContent>
+    <LxPopover Placement="bottom-start">
+        <ChildContent><LxButton Label="Popover" Variant="ButtonVariant.Outline" data-testid="popover-trigger" /></ChildContent>
         <Content>
             <p class="w-56 p-4 text-sm" data-testid="popover-panel">Escape or a tap outside closes me.</p>
         </Content>
-    </BxPopover>
+    </LxPopover>
 
-    <BxButton Label="Toast" OnClick="ShowToast" data-testid="toast-trigger" />
+    <LxButton Label="Toast" OnClick="ShowToast" data-testid="toast-trigger" />
 </div>
 
-<p class="text-sm text-(--blux-text-muted)" data-testid="modal-state">Modal: @(_modal ? "open" : "closed")</p>
-<p class="text-sm text-(--blux-text-muted)" data-testid="menu-state">Last menu action: @(_last ?? "none")</p>
+<p class="text-sm text-(--lux-text-muted)" data-testid="modal-state">Modal: @(_modal ? "open" : "closed")</p>
+<p class="text-sm text-(--lux-text-muted)" data-testid="menu-state">Last menu action: @(_last ?? "none")</p>
 
 @code {
     private bool _modal;
     private string? _last;
     private string? _country;
 
-    private static readonly BxSelectItem[] _countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
+    private static readonly LxSelectItem[] _countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
 
-    private static readonly BxMenuItem[] _items =
+    private static readonly LxMenuItem[] _items =
     [
-        BxMenuItem.Heading("My account"),
+        LxMenuItem.Heading("My account"),
         new() { Label = "Profile" },
         new() { Label = "Billing" },
-        BxMenuItem.Separator(),
-        new() { Label = "Delete account", Color = BxColor.Error },
+        LxMenuItem.Separator(),
+        new() { Label = "Delete account", Color = LxColor.Error },
     ];
 
-    private async Task ShowToast() => await Toasts.Add(new BxToast
+    private async Task ShowToast() => await Toasts.Add(new LxToast
     {
         Title = "Changes saved",
         Description = "Your profile is up to date.",
-        Color = BxColor.Success,
+        Color = LxColor.Success,
     });
 }

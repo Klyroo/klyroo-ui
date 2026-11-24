@@ -29,7 +29,7 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> HeroLinks { get; } =
     [
         new("Get started", "getting-started/installation") { TrailingIcon = "ph:arrow-right" },
-        new("Command reference", "reference/commands") { Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Command reference", "reference/commands") { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     /// <summary>The Markdown of the snippet next to the hero: the same renderer as the pages, so it is highlighted and has a copy button too.</summary>
@@ -61,6 +61,6 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> CtaLinks { get; } =
     [
         new("Install Tern", "getting-started/installation") { TrailingIcon = "ph:arrow-right" },
-        new("Read the guides", "guides/configuration") { Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Read the guides", "guides/configuration") { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 }

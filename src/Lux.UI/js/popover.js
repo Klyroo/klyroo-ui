@@ -7,13 +7,13 @@ const HOVER_OPEN_MS = 100;
 const HOVER_CLOSE_MS = 250;
 
 /**
- * <bx-popover open placement="bottom" offset="8">
+ * <lx-popover open placement="bottom" offset="8">
  *   <span data-slot="trigger"><button>…</button></span>
  *   <div popover="auto" data-slot="content">…</div>
- * </bx-popover>
+ * </lx-popover>
  *
  * The "open" attribute is the intent rendered by Blazor; the native popover is the truth. Every change of the native
- * state (including Escape and light dismiss) is reported with a bubbling "bx-toggle" event.
+ * state (including Escape and light dismiss) is reported with a bubbling "lx-toggle" event.
  * When the content has role="menu", it behaves as a menu button: arrow keys and typeahead move between items, and
  * activating an item closes the menu.
  * A menu item with aria-haspopup="menu" and popovertarget opens a submenu: a sibling <div popover role="menu" data-slot="submenu">
@@ -21,8 +21,8 @@ const HOVER_CLOSE_MS = 250;
  * and focus its first item; ArrowLeft and Escape close it and give focus back to the item; the pointer opens it after a short pause
  * on the item and closes it after a pause on another item of the menu.
  */
-export class BxPopoverElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'open', 'placement', 'offset'];
+export class LxPopoverElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'open', 'placement', 'offset'];
 
   #content = null;
   #stopFloating = null;
@@ -60,8 +60,8 @@ export class BxPopoverElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else if (name === 'open') this.#apply();
   }
 
@@ -124,7 +124,7 @@ export class BxPopoverElement extends HTMLElement {
     if (!content) return;
     const trigger = this.#trigger;
     if (!trigger) {
-      if (!this.#warned) console.warn('<bx-popover>: the trigger must contain a <button>.', this);
+      if (!this.#warned) console.warn('<lx-popover>: the trigger must contain a <button>.', this);
       this.#warned = true;
       return;
     }
@@ -144,13 +144,13 @@ export class BxPopoverElement extends HTMLElement {
     if (!role) {
       // A role-less element cannot carry a name.
     } else if (content.hasAttribute('aria-label')) {
-      if (content.hasAttribute('data-bx-labelledby')) {
+      if (content.hasAttribute('data-lx-labelledby')) {
         content.removeAttribute('aria-labelledby');
-        content.removeAttribute('data-bx-labelledby');
+        content.removeAttribute('data-lx-labelledby');
       }
     } else if (!content.hasAttribute('aria-labelledby')) {
       content.setAttribute('aria-labelledby', trigger.id);
-      content.setAttribute('data-bx-labelledby', '');
+      content.setAttribute('data-lx-labelledby', '');
     }
   }
 
@@ -164,7 +164,7 @@ export class BxPopoverElement extends HTMLElement {
 
   // The items a menu owns: its own, not those of a submenu or of a menu nested in an item.
   #menuItems(menu = this.#content) {
-    return [...menu.querySelectorAll(MENU_ITEMS)].filter((item) => item.closest('[role="menu"]') === menu && item.closest('bx-popover') === this);
+    return [...menu.querySelectorAll(MENU_ITEMS)].filter((item) => item.closest('[role="menu"]') === menu && item.closest('lx-popover') === this);
   }
 
   #openSubmenus(menu) {
@@ -324,8 +324,8 @@ export class BxPopoverElement extends HTMLElement {
       if (!active || active === document.body || content.contains(active) || this.#submenus().some((sub) => sub.contains(active))) trigger?.focus({ preventScroll: true });
     }
 
-    this.#reporter.report('bx-toggle', { open });
+    this.#reporter.report('lx-toggle', { open });
   };
 }
 
-if (!customElements.get('bx-popover')) customElements.define('bx-popover', BxPopoverElement);
+if (!customElements.get('lx-popover')) customElements.define('lx-popover', LxPopoverElement);

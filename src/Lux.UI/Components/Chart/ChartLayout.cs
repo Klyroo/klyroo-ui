@@ -78,10 +78,10 @@ internal sealed class ChartLayout
     }
 
     public static ChartLayout Build(
-        BxChartType type,
+        LxChartType type,
         bool horizontal,
         bool stacked,
-        BxChartCurve curve,
+        LxChartCurve curve,
         IReadOnlyList<string> index,
         IReadOnlyList<IReadOnlyList<double?>> values,
         double width,
@@ -97,15 +97,15 @@ internal sealed class ChartLayout
         {
             Width = width,
             Height = height,
-            Horizontal = type == BxChartType.Bar && horizontal,
+            Horizontal = type == LxChartType.Bar && horizontal,
         };
-        if (type == BxChartType.Donut)
+        if (type == LxChartType.Donut)
         {
             layout.BuildDonut(values.Count == 0 ? [] : values[0], thickness);
         }
         else
         {
-            layout.BuildCartesian(type, stacked && type != BxChartType.Line, curve, index, values, xAxis, yAxis, hasXTitle, hasYTitle, format);
+            layout.BuildCartesian(type, stacked && type != LxChartType.Line, curve, index, values, xAxis, yAxis, hasXTitle, hasYTitle, format);
         }
         return layout;
     }
@@ -172,7 +172,7 @@ internal sealed class ChartLayout
     // ---- Cartesian charts (line, area, bar)
 
     private void BuildCartesian(
-        BxChartType type, bool stacked, BxChartCurve curve, IReadOnlyList<string> index, IReadOnlyList<IReadOnlyList<double?>> values,
+        LxChartType type, bool stacked, LxChartCurve curve, IReadOnlyList<string> index, IReadOnlyList<IReadOnlyList<double?>> values,
         bool xAxis, bool yAxis, bool hasXTitle, bool hasYTitle, Func<double, string> format)
     {
         var n = index.Count;
@@ -218,8 +218,8 @@ internal sealed class ChartLayout
                 else
                 {
                     edge[s, i] = v;
-                    lo[s, i] = type == BxChartType.Line ? v : Math.Min(0, v);
-                    hi[s, i] = type == BxChartType.Line ? v : Math.Max(0, v);
+                    lo[s, i] = type == LxChartType.Line ? v : Math.Min(0, v);
+                    hi[s, i] = type == LxChartType.Line ? v : Math.Max(0, v);
                 }
                 min = Math.Min(min, lo[s, i]);
                 max = Math.Max(max, hi[s, i]);
@@ -230,7 +230,7 @@ internal sealed class ChartLayout
             min = 0;
             max = 1;
         }
-        else if (type != BxChartType.Line)
+        else if (type != LxChartType.Line)
         {
             min = Math.Min(min, 0);
             max = Math.Max(max, 0);
@@ -276,7 +276,7 @@ internal sealed class ChartLayout
         var centers = new double[n];
         var bands = new (double From, double To)[n];
         double spacing;
-        if (type == BxChartType.Bar)
+        if (type == LxChartType.Bar)
         {
             spacing = span / n;
             for (var i = 0; i < n; i++)
@@ -315,7 +315,7 @@ internal sealed class ChartLayout
             Hits.Add(Horizontal ? new ChartHit(i, Left, from, Right - Left, to - from) : new ChartHit(i, from, Top, to - from, Bottom - Top));
         }
 
-        if (type == BxChartType.Bar)
+        if (type == LxChartType.Bar)
         {
             BuildBars(stacked, lo, hi, values, bands);
             return;
@@ -323,7 +323,7 @@ internal sealed class ChartLayout
 
         for (var s = 0; s < k; s++)
         {
-            BuildLine(type == BxChartType.Area, curve, Series[s], s, n, centers, lo, hi, edge, stacked);
+            BuildLine(type == LxChartType.Area, curve, Series[s], s, n, centers, lo, hi, edge, stacked);
         }
     }
 
@@ -355,7 +355,7 @@ internal sealed class ChartLayout
         }
     }
 
-    private void BuildLine(bool area, BxChartCurve curve, ChartSeriesShape shape, int s, int n, double[] centers, double[,] lo, double[,] hi, double[,] edge, bool stacked)
+    private void BuildLine(bool area, LxChartCurve curve, ChartSeriesShape shape, int s, int n, double[] centers, double[,] lo, double[,] hi, double[,] edge, bool stacked)
     {
         var upper = new List<(double X, double Y)>();
         var lower = new List<(double X, double Y)>();
@@ -398,7 +398,7 @@ internal sealed class ChartLayout
     internal static string N(double value) => Math.Round(value, 2).ToString("0.##", CultureInfo.InvariantCulture);
 
     /// <summary>An SVG path through the points: straight, stepped or a smooth monotone curve.</summary>
-    public static string CurvePath(IReadOnlyList<(double X, double Y)> points, BxChartCurve curve)
+    public static string CurvePath(IReadOnlyList<(double X, double Y)> points, LxChartCurve curve)
     {
         if (points.Count == 0)
         {
@@ -412,7 +412,7 @@ internal sealed class ChartLayout
             sb.Append("h0");
             return sb.ToString();
         }
-        if (curve == BxChartCurve.Monotone && points.Count > 2)
+        if (curve == LxChartCurve.Monotone && points.Count > 2)
         {
             var t = Tangents(points);
             for (var i = 0; i < points.Count - 1; i++)
@@ -429,7 +429,7 @@ internal sealed class ChartLayout
         for (var i = 1; i < points.Count; i++)
         {
             var (x, y) = points[i];
-            if (curve == BxChartCurve.Step)
+            if (curve == LxChartCurve.Step)
             {
                 var mid = (points[i - 1].X + x) / 2;
                 sb.Append(" L").Append(N(mid)).Append(' ').Append(N(points[i - 1].Y))

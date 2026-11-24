@@ -78,7 +78,7 @@ public class TailwindAssetTests
 
 public class TailwindCliResolveTests : IDisposable
 {
-    private readonly string _cache = Path.Combine(Path.GetTempPath(), "blux-tw-" + Guid.NewGuid().ToString("N"));
+    private readonly string _cache = Path.Combine(Path.GetTempPath(), "lux-tw-" + Guid.NewGuid().ToString("N"));
     private static readonly TailwindPlatform Windows = new("windows", "x64", false); // no chmod involved
     private static readonly byte[] Binary = "fake tailwind"u8.ToArray();
     private static string? Hash(string version, string asset) => TailwindAssets.Sha256(Binary);
@@ -221,8 +221,8 @@ public class TailwindCliResolveTests : IDisposable
     }
 
     [Theory]
-    [InlineData(false, "C:\\Users\\a\\AppData\\Local", "/home/a", "/home/a/.blux/tailwind")]
-    [InlineData(true, "C:\\Users\\a\\AppData\\Local", "C:\\Users\\a", "C:\\Users\\a\\AppData\\Local/Blux/tailwind")]
+    [InlineData(false, "C:\\Users\\a\\AppData\\Local", "/home/a", "/home/a/.lux/tailwind")]
+    [InlineData(true, "C:\\Users\\a\\AppData\\Local", "C:\\Users\\a", "C:\\Users\\a\\AppData\\Local/Lux/tailwind")]
     public void The_default_cache_is_per_user_and_shared(bool windows, string local, string home, string expected)
     {
         var actual = TailwindCli.DefaultCacheDir(windows, local, home)!;
@@ -283,14 +283,14 @@ public class LuxResolveTailwindTaskTests
         var engine = new Engine();
         var task = new LuxResolveTailwind { BuildEngine = engine, Executable = "/nonexistent/tailwindcss", Version = "4.3.5", CacheDir = "unused" };
         Assert.False(task.Execute());
-        Assert.Contains(engine.Errors, e => e.StartsWith("BLUXTW001") && e.Contains("LuxTailwindExecutable"));
+        Assert.Contains(engine.Errors, e => e.StartsWith("LUXTW001") && e.Contains("LuxTailwindExecutable"));
     }
 
     [Fact]
     public void Offline_with_an_empty_cache_is_an_error_naming_the_property()
     {
         var engine = new Engine();
-        var cache = Path.Combine(Path.GetTempPath(), "blux-tw-" + Guid.NewGuid().ToString("N"));
+        var cache = Path.Combine(Path.GetTempPath(), "lux-tw-" + Guid.NewGuid().ToString("N"));
         var task = new LuxResolveTailwind { BuildEngine = engine, Version = "4.3.5", CacheDir = cache, Offline = true };
         Assert.False(task.Execute());
         Assert.Contains(engine.Errors, e => e.Contains("Offline") && e.Contains("LuxTailwindExecutable"));

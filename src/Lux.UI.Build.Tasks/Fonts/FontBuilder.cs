@@ -11,7 +11,7 @@ namespace Lux.UI.Build.Fonts
         public string CacheDir { get; set; } = "";
         public string OutputDir { get; set; } = "";
         /// <summary>Route of the generated files, relative to the site root.</summary>
-        public string UrlBase { get; set; } = "_blux/fonts";
+        public string UrlBase { get; set; } = "_lux/fonts";
         public TimeSpan CacheMaxAge { get; set; } = TimeSpan.FromDays(7);
         /// <summary>Never touch the network: everything must already be in the cache.</summary>
         public bool Offline { get; set; }
@@ -36,8 +36,8 @@ namespace Lux.UI.Build.Fonts
 
     internal static class FontBuilder
     {
-        public const string CssFileName = "blux.fonts.css";
-        public const string ManifestFileName = "blux.fonts.json";
+        public const string CssFileName = "lux.fonts.css";
+        public const string ManifestFileName = "lux.fonts.json";
         private const string StampFileName = ".stamp";
         private const string Version = "2";
         internal static readonly string AssemblyVersion = typeof(FontBuilder).Assembly.ManifestModule.ModuleVersionId.ToString("N");
@@ -151,9 +151,9 @@ namespace Lux.UI.Build.Fonts
                     var chosen = roles.First(r => r.Role == role);
                     foreach (var other in roles.Where(r => r.Role == role).Skip(1))
                     {
-                        options.Warn($"Two fonts have the role '{role}' ('{chosen.Family}' and '{other.Family}'): only '{chosen.Family}' is used for --blux-font-{role}.");
+                        options.Warn($"Two fonts have the role '{role}' ('{chosen.Family}' and '{other.Family}'): only '{chosen.Family}' is used for --lux-font-{role}.");
                     }
-                    css.Append("  --blux-font-").Append(role).Append(": ").Append(chosen.Value).Append(";\n");
+                    css.Append("  --lux-font-").Append(role).Append(": ").Append(chosen.Value).Append(";\n");
                 }
                 css.Append("}\n");
             }

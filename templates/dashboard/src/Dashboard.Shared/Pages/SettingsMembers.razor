@@ -6,78 +6,78 @@
 <PageTitle>Members · Settings</PageTitle>
 
 <SettingsPage Heading="Members" Description="Who can use this team, and what they can do." TestId="settings-members">
-    <BxCard>
+    <LxCard>
         <Header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="font-semibold text-(--blux-text-highlighted)">Team members</h2>
-                    <p class="text-sm text-(--blux-text-muted)" data-testid="member-count">@Members.Items.Count people</p>
+                    <h2 class="font-semibold text-(--lux-text-highlighted)">Team members</h2>
+                    <p class="text-sm text-(--lux-text-muted)" data-testid="member-count">@Members.Items.Count people</p>
                 </div>
-                <BxButton Label="Invite people" Size="BxSize.Sm" OnClick="@(() => _inviteOpen = true)" data-testid="invite-button">
-                    <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
-                </BxButton>
+                <LxButton Label="Invite people" Size="LxSize.Sm" OnClick="@(() => _inviteOpen = true)" data-testid="invite-button">
+                    <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
+                </LxButton>
             </div>
         </Header>
         <ChildContent>
             <div class="flex flex-col gap-4">
-                <BxInput @bind-Value="_search" Immediate Type="search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
-                    <LeadingIcon>@BxIcons.Named("search")</LeadingIcon>
-                </BxInput>
-                <ul class="flex flex-col divide-y divide-(--blux-border)" aria-label="Members" data-testid="member-list">
+                <LxInput @bind-Value="_search" Immediate Type="search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
+                    <LeadingIcon>@LxIcons.Named("search")</LeadingIcon>
+                </LxInput>
+                <ul class="flex flex-col divide-y divide-(--lux-border)" aria-label="Members" data-testid="member-list">
                     @foreach (var member in Visible())
                     {
                         <li class="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0" data-testid="member">
-                            <BxAvatar Alt="@member.Name" />
+                            <LxAvatar Alt="@member.Name" />
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-(--blux-text-highlighted)">
+                                <p class="truncate text-sm font-medium text-(--lux-text-highlighted)">
                                     @member.Name
                                     @if (!member.Active)
                                     {
-                                        <BxBadge Label="Invited" Variant="BxVariant.Subtle" Color="BxColor.Warning" Size="BxSize.Sm" class="ms-1" />
+                                        <LxBadge Label="Invited" Variant="LxVariant.Subtle" Color="LxColor.Warning" Size="LxSize.Sm" class="ms-1" />
                                     }
                                 </p>
-                                <p class="truncate text-xs text-(--blux-text-muted)">@member.Email</p>
+                                <p class="truncate text-xs text-(--lux-text-muted)">@member.Email</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <BxSelect Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="BxSize.Sm" />
-                                <BxButton Square Size="BxSize.Sm" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Disabled="@(member.Role == "Owner")" OnClick="@(() => Remove(member))" aria-label="@($"Remove {member.Name}")">
-                                    <LeadingIcon>@BxIcons.Named("trash")</LeadingIcon>
-                                </BxButton>
+                                <LxSelect Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="LxSize.Sm" />
+                                <LxButton Square Size="LxSize.Sm" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Disabled="@(member.Role == "Owner")" OnClick="@(() => Remove(member))" aria-label="@($"Remove {member.Name}")">
+                                    <LeadingIcon>@LxIcons.Named("trash")</LeadingIcon>
+                                </LxButton>
                             </div>
                         </li>
                     }
                 </ul>
                 @if (!Visible().Any())
                 {
-                    <p class="text-sm text-(--blux-text-muted)" role="status">No member matches "@_search".</p>
+                    <p class="text-sm text-(--lux-text-muted)" role="status">No member matches "@_search".</p>
                 }
             </div>
         </ChildContent>
-    </BxCard>
+    </LxCard>
 </SettingsPage>
 
-@* The people come from a directory searched while you type: BxSelectMenu loads one page of matches per request and shows a loading state in between. *@
-<BxModal @bind-Open="_inviteOpen" Title="Invite people" Description="They get an email and join with the role you choose." data-testid="invite-dialog">
+@* The people come from a directory searched while you type: LxSelectMenu loads one page of matches per request and shows a loading state in between. *@
+<LxModal @bind-Open="_inviteOpen" Title="Invite people" Description="They get an email and join with the role you choose." data-testid="invite-dialog">
     <Body>
         <div class="flex flex-col gap-4">
-            <BxFormField Label="People">
-                <BxSelectMenu OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
+            <LxFormField Label="People">
+                <LxSelectMenu OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
                               Value="_invited" ValueChanged="@(v => _invited = v ?? [])" data-testid="invite-people" />
-            </BxFormField>
-            <BxFormField Label="Role">
-                <BxSelect Items="_inviteRoles" @bind-Value="_inviteRole" />
-            </BxFormField>
+            </LxFormField>
+            <LxFormField Label="Role">
+                <LxSelect Items="_inviteRoles" @bind-Value="_inviteRole" />
+            </LxFormField>
         </div>
     </Body>
     <Footer>
-        <BxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" data-bx-close />
-        <BxButton Label="@(_invited.Count == 0 ? "Send invitations" : $"Invite {_invited.Count}")" Disabled="@(_invited.Count == 0)" OnClick="InviteAsync" data-bx-close data-testid="invite-send" />
+        <LxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
+        <LxButton Label="@(_invited.Count == 0 ? "Send invitations" : $"Invite {_invited.Count}")" Disabled="@(_invited.Count == 0)" OnClick="InviteAsync" data-lx-close data-testid="invite-send" />
     </Footer>
-</BxModal>
+</LxModal>
 
 @code {
-    private static readonly BxSelectItem[] _roles = [.. PeopleData.Roles.Select(r => new BxSelectItem(r, r))];
-    private static readonly BxSelectItem[] _inviteRoles = [.. PeopleData.Roles.Where(r => r != "Owner").Select(r => new BxSelectItem(r, r))];
+    private static readonly LxSelectItem[] _roles = [.. PeopleData.Roles.Select(r => new LxSelectItem(r, r))];
+    private static readonly LxSelectItem[] _inviteRoles = [.. PeopleData.Roles.Where(r => r != "Owner").Select(r => new LxSelectItem(r, r))];
 
     private string? _search;
     private bool _inviteOpen;
@@ -100,14 +100,14 @@
     private async Task Remove(Member member)
     {
         Members.Remove(member.Id);
-        await Toasts.Add(new BxToast { Title = "Member removed", Description = member.Name, Color = BxColor.Success });
+        await Toasts.Add(new LxToast { Title = "Member removed", Description = member.Name, Color = LxColor.Success });
     }
 
     private async Task InviteAsync()
     {
         var people = await PeopleDirectory.Resolve(_invited, CancellationToken.None);
         foreach (var person in people) Members.Invite(person.Value, person.Label, _inviteRole ?? "Member");
-        await Toasts.Add(new BxToast { Title = people.Count == 1 ? "Invitation sent" : $"{people.Count} invitations sent", Color = BxColor.Success });
+        await Toasts.Add(new LxToast { Title = people.Count == 1 ? "Invitation sent" : $"{people.Count} invitations sent", Color = LxColor.Success });
         _invited = [];
     }
 

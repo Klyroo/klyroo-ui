@@ -1,6 +1,6 @@
 // Shared by the build task (namespace Lux.UI.Build) and by the library (Lux.UI.Internal), which compiles this file as a link,
 // so both read an icon name the same way.
-#if BLUX_TASKS
+#if LUX_TASKS
 namespace Lux.UI.Build
 #else
 namespace Lux.UI.Internal
@@ -39,7 +39,7 @@ namespace Lux.UI.Internal
     }
 
     /// <summary>
-    /// Icon names accepted by Blux: <c>i-{collection}-{name}</c> (<c>i-lucide-lightbulb</c>), <c>{collection}:{name}</c>
+    /// Icon names accepted by Lux: <c>i-{collection}-{name}</c> (<c>i-lucide-lightbulb</c>), <c>{collection}:{name}</c>
     /// (<c>lucide:lightbulb</c>) and, for compatibility with the names Lux.UI always accepted, a bare Lucide name (<c>lightbulb</c>).
     /// A collection prefix may contain dashes (<c>simple-icons</c>), so the <c>i-</c> form takes the longest known prefix that fits:
     /// <c>i-mdi-light-home</c> is <c>mdi-light:home</c>. The <c>prefix:name</c> form never needs a list.

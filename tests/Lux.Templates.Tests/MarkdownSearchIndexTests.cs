@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text.Json;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;

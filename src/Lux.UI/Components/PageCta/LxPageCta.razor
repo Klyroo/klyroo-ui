@@ -1,0 +1,59 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+@using Lux.UI.Internal
+
+@* A call to action band, named by its title. In the solid variant use a neutral button, a primary one would vanish. *@
+<section data-color="@Color.Value" aria-labelledby="@(Title is null ? null : _titleId)" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div class="@_slots["container"]">
+        <div class="@_slots["wrapper"]">
+            @if (Title is not null)
+            {
+                <SectionHeading Level="HeadingLevel" Id="@_titleId" Class="@_slots["title"]">@Title</SectionHeading>
+            }
+            @if (Description is not null)
+            {
+                <p class="@_slots["description"]" data-slot="description">@Description</p>
+            }
+            @if (ChildContent is not null)
+            {
+                <div class="@_slots["body"]" data-slot="body">@ChildContent</div>
+            }
+        </div>
+        @PageRender.Buttons(Links, _slots["links"], LxSize.Lg, Options.Icons)
+    </div>
+</section>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly string _titleId = NewId("pagecta");
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Links rendered as buttons beside (horizontal) or under (vertical) the text.</summary>
+    [Parameter] public IReadOnlyList<PageLinkItem>? Links { get; set; }
+
+    /// <summary>Extra content under the description.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public LxVariant Variant { get; set; } = LxVariant.Outline;
+    [Parameter] public LxColor Color { get => _colorParameter ?? DefaultColor(LxColor.Primary); set => _colorParameter = value; }
+    private LxColor? _colorParameter;
+
+    /// <summary>Horizontal puts the links beside the text from the lg breakpoint; vertical centers everything.</summary>
+    [Parameter] public LxOrientation Orientation { get; set; } = LxOrientation.Horizontal;
+
+    /// <summary>Shows the links before the text in a horizontal band.</summary>
+    [Parameter] public bool Reverse { get; set; }
+
+    /// <summary>Level of the title heading, 1 to 6.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 2;
+    [Parameter] public PageCtaUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageCta, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["orientation"] = Orientation == LxOrientation.Vertical ? "vertical" : "horizontal",
+            ["reverse"] = VariantValue.Of(Reverse),
+        }, Ui, "root");
+}

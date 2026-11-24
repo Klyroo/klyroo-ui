@@ -2,7 +2,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>The YAML block at the top of a page. Keys are camelCase; keys that are not listed here are ignored.</summary>
 public sealed class FrontMatter

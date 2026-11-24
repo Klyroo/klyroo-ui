@@ -53,10 +53,10 @@ dotnet add package Lux.UI
 | Package | What it is |
 |---|---|
 | `Lux.UI` | The components, themes, 12 locales and the build-time features (fonts, icons, Tailwind). |
-| `Lux.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `BxImage`. |
+| `Lux.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `LxImage`. |
 | `Lux.UI.Images.Local` | A local image optimizer endpoint (NetVips). |
 | `Lux.UI.Server` | Server-side request access (`services.AddLuxServer()`): lets components read cookies, such as the time zone of a data list, in static rendering and prerendering. ASP.NET Core only; call it in the server project. |
-| `Lux.UI.Tools` | Data-heavy components built on Lux.UI (the data list and its parts, under construction). `services.AddLuxUiTools()` registers it, and Lux.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `lux.css`. With `<LuxTailwind>true</LuxTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/blux/blux-tools.theme.css` after `lux.theme.css` and set `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>`. Depends on exactly the same version of `Lux.UI`. |
+| `Lux.UI.Tools` | Data-heavy components built on Lux.UI (the data list and its parts, under construction). `services.AddLuxUiTools()` registers it, and Lux.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `lux.css`. With `<LuxTailwind>true</LuxTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/lux/lux-tools.theme.css` after `lux.theme.css` and set `<LuxToolsOwnTailwind>true</LuxToolsOwnTailwind>`. Depends on exactly the same version of `Lux.UI`. |
 | `Lux.UI.Tools.Query` | The Blazor-free request and filter models of the data list, for API servers (no ASP.NET Core, no Lux.UI). |
 | `Lux.UI.Mcp` | The MCP server for agents (a dotnet tool). |
 
@@ -71,8 +71,8 @@ Styles come in two modes. Without Tailwind in your app, load the precompiled sty
 
 ```razor
 @* App.razor, in <head> *@
-<BxColorModeScript />
-<BxThemeStyle /> @* only needed when you configure palettes *@
+<LxColorModeScript />
+<LxThemeStyle /> @* only needed when you configure palettes *@
 <link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.preflight.css"]" />
 <link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.css"]" />
 ```
@@ -80,12 +80,12 @@ Styles come in two modes. Without Tailwind in your app, load the precompiled sty
 ```razor
 @using Lux.UI
 
-<BxButton Label="Save" OnClick="Save" />
-<BxSwitch @bind-Value="notify" Label="Email notifications" />
-<BxPopover @bind-Open="open">
-    <ChildContent><BxButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
+<LxButton Label="Save" OnClick="Save" />
+<LxSwitch @bind-Value="notify" Label="Email notifications" />
+<LxPopover @bind-Open="open">
+    <ChildContent><LxButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
     <Content><p class="p-3">Panel</p></Content>
-</BxPopover>
+</LxPopover>
 ```
 
 ### Render modes
@@ -98,12 +98,12 @@ in a layer (`@import url(bootstrap.css) layer(bootstrap);`): unlayered CSS overr
 
 ### Styles with Tailwind v4 compiled by your app
 
-Every build copies the Blux theme (tokens, dark variant, the classes components use) to `obj/blux/lux.theme.css`.
+Every build copies the Lux theme (tokens, dark variant, the classes components use) to `obj/lux/lux.theme.css`.
 Import it after Tailwind, and load only your compiled stylesheet (not `lux.css` nor `lux.preflight.css`):
 
 ```css
 @import "tailwindcss";
-@import "../obj/blux/lux.theme.css"; /* path relative to this file */
+@import "../obj/lux/lux.theme.css"; /* path relative to this file */
 ```
 
 `Class` and `Ui` then accept any utility, since your Tailwind build sees them in your Razor files.
@@ -112,44 +112,44 @@ Import it after Tailwind, and load only your compiled stylesheet (not `lux.css` 
 
 Twelve locales are built in (English, French, German, Spanish, Italian, Portuguese, Brazilian Portuguese, Dutch, Japanese, Simplified
 Chinese, Arabic and Russian). Components follow the culture of the user on their own: with ASP.NET Core request localization on the
-server, or the culture of the browser in WebAssembly, no code is needed. A `BxApp` writes `lang` and `dir` (Arabic is right to left).
+server, or the culture of the browser in WebAssembly, no code is needed. A `LxApp` writes `lang` and `dir` (Arabic is right to left).
 
 ```razor
-<BxApp Locale="BxLocales.Fr"> @Body </BxApp>
+<LxApp Locale="LxLocales.Fr"> @Body </LxApp>
 ```
 
 ```csharp
-builder.Services.AddLuxUi(o => o.Locale = BxLocales.Extend(BxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
+builder.Services.AddLuxUi(o => o.Locale = LxLocales.Extend(LxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
 ```
 
 See the Internationalization guide of the documentation site.
 
 ## Customize
 
-- **Palettes**: map the semantic colors to Tailwind palettes or your own. Blux computes the
-  fill, text and on-fill tokens so the contrast rules still hold, and `BxThemeStyle` (in `<head>`, next to
-  `BxColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
+- **Palettes**: map the semantic colors to Tailwind palettes or your own. Lux computes the
+  fill, text and on-fill tokens so the contrast rules still hold, and `LxThemeStyle` (in `<head>`, next to
+  `LxColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
 
   ```csharp
   builder.Services.AddLuxUi(o =>
   {
-      o.Colors.Primary = BxPalette.Blue;                 // 26 Tailwind v4 palettes, or BxPalette.Custom("brand", shades)
-      o.Colors.Neutral = BxPalette.Zinc;                 // also drives the text, background and border tokens
-      o.Colors.Add("tertiary", BxPalette.Indigo);        // then Color="@("tertiary")", no CSS to write
-      o.Defaults.Color = BxColor.Secondary;              // used when a component's Color is not set (Size likewise)
+      o.Colors.Primary = LxPalette.Blue;                 // 26 Tailwind v4 palettes, or LxPalette.Custom("brand", shades)
+      o.Colors.Neutral = LxPalette.Zinc;                 // also drives the text, background and border tokens
+      o.Colors.Add("tertiary", LxPalette.Indigo);        // then Color="@("tertiary")", no CSS to write
+      o.Defaults.Color = LxColor.Secondary;              // used when a component's Color is not set (Size likewise)
   });
   ```
 
-- **Tokens** (works everywhere): override `--blux-primary`, `--blux-radius`, `--blux-bg`… in your CSS, in both
+- **Tokens** (works everywhere): override `--lux-primary`, `--lux-radius`, `--lux-bg`… in your CSS, in both
   `:root` and `.dark`. Your unlayered `:root` rule beats the library's dark values, so a color overridden only in
   `:root` keeps its light value in dark mode while its paired `-contrast` token still flips. The full list: text
-  (`--blux-text`, `-text-toned`, `-text-muted`, `-text-dimmed`, `-text-highlighted`, `-text-inverted`), backgrounds
-  (`--blux-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--blux-border`,
-  `-border-muted`, `-border-accented`, `-border-inverted`), `--blux-radius` (the `rounded-*` scale is computed from it),
-  `--blux-container`, `--blux-header-height` and `--blux-chart-1` to `-6` (unset by default, they fall back to the semantic colors).
+  (`--lux-text`, `-text-toned`, `-text-muted`, `-text-dimmed`, `-text-highlighted`, `-text-inverted`), backgrounds
+  (`--lux-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--lux-border`,
+  `-border-muted`, `-border-accented`, `-border-inverted`), `--lux-radius` (the `rounded-*` scale is computed from it),
+  `--lux-container`, `--lux-header-height` and `--lux-chart-1` to `-6` (unset by default, they fall back to the semantic colors).
 - **Fonts**: name them in the project file, and the build downloads and self-hosts them (no request to a font provider
-  when the page runs), with `@font-face`, a metrics-adjusted fallback face and a preload. Put `<BxFonts />` in `<head>`.
-  They set `--blux-font-sans` and `--blux-font-mono`, which the page font, `font-sans` and `font-mono` follow.
+  when the page runs), with `@font-face`, a metrics-adjusted fallback face and a preload. Put `<LxFonts />` in `<head>`.
+  They set `--lux-font-sans` and `--lux-font-mono`, which the page font, `font-sans` and `font-mono` follow.
 
   ```xml
   <ItemGroup>
@@ -160,15 +160,15 @@ See the Internationalization guide of the documentation site.
 - **Tailwind utilities** (Tailwind compiled by your app): `text-default`, `text-muted`, `text-dimmed`, `text-toned`,
   `text-highlighted`, `text-inverted`, `bg-default`, `bg-muted`, `bg-elevated`, `bg-accented`, `bg-inverted`,
   `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic
-  colors (`bg-primary`, `text-error`…) and `rounded-*`, which follows `--blux-radius`.
-- **Custom color by hand**: `Color="@("brand")"` plus `[data-color='brand'] { --bx-color: …; --bx-color-text: …; --bx-color-contrast: …; }`.
+  colors (`bg-primary`, `text-error`…) and `rounded-*`, which follows `--lux-radius`.
+- **Custom color by hand**: `Color="@("brand")"` plus `[data-color='brand'] { --lx-color: …; --lx-color-text: …; --lx-color-contrast: …; }`.
 - **Global theme**: `AddLuxUi(o => o.Button.Slot("base", "font-semibold"))`.
 - **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
   utilities, so they need Tailwind compiled by your app; without it, only classes already in `lux.css` or your own CSS apply.
 
 ## Images
 
-`BxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in;
+`LxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in;
 the avatar, blog post, changelog, logos and chat attachment components use it and take an `ImageOptions` parameter.
 Without a provider images are rendered as they are. Pick one in `AddLuxUi`:
 
@@ -178,17 +178,17 @@ o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Lux.UI.Images: also 
 ```
 
 ```razor
-<BxImage Src="/img/team.jpg" Alt="The team" Width="640" Height="360" Sizes="100vw md:640px" Format="webp" />
+<LxImage Src="/img/team.jpg" Alt="The team" Width="640" Height="360" Sizes="100vw md:640px" Format="webp" />
 ```
 
 See the "Images" guide of the docs site.
 
 ## MAUI and Blazor Hybrid
 
-Blux runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
-`maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `BxHead` and a
+Lux runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
+`maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `LxHead` and a
 `HeadOutlet` root component); the local image optimizer is web only. Tooltips follow touch, targets are 44 px on coarse pointers, safe areas are respected, and an experimental
-TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Lux.Maui` and the "MAUI and Blazor Hybrid" guide.
+TV mode (`<LxApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Lux.Maui` and the "MAUI and Blazor Hybrid" guide.
 
 ## AI tooling
 

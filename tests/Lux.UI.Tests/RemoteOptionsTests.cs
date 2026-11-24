@@ -3,20 +3,20 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI.Tests;
 
-/// <summary>The loading logic behind OptionsProvider of BxSelectMenu and BxInputMenu, without any rendering.</summary>
+/// <summary>The loading logic behind OptionsProvider of LxSelectMenu and LxInputMenu, without any rendering.</summary>
 public class RemoteOptionsTests
 {
     /// <summary>A source of 60 options named Item 1..60 that records its requests and can be held back.</summary>
     private sealed class Source
     {
-        public List<BxOptionsRequest> Requests { get; } = [];
+        public List<LxOptionsRequest> Requests { get; } = [];
         public List<TaskCompletionSource> Gates { get; } = [];
         public bool Hold { get; set; }
         public bool Fail { get; set; }
         public bool Cursors { get; set; }
         public int Total { get; set; } = 60;
 
-        public async ValueTask<BxOptionsResult> Load(BxOptionsRequest request, CancellationToken ct)
+        public async ValueTask<LxOptionsResult> Load(LxOptionsRequest request, CancellationToken ct)
         {
             Requests.Add(request);
             if (Hold)
@@ -30,18 +30,18 @@ public class RemoteOptionsTests
             var start = Cursors ? (request.Cursor is null ? 0 : int.Parse(request.Cursor)) : request.Skip;
             var matches = Enumerable.Range(1, Total).Select(i => $"Item {i}")
                 .Where(l => request.Search.Length == 0 || l.Contains(request.Search, StringComparison.OrdinalIgnoreCase)).ToList();
-            var page = matches.Skip(start).Take(request.Take).Select(l => new BxSelectItem(l.Replace("Item ", "i"), l)).ToList();
+            var page = matches.Skip(start).Take(request.Take).Select(l => new LxSelectItem(l.Replace("Item ", "i"), l)).ToList();
             var end = start + page.Count;
             return Cursors
-                ? new BxOptionsResult(page, NextCursor: end < matches.Count ? end.ToString() : null)
-                : new BxOptionsResult(page, HasMore: end < matches.Count);
+                ? new LxOptionsResult(page, NextCursor: end < matches.Count ? end.ToString() : null)
+                : new LxOptionsResult(page, HasMore: end < matches.Count);
         }
     }
 
-    private static (BxRemoteOptions Options, Func<int> Changes) Create(Source source, int pageSize = 25)
+    private static (LxRemoteOptions Options, Func<int> Changes) Create(Source source, int pageSize = 25)
     {
         var changes = 0;
-        var options = new BxRemoteOptions(source.Load, () => changes++) { PageSize = pageSize };
+        var options = new LxRemoteOptions(source.Load, () => changes++) { PageSize = pageSize };
         return (options, () => changes);
     }
 
@@ -50,22 +50,22 @@ public class RemoteOptionsTests
     {
         var source = new Source();
         var (options, _) = Create(source);
-        Assert.Equal(BxRemoteStatus.Idle, options.Status);
+        Assert.Equal(LxRemoteStatus.Idle, options.Status);
 
         await options.SearchAsync("");
 
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
         Assert.Equal(25, options.Items.Count);
         Assert.True(options.HasMore);
-        Assert.Equal(new BxOptionsRequest("", 0, 25, null), source.Requests[0]);
+        Assert.Equal(new LxOptionsRequest("", 0, 25, null), source.Requests[0]);
 
         await options.LoadMoreAsync();
         await options.LoadMoreAsync();
 
         Assert.Equal(60, options.Items.Count);
         Assert.False(options.HasMore);
-        Assert.Equal(new BxOptionsRequest("", 25, 25, null), source.Requests[1]);
-        Assert.Equal(new BxOptionsRequest("", 50, 25, null), source.Requests[2]);
+        Assert.Equal(new LxOptionsRequest("", 25, 25, null), source.Requests[1]);
+        Assert.Equal(new LxOptionsRequest("", 50, 25, null), source.Requests[2]);
 
         await options.LoadMoreAsync();
         Assert.Equal(3, source.Requests.Count);
@@ -81,7 +81,7 @@ public class RemoteOptionsTests
         Assert.True(options.HasMore);
         await options.LoadMoreAsync();
 
-        Assert.Equal(new BxOptionsRequest("", 30, 30, "30"), source.Requests[1]);
+        Assert.Equal(new LxOptionsRequest("", 30, 30, "30"), source.Requests[1]);
         Assert.Equal(60, options.Items.Count);
         Assert.False(options.HasMore);
     }
@@ -124,26 +124,26 @@ public class RemoteOptionsTests
 
         await first;
         Assert.Equal(listed, options.Items.Select(i => i.Label));
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
         Assert.Equal("2", options.Term);
     }
 
     [Fact]
     public async Task A_late_answer_that_the_provider_did_not_stop_is_ignored_too()
     {
-        var gates = new List<TaskCompletionSource<BxOptionsResult>>();
-        var options = new BxRemoteOptions((_, _) =>
+        var gates = new List<TaskCompletionSource<LxOptionsResult>>();
+        var options = new LxRemoteOptions((_, _) =>
         {
-            var gate = new TaskCompletionSource<BxOptionsResult>();
+            var gate = new TaskCompletionSource<LxOptionsResult>();
             gates.Add(gate);
-            return new ValueTask<BxOptionsResult>(gate.Task);
+            return new ValueTask<LxOptionsResult>(gate.Task);
         }, () => { });
 
         var first = options.SearchAsync("a");
         var second = options.SearchAsync("b");
-        gates[1].SetResult(new BxOptionsResult([new BxSelectItem("b1", "B one")]));
+        gates[1].SetResult(new LxOptionsResult([new LxSelectItem("b1", "B one")]));
         await second;
-        gates[0].SetResult(new BxOptionsResult([new BxSelectItem("a1", "A one")]));
+        gates[0].SetResult(new LxOptionsResult([new LxSelectItem("a1", "A one")]));
         await first;
 
         Assert.Equal(["b1"], options.Items.Select(i => i.Value));
@@ -158,14 +158,14 @@ public class RemoteOptionsTests
         source.Hold = true;
 
         var more = options.LoadMoreAsync();
-        Assert.Equal(BxRemoteStatus.LoadingMore, options.Status);
+        Assert.Equal(LxRemoteStatus.LoadingMore, options.Status);
         var search = options.SearchAsync("Item 5");
         source.Gates[1].SetResult();
         await search;
         await more;
 
         Assert.All(options.Items, i => Assert.Contains("Item 5", i.Label));
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class RemoteOptionsTests
 
         source.Hold = true;
         var search = options.SearchAsync("Item 4");
-        Assert.Equal(BxRemoteStatus.Loading, options.Status);
+        Assert.Equal(LxRemoteStatus.Loading, options.Status);
         Assert.Equal(50, options.Items.Count);
         Assert.Equal(generation, options.Generation);
 
@@ -200,12 +200,12 @@ public class RemoteOptionsTests
         Assert.Equal(25, options.Items.Count);
 
         await options.SearchAsync("It");
-        Assert.Equal(BxRemoteStatus.TooShort, options.Status);
+        Assert.Equal(LxRemoteStatus.TooShort, options.Status);
         Assert.Empty(options.Items);
         Assert.Single(source.Requests);
 
         await options.SearchAsync("Ite");
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
         Assert.Equal(2, source.Requests.Count);
         Assert.Equal("Ite", source.Requests[1].Search);
     }
@@ -219,7 +219,7 @@ public class RemoteOptionsTests
 
         await options.SearchAsync(" ab ");
 
-        Assert.Equal(BxRemoteStatus.TooShort, options.Status);
+        Assert.Equal(LxRemoteStatus.TooShort, options.Status);
         Assert.Empty(source.Requests);
     }
 
@@ -231,13 +231,13 @@ public class RemoteOptionsTests
 
         await options.SearchAsync("");
 
-        Assert.Equal(BxRemoteStatus.Error, options.Status);
+        Assert.Equal(LxRemoteStatus.Error, options.Status);
         Assert.Empty(options.Items);
 
         source.Fail = false;
         await options.RetryAsync();
 
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
         Assert.Equal(25, options.Items.Count);
         Assert.Equal(source.Requests[0], source.Requests[1]);
     }
@@ -252,7 +252,7 @@ public class RemoteOptionsTests
 
         await options.LoadMoreAsync();
 
-        Assert.Equal(BxRemoteStatus.Error, options.Status);
+        Assert.Equal(LxRemoteStatus.Error, options.Status);
         Assert.Equal(25, options.Items.Count);
 
         // Nothing else loads while the error is shown.
@@ -263,7 +263,7 @@ public class RemoteOptionsTests
         await options.RetryAsync();
 
         Assert.Equal(50, options.Items.Count);
-        Assert.Equal(new BxOptionsRequest("", 25, 25, null), source.Requests[^1]);
+        Assert.Equal(new LxOptionsRequest("", 25, 25, null), source.Requests[^1]);
     }
 
     [Fact]
@@ -276,20 +276,20 @@ public class RemoteOptionsTests
 
         await options.SearchAsync("x");
 
-        Assert.Equal(BxRemoteStatus.Loaded, options.Status);
+        Assert.Equal(LxRemoteStatus.Loaded, options.Status);
     }
 
     [Fact]
     public async Task A_value_returned_twice_is_listed_once_but_the_skip_counts_what_was_received()
     {
         var calls = 0;
-        var requests = new List<BxOptionsRequest>();
-        var options = new BxRemoteOptions((request, _) =>
+        var requests = new List<LxOptionsRequest>();
+        var options = new LxRemoteOptions((request, _) =>
         {
             requests.Add(request);
-            return new ValueTask<BxOptionsResult>(calls++ == 0
-                ? new BxOptionsResult([new("a", "A"), new("b", "B")], HasMore: true)
-                : new BxOptionsResult([new("b", "B"), new("c", "C")]));
+            return new ValueTask<LxOptionsResult>(calls++ == 0
+                ? new LxOptionsResult([new("a", "A"), new("b", "B")], HasMore: true)
+                : new LxOptionsResult([new("b", "B"), new("c", "C")]));
         }, () => { });
 
         await options.SearchAsync("");
@@ -319,12 +319,12 @@ public class RemoteOptionsTests
     public async Task ResolveSelected_runs_once_for_the_values_nobody_knows()
     {
         var (options, _) = Create(new Source());
-        options.StaticItems = [new BxSelectItem("given", "Given")];
+        options.StaticItems = [new LxSelectItem("given", "Given")];
         var asked = new List<string[]>();
-        BxSelectedOptionsResolver resolver = (values, _) =>
+        LxSelectedOptionsResolver resolver = (values, _) =>
         {
             asked.Add([.. values]);
-            return new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("i7", "Item 7")]);
+            return new ValueTask<IReadOnlyList<LxSelectItem>>([new LxSelectItem("i7", "Item 7")]);
         };
 
         await options.ResolveAsync(["i7", "given", "gone"], resolver);
@@ -343,7 +343,7 @@ public class RemoteOptionsTests
     {
         var (options, _) = Create(new Source());
         var calls = 0;
-        BxSelectedOptionsResolver resolver = (_, _) =>
+        LxSelectedOptionsResolver resolver = (_, _) =>
         {
             calls++;
             throw new InvalidOperationException("down");
@@ -396,7 +396,7 @@ public class RemoteOptionsTests
 
         options.Reset();
 
-        Assert.Equal(BxRemoteStatus.Idle, options.Status);
+        Assert.Equal(LxRemoteStatus.Idle, options.Status);
         Assert.Empty(options.Items);
         Assert.Equal("", options.Term);
         Assert.False(options.HasMore);
@@ -406,7 +406,7 @@ public class RemoteOptionsTests
 
         await options.SearchAsync("Item 4");
         Assert.Equal(2, source.Requests.Count);
-        Assert.Equal(new BxOptionsRequest("Item 4", 0, 25, null), source.Requests[1]);
+        Assert.Equal(new LxOptionsRequest("Item 4", 0, 25, null), source.Requests[1]);
     }
 
     [Fact]
@@ -421,19 +421,19 @@ public class RemoteOptionsTests
         await pending;
 
         Assert.Empty(options.Items);
-        Assert.Equal(BxRemoteStatus.Idle, options.Status);
+        Assert.Equal(LxRemoteStatus.Idle, options.Status);
     }
 
     /// <summary>A resolver whose calls complete when the test says so, in any order, and that ignores cancellation (a source that does not honour the token).</summary>
     private sealed class ControlledResolver
     {
-        public List<(IReadOnlyList<string> Values, TaskCompletionSource<IReadOnlyList<BxSelectItem>> Gate, CancellationToken Token)> Calls { get; } = [];
+        public List<(IReadOnlyList<string> Values, TaskCompletionSource<IReadOnlyList<LxSelectItem>> Gate, CancellationToken Token)> Calls { get; } = [];
 
-        public ValueTask<IReadOnlyList<BxSelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken ct)
+        public ValueTask<IReadOnlyList<LxSelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken ct)
         {
-            var gate = new TaskCompletionSource<IReadOnlyList<BxSelectItem>>();
+            var gate = new TaskCompletionSource<IReadOnlyList<LxSelectItem>>();
             Calls.Add((values, gate, ct));
-            return new ValueTask<IReadOnlyList<BxSelectItem>>(gate.Task);
+            return new ValueTask<IReadOnlyList<LxSelectItem>>(gate.Task);
         }
     }
 
@@ -442,7 +442,7 @@ public class RemoteOptionsTests
     {
         var (options, changes) = Create(new Source());
         var resolver = new ControlledResolver();
-        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        LxSelectedOptionsResolver resolve = resolver.Resolve;
         var oldResolve = options.ResolveAsync(["x"], resolve);
 
         options.Reset();
@@ -452,9 +452,9 @@ public class RemoteOptionsTests
         Assert.Equal(2, resolver.Calls.Count);
         Assert.True(resolver.Calls[0].Token.IsCancellationRequested);
         Assert.False(resolver.Calls[1].Token.IsCancellationRequested);
-        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        resolver.Calls[1].Gate.SetResult([new LxSelectItem("x", "New label")]);
         await newResolve;
-        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Old label")]);
+        resolver.Calls[0].Gate.SetResult([new LxSelectItem("x", "Old label")]);
         await oldResolve;
 
         Assert.Equal("New label", options.LabelOf("x"));
@@ -466,12 +466,12 @@ public class RemoteOptionsTests
     {
         var (options, changes) = Create(new Source());
         var resolver = new ControlledResolver();
-        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        LxSelectedOptionsResolver resolve = resolver.Resolve;
         var oldResolve = options.ResolveAsync(["x"], resolve);
 
         options.Reset();
         var changesAfterReset = changes();
-        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Old label")]);
+        resolver.Calls[0].Gate.SetResult([new LxSelectItem("x", "Old label")]);
         await oldResolve;
 
         // Nothing knows x for the new source, so the next resolution asks again instead of being blocked by Knows.
@@ -480,7 +480,7 @@ public class RemoteOptionsTests
         Assert.Equal(changesAfterReset, changes());
         var again = options.ResolveAsync(["x"], resolve);
         Assert.Equal(2, resolver.Calls.Count);
-        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        resolver.Calls[1].Gate.SetResult([new LxSelectItem("x", "New label")]);
         await again;
         Assert.Equal("New label", options.LabelOf("x"));
     }
@@ -490,14 +490,14 @@ public class RemoteOptionsTests
     {
         var (options, _) = Create(new Source());
         var resolver = new ControlledResolver();
-        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        LxSelectedOptionsResolver resolve = resolver.Resolve;
         var oldResolve = options.ResolveAsync(["x"], resolve);
 
         options.Reset();
         var newResolve = options.ResolveAsync(["x"], resolve);
         resolver.Calls[0].Gate.SetException(new InvalidOperationException("old source down"));
         await oldResolve;
-        resolver.Calls[1].Gate.SetResult([new BxSelectItem("x", "New label")]);
+        resolver.Calls[1].Gate.SetResult([new LxSelectItem("x", "New label")]);
         await newResolve;
 
         Assert.Equal("New label", options.LabelOf("x"));
@@ -511,19 +511,19 @@ public class RemoteOptionsTests
     {
         var (options, _) = Create(new Source());
         var resolver = new ControlledResolver();
-        BxSelectedOptionsResolver resolve = resolver.Resolve;
+        LxSelectedOptionsResolver resolve = resolver.Resolve;
         var first = options.ResolveAsync(["x"], resolve);
         var second = options.ResolveAsync(["y"], resolve);
 
         resolver.Calls[1].Gate.SetException(new InvalidOperationException("down"));
-        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Ex")]);
+        resolver.Calls[0].Gate.SetResult([new LxSelectItem("x", "Ex")]);
         await Task.WhenAll(first, second);
 
         Assert.Equal("Ex", options.LabelOf("x"));
         Assert.False(options.Knows("y"));
         var retry = options.ResolveAsync(["y"], resolve, retryFailed: true);
         Assert.Equal(3, resolver.Calls.Count);
-        resolver.Calls[2].Gate.SetResult([new BxSelectItem("y", "Why")]);
+        resolver.Calls[2].Gate.SetResult([new LxSelectItem("y", "Why")]);
         await retry;
         Assert.Equal("Why", options.LabelOf("y"));
     }
@@ -536,7 +536,7 @@ public class RemoteOptionsTests
         var pending = options.ResolveAsync(["x"], resolver.Resolve);
 
         options.Dispose();
-        resolver.Calls[0].Gate.SetResult([new BxSelectItem("x", "Ex")]);
+        resolver.Calls[0].Gate.SetResult([new LxSelectItem("x", "Ex")]);
         await pending;
 
         Assert.True(resolver.Calls[0].Token.IsCancellationRequested);
@@ -548,10 +548,10 @@ public class RemoteOptionsTests
     {
         var (options, _) = Create(new Source());
         var calls = 0;
-        BxSelectedOptionsResolver resolver = (values, _) =>
+        LxSelectedOptionsResolver resolver = (values, _) =>
         {
             calls++;
-            return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<BxSelectItem>>([new BxSelectItem("x", "Ex")]);
+            return calls == 1 ? throw new InvalidOperationException("down") : new ValueTask<IReadOnlyList<LxSelectItem>>([new LxSelectItem("x", "Ex")]);
         };
 
         await options.ResolveAsync(["x"], resolver);
@@ -568,11 +568,11 @@ public class RemoteOptionsTests
     [Fact]
     public void The_remote_options_messages_are_drafts_in_every_locale_but_en_and_fr()
     {
-        Assert.Equal(["en", "fr"], BxLocales.ReviewedCodes);
+        Assert.Equal(["en", "fr"], LxLocales.ReviewedCodes);
         var root = AppContext.BaseDirectory;
         while (root is not null && !File.Exists(Path.Combine(root, "Lux.UI.slnx"))) root = Path.GetDirectoryName(root);
         Assert.NotNull(root);
-        foreach (var locale in BxLocales.All.Where(l => !BxLocales.ReviewedCodes.Contains(l.Code)))
+        foreach (var locale in LxLocales.All.Where(l => !LxLocales.ReviewedCodes.Contains(l.Code)))
         {
             var file = Directory.GetFiles(Path.Combine(root, "src", "Lux.UI", "Localization", "Locales"), "*.cs")
                 .Single(f => File.ReadAllText(f).Contains($"new(\"{locale.Code}\"", StringComparison.Ordinal));

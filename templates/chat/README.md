@@ -107,7 +107,7 @@ The text of an answer is Markdown, rendered with [Markdig](https://github.com/xo
 - headings start at level 2, and their ids cannot take an id of the page;
 - code blocks are highlighted for a few languages (bash, json, yaml, toml, C#, html) and have a Copy button, brought to life by `installCodeCopy` in `wwwroot/host.js`.
 
-The three files in `Markdown/` besides `MessageMarkdown.cs` are copies of the Markdown code shared by the content templates of Blux (`MarkdownRenderer.cs`, `ContentUrl.cs`, `SyntaxHighlighter.cs`): change `MessageMarkdown.cs`, not the copies.
+The three files in `Markdown/` besides `MessageMarkdown.cs` are copies of the Markdown code shared by the content templates of Lux (`MarkdownRenderer.cs`, `ContentUrl.cs`, `SyntaxHighlighter.cs`): change `MessageMarkdown.cs`, not the copies.
 
 ## What is in it
 

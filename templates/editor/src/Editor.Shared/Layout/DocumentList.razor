@@ -5,31 +5,31 @@
 @* The content of the sidebar: a button for a new document, a search, and the documents grouped by the day they were last changed. The list is read from
    the browser after the first render, so until then (and while the page is prerendered) it shows placeholders. *@
 <div class="flex min-h-0 flex-1 flex-col gap-3" data-testid="document-list">
-    <BxButton Label="New document" OnClick="NewAsync" Variant="ButtonVariant.Soft" Block Disabled="@(!Documents.Loaded)" data-testid="new-document">
-        <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
-    </BxButton>
+    <LxButton Label="New document" OnClick="NewAsync" Variant="ButtonVariant.Soft" Block Disabled="@(!Documents.Loaded)" data-testid="new-document">
+        <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
+    </LxButton>
 
     @if (!Documents.Loaded)
     {
         <div class="flex flex-col gap-2" aria-hidden="true">
-            <BxSkeleton Class="h-8 w-full" />
-            <BxSkeleton Class="h-8 w-5/6" />
-            <BxSkeleton Class="h-8 w-2/3" />
+            <LxSkeleton Class="h-8 w-full" />
+            <LxSkeleton Class="h-8 w-5/6" />
+            <LxSkeleton Class="h-8 w-2/3" />
         </div>
     }
     else if (Documents.Items.Count == 0)
     {
-        <p class="px-1.5 text-sm text-(--blux-text-muted)" data-testid="documents-empty">No documents yet. The ones you write appear here.</p>
+        <p class="px-1.5 text-sm text-(--lux-text-muted)" data-testid="documents-empty">No documents yet. The ones you write appear here.</p>
     }
     else
     {
-        <BxInput Value="@_query" ValueChanged="OnQuery" Placeholder="Search documents" Debounce="200" ClearOnEscape aria-label="Search documents" data-testid="document-search">
-            <LeadingIcon>@BxIcons.Named("search")</LeadingIcon>
-        </BxInput>
+        <LxInput Value="@_query" ValueChanged="OnQuery" Placeholder="Search documents" Debounce="200" ClearOnEscape aria-label="Search documents" data-testid="document-search">
+            <LeadingIcon>@LxIcons.Named("search")</LeadingIcon>
+        </LxInput>
 
         @if (_groups.Count == 0)
         {
-            <p class="px-1.5 text-sm text-(--blux-text-muted)" role="status" data-testid="documents-none">No document matches "@_query".</p>
+            <p class="px-1.5 text-sm text-(--lux-text-muted)" role="status" data-testid="documents-none">No document matches "@_query".</p>
         }
         else
         {
@@ -38,7 +38,7 @@
                 {
                     var labelId = $"group-{group.Label.Replace(' ', '-').ToLowerInvariant()}";
                     <div class="mb-3" data-testid="document-group">
-                        <p id="@labelId" class="px-2.5 pb-1 pt-1 text-xs font-medium text-(--blux-text-muted)">@group.Label</p>
+                        <p id="@labelId" class="px-2.5 pb-1 pt-1 text-xs font-medium text-(--lux-text-muted)">@group.Label</p>
                         <ul aria-labelledby="@labelId" class="flex flex-col gap-0.5">
                             @foreach (var document in group.Items)
                             {
@@ -46,15 +46,15 @@
                                 var active = current.Id == _activeId;
                                 <li class="group relative" @key="current.Id">
                                     <a href="@($"d/{current.Id}")" aria-current="@(active ? "page" : null)" data-testid="document-item"
-                                       class="@($"block truncate rounded-(--blux-radius) py-2 ps-2.5 pe-10 text-sm transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--blux-primary-text) {(active ? "bg-(--blux-bg-elevated) font-medium text-(--blux-text-highlighted)" : "text-(--blux-text)")}")">
+                                       class="@($"block truncate rounded-(--lux-radius) py-2 ps-2.5 pe-10 text-sm transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--lux-primary-text) {(active ? "bg-(--lux-bg-elevated) font-medium text-(--lux-text-highlighted)" : "text-(--lux-text)")}")">
                                         @current.Title
                                     </a>
                                     <div class="absolute end-1 top-1/2 -translate-y-1/2 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100 lg:has-[[aria-expanded=true]]:opacity-100">
-                                        <BxDropdownMenu Items="_menu" OnSelect="@(item => OnMenu(item, current))" Placement="bottom-end">
-                                            <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="@($"Options for {current.Title}")" data-testid="document-menu">
-                                                <LeadingIcon>@BxIcons.Named("lucide:ellipsis")</LeadingIcon>
-                                            </BxButton>
-                                        </BxDropdownMenu>
+                                        <LxDropdownMenu Items="_menu" OnSelect="@(item => OnMenu(item, current))" Placement="bottom-end">
+                                            <LxButton Square Size="LxSize.Xs" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="@($"Options for {current.Title}")" data-testid="document-menu">
+                                                <LeadingIcon>@LxIcons.Named("lucide:ellipsis")</LeadingIcon>
+                                            </LxButton>
+                                        </LxDropdownMenu>
                                     </div>
                                 </li>
                             }
@@ -67,10 +67,10 @@
 </div>
 
 @code {
-    private static readonly BxMenuItem[] _menu =
+    private static readonly LxMenuItem[] _menu =
     [
-        new() { Label = "Rename", Value = "rename", Icon = BxIcons.Named("lucide:pencil", "size-4") },
-        new() { Label = "Delete", Value = "delete", Icon = BxIcons.Named("lucide:trash-2", "size-4"), Color = BxColor.Error },
+        new() { Label = "Rename", Value = "rename", Icon = LxIcons.Named("lucide:pencil", "size-4") },
+        new() { Label = "Delete", Value = "delete", Icon = LxIcons.Named("lucide:trash-2", "size-4"), Color = LxColor.Error },
     ];
 
     private string _query = "";
@@ -130,7 +130,7 @@
         Navigation.NavigateTo($"d/{document.Id}");
     }
 
-    private void OnMenu(BxMenuItem item, Document document)
+    private void OnMenu(LxMenuItem item, Document document)
     {
         if (item.Value == "rename") Documents.RequestRename(document);
         else if (item.Value == "delete") Documents.RequestDelete(document);

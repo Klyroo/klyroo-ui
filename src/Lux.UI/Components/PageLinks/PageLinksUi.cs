@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxPageLinks"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxPageLinks"/> slots.</summary>
 public sealed record PageLinksUi : ISlotOverrides
 {
     public string? Root { get; init; }

@@ -2,7 +2,7 @@
 
 **LuxStack** is structured around the central hub **[lux.stack](file:///home/gpoumarat/lux.stack/README.md)** (which also hosts the unified documentation & live playground site `site/Lux.Stack.Site`) and **8 specialized repositories** (`/home/gpoumarat/lux-*`), each cleanly separating:
 - **`src/Lux.<Product>.Core`**: **100% Headless C# / NativeAOT** engine (zero UI dependency; runs in Minimal APIs, workers, CLIs, and native .NET MAUI ViewModels).
-- **`src/Lux.<Product>`**: **Blazor Web & .NET MAUI Blazor Hybrid (`Bx*`)** components (`SupportedPlatform`: `browser`, `ios`, `android`, `maccatalyst`, `windows`).
+- **`src/Lux.<Product>`**: **Blazor Web & .NET MAUI Blazor Hybrid (`Lx*`)** components (`SupportedPlatform`: `browser`, `ios`, `android`, `maccatalyst`, `windows`).
 
 ---
 

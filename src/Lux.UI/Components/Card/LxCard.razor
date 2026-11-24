@@ -1,0 +1,40 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Header is not null)
+    {
+        <div class="@_slots["header"]" data-slot="header">@Header</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="@_slots["body"]" data-slot="body">@ChildContent</div>
+    }
+    @if (Footer is not null)
+    {
+        <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>The body.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public CardVariant Variant { get; set; } = CardVariant.Outline;
+    [Parameter] public CardUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Card, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant switch
+            {
+                CardVariant.Outline => "outline",
+                CardVariant.Soft => "soft",
+                _ => "subtle",
+            },
+        }, Ui, "root");
+}

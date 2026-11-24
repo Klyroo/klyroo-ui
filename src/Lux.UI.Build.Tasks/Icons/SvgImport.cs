@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 
 // Shared by the build task (custom icon folders) and by the library (LuxIconOptions.RegisterSvg), like IconNames.cs.
-#if BLUX_TASKS
+#if LUX_TASKS
 namespace Lux.UI.Build
 #else
 namespace Lux.UI.Internal

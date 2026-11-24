@@ -2,27 +2,27 @@ import './calendar.js';
 import './popover.js';
 
 /**
- * Glue between the native date input and the calendar popover of BxInputDate.
+ * Glue between the native date input and the calendar popover of LxInputDate.
  *
- * <bx-date-field>
+ * <lx-date-field>
  *   <input type="date" name="…">
- *   <span><bx-popover>…<bx-calendar>…</bx-calendar></bx-popover></span>
- * </bx-date-field>
+ *   <span><lx-popover>…<lx-calendar>…</lx-calendar></lx-popover></span>
+ * </lx-date-field>
  *
  * Picking a day writes its ISO date into the input and fires input and change on it, so a bound .NET handler, a
  * validator or a plain form post all see the new value; typing in the input moves the calendar's selection.
  * The input keeps the locale display and the keyboard segments of the browser; its value is always yyyy-MM-dd.
  */
-export class BxDateFieldElement extends HTMLElement {
+export class LxDateFieldElement extends HTMLElement {
   connectedCallback() {
-    this.addEventListener('bx-change', this.#onPicked);
+    this.addEventListener('lx-change', this.#onPicked);
     this.addEventListener('input', this.#onTyped);
     this.addEventListener('change', this.#onTyped);
     this.addEventListener('toggle', this.#onToggle, true);
   }
 
   disconnectedCallback() {
-    this.removeEventListener('bx-change', this.#onPicked);
+    this.removeEventListener('lx-change', this.#onPicked);
     this.removeEventListener('input', this.#onTyped);
     this.removeEventListener('change', this.#onTyped);
     this.removeEventListener('toggle', this.#onToggle, true);
@@ -33,7 +33,7 @@ export class BxDateFieldElement extends HTMLElement {
   }
 
   get #calendar() {
-    return this.querySelector('bx-calendar');
+    return this.querySelector('lx-calendar');
   }
 
   #onPicked = (event) => {
@@ -56,9 +56,9 @@ export class BxDateFieldElement extends HTMLElement {
   #onToggle = (event) => {
     if (event.newState !== 'open' || !event.target.matches?.('[popover]')) return;
     this.#calendar?.selectValue(this.#input?.value ?? '');
-    // bx-popover focuses the first control of the panel when it opens: move on to the day afterwards.
+    // lx-popover focuses the first control of the panel when it opens: move on to the day afterwards.
     setTimeout(() => this.#calendar?.focusDay(), 0);
   };
 }
 
-if (!customElements.get('bx-date-field')) customElements.define('bx-date-field', BxDateFieldElement);
+if (!customElements.get('lx-date-field')) customElements.define('lx-date-field', LxDateFieldElement);

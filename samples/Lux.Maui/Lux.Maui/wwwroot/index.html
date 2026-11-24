@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <!-- viewport-fit=cover lets the page use the whole screen; Blux keeps its content inside the safe area (notch, gesture bar). -->
+    <!-- viewport-fit=cover lets the page use the whole screen; Lux keeps its content inside the safe area (notch, gesture bar). -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Blux on MAUI</title>
+    <title>Lux on MAUI</title>
     <base href="/" />
-    <!-- Blux without Tailwind in the app: the reset, then the components. The fonts and the theme variables are added to the head by BxHead. -->
+    <!-- Lux without Tailwind in the app: the reset, then the components. The fonts and the theme variables are added to the head by LxHead. -->
     <link rel="stylesheet" href="_content/Lux.UI/lux.preflight.css" />
     <link rel="stylesheet" href="_content/Lux.UI/lux.css" />
     <link rel="icon" href="data:,">
@@ -20,7 +20,7 @@
 <body>
     <div id="app">Loading...</div>
 
-    <!-- autostart="false" is the template's: the MAUI BlazorWebView starts Blazor itself. Blux's JS initializer (beforeStart, afterStarted) loads from _framework/blazor.modules.json. -->
+    <!-- autostart="false" is the template's: the MAUI BlazorWebView starts Blazor itself. Lux's JS initializer (beforeStart, afterStarted) loads from _framework/blazor.modules.json. -->
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 </body>
 

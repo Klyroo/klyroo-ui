@@ -21,7 +21,7 @@ public sealed partial class LuxOptions
 
     /// <summary>
     /// The icons components draw (<c>Close</c>, <c>Check</c>, <c>ChevronDown</c>...), replaceable by name, and <c>Register</c> to add icons in code.
-    /// Any Iconify icon works by name, see <see cref="BxIcon"/>.
+    /// Any Iconify icon works by name, see <see cref="LxIcon"/>.
     /// </summary>
     public LuxIconOptions Icons { get; } = new();
 }

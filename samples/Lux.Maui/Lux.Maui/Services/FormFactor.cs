@@ -6,7 +6,7 @@ public class FormFactor : IFormFactor
 {
     public string GetFormFactor()
     {
-#if BLUX_TV
+#if LUX_TV
         return "TV";
 #else
         return DeviceInfo.Idiom == DeviceIdiom.TV ? "TV" : DeviceInfo.Idiom.ToString();

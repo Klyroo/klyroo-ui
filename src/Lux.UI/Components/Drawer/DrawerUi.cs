@@ -10,7 +10,7 @@ public enum DrawerDirection
     Right,
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxDrawer"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxDrawer"/> slots.</summary>
 public sealed record DrawerUi : ISlotOverrides
 {
     public string? Content { get; init; }

@@ -6,14 +6,14 @@ namespace Lux.UI.Tests;
 /// <summary>The class extractor end to end: its arguments, the files it writes and what it refuses.</summary>
 public class ClassExtractorTests : IDisposable
 {
-    private readonly string _root = Path.Combine(Path.GetTempPath(), "blux-extractor-" + Guid.NewGuid().ToString("N"));
+    private readonly string _root = Path.Combine(Path.GetTempPath(), "lux-extractor-" + Guid.NewGuid().ToString("N"));
     private static readonly string TestAssembly = typeof(GaugeOptions).Assembly.Location;
     private static readonly string GaugeName = typeof(GaugeOptions).FullName!;
 
     public ClassExtractorTests()
     {
         Directory.CreateDirectory(Path.Combine(_root, "styles"));
-        File.WriteAllText(Path.Combine(_root, "styles", "blux.base.css"), "@theme { --x: 1; }\n");
+        File.WriteAllText(Path.Combine(_root, "styles", "lux.base.css"), "@theme { --x: 1; }\n");
     }
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
@@ -45,13 +45,13 @@ public class ClassExtractorTests : IDisposable
     [Fact]
     public void Only_extensions_writes_the_classes_of_the_named_options_and_a_css_with_only_the_source()
     {
-        var result = Run("--assembly", TestAssembly, "--extension", GaugeName, "--only-extensions", "--theme-css", "blux-gauge.theme.css");
+        var result = Run("--assembly", TestAssembly, "--extension", GaugeName, "--only-extensions", "--theme-css", "lux-gauge.theme.css");
 
         Assert.Equal(0, result.Code);
         Assert.Equal(
             ["absolute", "bg-blue-500", "bg-red-500", "h-4", "inline-flex", "relative", "text-xs"],
             Read("styles", "generated", "classes.txt").Split('\n', StringSplitOptions.RemoveEmptyEntries));
-        var css = Read("wwwroot", "blux-gauge.theme.css");
+        var css = Read("wwwroot", "lux-gauge.theme.css");
         Assert.DoesNotContain("@theme", css);
         Assert.DoesNotContain("--x", css);
         Assert.Contains("@source inline(\"absolute bg-blue-500 bg-red-500 h-4 inline-flex relative text-xs\");", css);
@@ -84,7 +84,7 @@ public class ClassExtractorTests : IDisposable
 
     [Theory]
     [InlineData("No.Such.Type")]
-    [InlineData("Lux.UI.BxRadioGroup`1")]
+    [InlineData("Lux.UI.LxRadioGroup`1")]
     [InlineData("Lux.UI.LuxOptions")]
     [InlineData("System.IO.Stream")]
     public void An_unknown_open_generic_or_unusable_type_is_an_error_and_not_a_crash(string type)

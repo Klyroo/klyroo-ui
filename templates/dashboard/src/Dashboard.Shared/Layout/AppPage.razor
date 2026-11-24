@@ -1,5 +1,5 @@
 @* A page with one panel: the navbar (with an optional toolbar under it) and a scrolling body. *@
-<BxDashboardPanel>
+<LxDashboardPanel>
     <Header>
         <AppNavbar Title="@Title" Actions="Actions" />
         @Toolbar
@@ -9,7 +9,7 @@
             @ChildContent
         </div>
     </Body>
-</BxDashboardPanel>
+</LxDashboardPanel>
 
 @code {
     /// <summary>The title of the page, in the navbar.</summary>
@@ -18,7 +18,7 @@
     /// <summary>Actions of the page, in the navbar.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
 
-    /// <summary>A <c>BxDashboardToolbar</c> under the navbar.</summary>
+    /// <summary>A <c>LxDashboardToolbar</c> under the navbar.</summary>
     [Parameter] public RenderFragment? Toolbar { get; set; }
 
     [Parameter] public RenderFragment? ChildContent { get; set; }

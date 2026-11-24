@@ -17,14 +17,14 @@ public partial class PaletteContrastTests
     public static TheoryData<string> PaletteNames()
     {
         var data = new TheoryData<string>();
-        foreach (var palette in BxPalette.TailwindPalettes)
+        foreach (var palette in LxPalette.TailwindPalettes)
         {
             data.Add(palette.Name);
         }
         return data;
     }
 
-    private static BxPalette ByName(string name) => BxPalette.TailwindPalettes.Single(p => p.Name == name);
+    private static LxPalette ByName(string name) => LxPalette.TailwindPalettes.Single(p => p.Name == name);
 
     /// <summary>Every broken rule of a light and a dark token set, as readable messages.</summary>
     internal static List<string> Violations(IReadOnlyDictionary<string, string> light, IReadOnlyDictionary<string, string> dark)
@@ -151,7 +151,7 @@ public partial class PaletteContrastTests
     }
 
     [Fact]
-    public void The_default_tokens_of_blux_css_pass_every_rule()
+    public void The_default_tokens_of_lux_css_pass_every_rule()
     {
         var broken = Violations(Themes["light"], Themes["dark"]);
         Assert.True(broken.Count == 0, string.Join(Environment.NewLine, broken.Take(20)));
@@ -161,8 +161,8 @@ public partial class PaletteContrastTests
     [MemberData(nameof(PaletteNames))]
     public void Every_tailwind_palette_as_primary_passes_every_rule(string name)
     {
-        var colors = new BxColorOptions { Primary = ByName(name) };
-        var tokens = BxThemeTokens.Compute(colors);
+        var colors = new LxColorOptions { Primary = ByName(name) };
+        var tokens = LxThemeTokens.Compute(colors);
         var broken = Violations(tokens.Light, tokens.Dark);
         Assert.True(broken.Count == 0, $"primary = {name}:{Environment.NewLine}{string.Join(Environment.NewLine, broken.Take(20))}");
     }
@@ -171,8 +171,8 @@ public partial class PaletteContrastTests
     [MemberData(nameof(PaletteNames))]
     public void Every_tailwind_palette_as_neutral_passes_every_rule(string name)
     {
-        var colors = new BxColorOptions { Neutral = ByName(name) };
-        var tokens = BxThemeTokens.Compute(colors);
+        var colors = new LxColorOptions { Neutral = ByName(name) };
+        var tokens = LxThemeTokens.Compute(colors);
         var broken = Violations(tokens.Light, tokens.Dark);
         Assert.True(broken.Count == 0, $"neutral = {name}:{Environment.NewLine}{string.Join(Environment.NewLine, broken.Take(20))}");
     }
@@ -181,11 +181,11 @@ public partial class PaletteContrastTests
     [MemberData(nameof(PaletteNames))]
     public void Every_tailwind_palette_passes_as_each_semantic_color_on_the_default_and_on_a_neutral_palette(string name)
     {
-        foreach (var neutral in new[] { BxPalette.Lux, BxPalette.Zinc, BxPalette.Stone })
+        foreach (var neutral in new[] { LxPalette.Lux, LxPalette.Zinc, LxPalette.Stone })
         {
             foreach (var role in AccentRoles)
             {
-                var colors = new BxColorOptions { Neutral = neutral };
+                var colors = new LxColorOptions { Neutral = neutral };
                 switch (role)
                 {
                     case "primary": colors.Primary = ByName(name); break;
@@ -195,7 +195,7 @@ public partial class PaletteContrastTests
                     case "warning": colors.Warning = ByName(name); break;
                     default: colors.Error = ByName(name); break;
                 }
-                var tokens = BxThemeTokens.Compute(colors);
+                var tokens = LxThemeTokens.Compute(colors);
                 var broken = Violations(tokens.Light, tokens.Dark);
                 Assert.True(broken.Count == 0, $"{role} = {name}, neutral = {neutral}:{Environment.NewLine}{string.Join(Environment.NewLine, broken.Take(20))}");
             }
@@ -211,7 +211,7 @@ public partial class PaletteContrastTests
     public void The_initials_of_an_avatar_are_readable_on_its_fill_under_every_gray_scale(string name)
     {
         // The avatar fallback is text on bg-accented, a fill the surface rules do not list: muted text was 3.98:1 on it in dark mode with the zinc neutrals.
-        var tokens = BxThemeTokens.Compute(new BxColorOptions { Neutral = ByName(name) });
+        var tokens = LxThemeTokens.Compute(new LxColorOptions { Neutral = ByName(name) });
         foreach (var (theme, t) in new[] { ("light", tokens.Light), ("dark", tokens.Dark) })
         {
             var ratio = Contrast(t["text"], t["bg-accented"]);
@@ -222,12 +222,12 @@ public partial class PaletteContrastTests
     [Fact]
     public void An_extra_semantic_color_gets_tokens_that_pass_the_color_rules()
     {
-        var colors = new BxColorOptions();
-        foreach (var palette in BxPalette.TailwindPalettes)
+        var colors = new LxColorOptions();
+        foreach (var palette in LxPalette.TailwindPalettes)
         {
             colors.Add("extra-" + palette.Name, palette);
         }
-        var tokens = BxThemeTokens.Compute(colors);
+        var tokens = LxThemeTokens.Compute(colors);
         foreach (var (theme, t) in new[] { ("light", tokens.Light), ("dark", tokens.Dark) })
         {
             foreach (var name in tokens.ExtraColors)
@@ -250,13 +250,13 @@ public partial class PaletteContrastTests
     [Fact]
     public void The_soft_tint_the_tokens_are_computed_for_is_the_one_the_themes_use()
     {
-        Assert.Equal(SoftAlpha, BxThemeTokens.SoftAlpha);
+        Assert.Equal(SoftAlpha, LxThemeTokens.SoftAlpha);
     }
 
     [Fact]
     public void Text_on_solid_hover_and_active_fills_reaches_4_5_to_1_over_every_surface()
     {
-        // bg-(--bx-color)/90 and /80 let the surface show through: the text on them is checked against the blended fill.
+        // bg-(--lx-color)/90 and /80 let the surface show through: the text on them is checked against the blended fill.
         foreach (var theme in new[] { "light", "dark" })
         {
             foreach (var color in Colors)
@@ -278,7 +278,7 @@ public partial class PaletteContrastTests
     {
         // The two alphas above are the ones the themes use for solid fills; another one needs its own check.
         var alphas = AllThemes.SelectMany(t => t.AllClassTokens())
-            .Select(token => Regex.Match(token, @"(?:^|:)bg-\(--bx-color\)/(?<alpha>\d+)$"))
+            .Select(token => Regex.Match(token, @"(?:^|:)bg-\(--lx-color\)/(?<alpha>\d+)$"))
             .Where(m => m.Success && int.Parse(m.Groups["alpha"].Value) > 50)
             .Select(m => int.Parse(m.Groups["alpha"].Value))
             .Distinct()

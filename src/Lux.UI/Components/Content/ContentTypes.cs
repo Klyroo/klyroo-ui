@@ -2,8 +2,8 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>An entry of <see cref="BxContentNavigation"/>: a page link, or a group of entries when it has children.</summary>
-public sealed record BxContentNavigationItem(string Title)
+/// <summary>An entry of <see cref="LxContentNavigation"/>: a page link, or a group of entries when it has children.</summary>
+public sealed record LxContentNavigationItem(string Title)
 {
     /// <summary>The page the entry links to. An entry with children is a group and has no link of its own.</summary>
     public string? Href { get; init; }
@@ -13,10 +13,10 @@ public sealed record BxContentNavigationItem(string Title)
 
     /// <summary>A short label after the title: "New", a count.</summary>
     public string? Badge { get; init; }
-    public BxColor? BadgeColor { get; init; }
+    public LxColor? BadgeColor { get; init; }
 
     /// <summary>The entries below this one. They form a collapsible group.</summary>
-    public IReadOnlyList<BxContentNavigationItem>? Children { get; init; }
+    public IReadOnlyList<LxContentNavigationItem>? Children { get; init; }
 
     /// <summary>Initial state of a group. By default a group is open when it holds the current page.</summary>
     public bool? Open { get; init; }
@@ -30,23 +30,23 @@ public sealed record BxContentNavigationItem(string Title)
     public string? Target { get; init; }
 }
 
-/// <summary>A heading of the page, listed by <see cref="BxContentToc"/>.</summary>
+/// <summary>A heading of the page, listed by <see cref="LxContentToc"/>.</summary>
 /// <param name="Id">The <c>id</c> of the heading element. The link points at it and the scroll-spy follows it.</param>
 /// <param name="Text">The text of the link.</param>
-public sealed record BxContentTocLink(string Id, string Text)
+public sealed record LxContentTocLink(string Id, string Text)
 {
     /// <summary>The heading level, 2 for an <c>h2</c>. Deeper levels are indented.</summary>
     public int Level { get; init; } = 2;
 }
 
-/// <summary>A page linked by <see cref="BxContentSurround"/>.</summary>
-public sealed record BxContentSurroundLink(string Title, string Href)
+/// <summary>A page linked by <see cref="LxContentSurround"/>.</summary>
+public sealed record LxContentSurroundLink(string Title, string Href)
 {
     public string? Description { get; init; }
 }
 
-/// <summary>A page <see cref="BxContentSearch"/> can find, and optionally the headings inside it.</summary>
-public sealed record BxContentSearchPage(string Title, string Href)
+/// <summary>A page <see cref="LxContentSearch"/> can find, and optionally the headings inside it.</summary>
+public sealed record LxContentSearchPage(string Title, string Href)
 {
     /// <summary>A line of context shown under the title.</summary>
     public string? Description { get; init; }
@@ -61,14 +61,14 @@ public sealed record BxContentSearchPage(string Title, string Href)
     public string? Keywords { get; init; }
 
     /// <summary>Headings of the page, searchable on their own and linking to <c>Href#Id</c>.</summary>
-    public IReadOnlyList<BxContentSearchHeading>? Headings { get; init; }
+    public IReadOnlyList<LxContentSearchHeading>? Headings { get; init; }
 }
 
-/// <summary>A heading of a <see cref="BxContentSearchPage"/>.</summary>
-public sealed record BxContentSearchHeading(string Text, string Id);
+/// <summary>A heading of a <see cref="LxContentSearchPage"/>.</summary>
+public sealed record LxContentSearchHeading(string Text, string Id);
 
-/// <summary>The width below which <see cref="BxContentToc"/> collapses behind its title.</summary>
-public enum BxContentTocBreakpoint
+/// <summary>The width below which <see cref="LxContentToc"/> collapses behind its title.</summary>
+public enum LxContentTocBreakpoint
 {
     /// <summary>1024px.</summary>
     Lg,
@@ -80,7 +80,7 @@ public enum BxContentTocBreakpoint
     Xxl,
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxContentNavigation"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxContentNavigation"/> slots.</summary>
 public sealed record ContentNavigationUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -116,7 +116,7 @@ public sealed record ContentNavigationUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxContentToc"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxContentToc"/> slots.</summary>
 public sealed record ContentTocUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -142,7 +142,7 @@ public sealed record ContentTocUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxContentSurround"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxContentSurround"/> slots.</summary>
 public sealed record ContentSurroundUi : ISlotOverrides
 {
     public string? Root { get; init; }
@@ -164,7 +164,7 @@ public sealed record ContentSurroundUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxContentSearchButton"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxContentSearchButton"/> slots.</summary>
 public sealed record ContentSearchButtonUi : ISlotOverrides
 {
     public string? Root { get; init; }

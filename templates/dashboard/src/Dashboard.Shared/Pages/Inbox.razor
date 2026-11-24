@@ -9,26 +9,26 @@
 
 @* Two panels: the list and the message. From the lg breakpoint they sit side by side and the divider between them resizes. Below it only one shows, the list or
    the message that is open (the address says which: /inbox or /inbox/3), and the message has a back link. *@
-<BxDashboardPanel Resizable Size="36" MinSize="24" MaxSize="55" ResizeLabel="Resize the message list" Class="@ListClass" data-testid="mail-list-panel">
+<LxDashboardPanel Resizable Size="36" MinSize="24" MaxSize="55" ResizeLabel="Resize the message list" Class="@ListClass" data-testid="mail-list-panel">
     <Header>
         <AppNavbar Title="Inbox" />
-        <BxDashboardToolbar>
+        <LxDashboardToolbar>
             <Left>
                 <nav aria-label="Filter" class="flex items-center gap-1">
-                    <BxButton Label="All" Size="BxSize.Sm" Color="BxColor.Neutral" Href="inbox" Variant="@(_unreadOnly ? ButtonVariant.Ghost : ButtonVariant.Soft)" aria-current="@(_unreadOnly ? null : "true")" data-testid="filter-all" />
-                    <BxButton Label="Unread" Size="BxSize.Sm" Color="BxColor.Neutral" Href="inbox?filter=unread" Variant="@(_unreadOnly ? ButtonVariant.Soft : ButtonVariant.Ghost)" aria-current="@(_unreadOnly ? "true" : null)" data-testid="filter-unread" />
+                    <LxButton Label="All" Size="LxSize.Sm" Color="LxColor.Neutral" Href="inbox" Variant="@(_unreadOnly ? ButtonVariant.Ghost : ButtonVariant.Soft)" aria-current="@(_unreadOnly ? null : "true")" data-testid="filter-all" />
+                    <LxButton Label="Unread" Size="LxSize.Sm" Color="LxColor.Neutral" Href="inbox?filter=unread" Variant="@(_unreadOnly ? ButtonVariant.Soft : ButtonVariant.Ghost)" aria-current="@(_unreadOnly ? "true" : null)" data-testid="filter-unread" />
                 </nav>
             </Left>
             <Right>
-                <span class="text-sm text-(--blux-text-muted)" data-testid="unread-count">@Mails.UnreadCount unread</span>
+                <span class="text-sm text-(--lux-text-muted)" data-testid="unread-count">@Mails.UnreadCount unread</span>
             </Right>
-        </BxDashboardToolbar>
+        </LxDashboardToolbar>
     </Header>
     <Body>
         <div class="flex min-h-0 flex-1 flex-col">
             @if (_items.Count == 0)
             {
-                <BxEmpty Title="@(_unreadOnly ? "No unread messages" : "The inbox is empty")" Description="@(_unreadOnly ? "Everything has been read." : "Archived messages are gone for this session.")" Class="m-auto" />
+                <LxEmpty Title="@(_unreadOnly ? "No unread messages" : "The inbox is empty")" Description="@(_unreadOnly ? "Everything has been read." : "Archived messages are gone for this session.")" Class="m-auto" />
             }
             else
             {
@@ -37,20 +37,20 @@
                     {
                         <li>
                             <a href="@($"inbox/{mail.Id}")" aria-current="@(mail.Id == Id ? "page" : null)" data-testid="@($"mail-{mail.Id}")" data-unread="@(mail.Unread ? "true" : null)"
-                               class="@($"flex flex-col gap-1 border-b border-(--blux-border) px-4 py-3 text-sm transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--blux-primary-text) sm:px-6 {(mail.Id == Id ? "bg-(--blux-bg-elevated)" : "")}")">
+                               class="@($"flex flex-col gap-1 border-b border-(--lux-border) px-4 py-3 text-sm transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-(--lux-primary-text) sm:px-6 {(mail.Id == Id ? "bg-(--lux-bg-elevated)" : "")}")">
                                 <span class="flex items-center justify-between gap-3">
                                     <span class="flex min-w-0 items-center gap-2">
                                         @if (mail.Unread)
                                         {
-                                            <span class="size-2 shrink-0 rounded-full bg-(--blux-primary)" aria-hidden="true"></span>
+                                            <span class="size-2 shrink-0 rounded-full bg-(--lux-primary)" aria-hidden="true"></span>
                                             <span class="sr-only">Unread:</span>
                                         }
-                                        <span class="@($"truncate {(mail.Unread ? "font-semibold" : "font-medium")} text-(--blux-text-highlighted)")">@mail.From</span>
+                                        <span class="@($"truncate {(mail.Unread ? "font-semibold" : "font-medium")} text-(--lux-text-highlighted)")">@mail.From</span>
                                     </span>
-                                    <span class="shrink-0 text-xs text-(--blux-text-muted)">@When(mail.Date)</span>
+                                    <span class="shrink-0 text-xs text-(--lux-text-muted)">@When(mail.Date)</span>
                                 </span>
-                                <span class="@($"truncate {(mail.Unread ? "font-medium text-(--blux-text-highlighted)" : "text-(--blux-text)")}")">@mail.Subject</span>
-                                <span class="line-clamp-2 text-xs text-(--blux-text-muted)">@mail.Body[0]</span>
+                                <span class="@($"truncate {(mail.Unread ? "font-medium text-(--lux-text-highlighted)" : "text-(--lux-text)")}")">@mail.Subject</span>
+                                <span class="line-clamp-2 text-xs text-(--lux-text-muted)">@mail.Body[0]</span>
                             </a>
                         </li>
                     }
@@ -58,64 +58,64 @@
             }
         </div>
     </Body>
-</BxDashboardPanel>
+</LxDashboardPanel>
 
-<BxDashboardPanel Class="@(_selected is null ? "max-lg:hidden" : "")" data-testid="mail-detail">
+<LxDashboardPanel Class="@(_selected is null ? "max-lg:hidden" : "")" data-testid="mail-detail">
     <Header>
-        <BxDashboardNavbar As="div">
+        <LxDashboardNavbar As="div">
             <Leading>
-                <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Href="inbox" aria-label="Back to the inbox" Class="lg:hidden" data-testid="mail-back">
-                    <LeadingIcon>@BxIcons.Named("arrow-left")</LeadingIcon>
-                </BxButton>
+                <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Href="inbox" aria-label="Back to the inbox" Class="lg:hidden" data-testid="mail-back">
+                    <LeadingIcon>@LxIcons.Named("arrow-left")</LeadingIcon>
+                </LxButton>
             </Leading>
             <Left>
-                <span class="truncate text-base font-semibold text-(--blux-text-highlighted)" data-testid="mail-label">@(_selected is null ? "Message" : _selected.Label)</span>
+                <span class="truncate text-base font-semibold text-(--lux-text-highlighted)" data-testid="mail-label">@(_selected is null ? "Message" : _selected.Label)</span>
             </Left>
             <Right>
                 @if (_selected is not null)
                 {
-                    <BxButton Label="Archive" Size="BxSize.Sm" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" OnClick="Archive" data-testid="mail-archive" />
+                    <LxButton Label="Archive" Size="LxSize.Sm" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" OnClick="Archive" data-testid="mail-archive" />
                 }
             </Right>
-        </BxDashboardNavbar>
+        </LxDashboardNavbar>
     </Header>
     <Body>
         @if (_selected is null)
         {
-            <BxEmpty Title="Select a message" Description="Pick one in the list to read it here." Class="m-auto" data-testid="mail-empty">
-                <Icon>@BxIcons.Named("inbox", "size-10")</Icon>
-            </BxEmpty>
+            <LxEmpty Title="Select a message" Description="Pick one in the list to read it here." Class="m-auto" data-testid="mail-empty">
+                <Icon>@LxIcons.Named("inbox", "size-10")</Icon>
+            </LxEmpty>
         }
         else
         {
             <article class="mx-auto flex w-full max-w-3xl flex-col gap-6" aria-labelledby="mail-subject" data-testid="mail-article">
                 <header class="flex items-start gap-3">
-                    <BxAvatar Alt="@_selected.From" />
+                    <LxAvatar Alt="@_selected.From" />
                     <div class="min-w-0 flex-1">
-                        <h2 id="mail-subject" class="text-lg font-semibold text-(--blux-text-highlighted)">@_selected.Subject</h2>
-                        <p class="text-sm text-(--blux-text-muted)">@_selected.From &lt;@_selected.Email&gt;</p>
+                        <h2 id="mail-subject" class="text-lg font-semibold text-(--lux-text-highlighted)">@_selected.Subject</h2>
+                        <p class="text-sm text-(--lux-text-muted)">@_selected.From &lt;@_selected.Email&gt;</p>
                     </div>
-                    <time datetime="@_selected.Date.ToString("O")" class="shrink-0 text-xs text-(--blux-text-muted)">@_selected.Date.ToString("MMM d, HH:mm")</time>
+                    <time datetime="@_selected.Date.ToString("O")" class="shrink-0 text-xs text-(--lux-text-muted)">@_selected.Date.ToString("MMM d, HH:mm")</time>
                 </header>
-                <div class="flex flex-col gap-3 text-sm leading-relaxed text-(--blux-text)">
+                <div class="flex flex-col gap-3 text-sm leading-relaxed text-(--lux-text)">
                     @foreach (var paragraph in _selected.Body)
                     {
                         <p>@paragraph</p>
                     }
                 </div>
-                <BxSeparator />
+                <LxSeparator />
                 <form class="flex flex-col gap-3" @onsubmit="Reply" @onsubmit:preventDefault>
-                    <BxFormField Label="@($"Reply to {_selected.From}")">
-                        <BxTextarea @bind-Value="_reply" Rows="4" Immediate Placeholder="Write your reply" data-testid="mail-reply" />
-                    </BxFormField>
+                    <LxFormField Label="@($"Reply to {_selected.From}")">
+                        <LxTextarea @bind-Value="_reply" Rows="4" Immediate Placeholder="Write your reply" data-testid="mail-reply" />
+                    </LxFormField>
                     <div class="flex justify-end">
-                        <BxButton Label="Send reply" Type="submit" Disabled="@string.IsNullOrWhiteSpace(_reply)" data-testid="mail-send" />
+                        <LxButton Label="Send reply" Type="submit" Disabled="@string.IsNullOrWhiteSpace(_reply)" data-testid="mail-send" />
                     </div>
                 </form>
             </article>
         }
     </Body>
-</BxDashboardPanel>
+</LxDashboardPanel>
 
 @code {
     // The list has no padding around its rows: they are full-width links with their own. The body of a panel is a slot with its own padding, so the panel reaches it.
@@ -168,7 +168,7 @@
     private async Task Reply()
     {
         if (_selected is null || string.IsNullOrWhiteSpace(_reply)) return;
-        await Toasts.Add(new BxToast { Title = "Reply sent", Description = $"To {_selected.From}", Color = BxColor.Success });
+        await Toasts.Add(new LxToast { Title = "Reply sent", Description = $"To {_selected.From}", Color = LxColor.Success });
         _reply = null;
     }
 

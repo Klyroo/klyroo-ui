@@ -1,5 +1,5 @@
 /**
- * The hit area of a switch on a touch screen is the label that wraps its track (BxSwitch, BxColorModeSwitch: an ::after
+ * The hit area of a switch on a touch screen is the label that wraps its track (LxSwitch, LxColorModeSwitch: an ::after
  * of the label reaches 44px). A tap there targets the label, and the browser then dispatches a second, synthetic click on
  * the input, so a click listener on an ancestor (a card with @onclick, say) saw two clicks for one tap.
  * The label's own click is stopped before it leaves the capture phase: its activation behavior still runs (stopping

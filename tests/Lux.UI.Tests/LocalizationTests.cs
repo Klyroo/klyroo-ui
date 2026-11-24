@@ -10,9 +10,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lux.UI.Tests;
 
 /// <summary>The locale model: built-in locales, resolution order, direction, culture formatting.</summary>
-public partial class LocalizationTests : BluxTestContext
+public partial class LocalizationTests : LuxTestContext
 {
-    private static readonly PropertyInfo[] MessageProperties = typeof(BxMessages).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+    private static readonly PropertyInfo[] MessageProperties = typeof(LxMessages).GetProperties(BindingFlags.Public | BindingFlags.Instance)
         .Where(p => p.PropertyType == typeof(string)).ToArray();
 
     [GeneratedRegex(@"\{\d+\}")]
@@ -23,28 +23,28 @@ public partial class LocalizationTests : BluxTestContext
     public static TheoryData<string> LocaleCodes()
     {
         var data = new TheoryData<string>();
-        foreach (var locale in BxLocales.All) data.Add(locale.Code);
+        foreach (var locale in LxLocales.All) data.Add(locale.Code);
         return data;
     }
 
-    private static BxLocale ByCode(string code) => BxLocales.All.Single(l => l.Code == code);
+    private static LxLocale ByCode(string code) => LxLocales.All.Single(l => l.Code == code);
 
     // ---- The catalogue
 
     [Fact]
     public void All_holds_the_twelve_built_in_locales_once_each()
     {
-        Assert.Equal(["en", "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru"], BxLocales.All.Select(l => l.Code));
-        Assert.Equal(12, BxLocales.All.Select(l => l.Code).Distinct(StringComparer.OrdinalIgnoreCase).Count());
-        Assert.All(BxLocales.All, l => Assert.False(string.IsNullOrWhiteSpace(l.Name)));
+        Assert.Equal(["en", "fr", "de", "es", "it", "pt", "pt-BR", "nl", "ja", "zh-Hans", "ar", "ru"], LxLocales.All.Select(l => l.Code));
+        Assert.Equal(12, LxLocales.All.Select(l => l.Code).Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        Assert.All(LxLocales.All, l => Assert.False(string.IsNullOrWhiteSpace(l.Name)));
     }
 
     [Fact]
     public void Only_Arabic_is_right_to_left()
     {
-        Assert.Equal(["ar"], BxLocales.All.Where(l => l.Dir == BxDirection.Rtl).Select(l => l.Code));
-        Assert.Equal("rtl", BxLocales.Ar.DirAttribute);
-        Assert.Equal("ltr", BxLocales.Fr.DirAttribute);
+        Assert.Equal(["ar"], LxLocales.All.Where(l => l.Dir == LxDirection.Rtl).Select(l => l.Code));
+        Assert.Equal("rtl", LxLocales.Ar.DirAttribute);
+        Assert.Equal("ltr", LxLocales.Fr.DirAttribute);
     }
 
     [Theory]
@@ -55,7 +55,7 @@ public partial class LocalizationTests : BluxTestContext
         Assert.NotEmpty(MessageProperties);
         foreach (var property in MessageProperties)
         {
-            var english = (string)property.GetValue(BxLocales.En.Messages)!;
+            var english = (string)property.GetValue(LxLocales.En.Messages)!;
             var text = (string?)property.GetValue(locale.Messages);
             Assert.False(string.IsNullOrWhiteSpace(text), $"{code}: {property.Name} is empty");
             Assert.True(Placeholders(english).SequenceEqual(Placeholders(text!)), $"{code}: {property.Name} has the placeholders {string.Join(",", Placeholders(text!))}, English has {string.Join(",", Placeholders(english))}");
@@ -68,7 +68,7 @@ public partial class LocalizationTests : BluxTestContext
     {
         if (code == "en") return;
         var same = MessageProperties
-            .Where(p => (string)p.GetValue(BxLocales.En.Messages)! == (string)p.GetValue(ByCode(code).Messages)!)
+            .Where(p => (string)p.GetValue(LxLocales.En.Messages)! == (string)p.GetValue(ByCode(code).Messages)!)
             .Select(p => p.Name).ToList();
 
         // Words that are the same in several languages (Menu, Code, Minimum, Ctrl, AM/PM...) stay; a locale that is mostly English does not.
@@ -78,11 +78,11 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void Messages_are_an_immutable_record_so_with_copies_them()
     {
-        var changed = BxLocales.En.Messages with { Close = "Dismiss" };
+        var changed = LxLocales.En.Messages with { Close = "Dismiss" };
 
         Assert.Equal("Dismiss", changed.Close);
-        Assert.Equal("Close", BxLocales.En.Messages.Close);
-        Assert.Equal(BxLocales.En.Messages.NoData, changed.NoData);
+        Assert.Equal("Close", LxLocales.En.Messages.Close);
+        Assert.Equal(LxLocales.En.Messages.NoData, changed.NoData);
     }
 
     // ---- Extend
@@ -90,34 +90,34 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void Extend_overrides_what_is_asked_and_keeps_the_rest()
     {
-        var australian = BxLocales.Extend(BxLocales.En, code: "en-AU", name: "English (Australia)",
+        var australian = LxLocales.Extend(LxLocales.En, code: "en-AU", name: "English (Australia)",
             messages: m => m with { SearchCommands = "Search..." });
 
         Assert.Equal("en-AU", australian.Code);
         Assert.Equal("English (Australia)", australian.Name);
-        Assert.Equal(BxDirection.Ltr, australian.Dir);
+        Assert.Equal(LxDirection.Ltr, australian.Dir);
         Assert.Equal("Search...", australian.Messages.SearchCommands);
-        Assert.Equal(BxLocales.En.Messages.Close, australian.Messages.Close);
-        Assert.Equal("en", BxLocales.En.Code);
-        Assert.NotEqual("Search...", BxLocales.En.Messages.SearchCommands);
+        Assert.Equal(LxLocales.En.Messages.Close, australian.Messages.Close);
+        Assert.Equal("en", LxLocales.En.Code);
+        Assert.NotEqual("Search...", LxLocales.En.Messages.SearchCommands);
     }
 
     [Fact]
     public void Extend_without_overrides_is_a_copy_and_can_change_the_direction()
     {
-        Assert.Equal(BxLocales.Fr, BxLocales.Extend(BxLocales.Fr));
-        Assert.Equal(BxDirection.Rtl, BxLocales.Extend(BxLocales.Fr, code: "fr-x", dir: BxDirection.Rtl).Dir);
+        Assert.Equal(LxLocales.Fr, LxLocales.Extend(LxLocales.Fr));
+        Assert.Equal(LxDirection.Rtl, LxLocales.Extend(LxLocales.Fr, code: "fr-x", dir: LxDirection.Rtl).Dir);
     }
 
     [Fact]
     public void A_locale_can_be_created_from_scratch()
     {
-        var klingon = new BxLocale("tlh", "tlhIngan Hol", BxDirection.Ltr, new BxMessages { Close = "Qaw" });
+        var klingon = new LxLocale("tlh", "tlhIngan Hol", LxDirection.Ltr, new LxMessages { Close = "Qaw" });
 
         Assert.Equal("Qaw", klingon.Messages.Close);
-        Assert.Equal(CultureInfo.InvariantCulture, new BxLocale("not a culture!", "?", BxDirection.Ltr, klingon.Messages).Culture);
-        Assert.Equal("fr", BxLocales.Fr.Culture.Name);
-        Assert.Equal("pt-BR", BxLocales.PtBr.Culture.Name);
+        Assert.Equal(CultureInfo.InvariantCulture, new LxLocale("not a culture!", "?", LxDirection.Ltr, klingon.Messages).Culture);
+        Assert.Equal("fr", LxLocales.Fr.Culture.Name);
+        Assert.Equal("pt-BR", LxLocales.PtBr.Culture.Name);
     }
 
     // ---- Resolution of a culture
@@ -148,39 +148,39 @@ public partial class LocalizationTests : BluxTestContext
     [InlineData("", "en")]
     public void A_culture_picks_the_exact_code_then_its_parents_then_English_like_the_server(string culture, string expected)
     {
-        Assert.Equal(expected, BxLocales.Resolve(CultureInfo.GetCultureInfo(culture)).Code);
+        Assert.Equal(expected, LxLocales.Resolve(CultureInfo.GetCultureInfo(culture)).Code);
     }
 
     [Fact]
     public void A_language_without_a_locale_of_its_own_gets_English_instead_of_a_sibling_of_the_same_language()
     {
         // "zh-TW" is Chinese but Traditional, not zh-Hans: UseRequestLocalization falls back to its default culture, so Resolve does too.
-        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-TW")).Code);
-        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-HK")).Code);
-        Assert.Equal("zh-Hans", BxLocales.Resolve(CultureInfo.GetCultureInfo("zh-CN")).Code);
+        Assert.Equal("en", LxLocales.Resolve(CultureInfo.GetCultureInfo("zh-TW")).Code);
+        Assert.Equal("en", LxLocales.Resolve(CultureInfo.GetCultureInfo("zh-HK")).Code);
+        Assert.Equal("zh-Hans", LxLocales.Resolve(CultureInfo.GetCultureInfo("zh-CN")).Code);
     }
 
     [Fact]
     public void Portuguese_reaches_its_parent_but_a_parent_never_reaches_a_region()
     {
-        BxLocale[] onlyPt = [BxLocales.En, BxLocales.Pt];
-        BxLocale[] onlyBrazil = [BxLocales.En, BxLocales.PtBr];
+        LxLocale[] onlyPt = [LxLocales.En, LxLocales.Pt];
+        LxLocale[] onlyBrazil = [LxLocales.En, LxLocales.PtBr];
 
-        Assert.Equal("pt", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), BxLocales.All).Code);
-        Assert.Equal("pt", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), onlyPt).Code);
-        Assert.Equal("pt-BR", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), BxLocales.All).Code);
-        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt"), onlyBrazil).Code);
-        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), onlyBrazil).Code);
+        Assert.Equal("pt", LxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), LxLocales.All).Code);
+        Assert.Equal("pt", LxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), onlyPt).Code);
+        Assert.Equal("pt-BR", LxLocales.Resolve(CultureInfo.GetCultureInfo("pt-BR"), LxLocales.All).Code);
+        Assert.Equal("en", LxLocales.Resolve(CultureInfo.GetCultureInfo("pt"), onlyBrazil).Code);
+        Assert.Equal("en", LxLocales.Resolve(CultureInfo.GetCultureInfo("pt-PT"), onlyBrazil).Code);
     }
 
     [Fact]
     public void Resolve_chooses_among_the_given_locales_and_falls_back_to_the_first_without_English()
     {
-        BxLocale[] two = [BxLocales.Fr, BxLocales.De];
+        LxLocale[] two = [LxLocales.Fr, LxLocales.De];
 
-        Assert.Equal("de", BxLocales.Resolve(CultureInfo.GetCultureInfo("de-DE"), two).Code);
-        Assert.Equal("fr", BxLocales.Resolve(CultureInfo.GetCultureInfo("ja-JP"), two).Code);
-        Assert.Equal("en", BxLocales.Resolve(CultureInfo.GetCultureInfo("ja-JP"), [BxLocales.Fr, BxLocales.En]).Code);
+        Assert.Equal("de", LxLocales.Resolve(CultureInfo.GetCultureInfo("de-DE"), two).Code);
+        Assert.Equal("fr", LxLocales.Resolve(CultureInfo.GetCultureInfo("ja-JP"), two).Code);
+        Assert.Equal("en", LxLocales.Resolve(CultureInfo.GetCultureInfo("ja-JP"), [LxLocales.Fr, LxLocales.En]).Code);
     }
 
     [Fact]
@@ -188,7 +188,7 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("es-ES");
 
-        Assert.Equal("es", BxLocales.Resolve().Code);
+        Assert.Equal("es", LxLocales.Resolve().Code);
     }
 
     // ---- Resolution order of a component
@@ -211,18 +211,18 @@ public partial class LocalizationTests : BluxTestContext
         }
     }
 
-    private sealed class Ctx(Action<LuxOptions>? configure = null) : BluxTestContext(configure);
+    private sealed class Ctx(Action<LuxOptions>? configure = null) : LuxTestContext(configure);
 
-    private static string CloseLabel(IRenderedComponent<BxAlert> cut) => cut.Find("button[aria-label]").GetAttribute("aria-label")!;
+    private static string CloseLabel(IRenderedComponent<LxAlert> cut) => cut.Find("button[aria-label]").GetAttribute("aria-label")!;
 
-    private static void WithClose(ComponentParameterCollectionBuilder<BxAlert> p) => p.Add(a => a.Title, "T").Add(a => a.Close, true);
+    private static void WithClose(ComponentParameterCollectionBuilder<LxAlert> p) => p.Add(a => a.Title, "T").Add(a => a.Close, true);
 
     [Fact]
     public void Without_anything_set_the_locale_is_the_one_of_the_UI_culture()
     {
         using var _ = new CultureScope("fr-FR");
 
-        Assert.Equal("Fermer", CloseLabel(Render<BxAlert>(WithClose)));
+        Assert.Equal("Fermer", CloseLabel(Render<LxAlert>(WithClose)));
     }
 
     [Fact]
@@ -230,25 +230,25 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("sv-SE");
 
-        Assert.Equal("Close", CloseLabel(Render<BxAlert>(WithClose)));
+        Assert.Equal("Close", CloseLabel(Render<LxAlert>(WithClose)));
     }
 
     [Fact]
     public void The_option_locale_beats_the_culture()
     {
         using var _ = new CultureScope("fr-FR");
-        using var ctx = new Ctx(o => o.Locale = BxLocales.De);
+        using var ctx = new Ctx(o => o.Locale = LxLocales.De);
 
-        Assert.Equal("Schließen", CloseLabel(ctx.Render<BxAlert>(WithClose)));
+        Assert.Equal("Schließen", CloseLabel(ctx.Render<LxAlert>(WithClose)));
     }
 
     [Fact]
     public void A_cascading_locale_beats_the_option_and_the_culture()
     {
         using var _ = new CultureScope("fr-FR");
-        using var ctx = new Ctx(o => o.Locale = BxLocales.De);
+        using var ctx = new Ctx(o => o.Locale = LxLocales.De);
 
-        var cut = ctx.Render<BxAlert>(p => WithClose(p.AddCascadingValue(BxLocales.Es)));
+        var cut = ctx.Render<LxAlert>(p => WithClose(p.AddCascadingValue(LxLocales.Es)));
 
         Assert.Equal("Cerrar", CloseLabel(cut));
     }
@@ -257,19 +257,19 @@ public partial class LocalizationTests : BluxTestContext
     public void The_available_locales_of_the_options_limit_the_automatic_choice()
     {
         using var _ = new CultureScope("de-DE");
-        using var ctx = new Ctx(o => o.Locales = [BxLocales.En, BxLocales.Fr]);
+        using var ctx = new Ctx(o => o.Locales = [LxLocales.En, LxLocales.Fr]);
 
-        Assert.Equal("Close", CloseLabel(ctx.Render<BxAlert>(WithClose)));
+        Assert.Equal("Close", CloseLabel(ctx.Render<LxAlert>(WithClose)));
     }
 
     [Fact]
     public void An_app_can_add_its_own_locale_to_the_available_ones()
     {
-        var australian = BxLocales.Extend(BxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" });
+        var australian = LxLocales.Extend(LxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" });
         using var _ = new CultureScope("en-AU");
-        using var ctx = new Ctx(o => o.Locales = [.. BxLocales.All, australian]);
+        using var ctx = new Ctx(o => o.Locales = [.. LxLocales.All, australian]);
 
-        Assert.Equal("Dismiss", CloseLabel(ctx.Render<BxAlert>(WithClose)));
+        Assert.Equal("Dismiss", CloseLabel(ctx.Render<LxAlert>(WithClose)));
     }
 
     [Fact]
@@ -280,22 +280,22 @@ public partial class LocalizationTests : BluxTestContext
         var first = options.ResolveLocale(CultureInfo.GetCultureInfo("fr-FR"));
 
         Assert.Same(first, options.ResolveLocale(CultureInfo.GetCultureInfo("fr-FR")));
-        Assert.Same(BxLocales.Fr, first);
+        Assert.Same(LxLocales.Fr, first);
     }
 
     [Fact]
     public void The_locales_of_the_options_are_read_only_once_a_locale_was_resolved()
     {
         var options = Services.GetRequiredService<LuxOptions>();
-        options.Locales = [BxLocales.En];
-        Assert.Same(BxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        options.Locales = [LxLocales.En];
+        Assert.Same(LxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
 
-        var locales = Assert.Throws<InvalidOperationException>(() => options.Locales = [BxLocales.Fr]);
-        var locale = Assert.Throws<InvalidOperationException>(() => options.Locale = BxLocales.Fr);
+        var locales = Assert.Throws<InvalidOperationException>(() => options.Locales = [LxLocales.Fr]);
+        var locale = Assert.Throws<InvalidOperationException>(() => options.Locale = LxLocales.Fr);
 
         Assert.Contains("Locales", locales.Message);
         Assert.Contains("Locale", locale.Message);
-        Assert.Same(BxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        Assert.Same(LxLocales.En, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
         Assert.Null(options.Locale);
     }
 
@@ -304,38 +304,38 @@ public partial class LocalizationTests : BluxTestContext
     {
         var options = Services.GetRequiredService<LuxOptions>();
 
-        options.Locales = [BxLocales.En];
-        options.Locales = [BxLocales.Fr, BxLocales.En];
-        options.Locale = BxLocales.De;
+        options.Locales = [LxLocales.En];
+        options.Locales = [LxLocales.Fr, LxLocales.En];
+        options.Locale = LxLocales.De;
 
         Assert.Equal(["fr", "en"], options.Locales.Select(l => l.Code));
-        Assert.Same(BxLocales.De, options.ResolveLocale(CultureInfo.GetCultureInfo("ja")));
+        Assert.Same(LxLocales.De, options.ResolveLocale(CultureInfo.GetCultureInfo("ja")));
     }
 
     [Fact]
     public void Assigning_the_locales_copies_the_list_so_the_caller_cannot_change_it_later()
     {
         var options = Services.GetRequiredService<LuxOptions>();
-        var mine = new List<BxLocale> { BxLocales.En, BxLocales.Fr };
+        var mine = new List<LxLocale> { LxLocales.En, LxLocales.Fr };
 
         options.Locales = mine;
         mine.Clear();
-        mine.Add(BxLocales.Ja);
+        mine.Add(LxLocales.Ja);
 
         Assert.Equal(["en", "fr"], options.Locales.Select(l => l.Code));
-        Assert.True(((IList<BxLocale>)options.Locales).IsReadOnly);
-        Assert.Same(BxLocales.Fr, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
+        Assert.True(((IList<LxLocale>)options.Locales).IsReadOnly);
+        Assert.Same(LxLocales.Fr, options.ResolveLocale(CultureInfo.GetCultureInfo("fr")));
         Assert.Throws<ArgumentNullException>(() => options.Locales = null!);
     }
 
-    // ---- BxApp
+    // ---- LxApp
 
     [Fact]
     public void App_writes_lang_and_dir_of_the_resolved_locale()
     {
         using var _ = new CultureScope("ar-EG");
 
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false));
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false));
 
         Assert.Equal("ar", cut.Find("div").GetAttribute("lang"));
         Assert.Equal("rtl", cut.Find("div").GetAttribute("dir"));
@@ -344,12 +344,12 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void App_Locale_parameter_sets_lang_dir_and_the_texts_of_its_components()
     {
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Ar)
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Ar)
             .Add(a => a.ChildContent, b =>
             {
-                b.OpenComponent<BxAlert>(0);
-                b.AddAttribute(1, nameof(BxAlert.Title), "T");
-                b.AddAttribute(2, nameof(BxAlert.Close), true);
+                b.OpenComponent<LxAlert>(0);
+                b.AddAttribute(1, nameof(LxAlert.Title), "T");
+                b.AddAttribute(2, nameof(LxAlert.Close), true);
                 b.CloseComponent();
             }));
 
@@ -361,7 +361,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void App_explicit_Lang_and_Dir_win_over_the_locale()
     {
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Ar).Add(a => a.Lang, "ar-EG").Add(a => a.Dir, "auto"));
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Ar).Add(a => a.Lang, "ar-EG").Add(a => a.Dir, "auto"));
 
         Assert.Equal("ar-EG", cut.Find("div").GetAttribute("lang"));
         Assert.Equal("auto", cut.Find("div").GetAttribute("dir"));
@@ -370,22 +370,22 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void Changing_the_Locale_of_the_app_re_renders_the_components_below()
     {
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr)
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Fr)
             .Add(a => a.ChildContent, b =>
             {
-                b.OpenComponent<BxAlert>(0);
-                b.AddAttribute(1, nameof(BxAlert.Title), "T");
-                b.AddAttribute(2, nameof(BxAlert.Close), true);
+                b.OpenComponent<LxAlert>(0);
+                b.AddAttribute(1, nameof(LxAlert.Title), "T");
+                b.AddAttribute(2, nameof(LxAlert.Close), true);
                 b.CloseComponent();
             }));
         Assert.Equal("Fermer", cut.Find("button[aria-label]").GetAttribute("aria-label"));
 
-        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Ja)
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Ja)
             .Add(a => a.ChildContent, b =>
             {
-                b.OpenComponent<BxAlert>(0);
-                b.AddAttribute(1, nameof(BxAlert.Title), "T");
-                b.AddAttribute(2, nameof(BxAlert.Close), true);
+                b.OpenComponent<LxAlert>(0);
+                b.AddAttribute(1, nameof(LxAlert.Title), "T");
+                b.AddAttribute(2, nameof(LxAlert.Close), true);
                 b.CloseComponent();
             }));
 
@@ -393,7 +393,7 @@ public partial class LocalizationTests : BluxTestContext
         Assert.Equal("ja", cut.Find("div.isolate").GetAttribute("lang"));
     }
 
-    private sealed class RenderProbe : BxComponentBase
+    private sealed class RenderProbe : LxComponentBase
     {
         public static int Renders;
 
@@ -414,13 +414,13 @@ public partial class LocalizationTests : BluxTestContext
     public void Rendering_the_app_again_with_the_same_locale_does_not_render_the_components_below()
     {
         RenderProbe.Renders = 0;
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Fr).Add(a => a.ChildContent, Probe));
         Assert.Equal(1, RenderProbe.Renders);
         Assert.Contains("Fermer", cut.Markup);
 
         // A navigation re-renders the layout, hence the app, with the same locale (here an equal copy, as a derived locale built inline would be).
-        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Extend(BxLocales.Fr)).Add(a => a.ChildContent, Probe));
-        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Extend(LxLocales.Fr)).Add(a => a.ChildContent, Probe));
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Fr).Add(a => a.ChildContent, Probe));
 
         Assert.Equal(1, RenderProbe.Renders);
         Assert.Contains("Fermer", cut.Markup);
@@ -430,9 +430,9 @@ public partial class LocalizationTests : BluxTestContext
     public void Changing_the_locale_of_the_app_renders_the_components_below_in_the_new_language()
     {
         RenderProbe.Renders = 0;
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Fr).Add(a => a.ChildContent, Probe));
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Fr).Add(a => a.ChildContent, Probe));
 
-        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.De).Add(a => a.ChildContent, Probe));
+        cut.Render(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.De).Add(a => a.ChildContent, Probe));
 
         Assert.Contains("Schließen", cut.Markup);
         Assert.DoesNotContain("Fermer", cut.Markup);
@@ -442,11 +442,11 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void A_nested_app_without_Locale_inherits_the_one_above()
     {
-        var cut = Render<BxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, BxLocales.Ar)
+        var cut = Render<LxApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, LxLocales.Ar)
             .Add(a => a.ChildContent, b =>
             {
-                b.OpenComponent<BxApp>(0);
-                b.AddAttribute(1, nameof(BxApp.Toaster), false);
+                b.OpenComponent<LxApp>(0);
+                b.AddAttribute(1, nameof(LxApp.Toaster), false);
                 b.CloseComponent();
             }));
 
@@ -460,12 +460,12 @@ public partial class LocalizationTests : BluxTestContext
     {
         using (new CultureScope("fr-FR"))
         {
-            var error = Render<BxError>(p => p.Add(e => e.StatusCode, 404));
+            var error = Render<LxError>(p => p.Add(e => e.StatusCode, 404));
             Assert.Equal("Page introuvable", error.Find("h1").TextContent);
             Assert.Equal("Retour à l'accueil", error.Find("a").TextContent.Trim());
         }
 
-        var explicitLocale = Render<BxError>(p => p.AddCascadingValue(BxLocales.De).Add(e => e.StatusCode, 404));
+        var explicitLocale = Render<LxError>(p => p.AddCascadingValue(LxLocales.De).Add(e => e.StatusCode, 404));
         Assert.Equal("Seite nicht gefunden", explicitLocale.Find("h1").TextContent);
     }
 
@@ -474,22 +474,22 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("pt-BR");
 
-        var cut = Render<BxLocaleSelect>();
+        var cut = Render<LxLocaleSelect>();
 
         Assert.Equal(12, cut.FindAll("[role=option]").Count);
         Assert.Contains("Português (Brasil)", cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")));
-        Assert.Equal("pt-BR", cut.Find("bx-select").GetAttribute("value"));
+        Assert.Equal("pt-BR", cut.Find("lx-select").GetAttribute("value"));
         Assert.Equal("Idioma", cut.Find("button[role=combobox]").GetAttribute("aria-label"));
     }
 
     [Fact]
     public void The_modifier_key_label_follows_the_locale()
     {
-        var german = Render<BxContentSearchButton>(p => p.AddCascadingValue(BxLocales.De).Add(b => b.Collapsed, false));
-        var english = Render<BxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
+        var german = Render<LxContentSearchButton>(p => p.AddCascadingValue(LxLocales.De).Add(b => b.Collapsed, false));
+        var english = Render<LxContentSearchButton>(p => p.Add(b => b.Collapsed, false));
 
-        Assert.Equal("Strg", german.Find("kbd[data-bx-mod]").GetAttribute("data-label"));
-        Assert.Equal("Ctrl", english.Find("kbd[data-bx-mod]").GetAttribute("data-label"));
+        Assert.Equal("Strg", german.Find("kbd[data-lx-mod]").GetAttribute("data-label"));
+        Assert.Equal("Ctrl", english.Find("kbd[data-lx-mod]").GetAttribute("data-label"));
     }
 
     [Theory]
@@ -508,8 +508,8 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void The_sort_button_of_a_column_says_what_a_click_does_in_the_language_of_the_locale()
     {
-        var cut = Render<BxTable<Person>>(p => p.AddCascadingValue(BxLocales.Fr).Add(t => t.Items, [new Person("Zoe")])
-            .AddChildContent<BxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true)));
+        var cut = Render<LxTable<Person>>(p => p.AddCascadingValue(LxLocales.Fr).Add(t => t.Items, [new Person("Zoe")])
+            .AddChildContent<LxColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true)));
 
         Assert.Equal("Tri croissant", cut.Find("th button").GetAttribute("title"));
         cut.Find("th button").Click();
@@ -519,8 +519,8 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void The_form_summary_is_named_by_its_message()
     {
-        var english = Render<BxForm>(p => p.Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
-        var french = Render<BxForm>(p => p.AddCascadingValue(BxLocales.Fr).Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
+        var english = Render<LxForm>(p => p.Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
+        var french = Render<LxForm>(p => p.AddCascadingValue(LxLocales.Fr).Add(f => f.Model, new object()).Add(f => f.ShowSummary, true));
 
         Assert.Equal("Please fix the following errors", english.Find("[data-slot=summary]").GetAttribute("aria-label"));
         Assert.Equal("Veuillez corriger les erreurs suivantes", french.Find("[data-slot=summary]").GetAttribute("aria-label"));
@@ -531,11 +531,11 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void Calendar_names_months_in_the_culture_of_the_locale_and_an_explicit_Culture_wins()
     {
-        var french = Render<BxCalendar>(p => p.AddCascadingValue(BxLocales.Fr).Add(c => c.Value, new DateOnly(2026, 3, 5)));
+        var french = Render<LxCalendar>(p => p.AddCascadingValue(LxLocales.Fr).Add(c => c.Value, new DateOnly(2026, 3, 5)));
         Assert.Contains("mars", french.Markup);
         Assert.DoesNotContain("March", french.Markup);
 
-        var explicitCulture = Render<BxCalendar>(p => p.AddCascadingValue(BxLocales.Fr).Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Value, new DateOnly(2026, 3, 5)));
+        var explicitCulture = Render<LxCalendar>(p => p.AddCascadingValue(LxLocales.Fr).Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Value, new DateOnly(2026, 3, 5)));
         Assert.Contains("März", explicitCulture.Markup);
     }
 
@@ -544,7 +544,7 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("es-ES");
 
-        var cut = Render<BxCalendar>(p => p.Add(c => c.Value, new DateOnly(2026, 3, 5)));
+        var cut = Render<LxCalendar>(p => p.Add(c => c.Value, new DateOnly(2026, 3, 5)));
 
         Assert.Contains("marzo", cut.Markup);
     }
@@ -552,7 +552,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void InputDate_passes_the_locale_to_its_calendar()
     {
-        var cut = Render<BxInputDate>(p => p.AddCascadingValue(BxLocales.Fr).Add(d => d.Value, new DateOnly(2026, 3, 5)));
+        var cut = Render<LxInputDate>(p => p.AddCascadingValue(LxLocales.Fr).Add(d => d.Value, new DateOnly(2026, 3, 5)));
 
         Assert.Contains("mars", cut.Markup);
     }
@@ -560,86 +560,86 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void BlogPost_and_InputNumber_default_to_the_culture_of_the_locale()
     {
-        var post = Render<BxBlogPost>(p => p.AddCascadingValue(BxLocales.Fr).Add(c => c.Date, new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero)));
+        var post = Render<LxBlogPost>(p => p.AddCascadingValue(LxLocales.Fr).Add(c => c.Date, new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero)));
         Assert.Equal("12 novembre 2026", post.Find("time").TextContent);
 
-        var number = Render<BxInputNumber>(p => p.AddCascadingValue(BxLocales.De).Add(n => n.Value, 1234.5m));
-        Assert.Equal("de", number.Find("bx-input-number").GetAttribute("locale"));
+        var number = Render<LxInputNumber>(p => p.AddCascadingValue(LxLocales.De).Add(n => n.Value, 1234.5m));
+        Assert.Equal("de", number.Find("lx-input-number").GetAttribute("locale"));
     }
 
-    // ---- BxDates
+    // ---- LxDates
 
     [Theory]
     [InlineData("en-US", "March 4, 2026")]
     [InlineData("fr-FR", "4 mars 2026")]
     [InlineData("de-DE", "4. März 2026")]
-    public void BxDates_writes_the_long_date_of_the_culture_without_the_day_name(string culture, string expected)
+    public void LxDates_writes_the_long_date_of_the_culture_without_the_day_name(string culture, string expected)
     {
-        Assert.Equal(expected, BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo(culture)));
+        Assert.Equal(expected, LxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo(culture)));
     }
 
     [Fact]
-    public void BxDates_keeps_the_order_of_the_culture_in_russian()
+    public void LxDates_keeps_the_order_of_the_culture_in_russian()
     {
-        var text = BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo("ru-RU"));
+        var text = LxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), culture: CultureInfo.GetCultureInfo("ru-RU"));
 
         // "4 марта 2026 г.": the day first, as the culture writes it, not "марта 4, 2026".
         Assert.StartsWith("4 марта 2026", text);
     }
 
     [Fact]
-    public void BxDates_uses_an_explicit_format_and_the_blog_post_agrees_with_it()
+    public void LxDates_uses_an_explicit_format_and_the_blog_post_agrees_with_it()
     {
         var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
         var fr = CultureInfo.GetCultureInfo("fr-FR");
 
-        Assert.Equal("04/03/2026", BxDates.Format(date, "dd/MM/yyyy", fr));
-        var post = Render<BxBlogPost>(p => p.AddCascadingValue(BxLocales.Fr).Add(c => c.Date, date));
-        Assert.Equal(BxDates.Format(date, null, BxLocales.Fr.Culture), post.Find("time").TextContent);
-        Assert.Equal(BxDates.Iso(date), post.Find("time").GetAttribute("datetime"));
+        Assert.Equal("04/03/2026", LxDates.Format(date, "dd/MM/yyyy", fr));
+        var post = Render<LxBlogPost>(p => p.AddCascadingValue(LxLocales.Fr).Add(c => c.Date, date));
+        Assert.Equal(LxDates.Format(date, null, LxLocales.Fr.Culture), post.Find("time").TextContent);
+        Assert.Equal(LxDates.Iso(date), post.Find("time").GetAttribute("datetime"));
     }
 
     [Fact]
-    public void BxDates_follows_the_option_locale_like_the_components_do_and_the_parameterless_one_only_the_built_in_match()
+    public void LxDates_follows_the_option_locale_like_the_components_do_and_the_parameterless_one_only_the_built_in_match()
     {
         using var _ = new CultureScope("en-US");
-        using var ctx = new Ctx(o => o.Locale = BxLocales.Fr);
+        using var ctx = new Ctx(o => o.Locale = LxLocales.Fr);
         var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
 
-        var post = ctx.Render<BxBlogPost>(p => p.Add(c => c.Date, date));
+        var post = ctx.Render<LxBlogPost>(p => p.Add(c => c.Date, date));
 
         Assert.Equal("4 mars 2026", post.Find("time").TextContent);
-        Assert.Equal("4 mars 2026", BxDates.FormatFor(date, BxLocales.Fr));
-        Assert.Equal("fr", BxDates.FormatCulture(ctx.Services.GetRequiredService<LuxOptions>()).TwoLetterISOLanguageName);
+        Assert.Equal("4 mars 2026", LxDates.FormatFor(date, LxLocales.Fr));
+        Assert.Equal("fr", LxDates.FormatCulture(ctx.Services.GetRequiredService<LuxOptions>()).TwoLetterISOLanguageName);
         // No services: the English culture of the request.
-        Assert.Equal("March 4, 2026", BxDates.Format(date));
+        Assert.Equal("March 4, 2026", LxDates.Format(date));
     }
 
     [Fact]
-    public void BxDates_has_no_ambiguous_common_call()
+    public void LxDates_has_no_ambiguous_common_call()
     {
         // A call site for each shape: this compiles only while none of them is ambiguous.
         var date = new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero);
         var fr = CultureInfo.GetCultureInfo("fr-FR");
         using var _ = new CultureScope("fr-FR");
 
-        Assert.Equal("4 mars 2026", BxDates.Format(date));
-        Assert.Equal("4 mars 2026", BxDates.Format(date, null));
-        Assert.Equal("4 mars 2026", BxDates.Format(date, null, null));
-        Assert.Equal("4 mars 2026", BxDates.Format(date, culture: fr));
-        Assert.Equal("04/03/2026", BxDates.Format(date, "dd/MM/yyyy"));
-        Assert.Equal("4 mars 2026", BxDates.FormatFor(date, BxLocales.Fr));
-        Assert.Equal("04/03/2026", BxDates.FormatFor(date, BxLocales.Fr, "dd/MM/yyyy"));
+        Assert.Equal("4 mars 2026", LxDates.Format(date));
+        Assert.Equal("4 mars 2026", LxDates.Format(date, null));
+        Assert.Equal("4 mars 2026", LxDates.Format(date, null, null));
+        Assert.Equal("4 mars 2026", LxDates.Format(date, culture: fr));
+        Assert.Equal("04/03/2026", LxDates.Format(date, "dd/MM/yyyy"));
+        Assert.Equal("4 mars 2026", LxDates.FormatFor(date, LxLocales.Fr));
+        Assert.Equal("04/03/2026", LxDates.FormatFor(date, LxLocales.Fr, "dd/MM/yyyy"));
     }
 
     [Fact]
-    public void BxDates_iso_is_the_same_in_every_culture()
+    public void LxDates_iso_is_the_same_in_every_culture()
     {
         var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("ar-SA");
-            Assert.Equal("2026-03-04", BxDates.Iso(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
+            Assert.Equal("2026-03-04", LxDates.Iso(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
         }
         finally
         {
@@ -651,16 +651,16 @@ public partial class LocalizationTests : BluxTestContext
     [InlineData("en-GB", "en", "en-GB")]
     [InlineData("en-US", "fr", "fr")]
     [InlineData("fr-CA", "fr", "fr-CA")]
-    public void BxDates_format_culture_is_the_regional_one_when_it_has_the_language_of_the_locale_otherwise_the_one_of_the_locale(string current, string ui, string expected)
+    public void LxDates_format_culture_is_the_regional_one_when_it_has_the_language_of_the_locale_otherwise_the_one_of_the_locale(string current, string ui, string expected)
     {
         var original = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(current);
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo(ui);
-            Assert.Equal(expected, BxDates.FormatCulture().Name);
-            Assert.Equal(BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), null, CultureInfo.GetCultureInfo(expected)),
-                BxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
+            Assert.Equal(expected, LxDates.FormatCulture().Name);
+            Assert.Equal(LxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero), null, CultureInfo.GetCultureInfo(expected)),
+                LxDates.Format(new DateTimeOffset(2026, 3, 4, 0, 0, 0, TimeSpan.Zero)));
         }
         finally
         {
@@ -668,29 +668,29 @@ public partial class LocalizationTests : BluxTestContext
         }
     }
 
-    private IRenderedComponent<BxCalendar> Calendar(BxLocale locale) =>
-        Render<BxCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 11, 20)));
+    private IRenderedComponent<LxCalendar> Calendar(LxLocale locale) =>
+        Render<LxCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 11, 20)));
 
     [Fact]
     public void A_regional_culture_of_the_language_of_the_locale_formats_dates_and_starts_the_week_its_own_way()
     {
         using (new CultureScope("en-GB", "en"))
         {
-            var british = Calendar(BxLocales.En).Find("bx-calendar");
+            var british = Calendar(LxLocales.En).Find("lx-calendar");
             Assert.Equal("en-GB", british.GetAttribute("data-locale"));
             Assert.Equal("1", british.GetAttribute("week-start"));
         }
 
         using (new CultureScope("en-US", "en"))
         {
-            var american = Calendar(BxLocales.En).Find("bx-calendar");
+            var american = Calendar(LxLocales.En).Find("lx-calendar");
             Assert.Equal("en-US", american.GetAttribute("data-locale"));
             Assert.Equal("0", american.GetAttribute("week-start"));
         }
 
         using (new CultureScope("fr-CA", "fr"))
         {
-            Assert.Equal("fr-CA", Calendar(BxLocales.Fr).Find("bx-calendar").GetAttribute("data-locale"));
+            Assert.Equal("fr-CA", Calendar(LxLocales.Fr).Find("lx-calendar").GetAttribute("data-locale"));
         }
     }
 
@@ -699,7 +699,7 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("en-US", "en");
 
-        var cut = Calendar(BxLocales.Fr).Find("bx-calendar");
+        var cut = Calendar(LxLocales.Fr).Find("lx-calendar");
 
         Assert.Equal("fr", cut.GetAttribute("data-locale"));
         Assert.Equal("1", cut.GetAttribute("week-start"));
@@ -711,9 +711,9 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("en-GB", "en");
 
-        var cut = Render<BxCalendar>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Value, new DateOnly(2026, 11, 20)));
+        var cut = Render<LxCalendar>(p => p.AddCascadingValue(LxLocales.En).Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Value, new DateOnly(2026, 11, 20)));
 
-        Assert.Equal("de-DE", cut.Find("bx-calendar").GetAttribute("data-locale"));
+        Assert.Equal("de-DE", cut.Find("lx-calendar").GetAttribute("data-locale"));
     }
 
     [Fact]
@@ -722,13 +722,13 @@ public partial class LocalizationTests : BluxTestContext
         using var _ = new CultureScope("en-GB", "en");
         var date = new DateTimeOffset(2026, 11, 20, 0, 0, 0, TimeSpan.Zero);
 
-        var post = Render<BxBlogPost>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.Date, date));
-        var number = Render<BxInputNumber>(p => p.AddCascadingValue(BxLocales.En).Add(n => n.Value, 1234.5m));
-        var time = Render<BxInputTime>(p => p.AddCascadingValue(BxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
-        var upload = Render<BxFileUpload>(p => p.AddCascadingValue(BxLocales.En).Add(c => c.MaxSize, 1536L));
+        var post = Render<LxBlogPost>(p => p.AddCascadingValue(LxLocales.En).Add(c => c.Date, date));
+        var number = Render<LxInputNumber>(p => p.AddCascadingValue(LxLocales.En).Add(n => n.Value, 1234.5m));
+        var time = Render<LxInputTime>(p => p.AddCascadingValue(LxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
+        var upload = Render<LxFileUpload>(p => p.AddCascadingValue(LxLocales.En).Add(c => c.MaxSize, 1536L));
 
         Assert.Equal("20 November 2026", post.Find("time").TextContent);
-        Assert.Equal("en-GB", number.Find("bx-input-number").GetAttribute("locale"));
+        Assert.Equal("en-GB", number.Find("lx-input-number").GetAttribute("locale"));
         Assert.Empty(time.FindAll("[data-segment=period]"));
         Assert.Equal("en-GB", upload.Find("[data-culture]").GetAttribute("data-culture"));
     }
@@ -738,7 +738,7 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("fr-FR", "fr");
 
-        var american = Render<BxInputTime>(p => p.AddCascadingValue(BxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
+        var american = Render<LxInputTime>(p => p.AddCascadingValue(LxLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
 
         Assert.NotEmpty(american.FindAll("[data-segment=period]"));
     }
@@ -746,7 +746,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public void InputTime_uses_the_AM_PM_of_the_locale_when_the_culture_has_none()
     {
-        var cut = Render<BxInputTime>(p => p.AddCascadingValue(BxLocales.Ja).Add(t => t.Hour12, true).Add(t => t.Value, new TimeOnly(15, 30)));
+        var cut = Render<LxInputTime>(p => p.AddCascadingValue(LxLocales.Ja).Add(t => t.Hour12, true).Add(t => t.Value, new TimeOnly(15, 30)));
 
         Assert.Equal("時", cut.Find("[data-segment=hour]").GetAttribute("aria-label"));
         Assert.Equal("分", cut.Find("[data-segment=minute]").GetAttribute("aria-label"));
@@ -754,7 +754,7 @@ public partial class LocalizationTests : BluxTestContext
 
     // ---- The culture of the client follows the server
 
-    private static readonly string[] Supported = [.. BxLocales.All.Select(l => l.Code)];
+    private static readonly string[] Supported = [.. LxLocales.All.Select(l => l.Code)];
 
     private static string Show(LuxCulture.ChosenCulture? chosen) => chosen is null ? "none" : $"{chosen.Culture.Name}/{chosen.UICulture.Name}";
 
@@ -794,9 +794,9 @@ public partial class LocalizationTests : BluxTestContext
     {
         using var _ = new CultureScope("en-GB", "en");
 
-        var cut = Render<BxCultureMeta>();
+        var cut = Render<LxCultureMeta>();
 
-        Assert.Equal("blux-culture", cut.Find("meta").GetAttribute("name"));
+        Assert.Equal("lux-culture", cut.Find("meta").GetAttribute("name"));
         Assert.Equal("c=en-GB|uic=en", cut.Find("meta").GetAttribute("content"));
     }
 
@@ -812,7 +812,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public async Task The_culture_and_the_UI_culture_of_the_cookie_are_applied_separately()
     {
-        JSInterop.Setup<string?[]>("Blux.serverCulture", ".AspNetCore.Culture").SetResult(["c=en-GB|uic=en", "c=fr|uic=fr", "fr"]);
+        JSInterop.Setup<string?[]>("Lux.serverCulture", ".AspNetCore.Culture").SetResult(["c=en-GB|uic=en", "c=fr|uic=fr", "fr"]);
         var before = (CultureInfo.CurrentCulture, CultureInfo.CurrentUICulture);
         try
         {
@@ -834,7 +834,7 @@ public partial class LocalizationTests : BluxTestContext
     [Fact]
     public async Task The_client_keeps_the_browser_culture_when_the_server_left_nothing()
     {
-        JSInterop.Setup<string?[]>("Blux.serverCulture", ".AspNetCore.Culture").SetResult([null, null, null]);
+        JSInterop.Setup<string?[]>("Lux.serverCulture", ".AspNetCore.Culture").SetResult([null, null, null]);
         var before = CultureInfo.CurrentUICulture;
 
         await Services.ApplyServerCultureAsync(Supported);
@@ -877,40 +877,40 @@ public partial class LocalizationTests : BluxTestContext
         return texts.Any(t => Regex.IsMatch(t, pattern));
     }
 
-    private static readonly BxCommandGroup[] Groups = [new("Group", [new BxCommandItem { Label = "Item" }])];
-    private static readonly BxCarouselItem[] Slides = [new(b => b.AddContent(0, "a")), new(b => b.AddContent(0, "b"))];
+    private static readonly LxCommandGroup[] Groups = [new("Group", [new LxCommandItem { Label = "Item" }])];
+    private static readonly LxCarouselItem[] Slides = [new(b => b.AddContent(0, "a")), new(b => b.AddContent(0, "b"))];
 
     public static TheoryData<string> Samples() => new(
         "error", "pagination", "breadcrumb", "calendar", "input-date", "input-time", "file-upload", "toaster", "command-palette",
         "color-mode-select", "sidebar", "editor-toolbar", "editor-suggestions", "carousel", "chat-prompt", "content-toc", "locale-select",
         "input-tags", "pin-input", "form", "stepper", "header", "progress", "chat-attachment");
 
-    private IRenderedComponent<IComponent> Sample(string name, BxLocale locale) => name switch
+    private IRenderedComponent<IComponent> Sample(string name, LxLocale locale) => name switch
     {
-        "error" => Render<BxError>(p => p.AddCascadingValue(locale).Add(e => e.StatusCode, 404)),
-        "pagination" => Render<BxPagination>(p => p.AddCascadingValue(locale).Add(c => c.Total, 100).Add(c => c.Page, 3)),
-        "breadcrumb" => Render<BxBreadcrumb>(p => p.AddCascadingValue(locale).Add(c => c.Items, [new BxBreadcrumbItem("Home") { Href = "/" }, new BxBreadcrumbItem("Docs")])),
-        "calendar" => Render<BxCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 3, 5))),
-        "input-date" => Render<BxInputDate>(p => p.AddCascadingValue(locale)),
-        "input-time" => Render<BxInputTime>(p => p.AddCascadingValue(locale).Add(c => c.Hour12, true)),
-        "file-upload" => Render<BxFileUpload>(p => p.AddCascadingValue(locale).Add(c => c.MaxSize, 2048L)),
-        "toaster" => Render<BxToaster>(p => p.AddCascadingValue(locale)),
-        "command-palette" => Render<BxCommandPalette>(p => p.AddCascadingValue(locale).Add(c => c.Groups, Groups)),
-        "color-mode-select" => Render<BxColorModeSelect>(p => p.AddCascadingValue(locale)),
-        "sidebar" => Render<BxSidebar>(p => p.AddCascadingValue(locale)),
-        "editor-toolbar" => Render<BxEditorToolbar>(p => p.AddCascadingValue(locale)),
-        "editor-suggestions" => Render<BxEditorSuggestionMenu>(p => p.AddCascadingValue(locale)),
-        "carousel" => Render<BxCarousel>(p => p.AddCascadingValue(locale).Add(c => c.Items, Slides).Add(c => c.AutoPlay, 3000)),
-        "chat-prompt" => Render<BxChatPrompt>(p => p.AddCascadingValue(locale)),
-        "content-toc" => Render<BxContentToc>(p => p.AddCascadingValue(locale).Add(t => t.Links, [new BxContentTocLink("a", "A")])),
-        "locale-select" => Render<BxLocaleSelect>(p => p.AddCascadingValue(locale)),
-        "input-tags" => Render<BxInputTags>(p => p.AddCascadingValue(locale).Add(t => t.Value, ["x"])),
-        "pin-input" => Render<BxPinInput>(p => p.AddCascadingValue(locale).Add(i => i.Length, 4)),
-        "form" => Render<BxForm>(p => p.AddCascadingValue(locale).Add(f => f.Model, new object()).Add(f => f.ShowSummary, true)),
-        "stepper" => Render<BxStepper>(p => p.AddCascadingValue(locale).Add(s => s.Items, [new BxStepperItem("One"), new BxStepperItem("Two")]).Add(s => s.Current, 1)),
-        "header" => Render<BxHeader>(p => p.AddCascadingValue(locale).Add(h => h.Items, [new BxNavigationItem("Home") { Href = "/" }])),
-        "progress" => Render<BxProgress>(p => p.AddCascadingValue(locale).Add(b => b.Value, 20)),
-        "chat-attachment" => Render<BxChatAttachment>(p => p.AddCascadingValue(locale).Add(c => c.Name, "a.pdf").Add(c => c.FileSize, 1536L).Add(c => c.Status, ChatAttachmentStatus.Uploading)),
+        "error" => Render<LxError>(p => p.AddCascadingValue(locale).Add(e => e.StatusCode, 404)),
+        "pagination" => Render<LxPagination>(p => p.AddCascadingValue(locale).Add(c => c.Total, 100).Add(c => c.Page, 3)),
+        "breadcrumb" => Render<LxBreadcrumb>(p => p.AddCascadingValue(locale).Add(c => c.Items, [new LxBreadcrumbItem("Home") { Href = "/" }, new LxBreadcrumbItem("Docs")])),
+        "calendar" => Render<LxCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 3, 5))),
+        "input-date" => Render<LxInputDate>(p => p.AddCascadingValue(locale)),
+        "input-time" => Render<LxInputTime>(p => p.AddCascadingValue(locale).Add(c => c.Hour12, true)),
+        "file-upload" => Render<LxFileUpload>(p => p.AddCascadingValue(locale).Add(c => c.MaxSize, 2048L)),
+        "toaster" => Render<LxToaster>(p => p.AddCascadingValue(locale)),
+        "command-palette" => Render<LxCommandPalette>(p => p.AddCascadingValue(locale).Add(c => c.Groups, Groups)),
+        "color-mode-select" => Render<LxColorModeSelect>(p => p.AddCascadingValue(locale)),
+        "sidebar" => Render<LxSidebar>(p => p.AddCascadingValue(locale)),
+        "editor-toolbar" => Render<LxEditorToolbar>(p => p.AddCascadingValue(locale)),
+        "editor-suggestions" => Render<LxEditorSuggestionMenu>(p => p.AddCascadingValue(locale)),
+        "carousel" => Render<LxCarousel>(p => p.AddCascadingValue(locale).Add(c => c.Items, Slides).Add(c => c.AutoPlay, 3000)),
+        "chat-prompt" => Render<LxChatPrompt>(p => p.AddCascadingValue(locale)),
+        "content-toc" => Render<LxContentToc>(p => p.AddCascadingValue(locale).Add(t => t.Links, [new LxContentTocLink("a", "A")])),
+        "locale-select" => Render<LxLocaleSelect>(p => p.AddCascadingValue(locale)),
+        "input-tags" => Render<LxInputTags>(p => p.AddCascadingValue(locale).Add(t => t.Value, ["x"])),
+        "pin-input" => Render<LxPinInput>(p => p.AddCascadingValue(locale).Add(i => i.Length, 4)),
+        "form" => Render<LxForm>(p => p.AddCascadingValue(locale).Add(f => f.Model, new object()).Add(f => f.ShowSummary, true)),
+        "stepper" => Render<LxStepper>(p => p.AddCascadingValue(locale).Add(s => s.Items, [new LxStepperItem("One"), new LxStepperItem("Two")]).Add(s => s.Current, 1)),
+        "header" => Render<LxHeader>(p => p.AddCascadingValue(locale).Add(h => h.Items, [new LxNavigationItem("Home") { Href = "/" }])),
+        "progress" => Render<LxProgress>(p => p.AddCascadingValue(locale).Add(b => b.Value, 20)),
+        "chat-attachment" => Render<LxChatAttachment>(p => p.AddCascadingValue(locale).Add(c => c.Name, "a.pdf").Add(c => c.FileSize, 1536L).Add(c => c.Status, ChatAttachmentStatus.Uploading)),
         _ => throw new ArgumentOutOfRangeException(nameof(name)),
     };
 
@@ -918,11 +918,11 @@ public partial class LocalizationTests : BluxTestContext
     [MemberData(nameof(Samples))]
     public void A_component_renders_no_English_message_under_the_French_locale(string name)
     {
-        var english = Texts(Sample(name, BxLocales.En).Markup);
-        var french = Texts(Sample(name, BxLocales.Fr).Markup);
+        var english = Texts(Sample(name, LxLocales.En).Markup);
+        var french = Texts(Sample(name, LxLocales.Fr).Markup);
 
         var used = MessageProperties
-            .Select(p => (Name: p.Name, En: (string)p.GetValue(BxLocales.En.Messages)!, Fr: (string)p.GetValue(BxLocales.Fr.Messages)!))
+            .Select(p => (Name: p.Name, En: (string)p.GetValue(LxLocales.En.Messages)!, Fr: (string)p.GetValue(LxLocales.Fr.Messages)!))
             .Where(m => m.En != m.Fr && Shows(english, m.En))
             .ToList();
 
@@ -946,7 +946,7 @@ public partial class LocalizationTests : BluxTestContext
 
         var offenders = Directory.EnumerateFiles(Path.Combine(root!, "src", "Lux.UI"), "*.*", SearchOption.AllDirectories)
             .Where(f => (f.EndsWith(".razor") || f.EndsWith(".cs")) && !f.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") && !f.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
-            .Where(f => File.ReadAllText(f) is var text && (text.Contains("Options.Strings") || text.Contains("BluxStrings")))
+            .Where(f => File.ReadAllText(f) is var text && (text.Contains("Options.Strings") || text.Contains("LuxStrings")))
             .ToList();
 
         Assert.Empty(offenders);

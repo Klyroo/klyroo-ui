@@ -5,14 +5,14 @@ import { ValueModel } from './form2-shared.js';
  * Text field that turns typed values into removable tags. Enter or a comma adds, Backspace on an empty field
  * removes the last tag. The tags are drawn into the empty <span data-slot="tags">, which Blazor renders empty.
  *
- * <bx-input-tags name="…" data-values="a␟b" data-max="5" data-tag-class data-remove-class data-remove-label="Remove {0}">
+ * <lx-input-tags name="…" data-values="a␟b" data-max="5" data-tag-class data-remove-class data-remove-label="Remove {0}">
  *   <span data-slot="values" hidden></span>
  *   <span data-slot="tags" class="contents"></span>
  *   <input data-slot="input">
- * </bx-input-tags>
+ * </lx-input-tags>
  */
-export class BxInputTagsElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled'];
+export class LxInputTagsElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-values', 'name', 'disabled'];
 
   #observer = null;
   #model = new ValueModel(this, (values) => this.#paint(values));
@@ -121,4 +121,4 @@ export class BxInputTagsElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-input-tags')) customElements.define('bx-input-tags', BxInputTagsElement);
+if (!customElements.get('lx-input-tags')) customElements.define('lx-input-tags', LxInputTagsElement);

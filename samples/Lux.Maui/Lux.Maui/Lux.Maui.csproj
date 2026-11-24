@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFrameworks>$(BluxSampleTfm)-android</TargetFrameworks>
-    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);$(BluxSampleTfm)-ios;$(BluxSampleTfm)-maccatalyst</TargetFrameworks>
-    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);$(BluxSampleTfm)-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks>$(LuxSampleTfm)-android</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);$(LuxSampleTfm)-ios;$(LuxSampleTfm)-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);$(LuxSampleTfm)-windows10.0.19041.0</TargetFrameworks>
 
     <OutputType>Exe</OutputType>
     <RootNamespace>Lux.Maui</RootNamespace>
@@ -12,15 +12,15 @@
     <!-- Disable MAUI CSS handling so Blazor can handle it -->
     <EnableDefaultCssItems>false</EnableDefaultCssItems>
 
-    <ApplicationTitle>Blux on MAUI</ApplicationTitle>
-    <ApplicationId>dev.blux.maui</ApplicationId>
+    <ApplicationTitle>Lux on MAUI</ApplicationTitle>
+    <ApplicationId>dev.lux.maui</ApplicationId>
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
 
     <WindowsPackageType>None</WindowsPackageType>
 
     <!--
-      Platform minimums. Blux needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
+      Platform minimums. Lux needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
       System WebView (Chrome 114 or later; the app itself runs from Android 7.0, API 24).
     -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">17.0</SupportedOSPlatformVersion>
@@ -30,9 +30,9 @@
     <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
   </PropertyGroup>
 
-  <!-- -p:BluxTv=true forces the TV form factor (remote control navigation) on any Android device, to try TV mode without a TV. -->
-  <PropertyGroup Condition="'$(BluxTv)' == 'true'">
-    <DefineConstants>$(DefineConstants);BLUX_TV</DefineConstants>
+  <!-- -p:LuxTv=true forces the TV form factor (remote control navigation) on any Android device, to try TV mode without a TV. -->
+  <PropertyGroup Condition="'$(LuxTv)' == 'true'">
+    <DefineConstants>$(DefineConstants);LUX_TV</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -44,13 +44,13 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <_BluxLoggingVersion>10.0.0</_BluxLoggingVersion>
-    <_BluxLoggingVersion Condition="'$(BluxSampleTfm)' == 'net11.0'">11.0.0</_BluxLoggingVersion>
+    <_LuxLoggingVersion>10.0.0</_LuxLoggingVersion>
+    <_LuxLoggingVersion Condition="'$(LuxSampleTfm)' == 'net11.0'">11.0.0</_LuxLoggingVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(_BluxLoggingVersion)" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="$(_LuxLoggingVersion)" />
   </ItemGroup>
 
   <ItemGroup>
@@ -58,9 +58,9 @@
   </ItemGroup>
 
   <!--
-    The Blux build features. An app gets all of this from the Lux.UI package (buildTransitive); here Lux.UI is a project reference,
+    The Lux build features. An app gets all of this from the Lux.UI package (buildTransitive); here Lux.UI is a project reference,
     so the task assembly is built first and the targets are imported by hand. The fonts are generated into obj/ and added to the static
-    web assets at _blux/fonts/, which MAUI copies into the app as assets served from wwwroot (see index.html).
+    web assets at _lux/fonts/, which MAUI copies into the app as assets served from wwwroot (see index.html).
   -->
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Lux.UI.Build.Tasks\Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />

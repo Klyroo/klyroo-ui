@@ -3,15 +3,15 @@ namespace Lux.UI.Theming;
 internal static partial class Themes
 {
     private const string LinkFocus =
-        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)";
+        "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)";
 
     public static ComponentTheme Kbd() =>
         new ComponentTheme("kbd", "base")
             .Slot("base", "inline-flex items-center justify-center px-1 font-medium font-sans rounded-sm whitespace-nowrap")
-            .Variant("variant", "solid", "base", "bg-(--bx-color) ring ring-inset ring-(--bx-color-text) text-(--bx-color-contrast)")
-            .Variant("variant", "outline", "base", "ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text)")
-            .Variant("variant", "soft", "base", "bg-(--bx-color)/10 text-(--bx-color-text)")
-            .Variant("variant", "subtle", "base", "bg-(--bx-color)/10 ring ring-inset ring-(--bx-color-text)/75 text-(--bx-color-text)")
+            .Variant("variant", "solid", "base", "bg-(--lx-color) ring ring-inset ring-(--lx-color-text) text-(--lx-color-contrast)")
+            .Variant("variant", "outline", "base", "ring ring-inset ring-(--lx-color-text)/75 text-(--lx-color-text)")
+            .Variant("variant", "soft", "base", "bg-(--lx-color)/10 text-(--lx-color-text)")
+            .Variant("variant", "subtle", "base", "bg-(--lx-color)/10 ring ring-inset ring-(--lx-color-text)/75 text-(--lx-color-text)")
             .Variant("size", "xs", "base", "h-4 min-w-4 text-[10px]")
             .Variant("size", "sm", "base", "h-4 min-w-4 text-[11px]")
             .Variant("size", "md", "base", "h-5 min-w-5 text-xs")
@@ -23,21 +23,21 @@ internal static partial class Themes
     public static ComponentTheme Separator() =>
         new ComponentTheme("separator", "root", "border", "container", "label", "icon")
             .Slot("root", "flex items-center text-center")
-            .Slot("border", "flex-1 border-(--bx-color)/30")
-            .Slot("container", "flex items-center gap-2 font-medium text-(--bx-color-text)")
+            .Slot("border", "flex-1 border-(--lx-color)/30")
+            .Slot("container", "flex items-center gap-2 font-medium text-(--lx-color-text)")
             .Slot("label", "text-sm")
             .Slot("icon", "size-5 shrink-0")
             .Variant("orientation", "horizontal", "root", "w-full flex-row")
-            .Variant("orientation", "horizontal", "border", "border-t-(length:--bx-sep)")
+            .Variant("orientation", "horizontal", "border", "border-t-(length:--lx-sep)")
             .Variant("orientation", "horizontal", "container", "mx-3")
             .Variant("orientation", "vertical", "root", "min-h-4 flex-col self-stretch")
-            .Variant("orientation", "vertical", "border", "border-s-(length:--bx-sep)")
+            .Variant("orientation", "vertical", "border", "border-s-(length:--lx-sep)")
             .Variant("orientation", "vertical", "container", "my-3 flex-col")
-            .Variant("size", "xs", "root", "[--bx-sep:1px]")
-            .Variant("size", "sm", "root", "[--bx-sep:2px]")
-            .Variant("size", "md", "root", "[--bx-sep:3px]")
-            .Variant("size", "lg", "root", "[--bx-sep:4px]")
-            .Variant("size", "xl", "root", "[--bx-sep:5px]")
+            .Variant("size", "xs", "root", "[--lx-sep:1px]")
+            .Variant("size", "sm", "root", "[--lx-sep:2px]")
+            .Variant("size", "md", "root", "[--lx-sep:3px]")
+            .Variant("size", "lg", "root", "[--lx-sep:4px]")
+            .Variant("size", "xl", "root", "[--lx-sep:5px]")
             .Variant("type", "solid", "border", "border-solid")
             .Variant("type", "dashed", "border", "border-dashed")
             .Variant("type", "dotted", "border", "border-dotted")
@@ -47,9 +47,9 @@ internal static partial class Themes
 
     public static ComponentTheme Skeleton() =>
         new ComponentTheme("skeleton", "base")
-            .Slot("base", "animate-pulse rounded-(--blux-radius) bg-(--blux-bg-accented) motion-reduce:animate-none");
+            .Slot("base", "animate-pulse rounded-(--lux-radius) bg-(--lux-bg-accented) motion-reduce:animate-none");
 
-    /// <summary>The sentinel is a 1px strip the browser watches; the button (a <c>BxButton</c>, styled by its own theme) is the manual way to load more.</summary>
+    /// <summary>The sentinel is a 1px strip the browser watches; the button (a <c>LxButton</c>, styled by its own theme) is the manual way to load more.</summary>
     public static ComponentTheme InfiniteScroll() =>
         new ComponentTheme("infiniteScroll", "root", "sentinel", "trigger", "spinner", "status", "end", "marker")
             .Slot("root", "flex w-full flex-col items-center gap-2 py-2")
@@ -57,14 +57,14 @@ internal static partial class Themes
             .Slot("trigger", "shrink-0")
             .Slot("spinner", "size-full motion-safe:animate-spin")
             .Slot("status", "sr-only")
-            .Slot("end", "text-sm text-(--blux-text-muted)")
+            .Slot("end", "text-sm text-(--lux-text-muted)")
             .Slot("marker", "sr-only");
 
     public static ComponentTheme Chip() =>
         new ComponentTheme("chip", "root", "base")
             .Slot("root", "relative inline-flex shrink-0 items-center justify-center")
             .Slot("base", "flex items-center justify-center rounded-full font-semibold leading-none whitespace-nowrap " +
-                          "bg-(--bx-color) text-(--bx-color-contrast) inset-ring-1 inset-ring-(--bx-color-text) ring-2 ring-(--blux-bg)")
+                          "bg-(--lx-color) text-(--lx-color-contrast) inset-ring-1 inset-ring-(--lx-color-text) ring-2 ring-(--lux-bg)")
             .Variant("standalone", "false", "base", "absolute")
             .Variant("position", "top-right", "base", "top-0 end-0")
             .Variant("position", "top-left", "base", "top-0 start-0")
@@ -99,8 +99,8 @@ internal static partial class Themes
     public static ComponentTheme Link() =>
         new ComponentTheme("link", "base")
             .Slot("base", "rounded-sm transition-colors " + LinkFocus)
-            .Variant("active", "true", "base", "text-(--blux-primary-text)")
-            .Variant("active", "false", "base", "text-(--blux-text-muted) hover:text-(--blux-text-highlighted)")
+            .Variant("active", "true", "base", "text-(--lux-primary-text)")
+            .Variant("active", "false", "base", "text-(--lux-text-muted) hover:text-(--lux-text-highlighted)")
             .Variant("disabled", "true", "base", "cursor-not-allowed opacity-60")
             .Default("active", "false")
             .Default("disabled", "false");
@@ -120,7 +120,7 @@ internal static partial class Themes
             .Slot("base", "mx-auto w-full px-4 sm:px-6 lg:px-8")
             .Variant("size", "xs", "base", "max-w-2xl")
             .Variant("size", "sm", "base", "max-w-4xl")
-            .Variant("size", "md", "base", "max-w-(--blux-container)")
+            .Variant("size", "md", "base", "max-w-(--lux-container)")
             .Variant("size", "lg", "base", "max-w-(--breakpoint-2xl)")
             .Variant("size", "xl", "base", "max-w-none")
             .Default("size", "md");
@@ -128,11 +128,11 @@ internal static partial class Themes
     public static ComponentTheme Progress() =>
         new ComponentTheme("progress", "root", "status", "base", "indicator", "steps", "step")
             .Slot("root", "flex w-full flex-col gap-2")
-            .Slot("status", "text-end font-medium text-(--blux-text-muted)")
-            .Slot("base", "relative w-full overflow-hidden rounded-full bg-(--blux-bg-elevated) ring-1 ring-inset ring-(--blux-border-accented)")
-            .Slot("indicator", "h-full rounded-full bg-(--bx-color) ring-1 ring-inset ring-(--bx-color-text)")
+            .Slot("status", "text-end font-medium text-(--lux-text-muted)")
+            .Slot("base", "relative w-full overflow-hidden rounded-full bg-(--lux-bg-elevated) ring-1 ring-inset ring-(--lux-border-accented)")
+            .Slot("indicator", "h-full rounded-full bg-(--lx-color) ring-1 ring-inset ring-(--lx-color-text)")
             .Slot("steps", "flex justify-between text-sm")
-            .Slot("step", "text-(--blux-text-muted) data-[state=active]:font-medium data-[state=active]:text-(--bx-color-text) data-[state=completed]:text-(--blux-text)")
+            .Slot("step", "text-(--lux-text-muted) data-[state=active]:font-medium data-[state=active]:text-(--lx-color-text) data-[state=completed]:text-(--lux-text)")
             .Variant("size", "xs", "base", "h-1")
             .Variant("size", "xs", "status", "text-xs")
             .Variant("size", "sm", "base", "h-1.5")
@@ -144,21 +144,21 @@ internal static partial class Themes
             .Variant("size", "xl", "base", "h-4")
             .Variant("size", "xl", "status", "text-base")
             .Variant("animation", "none", "indicator", "transition-[width] duration-200 ease-out motion-reduce:transition-none")
-            .Variant("animation", "carousel", "indicator", "w-2/5 animate-[bx-progress-carousel_1.5s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:animate-none motion-reduce:opacity-60")
-            .Variant("animation", "swing", "indicator", "w-2/5 animate-[bx-progress-swing_2s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:animate-none motion-reduce:opacity-60")
+            .Variant("animation", "carousel", "indicator", "w-2/5 animate-[lx-progress-carousel_1.5s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:animate-none motion-reduce:opacity-60")
+            .Variant("animation", "swing", "indicator", "w-2/5 animate-[lx-progress-swing_2s_ease-in-out_infinite] motion-reduce:w-full motion-reduce:animate-none motion-reduce:opacity-60")
             .Default("size", "md")
             .Default("animation", "none");
 
     public static ComponentTheme Banner() =>
         new ComponentTheme("banner", "root", "container", "icon", "content", "title", "description", "actions", "close")
-            .Slot("root", "relative z-50 w-full bg-(--bx-color) text-(--bx-color-contrast) ring ring-inset ring-(--bx-color-text)")
+            .Slot("root", "relative z-50 w-full bg-(--lx-color) text-(--lx-color-contrast) ring ring-inset ring-(--lx-color-text)")
             .Slot("container", "flex items-center gap-3 px-4 py-1.5 sm:px-6 lg:px-8")
             .Slot("icon", "size-5 shrink-0")
             .Slot("content", "flex min-w-0 flex-1 flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center")
             .Slot("title", "text-sm font-medium")
             .Slot("description", "text-sm")
             .Slot("actions", "relative z-10 flex shrink-0 items-center gap-1.5")
-            .Slot("close", "relative z-10 -m-1 ms-auto shrink-0 rounded-(--blux-radius) p-1 opacity-80 hover:opacity-100 hover:bg-(--bx-color-contrast)/10 focus-visible:outline-2 focus-visible:outline-current")
+            .Slot("close", "relative z-10 -m-1 ms-auto shrink-0 rounded-(--lux-radius) p-1 opacity-80 hover:opacity-100 hover:bg-(--lx-color-contrast)/10 focus-visible:outline-2 focus-visible:outline-current")
             .Variant("link", "true", "title", "hover:underline focus-visible:outline-2 focus-visible:outline-current after:absolute after:inset-0")
             .Default("link", "false");
 
@@ -166,13 +166,13 @@ internal static partial class Themes
         new ComponentTheme("empty", "root", "header", "icon", "title", "description", "actions")
             .Slot("root", "relative flex w-full min-w-0 flex-col items-center justify-center text-center")
             .Slot("header", "flex max-w-md flex-col items-center")
-            .Slot("icon", "shrink-0 text-(--blux-text-muted)")
-            .Slot("title", "font-medium text-(--blux-text-highlighted)")
-            .Slot("description", "text-(--blux-text-muted)")
+            .Slot("icon", "shrink-0 text-(--lux-text-muted)")
+            .Slot("title", "font-medium text-(--lux-text-highlighted)")
+            .Slot("description", "text-(--lux-text-muted)")
             .Slot("actions", "flex flex-wrap items-center justify-center gap-2")
-            .Variant("variant", "outline", "root", "rounded-(--blux-radius) border border-dashed border-(--blux-border-accented)")
-            .Variant("variant", "soft", "root", "rounded-(--blux-radius) bg-(--blux-bg-elevated)/50")
-            .Variant("variant", "subtle", "root", "rounded-(--blux-radius) border border-(--blux-border) bg-(--blux-bg-elevated)/50")
+            .Variant("variant", "outline", "root", "rounded-(--lux-radius) border border-dashed border-(--lux-border-accented)")
+            .Variant("variant", "soft", "root", "rounded-(--lux-radius) bg-(--lux-bg-elevated)/50")
+            .Variant("variant", "subtle", "root", "rounded-(--lux-radius) border border-(--lux-border) bg-(--lux-bg-elevated)/50")
             .Variant("size", "xs", "root", "gap-2 p-4")
             .Variant("size", "xs", "header", "gap-1")
             .Variant("size", "xs", "icon", "size-8")
@@ -206,11 +206,11 @@ internal static partial class Themes
             .Slot("root", "relative flex min-w-0 items-center")
             .Slot("avatar", "shrink-0")
             .Slot("wrapper", "flex min-w-0 flex-col")
-            .Slot("name", "truncate font-medium text-(--blux-text-highlighted)")
-            .Slot("description", "truncate text-(--blux-text-muted)")
+            .Slot("name", "truncate font-medium text-(--lux-text-highlighted)")
+            .Slot("description", "truncate text-(--lux-text-muted)")
             .Variant("orientation", "horizontal", "root", "flex-row")
             .Variant("orientation", "vertical", "root", "flex-col text-center")
-            .Variant("link", "true", "root", "rounded-(--blux-radius) " + LinkFocus)
+            .Variant("link", "true", "root", "rounded-(--lux-radius) " + LinkFocus)
             .Variant("link", "true", "name", "after:absolute after:inset-0")
             .Variant("size", "xs", "root", "gap-1.5")
             .Variant("size", "xs", "name", "text-xs")
@@ -234,7 +234,7 @@ internal static partial class Themes
     public static ComponentTheme AvatarGroup() =>
         new ComponentTheme("avatarGroup", "root", "avatar")
             .Slot("root", "inline-flex items-center -space-x-2 rtl:space-x-reverse")
-            .Slot("avatar", "ring-2 ring-(--blux-bg)");
+            .Slot("avatar", "ring-2 ring-(--lux-bg)");
 
     /// <summary>
     /// Pure CSS on the container: direct children (and the field inside a wrapper) lose the radii and ring overlap on

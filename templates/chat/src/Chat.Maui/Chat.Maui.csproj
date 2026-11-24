@@ -22,7 +22,7 @@
     <WindowsPackageType>None</WindowsPackageType>
 
     <!--
-      Platform minimums. Blux needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
+      Platform minimums. Lux needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
       System WebView (Chrome 114 or later; the app itself runs from Android 7.0, API 24).
     -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">17.0</SupportedOSPlatformVersion>

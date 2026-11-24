@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Bundled icons. Any Iconify icon works by name (<BxIcon Name="ph:house" />, "i-mdi-home", "simple-icons:github"): at build time the
+    Bundled icons. Any Iconify icon works by name (<LxIcon Name="ph:house" />, "i-mdi-home", "simple-icons:github"): at build time the
     LuxResolveIcons task scans the project's .razor, .cshtml and .cs files for literal icon names, adds what the project lists
 
       <LuxIcon Include="ph:house;mdi:home" />                                  names the scan cannot see (built at runtime)
@@ -9,7 +9,7 @@
 
     downloads what its cache lacks from the Iconify API, and generates a C# file, added to the compilation, whose module initializer
     registers the icons with Lux.UI. Nothing is requested when the app runs, and a build without network works from the cache.
-    The scan reads "i-prefix-name" strings anywhere and "prefix:name" only in icon places (Icon="...", Name= on BxIcon, BxIcons.Named, o.Icons.X =); it skips
+    The scan reads "i-prefix-name" strings anywhere and "prefix:name" only in icon places (Icon="...", Name= on LxIcon, LxIcons.Named, o.Icons.X =); it skips
     dot folders, links and files over 1 MiB, and does nothing when no source, item, option or icon file changed. Every icon body is sanitized (see the Icons guide).
     When no icon is bundled the generated file is removed and not compiled.
 
@@ -38,7 +38,7 @@
           Condition="'$(LuxIcons)' != 'false' And '$(DesignTimeBuild)' != 'true'">
     <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the default is computed here. -->
     <PropertyGroup>
-      <LuxIconsOutputDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</LuxIconsOutputDir>
+      <LuxIconsOutputDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), lux, icons))</LuxIconsOutputDir>
     </PropertyGroup>
     <ItemGroup>
       <_LuxIconExclude Include="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath)))" />
@@ -75,7 +75,7 @@
           BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
           Condition="'$(LuxIcons)' == 'false' And '$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>
-      <_LuxIconsOffDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</_LuxIconsOffDir>
+      <_LuxIconsOffDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), lux, icons))</_LuxIconsOffDir>
       <_LuxIconsOffDir Condition="'$(_LuxIconsOffDir)' == ''">$(LuxIconsOutputDir)</_LuxIconsOffDir>
     </PropertyGroup>
     <ItemGroup>
@@ -89,7 +89,7 @@
           BeforeTargets="CoreCompile"
           Condition="'$(LuxIcons)' != 'false' And '$(DesignTimeBuild)' == 'true'">
     <PropertyGroup>
-      <LuxIconsOutputDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, icons))</LuxIconsOutputDir>
+      <LuxIconsOutputDir Condition="'$(LuxIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), lux, icons))</LuxIconsOutputDir>
     </PropertyGroup>
     <ItemGroup Condition="Exists('$(LuxIconsOutputDir)LuxIcons.g.cs')">
       <Compile Include="$(LuxIconsOutputDir)LuxIcons.g.cs" />

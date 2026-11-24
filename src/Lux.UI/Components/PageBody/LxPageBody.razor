@@ -1,0 +1,15 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+@* Styles the plain HTML inside it (headings, paragraphs, lists, code, quotes, links): handy for rendered Markdown. *@
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public PageBodyUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageBody, new Dictionary<string, string?>(), Ui, "root");
+}

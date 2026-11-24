@@ -13,7 +13,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
   </ItemGroup>
 
-  <!-- Fonts are downloaded at build time and served from the app's own origin (BxFonts in App.razor links them). They belong to the host project. -->
+  <!-- Fonts are downloaded at build time and served from the app's own origin (LxFonts in App.razor links them). They belong to the host project. -->
   <ItemGroup>
     <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
     <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />

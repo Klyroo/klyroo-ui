@@ -1,16 +1,16 @@
 import { FOCUSABLE, Reporter, ensureId, observeChildren } from './shared.js';
 
 /**
- * <bx-modal open dismissible>
+ * <lx-modal open dismissible>
  *   <span data-slot="trigger"><button>…</button></span>
- *   <dialog data-slot="content">… <button data-bx-close>…</button> …</dialog>
- * </bx-modal>
+ *   <dialog data-slot="content">… <button data-lx-close>…</button> …</dialog>
+ * </lx-modal>
  *
- * Shows the native modal dialog (top layer, inert page, Escape) and reports every open/close with "bx-toggle".
+ * Shows the native modal dialog (top layer, inert page, Escape) and reports every open/close with "lx-toggle".
  * Blazor never renders the dialog's own "open" attribute: that would make it non-modal.
  */
-export class BxModalElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'open'];
+export class LxModalElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'open'];
 
   #dialog = null;
   #observer = null;
@@ -35,8 +35,8 @@ export class BxModalElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -98,7 +98,7 @@ export class BxModalElement extends HTMLElement {
   #changed(open) {
     this.dataset.state = this.#dialog.dataset.state = open ? 'open' : 'closed';
     this.#trigger?.setAttribute('aria-expanded', String(open));
-    this.#reporter.report('bx-toggle', { open });
+    this.#reporter.report('lx-toggle', { open });
   }
 
   #onClick = (event) => {
@@ -106,10 +106,10 @@ export class BxModalElement extends HTMLElement {
     if (!dialog) return;
     const trigger = this.#trigger;
     // Clicks bubble out of a modal nested in this one: act only on what belongs to this modal.
-    if (event.target.closest?.('bx-modal') !== this) return;
+    if (event.target.closest?.('lx-modal') !== this) return;
     if (trigger && trigger.contains(event.target)) {
       this.#open();
-    } else if (event.target.closest?.('[data-bx-close]') && dialog.contains(event.target)) {
+    } else if (event.target.closest?.('[data-lx-close]') && dialog.contains(event.target)) {
       this.#close();
     } else if (event.target === dialog && this.#pressedBackdrop && this.hasAttribute('dismissible')) {
       // The dialog element itself only receives clicks on its backdrop: its content fills it. Requiring the press to
@@ -124,7 +124,7 @@ export class BxModalElement extends HTMLElement {
 
   // A cancelable "cancel" event is not guaranteed for repeated Escape presses, so stop the key itself as well.
   #onKeyDown = (event) => {
-    if (event.key === 'Escape' && !this.hasAttribute('dismissible') && event.target.closest?.('bx-modal') === this) {
+    if (event.key === 'Escape' && !this.hasAttribute('dismissible') && event.target.closest?.('lx-modal') === this) {
       event.preventDefault();
     }
   };
@@ -142,4 +142,4 @@ export class BxModalElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-modal')) customElements.define('bx-modal', BxModalElement);
+if (!customElements.get('lx-modal')) customElements.define('lx-modal', LxModalElement);

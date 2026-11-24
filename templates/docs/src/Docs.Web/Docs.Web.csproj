@@ -20,7 +20,7 @@
     <None Update="content/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- Fonts are downloaded at build time and served from the site's own origin (BxFonts in App.razor links them). -->
+  <!-- Fonts are downloaded at build time and served from the site's own origin (LxFonts in App.razor links them). -->
   <ItemGroup>
     <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
     <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />

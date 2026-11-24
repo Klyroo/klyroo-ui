@@ -2,14 +2,14 @@ import { Reporter, observeChildren } from './shared.js';
 
 /**
  * "Load more" sentinel. An IntersectionObserver watches a 1px strip; when it comes into view, the element reports a
- * bx-change (value "more") to .NET, once, and does not report again until the load is over. Only an element rendered
- * by a .NET component that listens (it renders data-bx-seq) does anything: a static page keeps a plain link.
+ * lx-change (value "more") to .NET, once, and does not report again until the load is over. Only an element rendered
+ * by a .NET component that listens (it renders data-lx-seq) does anything: a static page keeps a plain link.
  *
- * <bx-infinite-scroll data-bx-seq data-has-more data-loading data-loads="3" data-root="#list" data-root-margin="0px 0px 200px 0px">
+ * <lx-infinite-scroll data-lx-seq data-has-more data-loading data-loads="3" data-root="#list" data-root-margin="0px 0px 200px 0px">
  *   <div data-slot="sentinel"></div>
  *   <button data-slot="trigger">Load more</button>   (or a link: a click is taken over when bound)
  *   <div role="status" data-slot="status" tabindex="-1"></div>
- * </bx-infinite-scroll>
+ * </lx-infinite-scroll>
  *
  * "A load is over" is one of: data-loading goes away (the Loading parameter or the running OnLoadMore callback ended), or
  * data-loads changes (every finished callback bumps it, so a handler that finishes at once and never sets Loading
@@ -18,8 +18,8 @@ import { Reporter, observeChildren } from './shared.js';
  * reports the current state). When it did not grow (the load added nothing, or failed) nothing is asked again until the
  * sentinel has left the view and come back, or the button is used: a sentinel that stays in view would loop forever.
  */
-export class BxInfiniteScrollElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-has-more', 'data-loading', 'data-loads', 'data-root', 'data-root-margin'];
+export class LxInfiniteScrollElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-has-more', 'data-loading', 'data-loads', 'data-root', 'data-root-margin'];
 
   #reporter = new Reporter(this);
   #observer = null;
@@ -57,7 +57,7 @@ export class BxInfiniteScrollElement extends HTMLElement {
       // the focus is still on it now, and that is the only moment to know it was there (browsers differ on blur at removal).
       const active = document.activeElement;
       this.#restoreFocus = active instanceof Element && this.contains(active) && active.closest('[data-slot="trigger"]') !== null;
-    } else if (name === 'data-bx-seq' && newValue !== null && oldValue === null) {
+    } else if (name === 'data-lx-seq' && newValue !== null && oldValue === null) {
       // The component became interactive after a prerender.
       this.#look();
     }
@@ -98,7 +98,7 @@ export class BxInfiniteScrollElement extends HTMLElement {
     this.#fired = true;
     this.#stalled = false;
     this.#before = this.#measure();
-    this.#reporter.report('bx-change', { value: 'more' });
+    this.#reporter.report('lx-change', { value: 'more' });
   }
 
   /** Re-applies the state after an enhanced navigation merged server HTML over the element. */
@@ -135,7 +135,7 @@ export class BxInfiniteScrollElement extends HTMLElement {
       if (named) return named;
       if (this.#warned !== selector) {
         this.#warned = selector;
-        console.warn(`bx-infinite-scroll: Root "${selector}" matches no element, watching the viewport.`);
+        console.warn(`lx-infinite-scroll: Root "${selector}" matches no element, watching the viewport.`);
       }
       return null;
     }
@@ -221,4 +221,4 @@ export class BxInfiniteScrollElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-infinite-scroll')) customElements.define('bx-infinite-scroll', BxInfiniteScrollElement);
+if (!customElements.get('lx-infinite-scroll')) customElements.define('lx-infinite-scroll', LxInfiniteScrollElement);

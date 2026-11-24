@@ -7,7 +7,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Lux.UI.Images</RootNamespace>
     <PackageId>Lux.UI.Images</PackageId>
-    <Description>Image providers for Lux.UI's BxImage: Cloudinary, imgix, ImageKit, Cloudflare Images, Netlify Image CDN, Vercel, Bunny Optimizer and URL templates.</Description>
+    <Description>Image providers for Lux.UI's LxImage: Cloudinary, imgix, ImageKit, Cloudflare Images, Netlify Image CDN, Vercel, Bunny Optimizer and URL templates.</Description>
     <PackageTags>blazor;images;cdn;cloudinary;imgix;imagekit;cloudflare;netlify;vercel;bunny</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>

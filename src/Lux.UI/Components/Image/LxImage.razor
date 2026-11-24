@@ -1,0 +1,196 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+@*
+    One <img>, with the width, height, srcset, sizes and loading an optimizing provider can fill in.
+    With the default "none" provider nothing is resized: the image keeps its src and gets width, height and loading only.
+*@
+@if (_preload)
+{
+    <HeadContent>
+        <link rel="preload" as="image" href="@_resolved.Src" imagesrcset="@_resolved.SrcSet" imagesizes="@_resolved.Sizes" fetchpriority="@_priorityText" />
+    </HeadContent>
+}
+<img src="@_resolved.Src"
+     alt="@Alt"
+     width="@_width"
+     height="@_height"
+     srcset="@_resolved.SrcSet"
+     sizes="@_resolved.Sizes"
+     loading="@_loadingText"
+     fetchpriority="@_priorityText"
+     class="@Class"
+     style="@_style"
+     @attributes="_attributes" />
+
+@code {
+    private LxResolvedImage _resolved = new("", null, null);
+    private bool _preload;
+    private string _loadingText = "lazy";
+    private string? _priorityText;
+    private string? _style;
+    private string? _width;
+    private string? _height;
+    private IReadOnlyDictionary<string, object>? _attributes;
+
+    /// <summary>Address of the image: a root-relative path ("/img/team.jpg") or an absolute URL.</summary>
+    [Parameter, EditorRequired] public string? Src { get; set; }
+
+    /// <summary>Text alternative. Required: pass an empty string for a decorative image.</summary>
+    [Parameter, EditorRequired] public string? Alt { get; set; }
+
+    /// <summary>
+    /// Width of the image in CSS pixels, as a number or as text (<c>"100"</c>, <c>"100px"</c>): text so that a <c>width="100"</c> forwarded as an
+    /// unmatched attribute keeps working. It is also the base of the 1x, 2x… candidates, and it reserves the space before the image loads.
+    /// </summary>
+    [Parameter] public object? Width { get; set; }
+
+    /// <summary>Height of the image in CSS pixels, a number or text like <see cref="Width"/>.</summary>
+    [Parameter] public object? Height { get; set; }
+
+    /// <summary>Settings shared with the other image parameters: the parameters below override the ones set here.</summary>
+    [Parameter] public LxImageOptions? ImageOptions { get; set; }
+
+    /// <summary>
+    /// Responsive sizes: <c>"100vw sm:50vw md:400px"</c> (an unprefixed entry is the default; each breakpoint applies
+    /// from its width upward). Breakpoints come from <see cref="LxImageSettings.Screens"/>. It becomes the <c>sizes</c> attribute and decides the widths of the <c>srcset</c>.
+    /// </summary>
+    [Parameter] public string? Sizes { get; set; }
+
+    /// <summary>Densities of the <c>srcset</c>, like <c>"x1 x2"</c>. Defaults to <see cref="LxImageSettings.Densities"/>.</summary>
+    [Parameter] public string? Densities { get; set; }
+
+    /// <summary>Output format: "webp", "avif", "jpeg", "png", "gif" or "svg". Only a provider that converts honors it.</summary>
+    [Parameter] public string? Format { get; set; }
+
+    /// <summary>Quality from 1 to 100.</summary>
+    [Parameter] public int? Quality { get; set; }
+
+    /// <summary>How the image fills <see cref="Width"/> by <see cref="Height"/>. Cover when unset.</summary>
+    [Parameter] public LxImageFit? Fit { get; set; }
+
+    /// <summary>Provider specific modifiers (for example <c>gravity</c>), merged over the preset's.</summary>
+    [Parameter] public IReadOnlyDictionary<string, string>? Modifiers { get; set; }
+
+    /// <summary>Name of a registered provider; <see cref="LxImageSettings.DefaultProvider"/> when unset.</summary>
+    [Parameter] public string? Provider { get; set; }
+
+    /// <summary>Name of an entry of <see cref="LxImageSettings.Presets"/>.</summary>
+    [Parameter] public string? Preset { get; set; }
+
+    /// <summary>Lazy by default, eager when <see cref="Preload"/> is set. Use eager for the image visible at first paint.</summary>
+    [Parameter] public LxImageLoading? Loading { get; set; }
+
+    /// <summary><c>high</c> speeds up the image that matters most (the hero); preloading sets it to high unless you choose.</summary>
+    [Parameter] public LxFetchPriority? FetchPriority { get; set; }
+
+    /// <summary>
+    /// Adds <c>&lt;link rel="preload" as="image" imagesrcset imagesizes&gt;</c> to the document head, and loads eagerly. It goes through
+    /// <c>HeadContent</c>, so the app needs a <c>HeadOutlet</c> (the Blazor Web App template has one). In a Blazor Hybrid web view no link is
+    /// added (the image only loads eagerly with a high priority).
+    /// </summary>
+    [Parameter] public bool? Preload { get; set; }
+
+    /// <summary>
+    /// A placeholder shown behind the image while it loads: the address of a small image, or <c>true</c> to ask the provider for a tiny
+    /// (and, when it can blur, blurred) version of the image. It is painted as the background of the element.
+    /// </summary>
+    [Parameter] public object? Placeholder { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Alt is null)
+        {
+            throw new InvalidOperationException("LxImage needs Alt: describe the image, or pass an empty string when it is decorative.");
+        }
+
+        var options = new LxImageOptions
+        {
+            Format = Format,
+            Quality = Quality,
+            Provider = Provider,
+            Preset = Preset,
+            Sizes = Sizes,
+            Densities = Densities,
+            Fit = Fit,
+            Modifiers = Modifiers,
+            Loading = Loading,
+            Preload = Preload,
+        }.OverDefaultsOf(ImageOptions);
+
+        var width = PixelsOf(Width, out _width);
+        var height = PixelsOf(Height, out _height);
+        _resolved = Options.Images.Resolve(Src, options, width, height);
+        var preloadAsked = options.Preload == true && !string.IsNullOrEmpty(_resolved.Src);
+        // A web view has no server rendered head, and the files come from the device: no preload link, but the image still loads eagerly.
+        _preload = preloadAsked && !IsHybrid;
+        _loadingText = (options.Loading ?? (preloadAsked ? LxImageLoading.Eager : LxImageLoading.Lazy)) == LxImageLoading.Eager ? "eager" : "lazy";
+        var priority = FetchPriority ?? (preloadAsked ? LxFetchPriority.High : LxFetchPriority.Auto);
+        _priorityText = priority == LxFetchPriority.Auto ? null : priority.ToString().ToLowerInvariant();
+
+        var placeholder = PlaceholderUrl(options);
+        _attributes = AdditionalAttributes;
+        _style = null;
+        if (placeholder is not null)
+        {
+            var style = $"background-image:url(\"{EscapeCssUrl(placeholder)}\");background-size:cover;background-repeat:no-repeat";
+            if (AdditionalAttributes is not null && AdditionalAttributes.TryGetValue("style", out var own) && own is string ownStyle)
+            {
+                style += ";" + ownStyle;
+                _attributes = AdditionalAttributes.Where(a => a.Key != "style").ToDictionary(a => a.Key, a => a.Value);
+            }
+            _style = style;
+        }
+    }
+
+    private string? PlaceholderUrl(LxImageOptions options)
+    {
+        switch (Placeholder)
+        {
+            case null or false:
+                return null;
+            case string text when !string.Equals(text, "true", StringComparison.OrdinalIgnoreCase):
+                return text.Length > 0 ? text : null;
+        }
+
+        // true: a tiny version from the provider, ten pixels wide placeholder, blurred when the provider supports it.
+        var width = PixelsOf(Width, out _);
+        var height = PixelsOf(Height, out _);
+        var tinyHeight = width is > 0 && height is > 0 ? Math.Max(1, (int)Math.Round(10d * height.Value / width.Value)) : (int?)null;
+        return Options.Images.ResolvePlaceholder(Src, options, 10, tinyHeight);
+    }
+
+    // A number or "100" / "100px": the pixels. Anything else ("100%", "auto") is rendered as given and does not take part in the resolution.
+    private static int? PixelsOf(object? value, out string? attribute)
+    {
+        attribute = null;
+        switch (value)
+        {
+            case null:
+                return null;
+            case int number:
+                attribute = number.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                return number > 0 ? number : null;
+            case string text:
+                var trimmed = text.Trim();
+                attribute = trimmed.Length > 0 ? trimmed : null;
+                var digits = trimmed.EndsWith("px", StringComparison.OrdinalIgnoreCase) ? trimmed[..^2] : trimmed;
+                return int.TryParse(digits, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var parsed) && parsed > 0 ? parsed : null;
+            default:
+                attribute = Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+                return value is IConvertible && int.TryParse(attribute, out var other) && other > 0 ? other : null;
+        }
+    }
+
+    // Percent-encodes what could end the url("...") or the style attribute early.
+    private static string EscapeCssUrl(string url)
+    {
+        var builder = new System.Text.StringBuilder(url.Length);
+        foreach (var c in url)
+        {
+            if (c is '"' or '\'' or '(' or ')' or '\\' or '<' or '>' or ' ' or '\n' or '\r' or '\t') builder.Append('%').Append(((int)c).ToString("X2"));
+            else builder.Append(c);
+        }
+        return builder.ToString();
+    }
+}

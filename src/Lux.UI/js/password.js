@@ -1,16 +1,16 @@
 /**
  * Shows and hides the characters of a password field, with no .NET involved:
  *
- * <bx-password>
+ * <lx-password>
  *   <input type="password" data-slot="control">
  *   <button type="button" data-slot="toggle" aria-pressed="false" aria-label="Show password">…</button>
- * </bx-password>
+ * </lx-password>
  *
  * The button is a toggle button: its name never changes, aria-pressed says whether the password is visible.
  * The state is the type of the input, which Blazor renders as "password" and never touches again, so a render
  * cannot undo the user's choice.
  */
-export class BxPasswordElement extends HTMLElement {
+export class LxPasswordElement extends HTMLElement {
   connectedCallback() {
     this.addEventListener('click', this.#onClick);
     this.refresh();
@@ -47,4 +47,4 @@ export class BxPasswordElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-password')) customElements.define('bx-password', BxPasswordElement);
+if (!customElements.get('lx-password')) customElements.define('lx-password', LxPasswordElement);

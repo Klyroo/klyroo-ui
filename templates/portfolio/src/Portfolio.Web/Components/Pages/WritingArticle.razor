@@ -9,53 +9,53 @@
         <meta name="description" content="@(_article.Description ?? SiteInfo.Description)" />
     </HeadContent>
 
-    <BxContainer Class="py-10 sm:py-14">
+    <LxContainer Class="py-10 sm:py-14">
         <div class="mx-auto max-w-3xl">
-            <BxBreadcrumb Items="_crumbs" />
+            <LxBreadcrumb Items="_crumbs" />
 
             <article data-testid="article" class="mt-8">
                 <header class="flex flex-col gap-4">
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-(--blux-text-muted)">
-                        <time datetime="@BxDates.Iso(_article.Date)">@BxDates.Format(_article.Date)</time>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-(--lux-text-muted)">
+                        <time datetime="@LxDates.Iso(_article.Date)">@LxDates.Format(_article.Date)</time>
                         <span aria-hidden="true">&middot;</span>
                         <span>@_article.ReadingMinutes min read</span>
                         @foreach (var tag in _article.Tags)
                         {
-                            <BxBadge Label="@tag" Color="BxColor.Neutral" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                            <LxBadge Label="@tag" Color="LxColor.Neutral" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
                         }
                     </div>
-                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--blux-text-highlighted) sm:text-4xl">@_article.Title</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--lux-text-highlighted) sm:text-4xl">@_article.Title</h1>
                     @if (_article.Description is not null)
                     {
-                        <p class="text-lg text-pretty text-(--blux-text-muted)">@_article.Description</p>
+                        <p class="text-lg text-pretty text-(--lux-text-muted)">@_article.Description</p>
                     }
-                    <BxUser Name="@SiteInfo.Name" Description="@SiteInfo.Role" Class="mt-2" />
+                    <LxUser Name="@SiteInfo.Name" Description="@SiteInfo.Role" Class="mt-2" />
                 </header>
 
                 @if (_article.Image is not null)
                 {
-                    <BxImage Src="@_article.Image" Alt="@(_article.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--blux-radius)*2)] object-cover ring ring-(--blux-border)" />
+                    <LxImage Src="@_article.Image" Alt="@(_article.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--lux-radius)*2)] object-cover ring ring-(--lux-border)" />
                 }
 
-                @* The prose styles of the Blux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
-                <BxPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_article.Page.Html)</BxPageBody>
+                @* The prose styles of the Lux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
+                <LxPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_article.Page.Html)</LxPageBody>
             </article>
 
             @if (_more.Count > 0)
             {
-                <section aria-labelledby="more-articles" class="mt-6 border-t border-(--blux-border) pt-10">
-                    <h2 id="more-articles" class="text-xl font-semibold text-(--blux-text-highlighted)">Keep reading</h2>
-                    <BxBlogPosts Class="mt-6 md:grid-cols-2 lg:grid-cols-2">
+                <section aria-labelledby="more-articles" class="mt-6 border-t border-(--lux-border) pt-10">
+                    <h2 id="more-articles" class="text-xl font-semibold text-(--lux-text-highlighted)">Keep reading</h2>
+                    <LxBlogPosts Class="mt-6 md:grid-cols-2 lg:grid-cols-2">
                         @foreach (var article in _more)
                         {
-                            <BxBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
+                            <LxBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
                                         Href="@article.Href" HeadingLevel="3" data-testid="more-article" />
                         }
-                    </BxBlogPosts>
+                    </LxBlogPosts>
                 </section>
             }
         </div>
-    </BxContainer>
+    </LxContainer>
 }
 
 @code {
@@ -63,7 +63,7 @@
 
     private Article? _article;
     private IReadOnlyList<Article> _more = [];
-    private IReadOnlyList<BxBreadcrumbItem> _crumbs = [];
+    private IReadOnlyList<LxBreadcrumbItem> _crumbs = [];
 
     protected override void OnParametersSet()
     {

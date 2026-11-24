@@ -4,26 +4,26 @@
 
 @* The rename and delete dialogs, one of each for the whole list. The rows of the list ask for them through ConversationState. They are outside the sidebar
    on purpose: on a phone the sidebar is a panel that closes before a dialog outside it opens. *@
-<BxModal @bind-Open="_renameOpen" Title="Rename conversation" Description="The title is shown in the list and at the top of the conversation." data-testid="rename-dialog">
+<LxModal @bind-Open="_renameOpen" Title="Rename conversation" Description="The title is shown in the list and at the top of the conversation." data-testid="rename-dialog">
     <Body>
         <form id="rename-form" @onsubmit="RenameAsync" class="flex flex-col gap-2">
-            <BxFormField Label="Title">
-                <BxInput @bind-Value="_title" Immediate Placeholder="Title" data-testid="rename-input" />
-            </BxFormField>
+            <LxFormField Label="Title">
+                <LxInput @bind-Value="_title" Immediate Placeholder="Title" data-testid="rename-input" />
+            </LxFormField>
         </form>
     </Body>
     <Footer>
-        <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close />
-        <BxButton Label="Save" Type="submit" form="rename-form" Disabled="@(ConversationState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
+        <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close />
+        <LxButton Label="Save" Type="submit" form="rename-form" Disabled="@(ConversationState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
     </Footer>
-</BxModal>
+</LxModal>
 
-<BxModal @bind-Open="_deleteOpen" Title="Delete conversation?" Description="@(_target is null ? null : $"\"{_target.Title}\" is removed from this browser. This cannot be undone.")" data-testid="delete-dialog">
+<LxModal @bind-Open="_deleteOpen" Title="Delete conversation?" Description="@(_target is null ? null : $"\"{_target.Title}\" is removed from this browser. This cannot be undone.")" data-testid="delete-dialog">
     <Footer>
-        <BxButton Label="Cancel" Color="BxColor.Neutral" Variant="ButtonVariant.Ghost" data-bx-close />
-        <BxButton Label="Delete" Color="BxColor.Error" OnClick="DeleteAsync" data-testid="delete-confirm" />
+        <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close />
+        <LxButton Label="Delete" Color="LxColor.Error" OnClick="DeleteAsync" data-testid="delete-confirm" />
     </Footer>
-</BxModal>
+</LxModal>
 
 @code {
     private bool _renameOpen;
@@ -57,7 +57,7 @@
         if (_target is null || ConversationState.CleanTitle(_title).Length == 0) return;
         var saved = await Conversations.RenameAsync(_target, _title);
         _renameOpen = false;
-        if (!saved) await Toasts.Add(new BxToast { Title = "Not saved", Description = "This browser did not keep the change: it applies to this visit only.", Color = BxColor.Warning });
+        if (!saved) await Toasts.Add(new LxToast { Title = "Not saved", Description = "This browser did not keep the change: it applies to this visit only.", Color = LxColor.Warning });
     }
 
     private async Task DeleteAsync()

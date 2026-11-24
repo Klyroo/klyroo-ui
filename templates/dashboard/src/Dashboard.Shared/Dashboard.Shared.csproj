@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="Lux.UI" />
-    <!-- The data table of the Customers page is BxDataList. Tools has no precompiled stylesheet: LuxTailwind (above) compiles its classes too. -->
+    <!-- The data table of the Customers page is LxDataList. Tools has no precompiled stylesheet: LuxTailwind (above) compiles its classes too. -->
     <PackageReference Include="Lux.Table" />
   </ItemGroup>
 

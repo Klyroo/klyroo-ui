@@ -2,43 +2,43 @@
 @inject IFormFactor FormFactor
 @inject IJSRuntime JS
 
-<PageTitle>Blux on MAUI</PageTitle>
+<PageTitle>Lux on MAUI</PageTitle>
 
 <div class="flex flex-col gap-2">
-    <h1 class="text-2xl font-semibold text-(--blux-text-highlighted)">Lux.UI in a Blazor Hybrid app</h1>
-    <p class="text-(--blux-text-muted)">
-        The same pages run in the MAUI app (a BlazorWebView) and in the web app. Blux detects the host and adapts what needs a server.
+    <h1 class="text-2xl font-semibold text-(--lux-text-highlighted)">Lux.UI in a Blazor Hybrid app</h1>
+    <p class="text-(--lux-text-muted)">
+        The same pages run in the MAUI app (a BlazorWebView) and in the web app. Lux detects the host and adapts what needs a server.
     </p>
 </div>
 
-<BxCard>
+<LxCard>
     <Header><h2 class="font-semibold">This host</h2></Header>
     <ChildContent>
         <dl class="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
-            <dt class="text-(--blux-text-muted)">Renderer</dt>
+            <dt class="text-(--lux-text-muted)">Renderer</dt>
             <dd data-testid="renderer">@RendererInfo.Name (interactive: @RendererInfo.IsInteractive)</dd>
-            <dt class="text-(--blux-text-muted)">Form factor</dt>
+            <dt class="text-(--lux-text-muted)">Form factor</dt>
             <dd data-testid="form-factor">@FormFactor.GetFormFactor()</dd>
-            <dt class="text-(--blux-text-muted)">Platform</dt>
+            <dt class="text-(--lux-text-muted)">Platform</dt>
             <dd data-testid="platform">@FormFactor.GetPlatform()</dd>
-            <dt class="text-(--blux-text-muted)">Web view</dt>
+            <dt class="text-(--lux-text-muted)">Web view</dt>
             <dd class="break-words" data-testid="user-agent">@_webView</dd>
-            <dt class="text-(--blux-text-muted)">Culture</dt>
+            <dt class="text-(--lux-text-muted)">Culture</dt>
             <dd data-testid="culture">@System.Globalization.CultureInfo.CurrentUICulture.Name</dd>
         </dl>
     </ChildContent>
-</BxCard>
+</LxCard>
 
-<BxAlert Title="Touch and remote friendly" Description="Tooltips open on a long press, targets are at least 44 pixels, and TV mode moves focus with the arrow keys."
-         Color="BxColor.Info" Variant="BxVariant.Subtle" />
+<LxAlert Title="Touch and remote friendly" Description="Tooltips open on a long press, targets are at least 44 pixels, and TV mode moves focus with the arrow keys."
+         Color="LxColor.Info" Variant="LxVariant.Subtle" />
 
 <div class="flex flex-wrap items-center gap-3">
-    <BxButton Label="Counter" OnClick="() => _count++" data-testid="counter" />
-    <BxBadge Label="@($"Clicked {_count} times")" Variant="BxVariant.Subtle" />
-    <BxTooltip Text="Press and hold on a touch screen">
-        <BxButton Label="Long press me" Variant="ButtonVariant.Outline" Color="BxColor.Neutral" data-testid="tooltip-trigger" />
-    </BxTooltip>
-    <BxAvatar Alt="Ada Lovelace" />
+    <LxButton Label="Counter" OnClick="() => _count++" data-testid="counter" />
+    <LxBadge Label="@($"Clicked {_count} times")" Variant="LxVariant.Subtle" />
+    <LxTooltip Text="Press and hold on a touch screen">
+        <LxButton Label="Long press me" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" data-testid="tooltip-trigger" />
+    </LxTooltip>
+    <LxAvatar Alt="Ada Lovelace" />
 </div>
 
 @code {

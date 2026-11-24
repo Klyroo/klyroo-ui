@@ -4,15 +4,15 @@ import { SEP } from './form2-shared.js';
 /**
  * One or two native range inputs over a drawn track. The native inputs keep the keyboard behaviour, the ARIA
  * slider role and form posting; the element clamps the two thumbs of a range against each other and positions
- * the filled part of the track through --bx-lo and --bx-hi.
+ * the filled part of the track through --lx-lo and --lx-hi.
  *
- * <bx-slider data-immediate>
+ * <lx-slider data-immediate>
  *   <div data-slot="track"><div data-slot="range"></div></div>
  *   <input type="range" data-slot="thumb" name="…"> [<input type="range" data-slot="thumb" name="…">]
- * </bx-slider>
+ * </lx-slider>
  */
-export class BxSliderElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values'];
+export class LxSliderElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-values'];
 
   #reporter = new Reporter(this);
   #last = null;
@@ -63,10 +63,10 @@ export class BxSliderElement extends HTMLElement {
       const max = Number(input.max || 100);
       return max === min ? 0 : ((Number(input.value) - min) / (max - min)) * 100;
     };
-    const position = (p) => `calc(${p}% + ${0.5 - p / 100} * var(--bx-thumb, 1rem))`;
+    const position = (p) => `calc(${p}% + ${0.5 - p / 100} * var(--lx-thumb, 1rem))`;
     const range = inputs.length > 1;
-    this.style.setProperty('--bx-lo', range ? position(percent(inputs[0])) : '0px');
-    this.style.setProperty('--bx-hi', position(percent(inputs.at(-1))));
+    this.style.setProperty('--lx-lo', range ? position(percent(inputs[0])) : '0px');
+    this.style.setProperty('--lx-hi', position(percent(inputs.at(-1))));
     if (range) {
       // When both thumbs sit at the top end, the low one must stay reachable.
       const middle = (Number(inputs[0].min || 0) + Number(inputs[0].max || 100)) / 2;
@@ -95,8 +95,8 @@ export class BxSliderElement extends HTMLElement {
     const values = this.#read();
     if (this.#last && values.every((v, i) => v === this.#last[i])) return;
     this.#last = values;
-    this.#reporter.report('bx-change', { value: values.join(SEP) });
+    this.#reporter.report('lx-change', { value: values.join(SEP) });
   }
 }
 
-if (!customElements.get('bx-slider')) customElements.define('bx-slider', BxSliderElement);
+if (!customElements.get('lx-slider')) customElements.define('lx-slider', LxSliderElement);

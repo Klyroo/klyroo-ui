@@ -3,19 +3,19 @@ import { Reporter, observeChildren } from './shared.js';
 /**
  * Carousel (WAI-ARIA APG) over a scroll-snap viewport.
  *
- * <bx-carousel index="0" loop autoplay="5000" role="region" aria-roledescription="carousel">
+ * <lx-carousel index="0" loop autoplay="5000" role="region" aria-roledescription="carousel">
  *   <div data-slot="controls"> <button data-slot="toggle"> <button data-slot="prev"> <button data-slot="dot" data-index="0"> … <button data-slot="next"> </div>
  *   <div data-slot="viewport" tabindex="0"> <div role="group" aria-roledescription="slide" data-index="0">…</div> … </div>
- * </bx-carousel>
+ * </lx-carousel>
  *
  * The browser's scrolling does the swiping; this script keeps the current slide in step (buttons, keys, swipes),
  * makes the other slides inert so their content is out of the tab order and the accessibility tree, and runs autoplay.
  * Autoplay is paused while the pointer or focus is inside, while the tab is hidden and by the rotation button, and is off
  * from the start for visitors who prefer reduced motion (WCAG 2.2.2). While it is not rotating, the slides are a polite live region.
- * Changes of slide are reported with "bx-change" (the index).
+ * Changes of slide are reported with "lx-change" (the index).
  */
-export class BxCarouselElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'index', 'autoplay', 'loop'];
+export class LxCarouselElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'index', 'autoplay', 'loop'];
 
   #index = 0;
   #userPaused = false;
@@ -60,8 +60,8 @@ export class BxCarouselElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') this.#forced = true;
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
@@ -149,7 +149,7 @@ export class BxCarouselElement extends HTMLElement {
       viewport.scrollTo({ left, behavior: animate ? 'smooth' : 'instant' });
     }
     this.#update();
-    if (changed && report) this.#reporter.report('bx-change', { value: String(index) });
+    if (changed && report) this.#reporter.report('lx-change', { value: String(index) });
   }
 
   #update() {
@@ -213,13 +213,13 @@ export class BxCarouselElement extends HTMLElement {
       if (index === this.#index) return;
       this.#index = index;
       this.#update();
-      this.#reporter.report('bx-change', { value: String(index) });
+      this.#reporter.report('lx-change', { value: String(index) });
     }, 100);
   };
 
   #onClick = (event) => {
     const button = event.target.closest?.('button[data-slot]');
-    if (!button || button.closest('bx-carousel') !== this) return;
+    if (!button || button.closest('lx-carousel') !== this) return;
     if (button.getAttribute('aria-disabled') === 'true') return;
     switch (button.dataset.slot) {
       case 'prev': this.#prev(); break;
@@ -278,4 +278,4 @@ export class BxCarouselElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-carousel')) customElements.define('bx-carousel', BxCarouselElement);
+if (!customElements.get('lx-carousel')) customElements.define('lx-carousel', LxCarouselElement);

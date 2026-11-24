@@ -1,43 +1,43 @@
 @* The hero. The panel on the right is plain markup, there to show what the product watches: it is hidden from assistive technology because it repeats
-   nothing the text next to it does not say. Swap it for a screenshot (BxImage) when you have one. *@
-<BxPageHero Headline="@SiteInfo.HeroHeadline"
+   nothing the text next to it does not say. Swap it for a screenshot (LxImage) when you have one. *@
+<LxPageHero Headline="@SiteInfo.HeroHeadline"
             Title="@SiteInfo.HeroTitle"
             Description="@SiteInfo.HeroDescription"
             Links="SiteInfo.HeroLinks"
             Ui="_ui">
     <Media>
         <div aria-hidden="true" data-testid="hero-monitors"
-             class="mx-auto flex w-full max-w-[28rem] flex-col gap-4 rounded-2xl bg-(--blux-bg) p-6 shadow-xl ring ring-(--blux-border)">
+             class="mx-auto flex w-full max-w-[28rem] flex-col gap-4 rounded-2xl bg-(--lux-bg) p-6 shadow-xl ring ring-(--lux-border)">
             <div class="flex items-center justify-between gap-4">
-                <p class="font-mono text-xs uppercase tracking-wider text-(--blux-text-muted)">Monitors</p>
-                <BxBadge Label="1 incident" Color="BxColor.Error" Variant="BxVariant.Subtle" />
+                <p class="font-mono text-xs uppercase tracking-wider text-(--lux-text-muted)">Monitors</p>
+                <LxBadge Label="1 incident" Color="LxColor.Error" Variant="LxVariant.Subtle" />
             </div>
-            <ul class="m-0 flex list-none flex-col divide-y divide-(--blux-border) p-0 text-sm">
+            <ul class="m-0 flex list-none flex-col divide-y divide-(--lux-border) p-0 text-sm">
                 @foreach (var monitor in _monitors)
                 {
                     <li class="flex items-center justify-between gap-4 py-3">
                         <div class="min-w-0">
-                            <p class="truncate font-mono text-(--blux-text-highlighted)">@monitor.Name</p>
-                            <p class="text-xs text-(--blux-text-muted)">@monitor.Detail</p>
+                            <p class="truncate font-mono text-(--lux-text-highlighted)">@monitor.Name</p>
+                            <p class="text-xs text-(--lux-text-muted)">@monitor.Detail</p>
                         </div>
-                        <BxBadge Label="@monitor.State" Color="@monitor.Color" Variant="BxVariant.Subtle" />
+                        <LxBadge Label="@monitor.State" Color="@monitor.Color" Variant="LxVariant.Subtle" />
                     </li>
                 }
             </ul>
-            <p class="text-xs text-(--blux-text-muted)">Alert sent to #ops and on-call at 02:14.</p>
+            <p class="text-xs text-(--lux-text-muted)">Alert sent to #ops and on-call at 02:14.</p>
         </div>
     </Media>
-</BxPageHero>
+</LxPageHero>
 
 @code {
-    private sealed record Monitor(string Name, string Detail, string State, BxColor Color);
+    private sealed record Monitor(string Name, string Detail, string State, LxColor Color);
 
     private static readonly Monitor[] _monitors =
     [
-        new("nightly-backup", "Every day at 02:00, ran in 4 min", "Up", BxColor.Success),
-        new("invoice-export", "Every hour, last ping 38 min ago", "Late", BxColor.Warning),
-        new("search-reindex", "Every 6 hours, ran in 11 min", "Up", BxColor.Success),
-        new("report-email", "Every Monday at 07:30, no ping", "Down", BxColor.Error),
+        new("nightly-backup", "Every day at 02:00, ran in 4 min", "Up", LxColor.Success),
+        new("invoice-export", "Every hour, last ping 38 min ago", "Late", LxColor.Warning),
+        new("search-reindex", "Every 6 hours, ran in 11 min", "Up", LxColor.Success),
+        new("report-email", "Every Monday at 07:30, no ping", "Down", LxColor.Error),
     ];
 
     private static readonly PageHeroUi _ui = new()

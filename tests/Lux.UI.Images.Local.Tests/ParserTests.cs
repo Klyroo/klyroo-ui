@@ -5,11 +5,11 @@ namespace Lux.UI.Images.Local.Tests;
 
 public class ParserTests
 {
-    private static BxImageParseResult Parse(Dictionary<string, string> query, Action<BxLocalImagesOptions>? configure = null)
+    private static LxImageParseResult Parse(Dictionary<string, string> query, Action<LxLocalImagesOptions>? configure = null)
     {
-        var options = new BxLocalImagesOptions();
+        var options = new LxLocalImagesOptions();
         configure?.Invoke(options);
-        return BxImageRequestParser.Parse(key => query.GetValueOrDefault(key), options);
+        return LxImageRequestParser.Parse(key => query.GetValueOrDefault(key), options);
     }
 
     [Fact]
@@ -23,7 +23,7 @@ public class ParserTests
         Assert.Equal(256, request.Height);
         Assert.Equal(80, request.Quality);
         Assert.Equal("jpeg", request.Format);
-        Assert.Equal(BxImageFit.Contain, request.Fit);
+        Assert.Equal(LxImageFit.Contain, request.Fit);
         Assert.True(request.Versioned);
     }
 
@@ -169,6 +169,6 @@ public class ParserTests
     [InlineData("2606:2800:220:1:248:1893:25c8:1946", true)]
     public void Only_public_addresses_are_fetched(string address, bool expected)
     {
-        Assert.Equal(expected, BxImageProcessor.IsPublic(IPAddress.Parse(address)));
+        Assert.Equal(expected, LxImageProcessor.IsPublic(IPAddress.Parse(address)));
     }
 }

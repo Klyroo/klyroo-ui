@@ -1,10 +1,10 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>Русский (ru).</summary>
-    public static BxLocale Ru { get; } = new("ru", "Русский", BxDirection.Ltr,
-        new BxMessages
+    public static LxLocale Ru { get; } = new("ru", "Русский", LxDirection.Ltr,
+        new LxMessages
         {
             ChartLine = "Линейная диаграмма",
             ChartArea = "Диаграмма с областями",

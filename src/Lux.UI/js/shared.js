@@ -7,7 +7,7 @@ let counter = 0;
 
 /** Gives an element an id if it has none, and returns it. */
 export function ensureId(element, prefix) {
-  if (!element.id) element.id = `bx-${prefix}-${++counter}`;
+  if (!element.id) element.id = `lx-${prefix}-${++counter}`;
   return element.id;
 }
 
@@ -30,7 +30,7 @@ export function float(anchor, floating, { placement = 'bottom', distance = 8, ma
 
 /**
  * Change reporting shared by every element bound from .NET. Each report carries an increasing sequence; a bound
- * component renders back the last one it has seen in data-bx-seq, so a render computed before .NET received the
+ * component renders back the last one it has seen in data-lx-seq, so a render computed before .NET received the
  * latest report can be recognized and ignored instead of undoing what the user just did.
  */
 export class Reporter {
@@ -57,13 +57,13 @@ export class Reporter {
 
   /** True when the attribute change being processed comes from a render older than the last report. */
   isStale() {
-    const seen = this.#host.getAttribute('data-bx-seq');
+    const seen = this.#host.getAttribute('data-lx-seq');
     return seen !== null && Number(seen) < this.#sequence;
   }
 
-  /** True when a .NET component renders this element and listens to it (it renders data-bx-seq). */
+  /** True when a .NET component renders this element and listens to it (it renders data-lx-seq). */
   get bound() {
-    return this.#host.hasAttribute('data-bx-seq');
+    return this.#host.hasAttribute('data-lx-seq');
   }
 
   /**
@@ -86,7 +86,7 @@ export class Reporter {
    * without this, every later server render would look older than the element's own reports and be ignored.
    */
   adopt() {
-    this.#sequence = Number(this.#host.getAttribute('data-bx-seq') ?? 0);
+    this.#sequence = Number(this.#host.getAttribute('data-lx-seq') ?? 0);
   }
 }
 
@@ -110,14 +110,14 @@ export function observeChildren(host, callback, { ignore = null } = {}) {
  * What a shortcut whose element is `element` does while a modal dialog is open (the page behind it is not available,
  * though it is not marked inert): "run" (no modal is open, or the modals open contain the element), "consume" (the only
  * modal open is the one the element belongs to, like the hidden trigger of a search rendered next to its dialog in the
- * same <bx-modal>: the key is taken so the browser does not run its own, but the element is not clicked, the dialog is
+ * same <lx-modal>: the key is taken so the browser does not run its own, but the element is not clicked, the dialog is
  * already open) or "skip" (the page behind an unrelated modal: the key is left alone).
  */
 export function shortcutState(element) {
   let consume = false;
   for (const dialog of document.querySelectorAll('dialog:modal')) {
     if (dialog.contains(element)) continue;
-    if (dialog.closest('bx-modal')?.contains(element)) consume = true;
+    if (dialog.closest('lx-modal')?.contains(element)) consume = true;
     else return 'skip';
   }
   return consume ? 'consume' : 'run';
@@ -147,5 +147,5 @@ export function rovingKey(event, items, current, { vertical = true } = {}) {
 
 /** True in TV mode (remote control navigation): there the arrows move focus between controls, and a closed popup opens only with Select/Enter. */
 export function isTvMode() {
-  return document.documentElement.hasAttribute('data-bx-tv');
+  return document.documentElement.hasAttribute('data-lx-tv');
 }

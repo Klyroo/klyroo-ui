@@ -3,13 +3,13 @@ import { Reporter } from './shared.js';
 /**
  * A pressed/unpressed button that works without .NET: the element flips aria-pressed itself.
  *
- * <bx-toggle pressed>
+ * <lx-toggle pressed>
  *   <input type="hidden" data-slot="value" name="…" value="true" disabled>   (posts only while pressed)
  *   <button type="button" aria-pressed="true">…</button>
- * </bx-toggle>
+ * </lx-toggle>
  */
-export class BxToggleElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'pressed'];
+export class LxToggleElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'pressed'];
 
   #reporter = new Reporter(this);
 
@@ -19,7 +19,7 @@ export class BxToggleElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.isConnected) return;
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -53,8 +53,8 @@ export class BxToggleElement extends HTMLElement {
     this.#show(pressed);
     this.toggleAttribute('pressed', pressed);
     this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value: String(pressed) });
+    this.#reporter.report('lx-change', { value: String(pressed) });
   };
 }
 
-if (!customElements.get('bx-toggle')) customElements.define('bx-toggle', BxToggleElement);
+if (!customElements.get('lx-toggle')) customElements.define('lx-toggle', LxToggleElement);

@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 
 namespace Portfolio.Web.Site;
 

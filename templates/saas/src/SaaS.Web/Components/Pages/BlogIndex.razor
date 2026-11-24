@@ -7,21 +7,21 @@
     <meta name="description" content="@SiteInfo.BlogDescription" />
 </HeadContent>
 
-<BxContainer Class="py-10 sm:py-14">
-    <BxPageHeader Title="@SiteInfo.BlogTitle" Description="@SiteInfo.BlogDescription" />
+<LxContainer Class="py-10 sm:py-14">
+    <LxPageHeader Title="@SiteInfo.BlogTitle" Description="@SiteInfo.BlogDescription" />
 
     @* A tag is a link with a query string, so the filter works without a script and a filtered list can be shared. *@
     <nav aria-label="Tags" class="mt-8">
         <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
             <li>
-                <BxButton Label="All" Href="@SiteInfo.BlogHref" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="@(_tag is null ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                <LxButton Label="All" Href="@SiteInfo.BlogHref" Size="LxSize.Sm" Color="LxColor.Neutral" Variant="@(_tag is null ? ButtonVariant.Solid : ButtonVariant.Outline)"
                           aria-current="@(_tag is null ? "page" : null)" data-testid="tag" />
             </li>
             @foreach (var (tag, count) in _tags)
             {
                 var selected = string.Equals(tag, _tag, StringComparison.OrdinalIgnoreCase);
                 <li>
-                    <BxButton Label="@($"{tag} ({count})")" Href="@($"{SiteInfo.BlogHref}?tag={Uri.EscapeDataString(tag)}")" Size="BxSize.Sm" Color="BxColor.Neutral"
+                    <LxButton Label="@($"{tag} ({count})")" Href="@($"{SiteInfo.BlogHref}?tag={Uri.EscapeDataString(tag)}")" Size="LxSize.Sm" Color="LxColor.Neutral"
                               Variant="@(selected ? ButtonVariant.Solid : ButtonVariant.Outline)" aria-current="@(selected ? "page" : null)" data-testid="tag" />
                 </li>
             }
@@ -30,27 +30,27 @@
 
     @if (_posts.Count == 0)
     {
-        <BxEmpty Title="No posts with this tag" Description="Pick another tag, or show all the posts." class="mt-10" />
+        <LxEmpty Title="No posts with this tag" Description="Pick another tag, or show all the posts." class="mt-10" />
     }
     else
     {
         @if (_featured is not null)
         {
             <div class="mt-10">
-                <BxBlogPost Title="@_featured.Title" Description="@_featured.Description" Date="@_featured.Date" Image="@_featured.Image" ImageAlt="@_featured.ImageAlt"
-                            Href="@_featured.Href" Authors="_featured.Authors" Orientation="BxOrientation.Horizontal" HeadingLevel="2"
+                <LxBlogPost Title="@_featured.Title" Description="@_featured.Description" Date="@_featured.Date" Image="@_featured.Image" ImageAlt="@_featured.ImageAlt"
+                            Href="@_featured.Href" Authors="_featured.Authors" Orientation="LxOrientation.Horizontal" HeadingLevel="2"
                             Badge="@_featured.Tags.FirstOrDefault()" data-testid="post" />
             </div>
         }
-        <BxBlogPosts Class="mt-8">
+        <LxBlogPosts Class="mt-8">
             @foreach (var post in _rest)
             {
-                <BxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
+                <LxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
                             Href="@post.Href" Authors="post.Authors" HeadingLevel="2" Badge="@post.Tags.FirstOrDefault()" data-testid="post" />
             }
-        </BxBlogPosts>
+        </LxBlogPosts>
     }
-</BxContainer>
+</LxContainer>
 
 @code {
     [SupplyParameterFromQuery(Name = "tag")] public string? Tag { get; set; }

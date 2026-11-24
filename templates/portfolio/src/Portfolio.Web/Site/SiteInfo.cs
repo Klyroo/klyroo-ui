@@ -51,7 +51,7 @@ public static class SiteInfo
     public const string HeaderMenuTitle = "Menu";
     public const string FooterLabel = "Footer";
 
-    public static IReadOnlyList<BxNavigationItem> Navigation { get; } =
+    public static IReadOnlyList<LxNavigationItem> Navigation { get; } =
     [
         new("Work") { Href = WorkHref },
         new("About") { Href = AboutHref },
@@ -67,7 +67,7 @@ public static class SiteInfo
         new("Email", "mailto:" + Email) { Icon = "ph:envelope-simple" },
     ];
 
-    public static IReadOnlyList<BxFooterColumn> FooterColumns { get; } =
+    public static IReadOnlyList<LxFooterColumn> FooterColumns { get; } =
     [
         new("Site")
         {
@@ -99,7 +99,7 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> HeroLinks { get; } =
     [
         new("See my work", WorkHref) { TrailingIcon = "ph:arrow-right" },
-        new("Get in touch", ContactHref) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Get in touch", ContactHref) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     /// <summary>The facts in the card next to the introduction.</summary>
@@ -143,7 +143,7 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> CtaLinks { get; } =
     [
         new("Send a message", ContactHref),
-        new("Write directly", "mailto:" + Email) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline, Icon = "ph:envelope-simple" },
+        new("Write directly", "mailto:" + Email) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline, Icon = "ph:envelope-simple" },
     ];
 
     // Work
@@ -175,9 +175,9 @@ public static class SiteInfo
 
     /// <summary>
     /// The choices of the topic of the contact form: radio buttons, which the browser posts by itself. The form has to work with JavaScript off, and
-    /// the scripted menus of Blux (<c>BxSelect</c>) post through a script.
+    /// the scripted menus of Lux (<c>LxSelect</c>) post through a script.
     /// </summary>
-    public static IReadOnlyList<BxRadioItem<string>> Topics { get; } =
+    public static IReadOnlyList<LxRadioItem<string>> Topics { get; } =
     [
         new("project", "A project"),
         new("speaking", "A talk or a workshop"),

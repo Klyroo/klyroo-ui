@@ -5,36 +5,36 @@
 
 <SettingsPage Heading="Notifications" Description="Where you hear about what happens, and what is worth a message." TestId="settings-notifications">
     <form @onsubmit="SaveAsync" @onsubmit:preventDefault class="flex flex-col gap-6" data-testid="notification-form">
-        <BxCard>
+        <LxCard>
             <Header>
-                <h2 class="font-semibold text-(--blux-text-highlighted)">Channels</h2>
-                <p class="text-sm text-(--blux-text-muted)">Choose how messages reach you.</p>
+                <h2 class="font-semibold text-(--lux-text-highlighted)">Channels</h2>
+                <p class="text-sm text-(--lux-text-muted)">Choose how messages reach you.</p>
             </Header>
             <ChildContent>
                 <div class="flex flex-col gap-4">
-                    <BxSwitch @bind-Value="_email" Label="Email" Description="A message to maren@example.com." data-testid="channel-email" />
-                    <BxSwitch @bind-Value="_push" Label="Push" Description="A notification in the browser or on your phone." data-testid="channel-push" />
+                    <LxSwitch @bind-Value="_email" Label="Email" Description="A message to maren@example.com." data-testid="channel-email" />
+                    <LxSwitch @bind-Value="_push" Label="Push" Description="A notification in the browser or on your phone." data-testid="channel-push" />
                 </div>
             </ChildContent>
-        </BxCard>
+        </LxCard>
 
-        <BxCard>
+        <LxCard>
             <Header>
-                <h2 class="font-semibold text-(--blux-text-highlighted)">What to tell me about</h2>
-                <p class="text-sm text-(--blux-text-muted)">Each of these goes to the channels you turned on.</p>
+                <h2 class="font-semibold text-(--lux-text-highlighted)">What to tell me about</h2>
+                <p class="text-sm text-(--lux-text-muted)">Each of these goes to the channels you turned on.</p>
             </Header>
             <ChildContent>
                 <div class="flex flex-col gap-4">
-                    <BxSwitch @bind-Value="_messages" Label="New messages" Description="A customer writes to the inbox." />
-                    <BxSwitch @bind-Value="_orders" Label="Orders and payments" Description="A payment arrives, fails or is refunded." />
-                    <BxSwitch @bind-Value="_members" Label="Team changes" Description="Someone joins, leaves or changes role." />
-                    <BxSwitch @bind-Value="_digest" Label="Weekly report" Description="One summary of the week, on Monday morning." />
+                    <LxSwitch @bind-Value="_messages" Label="New messages" Description="A customer writes to the inbox." />
+                    <LxSwitch @bind-Value="_orders" Label="Orders and payments" Description="A payment arrives, fails or is refunded." />
+                    <LxSwitch @bind-Value="_members" Label="Team changes" Description="Someone joins, leaves or changes role." />
+                    <LxSwitch @bind-Value="_digest" Label="Weekly report" Description="One summary of the week, on Monday morning." />
                 </div>
             </ChildContent>
-        </BxCard>
+        </LxCard>
 
         <div class="flex justify-end">
-            <BxButton Label="Save preferences" Type="submit" data-testid="notification-save" />
+            <LxButton Label="Save preferences" Type="submit" data-testid="notification-save" />
         </div>
     </form>
 </SettingsPage>
@@ -51,6 +51,6 @@
     {
         var channels = new[] { (_email, "email"), (_push, "push") }.Where(c => c.Item1).Select(c => c.Item2).ToArray();
         var description = channels.Length == 0 ? "No channel is on: nothing will reach you." : $"Sent by {string.Join(" and ", channels)}.";
-        await Toasts.Add(new BxToast { Title = "Preferences saved", Description = description, Color = channels.Length == 0 ? BxColor.Warning : BxColor.Success });
+        await Toasts.Add(new LxToast { Title = "Preferences saved", Description = description, Color = channels.Length == 0 ? LxColor.Warning : LxColor.Success });
     }
 }

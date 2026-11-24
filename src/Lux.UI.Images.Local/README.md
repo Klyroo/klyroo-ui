@@ -1,8 +1,8 @@
 # Lux.UI.Images.Local
 
 An ASP.NET Core endpoint that resizes and converts images on your own server with [libvips](https://www.libvips.org/)
-(through [NetVips](https://github.com/kleisauke/net-vips)), and the `local` provider that makes `BxImage`,
-`BxAvatar`, `BxBlogPost` and the other image components of [Lux.UI](https://www.nuget.org/packages/Lux.UI) use it.
+(through [NetVips](https://github.com/kleisauke/net-vips)), and the `local` provider that makes `LxImage`,
+`LxAvatar`, `LxBlogPost` and the other image components of [Lux.UI](https://www.nuget.org/packages/Lux.UI) use it.
 A self-hosted image optimization endpoint powered by libvips.
 
 ```csharp
@@ -14,13 +14,13 @@ builder.Services.AddLuxImagesLocal(o =>
 });
 
 var app = builder.Build();
-app.MapLuxImages();                                  // GET /_blux/img?src=/img/team.jpg&w=640&f=webp (below the path base, if any)
+app.MapLuxImages();                                  // GET /_lux/img?src=/img/team.jpg&w=640&f=webp (below the path base, if any)
 ```
 
 In a Blazor Web App that renders in WebAssembly, register the URL builder in the shared client code too:
 `o.Images.AddLocal(version: "2026-11-20", makeDefault: true)` (package `Lux.UI.Images`, which has no server dependency).
 
-The endpoint is `_blux/img`, relative to `<base href>`: the browser resolves it, so an app served below a path base (`app.UsePathBase("/x")` with `<base href="/x/">`) reaches its own optimizer at `/x/_blux/img` in every render mode, and not the one of another app on the same origin. Call `app.UseRouting()` right after `UsePathBase`, because `WebApplication` otherwise adds routing first and the prefix is never stripped. An endpoint you give that starts with `/` (`AddLocal("/_blux/img")`) is used literally, which is only right for an app at the root.
+The endpoint is `_lux/img`, relative to `<base href>`: the browser resolves it, so an app served below a path base (`app.UsePathBase("/x")` with `<base href="/x/">`) reaches its own optimizer at `/x/_lux/img` in every render mode, and not the one of another app on the same origin. Call `app.UseRouting()` right after `UsePathBase`, because `WebApplication` otherwise adds routing first and the prefix is never stripped. An endpoint you give that starts with `/` (`AddLocal("/_lux/img")`) is used literally, which is only right for an app at the root.
 
 **Security.** The endpoint is meant to face the internet, so every request is bounded.
 

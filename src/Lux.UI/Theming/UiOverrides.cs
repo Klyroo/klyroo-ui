@@ -402,7 +402,7 @@ public enum TabsVariant
     Link,
 }
 
-public enum BxOrientation
+public enum LxOrientation
 {
     Horizontal,
     Vertical,

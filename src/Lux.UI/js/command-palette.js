@@ -1,19 +1,19 @@
 import { Reporter, ensureId, observeChildren } from './shared.js';
 
 /**
- * <bx-command-palette data-results-text="{0} results available">
+ * <lx-command-palette data-results-text="{0} results available">
  *   <div><input role="combobox" aria-controls="list" …></div>
  *   <div role="listbox" id="list"> [<div role="group">…] <div role="option" data-value data-search>…</div> </div>
  *   <div data-slot="empty">No results</div>
  *   <div role="status" data-slot="status"></div>
- * </bx-command-palette>
+ * </lx-command-palette>
  *
  * Filtering, highlighting and selection happen here, so typing never goes through .NET. Options that do not match
  * get data-filtered (the theme hides them), the element gets data-empty when none match, and the highlighted option
  * is announced through aria-activedescendant while focus stays in the input. Activating an option reports
- * "bx-change" with its value; links navigate natively.
+ * "lx-change" with its value; links navigate natively.
  */
-export class BxCommandPaletteElement extends HTMLElement {
+export class LxCommandPaletteElement extends HTMLElement {
   #observer = null;
   #active = null;
   #query = null;
@@ -161,7 +161,7 @@ export class BxCommandPaletteElement extends HTMLElement {
   #onClick = (event) => {
     const option = event.target.closest?.('[role="option"]');
     if (!option || !this.contains(option) || option.getAttribute('aria-disabled') === 'true') return;
-    this.#reporter.report('bx-change', { value: option.dataset.value ?? '' });
+    this.#reporter.report('lx-change', { value: option.dataset.value ?? '' });
     this.#input?.focus({ preventScroll: true });
   };
 
@@ -171,4 +171,4 @@ export class BxCommandPaletteElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-command-palette')) customElements.define('bx-command-palette', BxCommandPaletteElement);
+if (!customElements.get('lx-command-palette')) customElements.define('lx-command-palette', LxCommandPaletteElement);

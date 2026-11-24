@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace Lux.UI.Tests.Icons;
 
 /// <summary>An id of an icon is global to the page: every drawing gets its own, with every reference to it rewritten.</summary>
-public class IconIdTests : BluxTestContext
+public class IconIdTests : LuxTestContext
 {
     private const string Gradient =
         """<defs><linearGradient id="g"><stop offset="0" stop-color="#f00"/><stop offset="1" stop-color="#00f"/></linearGradient><clipPath id="c"><rect width="8" height="8"/></clipPath></defs><path d="M0 0h8v8H0z" fill="url(#g)" clip-path="url(#c)"/>""";
@@ -105,8 +105,8 @@ public class IconIdTests : BluxTestContext
     {
         LuxIconBundle.Add("idtest", "grad", Gradient, "0 0 8 8");
 
-        var first = Render<BxIcon>(p => p.Add(i => i.Name, "idtest:grad")).Markup;
-        var second = Render<BxIcon>(p => p.Add(i => i.Name, "i-idtest-grad")).Markup;
+        var first = Render<LxIcon>(p => p.Add(i => i.Name, "idtest:grad")).Markup;
+        var second = Render<LxIcon>(p => p.Add(i => i.Name, "i-idtest-grad")).Markup;
 
         Assert.Empty(Ids(first).Intersect(Ids(second)));
         foreach (var markup in new[] { first, second })
@@ -120,7 +120,7 @@ public class IconIdTests : BluxTestContext
     public void An_icon_keeps_its_ids_when_the_component_renders_again()
     {
         LuxIconBundle.Add("idtest", "grad2", Gradient, "0 0 8 8");
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "idtest:grad2"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "idtest:grad2"));
         var before = Ids(cut.Markup);
 
         cut.Render(p => p.Add(i => i.Name, "idtest:grad2").Add(i => i.Label, "Icon"));
@@ -131,7 +131,7 @@ public class IconIdTests : BluxTestContext
     [Fact]
     public void An_icon_without_ids_renders_exactly_the_body()
     {
-        var cut = Render<BxIcon>(p => p.Add(i => i.Name, "search"));
+        var cut = Render<LxIcon>(p => p.Add(i => i.Name, "search"));
 
         Assert.DoesNotContain("-bx", cut.Markup);
     }
@@ -158,7 +158,7 @@ public class IconIdTests : BluxTestContext
 /// </summary>
 public class IconRegistrationTests : IDisposable
 {
-    private readonly string _dir = Path.Combine(Path.GetTempPath(), "blux-icons-asm-" + Guid.NewGuid().ToString("N"));
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "lux-icons-asm-" + Guid.NewGuid().ToString("N"));
     private readonly Func<AssemblyLoadContext, AssemblyName, Assembly?> _resolver;
 
     public IconRegistrationTests()
@@ -172,7 +172,7 @@ public class IconRegistrationTests : IDisposable
         AssemblyLoadContext.Default.Resolving += _resolver;
     }
 
-    private sealed class Context : BluxTestContext;
+    private sealed class Context : LuxTestContext;
 
     public void Dispose()
     {
@@ -215,7 +215,7 @@ public class IconRegistrationTests : IDisposable
         Assert.True(IconResolver.TryResolve("i-" + prefix + "-dot", null, out var body));
         Assert.Equal("<circle r=\"3\"/>", body.Body);
         using var context = new Context();
-        var cut = context.Render<BxIcon>(p => p.Add(i => i.Name, "i-" + prefix + "-dot"));
+        var cut = context.Render<LxIcon>(p => p.Add(i => i.Name, "i-" + prefix + "-dot"));
         Assert.Equal("3", cut.Find("svg circle").GetAttribute("r"));
     }
 
@@ -239,7 +239,7 @@ public class IconRegistrationTests : IDisposable
     }
 
     [Fact]
-    public void A_library_referenced_by_a_library_is_found_when_it_uses_blux()
+    public void A_library_referenced_by_a_library_is_found_when_it_uses_lux()
     {
         var prefix = Unique();
         var deep = Compile("Deep" + prefix, Generated((prefix, "deep", "<rect width=\"2\" height=\"2\"/>")) + "\npublic class DeepPage { }");

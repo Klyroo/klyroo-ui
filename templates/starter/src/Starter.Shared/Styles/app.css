@@ -1,4 +1,4 @@
 @import "tailwindcss";
-@import "../obj/blux/lux.theme.css";
+@import "../obj/lux/lux.theme.css";
 
 /* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result at _content/Starter.Shared/app.css. */

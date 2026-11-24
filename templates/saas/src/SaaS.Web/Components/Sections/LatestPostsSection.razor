@@ -1,22 +1,22 @@
 @inject MarkdownStore Store
 
 @* The three most recent posts of the blog, from the same files as the blog page. *@
-<BxPageSection id="blog"
+<LxPageSection id="blog"
                Headline="@SiteInfo.PostsHeadline"
                Title="@SiteInfo.PostsTitle"
-               Orientation="BxOrientation.Vertical"
+               Orientation="LxOrientation.Vertical"
                Links="_links">
-    <BxBlogPosts Class="mt-10">
+    <LxBlogPosts Class="mt-10">
         @foreach (var post in _posts)
         {
-            <BxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
+            <LxBlogPost Title="@post.Title" Description="@post.Description" Date="@post.Date" Image="@post.Image" ImageAlt="@post.ImageAlt"
                         Href="@post.Href" Authors="post.Authors" data-testid="latest-post" />
         }
-    </BxBlogPosts>
-</BxPageSection>
+    </LxBlogPosts>
+</LxPageSection>
 
 @code {
-    private static readonly PageLinkItem[] _links = [new("All posts", SiteInfo.BlogHref) { Color = BxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+    private static readonly PageLinkItem[] _links = [new("All posts", SiteInfo.BlogHref) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
 
     private IReadOnlyList<Post> _posts = [];
 

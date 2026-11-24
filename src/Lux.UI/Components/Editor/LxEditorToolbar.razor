@@ -1,0 +1,94 @@
+@namespace Lux.UI
+@inherits LxComponentBase
+
+<lx-editor-toolbar role="toolbar"
+                   aria-label="@(Label ?? Messages.EditorToolbar)"
+                   aria-orientation="horizontal"
+                   data-layout="@(Bubble ? "bubble" : "fixed")"
+                   popover="@(Bubble ? "manual" : null)"
+                   class="@_slots["root"]"
+                   data-color="@Color.Value"
+                   data-lx-tight
+                   data-schemes-message="@Messages.EditorSchemesOnly"
+                   data-refused-message="@Messages.EditorAddressRefused"
+                   @attributes="AdditionalAttributes">
+    @{
+        var first = true;
+    }
+    @foreach (var item in EffectiveItems)
+    {
+        if (item.IsSeparator)
+        {
+            <div role="separator" aria-orientation="vertical" class="@_slots["separator"]"></div>
+            continue;
+        }
+        var label = item.Label ?? EditorActions.Label(Messages, item.Action, item.Level);
+        <button type="button"
+                class="@_slots["button"]"
+                data-action="@EditorActions.Name(item.Action)"
+                data-level="@(item.Action == EditorAction.Heading ? item.Level : null)"
+                data-toggle="@(EditorActions.IsToggle(item.Action) ? "" : null)"
+                aria-pressed="@(EditorActions.IsToggle(item.Action) ? "false" : null)"
+                aria-label="@label"
+                title="@label"
+                tabindex="@(first ? 0 : -1)"
+                disabled>
+            @RenderIcon(EditorActions.IconName(item.Action, item.Level, Options.Icons), _slots["icon"])
+        </button>
+        first = false;
+    }
+    @if (HasLink)
+    {
+        <div class="@_slots["linkForm"]" data-slot="link-form" role="group" aria-label="@Messages.EditorLink" hidden>
+            <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="link-input" aria-label="@Messages.EditorLinkUrl" placeholder="https://" />
+            <button type="button" class="@_slots["linkButton"]" data-link="apply">@Messages.EditorLinkApply</button>
+            <button type="button" class="@_slots["linkButton"]" data-link="remove">@Messages.EditorLinkRemove</button>
+            <p class="@_slots["linkMessage"]" data-slot="form-message" role="status"></p>
+        </div>
+    }
+    @if (HasImage)
+    {
+        <div class="@_slots["linkForm"]" data-slot="image-form" role="group" aria-label="@Messages.EditorImage" hidden>
+            <input type="text" inputmode="url" autocomplete="off" class="@_slots["linkInput"]" data-slot="image-input" aria-label="@Messages.EditorImageUrl" placeholder="https://" />
+            <button type="button" class="@_slots["linkButton"]" data-image="apply">@Messages.EditorLinkApply</button>
+            <p class="@_slots["linkMessage"]" data-slot="form-message" role="status"></p>
+        </div>
+    }
+</lx-editor-toolbar>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The buttons, in order. Defaults to <see cref="EditorToolbarItem.Defaults"/>, or <see cref="EditorToolbarItem.BubbleDefaults"/> for a bubble toolbar.</summary>
+    [Parameter] public IReadOnlyList<EditorToolbarItem>? Items { get; set; }
+
+    /// <summary>
+    /// Fixed (always visible, above the text) or Bubble (floats above a selection). Buttons are enabled once the editor is
+    /// ready; before that, in static pages, they are disabled.
+    /// </summary>
+    [Parameter] public EditorToolbarLayout Layout { get; set; }
+
+    /// <summary>Color of pressed buttons.</summary>
+    [Parameter] public LxColor Color { get => _colorParameter ?? DefaultColor(LxColor.Primary); set => _colorParameter = value; }
+    private LxColor? _colorParameter;
+    [Parameter] public LxSize Size { get; set; } = LxSize.Sm;
+
+    /// <summary>Accessible name of the toolbar. Defaults to <see cref="LxMessages.EditorToolbar"/>.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public EditorToolbarUi? Ui { get; set; }
+
+    private bool Bubble => Layout == EditorToolbarLayout.Bubble;
+
+    private IReadOnlyList<EditorToolbarItem> EffectiveItems => Items ?? (Bubble ? EditorToolbarItem.BubbleDefaults : EditorToolbarItem.Defaults);
+
+    private bool HasImage => EffectiveItems.Any(i => !i.IsSeparator && i.Action == EditorAction.Image);
+
+    private bool HasLink => EffectiveItems.Any(i => !i.IsSeparator && i.Action == EditorAction.Link);
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.EditorToolbar, new Dictionary<string, string?>
+        {
+            ["layout"] = Bubble ? "bubble" : "fixed",
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "root");
+}

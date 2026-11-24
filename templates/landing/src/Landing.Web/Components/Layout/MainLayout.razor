@@ -1,41 +1,41 @@
 @inherits LayoutComponentBase
 
-<BxApp>
-    <BxSkipLink />
+<LxApp>
+    <LxSkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <BxHeader Items="SiteContent.Navigation" AriaLabel="@SiteContent.HeaderLabel" MenuTitle="@SiteContent.HeaderMenuTitle">
+    <LxHeader Items="SiteContent.Navigation" AriaLabel="@SiteContent.HeaderLabel" MenuTitle="@SiteContent.HeaderMenuTitle">
         <Left>
-            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
-                <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
+                <LxIcon Name="ph:paper-plane-tilt" Class="size-6" />
                 <span>@SiteContent.Name</span>
             </a>
         </Left>
         <Right>
-            <BxLocaleSelect Size="BxSize.Sm" />
-            <BxColorModeButton Size="BxSize.Sm" />
-            <BxButton Label="@SiteContent.HeaderButtonLabel" Href="@SiteContent.SignUpUrl" Size="BxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
+            <LxLocaleSelect Size="LxSize.Sm" />
+            <LxColorModeButton Size="LxSize.Sm" />
+            <LxButton Label="@SiteContent.HeaderButtonLabel" Href="@SiteContent.SignUpUrl" Size="LxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
         </Right>
-    </BxHeader>
+    </LxHeader>
 
-    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+    <LxMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </BxMain>
+    </LxMain>
 
-    <BxFooter>
+    <LxFooter>
         <Top>
-            <BxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="@SiteContent.FooterLabel">
+            <LxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="@SiteContent.FooterLabel">
                 <Left>
-                    <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
-                        <BxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+                    <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
+                        <LxIcon Name="ph:paper-plane-tilt" Class="size-6" />
                         <span>@SiteContent.Name</span>
                     </a>
-                    <p class="mt-3 max-w-xs text-sm text-(--blux-text-muted)">@SiteContent.Tagline</p>
+                    <p class="mt-3 max-w-xs text-sm text-(--lux-text-muted)">@SiteContent.Tagline</p>
                 </Left>
-            </BxFooterColumns>
+            </LxFooterColumns>
         </Top>
         <Left>
-            <p class="text-sm text-(--blux-text-muted)">@SiteContent.Copyright</p>
+            <p class="text-sm text-(--lux-text-muted)">@SiteContent.Copyright</p>
         </Left>
-    </BxFooter>
-</BxApp>
+    </LxFooter>
+</LxApp>

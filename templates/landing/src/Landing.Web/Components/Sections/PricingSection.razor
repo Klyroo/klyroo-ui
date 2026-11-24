@@ -3,18 +3,18 @@
    interactive for the sake of one label, and would not work until the circuit or WebAssembly had started. The cost is that the plans are rendered
    twice: the copy that is not shown is display:none, so it is out of the accessibility tree and out of the layout.
    In Windows High Contrast the fill of the checked label is dropped, so forced-colors paints it with the system Highlight colors. *@
-<BxPageSection id="pricing"
+<LxPageSection id="pricing"
                Headline="@SiteContent.PricingHeadline"
                Title="@SiteContent.PricingTitle"
                Description="@SiteContent.PricingDescription"
-               Orientation="BxOrientation.Vertical">
+               Orientation="LxOrientation.Vertical">
     <div class="group/pricing mt-10 flex flex-col items-start gap-8" data-testid="pricing">
-        <fieldset class="m-0 inline-flex rounded-full bg-(--blux-bg-elevated)/50 p-1 ring ring-(--blux-border)">
+        <fieldset class="m-0 inline-flex rounded-full bg-(--lux-bg-elevated)/50 p-1 ring ring-(--lux-border)">
             <legend class="sr-only">@SiteContent.BillingLabel</legend>
             <input type="radio" id="billing-monthly" name="billing" value="monthly" class="peer/monthly sr-only" checked />
-            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--blux-bg-inverted) peer-checked/monthly:text-(--blux-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--blux-text)">@SiteContent.MonthlyLabel</label>
+            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--lux-bg-inverted) peer-checked/monthly:text-(--lux-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--lux-text)">@SiteContent.MonthlyLabel</label>
             <input type="radio" id="billing-yearly" name="billing" value="yearly" class="peer/yearly sr-only" />
-            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--blux-bg-inverted) peer-checked/yearly:text-(--blux-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--blux-text)">@SiteContent.YearlyLabel</label>
+            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--lux-bg-inverted) peer-checked/yearly:text-(--lux-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--lux-text)">@SiteContent.YearlyLabel</label>
         </fieldset>
 
         <div class="w-full group-has-[#billing-yearly:checked]/pricing:hidden" data-billing="monthly">
@@ -24,27 +24,27 @@
             @Plans(true)
         </div>
     </div>
-</BxPageSection>
+</LxPageSection>
 
 @code {
-    private const string _label = "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-(--blux-text-muted)";
+    private const string _label = "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-(--lux-text-muted)";
 
     private static RenderFragment Plans(bool yearly) =>
-        @<BxPricingPlans>
+        @<LxPricingPlans>
             @foreach (var plan in SiteContent.Plans)
             {
-                <BxPricingPlan Title="@plan.Name"
+                <LxPricingPlan Title="@plan.Name"
                                Description="@plan.Description"
                                Badge="@plan.Badge"
                                Highlight="@plan.Highlight"
                                Price="@plan.Price(yearly)"
                                BillingCycle="@SiteContent.PerMonth"
                                Terms="@plan.Terms(yearly)"
-                               Features="@(plan.Features.Select(f => new BxPricingFeature(f)).ToArray())"
+                               Features="@(plan.Features.Select(f => new LxPricingFeature(f)).ToArray())"
                                ButtonLabel="@plan.ButtonLabel"
                                ButtonHref="@plan.ButtonHref"
                                ButtonVariant="@(plan.Highlight ? ButtonVariant.Solid : ButtonVariant.Outline)"
-                               ButtonColor="@(plan.Highlight ? BxColor.Primary : BxColor.Neutral)" />
+                               ButtonColor="@(plan.Highlight ? LxColor.Primary : LxColor.Neutral)" />
             }
-        </BxPricingPlans>;
+        </LxPricingPlans>;
 }

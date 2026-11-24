@@ -43,7 +43,7 @@ import { toast } from './toaster.js';
 import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';
 import { setSpatialNavigation, tvKey, tvBack, tvTextEditing } from './spatial-nav.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
-import { BluxBehaviors, definePrimitive, announce, createUndoStack } from './behaviors.js';
+import { LuxBehaviors, definePrimitive, announce, createUndoStack } from './behaviors.js';
 import { createAgent, observe, agentTools, registerWebMcp } from './agent.js';
 
 // Before any element connects: storage choices (cookies or localStorage) depend on it.
@@ -51,7 +51,7 @@ markHost();
 
 const defaultAgent = createAgent();
 
-globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
+globalThis.Lux = Object.assign(globalThis.Lux ?? {}, {
   setColorMode,
   getColorMode,
   toast,
@@ -62,7 +62,7 @@ globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
   tvKey,
   tvBack,
   tvTextEditing,
-  behaviors: BluxBehaviors,
+  behaviors: LuxBehaviors,
   definePrimitive,
   announce,
   createUndoStack,
@@ -76,21 +76,21 @@ globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
 // Avatar images that fail to load are hidden so the initials underneath show. "error" does not bubble: capture it.
 // Images that failed before this script loaded are caught by the scan.
 function hideBrokenAvatars() {
-  for (const img of document.querySelectorAll('img[data-bx-avatar-image]')) {
+  for (const img of document.querySelectorAll('img[data-lx-avatar-image]')) {
     if (img.complete && img.naturalWidth === 0) img.hidden = true;
   }
 }
 document.addEventListener(
   'load',
   (event) => {
-    if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-bx-avatar-image')) event.target.hidden = false;
+    if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-lx-avatar-image')) event.target.hidden = false;
   },
   true,
 );
 document.addEventListener(
   'error',
   (event) => {
-    if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-bx-avatar-image')) event.target.hidden = true;
+    if (event.target instanceof HTMLImageElement && event.target.hasAttribute('data-lx-avatar-image')) event.target.hidden = true;
   },
   true,
 );
@@ -101,7 +101,7 @@ new MutationObserver((mutations) => {
   for (const mutation of mutations) {
     for (const node of mutation.addedNodes) {
       if (node.nodeType !== Node.ELEMENT_NODE) continue;
-      const images = node.matches('img[data-bx-avatar-image]') ? [node] : node.querySelectorAll('img[data-bx-avatar-image]');
+      const images = node.matches('img[data-lx-avatar-image]') ? [node] : node.querySelectorAll('img[data-lx-avatar-image]');
       for (const img of images) if (img.complete && img.naturalWidth === 0) img.hidden = true;
     }
   }
@@ -113,27 +113,27 @@ function registerEvents(blazor) {
   if (eventsRegistered) return;
   eventsRegistered = true;
   blazor.registerCustomEventType('bxtoggle', {
-    browserEventName: 'bx-toggle',
+    browserEventName: 'lx-toggle',
     createEventArgs: (event) => ({ open: event.detail.open, sequence: event.detail.sequence }),
   });
   blazor.registerCustomEventType('bxchange', {
-    browserEventName: 'bx-change',
+    browserEventName: 'lx-change',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });
   blazor.registerCustomEventType('bxlimit', {
-    browserEventName: 'bx-limit',
+    browserEventName: 'lx-limit',
     createEventArgs: (event) => ({ exceeded: event.detail.exceeded, length: event.detail.length, max: event.detail.max }),
   });
   blazor.registerCustomEventType('bxsearch', {
-    browserEventName: 'bx-search',
+    browserEventName: 'lx-search',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
   });
 }
 
-/** What an enhanced navigation merge resets: every Blux element re-applies it. No list to keep in sync with the components. */
+/** What an enhanced navigation merge resets: every Lux element re-applies it. No list to keep in sync with the components. */
 function refreshElements() {
   for (const el of document.querySelectorAll('*')) {
-    if (el.localName.startsWith('bx-') && typeof el.refresh === 'function') el.refresh();
+    if (el.localName.startsWith('lx-') && typeof el.refresh === 'function') el.refresh();
   }
 }
 

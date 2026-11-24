@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxChip"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChip"/> slots.</summary>
 public sealed record ChipUi : ISlotOverrides
 {
     public string? Root { get; init; }

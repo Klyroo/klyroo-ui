@@ -1,4 +1,4 @@
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>How a content folder is read and rendered.</summary>
 public sealed class ContentOptions

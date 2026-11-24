@@ -6,17 +6,17 @@ using Microsoft.AspNetCore.Components.Rendering;
 
 namespace Lux.UI.Tests;
 
-public class EditorTests : BluxTestContext
+public class EditorTests : LuxTestContext
 {
     // ---- Editor
 
     [Fact]
     public void Editor_renders_the_host_the_posted_value_and_the_html_shown_before_the_engine_is_ready()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>Hello <strong>you</strong></p>").Add(e => e.Name, "body")
+        var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>Hello <strong>you</strong></p>").Add(e => e.Name, "body")
             .Add(e => e.Placeholder, "Write"));
 
-        var host = cut.Find("bx-editor");
+        var host = cut.Find("lx-editor");
         Assert.Equal("<p>Hello <strong>you</strong></p>", host.GetAttribute("data-value"));
         Assert.Equal("Write", host.GetAttribute("data-placeholder"));
         Assert.Equal("Rich text editor", host.GetAttribute("data-label"));
@@ -35,10 +35,10 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Editor_renders_state_attributes_for_read_only_disabled_and_color()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.ReadOnly, true).Add(e => e.Disabled, true).Add(e => e.Color, BxColor.Success)
+        var cut = Render<LxEditor>(p => p.Add(e => e.ReadOnly, true).Add(e => e.Disabled, true).Add(e => e.Color, LxColor.Success)
             .Add(e => e.Label, "Biography").Add(e => e.Name, "bio"));
 
-        var host = cut.Find("bx-editor");
+        var host = cut.Find("lx-editor");
         Assert.True(host.HasAttribute("data-readonly"));
         Assert.True(host.HasAttribute("disabled"));
         Assert.True(cut.Find("input[type=hidden]").HasAttribute("disabled"));
@@ -49,62 +49,62 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Editor_unbound_has_no_sequence_and_bound_one_hears_the_browser()
     {
-        var unbound = Render<BxEditor>(p => p.Add(e => e.Value, "<p>a</p>"));
-        Assert.False(unbound.Find("bx-editor").HasAttribute("data-bx-seq"));
+        var unbound = Render<LxEditor>(p => p.Add(e => e.Value, "<p>a</p>"));
+        Assert.False(unbound.Find("lx-editor").HasAttribute("data-lx-seq"));
 
         string? value = null;
-        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>a</p>").Add(e => e.ValueChanged, (string? v) => value = v));
-        Assert.Equal("data-bx-seq", cut.Find("bx-editor").Attributes[0]!.Name);
-        Assert.Equal("0", cut.Find("bx-editor").GetAttribute("data-bx-seq"));
+        var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>a</p>").Add(e => e.ValueChanged, (string? v) => value = v));
+        Assert.Equal("data-lx-seq", cut.Find("lx-editor").Attributes[0]!.Name);
+        Assert.Equal("0", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
 
-        cut.Find("bx-editor").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "<p>b</p>", Sequence = 4 });
+        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>b</p>", Sequence = 4 });
 
         Assert.Equal("<p>b</p>", value);
-        Assert.Equal("4", cut.Find("bx-editor").GetAttribute("data-bx-seq"));
-        Assert.Equal("<p>b</p>", cut.Find("bx-editor").GetAttribute("data-value"));
+        Assert.Equal("4", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
+        Assert.Equal("<p>b</p>", cut.Find("lx-editor").GetAttribute("data-value"));
         Assert.Equal("<p>b</p>", cut.Find("input[type=hidden]").GetAttribute("value"));
-        Assert.Equal("data-bx-seq", cut.Find("bx-editor").Attributes[0]!.Name);
+        Assert.Equal("data-lx-seq", cut.Find("lx-editor").Attributes[0]!.Name);
     }
 
     [Fact]
     public void Editor_ignores_a_report_that_changes_nothing_but_still_remembers_its_sequence()
     {
         var calls = 0;
-        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>a</p>").Add(e => e.ValueChanged, (string? _) => calls++));
+        var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>a</p>").Add(e => e.ValueChanged, (string? _) => calls++));
 
-        cut.Find("bx-editor").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "<p>a</p>", Sequence = 2 });
+        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>a</p>", Sequence = 2 });
 
         Assert.Equal(0, calls);
-        Assert.Equal("2", cut.Find("bx-editor").GetAttribute("data-bx-seq"));
+        Assert.Equal("2", cut.Find("lx-editor").GetAttribute("data-lx-seq"));
     }
 
     [Fact]
     public void Editor_gives_the_browser_its_length_limit_and_the_schemes_it_accepts()
     {
-        var none = Render<BxEditor>(p => p.Add(e => e.Value, "<p>a</p>"));
-        var plain = none.Find("bx-editor");
+        var none = Render<LxEditor>(p => p.Add(e => e.Value, "<p>a</p>"));
+        var plain = none.Find("lx-editor");
         Assert.False(plain.HasAttribute("data-max-length"));
         Assert.False(plain.HasAttribute("data-image-schemes"));
         Assert.False(plain.HasAttribute("data-link-schemes"));
 
-        var cut = Render<BxEditor>(p => p.Add(e => e.MaxLength, 150_000).Add(e => e.ImageSchemes, ["https"]).Add(e => e.LinkSchemes, ["HTTPS", "http:", "mailto"]));
-        var host = cut.Find("bx-editor");
+        var cut = Render<LxEditor>(p => p.Add(e => e.MaxLength, 150_000).Add(e => e.ImageSchemes, ["https"]).Add(e => e.LinkSchemes, ["HTTPS", "http:", "mailto"]));
+        var host = cut.Find("lx-editor");
         Assert.Equal("150000", host.GetAttribute("data-max-length"));
         Assert.Equal("https", host.GetAttribute("data-image-schemes"));
         Assert.Equal("https http mailto", host.GetAttribute("data-link-schemes"));
 
-        Assert.False(Render<BxEditor>(p => p.Add(e => e.MaxLength, 0)).Find("bx-editor").HasAttribute("data-max-length"));
-        Assert.False(Render<BxEditor>(p => p.Add(e => e.LinkSchemes, [])).Find("bx-editor").HasAttribute("data-link-schemes"));
+        Assert.False(Render<LxEditor>(p => p.Add(e => e.MaxLength, 0)).Find("lx-editor").HasAttribute("data-max-length"));
+        Assert.False(Render<LxEditor>(p => p.Add(e => e.LinkSchemes, [])).Find("lx-editor").HasAttribute("data-link-schemes"));
     }
 
     [Fact]
     public void Editor_tells_the_page_when_the_browser_says_the_text_is_over_its_limit()
     {
-        var seen = new List<BxLimitEventArgs>();
-        var cut = Render<BxEditor>(p => p.Add(e => e.MaxLength, 10).Add(e => e.OnLimit, (BxLimitEventArgs e) => seen.Add(e)));
+        var seen = new List<LxLimitEventArgs>();
+        var cut = Render<LxEditor>(p => p.Add(e => e.MaxLength, 10).Add(e => e.OnLimit, (LxLimitEventArgs e) => seen.Add(e)));
 
-        cut.Find("bx-editor").TriggerEvent("onbxlimit", new BxLimitEventArgs { Exceeded = true, Length = 42, Max = 10 });
-        cut.Find("bx-editor").TriggerEvent("onbxlimit", new BxLimitEventArgs { Exceeded = false, Length = 8, Max = 10 });
+        cut.Find("lx-editor").TriggerEvent("onbxlimit", new LxLimitEventArgs { Exceeded = true, Length = 42, Max = 10 });
+        cut.Find("lx-editor").TriggerEvent("onbxlimit", new LxLimitEventArgs { Exceeded = false, Length = 8, Max = 10 });
 
         Assert.Equal([(true, 42, 10), (false, 8, 10)], seen.Select(e => (e.Exceeded, e.Length, e.Max)));
     }
@@ -115,7 +115,7 @@ public class EditorTests : BluxTestContext
         var model = new Note();
         var cut = RenderForm(model, b =>
         {
-            b.OpenComponent<BxEditor>(1);
+            b.OpenComponent<LxEditor>(1);
             b.AddAttribute(2, "Value", model.Body);
             b.AddAttribute(3, "ValueChanged", EventCallback.Factory.Create<string?>(this, v => model.Body = v));
             b.AddAttribute(4, "ValueExpression", (Expression<Func<string?>>)(() => model.Body));
@@ -123,29 +123,29 @@ public class EditorTests : BluxTestContext
         });
 
         Assert.Equal("model.Body", cut.Find("input[type=hidden]").GetAttribute("name"));
-        Assert.False(cut.Find("bx-editor").HasAttribute("data-invalid"));
+        Assert.False(cut.Find("lx-editor").HasAttribute("data-invalid"));
 
         cut.Find("form").Submit();
 
-        Assert.Equal("true", cut.Find("bx-editor").GetAttribute("data-invalid"));
+        Assert.Equal("true", cut.Find("lx-editor").GetAttribute("data-invalid"));
 
-        cut.Find("bx-editor").TriggerEvent("onbxchange", new BxChangeEventArgs { Value = "<p>x</p>", Sequence = 1 });
+        cut.Find("lx-editor").TriggerEvent("onbxchange", new LxChangeEventArgs { Value = "<p>x</p>", Sequence = 1 });
 
         Assert.Equal("<p>x</p>", model.Body);
-        Assert.False(cut.Find("bx-editor").HasAttribute("data-invalid"));
+        Assert.False(cut.Find("lx-editor").HasAttribute("data-invalid"));
     }
 
     [Fact]
     public void FormField_labels_and_describes_the_editor_and_marks_it_invalid()
     {
-        var cut = Render<BxFormField>(p => p.Add(f => f.Label, "Body").Add(f => f.Help, "Markup").Add(f => f.Error, "Required").Add(f => f.Required, true)
+        var cut = Render<LxFormField>(p => p.Add(f => f.Label, "Body").Add(f => f.Help, "Markup").Add(f => f.Error, "Required").Add(f => f.Required, true)
             .Add(f => f.ChildContent, (RenderFragment)(b =>
             {
-                b.OpenComponent<BxEditor>(0);
+                b.OpenComponent<LxEditor>(0);
                 b.CloseComponent();
             })));
 
-        var host = cut.Find("bx-editor");
+        var host = cut.Find("lx-editor");
         Assert.Equal(cut.Find("label").Id, host.GetAttribute("data-labelledby"));
         Assert.Equal(cut.Find("label").GetAttribute("for"), host.GetAttribute("data-editor-id"));
         Assert.Equal("true", host.GetAttribute("data-invalid"));
@@ -157,11 +157,11 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Editor_forwards_class_ui_and_additional_attributes()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.Class, "my-root").Add(e => e.Ui, new EditorUi { Content = "my-content", Fallback = "my-fallback" })
+        var cut = Render<LxEditor>(p => p.Add(e => e.Class, "my-root").Add(e => e.Ui, new EditorUi { Content = "my-content", Fallback = "my-fallback" })
             .AddUnmatched("data-testid", "ed"));
 
-        Assert.Contains("my-root", cut.Find("bx-editor").ClassList);
-        Assert.Equal("ed", cut.Find("bx-editor").GetAttribute("data-testid"));
+        Assert.Contains("my-root", cut.Find("lx-editor").ClassList);
+        Assert.Equal("ed", cut.Find("lx-editor").GetAttribute("data-testid"));
         Assert.Contains("my-content", cut.Find("[data-slot=content]").ClassList);
         Assert.Contains("my-fallback", cut.Find("[data-slot=fallback]").ClassList);
     }
@@ -169,14 +169,14 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Editor_places_its_children_before_the_text_area()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.ChildContent, (RenderFragment)(b =>
+        var cut = Render<LxEditor>(p => p.Add(e => e.ChildContent, (RenderFragment)(b =>
         {
-            b.OpenComponent<BxEditorToolbar>(0);
+            b.OpenComponent<LxEditorToolbar>(0);
             b.CloseComponent();
         })));
 
-        var children = cut.Find("bx-editor").Children.Select(c => c.LocalName).ToList();
-        Assert.Equal(["input", "bx-editor-toolbar", "div"], children);
+        var children = cut.Find("lx-editor").Children.Select(c => c.LocalName).ToList();
+        Assert.Equal(["input", "lx-editor-toolbar", "div"], children);
     }
 
     // ---- Toolbar
@@ -184,9 +184,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Toolbar_renders_a_roving_toolbar_with_one_tab_stop_and_toggle_buttons()
     {
-        var cut = Render<BxEditorToolbar>();
+        var cut = Render<LxEditorToolbar>();
 
-        var toolbar = cut.Find("bx-editor-toolbar");
+        var toolbar = cut.Find("lx-editor-toolbar");
         Assert.Equal("toolbar", toolbar.GetAttribute("role"));
         Assert.Equal("Formatting", toolbar.GetAttribute("aria-label"));
         Assert.Equal("fixed", toolbar.GetAttribute("data-layout"));
@@ -210,9 +210,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Toolbar_bubble_layout_is_a_manual_popover_with_inline_defaults()
     {
-        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Layout, EditorToolbarLayout.Bubble));
+        var cut = Render<LxEditorToolbar>(p => p.Add(t => t.Layout, EditorToolbarLayout.Bubble));
 
-        var toolbar = cut.Find("bx-editor-toolbar");
+        var toolbar = cut.Find("lx-editor-toolbar");
         Assert.Equal("manual", toolbar.GetAttribute("popover"));
         Assert.Equal("bubble", toolbar.GetAttribute("data-layout"));
         Assert.Equal(["bold", "italic", "strike", "code", "link"], cut.FindAll("button[data-action]").Select(b => b.GetAttribute("data-action")));
@@ -221,12 +221,12 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Toolbar_custom_items_labels_and_the_link_form_only_with_a_link_button()
     {
-        var without = Render<BxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.Bold) { Label = "Strong" }, EditorToolbarItem.Separator, new EditorToolbarItem(EditorAction.MoveUp)]));
+        var without = Render<LxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.Bold) { Label = "Strong" }, EditorToolbarItem.Separator, new EditorToolbarItem(EditorAction.MoveUp)]));
         Assert.Equal("Strong", without.Find("button[data-action=bold]").GetAttribute("aria-label"));
         Assert.Equal("Move block up", without.Find("button[data-action=moveUp]").GetAttribute("aria-label"));
         Assert.Empty(without.FindAll("[data-slot=link-form]"));
 
-        var with = Render<BxEditorToolbar>();
+        var with = Render<LxEditorToolbar>();
         var form = with.Find("[data-slot=link-form]");
         Assert.True(form.HasAttribute("hidden"));
         Assert.Equal("Link address", with.Find("[data-slot=link-input]").GetAttribute("aria-label"));
@@ -237,7 +237,7 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Toolbar_task_list_is_a_toggle_and_the_image_form_only_comes_with_an_image_button()
     {
-        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.TaskList), new EditorToolbarItem(EditorAction.Image)]));
+        var cut = Render<LxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.TaskList), new EditorToolbarItem(EditorAction.Image)]));
 
         var task = cut.Find("button[data-action=taskList]");
         Assert.Equal("Task list", task.GetAttribute("aria-label"));
@@ -252,16 +252,16 @@ public class EditorTests : BluxTestContext
         Assert.Single(form.QuerySelectorAll("button[data-image=apply]"));
         Assert.Empty(cut.FindAll("[data-slot=link-form]"));
 
-        var without = Render<BxEditorToolbar>();
+        var without = Render<LxEditorToolbar>();
         Assert.Empty(without.FindAll("[data-slot=image-form]"));
     }
 
     [Fact]
     public void Toolbar_forms_have_a_live_region_for_the_reason_an_address_is_refused_and_the_messages_to_say_it()
     {
-        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.Link), new EditorToolbarItem(EditorAction.Image)]));
+        var cut = Render<LxEditorToolbar>(p => p.Add(t => t.Items, [new EditorToolbarItem(EditorAction.Link), new EditorToolbarItem(EditorAction.Image)]));
 
-        var toolbar = cut.Find("bx-editor-toolbar");
+        var toolbar = cut.Find("lx-editor-toolbar");
         Assert.Equal("Only {0} addresses are accepted.", toolbar.GetAttribute("data-schemes-message"));
         Assert.Equal("This address is not accepted.", toolbar.GetAttribute("data-refused-message"));
         foreach (var form in new[] { "link-form", "image-form" })
@@ -275,18 +275,18 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Editor_gives_the_browser_the_name_pattern_of_the_checkbox_of_a_task_item()
     {
-        var cut = Render<BxEditor>();
+        var cut = Render<LxEditor>();
 
-        Assert.Equal("Task: {0}", cut.Find("bx-editor").GetAttribute("data-task-label"));
+        Assert.Equal("Task: {0}", cut.Find("lx-editor").GetAttribute("data-task-label"));
     }
 
     [Fact]
     public void Toolbar_uses_size_color_and_label()
     {
-        var cut = Render<BxEditorToolbar>(p => p.Add(t => t.Size, BxSize.Lg).Add(t => t.Color, BxColor.Info).Add(t => t.Label, "Format"));
+        var cut = Render<LxEditorToolbar>(p => p.Add(t => t.Size, LxSize.Lg).Add(t => t.Color, LxColor.Info).Add(t => t.Label, "Format"));
 
-        Assert.Equal("Format", cut.Find("bx-editor-toolbar").GetAttribute("aria-label"));
-        Assert.Equal("info", cut.Find("bx-editor-toolbar").GetAttribute("data-color"));
+        Assert.Equal("Format", cut.Find("lx-editor-toolbar").GetAttribute("aria-label"));
+        Assert.Equal("info", cut.Find("lx-editor-toolbar").GetAttribute("data-color"));
         Assert.Contains("size-9", cut.Find("button[data-action=bold]").ClassList);
     }
 
@@ -295,9 +295,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void DragHandle_renders_a_hidden_labeled_button_that_is_not_a_tab_stop()
     {
-        var cut = Render<BxEditorDragHandle>();
+        var cut = Render<LxEditorDragHandle>();
 
-        var host = cut.Find("bx-editor-drag-handle");
+        var host = cut.Find("lx-editor-drag-handle");
         Assert.True(host.HasAttribute("hidden"));
         var button = cut.Find("button");
         Assert.Equal("Drag to move block", button.GetAttribute("aria-label"));
@@ -311,9 +311,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void SuggestionMenu_renders_a_listbox_of_options_with_actions_and_a_hidden_empty_message()
     {
-        var cut = Render<BxEditorSuggestionMenu>();
+        var cut = Render<LxEditorSuggestionMenu>();
 
-        var menu = cut.Find("bx-editor-menu");
+        var menu = cut.Find("lx-editor-menu");
         Assert.Equal("/", menu.GetAttribute("data-char"));
         Assert.Equal("suggestion", menu.GetAttribute("data-kind"));
         Assert.Equal("manual", cut.Find("[data-slot=content]").GetAttribute("popover"));
@@ -334,11 +334,11 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void SuggestionMenu_takes_custom_items_character_limit_and_disabled_state()
     {
-        var cut = Render<BxEditorSuggestionMenu>(p => p
+        var cut = Render<LxEditorSuggestionMenu>(p => p
             .Add(m => m.Items, [new EditorSuggestionItem(EditorAction.CodeBlock, "Snippet") { Keywords = "pre", Disabled = true }])
             .Add(m => m.Char, "!").Add(m => m.Limit, 3).Add(m => m.Label, "Blocks"));
 
-        var menu = cut.Find("bx-editor-menu");
+        var menu = cut.Find("lx-editor-menu");
         Assert.Equal("!", menu.GetAttribute("data-char"));
         Assert.Equal("3", menu.GetAttribute("data-limit"));
         Assert.Equal("Blocks", cut.Find("[role=listbox]").GetAttribute("aria-label"));
@@ -351,9 +351,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void MentionMenu_renders_items_with_their_id_and_the_at_character()
     {
-        var cut = Render<BxEditorMentionMenu>(p => p.Add(m => m.Items, [new EditorMentionItem("ada", "Ada Lovelace") { Description = "Mathematician" }, new EditorMentionItem("alan", "Alan Turing")]));
+        var cut = Render<LxEditorMentionMenu>(p => p.Add(m => m.Items, [new EditorMentionItem("ada", "Ada Lovelace") { Description = "Mathematician" }, new EditorMentionItem("alan", "Alan Turing")]));
 
-        var menu = cut.Find("bx-editor-menu");
+        var menu = cut.Find("lx-editor-menu");
         Assert.Equal("@", menu.GetAttribute("data-char"));
         Assert.Equal("mention", menu.GetAttribute("data-kind"));
         Assert.Equal("Mentions", cut.Find("[role=listbox]").GetAttribute("aria-label"));
@@ -367,9 +367,9 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void EmojiMenu_renders_emoji_values_and_needs_one_character_after_the_colon()
     {
-        var cut = Render<BxEditorEmojiMenu>();
+        var cut = Render<LxEditorEmojiMenu>();
 
-        var menu = cut.Find("bx-editor-menu");
+        var menu = cut.Find("lx-editor-menu");
         Assert.Equal(":", menu.GetAttribute("data-char"));
         Assert.Equal("emoji", menu.GetAttribute("data-kind"));
         Assert.Equal("1", menu.GetAttribute("data-min-query"));
@@ -381,8 +381,8 @@ public class EditorTests : BluxTestContext
     [Fact]
     public void Menu_options_are_not_selected_and_use_unique_list_ids()
     {
-        var first = Render<BxEditorEmojiMenu>();
-        var second = Render<BxEditorEmojiMenu>();
+        var first = Render<LxEditorEmojiMenu>();
+        var second = Render<LxEditorEmojiMenu>();
 
         Assert.NotEqual(first.Find("[role=listbox]").Id, second.Find("[role=listbox]").Id);
     }
@@ -404,11 +404,11 @@ public class EditorTests : BluxTestContext
     }
 }
 
-public class EditorLocalizedTests : BluxTestContext
+public class EditorLocalizedTests : LuxTestContext
 {
     public EditorLocalizedTests() : base(o =>
     {
-        o.Locale = BxLocales.Extend(BxLocales.En, messages: m => m with { EditorBold = "Gras", EditorToolbar = "Mise en forme", EditorNoResults = "Aucun resultat", EditorDragHandle = "Deplacer" });
+        o.Locale = LxLocales.Extend(LxLocales.En, messages: m => m with { EditorBold = "Gras", EditorToolbar = "Mise en forme", EditorNoResults = "Aucun resultat", EditorDragHandle = "Deplacer" });
     })
     {
     }
@@ -416,18 +416,18 @@ public class EditorLocalizedTests : BluxTestContext
     [Fact]
     public void Texts_come_from_the_configured_strings()
     {
-        var toolbar = Render<BxEditorToolbar>();
+        var toolbar = Render<LxEditorToolbar>();
         Assert.Equal("Gras", toolbar.Find("button[data-action=bold]").GetAttribute("aria-label"));
-        Assert.Equal("Mise en forme", toolbar.Find("bx-editor-toolbar").GetAttribute("aria-label"));
+        Assert.Equal("Mise en forme", toolbar.Find("lx-editor-toolbar").GetAttribute("aria-label"));
 
-        Assert.Equal("Aucun resultat", Render<BxEditorEmojiMenu>().Find("[data-slot=empty]").TextContent);
-        Assert.Equal("Deplacer", Render<BxEditorDragHandle>().Find("button").GetAttribute("aria-label"));
+        Assert.Equal("Aucun resultat", Render<LxEditorEmojiMenu>().Find("[data-slot=empty]").TextContent);
+        Assert.Equal("Deplacer", Render<LxEditorDragHandle>().Find("button").GetAttribute("aria-label"));
     }
 
     [Fact]
     public void Read_only_view_never_renders_posted_markup_without_a_sanitizer()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>Hello <img src=x onerror=alert(1)></p><script>alert(2)</script><p>World</p>"));
+        var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>Hello <img src=x onerror=alert(1)></p><script>alert(2)</script><p>World</p>"));
 
         var fallback = cut.Find("[data-slot=fallback]");
         Assert.Empty(fallback.QuerySelectorAll("img, script"));
@@ -438,12 +438,12 @@ public class EditorLocalizedTests : BluxTestContext
 
 }
 
-public class EditorSanitizedTests() : BluxTestContext(o => o.SanitizeEditorHtml = html => html.Replace("<script>", "").Replace("</script>", ""))
+public class EditorSanitizedTests() : LuxTestContext(o => o.SanitizeEditorHtml = html => html.Replace("<script>", "").Replace("</script>", ""))
 {
     [Fact]
     public void Read_only_view_renders_markup_through_the_configured_sanitizer()
     {
-        var cut = Render<BxEditor>(p => p.Add(e => e.Value, "<p>Hello <strong>you</strong></p>"));
+        var cut = Render<LxEditor>(p => p.Add(e => e.Value, "<p>Hello <strong>you</strong></p>"));
 
         Assert.Equal("you", cut.Find("[data-slot=fallback] strong").TextContent);
     }
@@ -452,7 +452,7 @@ public class EditorSanitizedTests() : BluxTestContext(o => o.SanitizeEditorHtml 
     [Fact]
     public void SuggestionMenu_listbox_id_stays_the_same_across_renders()
     {
-        var cut = Render<BxEditorSuggestionMenu>();
+        var cut = Render<LxEditorSuggestionMenu>();
         var id = cut.Find("[role=listbox]").Id;
 
         cut.Render();

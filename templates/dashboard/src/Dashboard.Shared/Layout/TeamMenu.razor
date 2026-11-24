@@ -1,35 +1,35 @@
 @inject IToastService Toasts
 
 @* The team switcher at the top of the sidebar. The teams are sample ones: the menu only changes the name shown here. *@
-<BxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="bottom-start">
+<LxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="bottom-start">
     <button type="button"
-            class="flex w-full min-w-0 items-center gap-2 rounded-(--blux-radius) p-1.5 text-start transition-colors hover:bg-(--blux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)"
+            class="flex w-full min-w-0 items-center gap-2 rounded-(--lux-radius) p-1.5 text-start transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)"
             data-testid="team-menu">
         @* The avatar repeats the name next to it: hidden, so the button is named by the visible text. *@
-        <BxAvatar Text="@_team[..1]" Alt="@_team" Size="BxSize.Sm" aria-hidden="true" />
-        <span class="min-w-0 flex-1 truncate font-semibold text-(--blux-text-highlighted)">@_team</span>
-        <BxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--blux-text-muted)" />
+        <LxAvatar Text="@_team[..1]" Alt="@_team" Size="LxSize.Sm" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate font-semibold text-(--lux-text-highlighted)">@_team</span>
+        <LxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--lux-text-muted)" />
     </button>
-</BxDropdownMenu>
+</LxDropdownMenu>
 
 @code {
     private static readonly string[] Teams = ["Dashboard", "Larkspur Health", "Tidewater"];
 
     private string _team = Teams[0];
 
-    private static readonly BxMenuItem[] _items =
+    private static readonly LxMenuItem[] _items =
     [
-        BxMenuItem.Heading("Teams"),
-        .. Teams.Select(t => new BxMenuItem { Label = t, Value = t }),
-        BxMenuItem.Separator(),
-        new() { Label = "Create a team", Value = "create", Icon = BxIcons.Named("plus", "size-4") },
+        LxMenuItem.Heading("Teams"),
+        .. Teams.Select(t => new LxMenuItem { Label = t, Value = t }),
+        LxMenuItem.Separator(),
+        new() { Label = "Create a team", Value = "create", Icon = LxIcons.Named("plus", "size-4") },
     ];
 
-    private async Task OnSelect(BxMenuItem item)
+    private async Task OnSelect(LxMenuItem item)
     {
         if (item.Value == "create")
         {
-            await Toasts.Add(new BxToast { Title = "Create a team", Description = "This sample app has no backend: connect your own to create teams.", Color = BxColor.Info });
+            await Toasts.Add(new LxToast { Title = "Create a team", Description = "This sample app has no backend: connect your own to create teams.", Color = LxColor.Info });
             return;
         }
         _team = item.Label;

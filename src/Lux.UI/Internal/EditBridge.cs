@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 
 namespace Lux.UI.Internal;
 
-/// <summary>Infrastructure of Blux form controls; not meant to be used directly. What a custom control needs from an <c>EditForm</c> field: its form name and its validation state.</summary>
+/// <summary>Infrastructure of Lux form controls; not meant to be used directly. What a custom control needs from an <c>EditForm</c> field: its form name and its validation state.</summary>
 public readonly record struct EditBinding(string? Name, bool Invalid, string? CssClass = null)
 {
     /// <summary><paramref name="classes"/> followed by the classes of the field's <c>FieldCssClassProvider</c> (valid, modified, invalid, or the app's own), as <c>InputText</c> adds them to its input.</summary>
@@ -26,7 +26,7 @@ internal static class EditBindingExtensions
 }
 
 /// <summary>
-/// Infrastructure of Blux form controls; not meant to be used directly.
+/// Infrastructure of Lux form controls; not meant to be used directly.
 /// Lets a control with custom markup take part in an <c>EditForm</c> like a built-in input: <see cref="InputBase{TValue}"/>
 /// computes the posted field name and re-renders on validation changes; the control renders its own markup.
 /// </summary>
@@ -47,7 +47,7 @@ public sealed class EditBridge : InputBase<string?>
 }
 
 /// <summary>
-/// Infrastructure of Blux form controls; not meant to be used directly. Same as <see cref="EditBridge"/> for controls
+/// Infrastructure of Lux form controls; not meant to be used directly. Same as <see cref="EditBridge"/> for controls
 /// whose bound value is not a string (dates, times).
 /// </summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

@@ -10,7 +10,7 @@ public static class EditorServices
 {
     /// <summary>
     /// The services of the app. Every host calls it (the web server, the WebAssembly client and the MAUI app), so a page behaves the same
-    /// wherever it runs. Blux is configured here: <c>o.Colors.Primary = BxPalette.Blue</c>, the locales, the default size of the components.
+    /// wherever it runs. Lux is configured here: <c>o.Colors.Primary = LxPalette.Blue</c>, the locales, the default size of the components.
     /// </summary>
     public static IServiceCollection AddEditorUi(this IServiceCollection services)
     {

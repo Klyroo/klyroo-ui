@@ -10,7 +10,7 @@ namespace Lux.UI.Tests;
 /// Controls with custom markup take part in an EditForm through a bridge; they must carry the classes of the
 /// context's FieldCssClassProvider (modified, valid, invalid, or the app's own) as InputText does, next to aria-invalid.
 /// </summary>
-public class FieldCssClassTests : BluxTestContext
+public class FieldCssClassTests : LuxTestContext
 {
     private sealed class Model
     {
@@ -72,17 +72,17 @@ public class FieldCssClassTests : BluxTestContext
 
     private (RenderFragment Content, Func<IRenderedComponent<EditForm>, IElement> Target, Expression<Func<object?>> Field) For(string control, Model model) => control switch
     {
-        "input" => (Control<string?>(typeof(BxInput), model, () => model.Text, () => model.Text, v => model.Text = v, 250),
+        "input" => (Control<string?>(typeof(LxInput), model, () => model.Text, () => model.Text, v => model.Text = v, 250),
             cut => cut.Find("input"), () => model.Text),
-        "input-number" => (Control<decimal?>(typeof(BxInputNumber), model, () => model.Number, () => model.Number, v => model.Number = v),
+        "input-number" => (Control<decimal?>(typeof(LxInputNumber), model, () => model.Number, () => model.Number, v => model.Number = v),
             cut => cut.Find("input[data-slot=input]"), () => model.Number),
-        "slider" => (Control<double>(typeof(BxSlider), model, () => model.Slider, () => model.Slider, v => model.Slider = v),
+        "slider" => (Control<double>(typeof(LxSlider), model, () => model.Slider, () => model.Slider, v => model.Slider = v),
             cut => cut.Find("input[type=range]"), () => model.Slider),
-        "toggle" => (Control<bool>(typeof(BxToggle), model, () => model.Flag, () => model.Flag, v => model.Flag = v),
-            cut => cut.Find("bx-toggle"), () => model.Flag),
-        "input-tags" => (Control<IReadOnlyList<string>>(typeof(BxInputTags), model, () => model.Tags, () => model.Tags, v => model.Tags = v),
+        "toggle" => (Control<bool>(typeof(LxToggle), model, () => model.Flag, () => model.Flag, v => model.Flag = v),
+            cut => cut.Find("lx-toggle"), () => model.Flag),
+        "input-tags" => (Control<IReadOnlyList<string>>(typeof(LxInputTags), model, () => model.Tags, () => model.Tags, v => model.Tags = v),
             cut => cut.Find("input[data-slot=input]"), () => model.Tags),
-        "pin-input" => (Control<string?>(typeof(BxPinInput), model, () => model.Pin, () => model.Pin, v => model.Pin = v),
+        "pin-input" => (Control<string?>(typeof(LxPinInput), model, () => model.Pin, () => model.Pin, v => model.Pin = v),
             cut => cut.Find("input[data-slot=cell]"), () => model.Pin),
         _ => throw new ArgumentOutOfRangeException(nameof(control)),
     };

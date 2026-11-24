@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 using Lux.UI;
 using SaaS.Web.Components;
 using SaaS.Web.Site;
@@ -78,10 +78,10 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-// Reads the query string, the culture cookie that BxLocaleSelect writes and Accept-Language. Blux components follow the UI culture
+// Reads the query string, the culture cookie that LxLocaleSelect writes and Accept-Language. Lux components follow the UI culture
 // on their own: the supported UI cultures are the codes of the built-in locales. The text of the site is English: the language select
-// translates what Blux writes itself (labels, menus, the form messages) and switches the layout to right-to-left where needed.
-var cultures = BxLocales.All.Select(locale => locale.Code).ToArray();
+// translates what Lux writes itself (labels, menus, the form messages) and switches the layout to right-to-left where needed.
+var cultures = LxLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(cultures)

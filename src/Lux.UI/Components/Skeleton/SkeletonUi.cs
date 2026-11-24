@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxSkeleton"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxSkeleton"/> slots.</summary>
 public sealed record SkeletonUi : ISlotOverrides
 {
     public string? Base { get; init; }

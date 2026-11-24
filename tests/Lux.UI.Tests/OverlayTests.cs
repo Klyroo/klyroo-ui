@@ -2,37 +2,37 @@ using Microsoft.AspNetCore.Components;
 
 namespace Lux.UI.Tests;
 
-public class OverlayTests : BluxTestContext
+public class OverlayTests : LuxTestContext
 {
     [Fact]
     public void Modal_renders_a_titled_dialog_never_open_by_attribute()
     {
-        var cut = Render<BxModal>(p => p.Add(m => m.Open, true).Add(m => m.Title, "Delete file").Add(m => m.Description, "This cannot be undone.")
+        var cut = Render<LxModal>(p => p.Add(m => m.Open, true).Add(m => m.Title, "Delete file").Add(m => m.Description, "This cannot be undone.")
             .Add(m => m.ChildContent, "<button>Open</button>").Add(m => m.Body, "<p>Body</p>"));
 
-        Assert.True(cut.Find("bx-modal").HasAttribute("open"));
+        Assert.True(cut.Find("lx-modal").HasAttribute("open"));
         var dialog = cut.Find("dialog");
         Assert.False(dialog.HasAttribute("open"));
         Assert.Equal("Delete file", cut.Find($"#{dialog.GetAttribute("aria-labelledby")}").TextContent);
         Assert.Equal("This cannot be undone.", cut.Find($"#{dialog.GetAttribute("aria-describedby")}").TextContent);
-        Assert.True(cut.Find("button[aria-label=Close]").HasAttribute("data-bx-close"));
+        Assert.True(cut.Find("button[aria-label=Close]").HasAttribute("data-lx-close"));
     }
 
     [Fact]
     public void Modal_not_dismissible_tells_the_element()
     {
-        var cut = Render<BxModal>(p => p.Add(m => m.Dismissible, false));
+        var cut = Render<LxModal>(p => p.Add(m => m.Dismissible, false));
 
-        Assert.False(cut.Find("bx-modal").HasAttribute("dismissible"));
+        Assert.False(cut.Find("lx-modal").HasAttribute("dismissible"));
     }
 
     [Fact]
     public void Modal_bound_state_follows_the_browser()
     {
         var open = true;
-        var cut = Render<BxModal>(p => p.Add(m => m.Open, open).Add(m => m.OpenChanged, (bool v) => open = v));
+        var cut = Render<LxModal>(p => p.Add(m => m.Open, open).Add(m => m.OpenChanged, (bool v) => open = v));
 
-        cut.Find("bx-modal").TriggerEvent("onbxtoggle", new BxToggleEventArgs { Open = false, Sequence = 2 });
+        cut.Find("lx-modal").TriggerEvent("onbxtoggle", new LxToggleEventArgs { Open = false, Sequence = 2 });
 
         Assert.False(open);
     }
@@ -40,7 +40,7 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public void Tooltip_is_a_manual_popover_with_tooltip_role()
     {
-        var cut = Render<BxTooltip>(p => p.Add(t => t.Text, "Copy").Add(t => t.ChildContent, "<button>C</button>"));
+        var cut = Render<LxTooltip>(p => p.Add(t => t.Text, "Copy").Add(t => t.ChildContent, "<button>C</button>"));
 
         var tip = cut.Find("[role=tooltip]");
         Assert.Equal("manual", tip.GetAttribute("popover"));
@@ -50,17 +50,17 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public void DropdownMenu_renders_items_and_reports_selection()
     {
-        BxMenuItem? selected = null;
-        BxMenuItem[] items =
+        LxMenuItem? selected = null;
+        LxMenuItem[] items =
         [
-            BxMenuItem.Heading("Account"),
+            LxMenuItem.Heading("Account"),
             new() { Label = "Profile", Shortcut = "⌘P" },
             new() { Label = "Docs", Href = "/docs" },
-            BxMenuItem.Separator(),
-            new() { Label = "Delete", Color = BxColor.Error },
+            LxMenuItem.Separator(),
+            new() { Label = "Delete", Color = LxColor.Error },
             new() { Label = "Archived", Disabled = true },
         ];
-        var cut = Render<BxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.OnSelect, (BxMenuItem i) => selected = i)
+        var cut = Render<LxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.OnSelect, (LxMenuItem i) => selected = i)
             .Add(d => d.ChildContent, "<button>Menu</button>"));
 
         Assert.Equal("menu", cut.Find("[popover]").GetAttribute("role"));
@@ -78,15 +78,15 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public void DropdownMenu_and_ContextMenu_give_an_item_its_description_as_title_and_accessible_description()
     {
-        BxMenuItem[] items =
+        LxMenuItem[] items =
         [
             new() { Label = "Archive", Disabled = true, Description = "Nothing to archive." },
             new() { Label = "Docs", Href = "/docs", Description = "The docs." },
             new() { Label = "Send to", Description = "Sends it.", Children = [new() { Label = "Email" }] },
             new() { Label = "Plain" },
         ];
-        var dropdown = Render<BxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<button>Menu</button>"));
-        var context = Render<BxContextMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<div>Area</div>"));
+        var dropdown = Render<LxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<button>Menu</button>"));
+        var context = Render<LxContextMenu>(p => p.Add(d => d.Items, items).Add(d => d.ChildContent, "<div>Area</div>"));
 
         foreach (var cut in new IRenderedComponent<IComponent>[] { dropdown, context })
         {
@@ -107,8 +107,8 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public void DropdownMenu_renders_a_submenu_next_to_the_menu_and_names_it_after_its_item()
     {
-        BxMenuItem? selected = null;
-        BxMenuItem[] items =
+        LxMenuItem? selected = null;
+        LxMenuItem[] items =
         [
             new() { Label = "Copy" },
             new()
@@ -118,7 +118,7 @@ public class OverlayTests : BluxTestContext
             },
             new() { Label = "Export", Disabled = true, Children = [new() { Label = "PDF" }] },
         ];
-        var cut = Render<BxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.OnSelect, (BxMenuItem i) => selected = i)
+        var cut = Render<LxDropdownMenu>(p => p.Add(d => d.Items, items).Add(d => d.OnSelect, (LxMenuItem i) => selected = i)
             .Add(d => d.ChildContent, "<button>Menu</button>"));
 
         var menus = cut.FindAll("[popover]");
@@ -126,7 +126,7 @@ public class OverlayTests : BluxTestContext
         Assert.Equal("content", menus[0].GetAttribute("data-slot"));
         Assert.All(menus.Skip(1), m => Assert.Equal("submenu", m.GetAttribute("data-slot")));
         // The submenus are siblings of the menu: a role="menu" only owns items.
-        Assert.All(menus, m => Assert.Equal("bx-popover", m.ParentElement!.TagName.ToLowerInvariant()));
+        Assert.All(menus, m => Assert.Equal("lx-popover", m.ParentElement!.TagName.ToLowerInvariant()));
 
         var send = cut.Find("button[aria-haspopup=menu][popovertarget]:not([aria-disabled])");
         Assert.Contains("Send to", send.TextContent);
@@ -150,10 +150,10 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public void Toaster_exposes_its_theme_to_the_browser()
     {
-        var cut = Render<BxToaster>();
+        var cut = Render<LxToaster>();
 
-        var toaster = cut.Find("bx-toaster");
-        Assert.Contains("before:bg-(--bx-color)", toaster.GetAttribute("data-ui-root"));
+        var toaster = cut.Find("lx-toaster");
+        Assert.Contains("before:bg-(--lx-color)", toaster.GetAttribute("data-ui-root"));
         Assert.Equal("5000", toaster.GetAttribute("data-duration"));
         Assert.Empty(cut.Find("ol").Children);
     }
@@ -161,12 +161,12 @@ public class OverlayTests : BluxTestContext
     [Fact]
     public async Task ToastService_calls_the_browser_with_primitive_arguments()
     {
-        JSInterop.SetupVoid("Blux.toast", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("Lux.toast", _ => true).SetVoidResult();
         var service = Services.GetService(typeof(IToastService)) as IToastService;
 
-        await service!.Add(new BxToast { Title = "Saved", Color = BxColor.Success, Duration = TimeSpan.FromSeconds(2) });
+        await service!.Add(new LxToast { Title = "Saved", Color = LxColor.Success, Duration = TimeSpan.FromSeconds(2) });
 
-        var call = JSInterop.VerifyInvoke("Blux.toast");
+        var call = JSInterop.VerifyInvoke("Lux.toast");
         Assert.Equal(["Saved", null, "success", 2000], call.Arguments);
     }
 }

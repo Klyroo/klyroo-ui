@@ -1,11 +1,11 @@
-using Blux.Templates.Content;
+using Lux.Templates.Content;
 
 namespace Lux.Templates.Tests;
 
 /// <summary>A temporary content folder: files are written from a path and a text, and the folder is deleted with it.</summary>
 internal sealed class ContentFolder : IDisposable
 {
-    public ContentFolder() => Root = Directory.CreateTempSubdirectory("blux-content-").FullName;
+    public ContentFolder() => Root = Directory.CreateTempSubdirectory("lux-content-").FullName;
 
     public string Root { get; }
 

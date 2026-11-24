@@ -1,33 +1,33 @@
 @inherits LayoutComponentBase
 
-<BxApp>
-    <BxSkipLink />
+<LxApp>
+    <LxSkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <BxHeader>
+    <LxHeader>
         <Left>
-            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--blux-text-highlighted)">
-                <BxIcon Name="ph:tag" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
+                <LxIcon Name="ph:tag" Class="size-6" />
                 <span>@SiteInfo.Name</span>
             </a>
         </Left>
         <Right>
             @* The feed of the latest releases (Atom): /feed.xml, built by ReleaseNotes/ReleaseFeed.cs. *@
-            <BxButton Href="feed.xml" Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" Size="BxSize.Sm" data-testid="feed-link"
+            <LxButton Href="feed.xml" Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Size="LxSize.Sm" data-testid="feed-link"
                       aria-label="Atom feed of the releases">
-                <LeadingIcon><BxIcon Name="ph:rss" Class="size-5" /></LeadingIcon>
-            </BxButton>
-            <BxColorModeButton Size="BxSize.Sm" />
+                <LeadingIcon><LxIcon Name="ph:rss" Class="size-5" /></LeadingIcon>
+            </LxButton>
+            <LxColorModeButton Size="LxSize.Sm" />
         </Right>
-    </BxHeader>
+    </LxHeader>
 
-    <BxMain id="main" tabindex="-1" class="focus:outline-none">
+    <LxMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </BxMain>
+    </LxMain>
 
-    <BxFooter>
+    <LxFooter>
         <Left>
-            <p class="text-sm text-(--blux-text-muted)">@SiteInfo.Copyright</p>
+            <p class="text-sm text-(--lux-text-muted)">@SiteInfo.Copyright</p>
         </Left>
-    </BxFooter>
-</BxApp>
+    </LxFooter>
+</LxApp>

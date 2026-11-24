@@ -1,0 +1,119 @@
+@namespace Lux.UI
+@using Lux.UI.Internal
+@inherits LxComponentBase
+
+@*
+    WAI-ARIA tree view. Expanding, selecting and arrow-key navigation (roving tabindex) happen in the browser
+    (<lx-tree>); .NET only hears about the selection when Value is bound. The server renders the initial state.
+*@
+<lx-tree data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+         value="@Value"
+         data-color="@Color.Value"
+         class="@_slots["root"]"
+         @onbxchange="ChangeHandler"
+         @onbxchange:stopPropagation="true"
+         @attributes="AdditionalAttributes">
+    <ul role="tree" aria-label="@AriaLabel" class="@_slots["list"]">
+        @foreach (var node in Nodes(Items, "n"))
+        {
+            @Node(node)
+        }
+    </ul>
+</lx-tree>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private int _sequence;
+
+    private sealed record NodeInfo(LxTreeItem Item, string Path);
+
+    [Parameter, EditorRequired] public IReadOnlyList<LxTreeItem> Items { get; set; } = [];
+
+    /// <summary>Value of the selected item. Selection also works unbound: the browser keeps it.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public LxColor Color { get => _colorParameter ?? DefaultColor(LxColor.Primary); set => _colorParameter = value; }
+    private LxColor? _colorParameter;
+
+    /// <summary>Accessible name of the tree.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public TreeUi? Ui { get; set; }
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    private static string ValueOf(LxTreeItem item) => item.Value ?? item.Label;
+
+    private static IEnumerable<NodeInfo> Nodes(IReadOnlyList<LxTreeItem> items, string path) =>
+        items.Select((item, i) => new NodeInfo(item, $"{path}-{i}"));
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("tree");
+        _slots = ResolveSlots(Options.Tree, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    private RenderFragment Node(NodeInfo node) =>
+        @<text>
+            @{
+                var item = node.Item;
+                var hasChildren = item.Children is { Count: > 0 };
+                var selected = Value is not null && Value == ValueOf(item);
+                var labelId = $"{_id}-{node.Path}";
+                var groupId = $"{_id}-{node.Path}-g";
+            }
+            <li role="none" class="@_slots["item"]">
+                <div role="treeitem" data-value="@ValueOf(item)" data-slot="row"
+                     aria-labelledby="@labelId"
+                     aria-owns="@(hasChildren ? groupId : null)"
+                     aria-expanded="@(hasChildren ? (item.Expanded ? "true" : "false") : null)"
+                     aria-selected="@(selected ? "true" : "false")"
+                     aria-disabled="@(item.Disabled ? "true" : null)"
+                     data-selected="@(selected ? "true" : "false")"
+                     data-expanded="@(hasChildren ? (item.Expanded ? "true" : "false") : null)"
+                     data-disabled="@(item.Disabled ? "true" : null)" class="@_slots["row"]">
+                    @if (hasChildren)
+                    {
+                        @RenderIcon(Options.Icons.ChevronRight, _slots["chevron"])
+                    }
+                    else
+                    {
+                        <span class="@_slots["spacer"]" aria-hidden="true"></span>
+                    }
+                    @if (item.Icon is not null)
+                    {
+                        <span class="@_slots["icon"]" aria-hidden="true">@item.Icon</span>
+                    }
+                    @if (item.Href is not null && !item.Disabled)
+                    {
+                        <a id="@labelId" href="@item.Href" tabindex="-1" class="@_slots["label"]">@item.Label</a>
+                    }
+                    else
+                    {
+                        <span id="@labelId" class="@_slots["label"]">@item.Label</span>
+                    }
+                </div>
+                @if (hasChildren)
+                {
+                    <ul id="@groupId" role="group" hidden="@(!item.Expanded)" class="@_slots["group"]">
+                        @foreach (var child in Nodes(item.Children!, node.Path))
+                        {
+                            @Node(child)
+                        }
+                    </ul>
+                }
+            </li>
+        </text>;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        if (e.Value == Value) return;
+        Value = e.Value;
+        await ValueChanged.InvokeAsync(e.Value);
+    }
+}

@@ -29,7 +29,7 @@ public class GitHubReleaseClientTests
         Assert.Equal(FetchStatus.Ok, outcome.Status);
         var request = Assert.Single(handler.Requests);
         Assert.Equal("https://api.github.com/repos/octo/tern/releases?per_page=30", request.Url);
-        Assert.Equal("blux-template-changelog", request.Headers["User-Agent"]);
+        Assert.Equal("lux-template-changelog", request.Headers["User-Agent"]);
         Assert.Equal("application/vnd.github+json", request.Headers["Accept"]);
         Assert.Equal("2022-11-28", request.Headers["X-GitHub-Api-Version"]);
         // Nothing that says who runs the site or where.

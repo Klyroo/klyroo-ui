@@ -6,36 +6,36 @@ namespace Lux.UI.Images.Local.Tests;
 public class GeometryTests
 {
     [Theory]
-    [InlineData(1000, 3000, BxImageFit.Cover)]
-    [InlineData(1000, 3000, BxImageFit.Contain)]
-    [InlineData(1000, 3000, BxImageFit.Fill)]
-    [InlineData(1000, 3000, BxImageFit.Inside)]
-    [InlineData(1000, 3000, BxImageFit.Outside)]
-    [InlineData(2, 1000, BxImageFit.Cover)]
-    [InlineData(2, 1000, BxImageFit.Contain)]
-    [InlineData(2, 1000, BxImageFit.Outside)]
-    [InlineData(100000, 10, BxImageFit.Cover)]
-    [InlineData(100000, 10, BxImageFit.Outside)]
-    [InlineData(100000, 10, BxImageFit.Contain)]
-    [InlineData(1, 1, BxImageFit.Outside)]
-    [InlineData(1, 1, BxImageFit.Cover)]
-    public void No_plan_exceeds_the_maximum_for_any_request(int sourceWidth, int sourceHeight, BxImageFit fit)
+    [InlineData(1000, 3000, LxImageFit.Cover)]
+    [InlineData(1000, 3000, LxImageFit.Contain)]
+    [InlineData(1000, 3000, LxImageFit.Fill)]
+    [InlineData(1000, 3000, LxImageFit.Inside)]
+    [InlineData(1000, 3000, LxImageFit.Outside)]
+    [InlineData(2, 1000, LxImageFit.Cover)]
+    [InlineData(2, 1000, LxImageFit.Contain)]
+    [InlineData(2, 1000, LxImageFit.Outside)]
+    [InlineData(100000, 10, LxImageFit.Cover)]
+    [InlineData(100000, 10, LxImageFit.Outside)]
+    [InlineData(100000, 10, LxImageFit.Contain)]
+    [InlineData(1, 1, LxImageFit.Outside)]
+    [InlineData(1, 1, LxImageFit.Cover)]
+    public void No_plan_exceeds_the_maximum_for_any_request(int sourceWidth, int sourceHeight, LxImageFit fit)
     {
         int?[] sides = [null, 1, 16, 384, 1000, 4096];
         foreach (var w in sides)
         {
             foreach (var h in sides)
             {
-                var plan = BxImageGeometry.Plan(sourceWidth, sourceHeight, w, h, fit, 4096, 4096);
+                var plan = LxImageGeometry.Plan(sourceWidth, sourceHeight, w, h, fit, 4096, 4096);
 
                 Assert.InRange(plan.Width, 1, 4096);
                 Assert.InRange(plan.Height, 1, 4096);
-                if (plan.Kind == BxPlanKind.Letterbox)
+                if (plan.Kind == LxPlanKind.Letterbox)
                 {
                     Assert.InRange(plan.InnerWidth, 1, plan.Width);
                     Assert.InRange(plan.InnerHeight, 1, plan.Height);
                 }
-                if (plan.Kind == BxPlanKind.CropFromSource)
+                if (plan.Kind == LxPlanKind.CropFromSource)
                 {
                     Assert.InRange(plan.CropWidth, 1, sourceWidth);
                     Assert.InRange(plan.CropHeight, 1, sourceHeight);
@@ -49,7 +49,7 @@ public class GeometryTests
     [Fact]
     public void Without_a_size_a_huge_source_is_scaled_down_to_the_maximum()
     {
-        var plan = BxImageGeometry.Plan(10000, 5000, null, null, BxImageFit.Cover, 4096, 4096);
+        var plan = LxImageGeometry.Plan(10000, 5000, null, null, LxImageFit.Cover, 4096, 4096);
 
         Assert.Equal((4096, 2048), (plan.Width, plan.Height));
     }
@@ -57,9 +57,9 @@ public class GeometryTests
     [Fact]
     public void A_cover_whose_covering_size_is_enormous_cuts_the_region_out_of_the_source_first()
     {
-        var plan = BxImageGeometry.Plan(2, 1000, 384, 384, BxImageFit.Cover, 4096, 4096);
+        var plan = LxImageGeometry.Plan(2, 1000, 384, 384, LxImageFit.Cover, 4096, 4096);
 
-        Assert.Equal(BxPlanKind.CropFromSource, plan.Kind);
+        Assert.Equal(LxPlanKind.CropFromSource, plan.Kind);
         Assert.Equal((384, 384), (plan.Width, plan.Height));
         Assert.Equal((2, 2), (plan.CropWidth, plan.CropHeight));
     }
@@ -67,7 +67,7 @@ public class GeometryTests
 
 public class SvgSnifferTests
 {
-    private static bool Is(string text) => BxSvgSniffer.IsSvg(Encoding.UTF8.GetBytes(text));
+    private static bool Is(string text) => LxSvgSniffer.IsSvg(Encoding.UTF8.GetBytes(text));
 
     [Theory]
     [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"/>")]
@@ -97,7 +97,7 @@ public class SvgSnifferTests
     {
         var png = EndpointFixture.WithTextChunk(EndpointFixture.Png(20, 20), "<svg xmlns=\"http://www.w3.org/2000/svg\"/>");
 
-        Assert.False(BxSvgSniffer.IsSvg(png));
+        Assert.False(LxSvgSniffer.IsSvg(png));
     }
 
     [Fact]
@@ -110,8 +110,8 @@ public class SvgSnifferTests
     [Fact]
     public void Utf16_documents_are_recognized()
     {
-        Assert.True(BxSvgSniffer.IsSvg(Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes("<svg/>")).ToArray()));
-        Assert.True(BxSvgSniffer.IsSvg(Encoding.BigEndianUnicode.GetPreamble().Concat(Encoding.BigEndianUnicode.GetBytes("<svg/>")).ToArray()));
+        Assert.True(LxSvgSniffer.IsSvg(Encoding.Unicode.GetPreamble().Concat(Encoding.Unicode.GetBytes("<svg/>")).ToArray()));
+        Assert.True(LxSvgSniffer.IsSvg(Encoding.BigEndianUnicode.GetPreamble().Concat(Encoding.BigEndianUnicode.GetBytes("<svg/>")).ToArray()));
     }
 }
 
@@ -120,7 +120,7 @@ public class FlightTests
     [Fact]
     public async Task Callers_of_one_key_share_one_run_and_a_new_key_starts_another()
     {
-        var flights = new BxFlights<int>();
+        var flights = new LxFlights<int>();
         var runs = 0;
         var gate = new TaskCompletionSource();
         Task<int> Run(string key) => flights.RunAsync(key, async _ => { Interlocked.Increment(ref runs); await gate.Task; return runs; }, CancellationToken.None);
@@ -138,7 +138,7 @@ public class FlightTests
     [Fact]
     public async Task Work_is_canceled_only_when_the_last_caller_leaves_and_a_later_caller_starts_fresh()
     {
-        var flights = new BxFlights<int>();
+        var flights = new LxFlights<int>();
         var started = 0;
         var tokens = new List<CancellationToken>();
         Task<int> Run(CancellationToken caller) => flights.RunAsync("k", async token =>
@@ -170,7 +170,7 @@ public class FlightTests
     [Fact]
     public async Task A_failure_reaches_every_caller_and_is_not_remembered()
     {
-        var flights = new BxFlights<int>();
+        var flights = new LxFlights<int>();
         var attempts = 0;
         Task<int> Run() => flights.RunAsync("k", async _ =>
         {
@@ -193,13 +193,13 @@ public class RateLimiterTests
     [Theory]
     [InlineData("203.0.113.7", "203.0.113.7")]
     [InlineData("::ffff:203.0.113.7", "203.0.113.7")]
-    public void An_ipv4_client_is_its_address(string address, string expected) => Assert.Equal(expected, BxImageRateLimiter.ClientOf(IPAddress.Parse(address)));
+    public void An_ipv4_client_is_its_address(string address, string expected) => Assert.Equal(expected, LxImageRateLimiter.ClientOf(IPAddress.Parse(address)));
 
     [Fact]
     public void An_ipv6_client_is_its_64_bit_prefix_and_no_address_is_one_client()
     {
-        Assert.Equal(BxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2::1")), BxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2:ffff:ffff:ffff:ffff")));
-        Assert.NotEqual(BxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2::1")), BxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:3::1")));
-        Assert.Equal("unknown", BxImageRateLimiter.ClientOf(null));
+        Assert.Equal(LxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2::1")), LxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2:ffff:ffff:ffff:ffff")));
+        Assert.NotEqual(LxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:2::1")), LxImageRateLimiter.ClientOf(IPAddress.Parse("2001:db8:1:3::1")));
+        Assert.Equal("unknown", LxImageRateLimiter.ClientOf(null));
     }
 }

@@ -12,7 +12,7 @@ internal sealed record EditorMenuOption(string Value, string Label, string? Desc
 /// the browser filters them as the user types and takes the keys (up, down, Enter, Tab, Escape) while the menu is open,
 /// so typing does not make a round trip to .NET.
 /// </summary>
-public abstract class BxEditorMenuBase : BxComponentBase
+public abstract class LxEditorMenuBase : LxComponentBase
 {
     private SlotSet _slots = default!;
     private string _listId = default!;
@@ -25,12 +25,12 @@ public abstract class BxEditorMenuBase : BxComponentBase
 
     /// <summary>Accessible name of the list.</summary>
     [Parameter] public string? Label { get; set; }
-    [Parameter] public BxSize Size { get; set; } = BxSize.Md;
+    [Parameter] public LxSize Size { get; set; } = LxSize.Md;
     [Parameter] public EditorMenuUi? Ui { get; set; }
 
     private protected abstract string DefaultChar { get; }
     private protected abstract string Kind { get; }
-    private protected abstract string DefaultLabel(BxMessages strings);
+    private protected abstract string DefaultLabel(LxMessages strings);
     private protected abstract IEnumerable<EditorMenuOption> BuildOptions();
 
     /// <summary>Characters typed after the trigger before the menu opens.</summary>
@@ -44,7 +44,7 @@ public abstract class BxEditorMenuBase : BxComponentBase
 
     protected override void BuildRenderTree(RenderTreeBuilder b)
     {
-        b.OpenElement(0, "bx-editor-menu");
+        b.OpenElement(0, "lx-editor-menu");
         b.AddAttribute(1, "class", _slots["root"]);
         b.AddAttribute(2, "data-char", Char ?? DefaultChar);
         b.AddAttribute(3, "data-kind", Kind);
@@ -121,14 +121,14 @@ public abstract class BxEditorMenuBase : BxComponentBase
 /// The slash menu: opens when "/" is typed (after a space or at the start of a block) and inserts a block or a format.
 /// Items run in the browser: pass them as a parameter, no round trip is made while the user types.
 /// </summary>
-public sealed class BxEditorSuggestionMenu : BxEditorMenuBase
+public sealed class LxEditorSuggestionMenu : LxEditorMenuBase
 {
     /// <summary>Entries of the menu. Defaults to <see cref="EditorSuggestionItem.For"/> of the messages of the locale in effect.</summary>
     [Parameter] public IReadOnlyList<EditorSuggestionItem>? Items { get; set; }
 
     private protected override string DefaultChar => "/";
     private protected override string Kind => "suggestion";
-    private protected override string DefaultLabel(BxMessages strings) => strings.EditorSuggestionMenu;
+    private protected override string DefaultLabel(LxMessages strings) => strings.EditorSuggestionMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         (Items ?? EditorSuggestionItem.For(Messages)).Select(i => new EditorMenuOption(
@@ -140,14 +140,14 @@ public sealed class BxEditorSuggestionMenu : BxEditorMenuBase
 /// The mention menu: opens when "@" is typed and inserts a mention, a span with <c>data-type="mention"</c>, <c>data-id</c>
 /// and <c>data-label</c>. Items are supplied from .NET and filtered in the browser.
 /// </summary>
-public sealed class BxEditorMentionMenu : BxEditorMenuBase
+public sealed class LxEditorMentionMenu : LxEditorMenuBase
 {
     /// <summary>Who or what can be mentioned.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<EditorMentionItem> Items { get; set; } = [];
 
     private protected override string DefaultChar => "@";
     private protected override string Kind => "mention";
-    private protected override string DefaultLabel(BxMessages strings) => strings.EditorMentionMenu;
+    private protected override string DefaultLabel(LxMessages strings) => strings.EditorMentionMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         Items.Select(i => new EditorMenuOption(i.Id, i.Label, i.Description, Disabled: i.Disabled, Prefix: "@"));
@@ -156,7 +156,7 @@ public sealed class BxEditorMentionMenu : BxEditorMenuBase
 /// <summary>
 /// The emoji menu: opens when ":" is typed followed by at least one character, and inserts the emoji as text.
 /// </summary>
-public sealed class BxEditorEmojiMenu : BxEditorMenuBase
+public sealed class LxEditorEmojiMenu : LxEditorMenuBase
 {
     /// <summary>Emoji of the menu. Defaults to <see cref="EditorEmojiItem.Defaults"/>.</summary>
     [Parameter] public IReadOnlyList<EditorEmojiItem>? Items { get; set; }
@@ -164,7 +164,7 @@ public sealed class BxEditorEmojiMenu : BxEditorMenuBase
     private protected override string DefaultChar => ":";
     private protected override string Kind => "emoji";
     private protected override int MinQuery => 1;
-    private protected override string DefaultLabel(BxMessages strings) => strings.EditorEmojiMenu;
+    private protected override string DefaultLabel(LxMessages strings) => strings.EditorEmojiMenu;
 
     private protected override IEnumerable<EditorMenuOption> BuildOptions() =>
         (Items ?? EditorEmojiItem.Defaults).Select(i => new EditorMenuOption(i.Emoji, i.Name, null, i.Keywords, Prefix: i.Emoji));

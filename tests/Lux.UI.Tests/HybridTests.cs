@@ -10,9 +10,9 @@ namespace Lux.UI.Tests;
 /// Blazor Hybrid (BlazorWebView): the renderer reports <c>RendererInfo.Name == "WebView"</c>, is always interactive and has no server.
 /// These tests render the components under that renderer info and check what degrades.
 /// </summary>
-public class HybridTests : BluxTestContext
+public class HybridTests : LuxTestContext
 {
-    private const string Manifest = """{"css":"_blux/fonts/blux.fonts.css","fonts":[{"preload":["_blux/fonts/geist.woff2"]}]}""";
+    private const string Manifest = """{"css":"_lux/fonts/lux.fonts.css","fonts":[{"preload":["_lux/fonts/geist.woff2"]}]}""";
 
     private void UseWebView() => SetRendererInfo(new RendererInfo("WebView", true));
 
@@ -28,49 +28,49 @@ public class HybridTests : BluxTestContext
     [Fact]
     public void Sidebar_applies_the_remembered_state_with_a_script_on_the_web_but_not_in_a_web_view()
     {
-        var web = Render<BxSidebar>(p => p.Add(s => s.Id, "app").Add(s => s.ChildContent, "<p>Nav</p>"));
-        Assert.Contains("blux-sidebar-", web.Markup.Substring(web.Markup.IndexOf("<script", StringComparison.Ordinal)));
+        var web = Render<LxSidebar>(p => p.Add(s => s.Id, "app").Add(s => s.ChildContent, "<p>Nav</p>"));
+        Assert.Contains("lux-sidebar-", web.Markup.Substring(web.Markup.IndexOf("<script", StringComparison.Ordinal)));
 
         UseWebView();
-        var hybrid = Render<BxSidebar>(p => p.Add(s => s.Id, "app").Add(s => s.ChildContent, "<p>Nav</p>"));
+        var hybrid = Render<LxSidebar>(p => p.Add(s => s.Id, "app").Add(s => s.ChildContent, "<p>Nav</p>"));
         Assert.DoesNotContain("<script", hybrid.Markup);
-        Assert.Equal("app", hybrid.Find("bx-sidebar").GetAttribute("data-bx-sidebar-id"));
+        Assert.Equal("app", hybrid.Find("lx-sidebar").GetAttribute("data-lx-sidebar-id"));
     }
 
     [Fact]
     public void ColorModeScript_renders_in_a_browser_and_nothing_in_a_web_view()
     {
-        Assert.Contains("<script>", Render<BxColorModeScript>().Markup);
+        Assert.Contains("<script>", Render<LxColorModeScript>().Markup);
 
         UseWebView();
-        Assert.Equal("", Render<BxColorModeScript>().Markup);
+        Assert.Equal("", Render<LxColorModeScript>().Markup);
     }
 
     [Fact]
     public void CultureMeta_renders_nothing_in_a_web_view()
     {
-        Assert.Contains("blux-culture", Render<BxCultureMeta>().Markup);
+        Assert.Contains("lux-culture", Render<LxCultureMeta>().Markup);
 
         UseWebView();
-        Assert.Equal("", Render<BxCultureMeta>().Markup);
+        Assert.Equal("", Render<LxCultureMeta>().Markup);
     }
 
     [Fact]
     public void Fonts_link_the_plain_route_in_a_web_view_where_there_is_no_asset_map()
     {
         UseWebView();
-        var cut = Render<BxFonts>(p => p.Add(c => c.ManifestJson, Manifest));
+        var cut = Render<LxFonts>(p => p.Add(c => c.ManifestJson, Manifest));
 
-        Assert.Equal("_blux/fonts/blux.fonts.css", cut.Find("link[rel=stylesheet]").GetAttribute("href"));
-        Assert.Equal("_blux/fonts/geist.woff2", cut.Find("link[rel=preload]").GetAttribute("href"));
+        Assert.Equal("_lux/fonts/lux.fonts.css", cut.Find("link[rel=stylesheet]").GetAttribute("href"));
+        Assert.Equal("_lux/fonts/geist.woff2", cut.Find("link[rel=preload]").GetAttribute("href"));
     }
 
     private static void HeadPage(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
         b.OpenComponent<HeadOutlet>(0);
         b.CloseComponent();
-        b.OpenComponent<BxHead>(1);
-        b.AddAttribute(2, nameof(BxHead.Fonts), false);
+        b.OpenComponent<LxHead>(1);
+        b.AddAttribute(2, nameof(LxHead.Fonts), false);
         b.CloseComponent();
     }
 
@@ -78,29 +78,29 @@ public class HybridTests : BluxTestContext
     public void Head_renders_nothing_in_a_browser()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.GetRequiredService<LuxOptions>().Colors.Primary = BxPalette.Blue;
+        Services.GetRequiredService<LuxOptions>().Colors.Primary = LxPalette.Blue;
 
-        Assert.DoesNotContain("data-bx-theme", Render(HeadPage).Markup);
+        Assert.DoesNotContain("data-lx-theme", Render(HeadPage).Markup);
     }
 
     [Fact]
     public void Head_sends_the_theme_variables_to_the_head_in_a_web_view()
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
-        Services.GetRequiredService<LuxOptions>().Colors.Primary = BxPalette.Blue;
+        Services.GetRequiredService<LuxOptions>().Colors.Primary = LxPalette.Blue;
         UseWebView();
 
-        Assert.Contains("data-bx-theme", Render(HeadPage).Markup);
+        Assert.Contains("data-lx-theme", Render(HeadPage).Markup);
     }
 
     private static void ImagePage(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder b)
     {
         b.OpenComponent<HeadOutlet>(0);
         b.CloseComponent();
-        b.OpenComponent<BxImage>(1);
-        b.AddAttribute(2, nameof(BxImage.Src), "/img/hero.png");
-        b.AddAttribute(3, nameof(BxImage.Alt), "Hero");
-        b.AddAttribute(4, nameof(BxImage.Preload), true);
+        b.OpenComponent<LxImage>(1);
+        b.AddAttribute(2, nameof(LxImage.Src), "/img/hero.png");
+        b.AddAttribute(3, nameof(LxImage.Alt), "Hero");
+        b.AddAttribute(4, nameof(LxImage.Preload), true);
         b.CloseComponent();
     }
 
@@ -127,10 +127,10 @@ public class HybridTests : BluxTestContext
     [Fact]
     public void LocaleSelect_on_the_web_describes_the_cookie_and_reloads()
     {
-        var cut = Render<BxLocaleSelect>(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr]));
+        var cut = Render<LxLocaleSelect>(p => p.Add(l => l.Locales, [LxLocales.En, LxLocales.Fr]));
 
-        Assert.True(cut.Find("[data-bx-locale-select]").HasAttribute("data-bx-reload"));
-        Assert.False(cut.Find("bx-select").HasAttribute("data-bx-seq"));
+        Assert.True(cut.Find("[data-lx-locale-select]").HasAttribute("data-lx-reload"));
+        Assert.False(cut.Find("lx-select").HasAttribute("data-lx-seq"));
     }
 
     [Fact]
@@ -139,18 +139,18 @@ public class HybridTests : BluxTestContext
         JSInterop.Mode = JSRuntimeMode.Loose;
         UseWebView();
         string? raised = null;
-        var cut = Render<BxLocaleSelect>(p => p
-            .Add(l => l.Locales, [BxLocales.En, BxLocales.Fr])
+        var cut = Render<LxLocaleSelect>(p => p
+            .Add(l => l.Locales, [LxLocales.En, LxLocales.Fr])
             .Add(l => l.Value, "en")
             .Add(l => l.OnLocaleChange, EventCallback.Factory.Create<string>(this, code => raised = code)));
 
-        Assert.False(cut.Find("[data-bx-locale-select]").HasAttribute("data-bx-reload"));
-        await cut.InvokeAsync(() => cut.Find("bx-select").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "fr", Sequence = 1 }));
+        Assert.False(cut.Find("[data-lx-locale-select]").HasAttribute("data-lx-reload"));
+        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
 
-        var call = JSInterop.VerifyInvoke("Blux.setStoredCulture");
-        Assert.Equal(["blux-culture", "fr"], call.Arguments.Select(a => a?.ToString()));
+        var call = JSInterop.VerifyInvoke("Lux.setStoredCulture");
+        Assert.Equal(["lux-culture", "fr"], call.Arguments.Select(a => a?.ToString()));
         Assert.Equal("fr", raised);
-        Assert.Equal("fr", cut.Find("bx-select").GetAttribute("value"));
+        Assert.Equal("fr", cut.Find("lx-select").GetAttribute("value"));
     }
 
     [Fact]
@@ -158,31 +158,31 @@ public class HybridTests : BluxTestContext
     {
         JSInterop.Mode = JSRuntimeMode.Loose;
         UseWebView();
-        var cut = Render<BxLocaleSelect>(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "en"));
-        await cut.InvokeAsync(() => cut.Find("bx-select").TriggerEventAsync("onbxchange", new BxChangeEventArgs { Value = "fr", Sequence = 1 }));
+        var cut = Render<LxLocaleSelect>(p => p.Add(l => l.Locales, [LxLocales.En, LxLocales.Fr, LxLocales.De]).Add(l => l.Value, "en"));
+        await cut.InvokeAsync(() => cut.Find("lx-select").TriggerEventAsync("onbxchange", new LxChangeEventArgs { Value = "fr", Sequence = 1 }));
 
         // An OnLocaleChange handler that renders the parent again hands the same parameters back: the culture in effect is
         // still the old one (the choice applies at the next start), but the select must not snap back to it.
-        cut.Render(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "en"));
-        Assert.Equal("fr", cut.Find("bx-select").GetAttribute("value"));
+        cut.Render(p => p.Add(l => l.Locales, [LxLocales.En, LxLocales.Fr, LxLocales.De]).Add(l => l.Value, "en"));
+        Assert.Equal("fr", cut.Find("lx-select").GetAttribute("value"));
 
         // A new Value from the parent is a new decision of the app: it wins.
-        cut.Render(p => p.Add(l => l.Locales, [BxLocales.En, BxLocales.Fr, BxLocales.De]).Add(l => l.Value, "de"));
-        Assert.Equal("de", cut.Find("bx-select").GetAttribute("value"));
+        cut.Render(p => p.Add(l => l.Locales, [LxLocales.En, LxLocales.Fr, LxLocales.De]).Add(l => l.Value, "de"));
+        Assert.Equal("de", cut.Find("lx-select").GetAttribute("value"));
     }
 
     [Fact]
     public void App_spatial_navigation_renders_the_element_that_turns_tv_mode_on_only_when_asked()
     {
-        Assert.Empty(Render<BxApp>().FindAll("bx-spatial"));
-        Assert.Single(Render<BxApp>(p => p.Add(a => a.SpatialNavigation, true)).FindAll("bx-spatial"));
+        Assert.Empty(Render<LxApp>().FindAll("lx-spatial"));
+        Assert.Single(Render<LxApp>(p => p.Add(a => a.SpatialNavigation, true)).FindAll("lx-spatial"));
     }
 
     [Fact]
     public void Forms_with_a_form_name_stay_interactive_in_a_web_view()
     {
         UseWebView();
-        var cut = Render<BxChatPrompt>(p => p.Add(c => c.FormName, "prompt"));
+        var cut = Render<LxChatPrompt>(p => p.Add(c => c.FormName, "prompt"));
 
         // In a Blazor Web App without interactivity the prompt would post (a form with a name and an antiforgery token).
         Assert.Empty(cut.FindAll("input[name='__RequestVerificationToken']"));
@@ -196,7 +196,7 @@ public class HybridTests : BluxTestContext
         Assert.Contains("env(safe-area-inset-top", css);
         Assert.Contains("env(safe-area-inset-bottom", css);
         Assert.Contains("pointer:coarse", css.Replace(" ", ""));
-        Assert.Contains("data-bx-tv", css);
+        Assert.Contains("data-lx-tv", css);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public sealed class CultureCollection;
 
 /// <summary>Applying a culture sets the process wide default: these tests run alone so no other test sees it.</summary>
 [Collection("Culture")]
-public class HybridCultureTests : BluxTestContext
+public class HybridCultureTests : LuxTestContext
 {
     private void UseWebView() => SetRendererInfo(new RendererInfo("WebView", true));
 
@@ -239,10 +239,10 @@ public class HybridCultureTests : BluxTestContext
         try
         {
             CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("en");
-            JSInterop.Setup<string?>("Blux.getStoredCulture", "blux-culture").SetResult("fr");
+            JSInterop.Setup<string?>("Lux.getStoredCulture", "lux-culture").SetResult("fr");
             UseWebView();
 
-            var cut = Render<BxApp>(p => p.Add(a => a.ChildContent, "<p>Content</p>"));
+            var cut = Render<LxApp>(p => p.Add(a => a.ChildContent, "<p>Content</p>"));
 
             Assert.Equal("fr", cut.Find("div").GetAttribute("lang"));
             Assert.Equal("fr", CultureInfo.DefaultThreadCurrentUICulture?.Name);
@@ -261,9 +261,9 @@ public class HybridCultureTests : BluxTestContext
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo("en");
-            JSInterop.Setup<string?>("Blux.getStoredCulture", "blux-culture").SetResult("fr");
+            JSInterop.Setup<string?>("Lux.getStoredCulture", "lux-culture").SetResult("fr");
 
-            Assert.Equal("en", Render<BxApp>().Find("div").GetAttribute("lang"));
+            Assert.Equal("en", Render<LxApp>().Find("div").GetAttribute("lang"));
         }
         finally
         {
@@ -278,10 +278,10 @@ public class HybridCultureTests : BluxTestContext
         try
         {
             CultureInfo.CurrentUICulture = new CultureInfo("en");
-            JSInterop.Setup<string?>("Blux.getStoredCulture", "blux-culture").SetResult("xx-NOPE");
+            JSInterop.Setup<string?>("Lux.getStoredCulture", "lux-culture").SetResult("xx-NOPE");
             UseWebView();
 
-            Assert.Equal("en", Render<BxApp>().Find("div").GetAttribute("lang"));
+            Assert.Equal("en", Render<LxApp>().Find("div").GetAttribute("lang"));
         }
         finally
         {

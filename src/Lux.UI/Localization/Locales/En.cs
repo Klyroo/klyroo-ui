@@ -1,7 +1,7 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>English.</summary>
-    public static BxLocale En { get; } = new("en", "English", BxDirection.Ltr, new BxMessages());
+    public static LxLocale En { get; } = new("en", "English", LxDirection.Ltr, new LxMessages());
 }

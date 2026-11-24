@@ -21,7 +21,7 @@ function normalizeLabel(text) {
 function isSensitiveElement(el) {
   if (!el || !(el instanceof Element)) return false;
   if (el.hasAttribute('data-agent-redact')) return true;
-  if (el.localName === 'bx-pin-input') return true;
+  if (el.localName === 'lx-pin-input') return true;
   if (el instanceof HTMLInputElement && el.type === 'password') return true;
   const input = el.querySelector?.('input[type="password"]');
   return Boolean(input);
@@ -70,7 +70,7 @@ function assignRef(el) {
   return ref;
 }
 
-/** Emits an ObservedChange event to all registered `Blux.observe` subscribers. */
+/** Emits an ObservedChange event to all registered `Lux.observe` subscribers. */
 export function emitObservedChange(change) {
   const redacted = change.sensitive
     ? { ...change, value: '[redacted]', previous: '[redacted]' }
@@ -99,16 +99,16 @@ export function observe(callback, { within = null } = {}) {
 function discoverComponents(root = document) {
   if (typeof document === 'undefined') return [];
   const selector = [
-    '[data-bx-primitive]',
-    'bx-select',
-    'bx-select-menu',
-    'bx-tabs',
-    'bx-modal',
-    'bx-collapsible',
-    'bx-accordion',
-    'bx-pin-input',
-    'bx-color-picker',
-    'bx-calendar',
+    '[data-lx-primitive]',
+    'lx-select',
+    'lx-select-menu',
+    'lx-tabs',
+    'lx-modal',
+    'lx-collapsible',
+    'lx-accordion',
+    'lx-pin-input',
+    'lx-color-picker',
+    'lx-calendar',
     '[data-slot="datalist"]',
     '[data-slot="dashboard-filter"]',
     '[data-slot="form-engine"]',
@@ -123,8 +123,8 @@ function discoverComponents(root = document) {
   const list = [];
   for (const el of root.querySelectorAll(selector)) {
     if (seen.has(el)) continue;
-    // Skip inner native controls that belong to a higher-level bx-* custom element already in the list
-    const ownerBx = el.parentElement?.closest('bx-select, bx-select-menu, bx-pin-input, bx-color-picker');
+    // Skip inner native controls that belong to a higher-level lx-* custom element already in the list
+    const ownerBx = el.parentElement?.closest('lx-select, lx-select-menu, lx-pin-input, lx-color-picker');
     if (ownerBx && seen.has(ownerBx)) continue;
     seen.add(el);
     list.push(el);
@@ -155,7 +155,7 @@ function describeElement(el) {
   }
 
   const tag = el.localName;
-  if (tag === 'select' || tag === 'bx-select' || tag === 'bx-select-menu') {
+  if (tag === 'select' || tag === 'lx-select' || tag === 'lx-select-menu') {
     const val = el.value ?? el.getAttribute('value') ?? '';
     return {
       ref,
@@ -168,7 +168,7 @@ function describeElement(el) {
     };
   }
 
-  if (tag === 'input' || tag === 'textarea' || tag === 'bx-pin-input') {
+  if (tag === 'input' || tag === 'textarea' || tag === 'lx-pin-input') {
     const type = el.getAttribute('type') || 'text';
     if (type === 'checkbox' || type === 'radio') {
       return {
@@ -229,7 +229,7 @@ function extractChoices(el) {
   }));
 }
 
-/** Creates the Blux Agent runtime (`snapshot`, `query`, `act`, `registerWebMcp`). */
+/** Creates the Lux Agent runtime (`snapshot`, `query`, `act`, `registerWebMcp`). */
 export function createAgent({ allow = null } = {}) {
   function snapshot({ within = null } = {}) {
     const root = within instanceof Element ? within : document;
@@ -336,7 +336,7 @@ export function createAgent({ allow = null } = {}) {
         el.setAttribute('value', String(nextVal));
         el.dispatchEvent(new Event('input', { bubbles: true }));
         el.dispatchEvent(new Event('change', { bubbles: true }));
-        el.dispatchEvent(new CustomEvent('bx-change', { bubbles: true, detail: { value: nextVal, source: 'agent' } }));
+        el.dispatchEvent(new CustomEvent('lx-change', { bubbles: true, detail: { value: nextVal, source: 'agent' } }));
       } else if (step.action === 'clear') {
         if ('value' in el) el.value = '';
         el.dispatchEvent(new Event('input', { bubbles: true }));

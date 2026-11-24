@@ -2,8 +2,8 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>The kind of chart <see cref="BxChart{TItem}"/> draws.</summary>
-public enum BxChartType
+/// <summary>The kind of chart <see cref="LxChart{TItem}"/> draws.</summary>
+public enum LxChartType
 {
     Line,
     Area,
@@ -14,7 +14,7 @@ public enum BxChartType
 }
 
 /// <summary>The shape of the line between values of a line or area chart.</summary>
-public enum BxChartCurve
+public enum LxChartCurve
 {
     Linear,
 
@@ -24,7 +24,7 @@ public enum BxChartCurve
 }
 
 /// <summary>Where the table with the chart's data goes.</summary>
-public enum BxChartTable
+public enum LxChartTable
 {
     /// <summary>Visually hidden, still read by assistive technology.</summary>
     Hidden,
@@ -40,18 +40,18 @@ public enum BxChartTable
 /// <typeparam name="TItem">The row type of the chart.</typeparam>
 /// <param name="Key">Identifies the series. Also its name when there is no <see cref="Label"/>.</param>
 /// <param name="Value">The value of the series in a row. <c>null</c> leaves a gap.</param>
-public sealed record BxChartCategory<TItem>(string Key, Func<TItem, double?> Value)
+public sealed record LxChartCategory<TItem>(string Key, Func<TItem, double?> Value)
 {
     /// <summary>The name shown in the legend, the tooltip and the table. Defaults to <see cref="Key"/>.</summary>
     public string? Label { get; init; }
 
-    /// <summary>The color of the series, through the <c>--bx-color</c> tokens. Defaults to the chart's palette, in order.</summary>
-    public BxColor? Color { get; init; }
+    /// <summary>The color of the series, through the <c>--lx-color</c> tokens. Defaults to the chart's palette, in order.</summary>
+    public LxColor? Color { get; init; }
 
     internal string Name => Label ?? Key;
 }
 
-/// <summary>Per-instance class overrides of <see cref="BxChart{TItem}"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxChart{TItem}"/> slots.</summary>
 public sealed record ChartUi : ISlotOverrides
 {
     public string? Root { get; init; }

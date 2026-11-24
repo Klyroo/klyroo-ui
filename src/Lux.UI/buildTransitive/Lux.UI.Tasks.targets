@@ -1,11 +1,11 @@
 <Project>
   <!--
-    Shared by every Blux build feature that runs code at build time (self-hosted fonts, bundled icons, Tailwind). One task assembly,
+    Shared by every Lux build feature that runs code at build time (self-hosted fonts, bundled icons, Tailwind). One task assembly,
     Lux.UI.Build.Tasks.dll (netstandard2.0, so it loads in `dotnet build` and in Visual Studio's MSBuild alike), holds all the
     tasks; a feature adds its UsingTask line below and its own Lux.UI.<Feature>.targets, imported from Lux.UI.targets.
 
     Conventions of the features that download:
-      LuxCacheDir  root of the caches, one sub folder per feature (default obj/blux/); keep it between CI runs to build faster.
+      LuxCacheDir  root of the caches, one sub folder per feature (default obj/lux/); keep it between CI runs to build faster.
       LuxOffline   true: never touch the network, everything must already be in the cache.
       A resource that cannot be resolved is a warning in Debug and an error in Release (each feature has a switch to change that).
   -->
@@ -13,7 +13,7 @@
     <!-- Set before the default below: true when the repo or the app points at its own build of the task assembly. -->
     <_LuxTasksOverridden Condition="'$(LuxBuildTasksAssembly)' != ''">true</_LuxTasksOverridden>
     <LuxBuildTasksAssembly Condition="'$(LuxBuildTasksAssembly)' == ''">$(MSBuildThisFileDirectory)tasks/Lux.UI.Build.Tasks.dll</LuxBuildTasksAssembly>
-    <LuxCacheDir Condition="'$(LuxCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), blux))</LuxCacheDir>
+    <LuxCacheDir Condition="'$(LuxCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))</LuxCacheDir>
     <LuxOffline Condition="'$(LuxOffline)' == ''">false</LuxOffline>
   </PropertyGroup>
 

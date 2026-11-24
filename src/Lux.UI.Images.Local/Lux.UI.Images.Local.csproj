@@ -7,7 +7,7 @@
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Lux.UI.Images.Local</RootNamespace>
     <PackageId>Lux.UI.Images.Local</PackageId>
-    <Description>An ASP.NET Core image optimization endpoint for Lux.UI (resize and convert with libvips through NetVips), with the "local" provider for BxImage.</Description>
+    <Description>An ASP.NET Core image optimization endpoint for Lux.UI (resize and convert with libvips through NetVips), with the "local" provider for LxImage.</Description>
     <PackageTags>blazor;images;optimization;libvips;netvips;aspnetcore</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>

@@ -34,9 +34,9 @@ public static class MauiProgram
         //      builder.Services.AddAssistantProvider(new AssistantOptions { Provider = AssistantOptions.OpenAi, BaseUrl = "...", ApiKey = "...", Models = [new() { Id = "your-model-id" }] },
         //          new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan });
         builder.Services.AddAssistantProvider(new AssistantOptions { Provider = AssistantOptions.Simulated });
-        // Where BxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
+        // Where LxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
-        builder.Services.AddSingleton<IBxCultureStore, PreferencesCultureStore>();
+        builder.Services.AddSingleton<ILxCultureStore, PreferencesCultureStore>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -47,7 +47,7 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// A .NET process takes its culture from the device. The language the user picked in BxLocaleSelect is read here, before anything
+    /// A .NET process takes its culture from the device. The language the user picked in LxLocaleSelect is read here, before anything
     /// renders, and becomes the default culture of every thread.
     /// </summary>
     private static void ApplyStoredCulture()

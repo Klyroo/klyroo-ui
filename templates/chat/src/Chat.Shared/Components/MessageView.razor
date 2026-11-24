@@ -5,18 +5,18 @@
    actions under it once it is complete. *@
 @if (Message.IsUser)
 {
-    <BxChatMessage Role="ChatRole.User" Text="@Message.Content" data-testid="message-user" />
+    <LxChatMessage Role="ChatRole.User" Text="@Message.Content" data-testid="message-user" />
 }
 else
 {
-    <BxChatMessage Role="ChatRole.Assistant" Streaming="Streaming" data-testid="message-assistant">
-        <Icon>@BxIcons.Named("lucide:sparkles", "size-4")</Icon>
+    <LxChatMessage Role="ChatRole.Assistant" Streaming="Streaming" data-testid="message-assistant">
+        <Icon>@LxIcons.Named("lucide:sparkles", "size-4")</Icon>
         <ChildContent>
             @if (!string.IsNullOrEmpty(Message.Reasoning))
             {
-                <BxChatReasoning Streaming="@(Streaming && Message.Content.Length == 0)" Duration="Message.ThinkingSeconds" Class="mb-2" data-testid="message-reasoning">
+                <LxChatReasoning Streaming="@(Streaming && Message.Content.Length == 0)" Duration="Message.ThinkingSeconds" Class="mb-2" data-testid="message-reasoning">
                     <span class="whitespace-pre-wrap">@Message.Reasoning</span>
-                </BxChatReasoning>
+                </LxChatReasoning>
             }
             @if (Message.Content.Length > 0)
             {
@@ -24,7 +24,7 @@ else
             }
             @if (Message.Interrupted && !Streaming)
             {
-                <p class="mt-2 text-sm text-(--blux-warning-text)" data-testid="message-interrupted">This answer was interrupted and is incomplete.</p>
+                <p class="mt-2 text-sm text-(--lux-warning-text)" data-testid="message-interrupted">This answer was interrupted and is incomplete.</p>
             }
         </ChildContent>
         <Actions>
@@ -33,20 +33,20 @@ else
                 <div class="-ms-1.5 flex items-center gap-0.5">
                     @if (Message.Content.Length > 0)
                     {
-                        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">
-                            <LeadingIcon>@BxIcons.Named(_copied ? "lucide:check" : "lucide:copy")</LeadingIcon>
-                        </BxButton>
+                        <LxButton Square Size="LxSize.Xs" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Copy the answer" OnClick="CopyAsync" data-testid="message-copy">
+                            <LeadingIcon>@LxIcons.Named(_copied ? "lucide:check" : "lucide:copy")</LeadingIcon>
+                        </LxButton>
                     }
                     @if (CanRegenerate)
                     {
-                        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Write the answer again" OnClick="OnRegenerate" data-testid="message-regenerate">
-                            <LeadingIcon>@BxIcons.Named("lucide:refresh-cw")</LeadingIcon>
-                        </BxButton>
+                        <LxButton Square Size="LxSize.Xs" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Write the answer again" OnClick="OnRegenerate" data-testid="message-regenerate">
+                            <LeadingIcon>@LxIcons.Named("lucide:refresh-cw")</LeadingIcon>
+                        </LxButton>
                     }
                 </div>
             }
         </Actions>
-    </BxChatMessage>
+    </LxChatMessage>
 }
 
 @code {
@@ -72,13 +72,13 @@ else
             await using var module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Chat.Shared/host.js");
             await module.InvokeVoidAsync("copyText", Message.Content);
             _copied = true;
-            await Toasts.Add(new BxToast { Title = "Copied", Description = "The answer is on the clipboard.", Color = BxColor.Success });
+            await Toasts.Add(new LxToast { Title = "Copied", Description = "The answer is on the clipboard.", Color = LxColor.Success });
             await Task.Delay(1800);
             _copied = false;
         }
         catch (JSException)
         {
-            await Toasts.Add(new BxToast { Title = "Not copied", Description = "The browser did not allow access to the clipboard.", Color = BxColor.Warning });
+            await Toasts.Add(new LxToast { Title = "Not copied", Description = "The browser did not allow access to the clipboard.", Color = LxColor.Warning });
         }
     }
 }

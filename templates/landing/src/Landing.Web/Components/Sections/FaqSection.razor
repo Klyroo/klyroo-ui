@@ -1,13 +1,13 @@
-@* BxAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them. *@
-<BxPageSection id="faq"
+@* LxAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them. *@
+<LxPageSection id="faq"
                Headline="@SiteContent.FaqHeadline"
                Title="@SiteContent.FaqTitle"
-               Orientation="BxOrientation.Vertical">
-    <BxAccordion Items="_items" Class="mt-10 max-w-3xl" />
-</BxPageSection>
+               Orientation="LxOrientation.Vertical">
+    <LxAccordion Items="_items" Class="mt-10 max-w-3xl" />
+</LxPageSection>
 
 @code {
-    private static readonly BxAccordionItem[] _items = [.. SiteContent.Questions.Select((q, index) => new BxAccordionItem(q.Ask)
+    private static readonly LxAccordionItem[] _items = [.. SiteContent.Questions.Select((q, index) => new LxAccordionItem(q.Ask)
     {
         Value = $"q{index + 1}",
         Content = builder =>

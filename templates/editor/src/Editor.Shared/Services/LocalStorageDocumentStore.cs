@@ -8,7 +8,7 @@ namespace Editor.Shared.Services;
 
 /// <summary>
 /// Keeps the documents in the local storage of the browser (the web view of the MAUI app), one key per document. Local storage belongs to one user of one
-/// browser and is shared by every app of the same site, so the keys start with a prefix that carries the path base of the app (<see cref="BxPathScope.CookieName"/>):
+/// browser and is shared by every app of the same site, so the keys start with a prefix that carries the path base of the app (<see cref="LxPathScope.CookieName"/>):
 /// two apps below one host never read each other's documents. The server never sees them, which is why visitors of a public demo cannot see each other's.
 /// </summary>
 /// <remarks>
@@ -21,7 +21,7 @@ public sealed class LocalStorageDocumentStore(IJSRuntime js, NavigationManager n
     private const string Module = "./_content/Editor.Shared/host.js";
 
     // The path base as the server sees it: "/templates/editor/demo" for an app served at https://host/templates/editor/demo/, empty at the root.
-    private string Prefix => BxPathScope.CookieName("documents", new Uri(navigation.BaseUri).AbsolutePath.TrimEnd('/'));
+    private string Prefix => LxPathScope.CookieName("documents", new Uri(navigation.BaseUri).AbsolutePath.TrimEnd('/'));
 
     public async Task<StoredIndex> LoadIndexAsync()
     {

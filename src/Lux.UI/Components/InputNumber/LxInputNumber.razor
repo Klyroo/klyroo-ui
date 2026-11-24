@@ -1,0 +1,100 @@
+@namespace Lux.UI
+@using System.Globalization
+@using Lux.UI.Internal
+@inherits LxFieldBase<decimal?>
+
+@if (UseEditContext)
+{
+    <ValueBridge TValue="decimal?" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    [Parameter] public decimal? Min { get; set; }
+    [Parameter] public decimal? Max { get; set; }
+
+    /// <summary>Amount added or removed by the buttons and the arrow keys; Page Up and Page Down use ten steps.</summary>
+    [Parameter] public decimal Step { get; set; } = 1;
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language). The posted value is always invariant.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>Horizontal puts the buttons on both sides of the field, vertical stacks them at its end.</summary>
+    [Parameter] public LxOrientation Orientation { get; set; } = LxOrientation.Horizontal;
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputNumberUi? Ui { get; set; }
+
+    private static string? Invariant(decimal? value) => value?.ToString(CultureInfo.InvariantCulture);
+
+    private EventCallback<LxChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<LxChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputNumber, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["orientation"] = Orientation == LxOrientation.Vertical ? "vertical" : "horizontal",
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(LxChangeEventArgs))]
+    private async Task OnChange(LxChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        decimal? value = decimal.TryParse(e.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
+        if (value == Value)
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private Dictionary<string, object> InputAttributes(EditBinding binding)
+    {
+        var attributes = ControlAttributes(_slots["base"]);
+        attributes.Remove("required");
+        if (Required || Field?.Required == true) attributes["aria-required"] = "true";
+        if (binding.Invalid) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
+        attributes["data-slot"] = "input";
+        attributes["type"] = "text";
+        attributes["role"] = "spinbutton";
+        attributes["inputmode"] = "decimal";
+        attributes["autocomplete"] = "off";
+        if (Placeholder is not null) attributes["placeholder"] = Placeholder;
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<lx-input-number data-lx-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                          value="@Invariant(Value)"
+                          min="@Invariant(Min)"
+                          max="@Invariant(Max)"
+                          step="@Invariant(Step)"
+                          locale="@((Culture ?? FormatCulture).Name)"
+                          disabled="@Disabled"
+                          class="@_slots["root"]"
+                          data-color="@Color.Value"
+                          @onbxchange="ChangeHandler"
+                          @onbxchange:stopPropagation="true">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@Invariant(Value)" disabled="@Disabled" />
+            <input @attributes="InputAttributes(binding)" />
+            <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Messages.InputNumberDecrement" disabled="@Disabled">
+                @RenderIcon(Options.Icons.Minus, _slots["icon"])
+            </button>
+            <button type="button" tabindex="-1" class="@_slots["increment"]" data-slot="increment" aria-label="@Messages.InputNumberIncrement" disabled="@Disabled">
+                @RenderIcon(Options.Icons.Plus, _slots["icon"])
+            </button>
+        </lx-input-number>;
+}

@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxPageSection"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxPageSection"/> slots.</summary>
 public sealed record PageSectionUi : ISlotOverrides
 {
     public string? Root { get; init; }

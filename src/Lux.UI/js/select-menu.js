@@ -6,7 +6,7 @@ import { createDebouncer } from './debounce.js';
  * Select with a filter field inside the list. The trigger is a select-only combobox button; the popover holds a
  * search input (focus lives there while open) and a listbox. Filtering runs in the browser.
  *
- * <bx-select-menu name="…" data-values="a␟b" data-multiple data-create data-create-label='Create "{0}"'>
+ * <lx-select-menu name="…" data-values="a␟b" data-multiple data-create data-create-label='Create "{0}"'>
  *   <span data-slot="values" hidden></span>
  *   <button role="combobox" data-slot="trigger"><span data-slot="label" data-label="…" data-placeholder-text="…"></span></button>
  *   <div popover data-slot="content">
@@ -14,16 +14,16 @@ import { createDebouncer } from './debounce.js';
  *     <div role="listbox"><div role="option" data-value data-label>…</div><div role="option" data-slot="create" hidden>…</div></div>
  *     <p data-slot="empty" hidden>No results</p>
  *   </div>
- * </bx-select-menu>
+ * </lx-select-menu>
  *
  * With data-remote (an interactive .NET component that loads the options from a source) the browser stops filtering: the list is
- * whatever .NET renders. The search text is reported as bx-search (value = the text) when the list opens (the empty text, at once)
+ * whatever .NET renders. The search text is reported as lx-search (value = the text) when the list opens (the empty text, at once)
  * and after data-debounce milliseconds of quiet while typing. .NET renders data-generation on the listbox, which changes each time
  * the options are replaced (not when a page is added): the list goes back to the top and the first option is highlighted. The labels
  * of the selected values are kept here (a search can drop their options from the list), seeded by data-known (value, label, value, label...).
  */
-export class BxSelectMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'data-values', 'name', 'disabled', 'data-known', 'data-epoch'];
+export class LxSelectMenuElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'data-values', 'name', 'disabled', 'data-known', 'data-epoch'];
 
   #observer = null;
   #stopFloating = null;
@@ -176,7 +176,7 @@ export class BxSelectMenuElement extends HTMLElement {
   #reportSearch(term) {
     this.#reported = term.trim();
     this.#awaiting = true;
-    this.dispatchEvent(new CustomEvent('bx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
+    this.dispatchEvent(new CustomEvent('lx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
   }
 
   #isOpen() {
@@ -395,4 +395,4 @@ export class BxSelectMenuElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-select-menu')) customElements.define('bx-select-menu', BxSelectMenuElement);
+if (!customElements.get('lx-select-menu')) customElements.define('lx-select-menu', LxSelectMenuElement);

@@ -2,40 +2,40 @@
 
 <PageTitle>Dashboard</PageTitle>
 
-<h1 class="text-2xl font-semibold text-(--blux-text-highlighted)">Dashboard</h1>
+<h1 class="text-2xl font-semibold text-(--lux-text-highlighted)">Dashboard</h1>
 
 @* The sizes of the panels and the collapsed state of the sidebar are remembered in localStorage in a web view (cookies on the web). *@
-<div class="h-[28rem] w-full overflow-hidden rounded-xl border border-(--blux-border)" data-testid="dashboard">
-    <BxDashboardGroup StorageKey="maui-dashboard">
-        <BxDashboardSidebar As="div" Resizable>
-            <Header><span class="font-semibold text-(--blux-text-highlighted)">Acme</span></Header>
+<div class="h-[28rem] w-full overflow-hidden rounded-xl border border-(--lux-border)" data-testid="dashboard">
+    <LxDashboardGroup StorageKey="maui-dashboard">
+        <LxDashboardSidebar As="div" Resizable>
+            <Header><span class="font-semibold text-(--lux-text-highlighted)">Acme</span></Header>
             <ChildContent>
-                <BxNavigationMenu Items="_nav" Orientation="BxOrientation.Vertical" AriaLabel="Workspace" />
+                <LxNavigationMenu Items="_nav" Orientation="LxOrientation.Vertical" AriaLabel="Workspace" />
             </ChildContent>
-        </BxDashboardSidebar>
+        </LxDashboardSidebar>
 
-        <BxDashboardPanel Resizable Size="40" MinSize="25" MaxSize="70" ResizeLabel="Resize list">
+        <LxDashboardPanel Resizable Size="40" MinSize="25" MaxSize="70" ResizeLabel="Resize list">
             <Header>
-                <BxDashboardNavbar Title="Team">
-                    <Leading><BxDashboardSidebarCollapse /></Leading>
-                </BxDashboardNavbar>
+                <LxDashboardNavbar Title="Team">
+                    <Leading><LxDashboardSidebarCollapse /></Leading>
+                </LxDashboardNavbar>
             </Header>
             <Body>
-                <BxTable Items="People" Caption="Team members">
-                    <BxColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable />
-                    <BxColumn TItem="Person" Title="Role" Field="p => p.Role" Sortable />
-                </BxTable>
+                <LxTable Items="People" Caption="Team members">
+                    <LxColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable />
+                    <LxColumn TItem="Person" Title="Role" Field="p => p.Role" Sortable />
+                </LxTable>
             </Body>
-        </BxDashboardPanel>
+        </LxDashboardPanel>
 
-        <BxDashboardPanel>
-            <Header><BxDashboardNavbar Title="Details" Toggle="false" /></Header>
+        <LxDashboardPanel>
+            <Header><LxDashboardNavbar Title="Details" Toggle="false" /></Header>
             <Body>
-                <BxTabs Items="_tabs" AriaLabel="Details" />
-                <BxAccordion Items="_faq" />
+                <LxTabs Items="_tabs" AriaLabel="Details" />
+                <LxAccordion Items="_faq" />
             </Body>
-        </BxDashboardPanel>
-    </BxDashboardGroup>
+        </LxDashboardPanel>
+    </LxDashboardGroup>
 </div>
 
 @code {
@@ -49,20 +49,20 @@
         new("Whitney Francis", "Copywriter"),
     ];
 
-    private static readonly BxNavigationItem[] _nav =
+    private static readonly LxNavigationItem[] _nav =
     [
         new("Home") { Href = "/", Exact = true },
         new("Forms") { Href = "/forms" },
         new("Overlays") { Href = "/overlays" },
     ];
 
-    private static readonly BxTabItem[] _tabs =
+    private static readonly LxTabItem[] _tabs =
     [
         new("Account") { Value = "account", Content = @<p class="p-4 text-sm">Make changes to your account.</p> },
         new("Password") { Value = "password", Content = @<p class="p-4 text-sm">Change your password.</p> },
     ];
 
-    private static readonly BxAccordionItem[] _faq =
+    private static readonly LxAccordionItem[] _faq =
     [
         new("Does it work offline?") { Value = "offline", Content = @<p>Yes: the pages, the styles and the fonts are in the app.</p> },
         new("Where is my layout kept?") { Value = "layout", Content = @<p>In localStorage, under the id of the dashboard.</p> },

@@ -150,13 +150,13 @@ public static class LuxIconBundle
                     continue;
                 }
                 Discover(loaded);
-                if (UsesBlux(loaded)) queue.Enqueue(loaded);
+                if (UsesLux(loaded)) queue.Enqueue(loaded);
             }
         }
     }
 
     [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "Best effort: an assembly the trimmer removed has no module initializer to run, and every assembly that is kept is found in the loaded assemblies or by the AssemblyLoad event.")]
-    private static bool UsesBlux(Assembly assembly)
+    private static bool UsesLux(Assembly assembly)
     {
         try
         {
@@ -253,7 +253,7 @@ internal static class IconRender
 {
     public const string DefaultViewBox = BuiltinIcons.ViewBox;
 
-    /// <summary>An icon as a render fragment, for the parameters that take one. An unknown name renders an empty icon marked <c>data-bx-missing-icon</c>.</summary>
+    /// <summary>An icon as a render fragment, for the parameters that take one. An unknown name renders an empty icon marked <c>data-lx-missing-icon</c>.</summary>
     /// <remarks>An icon with ids gets new ids each time the fragment is built (so each drawing has its own): a parent that renders again redraws such an icon, which restarts its animation.</remarks>
     public static RenderFragment Fragment(LuxIconOptions? options, string? name, string? @class) => builder =>
     {
@@ -263,7 +263,7 @@ internal static class IconRender
         builder.AddAttribute(2, "fill", "currentColor");
         builder.AddAttribute(3, "aria-hidden", "true");
         builder.AddAttribute(4, "class", @class);
-        if (!found) builder.AddAttribute(5, "data-bx-missing-icon", name);
+        if (!found) builder.AddAttribute(5, "data-lx-missing-icon", name);
         if (found)
         {
             string? suffix = null;

@@ -7,16 +7,16 @@
     <meta name="description" content="@SiteInfo.WorkPageDescription" />
 </HeadContent>
 
-<BxContainer Class="py-10 sm:py-14">
-    <BxPageHeader Title="@SiteInfo.WorkPageTitle" Description="@SiteInfo.WorkPageDescription" />
+<LxContainer Class="py-10 sm:py-14">
+    <LxPageHeader Title="@SiteInfo.WorkPageTitle" Description="@SiteInfo.WorkPageDescription" />
 
-    <BxPageGrid Columns="2" Class="mt-10 gap-6">
+    <LxPageGrid Columns="2" Class="mt-10 gap-6">
         @foreach (var project in _projects)
         {
             <ProjectCard Project="project" HeadingLevel="2" />
         }
-    </BxPageGrid>
-</BxContainer>
+    </LxPageGrid>
+</LxContainer>
 
 @code {
     private IReadOnlyList<Project> _projects = [];

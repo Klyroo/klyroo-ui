@@ -33,6 +33,6 @@ public static class Resume
         new("Practice", ["Design system documentation", "Workshops", "Code review", "Writing for engineers"]),
     ];
 
-    public static IReadOnlyList<BxTimelineItem> Timeline() =>
-        [.. Experiences.Select(e => new BxTimelineItem($"{e.Title}, {e.Organization}") { Date = e.Period, Description = e.Summary })];
+    public static IReadOnlyList<LxTimelineItem> Timeline() =>
+        [.. Experiences.Select(e => new LxTimelineItem($"{e.Title}, {e.Organization}") { Date = e.Period, Description = e.Summary })];
 }

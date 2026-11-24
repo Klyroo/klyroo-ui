@@ -2,7 +2,7 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>Per-instance class overrides of <see cref="BxSidebar"/> slots.</summary>
+/// <summary>Per-instance class overrides of <see cref="LxSidebar"/> slots.</summary>
 public sealed record SidebarUi : ISlotOverrides
 {
     public string? Root { get; init; }

@@ -36,7 +36,7 @@ export function createDebouncer(callback, timers = { set: (fn, ms) => setTimeout
 }
 
 /**
- * The delay a field uses, from its data-bx-debounce attribute: a number of milliseconds (0 reports on every input), or
+ * The delay a field uses, from its data-lx-debounce attribute: a number of milliseconds (0 reports on every input), or
  * null when the attribute is missing or not a non-negative number, which means "report when the value is committed".
  */
 export function parseDelay(raw) {

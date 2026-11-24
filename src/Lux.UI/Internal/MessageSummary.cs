@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace Lux.UI.Internal;
 
 /// <summary>
-/// Infrastructure of <see cref="BxForm"/>; not meant to be used directly.
+/// Infrastructure of <see cref="LxForm"/>; not meant to be used directly.
 /// Lists every validation message of an edit context and re-renders when validation changes.
 /// </summary>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]

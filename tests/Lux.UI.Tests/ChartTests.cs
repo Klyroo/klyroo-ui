@@ -3,8 +3,8 @@ using Lux.UI.Internal;
 
 namespace Lux.UI.Tests;
 
-/// <summary>The "Chart" family: BxChart, drawn as SVG in C#.</summary>
-public class ChartTests : BluxTestContext
+/// <summary>The "Chart" family: LxChart, drawn as SVG in C#.</summary>
+public class ChartTests : LuxTestContext
 {
     private sealed record Sale(string Month, double? Desktop, double? Mobile);
 
@@ -18,14 +18,14 @@ public class ChartTests : BluxTestContext
         new("June", 214, 140),
     ];
 
-    private static readonly BxChartCategory<Sale>[] Both =
+    private static readonly LxChartCategory<Sale>[] Both =
     [
         new("desktop", s => s.Desktop) { Label = "Desktop" },
         new("mobile", s => s.Mobile) { Label = "Mobile" },
     ];
 
-    private IRenderedComponent<BxChart<Sale>> Chart(Action<ComponentParameterCollectionBuilder<BxChart<Sale>>>? configure = null, IReadOnlyList<Sale>? data = null, IReadOnlyList<BxChartCategory<Sale>>? categories = null) =>
-        Render<BxChart<Sale>>(p =>
+    private IRenderedComponent<LxChart<Sale>> Chart(Action<ComponentParameterCollectionBuilder<LxChart<Sale>>>? configure = null, IReadOnlyList<Sale>? data = null, IReadOnlyList<LxChartCategory<Sale>>? categories = null) =>
+        Render<LxChart<Sale>>(p =>
         {
             p.Add(c => c.Data, data ?? Sales)
              .Add(c => c.Index, s => s.Month)
@@ -34,10 +34,10 @@ public class ChartTests : BluxTestContext
         });
 
     /// <summary>The name of the chart: on the svg image, or on the focusable group when the chart is interactive.</summary>
-    private static string AccessibleName(IRenderedComponent<BxChart<Sale>> cut) =>
+    private static string AccessibleName(IRenderedComponent<LxChart<Sale>> cut) =>
         cut.Find("svg").GetAttribute("aria-label") ?? cut.Find("[data-slot=plot]").GetAttribute("aria-label")!;
 
-    private static string[] Texts(IRenderedComponent<BxChart<Sale>> cut, string selector) =>
+    private static string[] Texts(IRenderedComponent<LxChart<Sale>> cut, string selector) =>
         cut.FindAll(selector).Select(e => e.TextContent.Trim()).ToArray();
 
     // ---- Scale
@@ -103,7 +103,7 @@ public class ChartTests : BluxTestContext
         Assert.Equal(["January", "February", "March", "April", "May", "June"], Texts(cut, "svg > text").Where(t => char.IsLetter(t[0])).ToArray());
         // One grid line per tick, and the line of the index axis.
         Assert.Equal(8, cut.FindAll("svg > line").Count);
-        Assert.Contains("0", Texts(Chart(p => p.Add(c => c.Type, BxChartType.Bar)), "svg > text"));
+        Assert.Contains("0", Texts(Chart(p => p.Add(c => c.Type, LxChartType.Bar)), "svg > text"));
     }
 
     [Fact]
@@ -152,10 +152,10 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Dates_in_the_index_are_formatted_with_the_current_culture()
     {
-        var cut = Render<BxChart<DateTime>>(p => p
+        var cut = Render<LxChart<DateTime>>(p => p
             .Add(c => c.Data, [new DateTime(2026, 3, 5), new DateTime(2026, 3, 6)])
             .Add(c => c.Index, d => d)
-            .Add(c => c.Categories, new BxChartCategory<DateTime>[] { new("v", d => d.Day) })
+            .Add(c => c.Categories, new LxChartCategory<DateTime>[] { new("v", d => d.Day) })
             .Add(c => c.IndexFormat, "MMM d"));
 
         Assert.Equal(["Mar 5", "Mar 6"], cut.FindAll("svg > text").Select(t => t.TextContent).Where(t => t.StartsWith("Mar")).ToArray());
@@ -182,10 +182,10 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Data_table_can_be_shown_or_put_behind_a_disclosure()
     {
-        var visible = Chart(p => p.Add(c => c.Table, BxChartTable.Visible));
+        var visible = Chart(p => p.Add(c => c.Table, LxChartTable.Visible));
         Assert.DoesNotContain("sr-only", visible.Find("table").ParentElement!.ClassList);
 
-        var toggle = Chart(p => p.Add(c => c.Table, BxChartTable.Toggle).Add(c => c.XLabel, "Month"));
+        var toggle = Chart(p => p.Add(c => c.Table, LxChartTable.Toggle).Add(c => c.XLabel, "Month"));
         Assert.Equal("Data table", toggle.Find("details > summary").TextContent);
         Assert.NotNull(toggle.Find("details table"));
         Assert.Equal("Month", toggle.Find("thead th").TextContent.Trim());
@@ -220,7 +220,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Series_get_their_color_from_the_tokens_of_data_color_and_never_from_a_palette()
     {
-        var cut = Chart(null, null, [new("desktop", s => s.Desktop), new("mobile", s => s.Mobile) { Color = BxColor.Success }]);
+        var cut = Chart(null, null, [new("desktop", s => s.Desktop), new("mobile", s => s.Mobile) { Color = LxColor.Success }]);
 
         Assert.Equal(["chart-1", "success"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
         Assert.Equal(["chart-1", "success"], cut.FindAll("li[data-color]").Select(g => g.GetAttribute("data-color")));
@@ -229,13 +229,13 @@ public class ChartTests : BluxTestContext
         Assert.DoesNotContain("stroke=\"#", html);
         Assert.DoesNotContain("zinc-", html);
         Assert.DoesNotContain("rgb(", html);
-        Assert.Contains("stroke-(--bx-color-text)", cut.Find("g[data-series='0'] path").GetAttribute("class"));
+        Assert.Contains("stroke-(--lx-color-text)", cut.Find("g[data-series='0'] path").GetAttribute("class"));
     }
 
     [Fact]
     public void Colors_replace_the_palette_in_order()
     {
-        var cut = Chart(p => p.Add(c => c.Colors, new[] { BxColor.Error, BxColor.Info }));
+        var cut = Chart(p => p.Add(c => c.Colors, new[] { LxColor.Error, LxColor.Info }));
 
         Assert.Equal(["error", "info"], cut.FindAll("g[data-series]").Select(g => g.GetAttribute("data-color")));
     }
@@ -269,7 +269,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Bars_and_areas_differ_by_fill_pattern_and_the_legend_shows_the_same_pattern()
     {
-        var bars = Chart(p => p.Add(c => c.Type, BxChartType.Bar));
+        var bars = Chart(p => p.Add(c => c.Type, LxChartType.Bar));
 
         var patterns = bars.FindAll("defs pattern");
         Assert.Equal(2, patterns.Count);
@@ -280,7 +280,7 @@ public class ChartTests : BluxTestContext
         Assert.Contains(bars.FindAll("rect[fill]"), r => r.GetAttribute("fill") == $"url(#{id})");
         Assert.Equal($"url(#{id})", bars.FindAll("li svg rect")[1].GetAttribute("fill"));
 
-        var area = Chart(p => p.Add(c => c.Type, BxChartType.Area));
+        var area = Chart(p => p.Add(c => c.Type, LxChartType.Area));
         Assert.Equal(2, area.FindAll("defs pattern").Count);
         Assert.Equal(2, area.FindAll("g[data-series] > path[fill^='url(#']").Count);
     }
@@ -307,9 +307,9 @@ public class ChartTests : BluxTestContext
     }
 
     [Theory]
-    [InlineData(BxChartCurve.Linear, "L", "C")]
-    [InlineData(BxChartCurve.Monotone, "C", "L")]
-    public void Curve_shapes_the_line(BxChartCurve curve, string present, string absent)
+    [InlineData(LxChartCurve.Linear, "L", "C")]
+    [InlineData(LxChartCurve.Monotone, "C", "L")]
+    public void Curve_shapes_the_line(LxChartCurve curve, string present, string absent)
     {
         var cut = Chart(p => p.Add(c => c.Curve, curve));
 
@@ -321,7 +321,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Step_curve_makes_right_angles()
     {
-        var path = ChartLayout.CurvePath([(0, 10), (10, 20), (20, 5)], BxChartCurve.Step);
+        var path = ChartLayout.CurvePath([(0, 10), (10, 20), (20, 5)], LxChartCurve.Step);
 
         Assert.Equal("M0 10 L5 10 L5 20 L10 20 L15 20 L15 5 L20 5", path);
     }
@@ -329,7 +329,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Monotone_curve_does_not_overshoot_the_values()
     {
-        var path = ChartLayout.CurvePath([(0, 0), (10, 0), (20, 10), (30, 10)], BxChartCurve.Monotone);
+        var path = ChartLayout.CurvePath([(0, 0), (10, 0), (20, 10), (30, 10)], LxChartCurve.Monotone);
 
         // Control points of the flat segments stay on the flat level.
         var numbers = path.Replace("M", "").Replace("C", "").Split([' '], StringSplitOptions.RemoveEmptyEntries).Select(double.Parse).ToArray();
@@ -339,7 +339,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Area_chart_closes_each_shape_down_to_the_baseline()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Area));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Area));
 
         var areas = cut.FindAll("g[data-series='0'] > path[fill^='url(#']");
         Assert.Single(areas);
@@ -351,7 +351,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Stacked_areas_sit_on_each_other()
     {
-        var layout = ChartLayout.Build(BxChartType.Area, false, true, BxChartCurve.Linear, ["a", "b"],
+        var layout = ChartLayout.Build(LxChartType.Area, false, true, LxChartCurve.Linear, ["a", "b"],
             [(IReadOnlyList<double?>)new double?[] { 10, 20 }, new double?[] { 5, 5 }], 640, 300, true, true, false, false, 24, v => v.ToString());
 
         // The second series starts where the first ends: its upper edge is higher than the first's.
@@ -362,7 +362,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Bar_chart_draws_a_bar_per_value_side_by_side()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Bar));
 
         var first = cut.FindAll("g[data-series='0'] rect");
         var second = cut.FindAll("g[data-series='1'] rect");
@@ -380,7 +380,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Stacked_bars_share_a_position_and_reach_the_total()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar).Add(c => c.Stacked, true));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Bar).Add(c => c.Stacked, true));
 
         var a = cut.FindAll("g[data-series='0'] rect")[0];
         var b = cut.FindAll("g[data-series='1'] rect")[0];
@@ -395,7 +395,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Horizontal_bars_put_the_index_on_the_y_axis_and_grow_to_the_right()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar).Add(c => c.Horizontal, true));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Bar).Add(c => c.Horizontal, true));
 
         var bars = cut.FindAll("g[data-series='0'] rect");
         double W(AngleSharp.Dom.IElement r) => double.Parse(r.GetAttribute("width")!, CultureInfo.InvariantCulture);
@@ -412,7 +412,7 @@ public class ChartTests : BluxTestContext
     public void Negative_values_reach_below_a_zero_line()
     {
         Sale[] swing = [new("a", -20, null), new("b", 40, null)];
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Bar), swing, [new("d", s => s.Desktop)]);
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Bar), swing, [new("d", s => s.Desktop)]);
 
         Assert.Contains("-20", Texts(cut, "svg > text"));
         Assert.Contains(cut.FindAll("svg > line"), l => l.GetAttribute("class")!.Contains("border-accented") && l.GetAttribute("y1") == l.GetAttribute("y2"));
@@ -425,7 +425,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Donut_has_a_slice_per_row_sized_by_the_first_category_and_a_legend_with_values()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Donut));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Donut));
 
         var slices = cut.FindAll("path[data-hit]");
         Assert.Equal(6, slices.Count);
@@ -441,12 +441,12 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Donut_slices_add_up_to_a_full_turn_and_a_single_slice_is_a_whole_ring()
     {
-        var layout = ChartLayout.Build(BxChartType.Donut, false, false, BxChartCurve.Linear, ["a", "b"],
+        var layout = ChartLayout.Build(LxChartType.Donut, false, false, LxChartCurve.Linear, ["a", "b"],
             [(IReadOnlyList<double?>)new double?[] { 1, 3 }], 200, 200, true, true, false, false, 24, v => v.ToString());
         Assert.Equal([0.25, 0.75], layout.Slices.Select(s => s.Fraction));
         Assert.Equal(70, layout.InnerRadius);
 
-        var whole = ChartLayout.Build(BxChartType.Donut, false, false, BxChartCurve.Linear, ["a"],
+        var whole = ChartLayout.Build(LxChartType.Donut, false, false, LxChartCurve.Linear, ["a"],
             [(IReadOnlyList<double?>)new double?[] { 5 }], 200, 200, true, true, false, false, 24, v => v.ToString());
         Assert.Equal(2, whole.Slices[0].Path.Split('M', StringSplitOptions.RemoveEmptyEntries).Length);
     }
@@ -455,7 +455,7 @@ public class ChartTests : BluxTestContext
     public void Donut_center_content_is_rendered_over_the_hole()
     {
         var cut = Chart(p => p
-            .Add(c => c.Type, BxChartType.Donut)
+            .Add(c => c.Type, LxChartType.Donut)
             .Add(c => c.Center, b => b.AddMarkupContent(0, "<strong data-testid=total>1,224</strong>")));
 
         Assert.Equal("1,224", cut.Find("[data-testid=total]").TextContent);
@@ -468,7 +468,7 @@ public class ChartTests : BluxTestContext
     public void Legend_shows_with_several_series_and_not_with_one_unless_asked()
     {
         Assert.NotNull(Chart().Find("ul[aria-label=Legend]"));
-        BxChartCategory<Sale>[] one = [new("d", s => s.Desktop) { Label = "Desktop" }];
+        LxChartCategory<Sale>[] one = [new("d", s => s.Desktop) { Label = "Desktop" }];
         Assert.Empty(Chart(null, null, one).FindAll("ul"));
         Assert.Single(Chart(p => p.Add(c => c.Legend, true), null, one).FindAll("ul"));
         Assert.Empty(Chart(p => p.Add(c => c.Legend, false)).FindAll("ul"));
@@ -524,7 +524,7 @@ public class ChartTests : BluxTestContext
     [Fact]
     public void Donut_tip_gives_the_value_and_the_share()
     {
-        var cut = Chart(p => p.Add(c => c.Type, BxChartType.Donut));
+        var cut = Chart(p => p.Add(c => c.Type, LxChartType.Donut));
 
         var tip = cut.Find("[data-tip='0']");
         Assert.StartsWith("January: 186 (", tip.GetAttribute("data-text"));
@@ -546,13 +546,13 @@ public class ChartTests : BluxTestContext
     public void Static_rendering_gives_the_same_markup()
     {
         using var ctx = new StaticContext();
-        var cut = ctx.Render<BxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, s => s.Month).Add(c => c.Categories, Both));
+        var cut = ctx.Render<LxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, s => s.Month).Add(c => c.Categories, Both));
 
         Assert.Equal(6, cut.FindAll("g[data-hit]").Count);
-        Assert.NotNull(cut.Find("bx-chart"));
+        Assert.NotNull(cut.Find("lx-chart"));
     }
 
-    private sealed class StaticContext() : BluxTestContext(interactive: false);
+    private sealed class StaticContext() : LuxTestContext(interactive: false);
 
     // ---- Theming
 
@@ -561,7 +561,7 @@ public class ChartTests : BluxTestContext
     {
         var cut = Chart(p => p.Add(c => c.Class, "my-chart").Add(c => c.Ui, new ChartUi { Legend = "justify-start" }));
 
-        Assert.Contains("my-chart", cut.Find("bx-chart").ClassList);
+        Assert.Contains("my-chart", cut.Find("lx-chart").ClassList);
         Assert.Contains("justify-start", cut.Find("ul").ClassList);
         Assert.DoesNotContain("justify-center", cut.Find("ul").ClassList);
     }
@@ -603,7 +603,7 @@ public class ChartTests : BluxTestContext
         try
         {
             var cut = Chart(
-                p => p.Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Table, BxChartTable.Visible),
+                p => p.Add(c => c.Culture, new CultureInfo("de-DE")).Add(c => c.Table, LxChartTable.Visible),
                 data: [new("a", 1234.5, 0.5)]);
 
             Assert.Contains("1.234,5", cut.Find("tbody td").TextContent);
@@ -622,7 +622,7 @@ public class ChartTests : BluxTestContext
     {
         var calls = 0;
         Func<Sale, object?> index = s => { calls++; return s.Month; };
-        Action<ComponentParameterCollectionBuilder<BxChart<Sale>>> parameters = p =>
+        Action<ComponentParameterCollectionBuilder<LxChart<Sale>>> parameters = p =>
             p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both);
         var cut = Render(parameters);
         var first = calls;
@@ -644,9 +644,9 @@ public class ChartTests : BluxTestContext
     public void Chart_shows_new_values_when_the_data_list_changed_in_place_with_the_same_count()
     {
         var data = new List<Sale> { new("a", 1, null), new("b", 2, null), new("c", 3, null) };
-        var categories = new[] { new BxChartCategory<Sale>("desktop", s => s.Desktop) };
+        var categories = new[] { new LxChartCategory<Sale>("desktop", s => s.Desktop) };
         Func<Sale, object?> index = s => s.Month;
-        Action<ComponentParameterCollectionBuilder<BxChart<Sale>>> parameters = p =>
+        Action<ComponentParameterCollectionBuilder<LxChart<Sale>>> parameters = p =>
             p.Add(c => c.Data, data).Add(c => c.Index, index).Add(c => c.Categories, categories);
         var cut = Render(parameters);
         Assert.Contains("a: desktop 1", cut.Find("[data-tip='0']").GetAttribute("data-text"));
@@ -667,7 +667,7 @@ public class ChartTests : BluxTestContext
     {
         var calls = 0;
         Func<Sale, object?> index = s => { calls++; return s.Month; };
-        var cut = Render<BxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both));
+        var cut = Render<LxChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both));
         var first = calls;
 
         cut.Render(p => p.Add(c => c.Data, Sales.Take(3).ToArray()).Add(c => c.Index, index).Add(c => c.Categories, Both));
@@ -729,10 +729,10 @@ public class ChartTests : BluxTestContext
     }
 
     [Theory]
-    [InlineData(BxChartType.Line)]
-    [InlineData(BxChartType.Bar)]
-    [InlineData(BxChartType.Area)]
-    public void Subnormal_domains_render_finite_coordinates(BxChartType type)
+    [InlineData(LxChartType.Line)]
+    [InlineData(LxChartType.Bar)]
+    [InlineData(LxChartType.Area)]
+    public void Subnormal_domains_render_finite_coordinates(LxChartType type)
     {
         foreach (var (a, b) in new[] { (0.0, double.Epsilon), (-double.Epsilon, double.Epsilon) })
         {

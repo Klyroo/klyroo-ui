@@ -3,7 +3,7 @@
  * (UsePathBase("/x") with <base href="/x/">) shares its origin with other apps. Cookies and localStorage are shared with them
  * too, so what an app remembers is scoped to its base path: a cookie by its path and its name (a server keeps the last of two
  * cookies of the same name), a storage key by a prefix. An app at the root keeps the plain names and keys.
- * The C# side of the same rules is BxPathScope.
+ * The C# side of the same rules is LxPathScope.
  */
 
 /**
@@ -61,16 +61,16 @@ export function slugFor(basePath) {
 }
 
 /**
- * The first part of the name of a sidebar cookie: "blux-sidebar-" at the root, so root apps keep their names, and
- * "blux-sidebar.{slug}~~" below a path base ("~~" never occurs in a slug, so no id can make two apps share a name).
+ * The first part of the name of a sidebar cookie: "lux-sidebar-" at the root, so root apps keep their names, and
+ * "lux-sidebar.{slug}~~" below a path base ("~~" never occurs in a slug, so no id can make two apps share a name).
  * @param {string} basePath
  */
 export function sidebarCookiePrefix(basePath) {
-  return basePath ? `blux-sidebar.${slugFor(basePath)}~~` : 'blux-sidebar-';
+  return basePath ? `lux-sidebar.${slugFor(basePath)}~~` : 'lux-sidebar-';
 }
 
 /**
- * The name of a cookie kept under `name`: the name at the root, "{name}.{slug}~~" below a path base (the rule of BxPathScope.CookieName).
+ * The name of a cookie kept under `name`: the name at the root, "{name}.{slug}~~" below a path base (the rule of LxPathScope.CookieName).
  * @param {string} basePath
  * @param {string} name
  */

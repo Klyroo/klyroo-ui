@@ -7,21 +7,21 @@ import { createDebouncer } from './debounce.js';
  * the active suggestion is announced through aria-activedescendant. Free text is the value, unless data-strict is
  * set: then only a suggestion is a value, and the text snaps back to it when the field loses focus.
  *
- * <bx-input-menu value="…" data-strict>
+ * <lx-input-menu value="…" data-strict>
  *   <input type="hidden" data-slot="value" name="…" value="…">
  *   <input role="combobox" data-slot="input" aria-autocomplete="list" aria-expanded="false">
  *   <div popover="manual" data-slot="content"><div role="listbox"><div role="option" data-value data-label>…</div></div><p data-slot="empty" hidden>…</p></div>
- * </bx-input-menu>
+ * </lx-input-menu>
  *
  * With data-remote (an interactive .NET component that loads the suggestions from a source) the browser stops filtering: the list is
- * whatever .NET renders. The text is reported as bx-search (value = the text) when the list opens (at once) and after data-debounce
+ * whatever .NET renders. The text is reported as lx-search (value = the text) when the list opens (at once) and after data-debounce
  * milliseconds of quiet while typing. .NET renders data-generation on the listbox, which changes each time the suggestions are replaced
  * (not when a page is added): the list goes back to the top and, for a strict field, the first one is highlighted. The label of a strict
  * value is kept here (a search can drop its option), seeded by data-known (value, label). data-inert-list (a remote field that is not
  * interactive yet) never opens the list: there is nothing to list.
  */
-export class BxInputMenuElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value', 'data-known', 'data-epoch'];
+export class LxInputMenuElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value', 'data-known', 'data-epoch'];
 
   #observer = null;
   #stopFloating = null;
@@ -72,7 +72,7 @@ export class BxInputMenuElement extends HTMLElement {
       this.#seedLabels();
       return;
     }
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyRendered(true));
     else this.#applyRendered();
   }
 
@@ -141,7 +141,7 @@ export class BxInputMenuElement extends HTMLElement {
   #reportSearch(term) {
     this.#reported = term.trim();
     this.#awaiting = true;
-    this.dispatchEvent(new CustomEvent('bx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
+    this.dispatchEvent(new CustomEvent('lx-search', { bubbles: true, detail: { value: term, sequence: ++this.#searchSequence } }));
   }
 
   #wire() {
@@ -266,7 +266,7 @@ export class BxInputMenuElement extends HTMLElement {
     this.#paintSelected();
     if (report) {
       this.dispatchEvent(new Event('change', { bubbles: true }));
-      this.#reporter.report('bx-change', { value });
+      this.#reporter.report('lx-change', { value });
     }
   }
 
@@ -302,7 +302,7 @@ export class BxInputMenuElement extends HTMLElement {
     this.#value = this.#input.value;
     this.#writeHidden();
     this.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value: this.#value });
+    this.#reporter.report('lx-change', { value: this.#value });
   };
 
   #onKeyDown = (event) => {
@@ -382,4 +382,4 @@ export class BxInputMenuElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-input-menu')) customElements.define('bx-input-menu', BxInputMenuElement);
+if (!customElements.get('lx-input-menu')) customElements.define('lx-input-menu', LxInputMenuElement);

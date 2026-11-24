@@ -1,10 +1,10 @@
 namespace Lux.UI;
 
-public static partial class BxLocales
+public static partial class LxLocales
 {
     /// <summary>Nederlands (nl).</summary>
-    public static BxLocale Nl { get; } = new("nl", "Nederlands", BxDirection.Ltr,
-        new BxMessages
+    public static LxLocale Nl { get; } = new("nl", "Nederlands", LxDirection.Ltr,
+        new LxMessages
         {
             ChartLine = "Lijndiagram",
             ChartArea = "Vlakdiagram",

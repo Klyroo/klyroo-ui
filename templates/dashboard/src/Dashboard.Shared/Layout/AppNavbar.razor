@@ -3,25 +3,25 @@
 @inject NotificationStore Notifications
 
 @* The top bar of every page: the sidebar toggle (below lg), the title, the actions of the page, the color mode and the notifications. *@
-<BxDashboardNavbar Title="@Title">
+<LxDashboardNavbar Title="@Title">
     <Leading>
-        <BxDashboardSidebarCollapse />
+        <LxDashboardSidebarCollapse />
     </Leading>
     <Right>
         @Actions
-        <BxColorModeButton />
-        <BxChip Show="@(Notifications.UnreadCount > 0)" Label="@($"{Notifications.UnreadCount} unread notifications")" Size="BxSize.Sm" Inset>
-            <BxButton Square Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" aria-label="Notifications" OnClick="App.OpenNotifications" data-testid="notifications-button">
-                <LeadingIcon>@BxIcons.Named("bell")</LeadingIcon>
-            </BxButton>
-        </BxChip>
-        <BxDropdownMenu Items="_create" Placement="bottom-end">
-            <BxButton Square Variant="ButtonVariant.Solid" aria-label="Create" data-testid="create-button">
-                <LeadingIcon>@BxIcons.Named("plus")</LeadingIcon>
-            </BxButton>
-        </BxDropdownMenu>
+        <LxColorModeButton />
+        <LxChip Show="@(Notifications.UnreadCount > 0)" Label="@($"{Notifications.UnreadCount} unread notifications")" Size="LxSize.Sm" Inset>
+            <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Notifications" OnClick="App.OpenNotifications" data-testid="notifications-button">
+                <LeadingIcon>@LxIcons.Named("bell")</LeadingIcon>
+            </LxButton>
+        </LxChip>
+        <LxDropdownMenu Items="_create" Placement="bottom-end">
+            <LxButton Square Variant="ButtonVariant.Solid" aria-label="Create" data-testid="create-button">
+                <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
+            </LxButton>
+        </LxDropdownMenu>
     </Right>
-</BxDashboardNavbar>
+</LxDashboardNavbar>
 
 @code {
     /// <summary>The title of the page.</summary>
@@ -30,11 +30,11 @@
     /// <summary>Extra actions of the page, before the color mode button.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
 
-    private static readonly BxMenuItem[] _create =
+    private static readonly LxMenuItem[] _create =
     [
-        new() { Label = "New message", Href = "inbox", Icon = BxIcons.Named("mail", "size-4") },
-        new() { Label = "New customer", Href = "customers?new=true", Icon = BxIcons.Named("user", "size-4") },
-        new() { Label = "Invite people", Href = "settings/members", Icon = BxIcons.Named("lucide:user-plus", "size-4") },
+        new() { Label = "New message", Href = "inbox", Icon = LxIcons.Named("mail", "size-4") },
+        new() { Label = "New customer", Href = "customers?new=true", Icon = LxIcons.Named("user", "size-4") },
+        new() { Label = "Invite people", Href = "settings/members", Icon = LxIcons.Named("lucide:user-plus", "size-4") },
     ];
 
     protected override void OnInitialized() => Notifications.Changed += OnChanged;

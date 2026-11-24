@@ -35,8 +35,8 @@ namespace Lux.UI.Build
     /// <list type="number">
     /// <item><b>Icon-typed attributes and properties</b> (strict): <c>Icon="..."</c>, <c>LeadingIcon="..."</c>, <c>Icon = "..."</c> in an object initializer
     /// and every other name that ends in <c>Icon</c>, when the value is a plain string literal that reads as an icon name.</item>
-    /// <item><c>Name="..."</c> on <c>&lt;BxIcon&gt;</c>.</item>
-    /// <item><c>BxIcons.Named("...")</c>.</item>
+    /// <item><c>Name="..."</c> on <c>&lt;LxIcon&gt;</c>.</item>
+    /// <item><c>LxIcons.Named("...")</c>.</item>
     /// <item><c>Icons.Close = "..."</c> (and every other key of <c>LuxOptions.Icons</c>), as in <c>o.Icons.Close = "ph:x"</c>.</item>
     /// <item><b>A standalone string</b> that is exactly <c>i-prefix-name</c> with the prefix of a known Iconify collection or
     /// of a <c>LuxIconCollection</c> (loose): bundled when found, ignored when not. The <c>prefix:name</c> form is never taken on its own:
@@ -54,9 +54,9 @@ namespace Lux.UI.Build
 
         // Foo Icon="x" / LeadingIcon="x" / Icon = "x" (not ==, not data-icon).
         private static readonly Regex IconProperty = new Regex(@"(?<![\w-])[A-Z]?\w*Icon\s*=(?!=)\s*" + Literal, RegexOptions.Compiled);
-        // <BxIcon Name="x" ...>, also across lines.
-        private static readonly Regex IconName = new Regex(@"<(?:Bx)?Icon\b[^>]*?\sName\s*=\s*" + Literal, RegexOptions.Compiled | RegexOptions.Singleline);
-        private static readonly Regex Named = new Regex(@"\bBxIcons\s*\.\s*Named\s*\(\s*(?:name\s*:\s*)?" + Literal, RegexOptions.Compiled);
+        // <LxIcon Name="x" ...>, also across lines.
+        private static readonly Regex IconName = new Regex(@"<(?:Lx)?Icon\b[^>]*?\sName\s*=\s*" + Literal, RegexOptions.Compiled | RegexOptions.Singleline);
+        private static readonly Regex Named = new Regex(@"\bLxIcons\s*\.\s*Named\s*\(\s*(?:name\s*:\s*)?" + Literal, RegexOptions.Compiled);
         private static readonly Regex AppIcon = new Regex(@"\bIcons\s*\.\s*[A-Z]\w*\s*=(?!=)\s*" + Literal, RegexOptions.Compiled);
         private static readonly Regex Registered = new Regex(@"\bIcons\s*\.\s*Register(?:Svg)?\s*\(\s*" + Literal, RegexOptions.Compiled);
         private static readonly Regex Standalone = new Regex("\"(?<v>i-[a-z0-9]+(?:-[a-z0-9]+)+)\"", RegexOptions.Compiled);

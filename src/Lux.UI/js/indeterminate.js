@@ -1,5 +1,5 @@
 /**
- * `indeterminate` is a DOM property of a checkbox, not an attribute, so Blazor cannot render it. BxCheckbox renders
+ * `indeterminate` is a DOM property of a checkbox, not an attribute, so Blazor cannot render it. LxCheckbox renders
  * data-indeterminate (its value changes on every render while the parameter is true) and this file sets the property:
  * when the page loads, when an element is inserted or the attribute changes (any render mode), and after an enhanced
  * navigation (syncIndeterminate, which also covers an element the merge kept but reset). A click clears the property

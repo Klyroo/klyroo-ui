@@ -1,4 +1,4 @@
-namespace Blux.Templates.Content;
+namespace Lux.Templates.Content;
 
 /// <summary>
 /// The script behind the "Copy" button of a code block. It is a few lines of plain JavaScript that listen for clicks on the whole page, so it works

@@ -1,7 +1,7 @@
 # Lux.UI.Images
 
-Image providers for the `BxImage` component of [Lux.UI](https://www.nuget.org/packages/Lux.UI): they turn a source
-path into the URL of a resized, converted image on an image CDN, so `BxImage`, `BxAvatar`, `BxBlogPost` and the other
+Image providers for the `LxImage` component of [Lux.UI](https://www.nuget.org/packages/Lux.UI): they turn a source
+path into the URL of a resized, converted image on an image CDN, so `LxImage`, `LxAvatar`, `LxBlogPost` and the other
 image components render a responsive `srcset`.
 
 ```csharp

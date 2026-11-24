@@ -1,21 +1,21 @@
 import { Reporter } from './shared.js';
 
 /**
- * <bx-collapsible open>
- *   <button data-bx-collapsible-trigger aria-expanded="false" aria-controls="…">…</button>
- *   <div data-bx-collapsible-content hidden="until-found">…</div>
- * </bx-collapsible>
+ * <lx-collapsible open>
+ *   <button data-lx-collapsible-trigger aria-expanded="false" aria-controls="…">…</button>
+ *   <div data-lx-collapsible-content hidden="until-found">…</div>
+ * </lx-collapsible>
  *
  * Disclosure pattern. hidden="until-found" keeps a closed region searchable with find-in-page, which opens it.
- * Changes are reported with "bx-toggle".
+ * Changes are reported with "lx-toggle".
  *
  * A static page has no .NET to hold the open state: the state lives here, and an enhanced navigation (a GET form, a link) that merges the
  * server markup over this element, which resets aria-expanded, data-state and hidden to what was rendered, gets it back in refresh().
  * What the server renders (the open attribute) wins only when it changed since the last render: a section the user opened or closed by hand
  * stays as it is while the server still says what it said before.
  */
-export class BxCollapsibleElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'open'];
+export class LxCollapsibleElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'open'];
 
   #reporter = new Reporter(this);
   #open = false;
@@ -32,8 +32,8 @@ export class BxCollapsibleElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#apply());
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#apply());
     else this.#apply();
   }
 
@@ -48,11 +48,11 @@ export class BxCollapsibleElement extends HTMLElement {
 
   // Only direct children: a collapsible nested in the content has its own trigger and region.
   get #trigger() {
-    return this.querySelector(':scope > [data-bx-collapsible-trigger]');
+    return this.querySelector(':scope > [data-lx-collapsible-trigger]');
   }
 
   get #content() {
-    return this.querySelector(':scope > [data-bx-collapsible-content]');
+    return this.querySelector(':scope > [data-lx-collapsible-content]');
   }
 
   #apply() {
@@ -78,11 +78,11 @@ export class BxCollapsibleElement extends HTMLElement {
 
   #toggle(open) {
     this.#set(open);
-    this.#reporter.report('bx-toggle', { open });
+    this.#reporter.report('lx-toggle', { open });
   }
 
   #onClick = (event) => {
-    const trigger = event.target.closest?.('[data-bx-collapsible-trigger]');
+    const trigger = event.target.closest?.('[data-lx-collapsible-trigger]');
     if (!trigger || trigger.disabled || trigger !== this.#trigger) return;
     this.#toggle(!this.#isOpen());
   };
@@ -92,4 +92,4 @@ export class BxCollapsibleElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-collapsible')) customElements.define('bx-collapsible', BxCollapsibleElement);
+if (!customElements.get('lx-collapsible')) customElements.define('lx-collapsible', LxCollapsibleElement);

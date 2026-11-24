@@ -2,13 +2,13 @@ using Lux.UI.Theming;
 
 namespace Lux.UI;
 
-/// <summary>A line of the feature list of a <see cref="BxPricingPlan"/>. A string converts to one.</summary>
-public sealed record BxPricingFeature(string Title)
+/// <summary>A line of the feature list of a <see cref="LxPricingPlan"/>. A string converts to one.</summary>
+public sealed record LxPricingFeature(string Title)
 {
-    /// <summary>Name of a built-in icon (see <see cref="BxIcon"/>) shown instead of the check mark.</summary>
+    /// <summary>Name of a built-in icon (see <see cref="LxIcon"/>) shown instead of the check mark.</summary>
     public string? Icon { get; init; }
 
-    public static implicit operator BxPricingFeature(string title) => new(title);
+    public static implicit operator LxPricingFeature(string title) => new(title);
 }
 
 public sealed record PricingPlanUi : ISlotOverrides

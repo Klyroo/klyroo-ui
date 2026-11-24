@@ -1,7 +1,7 @@
 import { Reporter, observeChildren } from './shared.js';
 import { appStorageKey } from './base-path.js';
 
-const PREFIX = 'blux:dashboard:';
+const PREFIX = 'lux:dashboard:';
 
 function read(key) {
   try {
@@ -26,21 +26,21 @@ function parse(text, count) {
 }
 
 /**
- * <bx-dashboard-group data-bx-dashboard-id="app" sizes="30,70">
- *   <span hidden data-bx-dashboard-sink @onbxchange></span>
- *   <bx-sidebar>…</bx-sidebar>
- *   <div data-bx-dash-panel data-size="30" data-min="20" data-max="60">… <div role="separator" data-bx-dash-handle></div></div>
- *   <div data-bx-dash-panel>…</div>
- * </bx-dashboard-group>
+ * <lx-dashboard-group data-lx-dashboard-id="app" sizes="30,70">
+ *   <span hidden data-lx-dashboard-sink @onbxchange></span>
+ *   <lx-sidebar>…</lx-sidebar>
+ *   <div data-lx-dash-panel data-size="30" data-min="20" data-max="60">… <div role="separator" data-lx-dash-handle></div></div>
+ *   <div data-lx-dash-panel>…</div>
+ * </lx-dashboard-group>
  *
- * Owns the sizes of the panels, as flex weights in percent (the same model as <bx-splitter>): a resize handle moves the
+ * Owns the sizes of the panels, as flex weights in percent (the same model as <lx-splitter>): a resize handle moves the
  * boundary between the panel it sits in (or follows) and the next one. Sizes are remembered in localStorage under the
- * id, except that bound sizes (data-bx-seq) are never read from storage: .NET owns them. The collapsed state and the
- * width of the sidebar belong to <bx-sidebar>, which is also told when controls are added around it.
- * Reports "bx-change" (value: sizes joined by commas) when a resize gesture ends, on the sink element (see BxDashboardGroup).
+ * id, except that bound sizes (data-lx-seq) are never read from storage: .NET owns them. The collapsed state and the
+ * width of the sidebar belong to <lx-sidebar>, which is also told when controls are added around it.
+ * Reports "lx-change" (value: sizes joined by commas) when a resize gesture ends, on the sink element (see LxDashboardGroup).
  */
-export class BxDashboardGroupElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'sizes', 'data-bx-dashboard-id'];
+export class LxDashboardGroupElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'sizes', 'data-lx-dashboard-id'];
 
   #reporter = new Reporter(this);
   #observer = null;
@@ -68,9 +68,9 @@ export class BxDashboardGroupElement extends HTMLElement {
 
   attributeChangedCallback(name) {
     if (!this.#ready) return;
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') queueMicrotask(() => this.#applyRendered(true));
-    else if (name === 'data-bx-dashboard-id') {
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') queueMicrotask(() => this.#applyRendered(true));
+    else if (name === 'data-lx-dashboard-id') {
       // An enhanced navigation can turn this element into another dashboard: its panels are merged after the attribute.
       this.#sizesKey = undefined;
       queueMicrotask(() => this.#reinit());
@@ -96,30 +96,30 @@ export class BxDashboardGroupElement extends HTMLElement {
   }
 
   get #key() {
-    const id = this.getAttribute('data-bx-dashboard-id');
+    const id = this.getAttribute('data-lx-dashboard-id');
     return id ? `${PREFIX}${id}:panels` : null;
   }
 
   #panels() {
-    return [...this.querySelectorAll('[data-bx-dash-panel]')].filter((p) => p.closest('bx-dashboard-group') === this);
+    return [...this.querySelectorAll('[data-lx-dash-panel]')].filter((p) => p.closest('lx-dashboard-group') === this);
   }
 
   #handles() {
-    return [...this.querySelectorAll('[data-bx-dash-handle]')].filter((h) => h.closest('bx-dashboard-group') === this);
+    return [...this.querySelectorAll('[data-lx-dash-handle]')].filter((h) => h.closest('lx-dashboard-group') === this);
   }
 
   /** The panel before a handle: the one it sits in, or the closest panel sibling before it. */
   #before(handle) {
-    const own = handle.parentElement?.closest('[data-bx-dash-panel]');
-    if (own && own.closest('bx-dashboard-group') === this) return own;
+    const own = handle.parentElement?.closest('[data-lx-dash-panel]');
+    if (own && own.closest('lx-dashboard-group') === this) return own;
     for (let el = handle.previousElementSibling; el; el = el.previousElementSibling) {
-      if (el.hasAttribute('data-bx-dash-panel')) return el;
+      if (el.hasAttribute('data-lx-dash-panel')) return el;
     }
     return null;
   }
 
   #syncSidebars() {
-    for (const sidebar of this.querySelectorAll('bx-sidebar')) sidebar.syncControls?.();
+    for (const sidebar of this.querySelectorAll('lx-sidebar')) sidebar.syncControls?.();
   }
 
   #sync() {
@@ -212,8 +212,8 @@ export class BxDashboardGroupElement extends HTMLElement {
   #commit() {
     const value = this.#sizes.map((s) => +s.toFixed(2)).join(',');
     if (!this.#reporter.bound && this.#key) write(this.#key, value);
-    // The .NET listener sits on a childless sink, so a bx-change of a component inside the group is never read as sizes.
-    this.#reporter.report('bx-change', { value }, this.querySelector(':scope > [data-bx-dashboard-sink]') ?? this);
+    // The .NET listener sits on a childless sink, so a lx-change of a component inside the group is never read as sizes.
+    this.#reporter.report('lx-change', { value }, this.querySelector(':scope > [data-lx-dashboard-sink]') ?? this);
   }
 
   get #rtl() {
@@ -221,8 +221,8 @@ export class BxDashboardGroupElement extends HTMLElement {
   }
 
   #onKeyDown = (event) => {
-    const handle = event.target instanceof Element ? event.target.closest('[data-bx-dash-handle]') : null;
-    if (!handle || event.altKey || event.ctrlKey || event.metaKey || handle.closest('bx-dashboard-group') !== this) return;
+    const handle = event.target instanceof Element ? event.target.closest('[data-lx-dash-handle]') : null;
+    if (!handle || event.altKey || event.ctrlKey || event.metaKey || handle.closest('lx-dashboard-group') !== this) return;
     const index = this.#panels().indexOf(this.#before(handle));
     if (index < 0 || index >= this.#sizes.length - 1) return;
     const step = Number(handle.dataset.step) || 5;
@@ -239,8 +239,8 @@ export class BxDashboardGroupElement extends HTMLElement {
   };
 
   #onPointerDown = (event) => {
-    const handle = event.target instanceof Element ? event.target.closest('[data-bx-dash-handle]') : null;
-    if (!handle || event.button !== 0 || handle.closest('bx-dashboard-group') !== this) return;
+    const handle = event.target instanceof Element ? event.target.closest('[data-lx-dash-handle]') : null;
+    if (!handle || event.button !== 0 || handle.closest('lx-dashboard-group') !== this) return;
     const panels = this.#panels();
     const index = panels.indexOf(this.#before(handle));
     if (index < 0 || index >= panels.length - 1) return;
@@ -277,14 +277,14 @@ export class BxDashboardGroupElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-dashboard-group')) customElements.define('bx-dashboard-group', BxDashboardGroupElement);
+if (!customElements.get('lx-dashboard-group')) customElements.define('lx-dashboard-group', LxDashboardGroupElement);
 
-// BxDashboardSearchButton opens the BxDashboardSearch of its dashboard (or the first one of the page) by clicking the
+// LxDashboardSearchButton opens the LxDashboardSearch of its dashboard (or the first one of the page) by clicking the
 // hidden trigger of its modal, so the modal returns focus to the button when it closes.
 document.addEventListener('click', (event) => {
-  const button = event.target instanceof Element ? event.target.closest('[data-bx-search-open]') : null;
+  const button = event.target instanceof Element ? event.target.closest('[data-lx-search-open]') : null;
   if (!button || button.disabled) return;
-  const selector = 'dialog[data-bx-dashboard-search]';
-  const dialog = button.closest('bx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
-  dialog?.closest('bx-modal')?.querySelector(':scope > [data-slot="trigger"] button')?.click();
+  const selector = 'dialog[data-lx-dashboard-search]';
+  const dialog = button.closest('lx-dashboard-group')?.querySelector(selector) ?? document.querySelector(selector);
+  dialog?.closest('lx-modal')?.querySelector(':scope > [data-slot="trigger"] button')?.click();
 });

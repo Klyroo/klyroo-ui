@@ -7,7 +7,7 @@
     <meta name="description" content="@SiteInfo.Description" />
 </HeadContent>
 
-<BxPageHero Headline="@SiteInfo.HeroHeadline"
+<LxPageHero Headline="@SiteInfo.HeroHeadline"
             Title="@SiteInfo.HeroTitle"
             Description="@SiteInfo.HeroDescription"
             Links="SiteInfo.HeroLinks"
@@ -16,40 +16,40 @@
         @* The same renderer as the pages: highlighted, with a copy button. *@
         <div data-testid="hero-snippet" class="mx-auto w-full max-w-[29rem]">@((MarkupString)_snippet)</div>
     </Media>
-</BxPageHero>
+</LxPageHero>
 
-<BxPageSection Headline="@SiteInfo.FeaturesHeadline"
+<LxPageSection Headline="@SiteInfo.FeaturesHeadline"
                Title="@SiteInfo.FeaturesTitle"
                Description="@SiteInfo.FeaturesDescription"
-               Orientation="BxOrientation.Vertical"
+               Orientation="LxOrientation.Vertical"
                Features="SiteInfo.Features" />
 
 @* One card per section of the documentation: the top level folders of the content folder, each with the pages it holds. *@
-<BxContainer Class="py-12 sm:py-16">
-    <h2 class="text-2xl font-semibold tracking-tight text-(--blux-text-highlighted)">Browse the documentation</h2>
+<LxContainer Class="py-12 sm:py-16">
+    <h2 class="text-2xl font-semibold tracking-tight text-(--lux-text-highlighted)">Browse the documentation</h2>
     <ul data-testid="sections" class="m-0 mt-8 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
         @foreach (var section in _sections)
         {
-            <li class="flex flex-col gap-3 rounded-[calc(var(--blux-radius)*2)] bg-(--blux-bg-elevated)/50 p-6 ring ring-(--blux-border)">
-                <h3 class="flex items-center gap-2 text-base font-semibold text-(--blux-text-highlighted)">
+            <li class="flex flex-col gap-3 rounded-[calc(var(--lux-radius)*2)] bg-(--lux-bg-elevated)/50 p-6 ring ring-(--lux-border)">
+                <h3 class="flex items-center gap-2 text-base font-semibold text-(--lux-text-highlighted)">
                     @if (section.Icon is not null)
                     {
-                        <BxIcon Name="@section.Icon" Class="size-5 text-(--blux-text-muted)" />
+                        <LxIcon Name="@section.Icon" Class="size-5 text-(--lux-text-muted)" />
                     }
                     @section.Title
                 </h3>
                 <ul class="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
                     @foreach (var link in section.Children ?? [])
                     {
-                        <li><a href="@link.Href" class="rounded-sm text-(--blux-primary-text) underline underline-offset-4">@link.Title</a></li>
+                        <li><a href="@link.Href" class="rounded-sm text-(--lux-primary-text) underline underline-offset-4">@link.Title</a></li>
                     }
                 </ul>
             </li>
         }
     </ul>
-</BxContainer>
+</LxContainer>
 
-<BxPageCta Variant="BxVariant.Outline"
+<LxPageCta Variant="LxVariant.Outline"
            Title="@SiteInfo.CtaTitle"
            Description="@SiteInfo.CtaDescription"
            Links="SiteInfo.CtaLinks"
@@ -65,7 +65,7 @@
     // Rendered once: it never changes with the content.
     private static readonly string _snippet = new MarkdownRenderer().Render(SiteInfo.HeroSnippet, "", "./").Html;
 
-    private IReadOnlyList<BxContentNavigationItem> _sections = [];
+    private IReadOnlyList<LxContentNavigationItem> _sections = [];
 
     protected override void OnInitialized() =>
         _sections = [.. Store.Site.Navigation.Where(item => item.Children is { Count: > 0 })];

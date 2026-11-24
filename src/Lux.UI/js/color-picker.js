@@ -42,19 +42,19 @@ function normalize(text) {
  * Color picker: a saturation/brightness area, a hue slider and a hex field. The area holds two native range inputs
  * (saturation, brightness) hidden visually, so the keyboard and assistive technology get real sliders; pointer
  * input on the area drives the same inputs. The value is "#rrggbb", carried by the hidden input and reported with
- * "bx-change".
+ * "lx-change".
  *
- * <bx-color-picker value="#ffd23f">
+ * <lx-color-picker value="#ffd23f">
  *   <input type="hidden" data-slot="value" name="…" value="#ffd23f">
  *   <div data-slot="area"><input type="range" data-slot="saturation"> <input type="range" data-slot="brightness"> <span data-slot="thumb"></span></div>
  *   <input type="range" data-slot="hue"> <input type="text" data-slot="hex">
- * </bx-color-picker>
+ * </lx-color-picker>
  *
  * Positions, ranges and the hex text are set here (they derive from the value and change while dragging), so Blazor
- * renders none of them. The host gets the custom properties --bx-hue and --bx-swatch for the stylesheet.
+ * renders none of them. The host gets the custom properties --lx-hue and --lx-swatch for the stylesheet.
  */
-export class BxColorPickerElement extends HTMLElement {
-  static observedAttributes = ['data-bx-seq', 'value'];
+export class LxColorPickerElement extends HTMLElement {
+  static observedAttributes = ['data-lx-seq', 'value'];
 
   #h = 0;
   #s = 0;
@@ -91,8 +91,8 @@ export class BxColorPickerElement extends HTMLElement {
   }
 
   attributeChangedCallback(name) {
-    // data-bx-seq is written before the other attributes of the same render: re-apply once they are all in place.
-    if (name === 'data-bx-seq') this.#forced = true;
+    // data-lx-seq is written before the other attributes of the same render: re-apply once they are all in place.
+    if (name === 'data-lx-seq') this.#forced = true;
     if (this.#scheduled) return;
     this.#scheduled = true;
     queueMicrotask(() => {
@@ -160,8 +160,8 @@ export class BxColorPickerElement extends HTMLElement {
   /** Writes the state into every part. `source` is the part the user is editing, left alone so typing is not disturbed. */
   #paint(source) {
     const hex = this.#hex();
-    this.style.setProperty('--bx-hue', String(this.#h));
-    this.style.setProperty('--bx-swatch', this.#has ? hex : 'transparent');
+    this.style.setProperty('--lx-hue', String(this.#h));
+    this.style.setProperty('--lx-swatch', this.#has ? hex : 'transparent');
     const ranges = { saturation: this.#s, brightness: this.#v, hue: this.#h };
     for (const [name, value] of Object.entries(ranges)) {
       const range = this.#slot(name);
@@ -204,7 +204,7 @@ export class BxColorPickerElement extends HTMLElement {
     if (value === this.#committed) return;
     this.#committed = value;
     this.querySelector(':scope > input[data-slot="value"]')?.dispatchEvent(new Event('change', { bubbles: true }));
-    this.#reporter.report('bx-change', { value });
+    this.#reporter.report('lx-change', { value });
   }
 
   #onInput = (event) => {
@@ -263,4 +263,4 @@ export class BxColorPickerElement extends HTMLElement {
   };
 }
 
-if (!customElements.get('bx-color-picker')) customElements.define('bx-color-picker', BxColorPickerElement);
+if (!customElements.get('lx-color-picker')) customElements.define('lx-color-picker', LxColorPickerElement);
