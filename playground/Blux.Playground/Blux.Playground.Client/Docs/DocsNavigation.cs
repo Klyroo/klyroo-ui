@@ -49,8 +49,8 @@ public static class DocsNavigation
             {
                 SearchPagesByPrefix[prefix] = pages =
                 [
-                    new BxContentSearchPage("LuxStack Ecosystem Hub", "/stack") { Group = "LuxStack", Icon = "", Keywords = "luxstack hub tanstack suite maui blazor" },
-                    .. LuxStackProducts.All.Select(p => new BxContentSearchPage(p.Name, $"/stack/{p.Slug}") { Group = "LuxStack", Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
+                    new BxContentSearchPage("LuxStack Ecosystem Hub", "/") { Group = "LuxStack", Icon = "", Keywords = "luxstack hub tanstack suite maui blazor" },
+                    .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Overview", $"/{p.Slug}") { Group = "LuxStack", Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
                     .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = g.Section, Icon = "" }),
                     new BxContentSearchPage("Templates", "templates") { Group = "Gallery", Icon = "", Keywords = "starter dashboard landing live demo" },
                     .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")

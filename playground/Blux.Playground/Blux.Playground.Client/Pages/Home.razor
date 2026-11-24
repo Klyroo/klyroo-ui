@@ -1,246 +1,223 @@
 @page "/"
+@page "/stack"
+@using Blux.Playground.Client.Docs
 
-<PageTitle>blux/ui · Blazor components for the web and native apps</PageTitle>
+<PageTitle>LuxStack · High-quality open-source libraries for .NET, Blazor &amp; MAUI</PageTitle>
 
-@* Hero *@
+@* TanStack-inspired Umbrella Hero *@
 <section class="relative isolate overflow-hidden border-b border-(--blux-border)">
     <div class="pg-dots absolute inset-0 -z-10 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" aria-hidden="true"></div>
     <div class="pg-glow absolute inset-0 -z-10" aria-hidden="true"></div>
     <Rain />
 
-    <div class="mx-auto grid max-w-(--breakpoint-2xl) gap-10 px-4 pt-20 pb-16 sm:px-6 sm:pt-28 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)] lg:items-end lg:px-8 lg:pb-20">
+    <div class="mx-auto grid max-w-(--breakpoint-2xl) gap-10 px-4 pt-16 pb-16 sm:px-6 sm:pt-24 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] lg:items-end lg:px-8 lg:pb-20">
         <div>
-            <p class="pg-eyebrow-mono">blux/ui <span aria-hidden="true">·</span> <span class="text-(--blux-primary-text)">open source</span> <span aria-hidden="true">·</span> MIT</p>
+            <p class="pg-eyebrow-mono">LuxStack <span aria-hidden="true">·</span> <span class="text-(--blux-primary-text)">8 headless + UI libraries</span> <span aria-hidden="true">·</span> .NET 10 &amp; MAUI <span aria-hidden="true">·</span> MIT</p>
             <h1 class="mt-5 text-5xl font-semibold leading-[0.95] tracking-[-0.055em] text-(--blux-text-highlighted) sm:text-7xl xl:text-[4.75rem]">
-                Blazor components<br />
-                <span class="pg-accent">for every render mode.</span>
+                High-quality open-source<br />
+                <span class="pg-accent">libraries for .NET.</span>
             </h1>
         </div>
         <div class="lg:pb-2">
             <p class="text-lg leading-relaxed text-(--blux-text-muted) text-pretty">
-                @Count accessible components for Server, WebAssembly, Auto and static pages, and in MAUI Blazor Hybrid apps
-                (tested on Android phones and TV so far). Menus, dialogs and tabs answer in the browser; .NET only hears what you bind.
+                Headless, type-safe, NativeAOT-ready C# engines paired with zero-roundtrip Blazor Web &amp; .NET MAUI Blazor Hybrid UI.
+                Adopt a single library or install the entire stack in one package.
             </p>
             <div class="mt-8 flex flex-wrap items-center gap-3">
-                <BxButton Label="Get started" Href="/docs/installation" Size="BxSize.Xl" Class="rounded-lg px-5">
+                <BxButton Label="Explore Lux.UI" Href="/ui" Size="BxSize.Xl" Class="rounded-lg px-5">
                     <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
                 </BxButton>
-                <button type="button" data-copy-text="dotnet add package Blux.UI --prerelease"
-                        class="group inline-flex items-center gap-3 rounded-lg border border-(--blux-border-accented) bg-(--blux-bg) px-4 py-2.5 font-mono text-sm text-(--blux-text-highlighted) hover:border-(--blux-primary-text) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--blux-primary-text)">
-                    <span><span class="text-(--blux-text-muted)">$</span> dotnet add package Blux.UI</span>
+                <BxButton Label="Read the Docs" Href="/docs" Size="BxSize.Xl" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg px-5" />
+            </div>
+            <div class="mt-4">
+                <button type="button" data-copy-text="dotnet add package Lux.Stack"
+                        class="group inline-flex w-full items-center justify-between gap-3 rounded-lg border border-(--blux-border-accented) bg-(--blux-bg) px-4 py-2.5 font-mono text-sm text-(--blux-text-highlighted) hover:border-(--blux-primary-text) sm:w-auto">
+                    <span><span class="text-(--blux-text-muted)">$</span> dotnet add package Lux.Stack</span>
                     <span class="text-[11px] uppercase tracking-wider text-(--blux-text-muted) group-hover:text-(--blux-primary-text)" data-copy-label>Copy</span>
                 </button>
             </div>
         </div>
     </div>
-
-    @* The live showcase sits in the hero, like a product shot that works. *@
-    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 pb-20 sm:px-6 lg:px-8">
-        <div class="mb-5 flex flex-wrap items-end justify-between gap-4">
-            <p class="pg-eyebrow-mono flex items-center gap-2"><span class="size-1.5 animate-pulse bg-(--blux-primary)" aria-hidden="true"></span>Live · pick a component, then use it</p>
-            <RendererBadge />
-        </div>
-        <Showcase />
-    </div>
 </section>
 
-@* Platforms *@
-<section aria-labelledby="platforms" class="border-b border-(--blux-border)">
-    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
+@* Open Source Libraries Grid (TanStack-inspired 8-card showcase) *@
+<section aria-labelledby="libraries-heading" class="border-b border-(--blux-border)">
+    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
         <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
-            <h2 id="platforms" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-                One codebase:<br /><span class="pg-accent">web, phone, TV.</span>
+            <h2 id="libraries-heading" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
+                Open Source<br /><span class="pg-accent">Libraries.</span>
             </h2>
             <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
-                The same components run in a browser and inside a MAUI Blazor Hybrid app (a <code class="font-mono text-base">BlazorWebView</code>).
-                The two screens below are the sample app in the Android emulator, not mockups.
+                Every library follows the same strict contract: <code class="font-mono text-sm text-(--blux-text-highlighted)">Lux.&lt;Product&gt;.Core</code>
+                is 100% headless NativeAOT C#, and <code class="font-mono text-sm text-(--blux-text-highlighted)">Lux.&lt;Product&gt;</code> ships
+                multiplatform Blazor Web &amp; .NET MAUI Hybrid components with dedicated documentation.
             </p>
         </div>
 
-        <div class="mt-14 flex flex-wrap items-end justify-center gap-x-14 gap-y-10 rounded-2xl border border-(--blux-border) bg-(--blux-bg-muted)/60 p-6 sm:p-10">
-            <figure class="w-56 max-w-full lg:w-64">
-                <div class="rounded-[2rem] border-[5px] border-(--blux-border-accented) bg-black p-1">
-                    <BxImage Src="img/platform-phone-home-dark.webp" Provider="none" Alt="The home page of the sample app on an Android phone, dark mode: a card reports the WebView renderer, the Phone form factor and Android 16." Width="540" Height="1200" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-[1.6rem]" data-testid="platform-phone" />
-                </div>
-                <figcaption class="mt-4 text-center font-mono text-xs uppercase tracking-[0.2em] text-(--blux-text-muted)">Android phone, touch</figcaption>
-            </figure>
-            <figure class="w-full min-w-0 max-w-3xl flex-1 basis-[28rem]">
-                <div class="rounded-xl border-[6px] border-(--blux-border-accented) bg-black">
-                    <BxImage Src="img/platform-tv-home-dark.webp" Provider="none" Alt="The home page of the sample app on Android TV, dark mode, with a thick focus ring on the menu button." Width="1280" Height="720" Loading="BxImageLoading.Lazy" Class="block h-auto w-full rounded-md" data-testid="platform-tv" />
-                </div>
-                <div class="mx-auto h-3 w-1/4 rounded-b-md bg-(--blux-border-accented)" aria-hidden="true"></div>
-                <figcaption class="mt-4 text-center font-mono text-xs uppercase tracking-[0.2em] text-(--blux-text-muted)">Android TV, D-pad focus ring</figcaption>
-            </figure>
-        </div>
-
-        <ul class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Platform support">
-            @foreach (var (name, detail, status, color) in Platforms)
+        <div class="mt-14 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            @foreach (var product in LuxStackProducts.All)
             {
-                <li class="flex flex-col rounded-xl border border-(--blux-border) bg-(--blux-bg) p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <p class="font-medium text-(--blux-text-highlighted)">@name</p>
-                        <BxBadge Label="@status" Color="color" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                <article class="group relative flex flex-col overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg) transition-all hover:border-(--blux-border-accented)"
+                         style="@($"border-top: 3px solid {product.AccentHex}")">
+                    <div class="flex flex-1 flex-col p-6">
+                        <div class="flex items-center justify-between gap-2">
+                            <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-(--blux-text-muted)">
+                                <span class="size-2.5 rounded-full" style="@($"background:{product.AccentHex}")" aria-hidden="true"></span>
+                                @product.RepoName
+                            </span>
+                            <BxBadge Label="Core + UI" Color="@product.BadgeColor" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
+                        </div>
+
+                        <h3 class="mt-3 text-2xl font-semibold tracking-tight text-(--blux-text-highlighted)">
+                            <a href="@($"/{product.Slug}")" class="hover:underline" style="@($"text-decoration-color:{product.AccentHex}")">
+                                Lux.<span style="@($"color:{product.AccentHex}")">@product.ShortName</span>
+                            </a>
+                        </h3>
+
+                        <p class="mt-1 font-mono text-xs text-(--blux-text-highlighted)">@product.Tagline</p>
+                        <p class="mt-3 flex-1 text-sm leading-relaxed text-(--blux-text-muted)">@product.Description</p>
+
+                        <div class="mt-5 rounded-xl border border-(--blux-border) bg-(--blux-bg-muted)/60 p-3 font-mono text-xs">
+                            <div class="flex items-center justify-between gap-2 text-(--blux-text-muted)">
+                                <span>Headless:</span>
+                                <span class="truncate text-(--blux-text-highlighted)">@product.CorePackage</span>
+                            </div>
+                            <div class="mt-1 flex items-center justify-between gap-2 text-(--blux-text-muted)">
+                                <span>Blazor/MAUI:</span>
+                                <span class="truncate text-(--blux-text-highlighted)">@product.UiPackage</span>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 grid grid-cols-2 gap-2 pt-1">
+                            <BxButton Label="Overview"
+                                      Href="@($"/{product.Slug}")"
+                                      Color="BxColor.Neutral"
+                                      Variant="ButtonVariant.Outline"
+                                      Size="BxSize.Sm"
+                                      Class="justify-center rounded-lg" />
+                            <BxButton Label="Docs →"
+                                      Href="@product.DocsHref"
+                                      Size="BxSize.Sm"
+                                      Class="justify-center rounded-lg" />
+                        </div>
                     </div>
-                    <p class="mt-2 text-sm text-(--blux-text-muted)">@detail</p>
-                </li>
+                </article>
             }
-        </ul>
-
-        <div class="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
-            <BxButton Label="Read the MAUI guide" Href="/docs/maui" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg">
-                <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
-            </BxButton>
-            <p class="text-sm text-(--blux-text-muted)">44 px touch hit areas on controls, safe areas, and an experimental TV mode.</p>
         </div>
     </div>
 </section>
 
-@* Components grid *@
-<section aria-labelledby="components" class="border-b border-(--blux-border)">
-    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
-            <h2 id="components" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-                @Count components,<br /><span class="pg-accent">one stylesheet.</span>
-            </h2>
-            <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
-                Every card below is the real component, running in this page. Same markup on the server and in the browser,
-                themed with a handful of CSS variables.
-            </p>
-        </div>
-
-        <div class="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Tile Title="Button" Text="Seven colors, six variants, loading and link states." Href="/components/button">
-                <div class="flex flex-wrap justify-center gap-2">
-                    <BxButton Label="Deploy" Size="BxSize.Sm" />
-                    <BxButton Label="Cancel" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" />
-                    <BxButton Label="Saving" Size="BxSize.Sm" Loading Color="BxColor.Neutral" Variant="ButtonVariant.Soft" />
-                </div>
-            </Tile>
-            <Tile Title="Select" Text="Keyboard, typeahead, and a hidden input that posts in plain forms." Href="/components/select">
-                <div class="w-48"><BxSelect Items="Regions" Value="@("eu")" aria-label="Region" /></div>
-            </Tile>
-            <Tile Title="Modal" Text="The native dialog: inert page, focus kept inside, Escape." Href="/components/modal">
-                <BxModal Title="Invite people" Description="They get an email with a link." Size="BxSize.Sm">
-                    <ChildContent><BxButton Label="Open dialog" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Subtle" /></ChildContent>
-                    <Body><BxFormField Label="Email"><BxInput Type="email" Placeholder="ada@example.com" /></BxFormField></Body>
-                    <Footer><BxButton Label="Send invite" data-bx-close /></Footer>
-                </BxModal>
-            </Tile>
-            <Tile Title="Toast" Text="Raised from .NET, shown and timed by the browser." Href="/components/toast">
-                <ToastTrigger />
-            </Tile>
-            <Tile Title="Form controls" Text="Switch, checkbox and radio on native inputs, right even without scripts." Href="/components/form-field">
-                <div class="flex flex-col gap-2.5">
-                    <BxSwitch Value="true" Label="Auto deploy" Size="BxSize.Sm" />
-                    <BxCheckbox Value="true" Label="Run tests" Size="BxSize.Sm" />
-                </div>
-            </Tile>
-            <Tile Title="Tabs" Text="Arrow keys and automatic activation, no round trip." Href="/components/tabs">
-                <div class="w-56"><BxTabs AriaLabel="Environment" Items="Environments" /></div>
-            </Tile>
-            <Tile Title="Avatar & Badge" Text="Initials when the picture is missing, status at a glance." Href="/components/avatar">
-                <div class="flex items-center gap-3">
-                    <div class="flex -space-x-2">
-                        <BxAvatar Alt="Ada Lovelace" Class="ring-2 ring-(--blux-bg)" />
-                        <BxAvatar Alt="Grace Hopper" Class="ring-2 ring-(--blux-bg)" />
-                        <BxAvatar Alt="Alan Turing" Class="ring-2 ring-(--blux-bg)" />
-                    </div>
-                    <BxBadge Label="online" Color="BxColor.Success" Variant="BxVariant.Subtle" Size="BxSize.Sm" />
-                </div>
-            </Tile>
-            <Tile Title="Tooltip" Text="Hover after a delay, focus at once, Escape to dismiss." Href="/components/tooltip">
-                <BxTooltip Text="Copied to clipboard">
-                    <BxButton Label="Hover or focus me" Size="BxSize.Sm" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" />
-                </BxTooltip>
-            </Tile>
-        </div>
-    </div>
-</section>
-
-@* Pipeline *@
-<section aria-labelledby="pipeline" class="relative isolate overflow-hidden border-b border-(--blux-border)">
-    <div class="pg-glow absolute inset-0 -z-10 rotate-180" aria-hidden="true"></div>
-    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
-        <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
-            <h2 id="pipeline" class="text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-                What happens<br />on a <span class="pg-accent">click</span>
-            </h2>
-            <p class="text-lg text-(--blux-text-muted) lg:max-w-xl lg:justify-self-end">
-                Opening a popover in Server mode usually means a SignalR round trip. Here it is five steps,
-                and four of them never leave the browser.
-            </p>
-        </div>
-
-        <div class="mt-14 rounded-2xl border border-(--blux-border) bg-(--blux-bg-muted)/60 p-4 sm:p-6">
-            <div class="mb-6 flex items-center justify-between gap-4 font-mono text-xs">
-                <span class="rounded-full border border-(--blux-primary-text) px-3 py-1 uppercase tracking-[0.2em] text-(--blux-primary-text)">click</span>
-                <span class="rounded-full border border-(--blux-border-accented) px-3 py-1 uppercase tracking-[0.2em] text-(--blux-text-muted)">.NET, if bound</span>
-            </div>
-            <div class="relative mb-6 hidden h-3 lg:block" aria-hidden="true">
-                <div class="absolute inset-x-0 top-1/2 border-t border-dashed border-(--blux-border-accented)"></div>
-                <div class="pg-beam"></div>
-            </div>
-            <ol class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-                @foreach (var (step, title, text, snippet) in Steps)
-                {
-                    <li class="flex flex-col rounded-xl border border-(--blux-border) bg-(--blux-bg) p-4">
-                        <p class="font-mono text-xs text-(--blux-primary-text)">@step</p>
-                        <p class="mt-1 font-medium text-(--blux-text-highlighted)">@title</p>
-                        <p class="mt-2 flex-1 text-sm text-(--blux-text-muted)">@text</p>
-                        <code class="mt-4 block truncate rounded-md border border-(--blux-border) bg-(--blux-bg-muted) px-2 py-1 font-mono text-[11px] text-(--blux-text)">@snippet</code>
-                    </li>
-                }
-            </ol>
-        </div>
-    </div>
-</section>
-
-@* Closing call to action *@
-<section aria-labelledby="start" class="relative isolate overflow-hidden">
-    <div class="pg-dots absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" aria-hidden="true"></div>
-    <div class="mx-auto max-w-4xl px-4 py-24 text-center sm:px-6 lg:py-32">
-        <p class="pg-eyebrow-mono"><span class="font-pixel text-2xl font-black text-(--blux-primary-text)">@Count</span> components · <span class="font-pixel text-2xl font-black text-(--blux-primary-text)">4</span> render modes · web and MAUI Blazor Hybrid</p>
-        <h2 id="start" class="mt-6 text-4xl font-semibold leading-none tracking-[-0.045em] text-(--blux-text-highlighted) sm:text-6xl">
-            Start with one package.
+@* Architecture Pillars *@
+<section aria-labelledby="pillars-heading" class="border-b border-(--blux-border)">
+    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8">
+        <p class="pg-eyebrow-mono">Built for Modern .NET Teams</p>
+        <h2 id="pillars-heading" class="mt-2 text-3xl font-semibold tracking-tight text-(--blux-text-highlighted) sm:text-5xl">
+            One architecture. Every target.
         </h2>
-        <div class="mx-auto mt-10 max-w-lg text-start">
-            <CodeBlock Code="dotnet add package Blux.UI --prerelease" Class="rounded-xl border border-(--blux-border)" />
+
+        <div class="mt-12 grid gap-6 md:grid-cols-3">
+            <div class="rounded-2xl border border-(--blux-border) bg-(--blux-bg) p-6">
+                <p class="font-mono text-xs uppercase tracking-widest text-(--blux-primary-text)">01 · Headless Core</p>
+                <h3 class="mt-3 text-xl font-semibold text-(--blux-text-highlighted)">100% NativeAOT &amp; Zero UI Lock-In</h3>
+                <p class="mt-2 text-sm leading-relaxed text-(--blux-text-muted)">
+                    Every <code class="font-mono">Lux.&lt;Product&gt;.Core</code> package compiles cleanly with <code class="font-mono">IsAotCompatible=true</code>
+                    and zero Razor dependencies — ready for Minimal APIs, workers, unit tests, and native C# .NET MAUI ViewModels.
+                </p>
+            </div>
+            <div class="rounded-2xl border border-(--blux-border) bg-(--blux-bg) p-6">
+                <p class="font-mono text-xs uppercase tracking-widest text-(--blux-primary-text)">02 · Multiplatform UI</p>
+                <h3 class="mt-3 text-xl font-semibold text-(--blux-text-highlighted)">Blazor Web &amp; .NET MAUI Hybrid</h3>
+                <p class="mt-2 text-sm leading-relaxed text-(--blux-text-muted)">
+                    Static SSR, Interactive Server, WebAssembly, Auto, iOS, Android, macOS Catalyst, Windows, and Android TV —
+                    with native browser popovers, 44px touch targets, and zero SignalR round-trip lag.
+                </p>
+            </div>
+            <div class="rounded-2xl border border-(--blux-border) bg-(--blux-bg) p-6">
+                <p class="font-mono text-xs uppercase tracking-widest text-(--blux-primary-text)">03 · AI-Native</p>
+                <h3 class="mt-3 text-xl font-semibold text-(--blux-text-highlighted)">Semantic Agent Bridge &amp; WebMCP</h3>
+                <p class="mt-2 text-sm leading-relaxed text-(--blux-text-muted)">
+                    <code class="font-mono">Lux.Agent</code> exposes deterministic <code class="font-mono">snapshot</code>, <code class="font-mono">query</code>,
+                    and <code class="font-mono">act</code> tools with automatic <code class="font-mono">[redacted]</code> secret masking and browser WebMCP registration.
+                </p>
+            </div>
         </div>
-        <div class="mt-8 flex flex-wrap justify-center gap-3">
-            <BxButton Label="Read the docs" Href="/docs" Size="BxSize.Lg" Class="rounded-lg" />
-            <BxButton Label="Browse components" Href="/components/button" Size="BxSize.Lg" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg" />
+    </div>
+</section>
+
+@* Interactive Component & API Router *@
+<section aria-labelledby="redirections-heading">
+    <div class="mx-auto max-w-(--breakpoint-2xl) px-4 py-20 sm:px-6 lg:px-8 lg:py-24">
+        <div class="grid gap-6 lg:grid-cols-2 lg:items-end">
+            <div>
+                <p class="pg-eyebrow-mono">LuxStackCatalog.ResolveComponentModule</p>
+                <h2 id="redirections-heading" class="mt-2 text-3xl font-semibold tracking-tight text-(--blux-text-highlighted) sm:text-5xl">
+                    Find any component or API.
+                </h2>
+            </div>
+            <div class="lg:max-w-md lg:justify-self-end">
+                <BxInput @bind-Value="_filter"
+                         Placeholder="Filter by component, controller or package (e.g. BxDataList, Form, Agent)..."
+                         aria-label="Filter components" />
+            </div>
+        </div>
+
+        <div class="mt-10 overflow-hidden rounded-2xl border border-(--blux-border) bg-(--blux-bg)">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="border-b border-(--blux-border) bg-(--blux-bg-muted) font-mono text-xs uppercase text-(--blux-text-muted)">
+                        <tr>
+                            <th class="px-4 py-3">Component / Service</th>
+                            <th class="px-4 py-3">Layer</th>
+                            <th class="px-4 py-3">Library</th>
+                            <th class="px-4 py-3">NuGet Package</th>
+                            <th class="px-4 py-3">Documentation</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-(--blux-border)">
+                        @foreach (var (product, comp) in FilteredComponents)
+                        {
+                            <tr class="hover:bg-(--blux-bg-muted)/40">
+                                <td class="px-4 py-3 font-mono font-medium text-(--blux-text-highlighted)">
+                                    <a href="@comp.Href" class="hover:underline">@comp.Name</a>
+                                    <p class="mt-0.5 font-sans text-xs font-normal text-(--blux-text-muted)">@comp.Description</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <BxBadge Label="@comp.Layer"
+                                             Color="@(comp.Layer == "Core" ? BxColor.Info : BxColor.Success)"
+                                             Variant="BxVariant.Subtle"
+                                             Size="BxSize.Sm" />
+                                </td>
+                                <td class="px-4 py-3 font-mono text-xs">
+                                    <a href="@($"/{product.Slug}")" class="inline-flex items-center gap-2 font-semibold text-(--blux-text-highlighted) hover:underline">
+                                        <span class="size-2 rounded-full" style="@($"background:{product.AccentHex}")"></span>
+                                        @product.Name
+                                    </a>
+                                </td>
+                                <td class="px-4 py-3 font-mono text-xs text-(--blux-text)">
+                                    @(comp.Layer == "Core" ? product.CorePackage : product.UiPackage)
+                                </td>
+                                <td class="px-4 py-3 font-mono text-xs">
+                                    <a href="@product.DocsHref" class="text-(--blux-primary-text) hover:underline">Read docs →</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </section>
 
 @code {
-    private static int Count => Blux.Playground.Client.Docs.Catalog.Components.Length;
+    private string _filter = "";
 
-    private static readonly BxSelectItem[] Regions = [new("eu", "Europe (Paris)"), new("us", "US East"), new("ap", "Asia (Tokyo)")];
-
-    private static readonly BxTabItem[] Environments =
-    [
-        new("Preview") { Content = @<p class="pt-3 text-xs text-(--blux-text-muted)">3 deployments today</p> },
-        new("Production") { Content = @<p class="pt-3 text-xs text-(--blux-text-muted)">Last deploy 2 h ago</p> },
-    ];
-
-    private static readonly (string Name, string Detail, string Status, BxColor Color)[] Platforms =
-    [
-        ("Web", "Static SSR, Server, WebAssembly and Auto, with the same markup.", "Tested", BxColor.Success),
-        ("Android", "Phone. Built and run in the emulator.", "Tested on emulator", BxColor.Success),
-        ("Android TV", "D-pad navigation, editing mode for fields, Back closes overlays. Soft keyboard not yet seen: the TV emulator has none.", "Experimental", BxColor.Warning),
-        ("iOS 17+", "Needs the native popover. A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
-        ("Windows", "A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
-        ("macOS", "Mac Catalyst. A CI build job is set up but has not run yet; not run on a device.", "Untested", BxColor.Info),
-        ("Tizen", "Samsung TV has no BlazorWebView.", "Not supported", BxColor.Neutral),
-    ];
-
-    private static readonly (string Step, string Title, string Text, string Code)[] Steps =
-    [
-        ("01", "Click", "The trigger is a native popover invoker. No .NET handler is attached.", "popoverTargetElement"),
-        ("02", "Custom element", "<bx-popover> positions the panel and moves focus inside.", "float(trigger, panel)"),
-        ("03", "Top layer", "The browser handles Escape, light dismiss and stacking.", "showPopover()"),
-        ("04", "One event", "The new state goes out once, with a sequence number.", "bx-toggle {open, seq}"),
-        ("05", ".NET", "Only if you bound it. Late renders are recognised and ignored.", "@bind-Open"),
-    ];
+    private IEnumerable<(LuxProductInfo Product, LuxProductComponentLink Component)> FilteredComponents =>
+        from p in LuxStackProducts.All
+        from c in p.Components
+        where string.IsNullOrWhiteSpace(_filter)
+              || c.Name.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+              || c.Description.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+              || p.Name.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+              || p.CorePackage.Contains(_filter, StringComparison.OrdinalIgnoreCase)
+        select (p, c);
 }
