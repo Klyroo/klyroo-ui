@@ -1,0 +1,69 @@
+@namespace Blux.UI.Tools
+@using System.Globalization
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(Items is not { Count: > 0 })" Skeleton="DashboardSkeletonKind.Feed"
+                 Menu="@Menu" Freshness="@Freshness" Class="@Class">
+    <div class="flex flex-col gap-3" data-slot="dashboard-feed">
+        @{
+            string? lastDayHeading = null;
+            var visible = Limit is > 0 && Items is not null ? Items.Take(Limit.Value).ToList() : Items ?? [];
+        }
+        @foreach (var item in visible)
+        {
+            if (GroupByDay)
+            {
+                var heading = DayHeading(item.Time);
+                if (heading != lastDayHeading)
+                {
+                    lastDayHeading = heading;
+                    <div class="text-[11px] font-bold uppercase tracking-wider text-(--blux-text-muted)" data-slot="dashboard-feed-day">
+                        @heading
+                    </div>
+                }
+            }
+            <div class="flex items-start gap-2.5" data-slot="dashboard-feed-item">
+                <span class="mt-0.5 inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-(--blux-bg-muted) text-[10px] font-bold text-(--blux-text-highlighted)">
+                    @(item.AvatarText ?? "•")
+                </span>
+                <div class="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <div class="flex items-baseline justify-between gap-2 text-xs">
+                        <span class="font-medium text-(--blux-text-highlighted)" data-slot="dashboard-feed-label">@item.Label</span>
+                        <time datetime="@item.Time.ToString("O")" title="@item.Time.ToString("u")"
+                              class="shrink-0 text-[11px] text-(--blux-text-muted)" data-slot="dashboard-feed-time">
+                            @DashboardFormat.FormatRelativeTime(item.Time, Now)
+                        </time>
+                    </div>
+                    @if (!string.IsNullOrEmpty(item.Description))
+                    {
+                        <span class="text-xs text-(--blux-text-muted)">@item.Description</span>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<DashboardFeedItem>? Items { get; set; }
+    [Parameter] public bool GroupByDay { get; set; } = true;
+    [Parameter] public DateTimeOffset? Now { get; set; }
+    [Parameter] public int? Limit { get; set; }
+    [Parameter] public int Span { get; set; } = 6;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private string DayHeading(DateTimeOffset time)
+    {
+        var now = (Now ?? DateTimeOffset.UtcNow).UtcDateTime.Date;
+        var d = time.UtcDateTime.Date;
+        if (d == now) return "Today";
+        if (d == now.AddDays(-1)) return "Yesterday";
+        return d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+    }
+}

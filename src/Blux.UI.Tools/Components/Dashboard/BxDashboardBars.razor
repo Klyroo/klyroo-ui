@@ -1,0 +1,88 @@
+@namespace Blux.UI.Tools
+@using System.Globalization
+@inherits BxComponentBase
+
+<BxDashboardCard Source="@Source" Title="@Title" Subtitle="@Subtitle" Span="@Span" Card="@Card"
+                 IsEmpty="@(Items is not { Count: > 0 })"
+                 Skeleton="@(IsFunnel ? DashboardSkeletonKind.Funnel : DashboardSkeletonKind.Bars)"
+                 Menu="@Menu" Freshness="@Freshness" Tabulate="BuildDataTable" Class="@Class">
+    <div class="flex flex-col gap-2.5" data-slot="dashboard-bars" data-variant="@Variant">
+        @if (Items is { Count: > 0 })
+        {
+            var visible = Limit is > 0 ? Items.Take(Limit.Value).ToList() : Items;
+            var maxVal = IsFunnel
+                ? Math.Max(1.0, Items[0].Value)
+                : Math.Max(1.0, Max ?? Items.Max(i => i.Value));
+
+            @for (var i = 0; i < visible.Count; i++)
+            {
+                var idx = i;
+                var item = visible[i];
+                var widthPct = Math.Clamp(item.Value / maxVal * 100.0, 2, 100).ToString("0.#", CultureInfo.InvariantCulture);
+                var funnelNote = IsFunnel
+                    ? (i == 0 ? "base 100%" : (Items[i - 1].Value > 0 ? $"{Math.Round(item.Value / Items[i - 1].Value * 100)}% of the previous step" : DashboardFormat.MissingValue))
+                    : null;
+
+                <div class="flex flex-col gap-1" data-slot="dashboard-bar-row" data-selected="@(item.Selected ? "true" : null)">
+                    <div class="flex items-baseline justify-between gap-2 text-xs">
+                        <div class="flex min-w-0 items-center gap-1.5">
+                            <span class="truncate font-medium text-(--blux-text-highlighted)">@item.Label</span>
+                            @if (!string.IsNullOrEmpty(item.Tag))
+                            {
+                                <span class="rounded-(--blux-radius) bg-(--blux-bg-muted) px-1.5 py-0.5 font-mono text-[10px] text-(--blux-text-muted)"
+                                      data-slot="dashboard-bar-tag">@item.Tag</span>
+                            }
+                        </div>
+                        <div class="flex shrink-0 items-baseline gap-2 tabular-nums">
+                            @if (funnelNote is not null)
+                            {
+                                <span class="text-[11px] text-(--blux-text-muted)" data-slot="dashboard-funnel-note">@funnelNote</span>
+                            }
+                            <span class="font-semibold text-(--blux-text-highlighted)" data-slot="dashboard-bar-value">
+                                @(item.Meta ?? DashboardFormat.Format(item.Value, Format, FormatCulture))
+                            </span>
+                        </div>
+                    </div>
+                    <div class="h-2 w-full overflow-hidden rounded-full bg-(--blux-bg-muted)">
+                        <div class="h-full rounded-full @(Emphasis == "first" && idx > 0 ? "bg-(--blux-text-muted)/50" : "bg-(--blux-primary)")"
+                             style="@($"width:{widthPct}%")"
+                             data-slot="dashboard-bar-fill"></div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</BxDashboardCard>
+
+@code {
+    [Parameter] public IDashboardSource? Source { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public IReadOnlyList<DashboardBarItem>? Items { get; set; }
+    [Parameter] public DashboardFormatPreset Format { get; set; } = DashboardFormatPreset.Number;
+    [Parameter] public double? Max { get; set; }
+    [Parameter] public int? Limit { get; set; }
+    [Parameter] public string Variant { get; set; } = "bars";
+    [Parameter] public string Emphasis { get; set; } = "all";
+    [Parameter] public int Span { get; set; } = 6;
+    [Parameter] public bool Card { get; set; } = true;
+    [Parameter] public bool? Menu { get; set; }
+    [Parameter] public bool? Freshness { get; set; }
+
+    private bool IsFunnel => string.Equals(Variant, "funnel", StringComparison.OrdinalIgnoreCase);
+
+    private DashboardDataTable BuildDataTable()
+    {
+        var cols = new List<DashboardDataColumn>
+        {
+            new("label", "Label"),
+            new("value", "Value", Numeric: true),
+        };
+        var rows = (Items ?? []).Select(i => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?>
+        {
+            ["label"] = i.Label,
+            ["value"] = DashboardFormat.Format(i.Value, Format, FormatCulture),
+        }).ToList();
+        return new DashboardDataTable(cols, rows);
+    }
+}
