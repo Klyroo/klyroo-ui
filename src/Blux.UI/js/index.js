@@ -43,9 +43,13 @@ import { toast } from './toaster.js';
 import { serverCulture, getStoredCulture, setStoredCulture } from './culture.js';
 import { setSpatialNavigation, tvKey, tvBack, tvTextEditing } from './spatial-nav.js';
 import { applyColorMode, getColorMode, setColorMode } from './color-mode.js';
+import { BluxBehaviors, definePrimitive, announce, createUndoStack } from './behaviors.js';
+import { createAgent, observe, agentTools, registerWebMcp } from './agent.js';
 
 // Before any element connects: storage choices (cookies or localStorage) depend on it.
 markHost();
+
+const defaultAgent = createAgent();
 
 globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
   setColorMode,
@@ -58,6 +62,15 @@ globalThis.Blux = Object.assign(globalThis.Blux ?? {}, {
   tvKey,
   tvBack,
   tvTextEditing,
+  behaviors: BluxBehaviors,
+  definePrimitive,
+  announce,
+  createUndoStack,
+  observe,
+  agent: defaultAgent,
+  createAgent,
+  agentTools,
+  registerWebMcp: (options) => registerWebMcp(defaultAgent, options),
 });
 
 // Avatar images that fail to load are hidden so the initials underneath show. "error" does not bubble: capture it.
