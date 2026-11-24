@@ -1,9 +1,9 @@
 # Components quick reference
 
-<!-- Generated from the Lux.UI docs bundle by build/Lux.UI.DocsBundle. Do not edit: run
-     dotnet run --project build/Lux.UI.DocsBundle -- --skill-reference  to refresh it. -->
+<!-- Generated from the Lux.UI docs bundle by build/Lux.Stack.DocsBundle. Do not edit: run
+     dotnet run --project build/Lux.Stack.DocsBundle -- --skill-reference  to refresh it. -->
 
-146 components of Lux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+146 components of Lux.UI 0.1.0-preview.1, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -169,7 +169,7 @@
 
 ### Image
 
-`/components/image`. An img with the width, height, srcset, sizes and loading a provider fills in, like NuxtImg of Nuxt Image.
+`/components/image`. An img with the width, height, srcset, sizes and loading a provider fills in.
 
 - `<LxImage>`
   - Parameters: `Alt` (required), `Class`, `Densities`, `FetchPriority`, `Fit`, `Format`, `Height`, `ImageOptions`, `Loading`, `Modifiers`, `Placeholder`, `Preload`, `Preset`, `Provider`, `Quality`, `Sizes`, `Src` (required), `Width`
@@ -251,6 +251,7 @@
   - Parameters: `AriaLabel`, `Class`, `Color`, `Culture`, `Disabled`, `DisabledDates`, `Id`, `Max`, `Min`, `Mode`, `Name`, `Range` (@bind), `RangeExpression`, `Required`, `Size`, `Ui`, `Value` (@bind), `ValueExpression`, `Values` (@bind), `ValuesExpression`, `WeekStart`
   - `Ui` (`CalendarUi`): `Root`, `Header`, `Heading`, `Nav`, `Grid`, `Weekday`, `Cell`, `Day`
 - `<LxDateRange>`
+  - Parameters: `End`, `Start`
 
 ### InputDate
 
@@ -669,7 +670,7 @@
 
 ### DataList
 
-`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Lux.UI.Tools.EntityFrameworkCore adapter), with search, sortable columns, pagination, a result count, loading, empty and error states, and its state in the URL. Filters, counts, the filter panel and selection have their own pages. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Lux.Table.EntityFrameworkCore adapter), with search, sortable columns, pagination, a result count, loading, empty and error states, and its state in the URL. Filters, counts, the filter panel and selection have their own pages. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataList>`
   - Parameters: `Class`, `Density`, `Items`, `Label`, `PagingMode`, `PersistKey`, `PreferencesKey`, `Provider`, `Queryable`, `ResultJson`, `Schema`, `Selectable`, `SelectedKeys` (@bind), `SelectionScope`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
@@ -701,7 +702,7 @@
 
 ### DataListFilters
 
-`/components/data-list-filters`. Filters of a data list: filter tags with an editor in a popover, the Add filter menu, Clear filters, text, option, yes / no, number and date filters, in Live or Submit mode. Statically rendered the tags are links and the editors GET forms. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-filters`. Filters of a data list: filter tags with an editor in a popover, the Add filter menu, Clear filters, text, option, yes / no, number and date filters, in Live or Submit mode. Statically rendered the tags are links and the editors GET forms. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListFilterTags>`
   - Parameters: `ApplyMode`, `Class`, `ShowAdd`, `ShowClear`, `Ui`
@@ -715,7 +716,7 @@
 
 ### DataListFilterPanel
 
-`/components/data-list-filter-panel`. Every filter of a data list as a collapsible section, as a sidebar or in a slideover on a phone, with the same editors, limits and history as the filter tags. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-filter-panel`. Every filter of a data list as a collapsible section, as a sidebar or in a slideover on a phone, with the same editors, limits and history as the filter tags. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListFilterPanel>`
   - Parameters: `ApplyMode`, `Class`, `CloseOnApply`, `Description`, `Ui`
@@ -723,7 +724,7 @@
 
 ### DataListFacets
 
-`/components/data-list-facets`. Counts next to the options of a filter (facets) and option filters that load their options from a remote source. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-facets`. Counts next to the options of a filter (facets) and option filters that load their options from a remote source. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListFilterEditor>`
   - Parameters: `ApplyMode`, `Class`, `Key` (required), `ResetToken`, `ShowTitle`, `Ui`
@@ -732,7 +733,7 @@
 
 ### DataListSelection
 
-`/components/data-list-selection`. Row selection, a bar of bulk actions with an every-result scope and a toolbar menu of actions, for a list in memory and for a provider. Interactive only. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-selection`. Row selection, a bar of bulk actions with an every-result scope and a toolbar menu of actions, for a list in memory and for a provider. Interactive only. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListSelectionActions>`
   - Parameters: `Actions`, `Class`, `MaxVisible`, `Position`, `Scope`, `Ui`
@@ -749,7 +750,7 @@
 
 ### DataListCursor
 
-`/components/data-list-cursor`. Keyset cursor paging with an infinite loader (automatic scroll sentinel or manual Load more, inline retry on error, link fallback in static SSR) and opt-in row virtualization. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-cursor`. Keyset cursor paging with an infinite loader (automatic scroll sentinel or manual Load more, inline retry on error, link fallback in static SSR) and opt-in row virtualization. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListInfiniteLoader>`
   - Parameters: `Auto`, `Class`, `Label`, `Root`, `RootMargin`, `ShowEnd`, `Ui`
@@ -758,7 +759,7 @@
 
 ### DataListColumns
 
-`/components/data-list-columns`. The column panel of a data list: show or hide columns, show or hide them all, reorder by dragging or with buttons, pin to either edge, resize by pointer or keyboard, and remember it all in a cookie that the server reads at the first paint. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-columns`. The column panel of a data list: show or hide columns, show or hide them all, reorder by dragging or with buttons, pin to either edge, resize by pointer or keyboard, and remember it all in a cookie that the server reads at the first paint. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListColumnPanel>`
   - Parameters: `AllowPinning`, `AllowReorder`, `Class`, `Label`, `SearchThreshold`, `Size`, `Ui`
@@ -766,7 +767,7 @@
 
 ### DataListGrid
 
-`/components/data-list-grid`. Grid layout of cards (LxDataListGrid), layout switch between Table and Grid views (LxDataListLayoutSwitch, synced with l=table|grid in the URL), compact phone summary rows (DataListRowSummary) with LxDataListViewToggle, visual row grouping (DataListGroupBy and LxDataListGroupHeader), hierarchical tree rows (DataListTree), footer totals and column aggregations (DataListSummaries), and a toolbar sort menu (LxDataListSortMenu). Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-grid`. Grid layout of cards (LxDataListGrid), layout switch between Table and Grid views (LxDataListLayoutSwitch, synced with l=table|grid in the URL), compact phone summary rows (DataListRowSummary) with LxDataListViewToggle, visual row grouping (DataListGroupBy and LxDataListGroupHeader), hierarchical tree rows (DataListTree), footer totals and column aggregations (DataListSummaries), and a toolbar sort menu (LxDataListSortMenu). Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListGrid>`
   - Parameters: `AriaLabel`, `Class`, `Columns`, `EmptyState`, `GroupBy`, `RowActions`, `RowActionsMaxVisible`, `ShowProgressLine`, `ShowSelectionControl`, `Ui`
@@ -789,7 +790,7 @@
 
 ### DataListEmpty
 
-`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
+`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Lux.Table, not part of Lux.UI: `dotnet add package Lux.Table --prerelease`.
 
 - `<LxDataListEmpty>`
   - Parameters: `Class`, `Description`, `Icon`, `Title`, `Ui`
@@ -804,6 +805,8 @@
   - Parameters: `AriaLabel` (required), `Arrows`, `AutoPlay`, `Class`, `Color`, `Dots`, `Index` (@bind), `Items` (required), `Loop`, `Ui`
   - `Ui` (`CarouselUi`): `Root`, `Viewport`, `Slide`, `Controls`, `Control`, `Dots`, `Dot`
 - `<LxCarouselItem>`
+  - Parameters: `Label`
+  - Slots: `Content`
 
 ### Chart
 
@@ -852,6 +855,7 @@
   - Slots: `Left`, `Right`
   - `Ui` (`FooterColumnsUi`): `Root`, `Left`, `Nav`, `Column`, `Label`, `List`, `Item`, `Link`, `Icon`, `Right`
 - `<LxFooterColumn>`
+  - Parameters: `Label`, `Links`
 
 ### Main
 
@@ -898,7 +902,9 @@
   - Events: `OnLocaleChange`
   - `Ui` (`LocaleSelectUi`): `Root`
 - `<LxLocale>`
+  - Parameters: `Code`, `Culture`, `Dir`, `DirAttribute`, `Flag`, `Messages`, `Name`
 - `<LxMessages>`
+  - Parameters: `AuthFormIncompleteCode`, `AuthFormInvalidEmail`, `AuthFormRequired`, `AuthFormSeparator`, `AuthFormShowPassword`, `AuthFormSubmit`, `Breadcrumb`, `Brightness`, `CarouselRoleDescription`, `CarouselSlideRoleDescription`, `ChartArea`, `ChartBar`, `ChartBarHorizontal`, `ChartDonut`, `ChartHint`, `ChartIndex`, `ChartLegend`, `ChartLine`, `ChartRange`, `ChartSlice`, `ChartSummary`, `ChartSummaryDonut`, `ChartTable`, `ChatAssistant`, `ChatAttachmentFailed`, `ChatAttachmentUploading`, `ChatConversation`, `ChatError`, `ChatJumpToLatest`, `ChatPromptLabel`, `ChatPromptPlaceholder`, `ChatRemoveAttachment`, `ChatResponding`, `ChatRetry`, `ChatSend`, `ChatStop`, `ChatSystem`, `ChatThinking`, `ChatThought`, `ChatThoughtFor`, `ChatToolFailed`, `ChatToolRunning`, `ChatUser`, `ChooseDate`, `Close`, `CollapseSidebar`, `ColorMode`, `ColorModeDark`, `ColorModeLight`, `ColorModeSystem`, `CommandResults`, `ContentNavigation`, `ContentNext`, `ContentPrevious`, `ContentSearch`, `ContentSearchButton`, `ContentSearchError`, `ContentSearchLoading`, `ContentSearchPlaceholder`, `ContentSearchRetry`, `ContentSurround`, `ContentToc`, `ContextMenu`, `DashboardSearch`, `DashboardSearchButton`, `DashboardSearchPlaceholder`, `DayPeriod`, `DropFiles`, `EditorAddressRefused`, `EditorBlockquote`, `EditorBold`, `EditorBulletList`, `EditorClearFormatting`, `EditorCode`, `EditorCodeBlock`, `EditorDescriptionBlockquote`, `EditorDescriptionBulletList`, `EditorDescriptionCodeBlock`, `EditorDescriptionHeading1`, `EditorDescriptionHeading2`, `EditorDescriptionHeading3`, `EditorDescriptionHorizontalRule`, `EditorDescriptionOrderedList`, `EditorDescriptionParagraph`, `EditorDragHandle`, `EditorEmojiMenu`, `EditorHeading`, `EditorHorizontalRule`, `EditorImage`, `EditorImageUrl`, `EditorItalic`, `EditorLabel`, `EditorLink`, `EditorLinkApply`, `EditorLinkRemove`, `EditorLinkUrl`, `EditorMentionMenu`, `EditorMoveDown`, `EditorMoveUp`, `EditorNoResults`, `EditorOrderedList`, `EditorParagraph`, `EditorRedo`, `EditorSchemesOnly`, `EditorStrike`, `EditorSuggestionMenu`, `EditorSuggestionText`, `EditorTaskItem`, `EditorTaskList`, `EditorToolbar`, `EditorUnderline`, `EditorUndo`, `ErrorBackHome`, `ErrorForbidden`, `ErrorForbiddenMessage`, `ErrorNotFound`, `ErrorNotFoundMessage`, `ErrorServer`, `ErrorServerMessage`, `ErrorUnauthorized`, `ErrorUnauthorizedMessage`, `FileNotAccepted`, `FileSizeBytes`, `FileSizeGigabytes`, `FileSizeKilobytes`, `FileSizeMegabytes`, `FileTooLarge`, `FirstPage`, `FooterLinks`, `FormSummaryTitle`, `GoToSlide`, `HeaderMenu`, `HeaderNavigation`, `HexColor`, `Hours`, `Hue`, `InputMenuNoResults`, `InputMenuSuggestions`, `InputNumberDecrement`, `InputNumberIncrement`, `InputRatingValue`, `InputTagsRemove`, `LastPage`, `LoadMore`, `LoadingMore`, `LocaleSelectLabel`, `MaximumSize`, `Minutes`, `ModifierKey`, `MoreAvatars`, `NextMonth`, `NextPage`, `NextSlide`, `NoCommandResults`, `NoData`, `NoMoreItems`, `Notifications`, `OpenHeaderMenu`, `OpenSidebar`, `OpensInNewTab`, `Page`, `PageAnchors`, `PageLinks`, `Pagination`, `PauseSlides`, `PinInputCharacter`, `PlaySlides`, `PreviousMonth`, `PreviousPage`, `PreviousSlide`, `PricingDiscountedPrice`, `PricingFeatures`, `PricingIncluded`, `PricingNotIncluded`, `PricingOriginalPrice`, `Progress`, `RemoteOptionsError`, `RemoteOptionsLoading`, `RemoteOptionsMinLength`, `RemoteOptionsRetry`, `RemoveFile`, `ResizePanels`, `ResizeSidebar`, `Saturation`, `SearchCommands`, `SelectMenuCreate`, `SelectMenuNoResults`, `SelectMenuSearch`, `SidebarLabel`, `SkipToContent`, `SlideControls`, `SlideOf`, `SliderMaximum`, `SliderMinimum`, `SortAscending`, `SortDescending`, `StepCompleted`, `TimeAm`, `TimePm`, `ToggleColorMode`, `TooManyFiles`
 
 ### Theme
 
@@ -953,7 +959,9 @@
   - Slots: `Media`, `ChildContent`
   - `Ui` (`PageSectionUi`): `Root`, `Container`, `Wrapper`, `Leading`, `LeadingIcon`, `Headline`, `Title`, `Description`, `Links`, `Features`, `Feature`, `Media`
 - `<PageFeatureItem>`
+  - Parameters: `Description`, `Href`, `Icon`, `Target`, `Title`
 - `<PageLinkItem>`
+  - Parameters: `Active`, `Color`, `Disabled`, `Exact`, `Href`, `Icon`, `Label`, `Target`, `TrailingIcon`, `Variant`
 
 ### PageFeature
 
@@ -1008,6 +1016,7 @@
   - Parameters: `Class`, `HeadingLevel`, `Links`, `Title`, `Ui`
   - `Ui` (`PageLinksUi`): `Root`, `Title`, `List`, `Item`, `Link`, `Icon`, `Label`, `ExternalIcon`
 - `<PageLinkItem>`
+  - Parameters: `Active`, `Color`, `Disabled`, `Exact`, `Href`, `Icon`, `Label`, `Target`, `TrailingIcon`, `Variant`
 
 ### PageList
 
@@ -1027,6 +1036,7 @@
   - Slots: `ChildContent`
   - `Ui` (`PageLogosUi`): `Root`, `Title`, `Items`, `Item`, `Icon`, `Image`, `Marquee`
 - `<PageLogoItem>`
+  - Parameters: `Alt`, `Icon`, `Src`
 
 ### PageAnchors
 
@@ -1317,6 +1327,7 @@
   - Parameters: `Class`, `Color`, `Items`, `Label`, `Layout`, `Size`, `Ui`
   - `Ui` (`EditorToolbarUi`): `Root`, `Button`, `Icon`, `Separator`, `LinkForm`, `LinkInput`, `LinkButton`, `LinkMessage`
 - `<EditorToolbarItem>`
+  - Parameters: `Action`, `IsSeparator`, `Label`, `Level`
 - `<EditorAction>`
 - `<EditorToolbarLayout>`
 
@@ -1336,6 +1347,7 @@
   - Parameters: `Char`, `Class`, `Items`, `Label`, `Limit`, `Size`, `Ui`
   - `Ui` (`EditorMenuUi`): `Root`, `Content`, `Listbox`, `Item`, `Icon`, `Body`, `ItemLabel`, `ItemDescription`, `Empty`
 - `<EditorSuggestionItem>`
+  - Parameters: `Action`, `Description`, `Disabled`, `Keywords`, `Label`, `Level`
 
 ### EditorMentionMenu
 
@@ -1345,6 +1357,7 @@
   - Parameters: `Char`, `Class`, `Items` (required), `Label`, `Limit`, `Size`, `Ui`
   - `Ui` (`EditorMenuUi`): `Root`, `Content`, `Listbox`, `Item`, `Icon`, `Body`, `ItemLabel`, `ItemDescription`, `Empty`
 - `<EditorMentionItem>`
+  - Parameters: `Description`, `Disabled`, `Id`, `Label`
 
 ### EditorEmojiMenu
 
@@ -1354,3 +1367,4 @@
   - Parameters: `Char`, `Class`, `Items`, `Label`, `Limit`, `Size`, `Ui`
   - `Ui` (`EditorMenuUi`): `Root`, `Content`, `Listbox`, `Item`, `Icon`, `Body`, `ItemLabel`, `ItemDescription`, `Empty`
 - `<EditorEmojiItem>`
+  - Parameters: `Emoji`, `Keywords`, `Name`
