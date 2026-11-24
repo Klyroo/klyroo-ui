@@ -25,6 +25,8 @@ public static class BluxToolsServiceCollectionExtensions
         services.TryAddScoped<QueryState>();
         // File preview gallery state and overlay coordination for BxFilePreviewProvider and BxDisplay.
         services.TryAddScoped<FilePreviewService>();
+        // Programmatic schema-driven overlay form service for BxFormProvider.
+        services.TryAddScoped<FormService>();
         // How a Queryable source runs its queries: blocking by default, replaced by an adapter package (AddBluxUiToolsEntityFrameworkAdapter).
         services.TryAddSingleton<IDataListQueryExecutor>(SynchronousDataListQueryExecutor.Instance);
         // A static or prerendered list reads the time zone cookie through IBxRequestCookies (Blux.UI.Server); without it, one warning in Development.

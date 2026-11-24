@@ -1,0 +1,40 @@
+@namespace Blux.UI.Tools
+@inherits BxComponentBase
+@implements IDisposable
+@inject FormService FormApi
+
+@if (ChildContent is not null)
+{
+    @ChildContent
+}
+
+@if (FormApi.IsOpen && FormApi.ActiveForm is { } activeForm)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/55 p-4"
+         role="dialog" aria-modal="true" aria-label="@(activeForm.Schema.Title ?? "Form")"
+         data-slot="form-provider-overlay" data-mode="@FormApi.ActiveMode.ToString().ToLowerInvariant()">
+        <div class="max-h-[90dvh] w-full max-w-2xl overflow-y-auto rounded-(--blux-radius-lg) border border-(--blux-border) bg-(--blux-bg) p-5 shadow-xl"
+             data-slot="form-provider-dialog">
+            <BxFormEngine Form="@activeForm"
+                          Shell="@FormApi.ActiveMode"
+                          OnSubmit="@(_ => FormApi.SubmitActiveFormAsync())"
+                          OnCancel="@(_ => FormApi.CloseForm())" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override void OnInitialized()
+    {
+        FormApi.Changed += OnFormApiChanged;
+    }
+
+    private void OnFormApiChanged() => _ = InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        FormApi.Changed -= OnFormApiChanged;
+    }
+}
