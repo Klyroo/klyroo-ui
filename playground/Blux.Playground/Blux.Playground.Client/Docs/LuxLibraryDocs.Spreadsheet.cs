@@ -255,6 +255,55 @@ public static partial class LuxLibraryDocs
                 ]),
             MauiAndAotPage("Lux.Spreadsheet", "Lux.Spreadsheet.Core", "Lux.Spreadsheet", "builder.Services.AddLuxSpreadsheet();",
                 "var importer = new SpreadsheetImporter(schema); importer.LoadText(csvText, \"rates.csv\");"),
+            new("examples", "Live Examples", "Examples",
+                "Interactive spreadsheet import pipelines demonstrating the 5-step BxSpreadsheetImport wizard, reference reconciliation, and Unicode NFD header matching.",
+                [
+                    new("import-wizard", "1. Full 5-Step BxSpreadsheetImport Wizard",
+                        Paragraphs: ["Walk through Upload, Column Mapping, Inline Validation & Cell Editing, Dry-Run Preview, and Batched Commit directly in the browser with preloaded sample CSV data."],
+                        LiveDemoKey: "spreadsheet-wizard",
+                        LiveDemoTitle: "BxSpreadsheetImport · 5-Step Import Wizard",
+                        CodeSamples:
+                        [
+                            new("RatesImporter.razor", """
+                                <BxSpreadsheetImport Importer="@_importer"
+                                                     Title="Import Product Rates"
+                                                     Wizard="true" />
+                                """)
+                        ]),
+                    new("reference-reconcile", "2. Reference Lookup Reconciliation & Unresolved Row Repair",
+                        Paragraphs: ["Automatically reconcile incoming supplier or category labels against your canonical lookup list, surface unresolved rows, and repair them inline before commit."],
+                        LiveDemoKey: "spreadsheet-reconcile",
+                        LiveDemoTitle: "SpreadsheetImporter · Reference Reconciliation",
+                        CodeSamples:
+                        [
+                            new("ReconcileLookup.cs", """
+                                new SpreadsheetColumnSchema
+                                {
+                                    Key = "country",
+                                    Label = "Country",
+                                    Aliases = ["pays", "country_code"],
+                                    ReferenceOptions =
+                                    [
+                                        new SpreadsheetReferenceOption("FR", "France", ["fr", "république française"]),
+                                        new SpreadsheetReferenceOption("DE", "Germany", ["de", "deutschland"])
+                                    ]
+                                }
+                                """)
+                        ]),
+                    new("unicode-nfd", "3. Accent-Insensitive (Unicode NFD) Header Auto-Mapping",
+                        Paragraphs: ["Paste accented, snake_case, or localized French/Spanish/German CSV headers and watch SpreadsheetImporter auto-map every column deterministically via NFD normalization."],
+                        LiveDemoKey: "spreadsheet-nfd",
+                        LiveDemoTitle: "Unicode NFD · Multilingual Header Auto-Mapping",
+                        CodeSamples:
+                        [
+                            new("NfdMapping.cs", """
+                                // Automatically matches "Référence Produit" -> "sku" and "Prix Unitaire (€)" -> "price"
+                                var importer = new SpreadsheetImporter(schema);
+                                importer.LoadText("Référence Produit;Désignation;Prix Unitaire (€)\nSKU-101;Clavier Mécanique;149.00", "tarifs.csv");
+                                // importer.ColumnMappings["sku"] == 0, importer.ColumnMappings["price"] == 2
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Spreadsheet.Core and Lux.Spreadsheet.",
                 [],

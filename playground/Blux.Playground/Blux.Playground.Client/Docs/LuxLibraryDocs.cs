@@ -34,7 +34,7 @@ public sealed record LibraryDocTree(
 
 /// <summary>
 /// Exhaustive, independent English multi-page documentation for each LuxStack library.
-/// Every library exposes 11 deeply detailed pages with exact enum/option tables, callouts, live interactive demos, and full API reference.
+/// Every library exposes 12 deeply detailed pages including dedicated interactive Live Examples, exact enum/option tables, callouts, and full API reference.
 /// </summary>
 public static partial class LuxLibraryDocs
 {

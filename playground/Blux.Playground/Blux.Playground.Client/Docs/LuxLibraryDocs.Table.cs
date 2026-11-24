@@ -276,6 +276,64 @@ public static partial class LuxLibraryDocs
                         ],
                         Callout: "Always invoke Services.AddLuxTable() BEFORE SetRendererInfo(...) in bUnit tests; SetRendererInfo resolves the renderer and locks DI.")
                 ]),
+            new("examples", "Live Examples", "Examples",
+                "Interactive BxDataList grids demonstrating header menus, summary footers, hierarchical trees, and client-side GroupBy aggregations.",
+                [
+                    new("basic-summary", "1. Interactive Grid with Header Menu & Sum Footer",
+                        Paragraphs: ["Render a typed BxDataList with built-in column sorting, header dropdown menus, progress indicator, and an automatic Sum aggregation row in <tfoot>."],
+                        LiveDemoKey: "table-basic",
+                        LiveDemoTitle: "BxDataList · Sorting, HeaderMenu & Sum Footer",
+                        CodeSamples:
+                        [
+                            new("EmployeeGrid.razor", """
+                                <BxDataList TItem="Employee" Schema="@EmployeeSchema" Items="@_employees" UrlSync="false">
+                                    <BxDataListTable TItem="Employee" HeaderMenu="true" ShowProgressLine="true"
+                                                     Summaries="@(new DataListSummaries<Employee>())">
+                                        <BxDataListColumn TItem="Employee" Field="name" Title="Employee" />
+                                        <BxDataListColumn TItem="Employee" Field="dept" Title="Department" />
+                                        <BxDataListColumn TItem="Employee" Field="salary" Title="Salary (€)"
+                                                          Summary="DataListSummaryKind.Sum" />
+                                    </BxDataListTable>
+                                </BxDataList>
+                                """)
+                        ]),
+                    new("tree-hierarchy", "2. Hierarchical Tree Grid with Depth & Expand/Collapse",
+                        Paragraphs: ["Build a parent/child org chart using DataListTree<TItem> in Lux.Table.Core, tracking Depth, HasChildren, and interactive expand/collapse state."],
+                        LiveDemoKey: "table-tree",
+                        LiveDemoTitle: "DataListTree<TItem> · Expandable Org Chart",
+                        CodeSamples:
+                        [
+                            new("OrgTree.razor", """
+                                <BxDataList TItem="OrgMember" Schema="@OrgSchema" Items="@_roots" UrlSync="false">
+                                    <BxDataListTable TItem="OrgMember"
+                                                     Tree="@(new DataListTree<OrgMember> { Children = m => m.Reports, DefaultExpanded = true })">
+                                        <BxDataListColumn TItem="OrgMember" Field="name" Title="Name" />
+                                        <BxDataListColumn TItem="OrgMember" Field="role" Title="Role" />
+                                        <BxDataListColumn TItem="OrgMember" Field="budget" Title="Budget (€)" />
+                                    </BxDataListTable>
+                                </BxDataList>
+                                """)
+                        ]),
+                    new("grouped-rows", "3. Grouped Table with Per-Group Summaries",
+                        Paragraphs: ["Group rows by department using DataListGroupBy<TItem> with collapsible group headers, item counts, and automatic per-group salary subtotals."],
+                        LiveDemoKey: "table-grouped",
+                        LiveDemoTitle: "DataListGroupBy<TItem> · Department Grouping",
+                        CodeSamples:
+                        [
+                            new("DepartmentGrid.razor", """
+                                <BxDataList TItem="Employee" Schema="@EmployeeSchema" Items="@_employees" UrlSync="false">
+                                    <BxDataListTable TItem="Employee"
+                                                     GroupBy="@(new DataListGroupBy<Employee> { KeySelector = e => e.Dept, DefaultExpanded = true })"
+                                                     Summaries="@(new DataListSummaries<Employee>())">
+                                        <BxDataListColumn TItem="Employee" Field="name" Title="Employee" />
+                                        <BxDataListColumn TItem="Employee" Field="dept" Title="Department" />
+                                        <BxDataListColumn TItem="Employee" Field="salary" Title="Salary (€)"
+                                                          Summary="DataListSummaryKind.Sum" />
+                                    </BxDataListTable>
+                                </BxDataList>
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Table.Core and Lux.Table.",
                 [],

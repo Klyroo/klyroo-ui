@@ -236,6 +236,54 @@ public static partial class LuxLibraryDocs
                 ]),
             MauiAndAotPage("Lux.Dashboard", "Lux.Dashboard.Core", "Lux.Dashboard", "builder.Services.AddLuxDashboard();",
                 "await dashboardController.RefreshAsync(); var csv = DashboardFormat.ExportCsv(table);"),
+            new("examples", "Live Examples", "Examples",
+                "Interactive analytics dashboards combining KPI stat strips, gauges, progress bars, wave charts, sortable tables, and severity alerts.",
+                [
+                    new("kpi-strip", "1. Responsive KPI Stat Strip & Timeframe Switching",
+                        Paragraphs: ["Switch timeframes (7d, 30d, 90d) to observe live KPI recalculations across BxDashboardStats with signed deltas, tone coloring, and sparkline trends."],
+                        LiveDemoKey: "dashboard-kpi",
+                        LiveDemoTitle: "BxDashboardStats · Interactive KPI Strip",
+                        CodeSamples:
+                        [
+                            new("KpiStrip.razor", """
+                                <BxDashboardStats Columns="3" Items="@([
+                                    new DashboardStatItem("mrr", "Monthly Recurring Revenue", "€148.9K", Delta: "+12.4%", Tone: "success"),
+                                    new DashboardStatItem("conv", "Trial Conversion", "34.2%", Delta: "+2.1%", Tone: "primary"),
+                                    new DashboardStatItem("churn", "Net Churn", "1.1%", Delta: "-0.3%", Tone: "success")
+                                ])" />
+                                """)
+                        ]),
+                    new("gauges-bars", "2. 3-Wave Staged Loading (Essential · Background · Deferred)",
+                        Paragraphs: ["Orchestrate DashboardResource<T> loading in three deterministic waves with DashboardController: Essential blocks load first, Background loads concurrently without blocking, and Deferred stays idle until explicitly activated."],
+                        LiveDemoKey: "dashboard-waves",
+                        LiveDemoTitle: "DashboardController · 3-Wave Staged Loading",
+                        CodeSamples:
+                        [
+                            new("StagedWaves.cs", """
+                                var controller = new DashboardController("sales");
+                                var essential  = controller.Register("kpi", LoadKpiAsync, DashboardPriority.Essential);
+                                var background = controller.Register("regions", LoadRegionsAsync, DashboardPriority.Background);
+                                var deferred   = controller.Register("audit", LoadAuditAsync, DashboardPriority.Deferred);
+
+                                await controller.RefreshAsync(); // Runs Wave 1 (Essential), then Wave 2 (Background)
+                                await deferred.ActivateAsync();  // Wave 3 runs on demand
+                                """)
+                        ]),
+                    new("tables-alerts", "3. Analytical Table, Operational Alerts & CSV Export",
+                        Paragraphs: ["Combine BxDashboardTable (sortable columns with inline bar and delta cells) with BxDashboardAlerts and culture-aware DashboardFormat.ExportCsv."],
+                        LiveDemoKey: "dashboard-table-alerts",
+                        LiveDemoTitle: "BxDashboardTable, BxDashboardAlerts & CSV Export",
+                        CodeSamples:
+                        [
+                            new("OpsOverview.razor", """
+                                <BxDashboardTable Title="Top Regions" Columns="@_columns" Rows="@_rows" Menu="true" />
+                                <BxDashboardAlerts Title="Operational Alerts" Items="@([
+                                    new DashboardAlertItem(DashboardAlertSeverity.Success, "EU cluster latency within SLA", "P95 at 24ms"),
+                                    new DashboardAlertItem(DashboardAlertSeverity.Warning, "Cache eviction spike in us-east", "Raise memory tier")
+                                ])" />
+                                """)
+                        ])
+                ]),
             new("api", "API Reference", "Reference",
                 "Complete public API reference for Lux.Dashboard.Core and Lux.Dashboard.",
                 [],
