@@ -4,7 +4,7 @@ using Blux.UI.Internal;
 namespace Blux.UI;
 
 /// <summary>
-/// The icons components draw, as Nuxt UI's <c>ui.icons</c>: every property is an icon name (<c>i-lucide-x</c>, <c>ph:x</c>, <c>mdi:close</c>,
+/// The icons components draw: every property is an icon name (<c>i-lucide-x</c>, <c>ph:x</c>, <c>mdi:close</c>,
 /// or a bare Lucide name) with a Lucide default. Set them in <c>AddBluxUi</c> to replace an icon everywhere components use it:
 /// <c>o.Icons.Close = "ph:x"</c>. A name that is not one of the Lucide icons built into the library is bundled at build time when the
 /// assignment is a literal (see the Icons guide); a name written another way goes in a <c>BluxIcon</c> item.

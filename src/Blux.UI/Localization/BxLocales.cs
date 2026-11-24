@@ -23,7 +23,7 @@ public static partial class BxLocales
     public static IReadOnlyList<string> ReviewedCodes { get; } = ["en", "fr"];
 
     /// <summary>
-    /// Derives a locale from another one, like <c>extendLocale</c> of Nuxt UI: everything you do not override is kept.
+    /// Derives a locale from another one: everything you do not override is kept.
     /// </summary>
     /// <example>
     /// <c>BxLocales.Extend(BxLocales.En, code: "en-AU", name: "English (Australia)", messages: m => m with { CommandPalettePlaceholder = "Search..." })</c>

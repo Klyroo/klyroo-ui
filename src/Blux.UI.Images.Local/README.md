@@ -3,7 +3,7 @@
 An ASP.NET Core endpoint that resizes and converts images on your own server with [libvips](https://www.libvips.org/)
 (through [NetVips](https://github.com/kleisauke/net-vips)), and the `local` provider that makes `BxImage`,
 `BxAvatar`, `BxBlogPost` and the other image components of [Blux UI](https://www.nuget.org/packages/Blux.UI) use it.
-It is the equivalent of IPX in Nuxt Image.
+A self-hosted image optimization endpoint powered by libvips.
 
 ```csharp
 builder.Services.AddBluxImagesLocal(o =>
@@ -44,7 +44,7 @@ The endpoint is `_blux/img`, relative to `<base href>`: the browser resolves it,
   libvips only loads JPEG, PNG, WebP, AVIF/HEIC and GIF here; the other loaders, and the ones it flags untrusted, are blocked. Animated GIF and WebP
   files are served untouched.
 
-`fit` follows sharp, like Nuxt Image's IPX: with both sides, `cover` and `outside` fill or cover the box and `contain` and `fill` produce exactly
+`fit` follows sharp resize semantics: with both sides, `cover` and `outside` fill or cover the box and `contain` and `fill` produce exactly
 the box even from a smaller source (`contain` pads with transparency, or white for JPEG), `inside` never enlarges; with one side the ratio is kept
 and the image is never enlarged. Output formats: `webp`, `avif`, `jpeg`, `png`, `gif` (a single frame).
 

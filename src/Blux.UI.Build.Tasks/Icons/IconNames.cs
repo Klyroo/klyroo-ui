@@ -39,7 +39,7 @@ namespace Blux.UI.Internal
     }
 
     /// <summary>
-    /// Icon names, as Nuxt UI accepts them: <c>i-{collection}-{name}</c> (<c>i-lucide-lightbulb</c>), <c>{collection}:{name}</c>
+    /// Icon names accepted by Blux: <c>i-{collection}-{name}</c> (<c>i-lucide-lightbulb</c>), <c>{collection}:{name}</c>
     /// (<c>lucide:lightbulb</c>) and, for compatibility with the names Blux.UI always accepted, a bare Lucide name (<c>lightbulb</c>).
     /// A collection prefix may contain dashes (<c>simple-icons</c>), so the <c>i-</c> form takes the longest known prefix that fits:
     /// <c>i-mdi-light-home</c> is <c>mdi-light:home</c>. The <c>prefix:name</c> form never needs a list.

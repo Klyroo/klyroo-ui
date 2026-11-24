@@ -5,7 +5,7 @@
 <div class="pg-prose">
     <p class="pg-eyebrow">Getting started</p>
     <h1>Fonts</h1>
-    <p class="pg-lead">Name a font in your project file. The build downloads it from a provider, hosts it in your app and writes the <code>@@font-face</code> rules, a fallback face that limits layout shift and a preload. The page never asks a third party for anything, which is what keeps it GDPR friendly. It works like <code>@@nuxt/fonts</code> in Nuxt UI, with MSBuild in place of the Nuxt module.</p>
+    <p class="pg-lead">Name a font in your project file. The build downloads it from a provider, hosts it in your app and writes the <code>@@font-face</code> rules, a fallback face that limits layout shift and a preload. The page never asks a third party for anything, which is what keeps it GDPR friendly — handled completely at build time via MSBuild.</p>
 
     <h2>Declare fonts</h2>
     <p>Fonts are MSBuild items of the project that renders the page (the server project of a Blazor Web App). They are read at build time, so they live in the <code>.csproj</code> and not in <code>AddBluxUi</code>.</p>
@@ -87,7 +87,7 @@
         new("Include", "(required)", "The family name, as the provider spells it: Public Sans, Geist Mono."),
         new("Role", "(none)", "sans or mono: the font becomes --blux-font-sans or --blux-font-mono. Empty: only @font-face rules."),
         new("Provider", "(priority list)", "google, bunny, fontsource or local. Empty: the providers of BluxFontsProviderPriority, in order."),
-        new("Weights", "400..700", "Values separated by ';' (400;700) or a range (400..700, or '400 700' as in Nuxt)."),
+        new("Weights", "400..700", "Values separated by ';' (400;700) or a range ('400..700' or '400 700')."),
         new("Styles", "normal", "normal, italic or both, separated by ';'. For local files, every style found."),
         new("Subsets", "latin", "latin, latin-ext, cyrillic, cyrillic-ext, greek, vietnamese… Each subset is its own file with a unicode-range, so a page only downloads what it displays."),
         new("Display", "swap", "The font-display of every face: auto, block, swap, fallback or optional."),

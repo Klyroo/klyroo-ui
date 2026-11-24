@@ -22,7 +22,7 @@ namespace Blux.UI.Build.Fonts
         public int Max { get; }
         public bool IsRange => Max > Min;
 
-        /// <summary>Accepts "400", "400..700" and "400 700" (the form Nuxt uses).</summary>
+        /// <summary>Accepts "400", "400..700" and "400 700".</summary>
         public static WeightSpec Parse(string text, string family)
         {
             var parts = text.Split(new[] { "..", " " }, StringSplitOptions.RemoveEmptyEntries);

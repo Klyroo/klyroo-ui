@@ -8,7 +8,7 @@ using ModelContextProtocol.Server;
 namespace Blux.UI.Mcp;
 
 /// <summary>
-/// The tools of the Blux UI MCP server. They mirror the Nuxt UI ones where they apply to Blazor. Every tool is read-only and
+/// The tools of the Blux UI MCP server. Every tool is read-only and
 /// answers in Markdown (JSON for component metadata). Unknown names fail with a message that lists the closest matches.
 /// </summary>
 [McpServerToolType]

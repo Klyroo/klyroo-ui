@@ -1,9 +1,9 @@
 namespace Blux.UI;
 
-/// <summary>How the image fills the requested width and height, like the <c>fit</c> prop of <c>NuxtImg</c>. Providers map it to their own vocabulary.</summary>
+/// <summary>How the image fills the requested width and height. Providers map it to their own vocabulary.</summary>
 public enum BxImageFit
 {
-    /// <summary>Fill the box and crop what overflows (the default of Nuxt Image). The local optimizer enlarges a smaller picture to fill the box.</summary>
+    /// <summary>Fill the box and crop what overflows (default). The local optimizer enlarges a smaller picture to fill the box.</summary>
     Cover,
     /// <summary>Fit inside the box without cropping and without distorting. The local optimizer then pads to exactly the box (transparent, or white for JPEG); other providers leave the free space out.</summary>
     Contain,
@@ -84,7 +84,7 @@ public interface IBxImageProvider
 
     /// <summary>
     /// True when <see cref="BxImageSettings.Domains"/> applies: a remote source (<c>https://host/...</c>) whose host is not listed is passed through
-    /// untouched instead of being sent to the provider, like Nuxt Image does for IPX, Netlify and Vercel. Defaults to false, for providers
+    /// untouched instead of being sent to the provider. Defaults to false, for providers
     /// whose sources are paths in their own storage.
     /// </summary>
     bool ValidateDomains => false;

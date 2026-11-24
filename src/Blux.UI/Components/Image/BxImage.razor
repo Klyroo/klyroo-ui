@@ -2,7 +2,7 @@
 @inherits BxComponentBase
 
 @*
-    One <img>, with the width, height, srcset, sizes and loading an optimizing provider can fill in, like NuxtImg of Nuxt Image.
+    One <img>, with the width, height, srcset, sizes and loading an optimizing provider can fill in.
     With the default "none" provider nothing is resized: the image keeps its src and gets width, height and loading only.
 *@
 @if (_preload)
@@ -52,7 +52,7 @@
     [Parameter] public BxImageOptions? ImageOptions { get; set; }
 
     /// <summary>
-    /// Responsive sizes, in the syntax of Nuxt Image: <c>"100vw sm:50vw md:400px"</c> (an unprefixed entry is the default; each breakpoint applies
+    /// Responsive sizes: <c>"100vw sm:50vw md:400px"</c> (an unprefixed entry is the default; each breakpoint applies
     /// from its width upward). Breakpoints come from <see cref="BxImageSettings.Screens"/>. It becomes the <c>sizes</c> attribute and decides the widths of the <c>srcset</c>.
     /// </summary>
     [Parameter] public string? Sizes { get; set; }
@@ -153,7 +153,7 @@
                 return text.Length > 0 ? text : null;
         }
 
-        // true: a tiny version from the provider, ten pixels wide like the placeholder of Nuxt Image, blurred when the provider can.
+        // true: a tiny version from the provider, ten pixels wide placeholder, blurred when the provider supports it.
         var width = PixelsOf(Width, out _);
         var height = PixelsOf(Height, out _);
         var tinyHeight = width is > 0 && height is > 0 ? Math.Max(1, (int)Math.Round(10d * height.Value / width.Value)) : (int?)null;

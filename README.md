@@ -1,7 +1,7 @@
 # blux-ui
 
-Accessible, themable Blazor components styled with Tailwind CSS v4, inspired by Nuxt UI.
-Status: early development. 133 components, in the same families as Nuxt UI:
+Accessible, themable Blazor components styled with Tailwind CSS v4.
+Status: early development. 133 accessible Blazor components across core UI families:
 
 - **Elements**: Button, Badge, Avatar, AvatarGroup, Card, Alert, Banner, Chip, Container, Empty, FieldGroup, Icon, Kbd, Link,
   Progress, Separator, Skeleton, User
@@ -126,7 +126,7 @@ See the Internationalization guide of the documentation site.
 
 ## Customize
 
-- **Palettes**: map the semantic colors to Tailwind palettes or your own, like Nuxt UI's `ui.colors`. Blux computes the
+- **Palettes**: map the semantic colors to Tailwind palettes or your own. Blux computes the
   fill, text and on-fill tokens so the contrast rules still hold, and `BxThemeStyle` (in `<head>`, next to
   `BxColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
 
@@ -168,7 +168,7 @@ See the Internationalization guide of the documentation site.
 
 ## Images
 
-`BxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in, like `NuxtImg`;
+`BxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in;
 the avatar, blog post, changelog, logos and chat attachment components use it and take an `ImageOptions` parameter.
 Without a provider images are rendered as they are. Pick one in `AddBluxUi`:
 
