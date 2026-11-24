@@ -19,38 +19,39 @@ public static class DocsNavigation
     /// </summary>
     public static IReadOnlyList<BxContentNavigationItem> Sidebar(string prefix, string? activeLibrarySlug = null)
     {
-        // Non-UI LuxStack libraries get a clean, library-focused sidebar (no Lux.UI components leak).
+        // Every non-UI LuxStack library gets its own 100% independent multi-page documentation sidebar
+        // (Getting Started, Guides, Reference) with zero cross-library clutter.
         if (activeLibrarySlug is not null && !string.Equals(activeLibrarySlug, "ui", StringComparison.OrdinalIgnoreCase))
         {
-            var current = LuxStackProducts.Find(activeLibrarySlug);
-            var libItems = new List<BxContentNavigationItem>();
-            if (current is not null)
+            var tree = LuxLibraryDocs.FindLibrary(activeLibrarySlug);
+            if (tree is not null)
             {
-                libItems.Add(new BxContentNavigationItem(current.Name)
-                {
-                    Open = true,
-                    Children =
-                    [
-                        new BxContentNavigationItem("Overview") { Href = $"/{current.Slug}", Exact = true },
-                        new BxContentNavigationItem("Documentation & API") { Href = current.DocsHref, Exact = true },
-                    ],
-                });
-            }
-            libItems.Add(new BxContentNavigationItem("LuxStack Libraries")
-            {
-                Open = true,
-                Children =
+                return
                 [
-                    .. LuxStackProducts.All.Select(p => new BxContentNavigationItem(p.Name) { Href = p.DocsHref, Exact = true }),
-                ],
-            });
-            return libItems;
+                    .. tree.Pages
+                        .Select(p => p.Group)
+                        .Distinct()
+                        .Select(group => new BxContentNavigationItem(group)
+                        {
+                            Open = true,
+                            Children =
+                            [
+                                .. tree.Pages
+                                    .Where(p => p.Group == group)
+                                    .Select(p => new BxContentNavigationItem(p.Title)
+                                    {
+                                        Href = LuxLibraryDocs.PageHref(tree.LibrarySlug, p.Slug),
+                                        Exact = true,
+                                    }),
+                            ],
+                        }),
+                ];
+            }
         }
 
-        // Lux.UI documentation sidebar: full Lux.UI guides + all 125+ components.
+        // Lux.UI independent documentation sidebar: full Lux.UI guides + all 125+ components.
         var items = new List<BxContentNavigationItem>();
         items.AddRange(Catalog.Guides
-            .Where(g => g.Section != "LuxStack Libraries")
             .Select(g => g.Section)
             .Distinct()
             .Select(section => new BxContentNavigationItem(section)
@@ -83,12 +84,18 @@ public static class DocsNavigation
                 SearchPagesByPrefix[prefix] = pages =
                 [
                     new BxContentSearchPage("LuxStack Ecosystem Hub", "/") { Group = "LuxStack", Icon = "", Keywords = "luxstack hub tanstack suite maui blazor" },
-                    .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Overview", $"/{p.Slug}") { Group = "LuxStack", Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
-                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = g.Section, Icon = "" }),
+                    .. LuxStackProducts.All.Select(p => new BxContentSearchPage($"{p.Name} Overview", $"/{p.Slug}") { Group = p.Name, Icon = "", Keywords = $"{p.RepoName} {p.CorePackage} {p.UiPackage} {p.Tagline}" }),
+                    .. LuxLibraryDocs.All.SelectMany(lib => lib.Pages.Select(p => new BxContentSearchPage($"{lib.LibraryName}: {p.Title}", LuxLibraryDocs.PageHref(lib.LibrarySlug, p.Slug))
+                    {
+                        Group = lib.LibraryName,
+                        Icon = "",
+                        Keywords = $"{lib.LibrarySlug} {p.Group} {p.Lead}",
+                    })),
+                    .. Catalog.Guides.Select(g => new BxContentSearchPage(g.Title, g.Href) { Group = $"Lux.UI · {g.Section}", Icon = "" }),
                     new BxContentSearchPage("Templates", "templates") { Group = "Gallery", Icon = "", Keywords = "starter dashboard landing live demo" },
                     .. InSidebarOrder.Select(c => new BxContentSearchPage(c.Name, $"{prefix}/components/{c.Slug}")
                     {
-                        Group = c.Group,
+                        Group = $"Lux.UI · {c.Group}",
                         Icon = "",
                         Keywords = c.Slug.Replace('-', ' '),
                     }),

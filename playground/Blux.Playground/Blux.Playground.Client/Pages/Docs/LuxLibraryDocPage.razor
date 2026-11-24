@@ -1,0 +1,175 @@
+@page "/query/docs"
+@page "/query/docs/{Section}"
+@page "/table/docs"
+@page "/table/docs/{Section}"
+@page "/form/docs"
+@page "/form/docs/{Section}"
+@page "/dashboard/docs"
+@page "/dashboard/docs/{Section}"
+@page "/display/docs"
+@page "/display/docs/{Section}"
+@page "/spreadsheet/docs"
+@page "/spreadsheet/docs/{Section}"
+@page "/agent/docs"
+@page "/agent/docs/{Section}"
+@layout Layout.DocsLayout
+@using Blux.Playground.Client.Docs
+@inject NavigationManager Navigation
+
+@if (_library is null || _page is null)
+{
+    <PageTitle>Documentation not found · LuxStack</PageTitle>
+    <div class="pg-prose">
+        <h1>Documentation page not found</h1>
+        <p>Return to <a href="/">LuxStack</a> to pick one of the 8 libraries.</p>
+    </div>
+}
+else
+{
+    <PageTitle>@_page.Title · @_library.LibraryName Docs</PageTitle>
+
+    <div>
+        @if (_tocLinks.Count > 0)
+        {
+            <aside class="float-end w-44 min-[96rem]:-me-[13.5rem] min-[96rem]:sticky min-[96rem]:top-32">
+                <BxContentToc Links="_tocLinks" Breakpoint="BxContentTocBreakpoint.Xxl" Title="On this page" Ui="_tocUi" />
+            </aside>
+        }
+
+        <div class="pg-prose">
+            <div class="flex flex-wrap items-center gap-2">
+                <a href="@($"/{_library.LibrarySlug}")" class="inline-flex items-center gap-1.5 rounded-full border border-(--blux-border) bg-(--blux-bg-muted) px-2.5 py-0.5 font-mono text-xs !no-underline"
+                   style="@($"border-color:{_library.AccentHex}")">
+                    <span class="size-2 rounded-full" style="@($"background:{_library.AccentHex}")" aria-hidden="true"></span>
+                    <span>@_library.LibraryName</span>
+                </a>
+                <span class="pg-eyebrow">· @_page.Group</span>
+            </div>
+
+            <h1>@_page.Title</h1>
+            <p class="pg-lead">@_page.Lead</p>
+
+            @foreach (var sec in _page.Sections)
+            {
+                <h2 id="@sec.Id" class="scroll-mt-32">@sec.Heading</h2>
+
+                @if (sec.Paragraphs is not null)
+                {
+                    @foreach (var para in sec.Paragraphs)
+                    {
+                        <p>@para</p>
+                    }
+                }
+
+                @if (sec.Bullets is not null)
+                {
+                    <ul>
+                        @foreach (var item in sec.Bullets)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+
+                @if (sec.TableHeaders is not null && sec.TableRows is not null)
+                {
+                    <div class="my-6 overflow-x-auto rounded-xl border border-(--blux-border)">
+                        <table class="min-w-full text-sm">
+                            <thead class="bg-(--blux-bg-muted) text-start">
+                                <tr>
+                                    @foreach (var h in sec.TableHeaders)
+                                    {
+                                        <th scope="col" class="px-4 py-2.5 text-start font-semibold text-(--blux-text-highlighted)">@h</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-(--blux-border)">
+                                @foreach (var row in sec.TableRows)
+                                {
+                                    <tr>
+                                        <td class="px-4 py-2.5 font-mono text-xs font-semibold text-(--blux-text-highlighted)">@row.Col1</td>
+                                        <td class="px-4 py-2.5 text-(--blux-text)">@row.Col2</td>
+                                        <td class="px-4 py-2.5 text-(--blux-text-muted)">@row.Col3</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+
+                @if (sec.CodeSamples is not null)
+                {
+                    @foreach (var sample in sec.CodeSamples)
+                    {
+                        <CodeBlock Title="@sample.Title" Code="@sample.Code" Class="my-4 rounded-xl border border-(--blux-border)" />
+                    }
+                }
+            }
+
+            @if (_page.ApiTypes is { Length: > 0 })
+            {
+                @foreach (var type in _page.ApiTypes)
+                {
+                    var typeLabel = ApiReader.TypeName(type).Replace("<object>", "<TItem>").Replace("<string>", "<TValue>");
+                    var anchorId = "api-" + type.Name.Split('`')[0].ToLowerInvariant();
+                    <h2 id="@anchorId" class="scroll-mt-32 font-mono">@typeLabel</h2>
+                    @if (ApiReader.Describe(type) is { } summary)
+                    {
+                        <p>@summary</p>
+                    }
+                    <ApiTable Of="type" />
+                }
+            }
+        </div>
+
+        <div class="mt-16">
+            <BxContentSurround Previous="_previous" Next="_next" />
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string? Section { get; set; }
+
+    private static readonly ContentTocUi _tocUi = new() { Trigger = "py-0 text-xs" };
+
+    private LibraryDocTree? _library;
+    private DocPageSpec? _page;
+    private IReadOnlyList<BxContentTocLink> _tocLinks = [];
+    private BxContentSurroundLink? _previous;
+    private BxContentSurroundLink? _next;
+
+    protected override void OnParametersSet()
+    {
+        var path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+        var firstSeg = path.Split('/', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+
+        _library = LuxLibraryDocs.FindLibrary(firstSeg);
+        _page = _library is null ? null : LuxLibraryDocs.FindPage(_library, Section);
+
+        if (_library is not null && _page is not null)
+        {
+            var links = new List<BxContentTocLink>();
+            foreach (var sec in _page.Sections)
+            {
+                links.Add(new BxContentTocLink(sec.Id, sec.Heading));
+            }
+            if (_page.ApiTypes is { Length: > 0 })
+            {
+                foreach (var t in _page.ApiTypes)
+                {
+                    var label = ApiReader.TypeName(t).Replace("<object>", "<TItem>").Replace("<string>", "<TValue>");
+                    links.Add(new BxContentTocLink("api-" + t.Name.Split('`')[0].ToLowerInvariant(), label));
+                }
+            }
+            _tocLinks = links;
+            (_previous, _next) = LuxLibraryDocs.Surround(_library, _page.Slug);
+        }
+        else
+        {
+            _tocLinks = [];
+            _previous = null;
+            _next = null;
+        }
+    }
+}
