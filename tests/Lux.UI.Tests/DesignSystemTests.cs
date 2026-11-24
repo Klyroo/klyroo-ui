@@ -163,7 +163,7 @@ public partial class DefaultTokenTests
     [InlineData("border-primary", "border-color:var(--blux-primary)")]
     public void The_utilities_exist_in_a_tailwind_build_of_the_docs_site_and_follow_the_runtime_tokens(string utility, string declaration)
     {
-        var site = File.ReadAllText(Path.Combine(FindLibraryRoot(), "..", "..", "playground", "Lux.Stack.Site", "Lux.Stack.Site", "wwwroot", "site.css"));
+        var site = File.ReadAllText(Path.Combine(FindLibraryRoot(), "..", "..", "..", "lux.stack", "site", "Lux.Stack.Site", "wwwroot", "site.css"));
         Assert.Contains("." + utility + "{" + declaration, site);
     }
 
