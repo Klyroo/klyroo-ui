@@ -1,5 +1,7 @@
 # lux-ui
 
+[![CI](https://github.com/luxstack/lux-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/luxstack/lux-ui/actions/workflows/ci.yml) [![NuGet](https://img.shields.io/badge/NuGet-0.1.0--preview.1-004880.svg)](https://www.nuget.org/packages/Lux.UI) [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/) [![NativeAOT](https://img.shields.io/badge/NativeAOT-Compatible-10b981.svg)](https://luxstack.dev/why) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+
 Accessible, themable Blazor components styled with Tailwind CSS v4.
 Status: early development. 133 accessible Blazor components across core UI families:
 
