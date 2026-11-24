@@ -197,7 +197,7 @@
                 <BxDisplay Kind="@(field.DisplayKind ?? DisplayKind.Alert)"
                            Title="@field.Label"
                            Value="@(field.DisplayText ?? field.Description)"
-                           Tone="@field.DisplayTone" />
+                           Tone="@(field.DisplayTone ?? BxColor.Info)" />
             </div>;
         }
 
