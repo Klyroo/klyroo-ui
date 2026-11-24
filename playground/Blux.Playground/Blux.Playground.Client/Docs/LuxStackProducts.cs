@@ -49,7 +49,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-ui",
             CorePackage: "Blux.UI.Build.Tasks",
             UiPackage: "Blux.UI",
-            DocsHref: "/docs",
+            DocsHref: "/ui/docs",
             Platforms: ["Blazor Server", "Blazor WASM", "Blazor Auto / SSR", ".NET MAUI Hybrid (iOS, Android, Mac, Win)", "Android TV (D-Pad)"],
             Features:
             [
@@ -114,7 +114,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-query",
             CorePackage: "Lux.Query.Core",
             UiPackage: "Lux.Query",
-            DocsHref: "/docs/lux-query",
+            DocsHref: "/query/docs",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Entity Framework Core"],
             Features:
             [
@@ -152,11 +152,11 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DataListSchema", "Fluent typed schema builder for searchable, sortable and filterable fields.", "/docs/lux-query", "Core"),
-                new("DataListRequest", "Immutable paging (Offset/Cursor), sorting, filtering & search AST.", "/docs/lux-query", "Core"),
-                new("QueryCodecs", "Reversible URL search parameter serialization for complex filter trees.", "/docs/lux-query", "Core"),
-                new("EfAsyncQueryExecutor", "Translates DataListRequest directly to async SQL via Entity Framework Core.", "/docs/lux-query", "Core"),
-                new("QueryState", "Reactive URL state manager for Blazor Web and .NET MAUI BlazorWebView.", "/docs/lux-query", "UI")
+                new("DataListSchema", "Fluent typed schema builder for searchable, sortable and filterable fields.", "/query/docs", "Core"),
+                new("DataListRequest", "Immutable paging (Offset/Cursor), sorting, filtering & search AST.", "/query/docs", "Core"),
+                new("QueryCodecs", "Reversible URL search parameter serialization for complex filter trees.", "/query/docs", "Core"),
+                new("EfAsyncQueryExecutor", "Translates DataListRequest directly to async SQL via Entity Framework Core.", "/query/docs", "Core"),
+                new("QueryState", "Reactive URL state manager for Blazor Web and .NET MAUI BlazorWebView.", "/query/docs", "UI")
             ]),
 
         new(
@@ -173,7 +173,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-table",
             CorePackage: "Lux.Table.Core",
             UiPackage: "Lux.Table",
-            DocsHref: "/docs/lux-table",
+            DocsHref: "/table/docs",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Entity Framework Core"],
             Features:
             [
@@ -209,10 +209,10 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/docs/lux-table", "Core"),
+                new("DataListTree<TItem>", "Pure headless NativeAOT hierarchy builder with rail continuations & expansion.", "/table/docs", "Core"),
                 new("BxDataList<TItem>", "Full-featured enterprise datagrid with table, grid, filter bar & pagination.", "/components/data-list", "UI"),
-                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/docs/lux-table", "UI"),
-                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/docs/lux-table", "UI")
+                new("BxDataListTable<TItem>", "High-density table with HeaderMenu, summaries, tree view and column resizing.", "/table/docs", "UI"),
+                new("DataListRowSummary<TItem>", "Automatic mobile summary-row presentation below the md breakpoint.", "/table/docs", "UI")
             ]),
 
         new(
@@ -229,7 +229,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-form",
             CorePackage: "Lux.Form.Core",
             UiPackage: "Lux.Form",
-            DocsHref: "/docs/lux-form",
+            DocsHref: "/form/docs",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
@@ -266,11 +266,11 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("FormSchema", "Declarative schema with 31 field kinds, steps, sections, rules & transforms.", "/docs/lux-form", "Core"),
-                new("FormController", "Headless NativeAOT state machine for values, errors, dirty paths & steps.", "/docs/lux-form", "Core"),
-                new("FormService", "Programmatic overlay service to open forms in modals or drawers.", "/docs/lux-form", "Core"),
-                new("BxFormEngine", "Automatic Blazor/MAUI renderer for FormSchema & multi-step wizards.", "/docs/lux-form", "UI"),
-                new("BxFormPage", "Sectioned form page layout with live completion & dirty status.", "/docs/lux-form", "UI")
+                new("FormSchema", "Declarative schema with 31 field kinds, steps, sections, rules & transforms.", "/form/docs", "Core"),
+                new("FormController", "Headless NativeAOT state machine for values, errors, dirty paths & steps.", "/form/docs", "Core"),
+                new("FormService", "Programmatic overlay service to open forms in modals or drawers.", "/form/docs", "Core"),
+                new("BxFormEngine", "Automatic Blazor/MAUI renderer for FormSchema & multi-step wizards.", "/form/docs", "UI"),
+                new("BxFormPage", "Sectioned form page layout with live completion & dirty status.", "/form/docs", "UI")
             ]),
 
         new(
@@ -287,7 +287,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-dashboard",
             CorePackage: "Lux.Dashboard.Core",
             UiPackage: "Lux.Dashboard",
-            DocsHref: "/docs/lux-dashboard",
+            DocsHref: "/dashboard/docs",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid (Tablet, Desktop, Mobile)"],
             Features:
             [
@@ -326,12 +326,12 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("DashboardController", "Staged 3-wave query coordinator (Essential/Background/Deferred), filters & views.", "/docs/lux-dashboard", "Core"),
-                new("DashboardFormat", "Compact/Delta/Points/Ratio formatters, leap-year ranges & BOM CSV exporter.", "/docs/lux-dashboard", "Core"),
-                new("BxDashboardPage", "Full analytical dashboard shell with filter toolbar, views & refresh state.", "/docs/lux-dashboard", "UI"),
-                new("BxDashboardStats", "Multi-KPI summary strip with delta badges, progress and status pills.", "/docs/lux-dashboard", "UI"),
-                new("BxDashboardGauge", "SVG circular gauge with target marker and formatted center value.", "/docs/lux-dashboard", "UI"),
-                new("BxDashboardTable", "Sortable analytical table block with inline bars, deltas & CSV export.", "/docs/lux-dashboard", "UI")
+                new("DashboardController", "Staged 3-wave query coordinator (Essential/Background/Deferred), filters & views.", "/dashboard/docs", "Core"),
+                new("DashboardFormat", "Compact/Delta/Points/Ratio formatters, leap-year ranges & BOM CSV exporter.", "/dashboard/docs", "Core"),
+                new("BxDashboardPage", "Full analytical dashboard shell with filter toolbar, views & refresh state.", "/dashboard/docs", "UI"),
+                new("BxDashboardStats", "Multi-KPI summary strip with delta badges, progress and status pills.", "/dashboard/docs", "UI"),
+                new("BxDashboardGauge", "SVG circular gauge with target marker and formatted center value.", "/dashboard/docs", "UI"),
+                new("BxDashboardTable", "Sortable analytical table block with inline bars, deltas & CSV export.", "/dashboard/docs", "UI")
             ]),
 
         new(
@@ -348,7 +348,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-display",
             CorePackage: "Lux.Display.Core",
             UiPackage: "Lux.Display",
-            DocsHref: "/docs/lux-display",
+            DocsHref: "/display/docs",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
@@ -382,11 +382,11 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("FilePreviewService", "Headless MIME detector, RFC 4180 CSV parser and lightbox queue state.", "/docs/lux-display", "Core"),
-                new("BxDisplay", "19-kind read-only block component (Stat, Facts, Meter, Diff, Code/Secret, Timeline).", "/docs/lux-display", "UI"),
-                new("BxAudioPlayer", "Constrained audio player with Start/End clip bounds, MaxPlays & Seekable guard.", "/docs/lux-display", "UI"),
-                new("BxVideoPlayer", "Constrained video player with tracks, clip bounds and play-limit locking.", "/docs/lux-display", "UI"),
-                new("BxFilePreviewProvider", "Modal lightbox host for images, PDFs, audio, video and parsed CSV files.", "/docs/lux-display", "UI")
+                new("FilePreviewService", "Headless MIME detector, RFC 4180 CSV parser and lightbox queue state.", "/display/docs", "Core"),
+                new("BxDisplay", "19-kind read-only block component (Stat, Facts, Meter, Diff, Code/Secret, Timeline).", "/display/docs", "UI"),
+                new("BxAudioPlayer", "Constrained audio player with Start/End clip bounds, MaxPlays & Seekable guard.", "/display/docs", "UI"),
+                new("BxVideoPlayer", "Constrained video player with tracks, clip bounds and play-limit locking.", "/display/docs", "UI"),
+                new("BxFilePreviewProvider", "Modal lightbox host for images, PDFs, audio, video and parsed CSV files.", "/display/docs", "UI")
             ]),
 
         new(
@@ -403,7 +403,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-spreadsheet",
             CorePackage: "Lux.Spreadsheet.Core",
             UiPackage: "Lux.Spreadsheet",
-            DocsHref: "/docs/lux-spreadsheet",
+            DocsHref: "/spreadsheet/docs",
             Platforms: ["Headless C# / NativeAOT", ".NET MAUI Native C#", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid"],
             Features:
             [
@@ -438,9 +438,9 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("SpreadsheetSchema", "Column definitions, rules, options, duplicate policies & existing record lookup.", "/docs/lux-spreadsheet", "Core"),
-                new("SpreadsheetImporter", "Headless NativeAOT parser, layout detector, column suggester & batch runner.", "/docs/lux-spreadsheet", "Core"),
-                new("BxSpreadsheetImport", "Interactive 5-step Blazor/MAUI import wizard with inline cell editing.", "/docs/lux-spreadsheet", "UI")
+                new("SpreadsheetSchema", "Column definitions, rules, options, duplicate policies & existing record lookup.", "/spreadsheet/docs", "Core"),
+                new("SpreadsheetImporter", "Headless NativeAOT parser, layout detector, column suggester & batch runner.", "/spreadsheet/docs", "Core"),
+                new("BxSpreadsheetImport", "Interactive 5-step Blazor/MAUI import wizard with inline cell editing.", "/spreadsheet/docs", "UI")
             ]),
 
         new(
@@ -457,7 +457,7 @@ public static class LuxStackProducts
             RepoPath: "/home/gpoumarat/lux-agent",
             CorePackage: "Lux.Agent.Core",
             UiPackage: "Lux.Agent",
-            DocsHref: "/docs/lux-agent",
+            DocsHref: "/agent/docs",
             Platforms: ["Headless C# / NativeAOT", "Blazor Server / WASM / Auto", ".NET MAUI Blazor Hybrid", "Browser WebMCP (navigator.modelContext)"],
             Features:
             [
@@ -495,10 +495,10 @@ public static class LuxStackProducts
                 """,
             Components:
             [
-                new("AgentComponentSnapshot", "Compact NativeAOT semantic snapshot model with state, actions & flags.", "/docs/lux-agent", "Core"),
-                new("UndoStack<T>", "Generic bounded Undo/Redo stack with labels and state notifications.", "/docs/lux-agent", "Core"),
-                new("AgentBridgeService", "Connects FormController, DashboardController & SpreadsheetImporter to AI agents.", "/docs/lux-agent", "UI"),
-                new("lux-agent.js & lux-behaviors.js", "Static web assets for WebMCP (navigator.modelContext) and composable DOM behaviors.", "/docs/lux-agent", "UI")
+                new("AgentComponentSnapshot", "Compact NativeAOT semantic snapshot model with state, actions & flags.", "/agent/docs", "Core"),
+                new("UndoStack<T>", "Generic bounded Undo/Redo stack with labels and state notifications.", "/agent/docs", "Core"),
+                new("AgentBridgeService", "Connects FormController, DashboardController & SpreadsheetImporter to AI agents.", "/agent/docs", "UI"),
+                new("lux-agent.js & lux-behaviors.js", "Static web assets for WebMCP (navigator.modelContext) and composable DOM behaviors.", "/agent/docs", "UI")
             ])
     ];
 

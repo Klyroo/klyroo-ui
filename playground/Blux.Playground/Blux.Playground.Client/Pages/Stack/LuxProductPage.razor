@@ -1,37 +1,24 @@
+@page "/query"
+@page "/table"
+@page "/form"
+@page "/dashboard"
+@page "/display"
+@page "/spreadsheet"
+@page "/agent"
 @page "/stack/{Slug}"
 @using Blux.Playground.Client.Docs
 @using Blux.UI.Tools.Query
+@inject NavigationManager Navigation
 
 <PageTitle>@(Product is null ? "LuxStack" : $"{Product.Name} · {Product.Tagline}")</PageTitle>
-
-@* Top Ecosystem Product Switcher (TanStack style) *@
-<div class="border-b border-(--blux-border) bg-(--blux-bg-muted)/70 backdrop-blur">
-    <div class="mx-auto flex max-w-(--breakpoint-2xl) items-center gap-2 overflow-x-auto px-4 py-2.5 sm:px-6 lg:px-8">
-        <a href="/stack" class="inline-flex shrink-0 items-center gap-2 rounded-full border border-(--blux-border) bg-(--blux-bg) px-3 py-1 font-mono text-xs text-(--blux-text-muted) hover:border-(--blux-border-accented) hover:text-(--blux-text-highlighted)">
-            <span class="size-2 rounded-full bg-(--blux-primary)"></span>
-            <span>LuxStack</span>
-        </a>
-        <span class="text-(--blux-border-accented)" aria-hidden="true">/</span>
-        @foreach (var p in LuxStackProducts.All)
-        {
-            var active = string.Equals(p.Slug, Slug, StringComparison.OrdinalIgnoreCase);
-            <a href="@($"/stack/{p.Slug}")"
-               class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs transition-colors @(active ? "bg-(--blux-bg) font-semibold text-(--blux-text-highlighted)" : "border-(--blux-border) bg-(--blux-bg) text-(--blux-text-muted) hover:text-(--blux-text-highlighted)")"
-               style="@(active ? $"border-color:{p.AccentHex}" : "")">
-                <span class="size-2 rounded-full" style="@($"background:{p.AccentHex}")"></span>
-                <span>@p.Name</span>
-            </a>
-        }
-    </div>
-</div>
 
 @if (Product is null)
 {
     <div class="mx-auto max-w-3xl px-4 py-24 text-center">
-        <h1 class="text-3xl font-semibold text-(--blux-text-highlighted)">Unknown LuxStack product</h1>
+        <h1 class="text-3xl font-semibold text-(--blux-text-highlighted)">Unknown LuxStack library</h1>
         <p class="mt-2 text-(--blux-text-muted)">Return to the LuxStack ecosystem hub to pick one of the 8 libraries.</p>
         <div class="mt-6">
-            <BxButton Label="Back to LuxStack Hub" Href="/stack" />
+            <BxButton Label="Back to LuxStack Hub" Href="/" />
         </div>
     </div>
 }
@@ -67,7 +54,7 @@ else
                     <BxButton Label="@($"Read {Product.Name} docs")" Href="@Product.DocsHref" Size="BxSize.Lg" Class="rounded-lg px-5">
                         <TrailingIcon><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14m-6-6 6 6-6 6" /></svg></TrailingIcon>
                     </BxButton>
-                    <BxButton Label="All LuxStack libraries" Href="/stack" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Size="BxSize.Lg" Class="rounded-lg" />
+                    <BxButton Label="All LuxStack libraries" Href="/" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Size="BxSize.Lg" Class="rounded-lg" />
                 </div>
 
                 <div class="mt-4 flex flex-col gap-2.5">
@@ -274,7 +261,7 @@ else
                         Included in @Product.Name
                     </h2>
                 </div>
-                <BxButton Label="View all 8 LuxStack libraries" Href="/stack" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg" />
+                <BxButton Label="View all 8 LuxStack libraries" Href="/" Color="BxColor.Neutral" Variant="ButtonVariant.Outline" Class="rounded-lg" />
             </div>
 
             <div class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -301,7 +288,12 @@ else
 @code {
     [Parameter] public string? Slug { get; set; }
 
-    private LuxProductInfo? Product => LuxStackProducts.Find(Slug);
+    private string EffectiveSlug =>
+        !string.IsNullOrWhiteSpace(Slug)
+            ? Slug
+            : Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+
+    private LuxProductInfo? Product => LuxStackProducts.Find(EffectiveSlug);
 
     // Dashboard live demo
     private static readonly IReadOnlyList<DashboardStatsItem> DemoStats =

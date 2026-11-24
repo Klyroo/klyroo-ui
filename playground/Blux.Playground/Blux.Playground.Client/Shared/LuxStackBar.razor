@@ -1,0 +1,114 @@
+@implements IDisposable
+@using Blux.Playground.Client.Docs
+@inject NavigationManager Navigation
+
+<div class="border-b border-(--blux-border) bg-(--blux-bg-muted)/75 backdrop-blur">
+    <div class="mx-auto flex max-w-(--breakpoint-2xl) items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        <nav aria-label="LuxStack Libraries" class="flex min-w-0 items-center gap-1.5 overflow-x-auto py-0.5">
+            <a href="/"
+               aria-current="@(_activeSlug is null && _isHub ? "page" : null)"
+               class="inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1 font-mono text-xs transition-colors @(_isHub ? "border-(--blux-primary-text) bg-(--blux-bg) font-semibold text-(--blux-text-highlighted)" : "border-(--blux-border) bg-(--blux-bg) text-(--blux-text-muted) hover:border-(--blux-border-accented) hover:text-(--blux-text-highlighted)")">
+                <span class="size-2 rounded-full bg-(--blux-primary)" aria-hidden="true"></span>
+                <span>LuxStack</span>
+            </a>
+            <span class="px-0.5 text-(--blux-border-accented)" aria-hidden="true">/</span>
+            @foreach (var p in LuxStackProducts.All)
+            {
+                var isActive = string.Equals(_activeSlug, p.Slug, StringComparison.OrdinalIgnoreCase);
+                <a href="@($"/{p.Slug}")"
+                   aria-current="@(isActive ? "page" : null)"
+                   class="inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs transition-colors @(isActive ? "bg-(--blux-bg) font-semibold text-(--blux-text-highlighted)" : "border-(--blux-border) bg-(--blux-bg) text-(--blux-text-muted) hover:border-(--blux-border-accented) hover:text-(--blux-text-highlighted)")"
+                   style="@(isActive ? $"border-color:{p.AccentHex}" : "")">
+                    <span class="size-2 rounded-full" style="@($"background:{p.AccentHex}")" aria-hidden="true"></span>
+                    <span>@p.ShortName</span>
+                </a>
+            }
+        </nav>
+
+        @if (_activeProduct is not null)
+        {
+            <nav aria-label="@($"{_activeProduct.Name} sections")" class="hidden shrink-0 items-center gap-1 rounded-lg border border-(--blux-border) bg-(--blux-bg) p-0.5 font-mono text-xs md:flex">
+                <a href="@($"/{_activeProduct.Slug}")"
+                   class="rounded-md px-2.5 py-1 transition-colors @(!_inDocs ? "bg-(--blux-bg-muted) font-semibold text-(--blux-text-highlighted)" : "text-(--blux-text-muted) hover:text-(--blux-text-highlighted)")">
+                    Overview
+                </a>
+                <a href="@_activeProduct.DocsHref"
+                   class="rounded-md px-2.5 py-1 transition-colors @(_inDocs ? "bg-(--blux-bg-muted) font-semibold text-(--blux-text-highlighted)" : "text-(--blux-text-muted) hover:text-(--blux-text-highlighted)")">
+                    Docs
+                </a>
+                @if (_activeProduct.Slug == "ui")
+                {
+                    <a href="/components/button"
+                       class="rounded-md px-2.5 py-1 text-(--blux-text-muted) transition-colors hover:text-(--blux-text-highlighted)">
+                        Components
+                    </a>
+                }
+            </nav>
+        }
+    </div>
+</div>
+
+@code {
+    private string? _activeSlug;
+    private LuxProductInfo? _activeProduct;
+    private bool _isHub;
+    private bool _inDocs;
+
+    protected override void OnInitialized()
+    {
+        UpdateFromUri();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e)
+    {
+        UpdateFromUri();
+        StateHasChanged();
+    }
+
+    private void UpdateFromUri()
+    {
+        var path = "/" + Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/');
+        _isHub = path is "/" or "/stack";
+        _activeSlug = null;
+        _inDocs = false;
+
+        if (!_isHub)
+        {
+            var segs = path.Trim('/').Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segs.Length >= 1)
+            {
+                if (segs[0] == "stack" && segs.Length >= 2)
+                {
+                    _activeSlug = segs[1];
+                }
+                else if (segs[0] == "docs")
+                {
+                    _inDocs = true;
+                    if (segs.Length >= 2 && segs[1].StartsWith("lux-", StringComparison.OrdinalIgnoreCase))
+                    {
+                        _activeSlug = segs[1]["lux-".Length..];
+                    }
+                    else
+                    {
+                        _activeSlug = "ui";
+                    }
+                }
+                else if (segs[0] == "components" || (segs.Length >= 2 && segs[1] == "components"))
+                {
+                    _activeSlug = "ui";
+                    _inDocs = true;
+                }
+                else if (LuxStackProducts.Find(segs[0]) is not null)
+                {
+                    _activeSlug = segs[0];
+                    _inDocs = segs.Length >= 2 && segs[1].Equals("docs", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+        }
+
+        _activeProduct = LuxStackProducts.Find(_activeSlug);
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
+}
