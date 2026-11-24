@@ -1,0 +1,45 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@*
+    A BxCommandPalette in a BxModal, opened by a keyboard shortcut. The shortcut is handled in the browser
+    (js/hotkey.js) by clicking a hidden trigger button of the modal, so it works in static rendering; a
+    BxDashboardSearchButton opens it too. Filtering, highlighting and activation are in the browser as well.
+*@
+<BxModal Open="Open" OpenChanged="OpenChanged" AriaLabel="@(Label ?? Messages.DashboardSearch)" Close="false" Ui="_modalUi"
+         data-bx-dashboard-search="">
+    <ChildContent>
+        <button type="button" hidden tabindex="-1" data-bx-hotkey="@Shortcut" data-bx-hotkey-always></button>
+    </ChildContent>
+    <Body>
+        <BxCommandPalette Groups="Groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Messages.DashboardSearch)"
+                          Placeholder="@(Placeholder ?? Messages.DashboardSearchPlaceholder)" Ui="Ui" />
+    </Body>
+</BxModal>
+
+@code {
+    private ModalUi _modalUi = new() { Body = "p-0 sm:p-0" };
+
+    /// <summary>The commands, in groups: links navigate, other commands go to <see cref="OnSelect"/>.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<BxCommandGroup> Groups { get; set; } = [];
+
+    /// <summary>Called with the activated command. Link commands navigate as well. The search closes in either case.</summary>
+    [Parameter] public EventCallback<BxCommandItem> OnSelect { get; set; }
+
+    /// <summary>
+    /// The keyboard shortcut that opens the search: "mod+k" by default, where mod is Cmd on Apple platforms and Ctrl
+    /// elsewhere. Ctrl, meta, alt and shift are accepted too.
+    /// </summary>
+    [Parameter] public string Shortcut { get; set; } = "mod+k";
+
+    /// <summary>Open state. Use <c>@bind-Open</c>; the browser opens and closes the search on its own.</summary>
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible name of the dialog and the search field. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Slot overrides of the command palette.</summary>
+    [Parameter] public CommandPaletteUi? Ui { get; set; }
+}

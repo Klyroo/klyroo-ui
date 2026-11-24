@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Blux.UI;
+using Lux.UI;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Chat.Web;

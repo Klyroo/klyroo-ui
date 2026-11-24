@@ -1,16 +1,16 @@
-// Template check: each project template, exported the way a user gets it, must restore, build and run against a PACKED Blux.UI, with nothing of
+// Template check: each project template, exported the way a user gets it, must restore, build and run against a PACKED Lux.UI, with nothing of
 // this monorepo around it.
 //
 //   node build/verify-templates.mjs [--keep] [--no-browser] [template ...]
 //
 // For every template (all of them by default):
 //   1. exports it to a temporary folder with no Directory.Build.*, Directory.Packages.props or nuget.config in any ancestor (the check fails if
-//      the machine has one there), and checks the export: no monorepo path, no absolute path, Blux.UI pinned to the version of build/Version.props;
+//      the machine has one there), and checks the export: no monorepo path, no absolute path, Lux.UI pinned to the version of build/Version.props;
 //   2. restores and builds its web project in Release with warnings as errors, from a local feed holding the packed library;
 //   3. runs it: / answers 200, the stylesheet it links contains a utility only the template uses (so Tailwind ran), and the app also works
 //      below a path base;
 //   4. publishes it (`dotnet publish -c Release`) and runs the published app in Production, at the root and below a path base: the same
-//      checks, the framework files are served, and a real headless browser (the E2E project, tests/Blux.UI.E2E/TemplateTests.cs) sees the
+//      checks, the framework files are served, and a real headless browser (the E2E project, tests/Lux.UI.E2E/TemplateTests.cs) sees the
 //      page become interactive, the counter increment, and the Auto mode hand off to WebAssembly (Starter), or every page of the shell, the home figures, the customers table (search, sort, filter, selection, new customer), the inbox, the settings and the command palette work (Dashboard), or the sections, the pricing switch, the accordion and the color mode work with no circuit (Landing), or the pages, navigation, table of contents, search and copy buttons work with no circuit (Docs), or the landing page, the pricing switch and table, the blog with its tags, the docs, the changelog, the search of all three and the UI-only sign-in and sign-up forms work with no circuit (SaaS), or the home page, the work list and a project page, the about timeline, the writing list with its tags and an article, the speaking page, the search and the UI-only contact form work with no circuit (Portfolio), or the list, the pagination, a release page, the feed and the copy buttons work with no circuit and no network (Changelog: the sample releases, Changelog:Source=File) (--no-browser skips that part);
 //   5. renames a second export with `rename.cs`, to a plain name (Acme) and to one that contains the template name in another case
 //      (starterApp), builds both, checks that invalid names are refused without touching anything, and that a rename that failed half way
@@ -18,8 +18,8 @@
 // The MAUI heads are not built here: they need workloads, so the `maui` job of the CI workflow builds them.
 //
 // Needs the .NET 10 SDK and the network (the first build downloads the Tailwind CLI, the fonts and the icons of the template, and NuGet restores
-// the framework packages from nuget.org). The pack output is a folder feed; Blux.UI comes only from it, through a global-packages folder of this
-// run. The browser check needs Chromium installed for Playwright (pwsh tests/Blux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install chromium).
+// the framework packages from nuget.org). The pack output is a folder feed; Lux.UI comes only from it, through a global-packages folder of this
+// run. The browser check needs Chromium installed for Playwright (pwsh tests/Lux.UI.E2E/bin/Debug/net10.0/playwright.ps1 install chromium).
 import { spawn, spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -38,7 +38,7 @@ const templates = [
     pages: ["/", "/about"],
     // The setup method of the shared project, named after the template.
     services: true,
-    browserClass: "Blux.UI.E2E.TemplateTests",
+    browserClass: "Lux.UI.E2E.TemplateTests",
   },
   {
     name: "dashboard",
@@ -46,13 +46,13 @@ const templates = [
     name_in_files: "Dashboard",
     renames: ["Acme", "dashboardApp"],
     probe: { utility: "max-w-[72rem]", css: "max-width:72rem" },
-    // Blux.UI.Tools has no stylesheet of its own: its classes must be in the one the template compiles (a rule only the data list writes).
+    // Lux.UI.Tools has no stylesheet of its own: its classes must be in the one the template compiles (a rule only the data list writes).
     toolsProbe: "webkit-search-cancel-button",
     pages: ["/", "/customers", "/inbox", "/inbox/3", "/settings", "/settings/members", "/settings/notifications", "/settings/security"],
     services: true,
     // Blux's own components (BxDashboardGroup, BxDashboardSidebar...) are not the template name: rename.cs leaves them alone.
     keep: /BxDashboard[A-Za-z]*/g,
-    browserClass: "Blux.UI.E2E.DashboardTemplateTests",
+    browserClass: "Lux.UI.E2E.DashboardTemplateTests",
   },
   {
     name: "landing",
@@ -61,7 +61,7 @@ const templates = [
     renames: ["Acme", "landingApp"],
     probe: { utility: "max-w-[27rem]", css: "max-width:27rem" },
     pages: ["/"],
-    browserClass: "Blux.UI.E2E.LandingTemplateTests",
+    browserClass: "Lux.UI.E2E.LandingTemplateTests",
   },
   {
     name: "docs",
@@ -70,7 +70,7 @@ const templates = [
     renames: ["Acme", "docsApp"],
     probe: { utility: "max-w-[29rem]", css: "max-width:29rem" },
     pages: ["/", "/getting-started/installation", "/guides/configuration"],
-    browserClass: "Blux.UI.E2E.DocsTemplateTests",
+    browserClass: "Lux.UI.E2E.DocsTemplateTests",
   },
   {
     name: "saas",
@@ -79,7 +79,7 @@ const templates = [
     renames: ["Acme", "saasApp"],
     probe: { utility: "max-w-[28rem]", css: "max-width:28rem" },
     pages: ["/", "/pricing", "/blog", "/blog/grace-periods-without-the-guesswork", "/docs", "/docs/getting-started/quick-start", "/changelog", "/changelog/2-0", "/login", "/signup"],
-    browserClass: "Blux.UI.E2E.SaasTemplateTests",
+    browserClass: "Lux.UI.E2E.SaasTemplateTests",
   },
   {
     name: "portfolio",
@@ -88,7 +88,7 @@ const templates = [
     renames: ["Acme", "portfolioApp"],
     probe: { utility: "max-w-[26rem]", css: "max-width:26rem" },
     pages: ["/", "/work", "/work/quire", "/about", "/writing", "/writing/spacing-scales-with-fewer-steps", "/speaking", "/contact", "/uses"],
-    browserClass: "Blux.UI.E2E.PortfolioTemplateTests",
+    browserClass: "Lux.UI.E2E.PortfolioTemplateTests",
   },
   {
     name: "changelog",
@@ -101,7 +101,7 @@ const templates = [
     env: { Changelog__Source: "File", Changelog__Repository: "tern-cli/tern" },
     // Blux's own components (BxChangelogVersions) are not the template name: rename.cs leaves them alone.
     keep: /Bx(?:Changelog)Version(?:s)?/g,
-    browserClass: "Blux.UI.E2E.ChangelogTemplateTests",
+    browserClass: "Lux.UI.E2E.ChangelogTemplateTests",
   },
   {
     name: "chat",
@@ -115,7 +115,7 @@ const templates = [
     env: { Assistant__Provider: "Simulated" },
     // Blux's own chat components, types and element attributes (BxChatMessages, ChatRole, ChatMessagesUi, data-bx-chat-input) are not the template name: rename.cs leaves them alone.
     keep: /chat\/completions|(?:Bx)?Chat(?:Role|Status|Side|Message|Messages|Prompt|Chevron|Tool|Attachment|Palette|Reasoning|Shimmer)[A-Za-z]*|bx-chat-[a-z-]*|data-bx-chat[a-z-]*/g,
-    browserClass: "Blux.UI.E2E.ChatTemplateTests",
+    browserClass: "Lux.UI.E2E.ChatTemplateTests",
   },
   {
     name: "editor",
@@ -128,7 +128,7 @@ const templates = [
     services: true,
     // Blux's own editor components, types and elements (BxEditor, EditorAction, EditorToolbarItem, bx-editor) are not the template name: rename.cs leaves them alone.
     keep: /Sanitize(?=Editor)Editor[A-Za-z]*|(?<!Add)(?:Bx)?Editor(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)[A-Za-z]*|Bx(?:Editor)[A-Za-z]*|bx-editor[a-z-]*/g,
-    browserClass: "Blux.UI.E2E.EditorTemplateTests",
+    browserClass: "Lux.UI.E2E.EditorTemplateTests",
   },
 ];
 
@@ -276,12 +276,12 @@ try {
     throw new Error("an ancestor folder of the temp directory holds MSBuild or NuGet settings: set TMPDIR to a clean folder");
   }
 
-  // 1. Pack the library to a local feed (Blux.UI only comes from there), as the package check does.
+  // 1. Pack the library to a local feed (Lux.UI only comes from there), as the package check does.
   mkdirSync(feed);
-  const pack = run("dotnet", ["pack", "src/Blux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
-  if (!check(pack.code === 0, "dotnet pack src/Blux.UI -c Release succeeds without warnings")) console.log(pack.out);
-  // The data list packages too, for the templates that use it (Dashboard): Blux.UI.Tools.Query first, Blux.UI.Tools depends on it and on Blux.UI at exactly this version.
-  for (const project of ["src/Blux.UI.Tools.Query", "src/Blux.UI.Tools", "src/Blux.UI.Server"]) {
+  const pack = run("dotnet", ["pack", "src/Lux.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
+  if (!check(pack.code === 0, "dotnet pack src/Lux.UI -c Release succeeds without warnings")) console.log(pack.out);
+  // The data list packages too, for the templates that use it (Dashboard): Lux.UI.Tools.Query first, Lux.UI.Tools depends on it and on Lux.UI at exactly this version.
+  for (const project of ["src/Lux.UI.Tools.Query", "src/Lux.UI.Tools", "src/Lux.UI.Server"]) {
     const packed = run("dotnet", ["pack", project, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(packed.code === 0, `dotnet pack ${project} -c Release succeeds without warnings`)) console.log(packed.out);
   }
@@ -290,9 +290,9 @@ try {
   const version = nupkg.replace(/^Blux\.UI\./, "").replace(/\.nupkg$/, "");
   check(version === expectedVersion, `the packed library has the version of build/Version.props (${version} / ${expectedVersion})`);
 
-  // The sources: the feed for Blux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
+  // The sources: the feed for Lux.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
   const nugetConfig = `<configuration><packageSources><clear /><add key="blux-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Blux.UI" /><package pattern="Blux.UI.Tools" /><package pattern="Blux.UI.Tools.Query" /><package pattern="Blux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+    `<packageSourceMapping><packageSource key="blux-feed"><package pattern="Lux.UI" /><package pattern="Lux.UI.Tools" /><package pattern="Lux.UI.Tools.Query" /><package pattern="Lux.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -307,7 +307,7 @@ try {
     }
     check(readdirSync(repo).some((f) => f.endsWith(".slnx")), `${template.name}: the export has a .slnx solution`);
     const forbidden = [
-      [/src[\\/]Blux\.UI/, "a path into the library source (src/Blux.UI)"],
+      [/src[\\/]Blux\.UI/, "a path into the library source (src/Lux.UI)"],
       [/BluxRepoRoot/, "BluxRepoRoot"],
       [/\.\.[\\/]\.\.[\\/]\.\./, "a path three levels up (..\\..\\..)"],
       [new RegExp(`(^|[^\\w.])(/home/|/Users/|[A-Za-z]:\\\\)`), "an absolute path"],
@@ -321,11 +321,11 @@ try {
     }
     const packages = readFileSync(join(repo, "Directory.Packages.props"), "utf8");
     const pinned = /<PackageVersion Include="Blux\.UI" Version="([^"]+)"/.exec(packages)?.[1];
-    check(pinned === expectedVersion, `${template.name}: Blux.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
+    check(pinned === expectedVersion, `${template.name}: Lux.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
     const serverPinned = /<PackageVersion Include="Blux\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
-    if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Blux.UI.Server is pinned to the version of build/Version.props, the one of Blux.UI (${serverPinned} / ${expectedVersion})`);
+    if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Lux.UI.Server is pinned to the version of build/Version.props, the one of Lux.UI (${serverPinned} / ${expectedVersion})`);
     const toolsPinned = /<PackageVersion Include="Blux\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
-    if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Blux.UI.Tools is pinned to the version of build/Version.props, the one of Blux.UI (${toolsPinned} / ${expectedVersion})`);
+    if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Lux.UI.Tools is pinned to the version of build/Version.props, the one of Lux.UI (${toolsPinned} / ${expectedVersion})`);
 
     // 3. Restore, build (Release, warnings as errors), run.
     const web = join(repo, template.web);
@@ -334,7 +334,7 @@ try {
     const assembly = join(web, "bin", "Release", "net10.0", `${basename(template.web)}.dll`);
     if (built.code === 0) {
       const { utility, css } = template.probe;
-      check(!readFileSync(join(root, "src", "Blux.UI", "wwwroot", "blux.css"), "utf8").includes(css), `${template.name}: ${utility} is not in the precompiled blux.css, so finding it proves the template's CSS was compiled`);
+      check(!readFileSync(join(root, "src", "Lux.UI", "wwwroot", "lux.css"), "utf8").includes(css), `${template.name}: ${utility} is not in the precompiled lux.css, so finding it proves the template's CSS was compiled`);
       for (const [label, extraEnv, prefix] of [["at the root", {}, ""], ["below a path base", { PathBase: `/demo/${template.name}` }, `/demo/${template.name}`]]) {
         let app;
         try {
@@ -359,7 +359,7 @@ try {
             check(cssRes.ok, `${template.name}: the stylesheet is served ${label} (${cssRes.status})`);
             check(body.includes(css), `${template.name}: the stylesheet contains ${utility}, a utility only the template uses ${label}`);
             check(body.includes("--blux-primary"), `${template.name}: the stylesheet has the Blux theme ${label}`);
-            if (template.toolsProbe) check(body.includes(template.toolsProbe), `${template.name}: the stylesheet has the classes of Blux.UI.Tools (${template.toolsProbe}) ${label}`);
+            if (template.toolsProbe) check(body.includes(template.toolsProbe), `${template.name}: the stylesheet has the classes of Lux.UI.Tools (${template.toolsProbe}) ${label}`);
           }
         } finally {
           app.child.kill();
@@ -403,10 +403,10 @@ try {
       if (browser) {
         // A real browser: the E2E project of this repository, pointed at the published folder.
         const e2e = { BLUX_TEMPLATE_PUBLISHED: published, BLUX_TEMPLATE_ASSEMBLY: `${basename(template.web)}.dll`, BLUX_TEMPLATE_PROBE: template.probe.css };
-        const e2eBuild = runPlain("dotnet", ["build", "tests/Blux.UI.E2E"], root);
-        if (!check(e2eBuild.code === 0, `${template.name}: tests/Blux.UI.E2E builds`)) console.log(e2eBuild.out);
+        const e2eBuild = runPlain("dotnet", ["build", "tests/Lux.UI.E2E"], root);
+        if (!check(e2eBuild.code === 0, `${template.name}: tests/Lux.UI.E2E builds`)) console.log(e2eBuild.out);
         if (e2eBuild.code === 0) {
-          const browserRun = runPlain("dotnet", ["test", "--project", "tests/Blux.UI.E2E", "--no-build", "--", "--filter-class", template.browserClass], root, e2e);
+          const browserRun = runPlain("dotnet", ["test", "--project", "tests/Lux.UI.E2E", "--no-build", "--", "--filter-class", template.browserClass], root, e2e);
           const count = (label) => Number(new RegExp(`${label}: (\\d+)`).exec(browserRun.out)?.[1] ?? NaN);
           const [total, passed, failed, skipped] = [count("total"), count("succeeded"), count("failed"), count("skipped")];
           if (!check(browserRun.code === 0 && total > 0 && failed === 0 && skipped === 0 && passed === total, `${template.name}: in a browser, the published app passes ${template.browserClass} (root and path base): ${passed} of ${total} tests passed, ${failed} failed, ${skipped} skipped`)) console.log(browserRun.out);

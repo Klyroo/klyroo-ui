@@ -1,8 +1,0 @@
-@* The Lucide icons are built into the library, by bare name or as i-lucide-{name} / lucide:{name}. An unknown name renders an empty icon marked data-bx-missing-icon. *@
-<div class="flex flex-wrap items-center gap-4">
-    @foreach (var name in new[] { "search", "bell", "mail", "calendar", "heart", "star", "download", "globe" })
-    {
-        <BxIcon Name="@name" Size="BxSize.Lg" />
-    }
-    <BxIcon Name="check" Size="BxSize.Xl" Label="Done" Class="text-(--blux-success-text)" />
-</div>

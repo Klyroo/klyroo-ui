@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 using Editor.Shared;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 

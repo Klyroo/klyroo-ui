@@ -4,6 +4,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Blux.UI" Version="0.1.0-alpha" />
+    <PackageVersion Include="Lux.UI" Version="0.1.0-alpha" />
   </ItemGroup>
 </Project>

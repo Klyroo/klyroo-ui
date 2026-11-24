@@ -1,0 +1,132 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@*
+    A file as a chip: an icon or an image preview, the name and the size. Removing needs interactivity (the button is
+    disabled until the page is interactive, like any button with a click handler).
+*@
+<div data-color="@Color.Value"
+     data-status="@_status"
+     aria-busy="@(Status == ChatAttachmentStatus.Uploading ? "true" : null)"
+     class="@_slots["root"]"
+     @attributes="AdditionalAttributes">
+    <span class="@_slots["leading"]" data-slot="leading">
+        @if (_preview)
+        {
+            <BxImage Src="@Url" Alt="@(Variant == ChatAttachmentVariant.Thumbnail ? Name : "")" Width="_pixels" Height="_pixels" ImageOptions="ImageOptions" Class="@_slots["image"]" data-bx-avatar-image />
+        }
+        else if (Status == ChatAttachmentStatus.Uploading)
+        {
+            @RenderIcon(Options.Icons.Loading, _slots["leadingIcon"])
+        }
+        else if (Status == ChatAttachmentStatus.Error)
+        {
+            @RenderIcon(Options.Icons.Caution, _slots["leadingIcon"])
+        }
+        else if (Icon is not null)
+        {
+            @Icon
+        }
+        else
+        {
+            @RenderIcon(Options.Icons.File, _slots["leadingIcon"])
+        }
+    </span>
+    <span class="@_slots["wrapper"]" data-slot="wrapper">
+        <span class="@_slots["name"]">
+            @if (Status == ChatAttachmentStatus.Uploading)
+            {
+                <BxChatShimmer Text="@Name" />
+            }
+            else
+            {
+                @Name
+            }
+        </span>
+        @if (_description is not null)
+        {
+            <span class="@_slots["description"]">@_description</span>
+        }
+        @if (_statusText is not null)
+        {
+            <span class="@_slots["srOnly"]">(@_statusText)</span>
+        }
+    </span>
+    @if (Removable)
+    {
+        <BxButton Square Size="BxSize.Xs" Variant="ButtonVariant.Ghost" Color="BxColor.Neutral" OnClick="OnRemove"
+                  aria-label="@string.Format(Messages.ChatRemoveAttachment, Name)" Class="@_slots["remove"]"
+                  LeadingIcon="@RenderIcon(Options.Icons.Close, _slots["removeIcon"])" />
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private bool _preview;
+    private string? _description;
+    private string? _statusText;
+    private string _status = "idle";
+
+    /// <summary>File name.</summary>
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+
+    /// <summary>Media type ("image/png"): images with a <see cref="Url"/> show a preview.</summary>
+    [Parameter] public string? Type { get; set; }
+    [Parameter] public string? Url { get; set; }
+
+    /// <summary>Size in bytes, shown in the description.</summary>
+    [Parameter] public long? FileSize { get; set; }
+
+    /// <summary>Replaces the default description: the extension, then the size. For an error, put the reason here.</summary>
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public ChatAttachmentStatus Status { get; set; }
+    [Parameter] public ChatAttachmentVariant Variant { get; set; }
+
+    /// <summary>Card only: a vertical card gives an image a large preview.</summary>
+    [Parameter] public BxOrientation Orientation { get; set; } = BxOrientation.Horizontal;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+
+    /// <summary>Replaces the file icon.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Shows a remove button. Raise <see cref="OnRemove"/> and take the attachment out of your list.</summary>
+    [Parameter] public bool Removable { get; set; }
+    [Parameter] public EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> OnRemove { get; set; }
+    [Parameter] public ChatAttachmentUi? Ui { get; set; }
+
+    /// <summary>
+    /// Image settings forwarded to the preview of an image, see <see cref="BxImage"/>. A horizontal card passes the size of its square preview
+    /// as the width and the height; a thumbnail or a vertical card takes the size of its container, so give <c>Sizes</c> to get a <c>srcset</c>.
+    /// </summary>
+    [Parameter] public BxImageOptions? ImageOptions { get; set; }
+
+    private int? _pixels;
+
+    protected override void OnParametersSet()
+    {
+        _preview = Url is not null && Type?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;
+        _status = ChatValue.Of(Status);
+        _pixels = Variant == ChatAttachmentVariant.Card && Orientation == BxOrientation.Horizontal
+            ? Size switch { BxSize.Xs => 24, BxSize.Sm => 28, BxSize.Lg => 40, BxSize.Xl => 48, _ => 36 }
+            : null;
+        _slots = ResolveSlots(Options.ChatAttachment, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant == ChatAttachmentVariant.Thumbnail ? "thumbnail" : "card",
+            ["size"] = VariantValue.Of(Size),
+            ["status"] = _status,
+            ["orientation"] = Orientation == BxOrientation.Vertical ? "vertical" : "horizontal",
+            ["preview"] = VariantValue.Of(_preview),
+        }, Ui, "root");
+        var extension = Path.GetExtension(Name).TrimStart('.').ToUpperInvariant();
+        var computed = string.Join(" · ", new[] { extension, FileSize is { } bytes ? Lux.UI.Internal.FileSizeText.Format(bytes, CurrentLocale, FormatCulture) : "" }.Where(p => p.Length > 0));
+        _description = Description ?? (computed.Length > 0 ? computed : null);
+        _statusText = Status switch
+        {
+            ChatAttachmentStatus.Uploading => Messages.ChatAttachmentUploading,
+            ChatAttachmentStatus.Error => Messages.ChatAttachmentFailed,
+            _ => null,
+        };
+    }
+}

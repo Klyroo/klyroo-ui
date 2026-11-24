@@ -1,4 +1,4 @@
-# blux-ui
+# lux-ui
 
 Accessible, themable Blazor components styled with Tailwind CSS v4.
 Status: early development. 133 accessible Blazor components across core UI families:
@@ -38,33 +38,33 @@ The same components run on the web and in .NET MAUI Blazor Hybrid apps (a `Blazo
 | Android TV | Experimental: D-pad navigation, editing mode for text fields, Back closes overlays. Tested on the emulator; the soft keyboard has not been seen yet (the TV emulator has none) |
 | Tizen (Samsung TV) | Not supported: there is no BlazorWebView |
 
-See [`samples/Blux.Maui`](samples/Blux.Maui) and the "MAUI and Blazor Hybrid" guide of the docs site.
+See [`samples/Lux.Maui`](samples/Lux.Maui) and the "MAUI and Blazor Hybrid" guide of the docs site.
 
 ## Install
 
 Requires .NET 10.
 
 ```bash
-dotnet add package Blux.UI
+dotnet add package Lux.UI
 ```
 
 ### Packages
 
 | Package | What it is |
 |---|---|
-| `Blux.UI` | The components, themes, 12 locales and the build-time features (fonts, icons, Tailwind). |
-| `Blux.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `BxImage`. |
-| `Blux.UI.Images.Local` | A local image optimizer endpoint (NetVips). |
-| `Blux.UI.Server` | Server-side request access (`services.AddBluxServer()`): lets components read cookies, such as the time zone of a data list, in static rendering and prerendering. ASP.NET Core only; call it in the server project. |
-| `Blux.UI.Tools` | Data-heavy components built on Blux.UI (the data list and its parts, under construction). `services.AddBluxUiTools()` registers it, and Blux.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `blux.css`. With `<BluxTailwind>true</BluxTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/blux/blux-tools.theme.css` after `blux.theme.css` and set `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>`. Depends on exactly the same version of `Blux.UI`. |
-| `Blux.UI.Tools.Query` | The Blazor-free request and filter models of the data list, for API servers (no ASP.NET Core, no Blux.UI). |
-| `Blux.UI.Mcp` | The MCP server for agents (a dotnet tool). |
+| `Lux.UI` | The components, themes, 12 locales and the build-time features (fonts, icons, Tailwind). |
+| `Lux.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `BxImage`. |
+| `Lux.UI.Images.Local` | A local image optimizer endpoint (NetVips). |
+| `Lux.UI.Server` | Server-side request access (`services.AddLuxServer()`): lets components read cookies, such as the time zone of a data list, in static rendering and prerendering. ASP.NET Core only; call it in the server project. |
+| `Lux.UI.Tools` | Data-heavy components built on Lux.UI (the data list and its parts, under construction). `services.AddLuxUiTools()` registers it, and Lux.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `lux.css`. With `<LuxTailwind>true</LuxTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/blux/blux-tools.theme.css` after `lux.theme.css` and set `<BluxToolsOwnTailwind>true</BluxToolsOwnTailwind>`. Depends on exactly the same version of `Lux.UI`. |
+| `Lux.UI.Tools.Query` | The Blazor-free request and filter models of the data list, for API servers (no ASP.NET Core, no Lux.UI). |
+| `Lux.UI.Mcp` | The MCP server for agents (a dotnet tool). |
 
 ## Use it
 
 ```csharp
 // Program.cs of the server AND of the .Client project (share the call in a method of the client project)
-builder.Services.AddBluxUi();
+builder.Services.AddLuxUi();
 ```
 
 Styles come in two modes. Without Tailwind in your app, load the precompiled stylesheets:
@@ -73,12 +73,12 @@ Styles come in two modes. Without Tailwind in your app, load the precompiled sty
 @* App.razor, in <head> *@
 <BxColorModeScript />
 <BxThemeStyle /> @* only needed when you configure palettes *@
-<link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.preflight.css"]" />
-<link rel="stylesheet" href="@Assets["_content/Blux.UI/blux.css"]" />
+<link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.preflight.css"]" />
+<link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.css"]" />
 ```
 
 ```razor
-@using Blux.UI
+@using Lux.UI
 
 <BxButton Label="Save" OnClick="Save" />
 <BxSwitch @bind-Value="notify" Label="Email notifications" />
@@ -98,12 +98,12 @@ in a layer (`@import url(bootstrap.css) layer(bootstrap);`): unlayered CSS overr
 
 ### Styles with Tailwind v4 compiled by your app
 
-Every build copies the Blux theme (tokens, dark variant, the classes components use) to `obj/blux/blux.theme.css`.
-Import it after Tailwind, and load only your compiled stylesheet (not `blux.css` nor `blux.preflight.css`):
+Every build copies the Blux theme (tokens, dark variant, the classes components use) to `obj/blux/lux.theme.css`.
+Import it after Tailwind, and load only your compiled stylesheet (not `lux.css` nor `lux.preflight.css`):
 
 ```css
 @import "tailwindcss";
-@import "../obj/blux/blux.theme.css"; /* path relative to this file */
+@import "../obj/blux/lux.theme.css"; /* path relative to this file */
 ```
 
 `Class` and `Ui` then accept any utility, since your Tailwind build sees them in your Razor files.
@@ -119,7 +119,7 @@ server, or the culture of the browser in WebAssembly, no code is needed. A `BxAp
 ```
 
 ```csharp
-builder.Services.AddBluxUi(o => o.Locale = BxLocales.Extend(BxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
+builder.Services.AddLuxUi(o => o.Locale = BxLocales.Extend(BxLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
 ```
 
 See the Internationalization guide of the documentation site.
@@ -131,7 +131,7 @@ See the Internationalization guide of the documentation site.
   `BxColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
 
   ```csharp
-  builder.Services.AddBluxUi(o =>
+  builder.Services.AddLuxUi(o =>
   {
       o.Colors.Primary = BxPalette.Blue;                 // 26 Tailwind v4 palettes, or BxPalette.Custom("brand", shades)
       o.Colors.Neutral = BxPalette.Zinc;                 // also drives the text, background and border tokens
@@ -153,7 +153,7 @@ See the Internationalization guide of the documentation site.
 
   ```xml
   <ItemGroup>
-    <BluxFont Include="Public Sans" Role="sans" Weights="400;700" Subsets="latin;latin-ext" />  <!-- google, bunny, fontsource or local -->
+    <LuxFont Include="Public Sans" Role="sans" Weights="400;700" Subsets="latin;latin-ext" />  <!-- google, bunny, fontsource or local -->
   </ItemGroup>
   ```
 
@@ -162,19 +162,19 @@ See the Internationalization guide of the documentation site.
   `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic
   colors (`bg-primary`, `text-error`…) and `rounded-*`, which follows `--blux-radius`.
 - **Custom color by hand**: `Color="@("brand")"` plus `[data-color='brand'] { --bx-color: …; --bx-color-text: …; --bx-color-contrast: …; }`.
-- **Global theme**: `AddBluxUi(o => o.Button.Slot("base", "font-semibold"))`.
+- **Global theme**: `AddLuxUi(o => o.Button.Slot("base", "font-semibold"))`.
 - **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
-  utilities, so they need Tailwind compiled by your app; without it, only classes already in `blux.css` or your own CSS apply.
+  utilities, so they need Tailwind compiled by your app; without it, only classes already in `lux.css` or your own CSS apply.
 
 ## Images
 
 `BxImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in;
 the avatar, blog post, changelog, logos and chat attachment components use it and take an `ImageOptions` parameter.
-Without a provider images are rendered as they are. Pick one in `AddBluxUi`:
+Without a provider images are rendered as they are. Pick one in `AddLuxUi`:
 
 ```csharp
-o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Blux.UI.Images: also imgix, ImageKit, Cloudflare, Netlify, Vercel, Bunny
-// or resize on your own server with Blux.UI.Images.Local:  services.AddBluxImagesLocal();  app.MapBluxImages();
+o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Lux.UI.Images: also imgix, ImageKit, Cloudflare, Netlify, Vercel, Bunny
+// or resize on your own server with Lux.UI.Images.Local:  services.AddLuxImagesLocal();  app.MapLuxImages();
 ```
 
 ```razor
@@ -188,16 +188,16 @@ See the "Images" guide of the docs site.
 Blux runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
 `maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `BxHead` and a
 `HeadOutlet` root component); the local image optimizer is web only. Tooltips follow touch, targets are 44 px on coarse pointers, safe areas are respected, and an experimental
-TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Blux.Maui` and the "MAUI and Blazor Hybrid" guide.
+TV mode (`<BxApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Lux.Maui` and the "MAUI and Blazor Hybrid" guide.
 
 ## AI tooling
 
 Agents can read the real API instead of guessing it. All of it is generated from the docs catalog and the library, so it follows every change.
 
-- **MCP server**: `dotnet tool install --global Blux.UI.Mcp --prerelease`, then `claude mcp add --transport stdio blux-ui -- blux-ui-mcp`. It searches components,
+- **MCP server**: `dotnet tool install --global Lux.UI.Mcp --prerelease`, then `claude mcp add --transport stdio lux-ui -- lux-ui-mcp`. It searches components,
   returns parameters, events, slots and theme, example sources and guides. The docs site serves the same server at `/mcp`.
 - **llms.txt**: `/llms.txt` (overview with links) and `/llms-full.txt` (everything) on the docs site.
-- **Skill**: `skills/blux-ui` holds conventions, patterns and a routing table for coding agents (`npx skills add <repo>`).
+- **Skill**: `skills/lux-ui` holds conventions, patterns and a routing table for coding agents (`npx skills add <repo>`).
 
 See the "AI" guides of the docs site.
 

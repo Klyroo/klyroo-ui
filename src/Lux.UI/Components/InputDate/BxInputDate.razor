@@ -1,0 +1,79 @@
+@namespace Lux.UI
+@using System.Globalization
+@using Lux.UI.Internal
+@inherits BxFieldBase<DateOnly?>
+
+@*
+    A native date input (typed segments in the browser's locale, always posting yyyy-MM-dd) next to a button that opens a BxCalendar
+    in a bx-popover. <bx-date-field> keeps the two in step in the browser, so it works in static rendering too.
+*@
+<bx-date-field class="@_slots["root"]" data-color="@Color.Value">
+    @if (UseEditContext)
+    {
+        <InputDate TValue="DateOnly?" Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+    }
+    else if (ValueChanged.HasDelegate)
+    {
+        <input name="@Name" type="date" value="@Iso.Date(Value)" @onchange="OnNativeChange" @attributes="Attributes()" />
+    }
+    else
+    {
+        <input name="@Name" type="date" value="@Iso.Date(Value)" @attributes="Attributes()" />
+    }
+    <span class="@_slots["trigger"]">
+        <BxPopover Placement="bottom-end" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
+            <ChildContent>
+                <button type="button" class="@_slots["triggerButton"]" aria-label="@Messages.ChooseDate" disabled="@Disabled">
+                    @RenderIcon(Options.Icons.Calendar, _slots["triggerIcon"])
+                </button>
+            </ChildContent>
+            <Content>
+                <BxCalendar Value="@Value" Min="Min" Max="Max" Culture="Culture" WeekStart="WeekStart" Size="EffectiveSize" Color="Color" />
+            </Content>
+        </BxPopover>
+    </span>
+</bx-date-field>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>Earliest date, for the input and the calendar.</summary>
+    [Parameter] public DateOnly? Min { get; set; }
+
+    /// <summary>Latest date, for the input and the calendar.</summary>
+    [Parameter] public DateOnly? Max { get; set; }
+
+    /// <summary>Source of the calendar's month and day names. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language).</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+
+    /// <summary>First column of the calendar. Defaults to the culture's first day of the week.</summary>
+    [Parameter] public DayOfWeek? WeekStart { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public InputDateUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.InputDate, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    private async Task OnNativeChange(ChangeEventArgs e)
+    {
+        var date = Iso.ParseDate(e.Value?.ToString());
+        if (date == Value)
+        {
+            return;
+        }
+        Value = date;
+        await ValueChanged.InvokeAsync(date);
+    }
+
+    private Dictionary<string, object> Attributes()
+    {
+        var attributes = ControlAttributes(_slots["base"]);
+        if (Min is not null) attributes["min"] = Iso.Date(Min)!;
+        if (Max is not null) attributes["max"] = Iso.Date(Max)!;
+        return attributes;
+    }
+}

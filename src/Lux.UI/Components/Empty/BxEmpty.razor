@@ -1,0 +1,63 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+@using Lux.UI.Internal
+
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Icon is not null || Title is not null || Description is not null)
+    {
+        <div class="@_slots["header"]">
+            @if (Icon is not null)
+            {
+                <span class="@_slots["icon"]" aria-hidden="true">@Icon</span>
+            }
+            @if (Title is not null)
+            {
+                @if (HeadingLevel is { } level)
+                {
+                    <Heading Level="level" Class="@_slots["title"]">@Title</Heading>
+                }
+                else
+                {
+                    <p class="@_slots["title"]" data-slot="title">@Title</p>
+                }
+            }
+            @if (Description is not null)
+            {
+                <p class="@_slots["description"]" data-slot="description">@Description</p>
+            }
+        </div>
+    }
+    @ChildContent
+    @if (Actions is not null)
+    {
+        <div class="@_slots["actions"]">@Actions</div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Illustration above the title, 24x24 icons such as <c>BxIcons.Named("inbox")</c> fit.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    /// <summary>Extra content between the description and the actions.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Renders the title as a heading of this level (1 to 6) instead of a paragraph.</summary>
+    [Parameter] public int? HeadingLevel { get; set; }
+    [Parameter] public EmptyVariant Variant { get; set; } = EmptyVariant.Outline;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+    [Parameter] public EmptyUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Empty, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "root");
+}

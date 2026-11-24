@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace Dashboard.Shared.Services;
 
@@ -34,13 +34,13 @@ public sealed class AppearanceState
     private bool _loaded;
 
     /// <summary>The palettes the dialog offers, the first one is the default (the Blux colors).</summary>
-    public static IReadOnlyList<BxPalette> Palettes { get; } = [BxPalette.Blux, BxPalette.Blue, BxPalette.Emerald, BxPalette.Violet, BxPalette.Rose, BxPalette.Orange];
+    public static IReadOnlyList<BxPalette> Palettes { get; } = [BxPalette.Lux, BxPalette.Blue, BxPalette.Emerald, BxPalette.Violet, BxPalette.Rose, BxPalette.Orange];
 
     /// <summary>The neutral palettes the dialog offers, the first one is the default (the Blux neutrals).</summary>
-    public static IReadOnlyList<BxPalette> Neutrals { get; } = [BxPalette.Blux, BxPalette.Slate, BxPalette.Gray, BxPalette.Zinc, BxPalette.Neutral, BxPalette.Stone];
+    public static IReadOnlyList<BxPalette> Neutrals { get; } = [BxPalette.Lux, BxPalette.Slate, BxPalette.Gray, BxPalette.Zinc, BxPalette.Neutral, BxPalette.Stone];
 
     /// <param name="store">Where the choice is kept.</param>
-    /// <param name="cookies">The cookies of the request, when there is one (the web host calls <c>AddBluxServer()</c>); null in WebAssembly and in the MAUI app.</param>
+    /// <param name="cookies">The cookies of the request, when there is one (the web host calls <c>AddLuxServer()</c>); null in WebAssembly and in the MAUI app.</param>
     public AppearanceState(IAppearanceStore store, IBxRequestCookies? cookies = null)
     {
         _store = store;

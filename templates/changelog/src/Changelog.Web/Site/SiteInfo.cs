@@ -13,5 +13,5 @@ public static class SiteInfo
 
     public const string Description = "What changed in each release of Tern, a command line tool that keeps a folder in step with remote storage.";
 
-    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Blux UI.";
+    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
 }

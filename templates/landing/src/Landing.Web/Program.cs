@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Blux.UI;
+using Lux.UI;
 using Landing.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,7 +23,7 @@ if (forwardedHeaders)
     });
 }
 
-builder.Services.AddBluxUi();
+builder.Services.AddLuxUi();
 // Static server rendering only: no AddInteractiveServerComponents, no AddInteractiveWebAssemblyComponents. Add one of them (and a render mode on
 // the Routes in App.razor) the day a page needs a component that runs .NET in the browser.
 builder.Services.AddRazorComponents();

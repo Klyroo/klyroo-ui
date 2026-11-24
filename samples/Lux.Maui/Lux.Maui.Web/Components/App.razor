@@ -1,0 +1,25 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <base href="/" />
+    @* On the web the head components go here; in the MAUI app BxHead (in the layout) and the JS initializer do the same. *@
+    <BxColorModeScript />
+    <BxCultureMeta />
+    <BxThemeStyle />
+    <BxFonts />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.preflight.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/Lux.UI/lux.css"]" />
+    <ImportMap />
+    <HeadOutlet />
+</head>
+
+<body>
+    <Routes @rendermode="InteractiveServer" />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+</body>
+
+</html>

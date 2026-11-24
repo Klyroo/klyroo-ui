@@ -1,4 +1,4 @@
-// Generates src/Blux.UI/assets/icon.png (256x256): a switch, signal yellow on near black.
+// Generates src/Lux.UI/assets/icon.png (256x256): a switch, signal yellow on near black.
 // Pure Node (zlib only), 4x4 supersampling for smooth edges. Run: node build/make-icon.mjs
 import { deflateSync } from "node:zlib";
 import { writeFileSync, mkdirSync } from "node:fs";
@@ -44,6 +44,6 @@ const chunk = (type, data) => {
 const ihdr = Buffer.alloc(13);
 ihdr.writeUInt32BE(SIZE, 0); ihdr.writeUInt32BE(SIZE, 4); ihdr[8] = 8; ihdr[9] = 6;
 const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0))]);
-mkdirSync("src/Blux.UI/assets", { recursive: true });
-writeFileSync("src/Blux.UI/assets/icon.png", png);
+mkdirSync("src/Lux.UI/assets", { recursive: true });
+writeFileSync("src/Lux.UI/assets/icon.png", png);
 console.log(`icon.png ${png.length} bytes`);

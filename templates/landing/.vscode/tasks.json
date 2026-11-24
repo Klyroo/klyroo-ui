@@ -22,7 +22,7 @@
       "label": "tailwind watch",
       "type": "process",
       "command": "dotnet",
-      "args": ["build", "${workspaceFolder}/src/Landing.Web", "-t:BluxTailwindWatch"],
+      "args": ["build", "${workspaceFolder}/src/Landing.Web", "-t:LuxTailwindWatch"],
       "isBackground": true,
       "problemMatcher": [],
       "presentation": { "group": "dev" }

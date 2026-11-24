@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>$(BluxSampleTfm)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Lux.UI comes with its static web assets (lux.css, the JS initializer) and its Razor components. In your own app, this is the Lux.UI package. -->
+    <ProjectReference Include="..\..\..\src\Lux.UI\Lux.UI.csproj" />
+  </ItemGroup>
+
+</Project>

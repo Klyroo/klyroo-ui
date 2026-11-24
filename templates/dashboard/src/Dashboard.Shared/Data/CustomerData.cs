@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Blux.UI.Tools.Query;
+using Lux.Query;
 
 namespace Dashboard.Shared.Data;
 

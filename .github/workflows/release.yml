@@ -36,7 +36,7 @@ jobs:
       - name: The tag matches the package version
         run: |
           expected="${GITHUB_REF_NAME#v}"
-          actual=$(dotnet msbuild src/Blux.UI -getProperty:PackageVersion)
+          actual=$(dotnet msbuild src/Lux.UI -getProperty:PackageVersion)
           if [ "$expected" != "$actual" ]; then echo "Tag $GITHUB_REF_NAME does not match PackageVersion $actual in build/Version.props"; exit 1; fi
       - name: The changelog has a dated entry for this version
         run: |
@@ -48,36 +48,36 @@ jobs:
       - name: Generated assets are up to date
         run: |
           npm run build
-          changes=$(git status --porcelain -- src/Blux.UI/styles/generated src/Blux.UI/wwwroot src/Blux.UI.Tools/styles/generated src/Blux.UI.Tools/wwwroot src/Blux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
+          changes=$(git status --porcelain -- src/Lux.UI/styles/generated src/Lux.UI/wwwroot src/Lux.UI.Tools/styles/generated src/Lux.UI.Tools/wwwroot src/Lux.UI.Tools/Icons playground/Blux.Playground/Blux.Playground/wwwroot/site.css)
           if [ -n "$changes" ]; then echo "Run npm run build and commit:"; echo "$changes"; exit 1; fi
 
-      - run: dotnet build Blux.UI.slnx -c Release
+      - run: dotnet build Lux.UI.slnx -c Release
       - name: Unit tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tests -c Release --no-build
-      - name: Blux.UI.Tools tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tools.Tests -c Release --no-build
-      - name: Blux.UI.Tools.Query tests (net10.0 and net11.0)
-        run: dotnet test --project tests/Blux.UI.Tools.Query.Tests -c Release --no-build
+        run: dotnet test --project tests/Lux.UI.Tests -c Release --no-build
+      - name: Lux.UI.Tools tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Lux.UI.Tools.Tests -c Release --no-build
+      - name: Lux.UI.Tools.Query tests (net10.0 and net11.0)
+        run: dotnet test --project tests/Lux.UI.Tools.Query.Tests -c Release --no-build
       - name: MCP tests
-        run: dotnet test --project tests/Blux.UI.Mcp.Tests -c Release --no-build
+        run: dotnet test --project tests/Lux.UI.Mcp.Tests -c Release --no-build
       - name: Image provider and local optimizer tests
         run: |
-          dotnet test --project tests/Blux.UI.Images.Tests -c Release --no-build
-          dotnet test --project tests/Blux.UI.Images.Local.Tests -c Release --no-build
-      - name: Blux.UI.Server tests (request cookies)
-        run: dotnet test --project tests/Blux.UI.Server.Tests -c Release --no-build
+          dotnet test --project tests/Lux.UI.Images.Tests -c Release --no-build
+          dotnet test --project tests/Lux.UI.Images.Local.Tests -c Release --no-build
+      - name: Lux.UI.Server tests (request cookies)
+        run: dotnet test --project tests/Lux.UI.Server.Tests -c Release --no-build
       - name: Package check
         run: node build/verify-package.mjs --online
       - name: Pack the library, the MCP tool, the image packages and the Tools packages (same version)
         run: |
-          dotnet pack src/Blux.UI -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Mcp -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Images -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Images.Local -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Server -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools.Query -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools -c Release --no-build -o artifacts
-          dotnet pack src/Blux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Mcp -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Images -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Images.Local -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Server -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools.Query -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools -c Release --no-build -o artifacts
+          dotnet pack src/Lux.UI.Tools.EntityFrameworkCore -c Release --no-build -o artifacts
       - uses: actions/upload-artifact@v7
         with:
           name: nuget
@@ -100,7 +100,7 @@ jobs:
         with:
           name: nuget
           path: artifacts
-      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Blux.UI, Blux.UI.Mcp, Blux.UI.Images, Blux.UI.Images.Local, Blux.UI.Server, Blux.UI.Tools.Query, Blux.UI.Tools and Blux.UI.Tools.EntityFrameworkCore packages.
+      # NUGET_API_KEY: secret of the "nuget" environment, a nuget.org API key scoped to the Lux.UI, Lux.UI.Mcp, Lux.UI.Images, Lux.UI.Images.Local, Lux.UI.Server, Lux.UI.Tools.Query, Lux.UI.Tools and Lux.UI.Tools.EntityFrameworkCore packages.
       - name: Push
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

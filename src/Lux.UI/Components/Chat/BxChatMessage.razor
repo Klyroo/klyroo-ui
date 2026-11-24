@@ -1,0 +1,137 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+@*
+    One message of a conversation. The library renders no markdown: give the rendered markup as ChildContent (see the
+    docs for Markdig) or plain text with Text. While Streaming, the message is marked busy, so BxChatMessages announces
+    it once it is complete instead of token by token.
+*@
+<article data-bx-chat-message
+         data-role="@_role"
+         data-streaming="@(Streaming ? "true" : null)"
+         data-color="@Color.Value"
+         aria-label="@_author"
+         aria-busy="@(Streaming ? "true" : null)"
+         class="@_slots["root"]"
+         @attributes="AdditionalAttributes">
+    <div class="@_slots["container"]" data-slot="container">
+        @if (_hasLeading)
+        {
+            <div class="@_slots["leading"]" data-slot="leading">
+                @if (Leading is not null)
+                {
+                    @Leading
+                }
+                else if (Icon is not null)
+                {
+                    <BxAvatar Icon="Icon" Alt="@_author" Size="BxSize.Sm" />
+                }
+                else
+                {
+                    <BxAvatar Src="@AvatarSrc" Alt="@(AvatarAlt ?? _author)" Text="@AvatarText" Size="BxSize.Sm" />
+                }
+            </div>
+        }
+        <div class="@_slots["wrapper"]" data-slot="wrapper">
+            @if (Header is not null)
+            {
+                <div class="@_slots["header"]" data-slot="header">@Header</div>
+            }
+            @if (Files is not null)
+            {
+                <div class="@_slots["files"]" data-slot="files">@Files</div>
+            }
+            @if (ChildContent is not null || Text is not null)
+            {
+                <div class="@_slots["content"]" data-slot="content" data-bx-chat-content>
+                    @if (ChildContent is not null)
+                    {
+                        @ChildContent
+                    }
+                    else
+                    {
+                        <p class="@_slots["text"]">@Text</p>
+                    }
+                </div>
+            }
+            @if (Actions is not null)
+            {
+                <div class="@_slots["actions"]" data-slot="actions">@Actions</div>
+            }
+        </div>
+    </div>
+</article>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _role = "assistant";
+    private string _author = "";
+    private bool _hasLeading;
+
+    /// <summary>Who wrote it: tints nothing, but sets the default side and look, and the accessible name of the message.</summary>
+    [Parameter] public ChatRole Role { get; set; } = ChatRole.Assistant;
+
+    /// <summary>The message, as markup. Rendering markdown is the app's job; nothing here parses it.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The message as plain text, line breaks kept. Ignored when <see cref="ChildContent"/> is set.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>Marks the message as still arriving. Pair it with the changing content.</summary>
+    [Parameter] public bool Streaming { get; set; }
+
+    /// <summary>The side of the conversation. A user message sits on the right, the others on the left.</summary>
+    [Parameter] public ChatSide? Side { get; set; }
+
+    /// <summary>The surface of the message. A user message is soft, the others have none.</summary>
+    [Parameter] public ChatMessageVariant? Variant { get; set; }
+    [Parameter] public BxColor Color { get; set; } = BxColor.Neutral;
+
+    /// <summary>Tighter spacing, for narrow panels such as <see cref="BxChatPalette"/>.</summary>
+    [Parameter] public bool Compact { get; set; }
+
+    /// <summary>Image of the author; the initials of <see cref="AvatarAlt"/> show when there is none.</summary>
+    [Parameter] public string? AvatarSrc { get; set; }
+
+    /// <summary>Name of the author for the avatar. Defaults to the name of the role.</summary>
+    [Parameter] public string? AvatarAlt { get; set; }
+    [Parameter] public string? AvatarText { get; set; }
+
+    /// <summary>An icon in place of the avatar picture.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Replaces the avatar altogether. Without any of the avatar parameters nothing is shown.</summary>
+    [Parameter] public RenderFragment? Leading { get; set; }
+
+    /// <summary>Above the message: a name, a time.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>Attachments of the message, above the text: <see cref="BxChatAttachment"/> items.</summary>
+    [Parameter] public RenderFragment? Files { get; set; }
+
+    /// <summary>Below the message: copy, retry, thumbs.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public ChatMessageUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _role = ChatValue.Of(Role);
+        _author = Role switch
+        {
+            ChatRole.User => Messages.ChatUser,
+            ChatRole.System => Messages.ChatSystem,
+            _ => Messages.ChatAssistant,
+        };
+        _hasLeading = Leading is not null || Icon is not null || AvatarSrc is not null || AvatarAlt is not null || AvatarText is not null;
+        var side = Side ?? (Role == ChatRole.User ? ChatSide.Right : ChatSide.Left);
+        var variant = Variant ?? (Role == ChatRole.User ? ChatMessageVariant.Soft : ChatMessageVariant.Naked);
+        _slots = ResolveSlots(Options.ChatMessage, new Dictionary<string, string?>
+        {
+            ["side"] = ChatValue.Of(side),
+            ["variant"] = ChatValue.Of(variant),
+            ["role"] = _role,
+            ["compact"] = VariantValue.Of(Compact),
+            ["streaming"] = VariantValue.Of(Streaming),
+        }, Ui, "root");
+    }
+}

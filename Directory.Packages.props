@@ -14,15 +14,15 @@
     <PackageVersion Include="NetVips.Native" Version="8.18.7" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="10.0.15" />
     <PackageVersion Include="xunit.v3" Version="4.0.3" />
-    <!-- the one dependency of Blux.UI.Tools.EntityFrameworkCore (the async executor of a Queryable list); the version the tests run against -->
+    <!-- the one dependency of Lux.UI.Tools.EntityFrameworkCore (the async executor of a Queryable list); the version the tests run against -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.15" />
-    <!-- test-only: proves in tests/Blux.UI.Tools.Query.EfTests that the IQueryable applier translates to SQL; no package depends on it -->
+    <!-- test-only: proves in tests/Lux.UI.Tools.Query.EfTests that the IQueryable applier translates to SQL; no package depends on it -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.15" />
     <PackageVersion Include="bunit" Version="2.15.2" />
     <PackageVersion Include="Microsoft.Playwright" Version="1.65.1" />
     <PackageVersion Include="Deque.AxeCore.Playwright" Version="4.14.0" />
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
-    <!-- The Markdown content code shared by the content templates (templates/_shared/Content), compiled by tests/Blux.Templates.Tests. Each template pins its own copy. -->
+    <!-- The Markdown content code shared by the content templates (templates/_shared/Content), compiled by tests/Lux.Templates.Tests. Each template pins its own copy. -->
     <PackageVersion Include="Markdig" Version="1.6.0" />
     <PackageVersion Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>

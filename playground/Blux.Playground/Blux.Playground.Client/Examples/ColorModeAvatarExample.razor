@@ -1,9 +1,0 @@
-<BxColorModeAvatar Light="@Avatar("#ffd23f", "#0a0b0c")" Dark="@Avatar("#0a0b0c", "#ffd23f")" Alt="Ada Lovelace" Size="BxSize.Xl" data-testid="color-mode-avatar" />
-<BxColorModeAvatar Light="@Avatar("#14b8a6", "#ffffff")" Dark="@Avatar("#134e4a", "#5eead4")" Alt="Grace Hopper" />
-
-@code {
-    // A tiny SVG per color mode stands in for two real image files.
-    private static string Avatar(string background, string foreground) =>
-        "data:image/svg+xml," + Uri.EscapeDataString(
-            $"<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><rect width='48' height='48' fill='{background}'/><circle cx='24' cy='19' r='8' fill='{foreground}'/><path d='M8 44c2-10 9-14 16-14s14 4 16 14z' fill='{foreground}'/></svg>");
-}

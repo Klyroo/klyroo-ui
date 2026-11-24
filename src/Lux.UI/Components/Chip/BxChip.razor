@@ -1,0 +1,62 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+<span class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @ChildContent
+    @if (Show)
+    {
+        <span data-color="@Color.Value"
+              data-slot="indicator"
+              class="@_slots["base"]"
+              role="@(Label is null ? null : "img")"
+              aria-label="@Label"
+              aria-hidden="@(Label is null && string.IsNullOrEmpty(Text) ? "true" : null)">@Text</span>
+    }
+</span>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The element the indicator sits on, an avatar or a button for example.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Text inside the indicator, a count for example. Without it the indicator is a dot.</summary>
+    [Parameter] public string? Text { get; set; }
+
+    /// <summary>
+    /// Accessible text of the indicator ("3 unread messages"). Without it a dot is hidden from assistive technology
+    /// and a text is read as it is: never rely on the color alone to convey a meaning.
+    /// </summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public BxColor Color { get => _colorParameter ?? DefaultColor(BxColor.Primary); set => _colorParameter = value; }
+    private BxColor? _colorParameter;
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+    [Parameter] public BxChipPosition Position { get; set; } = BxChipPosition.TopRight;
+
+    /// <summary>Keeps the indicator inside the corner of the element instead of straddling it.</summary>
+    [Parameter] public bool Inset { get; set; }
+
+    /// <summary>Renders the indicator on its own, in the flow, without an element to sit on.</summary>
+    [Parameter] public bool Standalone { get; set; }
+
+    /// <summary>Shows the indicator. Set it to false to hide it without removing the element it sits on.</summary>
+    [Parameter] public bool Show { get; set; } = true;
+    [Parameter] public ChipUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Chip, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(Size),
+            ["kind"] = string.IsNullOrEmpty(Text) ? "dot" : "count",
+            ["standalone"] = VariantValue.Of(Standalone),
+            ["inset"] = VariantValue.Of(Inset),
+            ["position"] = Standalone ? "none" : Position switch
+            {
+                BxChipPosition.TopLeft => "top-left",
+                BxChipPosition.BottomRight => "bottom-right",
+                BxChipPosition.BottomLeft => "bottom-left",
+                _ => "top-right",
+            },
+        }, Ui, "root");
+}

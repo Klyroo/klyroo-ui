@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace Landing.Web.Content;
 
@@ -53,7 +53,7 @@ public static class SiteContent
     public const string HeaderButtonLabel = "Start free";
     public const string FooterLabel = "Footer";
 
-    public static string Copyright => $"\u00a9 {DateTime.UtcNow.Year} {Name}. Built with Blux UI.";
+    public static string Copyright => $"\u00a9 {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
 
     public static IReadOnlyList<BxNavigationItem> Navigation { get; } =
     [

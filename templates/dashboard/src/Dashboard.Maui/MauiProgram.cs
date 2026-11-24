@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Dashboard.Maui.Services;
 using Dashboard.Shared;
 using Dashboard.Shared.Services;
-using Blux.UI;
+using Lux.UI;
 
 namespace Dashboard.Maui;
 

@@ -70,7 +70,7 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
     return Fail($"Run this from the root of the repository, the folder that holds rename.cs and {Template}.slnx (it was already renamed if the solution has another name).");
 }
 
-// One pass over the three spellings, so a new name that contains the template name is never replaced again. The components of Blux UI that have the
+// One pass over the three spellings, so a new name that contains the template name is never replaced again. The components of Lux.UI that have the
 // template name in theirs (BxDashboardGroup, BxDashboardSidebar...) are not the template name: "Dashboard" after "Bx" is left alone.
 var spellings = new Dictionary<string, string>
 {

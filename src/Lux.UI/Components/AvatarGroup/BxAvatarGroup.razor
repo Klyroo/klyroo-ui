@@ -1,0 +1,34 @@
+@namespace Lux.UI
+@inherits BxComponentBase
+
+<div role="group" aria-label="@AriaLabel" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @foreach (var item in Visible)
+    {
+        <BxAvatar Src="@item.Src" Alt="@item.Alt" Text="@item.Text" Size="@Size" Class="@_slots["avatar"]" />
+    }
+    @if (Hidden > 0)
+    {
+        <BxAvatar Text="@($"+{Hidden}")" Alt="@string.Format(Messages.MoreAvatars, Hidden)" Size="@Size" Class="@_slots["avatar"]" />
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<BxAvatarItem> Items { get; set; } = [];
+
+    /// <summary>Most avatars to show; the others collapse into a "+N" avatar. Null shows them all.</summary>
+    [Parameter] public int? Max { get; set; }
+    [Parameter] public BxSize Size { get => _sizeParameter ?? DefaultSize(BxSize.Md); set => _sizeParameter = value; }
+    private BxSize? _sizeParameter;
+
+    /// <summary>Accessible name of the group ("Project members").</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public AvatarGroupUi? Ui { get; set; }
+
+    private IEnumerable<BxAvatarItem> Visible => Max is { } max && max >= 0 ? Items.Take(max) : Items;
+    private int Hidden => Max is { } max && max >= 0 ? Math.Max(Items.Count - max, 0) : 0;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.AvatarGroup, new Dictionary<string, string?>(), Ui, "root");
+}

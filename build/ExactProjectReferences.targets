@@ -1,6 +1,6 @@
 <Project>
   <!--
-    Version lockstep: the sister packages (Blux.UI.Tools today) are released with Blux.UI and only work with the same version of it.
+    Version lockstep: the sister packages (Lux.UI.Tools today) are released with Lux.UI and only work with the same version of it.
     A ProjectReference is packed as a dependency with a minimum version ([1.2.3, )); this makes it exact ([1.2.3]) for every project
     reference of the project that imports this file. build/verify-package.mjs checks the nuspec.
   -->

@@ -1,4 +1,4 @@
-using Blux.UI;
+using Lux.UI;
 
 namespace Docs.Web.Site;
 
@@ -17,7 +17,7 @@ public static class SiteInfo
     /// <summary>Where the "Source" link of the footer leads. A placeholder on example.com: point it at your repository.</summary>
     public const string SourceUrl = "https://example.com/tern";
 
-    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Blux UI.";
+    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
 
     // Home page
 

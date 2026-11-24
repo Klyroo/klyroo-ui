@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_ADDRESS, describeSchemes, isImageAddress, isLinkAddress, parseSchemes } from '../../src/Blux.UI/js/editor-address.js';
+import { MAX_ADDRESS, describeSchemes, isImageAddress, isLinkAddress, parseSchemes } from '../../src/Lux.UI/js/editor-address.js';
 
 test('schemes are read from a list of words, in lower case, and none means the default', () => {
   assert.deepEqual(parseSchemes('HTTPS  http,mailto'), ['https', 'http', 'mailto']);

@@ -12,13 +12,13 @@
     <ProjectReference Include="..\Dashboard.Shared\Dashboard.Shared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
     <!-- The server side of Blux: lets components read cookies while the server renders. Not in the client or the MAUI app, which have no request. -->
-    <PackageReference Include="Blux.UI.Server" />
+    <PackageReference Include="Lux.UI.Server" />
   </ItemGroup>
 
   <!-- Fonts are downloaded at build time and served from the app's own origin (BxFonts in App.razor links them). They belong to the host project. -->
   <ItemGroup>
-    <BluxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <BluxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

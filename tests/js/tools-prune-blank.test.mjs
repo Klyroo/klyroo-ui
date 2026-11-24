@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pruneBlank } from '../../src/Blux.UI.Tools/js/prune-blank.js';
+import { pruneBlank } from '../../src/Lux.UI.Tools/js/prune-blank.js';
 
 // A form whose marked fields are the ones in the list.
 const formOf = (fields) => ({ querySelectorAll: (selector) => (selector === '[data-bx-prune]' ? fields : []) });

@@ -1,9 +1,0 @@
-<div class="flex w-full max-w-xs flex-col gap-3">
-    <BxFormField Label="Editors">
-        <BxSelectMenu Items="Editors" Name="editors" Multiple Value="@(["vim"])" Placeholder="Pick editors" />
-    </BxFormField>
-</div>
-
-@code {
-    private static readonly BxSelectItem[] Editors = [new("vim", "Vim"), new("code", "VS Code"), new("rider", "Rider")];
-}

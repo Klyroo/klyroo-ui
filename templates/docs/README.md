@@ -1,6 +1,6 @@
 # Docs
 
-A documentation site written in Markdown, on Blux UI: a header with a search button and a color mode button, a navigation tree built from your folders, the page with its table of contents, previous and next links, a home page and a 404 page. The product in the sample pages (Tern, a command line tool) and every name in them are made up.
+A documentation site written in Markdown, on Lux.UI: a header with a search button and a color mode button, a navigation tree built from your folders, the page with its table of contents, previous and next links, a home page and a 404 page. The product in the sample pages (Tern, a command line tool) and every name in them are made up.
 
 Pages are `.md` files with a little YAML at the top. The site reads them when it starts, renders them with [Markdig](https://github.com/xoofx/markdig) and builds the navigation, the table of contents and the search from what it finds. It is rendered by the server and sent as HTML: no circuit, no WebAssembly download.
 
@@ -24,7 +24,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Docs.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Blux.UI package), the fonts of `Docs.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Docs.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -62,7 +62,7 @@ Start the body at `##`: the title above is the only `h1`.
 | `description` | The line under the title, the meta description and the line under the title in search results. |
 | `order` | The position among the pages and folders next to it, smallest first. Without it a page comes after the ones that have one, by title. |
 | `navigationTitle` | A shorter title for the link in the navigation. |
-| `icon` | An icon name. The build cannot see names that are in Markdown: add them to the `BluxIcon` item in `Docs.Web.csproj`. |
+| `icon` | An icon name. The build cannot see names that are in Markdown: add them to the `LuxIcon` item in `Docs.Web.csproj`. |
 | `draft` | `true` keeps the page out of the site, the navigation and the search. Set `Content:IncludeDrafts` to `true` to see drafts. |
 
 A folder becomes a group in the navigation. Put a `_dir.yml` in it to set `title`, `order` and `icon`; without one the folder name is used ("getting-started" is "Getting started"). The top level folders also become the links of the header. Keys that are not listed are ignored, so check the spelling when a setting has no effect.
@@ -99,7 +99,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Docs.Web
-dotnet build src/Docs.Web -t:BluxTailwindWatch
+dotnet build src/Docs.Web -t:LuxTailwindWatch
 ```
 
 In Development the site reads the content again a moment after a `.md` or `.yml` file changes (reload the page to see it). A file with a mistake does not take the site down: the previous content stays and the error, with the file name, is in the log. A published site reads its files once, when it starts, and stops with the file name if one cannot be used.

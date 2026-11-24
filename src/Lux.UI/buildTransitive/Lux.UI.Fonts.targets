@@ -1,0 +1,139 @@
+<Project>
+  <!--
+    Self-hosted fonts. The app declares fonts as items:
+
+      <LuxFont Include="Public Sans" Role="sans" Provider="google" Weights="400;700" Styles="normal;italic" Subsets="latin;latin-ext" />
+
+    At build time the LuxResolveFonts task asks the providers, downloads only the requested files (cached), and generates
+    blux.fonts.css (@font-face, a fallback face per family, the blux-font-sans and blux-font-mono variables) and the font files into
+    obj/<config>/<tfm>/blux/fonts/. They are added to the static web assets at _blux/fonts/, so MapStaticAssets serves them from
+    the app's own origin. BxFonts links the stylesheet and preloads the main face from a manifest generated into the assembly
+    (obj/<config>/<tfm>/blux/LuxFontsManifest.g.cs, next to the fonts folder and not in it: everything in the folder is served).
+    Nothing is requested from a third party when the page runs. LuxFonts=false turns the feature off.
+
+    Declare the items in the project that hosts the app (the server project of a Server or Auto app): BxFonts reads the manifest
+    of the entry assembly. Declaring them in a Blazor WebAssembly project is a build error (BLUXFONT010).
+  -->
+  <PropertyGroup>
+    <LuxFonts Condition="'$(LuxFonts)' == ''">true</LuxFonts>
+    <LuxFontsProviderPriority Condition="'$(LuxFontsProviderPriority)' == ''">google;bunny;fontsource</LuxFontsProviderPriority>
+    <LuxFontsCacheDir Condition="'$(LuxFontsCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(LuxCacheDir), fonts-cache))</LuxFontsCacheDir>
+    <LuxFontsCacheDays Condition="'$(LuxFontsCacheDays)' == ''">7</LuxFontsCacheDays>
+    <LuxFontsFailOnError Condition="'$(LuxFontsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</LuxFontsFailOnError>
+    <!-- The generated names carry a hash of the content, so a font never changes at its URL. -->
+    <LuxFontsCacheControl Condition="'$(LuxFontsCacheControl)' == ''">max-age=31536000, immutable</LuxFontsCacheControl>
+  </PropertyGroup>
+
+  <!--
+    A Blazor WebAssembly project (a standalone app or the client project of an Auto app) is not the host of the page: the server
+    renders the head, and BxFonts reads the manifest of the entry assembly, which on the server is the server project. Fonts
+    declared in the client would render nothing there, and both projects would publish the same _blux/fonts/blux.fonts.css.
+  -->
+  <Target Name="LuxFontsCheckProject"
+          BeforeTargets="LuxResolveFonts;LuxFontsDesignTime;ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(LuxFonts)' != 'false' And '@(LuxFont)' != '' And '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">
+    <Error Code="BLUXFONT010"
+           Text="LuxFont items are declared in '$(MSBuildProjectName)', a Blazor WebAssembly project. The server renders the page head, so fonts are self-hosted by the server project: declare the LuxFont items in the server project (the one that has the App component with BxFonts), and remove them here. Set LuxFonts=false in this project to silence this error." />
+  </Target>
+
+  <!--
+    Design-time builds (IntelliSense, the IDE's evaluation) never touch the network and generate nothing: they only expose what
+    an earlier real build left, so the manifest source and the static web assets are the same as at the last build.
+  -->
+  <Target Name="LuxFontsDesignTime"
+          BeforeTargets="ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(LuxFonts)' != 'false' And '@(LuxFont)' != '' And '$(DesignTimeBuild)' == 'true'">
+    <PropertyGroup>
+      <LuxFontsOutputDir Condition="'$(LuxFontsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, fonts))</LuxFontsOutputDir>
+      <LuxFontsManifestFile Condition="'$(LuxFontsManifestFile)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux))LuxFontsManifest.g.cs</LuxFontsManifestFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <_LuxFontExisting Include="$(LuxFontsOutputDir)*.woff2;$(LuxFontsOutputDir)*.woff;$(LuxFontsOutputDir)*.ttf;$(LuxFontsOutputDir)*.otf;$(LuxFontsOutputDir)blux.fonts.css" Condition="Exists('$(LuxFontsOutputDir)blux.fonts.css')" />
+      <_LuxFontFile Include="@(_LuxFontExisting)" BluxFile="%(Filename)%(Extension)" />
+      <Compile Include="$(LuxFontsManifestFile)" Condition="Exists('$(LuxFontsManifestFile)')" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="LuxResolveFonts"
+          BeforeTargets="ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(LuxFonts)' != 'false' And '@(LuxFont)' != '' And '$(DesignTimeBuild)' != 'true'">
+    <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the defaults are computed here. -->
+    <PropertyGroup>
+      <LuxFontsOutputDir Condition="'$(LuxFontsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux, fonts))</LuxFontsOutputDir>
+      <!-- Outside the fonts folder: every file of that folder that the task lists becomes a static web asset. -->
+      <LuxFontsManifestFile Condition="'$(LuxFontsManifestFile)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), blux))LuxFontsManifest.g.cs</LuxFontsManifestFile>
+    </PropertyGroup>
+
+    <LuxResolveFonts Fonts="@(LuxFont)"
+                      OutputDir="$(LuxFontsOutputDir)"
+                      CacheDir="$(LuxFontsCacheDir)"
+                      ProjectDirectory="$(MSBuildProjectDirectory)"
+                      ProviderPriority="$(LuxFontsProviderPriority)"
+                      FailOnError="$(LuxFontsFailOnError)"
+                      Offline="$(LuxOffline)"
+                      CacheDays="$(LuxFontsCacheDays)"
+                      ManifestSourceFile="$(LuxFontsManifestFile)">
+      <Output TaskParameter="GeneratedFiles" ItemName="_LuxFontFile" />
+    </LuxResolveFonts>
+
+    <ItemGroup>
+      <Compile Include="$(LuxFontsManifestFile)" />
+      <FileWrites Include="@(_LuxFontFile)" />
+      <FileWrites Include="$(LuxFontsManifestFile)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Adds the generated files to the static web assets, served at /_blux/fonts/. They live in obj, not in wwwroot, so they are
+    defined here with their own content root (what the development server reads them from) instead of being discovered.
+    The generated file names carry a hash of their content, so a font is immutable at its URL: every route of a font file gets
+    $(LuxFontsCacheControl) through a content type mapping of its own for each font extension (woff2, woff, ttf, otf), whatever
+    the SDK's defaults or the app's StaticWebAssetEndpointDefaultMediaCacheControlHeader say. The stylesheet keeps the SDK's rules.
+  -->
+  <Target Name="LuxFontsDefineAssets" AfterTargets="ResolveProjectStaticWebAssets" Condition="'@(_LuxFontFile)' != ''">
+    <ItemGroup>
+      <_LuxFontCandidate Include="@(_LuxFontFile)" RelativePath="_blux/fonts/%(_LuxFontFile.BluxFile)" />
+      <_LuxFontMapping Include="font/woff2" Pattern="*.woff2" Cache="$(LuxFontsCacheControl)" Priority="1" />
+      <_LuxFontMapping Include="font/woff" Pattern="*.woff" Cache="$(LuxFontsCacheControl)" Priority="1" />
+      <_LuxFontMapping Include="font/ttf" Pattern="*.ttf" Cache="$(LuxFontsCacheControl)" Priority="1" />
+      <_LuxFontMapping Include="font/otf" Pattern="*.otf" Cache="$(LuxFontsCacheControl)" Priority="1" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets CandidateAssets="@(_LuxFontCandidate)"
+                           SourceType="Computed"
+                           SourceId="$(PackageId)"
+                           ContentRoot="$(LuxFontsOutputDir)"
+                           BasePath="$(StaticWebAssetBasePath)"
+                           AssetKind="All"
+                           AssetMode="All"
+                           AssetRole="Primary"
+                           AssetMergeSource="$(StaticWebAssetMergeTarget)"
+                           FingerprintCandidates="$(StaticWebAssetsFingerprintContent)"
+                           FingerprintPatterns="@(StaticWebAssetFingerprintPattern)"
+                           CopyToOutputDirectory="Never"
+                           CopyToPublishDirectory="PreserveNewest">
+      <Output TaskParameter="Assets" ItemName="_LuxFontAsset" />
+    </DefineStaticWebAssets>
+
+    <ItemGroup>
+      <_LuxFontFileAsset Include="@(_LuxFontAsset)" Condition="'%(Extension)' != '.css'" />
+      <_LuxFontCssAsset Include="@(_LuxFontAsset)" Condition="'%(Extension)' == '.css'" />
+    </ItemGroup>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_LuxFontFileAsset)"
+                                   ContentTypeMappings="@(_LuxFontMapping)">
+      <Output TaskParameter="Endpoints" ItemName="_LuxFontEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_LuxFontCssAsset)"
+                                   ContentTypeMappings="@(StaticWebAssetContentTypeMapping)"
+                                   Condition="'@(_LuxFontCssAsset)' != ''">
+      <Output TaskParameter="Endpoints" ItemName="_LuxFontEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <ItemGroup>
+      <StaticWebAsset Include="@(_LuxFontAsset)" />
+      <StaticWebAssetEndpoint Include="@(_LuxFontEndpoint)" />
+    </ItemGroup>
+  </Target>
+</Project>

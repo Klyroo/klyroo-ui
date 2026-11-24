@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { Reporter } from '../../src/Blux.UI/js/shared.js';
+import { Reporter } from '../../src/Lux.UI/js/shared.js';
 
 // The part of an element a Reporter touches.
 function host(seq) {

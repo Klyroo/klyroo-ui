@@ -51,8 +51,8 @@
 
   <!-- Self-hosted fonts, the same as the web host's, generated into obj/ and added to the static web assets, which MAUI copies into the app (see wwwroot/index.html). -->
   <ItemGroup>
-    <BluxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <BluxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

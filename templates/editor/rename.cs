@@ -69,7 +69,7 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
     return Fail($"Run this from the root of the repository, the folder that holds rename.cs and {Template}.slnx (it was already renamed if the solution has another name).");
 }
 
-// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Blux UI names with "Editor" is not the template
+// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Lux.UI names with "Editor" is not the template
 // name and is left alone: the components (BxEditor, BxEditorToolbar...), their types (EditorAction, EditorToolbarItem, EditorUi...) and the elements they render
 // (bx-editor, bx-editor-toolbar).
 const string BluxEditor = "(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)";

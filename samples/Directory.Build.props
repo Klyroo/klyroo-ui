@@ -2,7 +2,7 @@
   <!--
     The samples are separate from the library's build: this file stops MSBuild from importing the repository's own
     Directory.Build.props (warnings as errors, central package versions), which a MAUI app should not inherit.
-    They are not part of Blux.UI.slnx; the CI builds them in their own jobs.
+    They are not part of Lux.UI.slnx; the CI builds them in their own jobs.
   -->
   <PropertyGroup>
     <!-- The target framework version of the samples: net10.0 (the LTS) by default. A machine whose MAUI workload is the .NET 11 one builds with -p:BluxSampleTfm=net11.0. -->
@@ -11,7 +11,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
     <!-- The sample is a user app: the Blux icon scan, font download and build tasks run on every build, so keep going when the network is down. -->
-    <BluxFontsFailOnError>false</BluxFontsFailOnError>
-    <BluxIconsFailOnError>false</BluxIconsFailOnError>
+    <LuxFontsFailOnError>false</LuxFontsFailOnError>
+    <LuxIconsFailOnError>false</LuxIconsFailOnError>
   </PropertyGroup>
 </Project>

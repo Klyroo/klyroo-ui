@@ -1,9 +1,9 @@
 # Components quick reference
 
-<!-- Generated from the Blux UI docs bundle by build/Blux.UI.DocsBundle. Do not edit: run
-     dotnet run --project build/Blux.UI.DocsBundle -- --skill-reference  to refresh it. -->
+<!-- Generated from the Lux.UI docs bundle by build/Lux.UI.DocsBundle. Do not edit: run
+     dotnet run --project build/Lux.UI.DocsBundle -- --skill-reference  to refresh it. -->
 
-146 components of Blux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+146 components of Lux.UI 0.1.0-alpha, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -669,7 +669,7 @@
 
 ### DataList
 
-`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Blux.UI.Tools.EntityFrameworkCore adapter), with search, sortable columns, pagination, a result count, loading, empty and error states, and its state in the URL. Filters, counts, the filter panel and selection have their own pages. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list`. A table of rows loaded in memory, from a provider or from a database query (a Queryable, run asynchronously by the Lux.UI.Tools.EntityFrameworkCore adapter), with search, sortable columns, pagination, a result count, loading, empty and error states, and its state in the URL. Filters, counts, the filter panel and selection have their own pages. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataList>`
   - Parameters: `Class`, `Density`, `Items`, `Label`, `PagingMode`, `PersistKey`, `PreferencesKey`, `Provider`, `Queryable`, `ResultJson`, `Schema`, `Selectable`, `SelectedKeys` (@bind), `SelectionScope`, `State` (@bind), `Ui`, `UrlKey`, `UrlSync`
@@ -701,7 +701,7 @@
 
 ### DataListFilters
 
-`/components/data-list-filters`. Filters of a data list: filter tags with an editor in a popover, the Add filter menu, Clear filters, text, option, yes / no, number and date filters, in Live or Submit mode. Statically rendered the tags are links and the editors GET forms. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-filters`. Filters of a data list: filter tags with an editor in a popover, the Add filter menu, Clear filters, text, option, yes / no, number and date filters, in Live or Submit mode. Statically rendered the tags are links and the editors GET forms. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListFilterTags>`
   - Parameters: `ApplyMode`, `Class`, `ShowAdd`, `ShowClear`, `Ui`
@@ -715,7 +715,7 @@
 
 ### DataListFilterPanel
 
-`/components/data-list-filter-panel`. Every filter of a data list as a collapsible section, as a sidebar or in a slideover on a phone, with the same editors, limits and history as the filter tags. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-filter-panel`. Every filter of a data list as a collapsible section, as a sidebar or in a slideover on a phone, with the same editors, limits and history as the filter tags. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListFilterPanel>`
   - Parameters: `ApplyMode`, `Class`, `CloseOnApply`, `Description`, `Ui`
@@ -723,7 +723,7 @@
 
 ### DataListFacets
 
-`/components/data-list-facets`. Counts next to the options of a filter (facets) and option filters that load their options from a remote source. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-facets`. Counts next to the options of a filter (facets) and option filters that load their options from a remote source. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListFilterEditor>`
   - Parameters: `ApplyMode`, `Class`, `Key` (required), `ResetToken`, `ShowTitle`, `Ui`
@@ -732,7 +732,7 @@
 
 ### DataListSelection
 
-`/components/data-list-selection`. Row selection, a bar of bulk actions with an every-result scope and a toolbar menu of actions, for a list in memory and for a provider. Interactive only. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-selection`. Row selection, a bar of bulk actions with an every-result scope and a toolbar menu of actions, for a list in memory and for a provider. Interactive only. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListSelectionActions>`
   - Parameters: `Actions`, `Class`, `MaxVisible`, `Position`, `Scope`, `Ui`
@@ -749,7 +749,7 @@
 
 ### DataListCursor
 
-`/components/data-list-cursor`. Keyset cursor paging with an infinite loader (automatic scroll sentinel or manual Load more, inline retry on error, link fallback in static SSR) and opt-in row virtualization. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-cursor`. Keyset cursor paging with an infinite loader (automatic scroll sentinel or manual Load more, inline retry on error, link fallback in static SSR) and opt-in row virtualization. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListInfiniteLoader>`
   - Parameters: `Auto`, `Class`, `Label`, `Root`, `RootMargin`, `ShowEnd`, `Ui`
@@ -758,7 +758,7 @@
 
 ### DataListColumns
 
-`/components/data-list-columns`. The column panel of a data list: show or hide columns, show or hide them all, reorder by dragging or with buttons, pin to either edge, resize by pointer or keyboard, and remember it all in a cookie that the server reads at the first paint. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-columns`. The column panel of a data list: show or hide columns, show or hide them all, reorder by dragging or with buttons, pin to either edge, resize by pointer or keyboard, and remember it all in a cookie that the server reads at the first paint. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListColumnPanel>`
   - Parameters: `AllowPinning`, `AllowReorder`, `Class`, `Label`, `SearchThreshold`, `Size`, `Ui`
@@ -766,7 +766,7 @@
 
 ### DataListGrid
 
-`/components/data-list-grid`. Grid layout of cards (BxDataListGrid), layout switch between Table and Grid views (BxDataListLayoutSwitch, synced with l=table|grid in the URL), compact phone summary rows (DataListRowSummary) with BxDataListViewToggle, visual row grouping (DataListGroupBy and BxDataListGroupHeader), hierarchical tree rows (DataListTree), footer totals and column aggregations (DataListSummaries), and a toolbar sort menu (BxDataListSortMenu). Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-grid`. Grid layout of cards (BxDataListGrid), layout switch between Table and Grid views (BxDataListLayoutSwitch, synced with l=table|grid in the URL), compact phone summary rows (DataListRowSummary) with BxDataListViewToggle, visual row grouping (DataListGroupBy and BxDataListGroupHeader), hierarchical tree rows (DataListTree), footer totals and column aggregations (DataListSummaries), and a toolbar sort menu (BxDataListSortMenu). Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListGrid>`
   - Parameters: `AriaLabel`, `Class`, `Columns`, `EmptyState`, `GroupBy`, `RowActions`, `RowActionsMaxVisible`, `ShowProgressLine`, `ShowSelectionControl`, `Ui`
@@ -789,7 +789,7 @@
 
 ### DataListEmpty
 
-`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Blux.UI.Tools, not part of Blux.UI: `dotnet add package Blux.UI.Tools --prerelease`.
+`/components/data-list-empty`. The empty state of a data list: a localized title and hint, an icon and room for actions. Package Lux.UI.Tools, not part of Lux.UI: `dotnet add package Lux.UI.Tools --prerelease`.
 
 - `<BxDataListEmpty>`
   - Parameters: `Class`, `Description`, `Icon`, `Title`, `Ui`
@@ -910,7 +910,7 @@
 
 ### ThemeStyle
 
-`/components/theme-style`. Delivers the palettes configured in AddBluxUi to the page: the color variables and the rule of every extra semantic color.
+`/components/theme-style`. Delivers the palettes configured in AddLuxUi to the page: the color variables and the rule of every extra semantic color.
 
 - `<BxThemeStyle>`
   - Parameters: `Colors`, `Nonce`, `Scope`

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { pickTopmost, pickConfinement } from '../../src/Blux.UI/js/overlay-core.js';
+import { pickTopmost, pickConfinement } from '../../src/Lux.UI/js/overlay-core.js';
 
 const layer = (name, stamp, order) => ({ name, stamp, order });
 
