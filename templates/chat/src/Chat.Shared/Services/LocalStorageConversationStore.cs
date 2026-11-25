@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 using Microsoft.AspNetCore.Components;
 using System.Text.Json;
 using Microsoft.JSInterop;
@@ -7,7 +7,7 @@ namespace Chat.Shared.Services;
 
 /// <summary>
 /// Keeps the conversations in the local storage of the browser (the web view of the MAUI app), one key per conversation. Local storage belongs to one user of one
-/// browser and is shared by every app of the same site, so the keys start with a prefix that carries the path base of the app (<see cref="LxPathScope.CookieName"/>):
+/// browser and is shared by every app of the same site, so the keys start with a prefix that carries the path base of the app (<see cref="KlyPathScope.CookieName"/>):
 /// two apps below one host never read each other's conversations. The server never sees them, which is why visitors of a public demo cannot see each other's.
 /// </summary>
 public sealed class LocalStorageConversationStore(IJSRuntime js, NavigationManager navigation) : IConversationStore
@@ -15,7 +15,7 @@ public sealed class LocalStorageConversationStore(IJSRuntime js, NavigationManag
     private const string Module = "./_content/Chat.Shared/host.js";
 
     // The path base as the server sees it: "/templates/chat/demo" for an app served at https://host/templates/chat/demo/, empty at the root.
-    private string Prefix => LxPathScope.CookieName("conversations", new Uri(navigation.BaseUri).AbsolutePath.TrimEnd('/'));
+    private string Prefix => KlyPathScope.CookieName("conversations", new Uri(navigation.BaseUri).AbsolutePath.TrimEnd('/'));
 
     public async Task<StoredData> LoadAsync()
     {

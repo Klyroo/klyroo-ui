@@ -3,29 +3,29 @@
 @inject NotificationStore Notifications
 
 @* The notifications, in a slideover from the right edge. Opened from the bell of the navbar, the user menu and the command palette. *@
-<LxSlideover @bind-Open="_open" Title="Notifications" Description="@Summary" Side="SlideoverSide.Right" data-testid="notifications">
+<KlySlideover @bind-Open="_open" Title="Notifications" Description="@Summary" Side="SlideoverSide.Right" data-testid="notifications">
     <Body>
         @if (Notifications.Items.Count == 0)
         {
-            <LxEmpty Title="Nothing new" Description="You are all caught up." />
+            <KlyEmpty Title="Nothing new" Description="You are all caught up." />
         }
         else
         {
-            <ul class="flex flex-col divide-y divide-(--lux-border)" aria-label="Notifications">
+            <ul class="flex flex-col divide-y divide-(--klyroo-border)" aria-label="Notifications">
                 @foreach (var notification in Notifications.Items)
                 {
                     <li class="flex gap-3 py-3 first:pt-0" data-unread="@(notification.Unread ? "true" : null)">
-                        <span class="@($"mt-2 size-2 shrink-0 rounded-full {(notification.Unread ? "bg-(--lux-primary)" : "bg-transparent")}")" aria-hidden="true"></span>
+                        <span class="@($"mt-2 size-2 shrink-0 rounded-full {(notification.Unread ? "bg-(--klyroo-primary)" : "bg-transparent")}")" aria-hidden="true"></span>
                         <div class="min-w-0 flex-1">
-                            <p class="text-sm font-medium text-(--lux-text-highlighted)">
+                            <p class="text-sm font-medium text-(--klyroo-text-highlighted)">
                                 @if (notification.Unread)
                                 {
                                     <span class="sr-only">Unread: </span>
                                 }
                                 @notification.Title
                             </p>
-                            <p class="mt-0.5 text-sm text-(--lux-text-muted)">@notification.Body</p>
-                            <p class="mt-1 text-xs text-(--lux-text-muted)">@notification.At.ToString("MMM d, HH:mm")</p>
+                            <p class="mt-0.5 text-sm text-(--klyroo-text-muted)">@notification.Body</p>
+                            <p class="mt-1 text-xs text-(--klyroo-text-muted)">@notification.At.ToString("MMM d, HH:mm")</p>
                         </div>
                     </li>
                 }
@@ -33,10 +33,10 @@
         }
     </Body>
     <Footer>
-        <LxButton Label="Mark all as read" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" Disabled="@(Notifications.UnreadCount == 0)" OnClick="Notifications.MarkAllRead" data-testid="mark-read" />
-        <LxButton Label="Close" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
+        <KlyButton Label="Mark all as read" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" Disabled="@(Notifications.UnreadCount == 0)" OnClick="Notifications.MarkAllRead" data-testid="mark-read" />
+        <KlyButton Label="Close" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" data-kly-close />
     </Footer>
-</LxSlideover>
+</KlySlideover>
 
 @code {
     private bool _open;

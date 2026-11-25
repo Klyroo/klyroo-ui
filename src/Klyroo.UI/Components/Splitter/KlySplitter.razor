@@ -1,0 +1,103 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    Resizable panels separated by focusable handles (WAI-ARIA window splitter). Dragging and arrow keys run in the
+    browser (<kly-splitter>); a size change is reported once the gesture ends, and only when Sizes is bound.
+    The root needs a height (and width) from its parent: give it a class such as h-64.
+*@
+<kly-splitter data-kly-seq="@(SizesChanged.HasDelegate ? _sequence : null)"
+             sizes="@string.Join(',', _sizes.Select(s => s.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)))"
+             orientation="@_orientation"
+             step="@Step.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+             data-color="@Color.Value"
+             class="@_slots["root"]"
+             @onklychange="ChangeHandler"
+             @onklychange:stopPropagation="true"
+             @attributes="AdditionalAttributes">
+    @for (var i = 0; i < Panels.Count; i++)
+    {
+        var index = i;
+        var panel = Panels[index];
+        <div id="@($"{_id}-panel-{index}")" data-kly-panel data-min="@Num(panel.MinSize)" data-max="@Num(panel.MaxSize)"
+             style="@($"flex: {Num(_sizes[index])} 1 0%")" class="@_slots["panel"]">
+            @panel.Content
+        </div>
+        @if (index < Panels.Count - 1)
+        {
+            var (min, max) = Range(index);
+            <div role="separator" tabindex="0" id="@($"{_id}-handle-{index}")" aria-orientation="@(_orientation == "horizontal" ? "vertical" : "horizontal")"
+                 aria-valuenow="@Math.Round(_sizes[index])" aria-valuemin="@Math.Round(min)" aria-valuemax="@Math.Round(max)"
+                 aria-controls="@($"{_id}-panel-{index}")"
+                 aria-label="@(Panels.Count == 2 ? Messages.ResizePanels : $"{Messages.ResizePanels} {index + 1}")"
+                 class="@_slots["handle"]"></div>
+        }
+    }
+</kly-splitter>
+
+@code {
+    private SlotSet _slots = default!;
+    private string _id = default!;
+    private int _sequence;
+    private double[] _sizes = [];
+    private string _orientation = "horizontal";
+
+    [Parameter, EditorRequired] public IReadOnlyList<KlySplitterPanel> Panels { get; set; } = [];
+
+    /// <summary>Sizes in percent, one per panel. Bind it to follow resizing; unbound, resizing stays in the browser.</summary>
+    [Parameter] public IReadOnlyList<double>? Sizes { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<double>> SizesChanged { get; set; }
+
+    /// <summary>Horizontal places the panels side by side (the handles are vertical); Vertical stacks them.</summary>
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+
+    /// <summary>Size change of an arrow key press, in percent.</summary>
+    [Parameter] public double Step { get; set; } = 5;
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+    [Parameter] public SplitterUi? Ui { get; set; }
+
+    private EventCallback<KlyChangeEventArgs> ChangeHandler =>
+        SizesChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
+
+    private static string Num(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    protected override void OnParametersSet()
+    {
+        _id ??= NewId("splitter");
+        _orientation = Orientation == KlyOrientation.Vertical ? "vertical" : "horizontal";
+        _sizes = Sizes is { } given && given.Count == Panels.Count ? [.. given] : InitialSizes();
+        _slots = ResolveSlots(Options.Splitter, new Dictionary<string, string?> { ["orientation"] = _orientation }, Ui, "root");
+    }
+
+    private double[] InitialSizes()
+    {
+        var specified = Panels.Where(p => p.Size.HasValue).Sum(p => p.Size!.Value);
+        var free = Panels.Count(p => !p.Size.HasValue);
+        var each = free == 0 ? 0 : Math.Max(0, 100 - specified) / free;
+        return [.. Panels.Select(p => p.Size ?? each)];
+    }
+
+    /// <summary>Range of the size of panel <paramref name="index"/>: its own limits and those of its neighbour.</summary>
+    private (double Min, double Max) Range(int index)
+    {
+        var pair = _sizes[index] + _sizes[index + 1];
+        var a = Panels[index];
+        var b = Panels[index + 1];
+        return (Math.Max(a.MinSize, pair - b.MaxSize), Math.Min(a.MaxSize, pair - b.MinSize));
+    }
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(KlyChangeEventArgs))]
+    private async Task OnChange(KlyChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var sizes = (e.Value ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => double.Parse(s, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+        if (sizes.Length != Panels.Count) return;
+        _sizes = sizes;
+        Sizes = sizes;
+        await SizesChanged.InvokeAsync(sizes);
+    }
+}

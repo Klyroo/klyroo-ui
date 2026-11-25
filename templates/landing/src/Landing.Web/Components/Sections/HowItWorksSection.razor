@@ -1,24 +1,24 @@
 @* An ordered list: the steps are a sequence, and a screen reader says "list, 3 items". *@
-<LxPageSection id="how-it-works"
+<KlyPageSection id="how-it-works"
                Headline="@SiteContent.HowHeadline"
                Title="@SiteContent.HowTitle"
                Description="@SiteContent.HowDescription"
-               Orientation="LxOrientation.Vertical">
+               Orientation="KlyOrientation.Vertical">
     <ol class="m-0 mt-10 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
         @for (var i = 0; i < SiteContent.Steps.Count; i++)
         {
             var number = i + 1;
             var step = SiteContent.Steps[i];
-            <li class="flex flex-col gap-4 rounded-[calc(var(--lux-radius)*2)] bg-(--lux-bg-elevated)/50 p-6 ring ring-(--lux-border)">
+            <li class="flex flex-col gap-4 rounded-[calc(var(--klyroo-radius)*2)] bg-(--klyroo-bg-elevated)/50 p-6 ring ring-(--klyroo-border)">
                 <div class="flex items-center gap-3">
-                    <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-(--lux-bg-inverted) font-mono text-sm font-semibold text-(--lux-text-inverted)" aria-hidden="true">@number</span>
-                    <LxIcon Name="@step.Icon" Class="size-5 text-(--lux-text-muted)" />
+                    <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-(--klyroo-bg-inverted) font-mono text-sm font-semibold text-(--klyroo-text-inverted)" aria-hidden="true">@number</span>
+                    <KlyIcon Name="@step.Icon" Class="size-5 text-(--klyroo-text-muted)" />
                 </div>
                 <div>
-                    <h3 class="text-base font-semibold text-(--lux-text-highlighted)"><span class="sr-only">Step @number: </span>@step.Title</h3>
-                    <p class="mt-1 text-sm text-pretty text-(--lux-text-muted)">@step.Text</p>
+                    <h3 class="text-base font-semibold text-(--klyroo-text-highlighted)"><span class="sr-only">Step @number: </span>@step.Title</h3>
+                    <p class="mt-1 text-sm text-pretty text-(--klyroo-text-muted)">@step.Text</p>
                 </div>
             </li>
         }
     </ol>
-</LxPageSection>
+</KlyPageSection>

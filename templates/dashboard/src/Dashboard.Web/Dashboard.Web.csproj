@@ -11,14 +11,14 @@
     <ProjectReference Include="..\Dashboard.Web.Client\Dashboard.Web.Client.csproj" />
     <ProjectReference Include="..\Dashboard.Shared\Dashboard.Shared.csproj" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" />
-    <!-- The server side of Lux: lets components read cookies while the server renders. Not in the client or the MAUI app, which have no request. -->
-    <PackageReference Include="Lux.UI.Server" />
+    <!-- The server side of Klyroo: lets components read cookies while the server renders. Not in the client or the MAUI app, which have no request. -->
+    <PackageReference Include="Klyroo.UI.Server" />
   </ItemGroup>
 
-  <!-- Fonts are downloaded at build time and served from the app's own origin (LxFonts in App.razor links them). They belong to the host project. -->
+  <!-- Fonts are downloaded at build time and served from the app's own origin (KlyFonts in App.razor links them). They belong to the host project. -->
   <ItemGroup>
-    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <KlyrooFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <KlyrooFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,130 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* One link per card: the title's link is stretched over the card, so nothing interactive is nested in it. *@
+<article data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Header is not null || Image is not null)
+    {
+        <div class="@_slots["header"]" data-slot="header">
+            @if (Header is not null)
+            {
+                @Header
+            }
+            else
+            {
+                <KlyImage Src="@Image" Alt="@(ImageAlt ?? "")" ImageOptions="ImageOptions" Class="@_slots["image"]" />
+            }
+        </div>
+    }
+    <div class="@_slots["body"]" data-slot="body">
+        @if (Date is not null || Badge is not null)
+        {
+            <div class="@_slots["meta"]">
+                @if (Date is { } date)
+                {
+                    <time datetime="@KlyDates.Iso(date)" class="@_slots["date"]">@KlyDates.Format(date, DateFormat, Culture ?? FormatCulture)</time>
+                }
+                @if (Badge is not null)
+                {
+                    <KlyBadge Label="@Badge" Color="@BadgeColor" Variant="KlyVariant.Subtle" Size="KlySize.Sm" Class="@_slots["badge"]" />
+                }
+            </div>
+        }
+        @if (Title is not null)
+        {
+            <Heading Level="HeadingLevel" Class="@_slots["title"]">
+                @if (Href is not null)
+                {
+                    <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target == "_blank") {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
+                }
+                else
+                {
+                    @Title
+                }
+            </Heading>
+        }
+        @if (Description is not null)
+        {
+            <p class="@_slots["description"]" data-slot="description">@Description</p>
+        }
+        @ChildContent
+        @if (Authors.Count > 0)
+        {
+            <div class="@_slots["authors"]" data-slot="authors">
+                @if (Authors.Count == 1)
+                {
+                    var author = Authors[0];
+                    <KlyUser Name="@author.Name" Description="@author.Description" AvatarSrc="@author.AvatarSrc" Href="@(Href is null ? author.Href : null)" />
+                }
+                else
+                {
+                    <KlyAvatarGroup Items="@(Authors.Select(a => new KlyAvatarItem(a.AvatarSrc, a.Name)).ToList())" AriaLabel="@string.Join(", ", Authors.Select(a => a.Name))" />
+                }
+            </div>
+        }
+        @if (Footer is not null)
+        {
+            <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+        }
+    </div>
+</article>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Level of the title heading: 3 by default, for a list of posts under a level 2 heading.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Publication date, shown in the format culture of the locale in effect (the regional current culture when it has the same language), or in <see cref="Culture"/> (see <see cref="DateFormat"/>) in a <c>time</c> element.</summary>
+    [Parameter] public DateTimeOffset? Date { get; set; }
+
+    /// <summary>A .NET date format. Without one, the long date of the culture without the day name.</summary>
+    [Parameter] public string? DateFormat { get; set; }
+
+    /// <summary>
+    /// The culture of the date. By default the format culture of the locale in effect (the regional current culture when it has the same language), so the prerender and a
+    /// WebAssembly render agree as long as they pick the same locale.
+    /// </summary>
+    [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
+    [Parameter] public string? Badge { get; set; }
+    [Parameter] public KlyColor BadgeColor { get => _badgeColor ?? DefaultColor(KlyColor.Primary); set => _badgeColor = value; }
+    private KlyColor? _badgeColor;
+
+    /// <summary>Cover image. Decorative unless <see cref="ImageAlt"/> says what it shows.</summary>
+    [Parameter] public string? Image { get; set; }
+    [Parameter] public string? ImageAlt { get; set; }
+
+    /// <summary>Image settings forwarded to <see cref="KlyImage"/> (format, quality, sizes, provider, preset…).</summary>
+    [Parameter] public KlyImageOptions? ImageOptions { get; set; }
+
+    /// <summary>Replaces the cover image.</summary>
+    [Parameter] public RenderFragment? Header { get; set; }
+
+    /// <summary>One author shows a <see cref="KlyUser"/>, several show a <see cref="KlyAvatarGroup"/> named after them.</summary>
+    [Parameter] public IReadOnlyList<KlyPostAuthor> Authors { get; set; } = [];
+
+    /// <summary>Makes the whole card a link to this address, through the title.</summary>
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Target { get; set; }
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    [Parameter] public BlogPostVariant Variant { get; set; } = BlogPostVariant.Outline;
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+
+    /// <summary>Extra content between the description and the authors.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public BlogPostUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.BlogPost, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["orientation"] = Orientation == KlyOrientation.Horizontal ? "horizontal" : "vertical",
+            ["link"] = VariantValue.Of(Href is not null),
+        }, Ui, "root");
+}

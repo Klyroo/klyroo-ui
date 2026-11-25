@@ -1,0 +1,37 @@
+@inherits LayoutComponentBase
+@inject IFormFactor FormFactor
+
+@* KlyHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+   It renders nothing on the web, where App.razor places them. *@
+<KlyHead />
+<SystemBars />
+
+<KlyApp SpatialNavigation="@FormFactor.IsTv">
+    <KlyHeader Title="Klyroo on MAUI" Items="_items" AriaLabel="Main" MenuTitle="Menu">
+        <Right>
+            <KlyLocaleSelect Size="KlySize.Sm" />
+            <KlyColorModeButton Size="KlySize.Sm" />
+        </Right>
+    </KlyHeader>
+    <KlyMain>
+        <div class="mx-auto flex w-full max-w-5xl flex-col gap-8 p-4 sm:p-6">
+            @Body
+        </div>
+    </KlyMain>
+</KlyApp>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">x</span>
+</div>
+
+@code {
+    private static readonly KlyNavigationItem[] _items =
+    [
+        new("Home") { Href = "/", Exact = true },
+        new("Forms") { Href = "/forms" },
+        new("Overlays") { Href = "/overlays" },
+        new("Dashboard") { Href = "/dashboard" },
+    ];
+}

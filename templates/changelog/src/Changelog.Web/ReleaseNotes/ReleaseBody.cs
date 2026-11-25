@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Lux.Templates.Content;
+using Klyroo.Templates.Content;
 
 namespace Changelog.Web.ReleaseNotes;
 

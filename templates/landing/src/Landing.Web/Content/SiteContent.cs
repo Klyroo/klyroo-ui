@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Landing.Web.Content;
 
@@ -53,9 +53,9 @@ public static class SiteContent
     public const string HeaderButtonLabel = "Start free";
     public const string FooterLabel = "Footer";
 
-    public static string Copyright => $"\u00a9 {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
+    public static string Copyright => $"\u00a9 {DateTime.UtcNow.Year} {Name}. Built with Klyroo.UI.";
 
-    public static IReadOnlyList<LxNavigationItem> Navigation { get; } =
+    public static IReadOnlyList<KlyNavigationItem> Navigation { get; } =
     [
         new("Features") { Href = "./#features", Active = false },
         new("How it works") { Href = "./#how-it-works", Active = false },
@@ -73,7 +73,7 @@ public static class SiteContent
     public static IReadOnlyList<PageLinkItem> HeroLinks { get; } =
     [
         new("Start free", SignUpUrl) { TrailingIcon = "ph:arrow-right" },
-        new("See pricing", "./#pricing") { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("See pricing", "./#pricing") { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     // Logos. The marks are Assets/marks/*.svg, bundled as the icons mark:<file name>; the names are made up.
@@ -190,12 +190,12 @@ public static class SiteContent
     public static IReadOnlyList<PageLinkItem> CtaLinks { get; } =
     [
         new("Start free", SignUpUrl),
-        new("Talk to us", ContactUrl) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Talk to us", ContactUrl) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     // Footer
 
-    public static IReadOnlyList<LxFooterColumn> FooterColumns { get; } =
+    public static IReadOnlyList<KlyFooterColumn> FooterColumns { get; } =
     [
         new("Product")
         {

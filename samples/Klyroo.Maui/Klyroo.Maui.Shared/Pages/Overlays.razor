@@ -1,0 +1,85 @@
+@page "/overlays"
+@inject IToastService Toasts
+
+<PageTitle>Overlays</PageTitle>
+
+<h1 class="text-2xl font-semibold text-(--klyroo-text-highlighted)">Overlays</h1>
+<p class="text-(--klyroo-text-muted)">Native dialogs and popovers (iOS 17 or later), driven by the browser in the web view.</p>
+
+<div class="flex flex-wrap items-center gap-3">
+    <KlyModal @bind-Open="_modal" Title="Edit profile" Description="Changes are saved when you close the dialog.">
+        <ChildContent><KlyButton Label="Modal" Variant="ButtonVariant.Outline" data-testid="modal-trigger" /></ChildContent>
+        <Body>
+            <div class="flex flex-col gap-4">
+                <KlyFormField Label="Name"><KlyInput Value="Ada Lovelace" /></KlyFormField>
+            </div>
+        </Body>
+        <Footer>
+            <KlyButton Label="Cancel" Color="KlyColor.Neutral" Variant="ButtonVariant.Ghost" data-kly-close />
+            <KlyButton Label="Save" data-kly-close data-testid="modal-save" />
+        </Footer>
+    </KlyModal>
+
+    <KlyModal Title="Delete project?" Description="Back and Escape do nothing here: choose a button." Dismissible="false" Close="false" Size="KlySize.Sm">
+        <ChildContent><KlyButton Label="Confirm modal" Variant="ButtonVariant.Outline" data-testid="confirm-trigger" /></ChildContent>
+        <Footer>
+            <KlyButton Label="Cancel" Color="KlyColor.Neutral" Variant="ButtonVariant.Outline" data-kly-close />
+            <KlyButton Label="Delete" Color="KlyColor.Error" data-kly-close />
+        </Footer>
+    </KlyModal>
+
+    <KlyModal Title="Shipping" Description="Back closes the open list first, then the modal.">
+        <ChildContent><KlyButton Label="Modal with select" Variant="ButtonVariant.Outline" data-testid="modal-select-trigger" /></ChildContent>
+        <Body>
+            <KlyFormField Label="Country">
+                <KlySelect @bind-Value="_country" Items="_countries" Placeholder="Choose a country" />
+            </KlyFormField>
+        </Body>
+        <Footer><KlyButton Label="Close" Color="KlyColor.Neutral" Variant="ButtonVariant.Ghost" data-kly-close /></Footer>
+    </KlyModal>
+
+    <KlySlideover Title="Settings" Description="A panel docked to an edge.">
+        <ChildContent><KlyButton Label="Slideover" Variant="ButtonVariant.Outline" data-testid="slideover-trigger" /></ChildContent>
+        <Body><p class="text-sm text-(--klyroo-text-muted)">The panel keeps clear of the notch and the gesture bar.</p></Body>
+    </KlySlideover>
+
+    <KlyDropdownMenu Items="_items" OnSelect="item => _last = item.Label">
+        <KlyButton Label="Menu" Color="KlyColor.Neutral" Variant="ButtonVariant.Outline" data-testid="menu-trigger" />
+    </KlyDropdownMenu>
+
+    <KlyPopover Placement="bottom-start">
+        <ChildContent><KlyButton Label="Popover" Variant="ButtonVariant.Outline" data-testid="popover-trigger" /></ChildContent>
+        <Content>
+            <p class="w-56 p-4 text-sm" data-testid="popover-panel">Escape or a tap outside closes me.</p>
+        </Content>
+    </KlyPopover>
+
+    <KlyButton Label="Toast" OnClick="ShowToast" data-testid="toast-trigger" />
+</div>
+
+<p class="text-sm text-(--klyroo-text-muted)" data-testid="modal-state">Modal: @(_modal ? "open" : "closed")</p>
+<p class="text-sm text-(--klyroo-text-muted)" data-testid="menu-state">Last menu action: @(_last ?? "none")</p>
+
+@code {
+    private bool _modal;
+    private string? _last;
+    private string? _country;
+
+    private static readonly KlySelectItem[] _countries = [new("fr", "France"), new("de", "Germany"), new("it", "Italy")];
+
+    private static readonly KlyMenuItem[] _items =
+    [
+        KlyMenuItem.Heading("My account"),
+        new() { Label = "Profile" },
+        new() { Label = "Billing" },
+        KlyMenuItem.Separator(),
+        new() { Label = "Delete account", Color = KlyColor.Error },
+    ];
+
+    private async Task ShowToast() => await Toasts.Add(new KlyToast
+    {
+        Title = "Changes saved",
+        Description = "Your profile is up to date.",
+        Color = KlyColor.Success,
+    });
+}

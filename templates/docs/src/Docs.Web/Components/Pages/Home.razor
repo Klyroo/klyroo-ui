@@ -7,7 +7,7 @@
     <meta name="description" content="@SiteInfo.Description" />
 </HeadContent>
 
-<LxPageHero Headline="@SiteInfo.HeroHeadline"
+<KlyPageHero Headline="@SiteInfo.HeroHeadline"
             Title="@SiteInfo.HeroTitle"
             Description="@SiteInfo.HeroDescription"
             Links="SiteInfo.HeroLinks"
@@ -16,40 +16,40 @@
         @* The same renderer as the pages: highlighted, with a copy button. *@
         <div data-testid="hero-snippet" class="mx-auto w-full max-w-[29rem]">@((MarkupString)_snippet)</div>
     </Media>
-</LxPageHero>
+</KlyPageHero>
 
-<LxPageSection Headline="@SiteInfo.FeaturesHeadline"
+<KlyPageSection Headline="@SiteInfo.FeaturesHeadline"
                Title="@SiteInfo.FeaturesTitle"
                Description="@SiteInfo.FeaturesDescription"
-               Orientation="LxOrientation.Vertical"
+               Orientation="KlyOrientation.Vertical"
                Features="SiteInfo.Features" />
 
 @* One card per section of the documentation: the top level folders of the content folder, each with the pages it holds. *@
-<LxContainer Class="py-12 sm:py-16">
-    <h2 class="text-2xl font-semibold tracking-tight text-(--lux-text-highlighted)">Browse the documentation</h2>
+<KlyContainer Class="py-12 sm:py-16">
+    <h2 class="text-2xl font-semibold tracking-tight text-(--klyroo-text-highlighted)">Browse the documentation</h2>
     <ul data-testid="sections" class="m-0 mt-8 grid list-none grid-cols-1 gap-6 p-0 md:grid-cols-3">
         @foreach (var section in _sections)
         {
-            <li class="flex flex-col gap-3 rounded-[calc(var(--lux-radius)*2)] bg-(--lux-bg-elevated)/50 p-6 ring ring-(--lux-border)">
-                <h3 class="flex items-center gap-2 text-base font-semibold text-(--lux-text-highlighted)">
+            <li class="flex flex-col gap-3 rounded-[calc(var(--klyroo-radius)*2)] bg-(--klyroo-bg-elevated)/50 p-6 ring ring-(--klyroo-border)">
+                <h3 class="flex items-center gap-2 text-base font-semibold text-(--klyroo-text-highlighted)">
                     @if (section.Icon is not null)
                     {
-                        <LxIcon Name="@section.Icon" Class="size-5 text-(--lux-text-muted)" />
+                        <KlyIcon Name="@section.Icon" Class="size-5 text-(--klyroo-text-muted)" />
                     }
                     @section.Title
                 </h3>
                 <ul class="m-0 flex list-none flex-col gap-1.5 p-0 text-sm">
                     @foreach (var link in section.Children ?? [])
                     {
-                        <li><a href="@link.Href" class="rounded-sm text-(--lux-primary-text) underline underline-offset-4">@link.Title</a></li>
+                        <li><a href="@link.Href" class="rounded-sm text-(--klyroo-primary-text) underline underline-offset-4">@link.Title</a></li>
                     }
                 </ul>
             </li>
         }
     </ul>
-</LxContainer>
+</KlyContainer>
 
-<LxPageCta Variant="LxVariant.Outline"
+<KlyPageCta Variant="KlyVariant.Outline"
            Title="@SiteInfo.CtaTitle"
            Description="@SiteInfo.CtaDescription"
            Links="SiteInfo.CtaLinks"
@@ -65,7 +65,7 @@
     // Rendered once: it never changes with the content.
     private static readonly string _snippet = new MarkdownRenderer().Render(SiteInfo.HeroSnippet, "", "./").Html;
 
-    private IReadOnlyList<LxContentNavigationItem> _sections = [];
+    private IReadOnlyList<KlyContentNavigationItem> _sections = [];
 
     protected override void OnInitialized() =>
         _sections = [.. Store.Site.Navigation.Where(item => item.Children is { Count: > 0 })];

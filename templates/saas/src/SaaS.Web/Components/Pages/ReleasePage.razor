@@ -10,36 +10,36 @@
         <meta name="description" content="@(_release.Page.Description ?? SiteInfo.ChangelogDescription)" />
     </HeadContent>
 
-    <LxContainer Class="py-10 sm:py-14">
+    <KlyContainer Class="py-10 sm:py-14">
         <div class="mx-auto max-w-3xl">
-            <LxBreadcrumb Items="_crumbs" />
+            <KlyBreadcrumb Items="_crumbs" />
             <article data-testid="release-page" class="mt-8">
                 <header class="flex flex-col gap-3">
-                    <div class="flex flex-wrap items-center gap-3 text-sm text-(--lux-text-muted)">
-                        <time datetime="@LxDates.Iso(_release.Date)">@LxDates.Format(_release.Date)</time>
+                    <div class="flex flex-wrap items-center gap-3 text-sm text-(--klyroo-text-muted)">
+                        <time datetime="@KlyDates.Iso(_release.Date)">@KlyDates.Format(_release.Date)</time>
                         @if (_release.Badge is not null)
                         {
-                            <LxBadge Label="@_release.Badge" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
+                            <KlyBadge Label="@_release.Badge" Variant="KlyVariant.Subtle" Size="KlySize.Sm" />
                         }
                     </div>
-                    <h1 class="text-3xl font-semibold tracking-tight text-(--lux-text-highlighted)">@_release.Version</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight text-(--klyroo-text-highlighted)">@_release.Version</h1>
                     @if (_release.Page.Description is not null)
                     {
-                        <p class="text-lg text-pretty text-(--lux-text-muted)">@_release.Page.Description</p>
+                        <p class="text-lg text-pretty text-(--klyroo-text-muted)">@_release.Page.Description</p>
                     }
                 </header>
-                <LxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_release.Page.Html)</LxPageBody>
+                <KlyPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_release.Page.Html)</KlyPageBody>
             </article>
-            <LxButton Label="All versions" Href="@SiteInfo.ChangelogHref" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" />
+            <KlyButton Label="All versions" Href="@SiteInfo.ChangelogHref" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" />
         </div>
-    </LxContainer>
+    </KlyContainer>
 }
 
 @code {
     [Parameter] public string? Slug { get; set; }
 
     private Release? _release;
-    private IReadOnlyList<LxBreadcrumbItem> _crumbs = [];
+    private IReadOnlyList<KlyBreadcrumbItem> _crumbs = [];
 
     protected override void OnParametersSet()
     {

@@ -1,5 +1,5 @@
 {
-  "_": "Lucide icons embedded in Lux.UI: the defaults of LuxOptions.Icons, what components use besides them, and the names earlier versions shipped. build/gen-icons.mjs writes them to src/Lux.UI/Components/Icon/BuiltinIcons.g.cs.",
+  "_": "Lucide icons embedded in Klyroo.UI: the defaults of KlyrooOptions.Icons, what components use besides them, and the names earlier versions shipped. build/gen-icons.mjs writes them to src/Klyroo.UI/Components/Icon/BuiltinIcons.g.cs.",
   "icons": [
     "arrow-down", "arrow-left", "arrow-right", "arrow-up", "circle-alert", "check", "chevrons-left", "chevrons-right",
     "chevron-down", "chevron-left", "chevron-right", "chevron-up", "x", "copy", "copy-check", "moon", "grip-vertical",

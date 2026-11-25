@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Dashboard.Shared.Services;
 
@@ -25,7 +25,7 @@ public sealed class AppState
 /// <remarks>
 /// Where the choice is kept is the business of an <see cref="IAppearanceStore"/>: a cookie on the web (written by the browser, read by the server while it renders, so the
 /// first paint already has the colors) and the local storage of the web view in the MAUI app. A render that has a request (a static render, a prerender) reads the cookie
-/// through <see cref="ILxRequestCookies"/> when the constructor runs; the layout hands the result to the interactive render (<see cref="Restore"/>) so that it does not start
+/// through <see cref="IKlyRequestCookies"/> when the constructor runs; the layout hands the result to the interactive render (<see cref="Restore"/>) so that it does not start
 /// from the defaults, and <see cref="LoadAsync"/> reads the store once the browser is there. A value that is not the name of an offered palette is ignored.
 /// </remarks>
 public sealed class AppearanceState
@@ -33,15 +33,15 @@ public sealed class AppearanceState
     private readonly IAppearanceStore _store;
     private bool _loaded;
 
-    /// <summary>The palettes the dialog offers, the first one is the default (the Lux colors).</summary>
-    public static IReadOnlyList<LxPalette> Palettes { get; } = [LxPalette.Lux, LxPalette.Blue, LxPalette.Emerald, LxPalette.Violet, LxPalette.Rose, LxPalette.Orange];
+    /// <summary>The palettes the dialog offers, the first one is the default (the Klyroo colors).</summary>
+    public static IReadOnlyList<KlyPalette> Palettes { get; } = [KlyPalette.Klyroo, KlyPalette.Blue, KlyPalette.Emerald, KlyPalette.Violet, KlyPalette.Rose, KlyPalette.Orange];
 
-    /// <summary>The neutral palettes the dialog offers, the first one is the default (the Lux neutrals).</summary>
-    public static IReadOnlyList<LxPalette> Neutrals { get; } = [LxPalette.Lux, LxPalette.Slate, LxPalette.Gray, LxPalette.Zinc, LxPalette.Neutral, LxPalette.Stone];
+    /// <summary>The neutral palettes the dialog offers, the first one is the default (the Klyroo neutrals).</summary>
+    public static IReadOnlyList<KlyPalette> Neutrals { get; } = [KlyPalette.Klyroo, KlyPalette.Slate, KlyPalette.Gray, KlyPalette.Zinc, KlyPalette.Neutral, KlyPalette.Stone];
 
     /// <param name="store">Where the choice is kept.</param>
-    /// <param name="cookies">The cookies of the request, when there is one (the web host calls <c>AddLuxServer()</c>); null in WebAssembly and in the MAUI app.</param>
-    public AppearanceState(IAppearanceStore store, ILxRequestCookies? cookies = null)
+    /// <param name="cookies">The cookies of the request, when there is one (the web host calls <c>AddKlyrooServer()</c>); null in WebAssembly and in the MAUI app.</param>
+    public AppearanceState(IAppearanceStore store, IKlyRequestCookies? cookies = null)
     {
         _store = store;
         if (cookies is not null)
@@ -50,17 +50,17 @@ public sealed class AppearanceState
         }
     }
 
-    public LxPalette Primary { get; private set; } = Palettes[0];
+    public KlyPalette Primary { get; private set; } = Palettes[0];
 
-    public LxPalette Neutral { get; private set; } = Neutrals[0];
+    public KlyPalette Neutral { get; private set; } = Neutrals[0];
 
     /// <summary>The semantic colors with the chosen palettes. A new object on each choice, because the options of a render freeze.</summary>
-    public LxColorOptions Colors { get; private set; } = Build(Palettes[0], Neutrals[0]);
+    public KlyColorOptions Colors { get; private set; } = Build(Palettes[0], Neutrals[0]);
 
     /// <summary>Raised after the colors changed.</summary>
     public event Action? Changed;
 
-    private static LxColorOptions Build(LxPalette primary, LxPalette neutral) => new() { Primary = primary, Neutral = neutral };
+    private static KlyColorOptions Build(KlyPalette primary, KlyPalette neutral) => new() { Primary = primary, Neutral = neutral };
 
     /// <summary>
     /// Takes the names of the palettes as they were read from a cookie or handed over by a prerender. A name that is not on offer (a cookie that was edited) leaves that color
@@ -91,10 +91,10 @@ public sealed class AppearanceState
         }
     }
 
-    public Task SetAsync(LxPalette primary) => SetAsync(primary, Neutral);
+    public Task SetAsync(KlyPalette primary) => SetAsync(primary, Neutral);
 
     /// <summary>Applies both colors and keeps them in the store.</summary>
-    public async Task SetAsync(LxPalette primary, LxPalette neutral)
+    public async Task SetAsync(KlyPalette primary, KlyPalette neutral)
     {
         Primary = primary;
         Neutral = neutral;

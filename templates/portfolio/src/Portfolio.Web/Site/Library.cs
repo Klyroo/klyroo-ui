@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using Lux.Templates.Content;
+using Klyroo.Templates.Content;
 
 namespace Portfolio.Web.Site;
 

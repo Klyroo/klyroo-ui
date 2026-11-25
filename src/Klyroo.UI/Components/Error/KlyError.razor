@@ -1,0 +1,94 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    The content of an error page: status code, title, message and a way back. Use it as the body of a NotFound page,
+    or in the ErrorContent of an ErrorBoundary. It is plain markup, so it works in every render mode.
+*@
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (_code is not null)
+    {
+        <p class="@_slots["statusCode"]">@_code</p>
+    }
+    @Heading
+    @if (_message is not null)
+    {
+        <p class="@_slots["message"]">@_message</p>
+    }
+    @ChildContent
+    @if (Actions is not null)
+    {
+        <div class="@_slots["actions"]">@Actions</div>
+    }
+    else if (Clear)
+    {
+        <div class="@_slots["actions"]">
+            <KlyButton Href="@Href" Label="@(ClearLabel ?? Messages.ErrorBackHome)" />
+        </div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private int? _code;
+    private string _title = "";
+    private string? _message;
+
+    /// <summary>The HTTP status code, shown above the title. 404, 403 and 500 have built-in texts.</summary>
+    [Parameter] public int? StatusCode { get; set; }
+
+    /// <summary>The title. Defaults to a text for <see cref="StatusCode"/>.</summary>
+    [Parameter] public string? StatusMessage { get; set; }
+
+    /// <summary>The explanation under the title. Defaults to a text for <see cref="StatusCode"/>.</summary>
+    [Parameter] public string? Message { get; set; }
+
+    /// <summary>The exception of an <c>ErrorBoundary</c>. Sets the status code to 500 when none is given.</summary>
+    [Parameter] public Exception? Exception { get; set; }
+
+    /// <summary>Shows the message of <see cref="Exception"/>. Leave it off in production: exception messages can leak internals.</summary>
+    [Parameter] public bool ShowDetails { get; set; }
+
+    /// <summary>Shows the button that leads back to <see cref="Href"/>. Ignored when <see cref="Actions"/> is set.</summary>
+    [Parameter] public bool Clear { get; set; } = true;
+
+    /// <summary>Where the back button goes. The default "./" is the home of the app: relative to <c>&lt;base href&gt;</c>, so it is right below a path base too.</summary>
+    [Parameter] public string Href { get; set; } = "./";
+
+    /// <summary>Text of the back button. Defaults to the built-in text.</summary>
+    [Parameter] public string? ClearLabel { get; set; }
+
+    /// <summary>The element of the title: "h1" by default, "h2" when the error replaces a part of a page.</summary>
+    [Parameter] public string HeadingAs { get; set; } = "h1";
+
+    /// <summary>Extra content between the message and the actions.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Replaces the back button.</summary>
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public ErrorUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _code = StatusCode ?? (Exception is not null ? 500 : null);
+        var strings = Messages;
+        var (title, message) = _code switch
+        {
+            404 => (strings.ErrorNotFound, strings.ErrorNotFoundMessage),
+            401 => (strings.ErrorUnauthorized, strings.ErrorUnauthorizedMessage),
+            403 => (strings.ErrorForbidden, strings.ErrorForbiddenMessage),
+            _ => (strings.ErrorServer, strings.ErrorServerMessage),
+        };
+        _title = StatusMessage ?? title;
+        _message = Message ?? (ShowDetails && Exception is not null ? Exception.Message : message);
+        _slots = ResolveSlots(Options.Error, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    private RenderFragment Heading => builder =>
+    {
+        builder.OpenElement(0, HeadingAs);
+        builder.AddAttribute(1, "class", _slots["statusMessage"]);
+        builder.AddContent(2, _title);
+        builder.CloseElement();
+    };
+}

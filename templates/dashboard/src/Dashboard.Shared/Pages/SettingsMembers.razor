@@ -6,78 +6,78 @@
 <PageTitle>Members · Settings</PageTitle>
 
 <SettingsPage Heading="Members" Description="Who can use this team, and what they can do." TestId="settings-members">
-    <LxCard>
+    <KlyCard>
         <Header>
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 class="font-semibold text-(--lux-text-highlighted)">Team members</h2>
-                    <p class="text-sm text-(--lux-text-muted)" data-testid="member-count">@Members.Items.Count people</p>
+                    <h2 class="font-semibold text-(--klyroo-text-highlighted)">Team members</h2>
+                    <p class="text-sm text-(--klyroo-text-muted)" data-testid="member-count">@Members.Items.Count people</p>
                 </div>
-                <LxButton Label="Invite people" Size="LxSize.Sm" OnClick="@(() => _inviteOpen = true)" data-testid="invite-button">
-                    <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
-                </LxButton>
+                <KlyButton Label="Invite people" Size="KlySize.Sm" OnClick="@(() => _inviteOpen = true)" data-testid="invite-button">
+                    <LeadingIcon>@KlyIcons.Named("plus")</LeadingIcon>
+                </KlyButton>
             </div>
         </Header>
         <ChildContent>
             <div class="flex flex-col gap-4">
-                <LxInput @bind-Value="_search" Immediate Type="search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
-                    <LeadingIcon>@LxIcons.Named("search")</LeadingIcon>
-                </LxInput>
-                <ul class="flex flex-col divide-y divide-(--lux-border)" aria-label="Members" data-testid="member-list">
+                <KlyInput @bind-Value="_search" Immediate Type="search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
+                    <LeadingIcon>@KlyIcons.Named("search")</LeadingIcon>
+                </KlyInput>
+                <ul class="flex flex-col divide-y divide-(--klyroo-border)" aria-label="Members" data-testid="member-list">
                     @foreach (var member in Visible())
                     {
                         <li class="flex flex-wrap items-center gap-3 py-3 first:pt-0 last:pb-0" data-testid="member">
-                            <LxAvatar Alt="@member.Name" />
+                            <KlyAvatar Alt="@member.Name" />
                             <div class="min-w-0 flex-1">
-                                <p class="truncate text-sm font-medium text-(--lux-text-highlighted)">
+                                <p class="truncate text-sm font-medium text-(--klyroo-text-highlighted)">
                                     @member.Name
                                     @if (!member.Active)
                                     {
-                                        <LxBadge Label="Invited" Variant="LxVariant.Subtle" Color="LxColor.Warning" Size="LxSize.Sm" class="ms-1" />
+                                        <KlyBadge Label="Invited" Variant="KlyVariant.Subtle" Color="KlyColor.Warning" Size="KlySize.Sm" class="ms-1" />
                                     }
                                 </p>
-                                <p class="truncate text-xs text-(--lux-text-muted)">@member.Email</p>
+                                <p class="truncate text-xs text-(--klyroo-text-muted)">@member.Email</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <LxSelect Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="LxSize.Sm" />
-                                <LxButton Square Size="LxSize.Sm" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Disabled="@(member.Role == "Owner")" OnClick="@(() => Remove(member))" aria-label="@($"Remove {member.Name}")">
-                                    <LeadingIcon>@LxIcons.Named("trash")</LeadingIcon>
-                                </LxButton>
+                                <KlySelect Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="KlySize.Sm" />
+                                <KlyButton Square Size="KlySize.Sm" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" Disabled="@(member.Role == "Owner")" OnClick="@(() => Remove(member))" aria-label="@($"Remove {member.Name}")">
+                                    <LeadingIcon>@KlyIcons.Named("trash")</LeadingIcon>
+                                </KlyButton>
                             </div>
                         </li>
                     }
                 </ul>
                 @if (!Visible().Any())
                 {
-                    <p class="text-sm text-(--lux-text-muted)" role="status">No member matches "@_search".</p>
+                    <p class="text-sm text-(--klyroo-text-muted)" role="status">No member matches "@_search".</p>
                 }
             </div>
         </ChildContent>
-    </LxCard>
+    </KlyCard>
 </SettingsPage>
 
-@* The people come from a directory searched while you type: LxSelectMenu loads one page of matches per request and shows a loading state in between. *@
-<LxModal @bind-Open="_inviteOpen" Title="Invite people" Description="They get an email and join with the role you choose." data-testid="invite-dialog">
+@* The people come from a directory searched while you type: KlySelectMenu loads one page of matches per request and shows a loading state in between. *@
+<KlyModal @bind-Open="_inviteOpen" Title="Invite people" Description="They get an email and join with the role you choose." data-testid="invite-dialog">
     <Body>
         <div class="flex flex-col gap-4">
-            <LxFormField Label="People">
-                <LxSelectMenu OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
+            <KlyFormField Label="People">
+                <KlySelectMenu OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
                               Value="_invited" ValueChanged="@(v => _invited = v ?? [])" data-testid="invite-people" />
-            </LxFormField>
-            <LxFormField Label="Role">
-                <LxSelect Items="_inviteRoles" @bind-Value="_inviteRole" />
-            </LxFormField>
+            </KlyFormField>
+            <KlyFormField Label="Role">
+                <KlySelect Items="_inviteRoles" @bind-Value="_inviteRole" />
+            </KlyFormField>
         </div>
     </Body>
     <Footer>
-        <LxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
-        <LxButton Label="@(_invited.Count == 0 ? "Send invitations" : $"Invite {_invited.Count}")" Disabled="@(_invited.Count == 0)" OnClick="InviteAsync" data-lx-close data-testid="invite-send" />
+        <KlyButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" data-kly-close />
+        <KlyButton Label="@(_invited.Count == 0 ? "Send invitations" : $"Invite {_invited.Count}")" Disabled="@(_invited.Count == 0)" OnClick="InviteAsync" data-kly-close data-testid="invite-send" />
     </Footer>
-</LxModal>
+</KlyModal>
 
 @code {
-    private static readonly LxSelectItem[] _roles = [.. PeopleData.Roles.Select(r => new LxSelectItem(r, r))];
-    private static readonly LxSelectItem[] _inviteRoles = [.. PeopleData.Roles.Where(r => r != "Owner").Select(r => new LxSelectItem(r, r))];
+    private static readonly KlySelectItem[] _roles = [.. PeopleData.Roles.Select(r => new KlySelectItem(r, r))];
+    private static readonly KlySelectItem[] _inviteRoles = [.. PeopleData.Roles.Where(r => r != "Owner").Select(r => new KlySelectItem(r, r))];
 
     private string? _search;
     private bool _inviteOpen;
@@ -100,14 +100,14 @@
     private async Task Remove(Member member)
     {
         Members.Remove(member.Id);
-        await Toasts.Add(new LxToast { Title = "Member removed", Description = member.Name, Color = LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = "Member removed", Description = member.Name, Color = KlyColor.Success });
     }
 
     private async Task InviteAsync()
     {
         var people = await PeopleDirectory.Resolve(_invited, CancellationToken.None);
         foreach (var person in people) Members.Invite(person.Value, person.Label, _inviteRole ?? "Member");
-        await Toasts.Add(new LxToast { Title = people.Count == 1 ? "Invitation sent" : $"{people.Count} invitations sent", Color = LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = people.Count == 1 ? "Invitation sent" : $"{people.Count} invitations sent", Color = KlyColor.Success });
         _invited = [];
     }
 

@@ -1,0 +1,51 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+@using Klyroo.UI.Internal
+
+<header class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div class="@_slots["wrapper"]">
+        @if (Headline is not null)
+        {
+            <p class="@_slots["headline"]" data-slot="headline">@Headline</p>
+        }
+        @if (Title is not null)
+        {
+            <SectionHeading Level="HeadingLevel" Class="@_slots["title"]">@Title</SectionHeading>
+        }
+        @if (Description is not null)
+        {
+            <p class="@_slots["description"]" data-slot="description">@Description</p>
+        }
+    </div>
+    @PageRender.Buttons(Links, _slots["links"], KlySize.Md, Options.Icons)
+    @if (ChildContent is not null)
+    {
+        <div class="@_slots["body"]" data-slot="body">@ChildContent</div>
+    }
+</header>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>Small label above the title.</summary>
+    [Parameter] public string? Headline { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Links rendered as buttons under the description.</summary>
+    [Parameter] public IReadOnlyList<PageLinkItem>? Links { get; set; }
+
+    /// <summary>Extra content under the links.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Level of the title heading, 1 to 6: 1 by default, the main heading of the page. A page has one h1: when a
+    /// <see cref="KlyPageHeader"/> and a <see cref="KlyPageHero"/> share a page, or either sits under another h1, set
+    /// this to 2 on the secondary one.
+    /// </summary>
+    [Parameter] public int HeadingLevel { get; set; } = 1;
+    [Parameter] public PageHeaderUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PageHeader, new Dictionary<string, string?>(), Ui, "root");
+}

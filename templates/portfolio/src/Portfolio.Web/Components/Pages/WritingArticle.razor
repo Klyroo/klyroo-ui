@@ -9,53 +9,53 @@
         <meta name="description" content="@(_article.Description ?? SiteInfo.Description)" />
     </HeadContent>
 
-    <LxContainer Class="py-10 sm:py-14">
+    <KlyContainer Class="py-10 sm:py-14">
         <div class="mx-auto max-w-3xl">
-            <LxBreadcrumb Items="_crumbs" />
+            <KlyBreadcrumb Items="_crumbs" />
 
             <article data-testid="article" class="mt-8">
                 <header class="flex flex-col gap-4">
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-(--lux-text-muted)">
-                        <time datetime="@LxDates.Iso(_article.Date)">@LxDates.Format(_article.Date)</time>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-(--klyroo-text-muted)">
+                        <time datetime="@KlyDates.Iso(_article.Date)">@KlyDates.Format(_article.Date)</time>
                         <span aria-hidden="true">&middot;</span>
                         <span>@_article.ReadingMinutes min read</span>
                         @foreach (var tag in _article.Tags)
                         {
-                            <LxBadge Label="@tag" Color="LxColor.Neutral" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
+                            <KlyBadge Label="@tag" Color="KlyColor.Neutral" Variant="KlyVariant.Subtle" Size="KlySize.Sm" />
                         }
                     </div>
-                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--lux-text-highlighted) sm:text-4xl">@_article.Title</h1>
+                    <h1 class="text-3xl font-semibold tracking-tight text-balance text-(--klyroo-text-highlighted) sm:text-4xl">@_article.Title</h1>
                     @if (_article.Description is not null)
                     {
-                        <p class="text-lg text-pretty text-(--lux-text-muted)">@_article.Description</p>
+                        <p class="text-lg text-pretty text-(--klyroo-text-muted)">@_article.Description</p>
                     }
-                    <LxUser Name="@SiteInfo.Name" Description="@SiteInfo.Role" Class="mt-2" />
+                    <KlyUser Name="@SiteInfo.Name" Description="@SiteInfo.Role" Class="mt-2" />
                 </header>
 
                 @if (_article.Image is not null)
                 {
-                    <LxImage Src="@_article.Image" Alt="@(_article.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--lux-radius)*2)] object-cover ring ring-(--lux-border)" />
+                    <KlyImage Src="@_article.Image" Alt="@(_article.ImageAlt ?? "")" Class="mt-8 aspect-video w-full rounded-[calc(var(--klyroo-radius)*2)] object-cover ring ring-(--klyroo-border)" />
                 }
 
-                @* The prose styles of the Lux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
-                <LxPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_article.Page.Html)</LxPageBody>
+                @* The prose styles of the Klyroo PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
+                <KlyPageBody Class="markdown-body mt-10 pb-10">@((MarkupString)_article.Page.Html)</KlyPageBody>
             </article>
 
             @if (_more.Count > 0)
             {
-                <section aria-labelledby="more-articles" class="mt-6 border-t border-(--lux-border) pt-10">
-                    <h2 id="more-articles" class="text-xl font-semibold text-(--lux-text-highlighted)">Keep reading</h2>
-                    <LxBlogPosts Class="mt-6 md:grid-cols-2 lg:grid-cols-2">
+                <section aria-labelledby="more-articles" class="mt-6 border-t border-(--klyroo-border) pt-10">
+                    <h2 id="more-articles" class="text-xl font-semibold text-(--klyroo-text-highlighted)">Keep reading</h2>
+                    <KlyBlogPosts Class="mt-6 md:grid-cols-2 lg:grid-cols-2">
                         @foreach (var article in _more)
                         {
-                            <LxBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
+                            <KlyBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
                                         Href="@article.Href" HeadingLevel="3" data-testid="more-article" />
                         }
-                    </LxBlogPosts>
+                    </KlyBlogPosts>
                 </section>
             }
         </div>
-    </LxContainer>
+    </KlyContainer>
 }
 
 @code {
@@ -63,7 +63,7 @@
 
     private Article? _article;
     private IReadOnlyList<Article> _more = [];
-    private IReadOnlyList<LxBreadcrumbItem> _crumbs = [];
+    private IReadOnlyList<KlyBreadcrumbItem> _crumbs = [];
 
     protected override void OnParametersSet()
     {

@@ -1,22 +1,22 @@
 @inject MarkdownStore Store
 
 @* The projects marked featured: true in their front matter, the most recent first. *@
-<LxPageSection id="work"
+<KlyPageSection id="work"
                Headline="@SiteInfo.WorkHeadline"
                Title="@SiteInfo.WorkTitle"
                Description="@SiteInfo.WorkDescription"
-               Orientation="LxOrientation.Vertical"
+               Orientation="KlyOrientation.Vertical"
                Links="_links">
-    <LxPageGrid Columns="3" Class="mt-10 gap-6">
+    <KlyPageGrid Columns="3" Class="mt-10 gap-6">
         @foreach (var project in _projects)
         {
             <ProjectCard Project="project" />
         }
-    </LxPageGrid>
-</LxPageSection>
+    </KlyPageGrid>
+</KlyPageSection>
 
 @code {
-    private static readonly PageLinkItem[] _links = [new("All projects", SiteInfo.WorkHref) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+    private static readonly PageLinkItem[] _links = [new("All projects", SiteInfo.WorkHref) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
 
     private IReadOnlyList<Project> _projects = [];
 

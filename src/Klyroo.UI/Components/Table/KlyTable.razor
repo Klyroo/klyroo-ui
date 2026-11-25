@@ -1,0 +1,133 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@typeparam TItem
+@inherits KlyComponentBase
+
+<CascadingValue TValue="KlyTable<TItem>" Value="this" IsFixed="true">
+    @{ BeginCollectingColumns(); }
+    @ChildContent
+    @* Rendered after the columns above have registered. *@
+    <Defer>
+        <div class="@_slots["root"]" @attributes="AdditionalAttributes">
+            <table class="@_slots["base"]">
+                @if (Caption is not null)
+                {
+                    <caption class="@_slots["caption"]">@Caption</caption>
+                }
+                <thead class="@_slots["thead"]">
+                    <tr class="@_slots["tr"]">
+                        @foreach (var column in _columns)
+                        {
+                            <th scope="col" class="@_slots["th"]" aria-sort="@AriaSort(column)">
+                                @if (column.Sortable && column.Field is not null)
+                                {
+                                    <button type="button" class="@_slots["sortButton"]" disabled="@(!RendererInfo.IsInteractive)" title="@SortTitle(column)" @onclick="() => Sort(column)">
+                                        @column.Title
+                                        @if (column == _sortColumn)
+                                        {
+                                            @(_ascending ? RenderIcon(Options.Icons.ArrowUp, _slots["sortIcon"]) : RenderIcon(Options.Icons.ArrowDown, _slots["sortIcon"]))
+                                        }
+                                        else
+                                        {
+                                            @RenderIcon(Options.Icons.ChevronUpDown, _slots["sortIcon"])
+                                        }
+                                    </button>
+                                }
+                                else
+                                {
+                                    @column.Title
+                                }
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                <tbody class="@_slots["tbody"]">
+                    @{ var rows = SortedItems.ToList(); }
+                    @if (rows.Count == 0)
+                    {
+                        <tr class="@_slots["tr"]">
+                            <td colspan="@_columns.Count" class="@_slots["empty"]">@(Empty ?? (RenderFragment)(b => b.AddContent(0, Messages.NoData)))</td>
+                        </tr>
+                    }
+                    @foreach (var item in rows)
+                    {
+                        <tr class="@_slots["tr"]">
+                            @foreach (var column in _columns)
+                            {
+                                <td class="@Resolver.Merge(_slots["td"], column.Class)">
+                                    @if (column.Template is not null)
+                                    {
+                                        @column.Template(item)
+                                    }
+                                    else
+                                    {
+                                        @column.Field?.Invoke(item)
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </Defer>
+</CascadingValue>
+
+@code {
+    private readonly List<KlyColumn<TItem>> _columns = [];
+    private SlotSet _slots = default!;
+    private KlyColumn<TItem>? _sortColumn;
+    private bool _ascending = true;
+
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
+
+    /// <summary>The columns: <c>KlyColumn</c> components.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Describes the table for assistive technologies (visually hidden).</summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>Shown when there are no items.</summary>
+    [Parameter] public RenderFragment? Empty { get; set; }
+
+    /// <summary>Keeps the header visible while the table scrolls (give the table a max height through Class).</summary>
+    [Parameter] public bool Sticky { get; set; }
+    [Parameter] public TableUi? Ui { get; set; }
+
+    // Columns register each time the table renders, in markup order, so one inserted later by an @if takes its
+    // place in the markup instead of going last. Every column has a Field or Template delegate, which Blazor always
+    // treats as changed, so every column re-registers on each render.
+    private void BeginCollectingColumns() => _columns.Clear();
+
+    internal void AddColumn(KlyColumn<TItem> column)
+    {
+        if (!_columns.Contains(column)) _columns.Add(column);
+    }
+
+    internal void RemoveColumn(KlyColumn<TItem> column) => _columns.Remove(column);
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Table, new Dictionary<string, string?> { ["sticky"] = VariantValue.Of(Sticky) }, Ui, "root");
+
+    private IEnumerable<TItem> SortedItems
+    {
+        get
+        {
+            var items = Items ?? [];
+            if (_sortColumn?.Field is not { } key) return items;
+            return _ascending ? items.OrderBy(key, Comparer<object?>.Default) : items.OrderByDescending(key, Comparer<object?>.Default);
+        }
+    }
+
+    private string SortTitle(KlyColumn<TItem> column) =>
+        column == _sortColumn && _ascending ? Messages.SortDescending : Messages.SortAscending;
+
+    private string? AriaSort(KlyColumn<TItem> column) =>
+        column != _sortColumn ? (column.Sortable && column.Field is not null ? "none" : null) : _ascending ? "ascending" : "descending";
+
+    private void Sort(KlyColumn<TItem> column)
+    {
+        _ascending = column != _sortColumn || !_ascending;
+        _sortColumn = column;
+    }
+}

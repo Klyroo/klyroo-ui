@@ -1,6 +1,6 @@
 # Chat
 
-An AI assistant app on Lux.UI: a sidebar with the history of conversations (new, search, rename, delete, grouped by the day they were last used), answers that stream in as Markdown with highlighted code blocks and Copy buttons, a prompt that sends with Enter and turns into a Stop button while an answer arrives, a model picker, a greeting with suggestions, and light and dark mode. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
+An AI assistant app on Klyroo.UI: a sidebar with the history of conversations (new, search, rename, delete, grouped by the day they were last used), answers that stream in as Markdown with highlighted code blocks and Copy buttons, a prompt that sends with Enter and turns into a Stop button while an answer arrives, a model picker, a greeting with suggestions, and light and dark mode. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
 
 The answers come from any service that speaks the OpenAI API (`POST /chat/completions` with `stream: true`), and the key never reaches a browser. Until you configure one, the app answers from a handful of canned replies (see [Try it without a key](#try-it-without-a-key)).
 
@@ -24,7 +24,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Chat.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Chat.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Chat.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 Out of the box the provider is `OpenAi` and nothing is configured, so the page tells you so. Pick one of the two ways below.
 
@@ -107,7 +107,7 @@ The text of an answer is Markdown, rendered with [Markdig](https://github.com/xo
 - headings start at level 2, and their ids cannot take an id of the page;
 - code blocks are highlighted for a few languages (bash, json, yaml, toml, C#, html) and have a Copy button, brought to life by `installCodeCopy` in `wwwroot/host.js`.
 
-The three files in `Markdown/` besides `MessageMarkdown.cs` are copies of the Markdown code shared by the content templates of Lux (`MarkdownRenderer.cs`, `ContentUrl.cs`, `SyntaxHighlighter.cs`): change `MessageMarkdown.cs`, not the copies.
+The three files in `Markdown/` besides `MessageMarkdown.cs` are copies of the Markdown code shared by the content templates of Klyroo (`MarkdownRenderer.cs`, `ContentUrl.cs`, `SyntaxHighlighter.cs`): change `MessageMarkdown.cs`, not the copies.
 
 ## What is in it
 
@@ -133,7 +133,7 @@ Run the app with `dotnet watch`, and Tailwind in a second terminal, so a new uti
 
 ```bash
 dotnet watch --project src/Chat.Web
-dotnet build src/Chat.Shared -t:LuxTailwindWatch
+dotnet build src/Chat.Shared -t:KlyrooTailwindWatch
 ```
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.

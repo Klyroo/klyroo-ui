@@ -2,37 +2,37 @@
 @inject CustomerStore Store
 @inject IToastService Toasts
 
-@* The form of a new customer, in a slideover. The country is searched in a remote source (LxSelectMenu with an options provider): a list of any size works, because
+@* The form of a new customer, in a slideover. The country is searched in a remote source (KlySelectMenu with an options provider): a list of any size works, because
    only the page that matches the search is loaded. *@
-<LxSlideover Open="Open" OpenChanged="OpenChanged" Title="New customer" Description="The customer is added to the table for this session." Side="SlideoverSide.Right" data-testid="new-customer">
+<KlySlideover Open="Open" OpenChanged="OpenChanged" Title="New customer" Description="The customer is added to the table for this session." Side="SlideoverSide.Right" data-testid="new-customer">
     <Body>
-        <LxForm Model="Model" FormName="new-customer" OnValidSubmit="CreateAsync" id="new-customer-form" class="flex flex-col gap-4">
-            <LxFormField Label="Name" Required For="() => Model!.Name">
-                <LxInput @bind-Value="Model!.Name" autocomplete="off" data-testid="new-name" />
-            </LxFormField>
-            <LxFormField Label="Email" Required For="() => Model!.Email">
-                <LxInput @bind-Value="Model!.Email" Type="email" autocomplete="off" data-testid="new-email" />
-            </LxFormField>
-            <LxFormField Label="Company" For="() => Model!.Company">
-                <LxInput @bind-Value="Model!.Company" autocomplete="off" />
-            </LxFormField>
-            <LxFormField Label="Country" Required Error="@_countryError">
-                <LxSelectMenu OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
+        <KlyForm Model="Model" FormName="new-customer" OnValidSubmit="CreateAsync" id="new-customer-form" class="flex flex-col gap-4">
+            <KlyFormField Label="Name" Required For="() => Model!.Name">
+                <KlyInput @bind-Value="Model!.Name" autocomplete="off" data-testid="new-name" />
+            </KlyFormField>
+            <KlyFormField Label="Email" Required For="() => Model!.Email">
+                <KlyInput @bind-Value="Model!.Email" Type="email" autocomplete="off" data-testid="new-email" />
+            </KlyFormField>
+            <KlyFormField Label="Company" For="() => Model!.Company">
+                <KlyInput @bind-Value="Model!.Company" autocomplete="off" />
+            </KlyFormField>
+            <KlyFormField Label="Country" Required Error="@_countryError">
+                <KlySelectMenu OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
                               Value="_country" ValueChanged="OnCountry" data-testid="new-country" />
-            </LxFormField>
-            <LxFormField Label="Plan">
-                <LxSelect Items="_plans" @bind-Value="Model!.Plan" />
-            </LxFormField>
-        </LxForm>
+            </KlyFormField>
+            <KlyFormField Label="Plan">
+                <KlySelect Items="_plans" @bind-Value="Model!.Plan" />
+            </KlyFormField>
+        </KlyForm>
     </Body>
     <Footer>
-        <LxButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
-        <LxButton Label="Create customer" Type="submit" form="new-customer-form" data-testid="new-create" />
+        <KlyButton Label="Cancel" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" data-kly-close />
+        <KlyButton Label="Create customer" Type="submit" form="new-customer-form" data-testid="new-create" />
     </Footer>
-</LxSlideover>
+</KlySlideover>
 
 @code {
-    private static readonly LxSelectItem[] _plans = [.. CustomerData.Plans.Select(p => new LxSelectItem(p, p))];
+    private static readonly KlySelectItem[] _plans = [.. CustomerData.Plans.Select(p => new KlySelectItem(p, p))];
 
     // Bound to the posted form: a static post (before the page is interactive) is validated by the server like an interactive one.
     [SupplyParameterFromForm(FormName = "new-customer")]
@@ -64,7 +64,7 @@
             return;
         }
         var customer = Store.Add(Model!.Name!.Trim(), Model!.Email!.Trim(), string.IsNullOrWhiteSpace(Model!.Company) ? "Independent" : Model!.Company.Trim(), CountryDirectory.NameOf(_country[0]), Model!.Plan);
-        await Toasts.ToastAsync(RendererInfo.IsInteractive, new LxToast { Title = "Customer added", Description = $"{customer.Name} is in the table.", Color = LxColor.Success });
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new KlyToast { Title = "Customer added", Description = $"{customer.Name} is in the table.", Color = KlyColor.Success });
         Model!.Name = Model!.Email = Model!.Company = null;
         Model!.Plan = "Free";
         _country = [];

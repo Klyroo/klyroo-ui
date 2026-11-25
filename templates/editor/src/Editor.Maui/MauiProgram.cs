@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Editor.Maui.Services;
 using Editor.Shared;
 using Editor.Shared.Services;
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Editor.Maui;
 
@@ -26,9 +26,9 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISystemBars, SystemBars>();
         // The documents are kept in the local storage of the web view, on the device (LocalStorageConversationStore, the default of AddEditorUi).
         builder.Services.AddEditorUi();
-        // Where LxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
+        // Where KlyLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
-        builder.Services.AddSingleton<ILxCultureStore, PreferencesCultureStore>();
+        builder.Services.AddSingleton<IKlyCultureStore, PreferencesCultureStore>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -39,7 +39,7 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// A .NET process takes its culture from the device. The language the user picked in LxLocaleSelect is read here, before anything
+    /// A .NET process takes its culture from the device. The language the user picked in KlyLocaleSelect is read here, before anything
     /// renders, and becomes the default culture of every thread.
     /// </summary>
     private static void ApplyStoredCulture()

@@ -6,13 +6,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     @* The site can be served below a path base (see Program.cs): every relative URL, the stylesheet and the framework included, follows this. *@
     <base href="@_baseHref" />
-    <LxColorModeScript />
-    <LxCultureMeta />
-    <LxThemeStyle />
-    @* Self-hosted at build time from the LuxFont items of Landing.Web.csproj: no third-party request. *@
-    <LxFonts />
+    <KlyColorModeScript />
+    <KlyCultureMeta />
+    <KlyThemeStyle />
+    @* Self-hosted at build time from the KlyrooFont items of Landing.Web.csproj: no third-party request. *@
+    <KlyFonts />
     <ResourcePreloader />
-    @* Compiled by the build from Styles/app.css (Tailwind, with the Lux theme). *@
+    @* Compiled by the build from Styles/app.css (Tailwind, with the Klyroo theme). *@
     <link rel="stylesheet" href="@Assets["app.css"]" />
     <link rel="icon" type="image/png" href="@Assets["favicon.png"]" />
     <ImportMap />
@@ -21,7 +21,7 @@
 
 <body>
     @* No render mode: every page is rendered once by the server and sent as HTML. The menu, the color mode, the language select, the accordion
-       and the billing switch all run in the browser (Lux's own script, or plain CSS), so there is no circuit and no WebAssembly to download. *@
+       and the billing switch all run in the browser (Klyroo's own script, or plain CSS), so there is no circuit and no WebAssembly to download. *@
     <Routes />
     <script src="@Assets["_framework/blazor.web.js"]"></script>
 </body>
@@ -34,9 +34,9 @@
     // The PathBase setting as configured, normalized to "/x/": the root when there is none.
     private string _baseHref => Configuration["PathBase"] is { Length: > 0 } pathBase ? "/" + pathBase.Trim('/') + "/" : "/";
 
-    private LxLocale _locale = LxLocales.En;
+    private KlyLocale _locale = KlyLocales.En;
 
     // lang and dir of the page follow the culture of the request, like the components do.
     protected override void OnParametersSet() =>
-        _locale = LxLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
+        _locale = KlyLocales.Resolve(System.Globalization.CultureInfo.CurrentUICulture);
 }

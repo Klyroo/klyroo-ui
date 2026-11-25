@@ -1,0 +1,65 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@* role="separator" makes the children presentational, so a label is the separator's name and its visual copy is hidden. *@
+<div role="separator"
+     aria-orientation="@(Orientation == KlyOrientation.Vertical ? "vertical" : null)"
+     aria-label="@Label"
+     data-color="@Color.Value"
+     class="@_slots["root"]"
+     @attributes="AdditionalAttributes">
+    @if (HasContent)
+    {
+        <span class="@_slots["border"]"></span>
+        <span class="@_slots["container"]" aria-hidden="true">
+            @if (Icon is not null)
+            {
+                <span class="@_slots["icon"]">@Icon</span>
+            }
+            @if (Label is not null)
+            {
+                <span class="@_slots["label"]">@Label</span>
+            }
+            @ChildContent
+        </span>
+        <span class="@_slots["border"]"></span>
+    }
+    else
+    {
+        <span class="@_slots["border"]"></span>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+
+    /// <summary>Text in the middle of the line. It also names the separator for assistive technology.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public RenderFragment? Icon { get; set; }
+
+    /// <summary>Extra decorative content in the middle, next to the icon and label.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
+
+    /// <summary>Thickness of the line.</summary>
+    [Parameter] public KlySize Size { get; set; } = KlySize.Xs;
+    [Parameter] public KlySeparatorType Type { get; set; } = KlySeparatorType.Solid;
+    [Parameter] public SeparatorUi? Ui { get; set; }
+
+    private bool HasContent => Label is not null || Icon is not null || ChildContent is not null;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Separator, new Dictionary<string, string?>
+        {
+            ["orientation"] = Orientation == KlyOrientation.Vertical ? "vertical" : "horizontal",
+            ["size"] = VariantValue.Of(Size),
+            ["type"] = Type switch
+            {
+                KlySeparatorType.Dashed => "dashed",
+                KlySeparatorType.Dotted => "dotted",
+                _ => "solid",
+            },
+        }, Ui, "root");
+}

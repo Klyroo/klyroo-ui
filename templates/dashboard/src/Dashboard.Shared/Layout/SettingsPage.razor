@@ -1,17 +1,17 @@
 @* The frame of the four settings pages: the app page, a toolbar with the sections, and a column for the forms. *@
 <AppPage Title="Settings" TestId="@TestId">
     <Toolbar>
-        <LxDashboardToolbar>
+        <KlyDashboardToolbar>
             <Left>
-                <LxNavigationMenu Items="_sections" Orientation="LxOrientation.Horizontal" AriaLabel="Settings sections" />
+                <KlyNavigationMenu Items="_sections" Orientation="KlyOrientation.Horizontal" AriaLabel="Settings sections" />
             </Left>
-        </LxDashboardToolbar>
+        </KlyDashboardToolbar>
     </Toolbar>
     <ChildContent>
         <div class="mx-auto flex w-full max-w-2xl flex-col gap-6">
             <header class="flex flex-col gap-1">
-                <h2 class="text-xl font-semibold text-(--lux-text-highlighted)">@Heading</h2>
-                <p class="text-sm text-(--lux-text-muted)">@Description</p>
+                <h2 class="text-xl font-semibold text-(--klyroo-text-highlighted)">@Heading</h2>
+                <p class="text-sm text-(--klyroo-text-muted)">@Description</p>
             </header>
             @ChildContent
         </div>
@@ -19,7 +19,7 @@
 </AppPage>
 
 @code {
-    private static readonly LxNavigationItem[] _sections =
+    private static readonly KlyNavigationItem[] _sections =
     [
         new("General") { Href = "settings", Exact = true },
         new("Members") { Href = "settings/members" },

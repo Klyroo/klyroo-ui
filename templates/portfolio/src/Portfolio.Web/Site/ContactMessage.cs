@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Portfolio.Web.Site;
 
 /// <summary>
-/// What the contact form posts. The rules are checked by the server on every post, and by <c>LxForm</c> the same way when the page is interactive.
+/// What the contact form posts. The rules are checked by the server on every post, and by <c>KlyForm</c> the same way when the page is interactive.
 /// This type is also where a real form would start: add a field here, in the form of <c>Components/Pages/Contact.razor</c> and in the check of <see cref="Topic"/>.
 /// </summary>
 public sealed class ContactMessage

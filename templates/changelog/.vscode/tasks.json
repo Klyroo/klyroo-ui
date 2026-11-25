@@ -22,7 +22,7 @@
       "label": "tailwind watch",
       "type": "process",
       "command": "dotnet",
-      "args": ["build", "${workspaceFolder}/src/Changelog.Web", "-t:LuxTailwindWatch"],
+      "args": ["build", "${workspaceFolder}/src/Changelog.Web", "-t:KlyrooTailwindWatch"],
       "isBackground": true,
       "problemMatcher": [],
       "presentation": { "group": "dev" }

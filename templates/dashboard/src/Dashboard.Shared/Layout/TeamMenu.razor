@@ -1,35 +1,35 @@
 @inject IToastService Toasts
 
 @* The team switcher at the top of the sidebar. The teams are sample ones: the menu only changes the name shown here. *@
-<LxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="bottom-start">
+<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="bottom-start">
     <button type="button"
-            class="flex w-full min-w-0 items-center gap-2 rounded-(--lux-radius) p-1.5 text-start transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)"
+            class="flex w-full min-w-0 items-center gap-2 rounded-(--klyroo-radius) p-1.5 text-start transition-colors hover:bg-(--klyroo-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
             data-testid="team-menu">
         @* The avatar repeats the name next to it: hidden, so the button is named by the visible text. *@
-        <LxAvatar Text="@_team[..1]" Alt="@_team" Size="LxSize.Sm" aria-hidden="true" />
-        <span class="min-w-0 flex-1 truncate font-semibold text-(--lux-text-highlighted)">@_team</span>
-        <LxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--lux-text-muted)" />
+        <KlyAvatar Text="@_team[..1]" Alt="@_team" Size="KlySize.Sm" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate font-semibold text-(--klyroo-text-highlighted)">@_team</span>
+        <KlyIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--klyroo-text-muted)" />
     </button>
-</LxDropdownMenu>
+</KlyDropdownMenu>
 
 @code {
     private static readonly string[] Teams = ["Dashboard", "Larkspur Health", "Tidewater"];
 
     private string _team = Teams[0];
 
-    private static readonly LxMenuItem[] _items =
+    private static readonly KlyMenuItem[] _items =
     [
-        LxMenuItem.Heading("Teams"),
-        .. Teams.Select(t => new LxMenuItem { Label = t, Value = t }),
-        LxMenuItem.Separator(),
-        new() { Label = "Create a team", Value = "create", Icon = LxIcons.Named("plus", "size-4") },
+        KlyMenuItem.Heading("Teams"),
+        .. Teams.Select(t => new KlyMenuItem { Label = t, Value = t }),
+        KlyMenuItem.Separator(),
+        new() { Label = "Create a team", Value = "create", Icon = KlyIcons.Named("plus", "size-4") },
     ];
 
-    private async Task OnSelect(LxMenuItem item)
+    private async Task OnSelect(KlyMenuItem item)
     {
         if (item.Value == "create")
         {
-            await Toasts.Add(new LxToast { Title = "Create a team", Description = "This sample app has no backend: connect your own to create teams.", Color = LxColor.Info });
+            await Toasts.Add(new KlyToast { Title = "Create a team", Description = "This sample app has no backend: connect your own to create teams.", Color = KlyColor.Info });
             return;
         }
         _team = item.Label;

@@ -1,0 +1,32 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@* A secondary bar under a navbar: filters and bulk actions on the left, view options on the right. *@
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Left is not null)
+    {
+        <div class="@_slots["left"]" data-slot="left">@Left</div>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="@_slots["center"]" data-slot="center">@ChildContent</div>
+    }
+    @if (Right is not null)
+    {
+        <div class="@_slots["right"]" data-slot="right">@Right</div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? Left { get; set; }
+
+    /// <summary>The center area, between the left and the right ones.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Right { get; set; }
+    [Parameter] public DashboardToolbarUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DashboardToolbar, new Dictionary<string, string?>(), Ui, "root");
+}

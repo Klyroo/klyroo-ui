@@ -8,56 +8,56 @@
 
 <AppPage Title="Customers" TestId="customers">
     <Actions>
-        <LxButton Label="New customer" Size="LxSize.Sm" OnClick="@(() => _newOpen = true)" data-testid="new-customer-button">
-            <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
-        </LxButton>
+        <KlyButton Label="New customer" Size="KlySize.Sm" OnClick="@(() => _newOpen = true)" data-testid="new-customer-button">
+            <LeadingIcon>@KlyIcons.Named("plus")</LeadingIcon>
+        </KlyButton>
     </Actions>
     <ChildContent>
         @* One data list: the search, the filters, the sort, the page and the page size are in the address (q, f.status, s, p, ps), so a view can be shared and Back
            undoes a change. The rows are the customers of the session, in memory; give it a Provider or a Queryable to read them from your API or your database. *@
         <p role="status" class="sr-only" data-testid="customers-message">@_message</p>
-        <LxDataList TItem="Customer" Label="Customers" Schema="CustomerData.Schema" Items="Store.Items" ResultJson="DashboardJson.Default.DataListResultCustomer">
+        <KlyDataList TItem="Customer" Label="Customers" Schema="CustomerData.Schema" Items="Store.Items" ResultJson="DashboardJson.Default.DataListResultCustomer">
             <div class="flex flex-wrap items-center gap-2" data-testid="customers-toolbar">
-                <LxDataListSearch Placeholder="Search customers" />
+                <KlyDataListSearch Placeholder="Search customers" />
                 <div class="ms-auto flex items-center gap-2">
-                    <LxDataListResultCount />
+                    <KlyDataListResultCount />
                 </div>
             </div>
-            <LxDataListFilterTags ShowAdd ShowClear />
-            <LxDataListErrorState />
+            <KlyDataListFilterTags ShowAdd ShowClear />
+            <KlyDataListErrorState />
             @* The actions of a row are built in: with MaxVisible 0 they stay behind one "Actions for ..." button (a sheet below md). "Send a message" is a link, so it also works
                before the page is interactive; the others need the interactive render. *@
-            <LxDataListTable Caption="Customers" RowActions="_rowActions" RowActionsMaxVisible="0">
-                <LxDataListColumn Key="name" Title="Customer">
+            <KlyDataListTable Caption="Customers" RowActions="_rowActions" RowActionsMaxVisible="0">
+                <KlyDataListColumn Key="name" Title="Customer">
                     <Template Context="customer">
                         <div class="flex items-center gap-3">
-                            <LxAvatar Alt="@customer.Name" Size="LxSize.Sm" />
+                            <KlyAvatar Alt="@customer.Name" Size="KlySize.Sm" />
                             <div class="min-w-0">
-                                <p class="truncate font-medium text-(--lux-text-highlighted)">@customer.Name</p>
-                                <p class="truncate text-xs text-(--lux-text-muted)">@customer.Email</p>
+                                <p class="truncate font-medium text-(--klyroo-text-highlighted)">@customer.Name</p>
+                                <p class="truncate text-xs text-(--klyroo-text-muted)">@customer.Email</p>
                             </div>
                         </div>
                     </Template>
-                </LxDataListColumn>
-                <LxDataListColumn Field="company" />
-                <LxDataListColumn Field="country" />
-                <LxDataListColumn Field="plan" />
-                <LxDataListColumn Key="status" Title="Status">
+                </KlyDataListColumn>
+                <KlyDataListColumn Field="company" />
+                <KlyDataListColumn Field="country" />
+                <KlyDataListColumn Field="plan" />
+                <KlyDataListColumn Key="status" Title="Status">
                     <Template Context="customer">
-                        <LxBadge Label="@customer.Status" Color="@StatusColor(customer.Status)" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
+                        <KlyBadge Label="@customer.Status" Color="@StatusColor(customer.Status)" Variant="KlyVariant.Subtle" Size="KlySize.Sm" />
                     </Template>
-                </LxDataListColumn>
-                <LxDataListColumn Field="orders" Align="DataListAlign.End" />
-                <LxDataListColumn Key="totalSpent" Title="Total spent" Align="DataListAlign.End">
+                </KlyDataListColumn>
+                <KlyDataListColumn Field="orders" Align="DataListAlign.End" />
+                <KlyDataListColumn Key="totalSpent" Title="Total spent" Align="DataListAlign.End">
                     <Template Context="customer">@Money.Format(customer.TotalSpent)</Template>
-                </LxDataListColumn>
-                <LxDataListColumn Field="joined" Format="MMM d, yyyy" />
-            </LxDataListTable>
+                </KlyDataListColumn>
+                <KlyDataListColumn Field="joined" Format="MMM d, yyyy" />
+            </KlyDataListTable>
             @* The checkbox column comes with this bar: the rows ticked on a page stay ticked on the next one, and only those the search and the filters still match stay ticked.
                Interactive only, like every action. *@
-            <LxDataListSelectionActions Actions="_bulkActions" data-testid="customers-selection" />
-            <LxDataListPagination AriaLabel="Customers pagination" />
-        </LxDataList>
+            <KlyDataListSelectionActions Actions="_bulkActions" data-testid="customers-selection" />
+            <KlyDataListPagination AriaLabel="Customers pagination" />
+        </KlyDataList>
     </ChildContent>
 </AppPage>
 
@@ -86,14 +86,14 @@
                 Key = "delete",
                 Label = "Delete customer",
                 Icon = "trash",
-                Color = LxColor.Error,
+                Color = KlyColor.Error,
                 Group = "Danger",
                 Confirm = new DataListRowActionConfirm<Customer>
                 {
                     Title = "Delete customer",
                     Description = context => $"{context.Item.Name} will be removed from the table.",
                     ConfirmLabel = "Delete",
-                    Color = LxColor.Error,
+                    Color = KlyColor.Error,
                 },
                 OnExecute = DeleteOne,
             },
@@ -106,14 +106,14 @@
                 Label = "Delete",
                 Icon = "trash",
                 Variant = ButtonVariant.Soft,
-                Color = LxColor.Error,
+                Color = KlyColor.Error,
                 ClearSelection = DataListSelectionClear.Success,
                 Confirm = new DataListActionConfirm<Customer>
                 {
                     Title = "Delete customers",
                     Description = context => $"{context.TargetCount} customers will be removed from the table.",
                     ConfirmLabel = "Delete",
-                    Color = LxColor.Error,
+                    Color = KlyColor.Error,
                 },
                 OnExecute = DeleteSelected,
             },
@@ -131,12 +131,12 @@
 
     private void OnCreated(Customer customer) => _message = $"{customer.Name} was added.";
 
-    private static LxColor StatusColor(string status) => status switch
+    private static KlyColor StatusColor(string status) => status switch
     {
-        "Active" => LxColor.Success,
-        "Trial" => LxColor.Info,
-        "Paused" => LxColor.Warning,
-        _ => LxColor.Neutral,
+        "Active" => KlyColor.Success,
+        "Trial" => KlyColor.Info,
+        "Paused" => KlyColor.Warning,
+        _ => KlyColor.Neutral,
     };
 
     private async Task CopyEmail(DataListRowActionContext<Customer> context)
@@ -144,12 +144,12 @@
         try
         {
             await JS.InvokeVoidAsync("navigator.clipboard.writeText", context.Item.Email);
-            await Toasts.Add(new LxToast { Title = "Email copied", Description = context.Item.Email, Color = LxColor.Success });
+            await Toasts.Add(new KlyToast { Title = "Email copied", Description = context.Item.Email, Color = KlyColor.Success });
         }
         catch (JSException)
         {
             context.Fail("The browser did not allow access to the clipboard.");
-            await Toasts.Add(new LxToast { Title = "Could not copy", Description = "The browser did not allow access to the clipboard.", Color = LxColor.Error });
+            await Toasts.Add(new KlyToast { Title = "Could not copy", Description = "The browser did not allow access to the clipboard.", Color = KlyColor.Error });
         }
     }
 
@@ -158,7 +158,7 @@
         // The list gets the new rows with the next render of the page and drops the customer from its selection.
         Store.Remove([context.Item.Id]);
         StateHasChanged();
-        await Toasts.Add(new LxToast { Title = "Customer deleted", Description = context.Item.Name, Color = LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = "Customer deleted", Description = context.Item.Name, Color = KlyColor.Success });
     }
 
     private async Task DeleteSelected(DataListActionContext<Customer> context)
@@ -168,6 +168,6 @@
         Store.Remove([.. context.SelectedItems.Select(c => c.Id)]);
         // The list reads Store.Items again with the render of this page.
         StateHasChanged();
-        await Toasts.Add(new LxToast { Title = count == 1 ? "Customer deleted" : $"{count} customers deleted", Color = LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = count == 1 ? "Customer deleted" : $"{count} customers deleted", Color = KlyColor.Success });
     }
 }

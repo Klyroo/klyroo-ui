@@ -1,33 +1,33 @@
 @inherits LayoutComponentBase
 
-<LxApp>
-    <LxSkipLink />
+<KlyApp>
+    <KlySkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <LxHeader>
+    <KlyHeader>
         <Left>
-            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                <LxIcon Name="ph:tag" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                <KlyIcon Name="ph:tag" Class="size-6" />
                 <span>@SiteInfo.Name</span>
             </a>
         </Left>
         <Right>
             @* The feed of the latest releases (Atom): /feed.xml, built by ReleaseNotes/ReleaseFeed.cs. *@
-            <LxButton Href="feed.xml" Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Size="LxSize.Sm" data-testid="feed-link"
+            <KlyButton Href="feed.xml" Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" Size="KlySize.Sm" data-testid="feed-link"
                       aria-label="Atom feed of the releases">
-                <LeadingIcon><LxIcon Name="ph:rss" Class="size-5" /></LeadingIcon>
-            </LxButton>
-            <LxColorModeButton Size="LxSize.Sm" />
+                <LeadingIcon><KlyIcon Name="ph:rss" Class="size-5" /></LeadingIcon>
+            </KlyButton>
+            <KlyColorModeButton Size="KlySize.Sm" />
         </Right>
-    </LxHeader>
+    </KlyHeader>
 
-    <LxMain id="main" tabindex="-1" class="focus:outline-none">
+    <KlyMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </LxMain>
+    </KlyMain>
 
-    <LxFooter>
+    <KlyFooter>
         <Left>
-            <p class="text-sm text-(--lux-text-muted)">@SiteInfo.Copyright</p>
+            <p class="text-sm text-(--klyroo-text-muted)">@SiteInfo.Copyright</p>
         </Left>
-    </LxFooter>
-</LxApp>
+    </KlyFooter>
+</KlyApp>

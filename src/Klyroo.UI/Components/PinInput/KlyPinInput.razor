@@ -1,0 +1,98 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyFieldBase<string>
+
+@if (UseEditContext)
+{
+    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+}
+else
+{
+    @Markup(new EditBinding(Name, Field?.Invalid == true))
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private int _sequence;
+
+    /// <summary>Number of boxes.</summary>
+    [Parameter] public int Length { get; set; } = 5;
+    [Parameter] public PinInputType Type { get; set; } = PinInputType.Numeric;
+
+    /// <summary>Hides the characters, as in a password field.</summary>
+    [Parameter] public bool Mask { get; set; }
+
+    /// <summary>Accessible name of the group when no <see cref="KlyFormField"/> label is around.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public PinInputUi? Ui { get; set; }
+
+    private EventCallback<KlyChangeEventArgs> ChangeHandler =>
+        ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PinInput, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(EffectiveSize),
+        }, Ui, "root");
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(KlyChangeEventArgs))]
+    private async Task OnChange(KlyChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        var value = e.Value ?? "";
+        if (value == (Value ?? ""))
+        {
+            return;
+        }
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+        NotifyFieldChanged();
+    }
+
+    private string? CharacterAt(int index) => Value is not null && index < Value.Length ? Value[index].ToString() : null;
+
+    private Dictionary<string, object> CellAttributes(int index, EditBinding binding)
+    {
+        var attributes = new Dictionary<string, object>
+        {
+            ["class"] = _slots["cell"],
+            ["data-slot"] = "cell",
+            ["type"] = Mask ? "password" : "text",
+            ["inputmode"] = Type == PinInputType.Numeric ? "numeric" : "text",
+            ["maxlength"] = "1",
+            ["autocomplete"] = index == 0 ? "one-time-code" : "off",
+            ["aria-label"] = string.Format(FormatCulture, Messages.PinInputCharacter, index + 1, Length),
+        };
+        if (index == 0) attributes["id"] = ControlId;
+        if (Disabled) attributes["disabled"] = true;
+        if (Required || Field?.Required == true) attributes["aria-required"] = "true";
+        if (binding.Invalid || (!UseEditContext && Field?.Invalid == true)) attributes["aria-invalid"] = "true";
+        attributes.AddFieldClass(binding);
+        if (index == 0 && FormFieldContext.Join(Field?.DescribedBy) is { } describedBy) attributes["aria-describedby"] = describedBy;
+        return attributes;
+    }
+
+    private RenderFragment Markup(EditBinding binding) =>
+        @<kly-pin-input data-kly-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
+                       value="@(Value ?? "")"
+                       data-type="@(Type == PinInputType.Numeric ? "numeric" : "alphanumeric")"
+                       role="group"
+                       aria-label="@AriaLabel"
+                       aria-labelledby="@(AriaLabel is null ? Field?.LabelId : null)"
+                       class="@_slots["root"]"
+                       data-color="@Color.Value"
+                       @onklychange="ChangeHandler"
+                       @onklychange:stopPropagation="true"
+                       @attributes="AdditionalAttributes">
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            @for (var i = 0; i < Length; i++)
+            {
+                var index = i;
+                <input value="@CharacterAt(index)" @attributes="CellAttributes(index, binding)" />
+            }
+        </kly-pin-input>;
+}

@@ -1,13 +1,13 @@
 {
-  "name": "lux-ui-build",
+  "name": "klyroo-ui-build",
   "private": true,
-  "description": "Builds the generated assets of Lux.UI. Only needed to work on the library, never by apps using it.",
+  "description": "Builds the generated assets of Klyroo.UI. Only needed to work on the library, never by apps using it.",
   "type": "module",
   "scripts": {
-    "classes": "dotnet run --project build/Lux.UI.ClassExtractor -- src/Lux.UI",
-    "css": "tailwindcss -i src/Lux.UI/styles/lux.css -o src/Lux.UI/wwwroot/lux.css --minify && tailwindcss -i src/Lux.UI/styles/lux.preflight.css -o src/Lux.UI/wwwroot/lux.preflight.css --minify",
-    "js": "esbuild src/Lux.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Lux.UI/wwwroot/Lux.UI.lib.module.js",
-    "editor": "esbuild src/Lux.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Lux.UI/wwwroot/lux-editor.js",
+    "classes": "dotnet run --project build/Klyroo.UI.ClassExtractor -- src/Klyroo.UI",
+    "css": "tailwindcss -i src/Klyroo.UI/styles/klyroo.css -o src/Klyroo.UI/wwwroot/klyroo.css --minify && tailwindcss -i src/Klyroo.UI/styles/klyroo.preflight.css -o src/Klyroo.UI/wwwroot/klyroo.preflight.css --minify",
+    "js": "esbuild src/Klyroo.UI/js/index.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Klyroo.UI/wwwroot/Klyroo.UI.lib.module.js",
+    "editor": "esbuild src/Klyroo.UI/js/editor-engine.js --bundle --format=esm --target=es2022 --minify --legal-comments=none --outfile=src/Klyroo.UI/wwwroot/klyroo-editor.js",
     "icons": "node build/gen-icons.mjs",
     "test:js": "node --test tests/js/*.test.mjs",
     "build": "npm run icons && npm run classes && npm run css && npm run js && npm run editor"

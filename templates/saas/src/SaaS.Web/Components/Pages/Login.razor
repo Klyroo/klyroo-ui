@@ -2,45 +2,45 @@
 
 <PageTitle>Sign in - @SiteInfo.Name</PageTitle>
 
-@* UI only. The form is Lux's LxAuthForm, posted to the server with FormName (no circuit): it checks the fields, and when they are valid it calls
+@* UI only. The form is Klyroo's KlyAuthForm, posted to the server with FormName (no circuit): it checks the fields, and when they are valid it calls
    SignInAsync below, which does nothing but remember that it was called. There is no account, no session and no cookie. To make it real, check the
    email and the password in SignInAsync, return a message in _error when they are wrong, and sign the user in before redirecting
-   (Navigation.NavigateTo). Nothing about the password is ever sent back to the browser: LxAuthForm drops it from the page it renders. *@
-<LxContainer Class="flex justify-center py-12 sm:py-20">
+   (Navigation.NavigateTo). Nothing about the password is ever sent back to the browser: KlyAuthForm drops it from the page it renders. *@
+<KlyContainer Class="flex justify-center py-12 sm:py-20">
     <div class="flex w-full max-w-sm flex-col gap-6">
-        <LxAuthForm FormName="login" Title="Sign in" Description="Welcome back. Sign in to see your monitors." HeadingLevel="1"
+        <KlyAuthForm FormName="login" Title="Sign in" Description="Welcome back. Sign in to see your monitors." HeadingLevel="1"
                     Fields="_fields" Providers="_providers" SubmitLabel="Sign in" Error="@_error" OnValidSubmit="SignInAsync">
             <Icon>
-                <LxIcon Name="ph:lock-key" Class="size-8" />
+                <KlyIcon Name="ph:lock-key" Class="size-8" />
             </Icon>
             <Validation>
-                <a href="@SiteInfo.ForgotPasswordHref" class="text-sm text-(--lux-primary-text) underline underline-offset-4">Forgot your password?</a>
+                <a href="@SiteInfo.ForgotPasswordHref" class="text-sm text-(--klyroo-primary-text) underline underline-offset-4">Forgot your password?</a>
             </Validation>
             <Footer>
-                New to @SiteInfo.Name? <a href="@SiteInfo.SignUpHref" class="font-medium text-(--lux-primary-text) underline underline-offset-4">Create an account</a>
+                New to @SiteInfo.Name? <a href="@SiteInfo.SignUpHref" class="font-medium text-(--klyroo-primary-text) underline underline-offset-4">Create an account</a>
             </Footer>
-        </LxAuthForm>
+        </KlyAuthForm>
 
         @if (_email is not null)
         {
-            <LxAlert Color="LxColor.Info" Variant="LxVariant.Soft" Title="The form is valid" role="status" data-testid="auth-result"
+            <KlyAlert Color="KlyColor.Info" Variant="KlyVariant.Soft" Title="The form is valid" role="status" data-testid="auth-result"
                      Description="@($"{_email} would be signed in now. This template has no authentication: nothing was checked and nothing was stored.")" />
         }
     </div>
-</LxContainer>
+</KlyContainer>
 
 @code {
     private string? _error;
     private string? _email;
 
-    private static readonly LxAuthField[] _fields =
+    private static readonly KlyAuthField[] _fields =
     [
         new("email", "email") { Label = "Email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
         new("password", "password") { Label = "Password", Required = true, Autocomplete = "current-password" },
         new("remember", "checkbox") { Label = "Remember me" },
     ];
 
-    private static readonly LxAuthProvider[] _providers =
+    private static readonly KlyAuthProvider[] _providers =
     [
         new("Continue with GitHub (demo)", SiteInfo.GitHubSignInUrl) { Icon = "code" },
         new("Continue with Google (demo)", SiteInfo.GoogleSignInUrl) { Icon = "globe" },

@@ -1,0 +1,160 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+<div data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div class="@_slots["intro"]" data-slot="intro">
+        @if (Title is not null || Description is not null || Badge is not null)
+        {
+            <div class="@_slots["header"]" data-slot="header">
+                @if (Title is not null || Badge is not null)
+                {
+                    <div class="@_slots["titleRow"]">
+                        @if (Title is not null)
+                        {
+                            <Heading Level="HeadingLevel" Class="@_slots["title"]">@Title</Heading>
+                        }
+                        @if (Badge is not null)
+                        {
+                            <KlyBadge Label="@Badge" Color="@(Variant == KlyVariant.Solid ? KlyColor.Neutral : BadgeColor ?? Color)" Variant="KlyVariant.Subtle" Size="KlySize.Sm" Class="@_slots["badge"]" />
+                        }
+                    </div>
+                }
+                @if (Description is not null)
+                {
+                    <p class="@_slots["description"]" data-slot="description">@Description</p>
+                }
+            </div>
+        }
+        @if (Price is not null)
+        {
+            <div class="@_slots["pricing"]" data-slot="pricing">
+                @if (Tagline is not null)
+                {
+                    <p class="@_slots["tagline"]">@Tagline</p>
+                }
+                <p class="@_slots["priceRow"]">
+                    @if (Discount is not null)
+                    {
+                        @* The strikethrough is visual only: spell out which price is which. *@
+                        <del class="@_slots["discount"]"><span class="@_slots["srOnly"]">@Messages.PricingOriginalPrice</span> @Price</del>
+                        <span class="@_slots["price"]"><span class="@_slots["srOnly"]">@Messages.PricingDiscountedPrice</span> @Discount</span>
+                    }
+                    else
+                    {
+                        <span class="@_slots["price"]">@Price</span>
+                    }
+                    @if (BillingCycle is not null)
+                    {
+                        <span class="@_slots["billingCycle"]">@BillingCycle</span>
+                    }
+                </p>
+                @if (Terms is not null)
+                {
+                    <p class="@_slots["terms"]">@Terms</p>
+                }
+            </div>
+        }
+    </div>
+    @if (Features.Count > 0)
+    {
+        <ul class="@_slots["features"]" data-slot="features">
+            @foreach (var feature in Features)
+            {
+                <li class="@_slots["feature"]">
+                    @if (feature.Icon is not null)
+                    {
+                        @RenderIcon(feature.Icon, _slots["featureIcon"])
+                    }
+                    else
+                    {
+                        @RenderIcon(Options.Icons.Check, _slots["featureIcon"])
+                    }
+                    <span>@feature.Title</span>
+                </li>
+            }
+        </ul>
+    }
+    @if (Footer is not null)
+    {
+        <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+    }
+    else if (ButtonLabel is not null)
+    {
+        <div class="@_slots["footer"]" data-slot="footer">
+            <KlyButton Label="@ButtonLabel" Href="@ButtonHref" Block Size="KlySize.Lg"
+                      Color="@(ButtonColor ?? (Variant == KlyVariant.Solid ? KlyColor.Neutral : Color))"
+                      Variant="@(ButtonVariant ?? (Highlight || Variant == KlyVariant.Solid ? Klyroo.UI.ButtonVariant.Solid : Klyroo.UI.ButtonVariant.Outline))"
+                      OnClick="OnButtonClick" />
+        </div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The plan name, in a heading.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Level of the title heading: 3 by default, for plans under a level 2 heading.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public string? Badge { get; set; }
+
+    /// <summary>Color of the badge; the plan's color by default.</summary>
+    [Parameter] public KlyColor? BadgeColor { get; set; }
+
+    /// <summary>A value statement above the price.</summary>
+    [Parameter] public string? Tagline { get; set; }
+
+    /// <summary>The price, formatted by the caller ("$29"). With <see cref="Discount"/> it is the original price, struck through.</summary>
+    [Parameter] public string? Price { get; set; }
+
+    /// <summary>The discounted price, shown instead of <see cref="Price"/>.</summary>
+    [Parameter] public string? Discount { get; set; }
+
+    /// <summary>Text after the price: "/month".</summary>
+    [Parameter] public string? BillingCycle { get; set; }
+
+    /// <summary>Fine print under the price.</summary>
+    [Parameter] public string? Terms { get; set; }
+
+    /// <summary>The included features. A string converts to a feature.</summary>
+    [Parameter] public IReadOnlyList<KlyPricingFeature> Features { get; set; } = [];
+
+    /// <summary>Label of the button at the bottom.</summary>
+    [Parameter] public string? ButtonLabel { get; set; }
+
+    /// <summary>Makes the button a link.</summary>
+    [Parameter] public string? ButtonHref { get; set; }
+    [Parameter] public KlyColor? ButtonColor { get; set; }
+    [Parameter] public ButtonVariant? ButtonVariant { get; set; }
+
+    /// <summary>Click of the button. As for <see cref="KlyButton"/>, it stays disabled until the page is interactive.</summary>
+    [Parameter] public EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> OnButtonClick { get; set; }
+
+    /// <summary>Replaces the button.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Adds a ring around the plan.</summary>
+    [Parameter] public bool Highlight { get; set; }
+
+    /// <summary>Enlarges the plan on wide screens so it stands out from the others.</summary>
+    [Parameter] public bool Scale { get; set; }
+    [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Outline;
+
+    /// <summary>Horizontal lays the plan out in a row on wide screens: the price on the left, the features, then the button.</summary>
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+    [Parameter] public PricingPlanUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PricingPlan, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["highlight"] = VariantValue.Of(Highlight),
+            ["scale"] = VariantValue.Of(Scale),
+            ["orientation"] = Orientation == KlyOrientation.Horizontal ? "horizontal" : "vertical",
+        }, Ui, "root");
+}

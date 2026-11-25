@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Lux.Templates.Content;
+namespace Klyroo.Templates.Content;
 
 /// <summary>
 /// A small syntax highlighter for the code blocks of a page: it wraps tokens in <c>&lt;span class="tok-..."&gt;</c> and nothing else, so the colors live in

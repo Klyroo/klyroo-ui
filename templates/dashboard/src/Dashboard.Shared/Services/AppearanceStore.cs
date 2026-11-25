@@ -1,17 +1,17 @@
-using Lux.UI;
+using Klyroo.UI;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 
 namespace Dashboard.Shared.Services;
 
-/// <summary>The names of the cookies of the appearance, scoped to the path base of the app like the other cookies of Lux.</summary>
+/// <summary>The names of the cookies of the appearance, scoped to the path base of the app like the other cookies of Klyroo.</summary>
 public static class AppearanceCookies
 {
     public const string PrimaryKey = "dashboard-primary";
     public const string NeutralKey = "dashboard-neutral";
 
-    /// <summary>The cookie name for a key: the key at the root, and the key with a slug of the path base below one (<see cref="LxPathScope.CookieName"/>).</summary>
-    public static string Name(string key, string? pathBase) => LxPathScope.CookieName(key, pathBase);
+    /// <summary>The cookie name for a key: the key at the root, and the key with a slug of the path base below one (<see cref="KlyPathScope.CookieName"/>).</summary>
+    public static string Name(string key, string? pathBase) => KlyPathScope.CookieName(key, pathBase);
 }
 
 /// <summary>Where the choice of the colors is kept between visits.</summary>

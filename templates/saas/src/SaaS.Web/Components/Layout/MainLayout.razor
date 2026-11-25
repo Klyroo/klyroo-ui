@@ -1,59 +1,59 @@
 @inherits LayoutComponentBase
 
-<LxApp>
-    <LxSkipLink />
+<KlyApp>
+    <KlySkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <LxHeader Items="SiteInfo.Navigation" AriaLabel="@SiteInfo.HeaderLabel" MenuTitle="@SiteInfo.HeaderMenuTitle">
+    <KlyHeader Items="SiteInfo.Navigation" AriaLabel="@SiteInfo.HeaderLabel" MenuTitle="@SiteInfo.HeaderMenuTitle">
         <Left>
-            <a href="@SiteInfo.HomeHref" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                <LxIcon Name="ph:wave-sine" Class="size-6" />
+            <a href="@SiteInfo.HomeHref" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                <KlyIcon Name="ph:wave-sine" Class="size-6" />
                 <span>@SiteInfo.Name</span>
             </a>
         </Left>
         <Right>
             @* Two buttons for one search, so that only one shows: the label and the shortcut where there is room, the icon alone on a phone. *@
-            <LxContentSearchButton Collapsed="false" Size="LxSize.Sm" Class="hidden xl:inline-flex xl:w-48" />
-            <LxContentSearchButton Size="LxSize.Sm" Class="xl:hidden" />
-            <LxLocaleSelect Size="LxSize.Sm" Class="hidden sm:inline-flex" />
-            <LxColorModeButton Size="LxSize.Sm" />
-            <LxButton Label="Sign in" Href="@SiteInfo.LoginHref" Size="LxSize.Sm" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" Class="ms-1 hidden sm:inline-flex" />
-            <LxButton Label="Get started" Href="@SiteInfo.SignUpHref" Size="LxSize.Sm" Class="hidden sm:inline-flex" />
+            <KlyContentSearchButton Collapsed="false" Size="KlySize.Sm" Class="hidden xl:inline-flex xl:w-48" />
+            <KlyContentSearchButton Size="KlySize.Sm" Class="xl:hidden" />
+            <KlyLocaleSelect Size="KlySize.Sm" Class="hidden sm:inline-flex" />
+            <KlyColorModeButton Size="KlySize.Sm" />
+            <KlyButton Label="Sign in" Href="@SiteInfo.LoginHref" Size="KlySize.Sm" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" Class="ms-1 hidden sm:inline-flex" />
+            <KlyButton Label="Get started" Href="@SiteInfo.SignUpHref" Size="KlySize.Sm" Class="hidden sm:inline-flex" />
         </Right>
         <Body>
             @* The mobile menu: the links, then the two buttons that the header only shows from the sm breakpoint up. *@
-            <LxNavigationMenu Items="SiteInfo.Navigation" Orientation="LxOrientation.Vertical" AriaLabel="@SiteInfo.HeaderMenuTitle" />
+            <KlyNavigationMenu Items="SiteInfo.Navigation" Orientation="KlyOrientation.Vertical" AriaLabel="@SiteInfo.HeaderMenuTitle" />
             <div class="mt-6 flex flex-col gap-3">
-                <LxButton Label="Sign in" Href="@SiteInfo.LoginHref" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" Block />
-                <LxButton Label="Get started" Href="@SiteInfo.SignUpHref" Block />
-                <LxLocaleSelect />
+                <KlyButton Label="Sign in" Href="@SiteInfo.LoginHref" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" Block />
+                <KlyButton Label="Get started" Href="@SiteInfo.SignUpHref" Block />
+                <KlyLocaleSelect />
             </div>
         </Body>
-    </LxHeader>
+    </KlyHeader>
 
     @* The search of the whole site: the documentation, the blog and the changelog. Ctrl+K (Cmd+K on a Mac) or one of the buttons above. The list is
        not in the page: the browser fetches search-index.json (Program.cs) the first time the search opens. *@
-    <LxContentSearch IndexUrl="search-index.json" />
+    <KlyContentSearch IndexUrl="search-index.json" />
 
-    <LxMain id="main" tabindex="-1" class="focus:outline-none">
+    <KlyMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </LxMain>
+    </KlyMain>
 
-    <LxFooter>
+    <KlyFooter>
         <Top>
             @* Level 2: a page can end in its only h1 (the sign-in page), and a level 3 heading would skip one. *@
-            <LxFooterColumns Columns="SiteInfo.FooterColumns" AriaLabel="@SiteInfo.FooterLabel" HeadingLevel="2">
+            <KlyFooterColumns Columns="SiteInfo.FooterColumns" AriaLabel="@SiteInfo.FooterLabel" HeadingLevel="2">
                 <Left>
-                    <a href="@SiteInfo.HomeHref" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                        <LxIcon Name="ph:wave-sine" Class="size-6" />
+                    <a href="@SiteInfo.HomeHref" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                        <KlyIcon Name="ph:wave-sine" Class="size-6" />
                         <span>@SiteInfo.Name</span>
                     </a>
-                    <p class="mt-3 max-w-xs text-sm text-(--lux-text-muted)">@SiteInfo.Tagline</p>
+                    <p class="mt-3 max-w-xs text-sm text-(--klyroo-text-muted)">@SiteInfo.Tagline</p>
                 </Left>
-            </LxFooterColumns>
+            </KlyFooterColumns>
         </Top>
         <Left>
-            <p class="text-sm text-(--lux-text-muted)">@SiteInfo.Copyright</p>
+            <p class="text-sm text-(--klyroo-text-muted)">@SiteInfo.Copyright</p>
         </Left>
-    </LxFooter>
-</LxApp>
+    </KlyFooter>
+</KlyApp>

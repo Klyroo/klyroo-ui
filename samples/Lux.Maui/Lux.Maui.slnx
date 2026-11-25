@@ -1,5 +1,0 @@
-<Solution>
-  <Project Path="Lux.Maui.Shared/Lux.Maui.Shared.csproj" />
-  <Project Path="Lux.Maui.Web/Lux.Maui.Web.csproj" />
-  <Project Path="Lux.Maui/Lux.Maui.csproj" />
-</Solution>

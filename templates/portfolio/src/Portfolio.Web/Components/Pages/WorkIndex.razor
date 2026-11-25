@@ -7,16 +7,16 @@
     <meta name="description" content="@SiteInfo.WorkPageDescription" />
 </HeadContent>
 
-<LxContainer Class="py-10 sm:py-14">
-    <LxPageHeader Title="@SiteInfo.WorkPageTitle" Description="@SiteInfo.WorkPageDescription" />
+<KlyContainer Class="py-10 sm:py-14">
+    <KlyPageHeader Title="@SiteInfo.WorkPageTitle" Description="@SiteInfo.WorkPageDescription" />
 
-    <LxPageGrid Columns="2" Class="mt-10 gap-6">
+    <KlyPageGrid Columns="2" Class="mt-10 gap-6">
         @foreach (var project in _projects)
         {
             <ProjectCard Project="project" HeadingLevel="2" />
         }
-    </LxPageGrid>
-</LxContainer>
+    </KlyPageGrid>
+</KlyContainer>
 
 @code {
     private IReadOnlyList<Project> _projects = [];

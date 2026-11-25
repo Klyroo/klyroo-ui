@@ -1,0 +1,98 @@
+<Project>
+  <!--
+    Bundled icons. Any Iconify icon works by name (<KlyIcon Name="ph:house" />, "i-mdi-home", "simple-icons:github"): at build time the
+    KlyrooResolveIcons task scans the project's .razor, .cshtml and .cs files for literal icon names, adds what the project lists
+
+      <KlyrooIcon Include="ph:house;mdi:home" />                                  names the scan cannot see (built at runtime)
+      <KlyrooIconCollection Include="Assets/icons" Prefix="custom" />             a folder of .svg files, used as custom:file-name
+      <KlyrooIconScanDirectory Include="../Shared" />                             a folder outside the project whose sources are scanned too
+
+    downloads what its cache lacks from the Iconify API, and generates a C# file, added to the compilation, whose module initializer
+    registers the icons with Klyroo.UI. Nothing is requested when the app runs, and a build without network works from the cache.
+    The scan reads "i-prefix-name" strings anywhere and "prefix:name" only in icon places (Icon="...", Name= on KlyIcon, KlyIcons.Named, o.Icons.X =); it skips
+    dot folders, links and files over 1 MiB, and does nothing when no source, item, option or icon file changed. Every icon body is sanitized (see the Icons guide).
+    When no icon is bundled the generated file is removed and not compiled.
+
+      KlyrooIcons=false         turns the whole feature off (no scan, no download, no generated file).
+      KlyrooIconsScan=false     keeps the KlyrooIcon and KlyrooIconCollection items but does not scan the sources.
+      KlyrooIconsApi            base address of the Iconify API (default https://api.iconify.design), for a self-hosted one.
+      KlyrooIconsCacheDir       the cache (default $(KlyrooCacheDir)icons-cache), KlyrooIconsCacheDays how long it is trusted (default 30).
+      KlyrooIconsFailOnError    an icon that cannot be found is an error (default in Release) or a warning (default in Debug).
+  -->
+  <PropertyGroup>
+    <KlyrooIcons Condition="'$(KlyrooIcons)' == ''">true</KlyrooIcons>
+    <KlyrooIconsScan Condition="'$(KlyrooIconsScan)' == ''">true</KlyrooIconsScan>
+    <KlyrooIconsApi Condition="'$(KlyrooIconsApi)' == ''">https://api.iconify.design</KlyrooIconsApi>
+    <KlyrooIconsCacheDir Condition="'$(KlyrooIconsCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(KlyrooCacheDir), icons-cache))</KlyrooIconsCacheDir>
+    <KlyrooIconsCacheDays Condition="'$(KlyrooIconsCacheDays)' == ''">30</KlyrooIconsCacheDays>
+    <KlyrooIconsFailOnError Condition="'$(KlyrooIconsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</KlyrooIconsFailOnError>
+  </PropertyGroup>
+
+  <!--
+    The generated file must be in @(Compile) before _GenerateCompileDependencyCache hashes the compile inputs (CompileDependsOn runs it just before
+    CoreCompile): a file added after that is not in CoreCompileInputs.cache, so removing it later (KlyrooIcons=false, no icon left) would not make
+    CoreCompile run again and the old initializer would stay in the assembly.
+  -->
+  <Target Name="KlyrooResolveIcons"
+          BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
+          Condition="'$(KlyrooIcons)' != 'false' And '$(DesignTimeBuild)' != 'true'">
+    <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the default is computed here. -->
+    <PropertyGroup>
+      <KlyrooIconsOutputDir Condition="'$(KlyrooIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, icons))</KlyrooIconsOutputDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <_KlyrooIconExclude Include="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath)))" />
+      <_KlyrooIconExclude Include="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseOutputPath)))" />
+    </ItemGroup>
+
+    <KlyrooResolveIcons Icons="@(KlyrooIcon)"
+                      Collections="@(KlyrooIconCollection)"
+                      Scan="$(KlyrooIconsScan)"
+                      ProjectDirectory="$(MSBuildProjectDirectory)"
+                      ScanDirectories="@(KlyrooIconScanDirectory)"
+                      ExcludeDirectories="@(_KlyrooIconExclude)"
+                      CacheDir="$(KlyrooIconsCacheDir)"
+                      OutputFile="$(KlyrooIconsOutputDir)KlyrooIcons.g.cs"
+                      Api="$(KlyrooIconsApi)"
+                      FailOnError="$(KlyrooIconsFailOnError)"
+                      Offline="$(KlyrooOffline)"
+                      CacheDays="$(KlyrooIconsCacheDays)">
+      <Output TaskParameter="HasIcons" PropertyName="_KlyrooIconsHasIcons" />
+    </KlyrooResolveIcons>
+
+    <!-- No icon bundled: the task has removed the file, and it stays out of the compilation. -->
+    <ItemGroup Condition="'$(_KlyrooIconsHasIcons)' == 'true'">
+      <Compile Include="$(KlyrooIconsOutputDir)KlyrooIcons.g.cs" />
+      <FileWrites Include="$(KlyrooIconsOutputDir)KlyrooIcons.g.cs" />
+    </ItemGroup>
+    <ItemGroup>
+      <FileWrites Include="$(KlyrooIconsOutputDir)KlyrooIcons.g.cs.inputs" Condition="Exists('$(KlyrooIconsOutputDir)KlyrooIcons.g.cs.inputs')" />
+    </ItemGroup>
+  </Target>
+
+  <!-- KlyrooIcons=false: a file left by an earlier build with icons is deleted and kept out of the compilation, so the next compile does not register icons that are switched off. -->
+  <Target Name="KlyrooIconsOff"
+          BeforeTargets="_GenerateCompileDependencyCache;CoreCompile"
+          Condition="'$(KlyrooIcons)' == 'false' And '$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <_KlyrooIconsOffDir Condition="'$(KlyrooIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, icons))</_KlyrooIconsOffDir>
+      <_KlyrooIconsOffDir Condition="'$(_KlyrooIconsOffDir)' == ''">$(KlyrooIconsOutputDir)</_KlyrooIconsOffDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <Compile Remove="$(_KlyrooIconsOffDir)KlyrooIcons.g.cs" />
+    </ItemGroup>
+    <Delete Files="$(_KlyrooIconsOffDir)KlyrooIcons.g.cs;$(_KlyrooIconsOffDir)KlyrooIcons.g.cs.inputs" ContinueOnError="true" />
+  </Target>
+
+  <!-- Design-time builds (an IDE refreshing IntelliSense) never scan or download: they only keep the file of the last real build in the compilation. -->
+  <Target Name="KlyrooIconsDesignTime"
+          BeforeTargets="CoreCompile"
+          Condition="'$(KlyrooIcons)' != 'false' And '$(DesignTimeBuild)' == 'true'">
+    <PropertyGroup>
+      <KlyrooIconsOutputDir Condition="'$(KlyrooIconsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, icons))</KlyrooIconsOutputDir>
+    </PropertyGroup>
+    <ItemGroup Condition="Exists('$(KlyrooIconsOutputDir)KlyrooIcons.g.cs')">
+      <Compile Include="$(KlyrooIconsOutputDir)KlyrooIcons.g.cs" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -22,7 +22,7 @@
     <WindowsPackageType>None</WindowsPackageType>
 
     <!--
-      Platform minimums. Lux needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
+      Platform minimums. Klyroo needs the native popover API in the web view: iOS 17 and Mac Catalyst 17 (Safari 17), Android with a current
       System WebView (Chrome 114 or later; the app itself runs from Android 7.0, API 24).
     -->
     <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">17.0</SupportedOSPlatformVersion>
@@ -51,8 +51,8 @@
 
   <!-- Self-hosted fonts, the same as the web host's, generated into obj/ and added to the static web assets, which MAUI copies into the app (see wwwroot/index.html). -->
   <ItemGroup>
-    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <KlyrooFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <KlyrooFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

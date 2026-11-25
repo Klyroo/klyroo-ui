@@ -1,0 +1,21 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">@ChildContent</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The <see cref="KlyPricingPlan"/> cards.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Horizontal places the plans next to each other in a responsive grid, vertical stacks them in one column.</summary>
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    [Parameter] public PricingPlansUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.PricingPlans, new Dictionary<string, string?>
+        {
+            ["orientation"] = Orientation == KlyOrientation.Vertical ? "vertical" : "horizontal",
+        }, Ui, "root");
+}

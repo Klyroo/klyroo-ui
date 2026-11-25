@@ -1,22 +1,22 @@
 @* One number of the Home page: what it counts, its value, and how it moved compared with the period before. The arrow and the sign carry the direction, never the color alone. *@
-<LxCard data-testid="@TestId">
+<KlyCard data-testid="@TestId">
     <div class="flex items-start justify-between gap-3">
         <div class="flex min-w-0 flex-col gap-1">
-            <p class="text-sm text-(--lux-text-muted)">@Label</p>
-            <p class="truncate text-2xl font-semibold tracking-tight text-(--lux-text-highlighted)" data-testid="@(TestId is null ? null : TestId + "-value")">@Value</p>
+            <p class="text-sm text-(--klyroo-text-muted)">@Label</p>
+            <p class="truncate text-2xl font-semibold tracking-tight text-(--klyroo-text-highlighted)" data-testid="@(TestId is null ? null : TestId + "-value")">@Value</p>
         </div>
-        <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--lux-bg-elevated) text-(--lux-text-muted)" aria-hidden="true">
-            <LxIcon Name="@Icon" Class="size-5" />
+        <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--klyroo-bg-elevated) text-(--klyroo-text-muted)" aria-hidden="true">
+            <KlyIcon Name="@Icon" Class="size-5" />
         </span>
     </div>
     <div class="mt-3 flex items-center gap-2">
-        <LxBadge Color="@(Change >= 0 ? LxColor.Success : LxColor.Error)" Variant="LxVariant.Subtle" Size="LxSize.Sm" data-testid="@(TestId is null ? null : TestId + "-change")">
-            <LeadingIcon><LxIcon Name="@(Change >= 0 ? "lucide:trending-up" : "lucide:trending-down")" Class="size-3.5" /></LeadingIcon>
+        <KlyBadge Color="@(Change >= 0 ? KlyColor.Success : KlyColor.Error)" Variant="KlyVariant.Subtle" Size="KlySize.Sm" data-testid="@(TestId is null ? null : TestId + "-change")">
+            <LeadingIcon><KlyIcon Name="@(Change >= 0 ? "lucide:trending-up" : "lucide:trending-down")" Class="size-3.5" /></LeadingIcon>
             <ChildContent>@(Change >= 0 ? "+" : "-")@Math.Abs(Change).ToString("0.0")%</ChildContent>
-        </LxBadge>
-        <span class="text-xs text-(--lux-text-muted)">than the period before</span>
+        </KlyBadge>
+        <span class="text-xs text-(--klyroo-text-muted)">than the period before</span>
     </div>
-</LxCard>
+</KlyCard>
 
 @code {
     [Parameter, EditorRequired] public string Label { get; set; } = "";

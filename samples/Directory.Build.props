@@ -2,16 +2,16 @@
   <!--
     The samples are separate from the library's build: this file stops MSBuild from importing the repository's own
     Directory.Build.props (warnings as errors, central package versions), which a MAUI app should not inherit.
-    They are not part of Lux.UI.slnx; the CI builds them in their own jobs.
+    They are not part of Klyroo.UI.slnx; the CI builds them in their own jobs.
   -->
   <PropertyGroup>
-    <!-- The target framework version of the samples: net10.0 (the LTS) by default. A machine whose MAUI workload is the .NET 11 one builds with -p:LuxSampleTfm=net11.0. -->
-    <LuxSampleTfm Condition="'$(LuxSampleTfm)' == ''">net10.0</LuxSampleTfm>
+    <!-- The target framework version of the samples: net10.0 (the LTS) by default. A machine whose MAUI workload is the .NET 11 one builds with -p:KlyrooSampleTfm=net11.0. -->
+    <KlyrooSampleTfm Condition="'$(KlyrooSampleTfm)' == ''">net10.0</KlyrooSampleTfm>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
-    <!-- The sample is a user app: the Lux icon scan, font download and build tasks run on every build, so keep going when the network is down. -->
-    <LuxFontsFailOnError>false</LuxFontsFailOnError>
-    <LuxIconsFailOnError>false</LuxIconsFailOnError>
+    <!-- The sample is a user app: the Klyroo icon scan, font download and build tasks run on every build, so keep going when the network is down. -->
+    <KlyrooFontsFailOnError>false</KlyrooFontsFailOnError>
+    <KlyrooIconsFailOnError>false</KlyrooIconsFailOnError>
   </PropertyGroup>
 </Project>

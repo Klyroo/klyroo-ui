@@ -2,7 +2,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Lux.Templates.Content;
+namespace Klyroo.Templates.Content;
 
 /// <summary>The YAML block at the top of a page. Keys are camelCase; keys that are not listed here are ignored.</summary>
 public sealed class FrontMatter
@@ -16,7 +16,7 @@ public sealed class FrontMatter
     /// <summary>The text of the link in the navigation, when it should be shorter than the title.</summary>
     public string? NavigationTitle { get; set; }
 
-    /// <summary>An icon name (<c>ph:rocket-launch</c>). It has to be bundled: list it in a <c>LuxIcon</c> item of the project file.</summary>
+    /// <summary>An icon name (<c>ph:rocket-launch</c>). It has to be bundled: list it in a <c>KlyrooIcon</c> item of the project file.</summary>
     public string? Icon { get; set; }
 
     /// <summary>A draft is not served, listed or searched (unless <see cref="ContentOptions.IncludeDrafts"/> is on).</summary>

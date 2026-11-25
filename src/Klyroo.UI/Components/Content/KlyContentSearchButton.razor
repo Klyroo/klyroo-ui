@@ -1,0 +1,76 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    The button that opens a KlyContentSearch, showing its shortcut with KlyKbd. It is a KlyButton, so it takes its color,
+    variant and size. A click is handled in the browser (js/content.js), which opens the search by clicking the hidden
+    trigger of its modal, so it works in static rendering and focus returns to the button when the search closes.
+*@
+<KlyButton Color="Color" Variant="Variant" Size="Size" Square="Collapsed" Class="@_slots["root"]" Ui="_buttonUi"
+          aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" aria-label="@(Collapsed ? ButtonLabel : null)" data-kly-content-search-open="@For"
+          @attributes="AdditionalAttributes">
+    <LeadingIcon>@RenderIcon(Options.Icons.Search, "size-5")</LeadingIcon>
+    <ChildContent>
+        @if (!Collapsed)
+        {
+            <span class="@_slots["label"]">@ButtonLabel</span>
+            @if (Keys is null || Keys.Count > 0)
+            {
+                <kly-mod-keys class="@_slots["kbds"]" aria-hidden="true">
+                    @if (Keys is null)
+                    {
+                        @* The modifier follows the platform: the browser sets the label (<kly-mod-keys>, js/platform-keys.js), the localized modifier name until then. *@
+                        <KlyKbd Size="KlySize.Sm" data-kly-mod="" data-label="@Messages.ModifierKey" />
+                        <KlyKbd Value="K" Size="KlySize.Sm" />
+                    }
+                    else
+                    {
+                        @foreach (var key in Keys)
+                        {
+                            <KlyKbd Value="@key" Size="KlySize.Sm" />
+                        }
+                    }
+                </kly-mod-keys>
+            }
+        }
+    </ChildContent>
+</KlyButton>
+
+@code {
+    private SlotSet _slots = default!;
+
+    private ButtonUi _buttonUi = new();
+
+    private string ButtonLabel => Label ?? Messages.ContentSearchButton;
+
+    /// <summary>The text of the button. Defaults to the built-in text; with <see cref="Collapsed"/> it is the accessible name.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Shows only the icon, as a square button. Without it the button shows its label and its shortcut.</summary>
+    [Parameter] public bool Collapsed { get; set; } = true;
+
+    /// <summary>
+    /// The keys of the shortcut to show, one <see cref="KlyKbd"/> each. Match the <c>Shortcut</c> of the search. Left out, the
+    /// hint follows the platform in the browser (the command key and K on Apple devices, Ctrl and K elsewhere), matching the
+    /// default <c>mod+k</c> shortcut, and the button announces <c>aria-keyshortcuts</c>. Keys you give are shown as given.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? Keys { get; set; }
+
+    /// <summary>The <c>Name</c> of the search to open. Without it the button opens the unnamed one.</summary>
+    [Parameter] public string For { get; set; } = "";
+    [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Outline;
+    [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
+    private KlySize? _sizeParameter;
+    [Parameter] public ContentSearchButtonUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _slots = ResolveSlots(Options.ContentSearchButton, new Dictionary<string, string?>
+        {
+            ["collapsed"] = VariantValue.Of(Collapsed),
+        }, Ui, "root");
+        // The label of the button holds the text and the keys side by side.
+        _buttonUi = new ButtonUi { Label = _slots["buttonLabel"] };
+    }
+}

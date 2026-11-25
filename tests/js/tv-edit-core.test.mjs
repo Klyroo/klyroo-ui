@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { editKind, wantsKeyboard, enterLeaves, stepOf, caretAfter } from '../../src/Lux.UI/js/tv-edit-core.js';
+import { editKind, wantsKeyboard, enterLeaves, stepOf, caretAfter } from '../../src/Klyroo.UI/js/tv-edit-core.js';
 
 test('fields that need an editing mode', () => {
   assert.equal(editKind({ tag: 'input', type: 'text' }), 'text');

@@ -3,48 +3,48 @@
 
 <PageTitle>Starter</PageTitle>
 
-<LxPageHero Headline="Lux.UI"
+<KlyPageHero Headline="Klyroo.UI"
             Title="Start your Blazor app with a real design system"
             Description="Accessible, themable components, light and dark mode, twelve languages and Tailwind CSS, wired once. The same pages run on the web (server, then WebAssembly) and in a native app."
             Links="_heroLinks" />
 
-<LxPageSection id="features"
+<KlyPageSection id="features"
                Headline="What is in the box"
                Title="Everything a new app needs on day one"
                Description="Replace this page with your own: the pieces below are plain Razor, there is nothing to unlearn."
-               Orientation="LxOrientation.Vertical"
+               Orientation="KlyOrientation.Vertical"
                Features="_features" />
 
 <section id="demo" aria-labelledby="demo-title" class="px-4 py-16 sm:px-6 lg:px-8">
     <div class="mx-auto flex max-w-[37rem] flex-col gap-6">
         <div class="flex flex-col gap-2">
-            <h2 id="demo-title" class="text-2xl font-semibold text-(--lux-text-highlighted)">See it respond</h2>
-            <p class="text-(--lux-text-muted)">
+            <h2 id="demo-title" class="text-2xl font-semibold text-(--klyroo-text-highlighted)">See it respond</h2>
+            <p class="text-(--klyroo-text-muted)">
                 The page is rendered by the server first, then becomes interactive without a reload: on the server connection at once,
                 and in WebAssembly once the runtime has downloaded.
             </p>
         </div>
 
-        <LxCard>
+        <KlyCard>
             <Header>
                 <div class="flex items-center justify-between gap-3">
                     <h3 class="font-semibold">Interactive demo</h3>
-                    <LxBadge Label="@($"Running on {RendererInfo.Name}")" Variant="LxVariant.Subtle" data-testid="renderer" />
+                    <KlyBadge Label="@($"Running on {RendererInfo.Name}")" Variant="KlyVariant.Subtle" data-testid="renderer" />
                 </div>
             </Header>
             <ChildContent>
                 <div class="flex flex-col gap-4">
                     <div class="flex flex-wrap items-center gap-3">
-                        <LxButton Label="Count" OnClick="() => _count++" data-testid="counter-button" />
-                        <LxBadge Label="@($"Clicked {_count} times")" Color="LxColor.Neutral" Variant="LxVariant.Outline" data-testid="counter" />
+                        <KlyButton Label="Count" OnClick="() => _count++" data-testid="counter-button" />
+                        <KlyBadge Label="@($"Clicked {_count} times")" Color="KlyColor.Neutral" Variant="KlyVariant.Outline" data-testid="counter" />
                     </div>
                     <div class="flex flex-wrap items-center gap-3">
-                        <LxInput @bind-Value="_name" Immediate="true" Placeholder="Your name" aria-label="Your name" Class="w-56" data-testid="name" />
-                        <LxButton Label="Say hello" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" OnClick="SayHello" data-testid="hello" />
+                        <KlyInput @bind-Value="_name" Immediate="true" Placeholder="Your name" aria-label="Your name" Class="w-56" data-testid="name" />
+                        <KlyButton Label="Say hello" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" OnClick="SayHello" data-testid="hello" />
                     </div>
                 </div>
             </ChildContent>
-        </LxCard>
+        </KlyCard>
     </div>
 </section>
 
@@ -55,7 +55,7 @@
     private static readonly IReadOnlyList<PageLinkItem> _heroLinks =
     [
         new("Try the demo", "./#demo") { Icon = "ph:lightning" },
-        new("Read the About page", "about") { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Read the About page", "about") { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     private static readonly IReadOnlyList<PageFeatureItem> _features =
@@ -71,6 +71,6 @@
     private async Task SayHello()
     {
         var who = string.IsNullOrWhiteSpace(_name) ? "there" : _name.Trim();
-        await Toasts.Add(new LxToast { Title = $"Hello, {who}", Description = $"Handled on {RendererInfo.Name}.", Color = LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = $"Hello, {who}", Description = $"Handled on {RendererInfo.Name}.", Color = KlyColor.Success });
     }
 }

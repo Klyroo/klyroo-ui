@@ -10,26 +10,26 @@
         <meta name="description" content="@(_page.Description ?? SiteInfo.DocsDescription)" />
     </HeadContent>
 
-    <LxContainer Class="py-8 lg:py-10">
-        <LxPage Ui="_columnsUi" Left="_nav" Right="_toc">
+    <KlyContainer Class="py-8 lg:py-10">
+        <KlyPage Ui="_columnsUi" Left="_nav" Right="_toc">
             <article class="min-w-0" data-testid="article">
-                <LxPageHeader Title="@_page.Title" Description="@_page.Description" />
+                <KlyPageHeader Title="@_page.Title" Description="@_page.Description" />
 
                 @if (_toc is not null)
                 {
                     @* Below the lg breakpoint the table of contents is a disclosure above the text; from lg up it is in the right column. *@
                     <div class="mt-6 lg:hidden">
-                        <LxContentToc Links="_page.Toc" Title="On this page" />
+                        <KlyContentToc Links="_page.Toc" Title="On this page" />
                     </div>
                 }
 
-                @* The prose styles of the Lux PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
-                <LxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</LxPageBody>
+                @* The prose styles of the Klyroo PageBody, plus the ones in Styles/app.css for what Markdown adds (code blocks, callouts, tables). *@
+                <KlyPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</KlyPageBody>
 
-                <LxContentSurround Previous="_previous" Next="_next" Class="border-t border-(--lux-border) pt-8" />
+                <KlyContentSurround Previous="_previous" Next="_next" Class="border-t border-(--klyroo-border) pt-8" />
             </article>
-        </LxPage>
-    </LxContainer>
+        </KlyPage>
+    </KlyContainer>
 }
 
 @code {
@@ -37,8 +37,8 @@
 
     private MarkdownSite _site = default!;
     private MarkdownPage? _page;
-    private LxContentSurroundLink? _previous;
-    private LxContentSurroundLink? _next;
+    private KlyContentSurroundLink? _previous;
+    private KlyContentSurroundLink? _next;
 
     [Parameter] public string? Slug { get; set; }
 
@@ -57,11 +57,11 @@
     }
 
     // The tree in the left column. A complementary landmark inside main would be a mistake, so the aside is a plain div.
-    private RenderFragment? _nav => _page is null ? null : @<LxPageAside As="div" Class="py-1">
-        <LxContentNavigation Items="_site.DocsNavigation()" AriaLabel="Documentation" />
-    </LxPageAside>;
+    private RenderFragment? _nav => _page is null ? null : @<KlyPageAside As="div" Class="py-1">
+        <KlyContentNavigation Items="_site.DocsNavigation()" AriaLabel="Documentation" />
+    </KlyPageAside>;
 
-    private RenderFragment? _toc => _page is null || _page.Toc.Count == 0 ? null : @<LxPageAside As="div">
-        <LxContentToc Links="_page.Toc" Title="On this page" />
-    </LxPageAside>;
+    private RenderFragment? _toc => _page is null || _page.Toc.Count == 0 ? null : @<KlyPageAside As="div">
+        <KlyContentToc Links="_page.Toc" Title="On this page" />
+    </KlyPageAside>;
 }

@@ -7,7 +7,7 @@
     private IJSObjectReference? _module;
     private IJSObjectReference? _watch;
 
-    // Follows the color mode of Lux (class "dark" on html) and passes it to the host, which colors the system bars of a phone.
+    // Follows the color mode of Klyroo (class "dark" on html) and passes it to the host, which colors the system bars of a phone.
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender) return;
@@ -23,7 +23,7 @@
     {
         try
         {
-            // Removes the lx-color-mode listener: left in place it would keep calling into a disposed reference.
+            // Removes the kly-color-mode listener: left in place it would keep calling into a disposed reference.
             if (_watch is not null) await _watch.InvokeVoidAsync("dispose");
             if (_watch is not null) await _watch.DisposeAsync();
             if (_module is not null) await _module.DisposeAsync();

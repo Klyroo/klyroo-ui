@@ -1,27 +1,27 @@
 @import "tailwindcss";
-@import "../obj/lux/lux.theme.css";
+@import "../obj/klyroo/klyroo.theme.css";
 
 /* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result as app.css. */
 
 @layer base {
-  /* The page background and text color come from the Lux theme, which follows the "dark" class that the color mode script sets. */
+  /* The page background and text color come from the Klyroo theme, which follows the "dark" class that the color mode script sets. */
   body {
     -webkit-font-smoothing: antialiased;
   }
 
   /* The header is sticky: an anchor link (a heading of a page) lands below it, not under it. */
   html {
-    scroll-padding-top: calc(var(--lux-header-height) + 1rem);
+    scroll-padding-top: calc(var(--klyroo-header-height) + 1rem);
   }
 }
 
 /*
-  What Markdown adds to a page, beyond the prose styles of LxPageBody: code blocks, callouts, tables, task lists, footnotes.
-  These rules are outside any layer on purpose: they have to win over the utilities that LxPageBody puts on pre, code and links, and a layered
+  What Markdown adds to a page, beyond the prose styles of KlyPageBody: code blocks, callouts, tables, task lists, footnotes.
+  These rules are outside any layer on purpose: they have to win over the utilities that KlyPageBody puts on pre, code and links, and a layered
   utility loses to an unlayered rule. The class names are the ones Content/MarkdownRenderer.cs writes.
 */
 
-/* Token colors of the code blocks, each at least 4.5:1 on the block background (--lux-bg-elevated) in light and in dark mode. */
+/* Token colors of the code blocks, each at least 4.5:1 on the block background (--klyroo-bg-elevated) in light and in dark mode. */
 :root {
   --tok-comment: #565c60;
   --tok-string: #136238;
@@ -59,8 +59,8 @@
 .code-block {
   position: relative;
   margin: 1.25rem 0;
-  border-radius: var(--lux-radius);
-  background: var(--lux-bg-elevated);
+  border-radius: var(--klyroo-radius);
+  background: var(--klyroo-bg-elevated);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -75,7 +75,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--lux-text-toned);
+  color: var(--klyroo-text-toned);
 }
 
 .code-block[data-language="text"]::before {
@@ -86,14 +86,14 @@
   margin: 0;
   padding: 2.75rem 1rem 1rem;
   overflow-x: auto;
-  border-radius: var(--lux-radius);
+  border-radius: var(--klyroo-radius);
   background: transparent;
   font-family: var(--font-mono, ui-monospace, monospace);
   tab-size: 2;
 }
 
 .code-block pre:focus-visible {
-  outline: 2px solid var(--lux-text-highlighted);
+  outline: 2px solid var(--klyroo-text-highlighted);
   outline-offset: -2px;
 }
 
@@ -112,21 +112,21 @@
   min-width: 4rem;
   min-height: 1.75rem;
   padding: 0 0.625rem;
-  border: 1px solid var(--lux-border-accented);
-  border-radius: calc(var(--lux-radius) * 0.75);
-  background: var(--lux-bg);
-  color: var(--lux-text-highlighted);
+  border: 1px solid var(--klyroo-border-accented);
+  border-radius: calc(var(--klyroo-radius) * 0.75);
+  background: var(--klyroo-bg);
+  color: var(--klyroo-text-highlighted);
   font-size: 0.75rem;
   line-height: 1;
   cursor: pointer;
 }
 
 .code-copy:hover {
-  background: var(--lux-bg-accented);
+  background: var(--klyroo-bg-accented);
 }
 
 .code-copy:focus-visible {
-  outline: 2px solid var(--lux-text-highlighted);
+  outline: 2px solid var(--klyroo-text-highlighted);
   outline-offset: 2px;
 }
 
@@ -140,13 +140,13 @@
   white-space: nowrap;
 }
 
-/* Callouts look like LxAlert with the soft variant: the color of data-color at 10% for the fill, its text color for the words. */
+/* Callouts look like KlyAlert with the soft variant: the color of data-color at 10% for the fill, its text color for the words. */
 .callout {
   margin: 1.5rem 0;
   padding: 1rem;
-  border-radius: var(--lux-radius);
-  background: color-mix(in oklab, var(--lx-color) 10%, transparent);
-  color: var(--lx-color-text);
+  border-radius: var(--klyroo-radius);
+  background: color-mix(in oklab, var(--kly-color) 10%, transparent);
+  color: var(--kly-color-text);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -162,7 +162,7 @@
 }
 
 .table-scroll:focus-visible {
-  outline: 2px solid var(--lux-text-highlighted);
+  outline: 2px solid var(--klyroo-text-highlighted);
   outline-offset: 2px;
 }
 
@@ -175,28 +175,28 @@
 
 .table-scroll th, .table-scroll td {
   padding: 0.5rem 0.75rem;
-  border: 1px solid var(--lux-border);
+  border: 1px solid var(--klyroo-border);
   text-align: start;
   vertical-align: top;
 }
 
 .table-scroll th {
-  background: var(--lux-bg-elevated);
-  color: var(--lux-text-highlighted);
+  background: var(--klyroo-bg-elevated);
+  color: var(--klyroo-text-highlighted);
   font-weight: 600;
   white-space: nowrap;
 }
 
 /* Task lists: no bullet, the box in its place. */
 .contains-task-list { list-style: none; padding-inline-start: 0.25rem; }
-.task-list-item input { margin-inline-end: 0.5rem; accent-color: var(--lux-primary-text); }
+.task-list-item input { margin-inline-end: 0.5rem; accent-color: var(--klyroo-primary-text); }
 
 /* Footnotes, below the text. */
 .footnotes {
   margin-top: 3rem;
   padding-top: 1rem;
-  border-top: 1px solid var(--lux-border);
-  color: var(--lux-text-muted);
+  border-top: 1px solid var(--klyroo-border);
+  color: var(--klyroo-text-muted);
   font-size: 0.875rem;
 }
 
@@ -205,5 +205,5 @@
 
 /* Definition lists. */
 /* The body of a page has the class markdown-body (Components/Pages/Article.razor). */
-.markdown-body dt { margin-top: 1rem; font-weight: 600; color: var(--lux-text-highlighted); }
+.markdown-body dt { margin-top: 1rem; font-weight: 600; color: var(--klyroo-text-highlighted); }
 .markdown-body dd { margin-inline-start: 1.5rem; }

@@ -1,0 +1,31 @@
+<Project>
+  <!--
+    Shared by every Klyroo build feature that runs code at build time (self-hosted fonts, bundled icons, Tailwind). One task assembly,
+    Klyroo.UI.Build.Tasks.dll (netstandard2.0, so it loads in `dotnet build` and in Visual Studio's MSBuild alike), holds all the
+    tasks; a feature adds its UsingTask line below and its own Klyroo.UI.<Feature>.targets, imported from Klyroo.UI.targets.
+
+    Conventions of the features that download:
+      KlyrooCacheDir  root of the caches, one sub folder per feature (default obj/klyroo/); keep it between CI runs to build faster.
+      KlyrooOffline   true: never touch the network, everything must already be in the cache.
+      A resource that cannot be resolved is a warning in Debug and an error in Release (each feature has a switch to change that).
+  -->
+  <PropertyGroup>
+    <!-- Set before the default below: true when the repo or the app points at its own build of the task assembly. -->
+    <_KlyrooTasksOverridden Condition="'$(KlyrooBuildTasksAssembly)' != ''">true</_KlyrooTasksOverridden>
+    <KlyrooBuildTasksAssembly Condition="'$(KlyrooBuildTasksAssembly)' == ''">$(MSBuildThisFileDirectory)tasks/Klyroo.UI.Build.Tasks.dll</KlyrooBuildTasksAssembly>
+    <KlyrooCacheDir Condition="'$(KlyrooCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))</KlyrooCacheDir>
+    <KlyrooOffline Condition="'$(KlyrooOffline)' == ''">false</KlyrooOffline>
+  </PropertyGroup>
+
+  <!--
+    The packaged assembly is loaded in the MSBuild process, like any package's tasks. An assembly the repo or the app points at
+    (KlyrooBuildTasksAssembly, for in-repo dogfooding) changes with every build of the task: it runs in a task host process that
+    ends with the build, so no reused MSBuild node keeps it loaded and locked.
+  -->
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveFonts" AssemblyFile="$(KlyrooBuildTasksAssembly)" Condition="'$(_KlyrooTasksOverridden)' != 'true'" />
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveFonts" AssemblyFile="$(KlyrooBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_KlyrooTasksOverridden)' == 'true'" />
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveIcons" AssemblyFile="$(KlyrooBuildTasksAssembly)" Condition="'$(_KlyrooTasksOverridden)' != 'true'" />
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveIcons" AssemblyFile="$(KlyrooBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_KlyrooTasksOverridden)' == 'true'" />
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveTailwind" AssemblyFile="$(KlyrooBuildTasksAssembly)" Condition="'$(_KlyrooTasksOverridden)' != 'true'" />
+  <UsingTask TaskName="Klyroo.UI.Build.KlyrooResolveTailwind" AssemblyFile="$(KlyrooBuildTasksAssembly)" TaskFactory="TaskHostFactory" Condition="'$(_KlyrooTasksOverridden)' == 'true'" />
+</Project>

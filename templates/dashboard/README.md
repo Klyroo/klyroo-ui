@@ -1,6 +1,6 @@
 # Dashboard
 
-An admin app on Lux.UI: a resizable sidebar with a team switcher, a user menu and a command palette, a home page with figures, charts and recent sales, a customers table with search, filters, sorting, pagination, selection and row actions, an inbox with a reading pane, and four settings pages. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid). The data is made up and lives in memory: replace it with your own source.
+An admin app on Klyroo.UI: a resizable sidebar with a team switcher, a user menu and a command palette, a home page with figures, charts and recent sales, a customers table with search, filters, sorting, pagination, selection and row actions, an inbox with a reading pane, and four settings pages. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid). The data is made up and lives in memory: replace it with your own source.
 
 <!-- rename:start -->
 ## Make it yours
@@ -22,7 +22,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Dashboard.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Dashboard.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Dashboard.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -37,7 +37,7 @@ src/
 | Page | What it shows |
 | --- | --- |
 | `Pages/Home.razor` | Four figures with their change since the period before, a revenue chart, a donut by channel, recent sales and a bar chart. The period is in the address (`?period=week`). |
-| `Pages/Customers.razor` | A `LxDataList` of 240 customers: search, text, option, number, date and yes/no filters, sortable columns, pages, a ticked selection that survives the next page, a menu of actions per row and a form for a new customer (the country is searched in a remote source). |
+| `Pages/Customers.razor` | A `KlyDataList` of 240 customers: search, text, option, number, date and yes/no filters, sortable columns, pages, a ticked selection that survives the next page, a menu of actions per row and a form for a new customer (the country is searched in a remote source). |
 | `Pages/Inbox.razor` | A list of messages and a reading pane side by side, with a resizable divider; on a phone one panel at a time. Opening a message reads it, and it can be answered and archived. |
 | `Pages/Settings*.razor` | General (profile form, language), Members (roles, an invitation from a searched directory), Notifications (switches) and Security (password form, two-step sign-in, signed-in devices). |
 | `Layout/` | The sidebar, the team switcher, the user menu, the notifications slideover, the appearance dialog (primary color and color mode) and the command palette. |
@@ -45,7 +45,7 @@ src/
 ## Replace the sample data
 
 - `Data/` holds the sample data, built from a fixed seed so that the server and the browser agree. The pages read it through the services of `Services/AppStores.cs` (`CustomerStore`, `MailStore`, `NotificationStore`, `MemberStore`), registered in `DashboardServices.cs`: change what they do and the pages follow.
-- The customer table is `LxDataList` from `Lux.UI.Tools`. `CustomerData.Schema` says which fields search, sort and filter. It is given the rows in memory (`Items`); give it a `Provider` or a `Queryable` instead to read a page at a time from an API or a database (see the package README), and the schema stays as it is.
+- The customer table is `KlyDataList` from `Klyroo.UI.Tools`. `CustomerData.Schema` says which fields search, sort and filter. It is given the rows in memory (`Items`); give it a `Provider` or a `Queryable` instead to read a page at a time from an API or a database (see the package README), and the schema stays as it is.
 - `AppearanceState` keeps the chosen primary color in the browser. The other colors, the locales and the size of the components are configured once, in `DashboardServices.cs`.
 
 ## Develop
@@ -54,12 +54,12 @@ Run the app with `dotnet watch`, and Tailwind in a second terminal, so a new uti
 
 ```bash
 dotnet watch --project src/Dashboard.Web
-dotnet build src/Dashboard.Shared -t:LuxTailwindWatch
+dotnet build src/Dashboard.Shared -t:KlyrooTailwindWatch
 ```
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.
 
-Lux.UI.Tools has no stylesheet of its own: the Tailwind build of `Dashboard.Shared` compiles its classes with yours.
+Klyroo.UI.Tools has no stylesheet of its own: the Tailwind build of `Dashboard.Shared` compiles its classes with yours.
 
 ## Native app
 

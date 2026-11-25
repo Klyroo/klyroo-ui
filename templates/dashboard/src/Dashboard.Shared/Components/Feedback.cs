@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Dashboard.Shared.Components;
 
@@ -8,7 +8,7 @@ namespace Dashboard.Shared.Components;
 /// </summary>
 public static class Feedback
 {
-    public static async Task ToastAsync(this IToastService toasts, bool interactive, LxToast toast)
+    public static async Task ToastAsync(this IToastService toasts, bool interactive, KlyToast toast)
     {
         if (interactive) await toasts.Add(toast);
     }

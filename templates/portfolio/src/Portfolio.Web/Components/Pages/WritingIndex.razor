@@ -7,21 +7,21 @@
     <meta name="description" content="@SiteInfo.WritingPageDescription" />
 </HeadContent>
 
-<LxContainer Class="py-10 sm:py-14">
-    <LxPageHeader Title="@SiteInfo.WritingPageTitle" Description="@SiteInfo.WritingPageDescription" />
+<KlyContainer Class="py-10 sm:py-14">
+    <KlyPageHeader Title="@SiteInfo.WritingPageTitle" Description="@SiteInfo.WritingPageDescription" />
 
     @* A tag is a link with a query string, so the filter works without a script and a filtered list can be shared. *@
     <nav aria-label="Tags" class="mt-8">
         <ul class="m-0 flex list-none flex-wrap gap-2 p-0">
             <li>
-                <LxButton Label="All" Href="@SiteInfo.WritingHref" Size="LxSize.Sm" Color="LxColor.Neutral" Variant="@(_tag is null ? ButtonVariant.Solid : ButtonVariant.Outline)"
+                <KlyButton Label="All" Href="@SiteInfo.WritingHref" Size="KlySize.Sm" Color="KlyColor.Neutral" Variant="@(_tag is null ? ButtonVariant.Solid : ButtonVariant.Outline)"
                           aria-current="@(_tag is null ? "page" : null)" data-testid="tag" />
             </li>
             @foreach (var (tag, count) in _tags)
             {
                 var selected = string.Equals(tag, _tag, StringComparison.OrdinalIgnoreCase);
                 <li>
-                    <LxButton Label="@($"{tag} ({count})")" Href="@($"{SiteInfo.WritingHref}?tag={Uri.EscapeDataString(tag)}")" Size="LxSize.Sm" Color="LxColor.Neutral"
+                    <KlyButton Label="@($"{tag} ({count})")" Href="@($"{SiteInfo.WritingHref}?tag={Uri.EscapeDataString(tag)}")" Size="KlySize.Sm" Color="KlyColor.Neutral"
                               Variant="@(selected ? ButtonVariant.Solid : ButtonVariant.Outline)" aria-current="@(selected ? "page" : null)" data-testid="tag" />
                 </li>
             }
@@ -30,27 +30,27 @@
 
     @if (_articles.Count == 0)
     {
-        <LxEmpty Title="No articles with this tag" Description="Pick another tag, or show all the articles." class="mt-10" />
+        <KlyEmpty Title="No articles with this tag" Description="Pick another tag, or show all the articles." class="mt-10" />
     }
     else
     {
         @if (_featured is not null)
         {
             <div class="mt-10">
-                <LxBlogPost Title="@_featured.Title" Description="@_featured.Description" Date="@_featured.Date" Image="@_featured.Image" ImageAlt="@_featured.ImageAlt"
-                            Href="@_featured.Href" Orientation="LxOrientation.Horizontal" HeadingLevel="2"
+                <KlyBlogPost Title="@_featured.Title" Description="@_featured.Description" Date="@_featured.Date" Image="@_featured.Image" ImageAlt="@_featured.ImageAlt"
+                            Href="@_featured.Href" Orientation="KlyOrientation.Horizontal" HeadingLevel="2"
                             Badge="@_featured.Tags.FirstOrDefault()" data-testid="article-card" />
             </div>
         }
-        <LxBlogPosts Class="mt-8">
+        <KlyBlogPosts Class="mt-8">
             @foreach (var article in _rest)
             {
-                <LxBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
+                <KlyBlogPost Title="@article.Title" Description="@article.Description" Date="@article.Date" Image="@article.Image" ImageAlt="@article.ImageAlt"
                             Href="@article.Href" HeadingLevel="2" Badge="@article.Tags.FirstOrDefault()" data-testid="article-card" />
             }
-        </LxBlogPosts>
+        </KlyBlogPosts>
     }
-</LxContainer>
+</KlyContainer>
 
 @code {
     [SupplyParameterFromQuery(Name = "tag")] public string? Tag { get; set; }

@@ -1,0 +1,398 @@
+/*
+ * Klyroo.UI design tokens. Shared by both modes:
+ * - without Tailwind in the app, compiled into klyroo.css;
+ * - with Tailwind v4 in the app, imported through klyroo.theme.css.
+ * Override any --klyroo-* variable in your own CSS to rebrand.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Tailwind utilities that follow the runtime tokens (hence `inline`: the utility reads var(--klyroo-*) at the element, so
+ * .dark and overrides apply). text-default, text-muted, bg-elevated, border-accented, bg-primary, text-primary… exist in
+ * both modes, and rounded-* are computed from --klyroo-radius at the element, so --klyroo-radius set on a subtree resizes them
+ * there. Custom semantic colors need their own mapping, see the Theming guide.
+ */
+@theme inline {
+  --color-primary: var(--klyroo-primary);
+  --color-secondary: var(--klyroo-secondary);
+  --color-success: var(--klyroo-success);
+  --color-info: var(--klyroo-info);
+  --color-warning: var(--klyroo-warning);
+  --color-error: var(--klyroo-error);
+  --color-neutral: var(--klyroo-neutral);
+
+  --text-color-dimmed: var(--klyroo-text-dimmed);
+  --text-color-muted: var(--klyroo-text-muted);
+  --text-color-toned: var(--klyroo-text-toned);
+  --text-color-default: var(--klyroo-text);
+  --text-color-highlighted: var(--klyroo-text-highlighted);
+  --text-color-inverted: var(--klyroo-text-inverted);
+
+  --background-color-default: var(--klyroo-bg);
+  --background-color-muted: var(--klyroo-bg-muted);
+  --background-color-elevated: var(--klyroo-bg-elevated);
+  --background-color-accented: var(--klyroo-bg-accented);
+  --background-color-inverted: var(--klyroo-bg-inverted);
+
+  --border-color-default: var(--klyroo-border);
+  --border-color-muted: var(--klyroo-border-muted);
+  --border-color-accented: var(--klyroo-border-accented);
+  --border-color-inverted: var(--klyroo-border-inverted);
+
+  --ring-color-default: var(--klyroo-border);
+  --ring-color-muted: var(--klyroo-border-muted);
+  --ring-color-accented: var(--klyroo-border-accented);
+  --ring-color-inverted: var(--klyroo-border-inverted);
+
+  --divide-color-default: var(--klyroo-border);
+  --divide-color-muted: var(--klyroo-border-muted);
+  --divide-color-accented: var(--klyroo-border-accented);
+  --divide-color-inverted: var(--klyroo-border-inverted);
+
+  --outline-color-default: var(--klyroo-border);
+  --outline-color-accented: var(--klyroo-border-accented);
+  --outline-color-inverted: var(--klyroo-border-inverted);
+
+  /* font-sans and font-mono (and the page's default font) follow the font tokens, which KlyFonts and the KlyrooFont items set. */
+  --font-sans: var(--klyroo-font-sans);
+  --font-mono: var(--klyroo-font-mono);
+  --default-font-family: var(--klyroo-font-sans);
+  --default-mono-font-family: var(--klyroo-font-mono);
+
+  --radius-xs: calc(var(--klyroo-radius) * 0.25);
+  --radius-sm: calc(var(--klyroo-radius) * 0.5);
+  --radius-md: calc(var(--klyroo-radius) * 0.75);
+  --radius-lg: var(--klyroo-radius);
+  --radius-xl: calc(var(--klyroo-radius) * 1.5);
+  --radius-2xl: calc(var(--klyroo-radius) * 2);
+  --radius-3xl: calc(var(--klyroo-radius) * 3);
+}
+
+@layer base {
+  :root {
+    /* Native controls, scrollbars and the canvas follow the mode too (light here, dark below). */
+    color-scheme: light;
+    --klyroo-radius: 0.5rem;
+    /* Maximum width of KlyContainer, the header and the footer. */
+    --klyroo-container: 80rem;
+    /*
+     * Height of KlyHeader, which KlyMain subtracts from the viewport. Components read var(--kly-header-height, var(--klyroo-header-height))
+     * at the element, so either name set on a subtree applies there (--kly-header-height wins when both are set).
+     */
+    --klyroo-header-height: 4rem;
+
+    /*
+     * Safe area insets (notch, rounded corners, system bars, gesture bar), which a page only gets when it draws under them:
+     * <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> on iOS, and a Blazor Hybrid
+     * web view that extends edge to edge. They are 0 everywhere else. The header, main, footer, dashboard, panels and toaster
+     * keep their content inside them; set --kly-safe-top (and the others) on a subtree to override.
+     */
+    --kly-safe-top: env(safe-area-inset-top, 0px);
+    --kly-safe-right: env(safe-area-inset-right, 0px);
+    --kly-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --kly-safe-left: env(safe-area-inset-left, 0px);
+
+    /*
+     * Fonts. The defaults are Tailwind's stacks, so nothing changes until a font is declared: a <KlyrooFont Role="sans"> item of
+     * the project makes the build self-host the font and write these two variables (klyroo.fonts.css, loaded by KlyFonts). Set them
+     * by hand to use any other stack.
+     */
+    --klyroo-font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+    --klyroo-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+
+    /* Each color: a fill, the text color to use on light surfaces (-text), and the text color on the fill (-contrast). */
+    --klyroo-primary: #b6ff00;
+    --klyroo-primary-text: #3b5900;
+    --klyroo-primary-contrast: #0b0f14;
+    --klyroo-secondary: #1a5e68;
+    --klyroo-secondary-text: #1a5e68;
+    --klyroo-secondary-contrast: #ffffff;
+    --klyroo-success: #146439;
+    --klyroo-success-text: #136238;
+    --klyroo-success-contrast: #ffffff;
+    --klyroo-info: #2555a0;
+    --klyroo-info-text: #23549e;
+    --klyroo-info-contrast: #ffffff;
+    --klyroo-warning: #d86010;
+    --klyroo-warning-text: #9c3d08;
+    --klyroo-warning-contrast: #1a0a00;
+    --klyroo-error: #a53125;
+    --klyroo-error-text: #9d2c1a;
+    --klyroo-error-contrast: #ffffff;
+    --klyroo-neutral: #0b0f14;
+    --klyroo-neutral-text: #1f2937;
+    --klyroo-neutral-contrast: #ffffff;
+
+    --klyroo-text: #1f2937;
+    --klyroo-text-highlighted: #0b0f14;
+    --klyroo-text-toned: #374151;
+    --klyroo-text-muted: #4b5563;
+    --klyroo-text-dimmed: #626b77;
+    /* Text on --klyroo-bg-inverted. */
+    --klyroo-text-inverted: #ffffff;
+    --klyroo-bg: #ffffff;
+    --klyroo-bg-muted: #f7f8fa;
+    --klyroo-bg-elevated: #f1f3f5;
+    --klyroo-bg-accented: #e5e7eb;
+    --klyroo-bg-overlay: #ffffff;
+    /* The opposite of the page: dark in light mode, light in dark mode. */
+    --klyroo-bg-inverted: #0b0f14;
+    --klyroo-border: #d4d8de;
+    --klyroo-border-muted: #d4d8de;
+    /* Boundaries of form controls: at least 3:1 against the page (WCAG 1.4.11). */
+    --klyroo-border-accented: #6b7280;
+    --klyroo-border-inverted: #0b0f14;
+    /* Unchecked track of switches: at least 3:1 against the page and against a white thumb. */
+    --klyroo-control: #6b7280;
+  }
+
+  .dark {
+    color-scheme: dark;
+    --klyroo-primary: #b6ff00;
+    --klyroo-primary-text: #b6ff00;
+    --klyroo-primary-contrast: #0b0f14;
+    --klyroo-secondary: #64c3cf;
+    --klyroo-secondary-text: #64c3cf;
+    --klyroo-secondary-contrast: #06181b;
+    --klyroo-success: #7bd88f;
+    --klyroo-success-text: #7bd88f;
+    --klyroo-success-contrast: #08180c;
+    --klyroo-info: #7fb2ff;
+    --klyroo-info-text: #7fb2ff;
+    --klyroo-info-contrast: #07101f;
+    --klyroo-warning: #ff8a4c;
+    --klyroo-warning-text: #ff8a4c;
+    --klyroo-warning-contrast: #1a0a00;
+    --klyroo-error: #ff6b4a;
+    --klyroo-error-text: #ff7759;
+    --klyroo-error-contrast: #1f0700;
+    --klyroo-neutral: #e5e7eb;
+    --klyroo-neutral-text: #e5e7eb;
+    --klyroo-neutral-contrast: #0b0f14;
+
+    --klyroo-text: #e5e7eb;
+    --klyroo-text-highlighted: #ffffff;
+    --klyroo-text-toned: #cbd5e1;
+    --klyroo-text-muted: #9ca3af;
+    --klyroo-text-dimmed: #808999;
+    --klyroo-text-inverted: #0b0f14;
+    --klyroo-bg: #0b0f14;
+    --klyroo-bg-muted: #11161d;
+    --klyroo-bg-elevated: #171e27;
+    --klyroo-bg-accented: #222b36;
+    --klyroo-bg-overlay: #121820;
+    --klyroo-bg-inverted: #e5e7eb;
+    --klyroo-border: #242e3b;
+    --klyroo-border-muted: #2b3645;
+    --klyroo-border-accented: #647080;
+    --klyroo-border-inverted: #e5e7eb;
+    --klyroo-control: #647080;
+  }
+
+  /*
+   * The page itself: background and text color from the tokens, so a page with no styles of its own is readable in both modes, and so an
+   * accessibility scan sees the real background. :where() gives it no specificity at all: any rule of the app, a utility on <body> included, wins.
+   */
+  :where(body) {
+    background-color: var(--klyroo-bg);
+    color: var(--klyroo-text);
+  }
+
+  /* data-color sets the three variables every themed component reads. */
+  [data-color='primary'] { --kly-color: var(--klyroo-primary); --kly-color-text: var(--klyroo-primary-text); --kly-color-contrast: var(--klyroo-primary-contrast); }
+  [data-color='secondary'] { --kly-color: var(--klyroo-secondary); --kly-color-text: var(--klyroo-secondary-text); --kly-color-contrast: var(--klyroo-secondary-contrast); }
+  [data-color='success'] { --kly-color: var(--klyroo-success); --kly-color-text: var(--klyroo-success-text); --kly-color-contrast: var(--klyroo-success-contrast); }
+  [data-color='info'] { --kly-color: var(--klyroo-info); --kly-color-text: var(--klyroo-info-text); --kly-color-contrast: var(--klyroo-info-contrast); }
+  [data-color='warning'] { --kly-color: var(--klyroo-warning); --kly-color-text: var(--klyroo-warning-text); --kly-color-contrast: var(--klyroo-warning-contrast); }
+  [data-color='error'] { --kly-color: var(--klyroo-error); --kly-color-text: var(--klyroo-error-text); --kly-color-contrast: var(--klyroo-error-contrast); }
+  [data-color='neutral'] { --kly-color: var(--klyroo-neutral); --kly-color-text: var(--klyroo-neutral-text); --kly-color-contrast: var(--klyroo-neutral-contrast); }
+
+  /*
+   * Series colors of KlyChart, in order: chart-1 follows the primary color. --klyroo-chart-N (and -text, -contrast) are not
+   * defined by default: the rules fall back to the semantic colors at the element, so a palette or a --klyroo-primary set on a
+   * subtree reaches the charts inside it. Set --klyroo-chart-N globally or on a subtree to give the charts their own colors.
+   */
+  [data-color='chart-1'] { --kly-color: var(--klyroo-chart-1, var(--klyroo-primary)); --kly-color-text: var(--klyroo-chart-1-text, var(--klyroo-primary-text)); --kly-color-contrast: var(--klyroo-chart-1-contrast, var(--klyroo-primary-contrast)); }
+  [data-color='chart-2'] { --kly-color: var(--klyroo-chart-2, var(--klyroo-secondary)); --kly-color-text: var(--klyroo-chart-2-text, var(--klyroo-secondary-text)); --kly-color-contrast: var(--klyroo-chart-2-contrast, var(--klyroo-secondary-contrast)); }
+  [data-color='chart-3'] { --kly-color: var(--klyroo-chart-3, var(--klyroo-info)); --kly-color-text: var(--klyroo-chart-3-text, var(--klyroo-info-text)); --kly-color-contrast: var(--klyroo-chart-3-contrast, var(--klyroo-info-contrast)); }
+  [data-color='chart-4'] { --kly-color: var(--klyroo-chart-4, var(--klyroo-error)); --kly-color-text: var(--klyroo-chart-4-text, var(--klyroo-error-text)); --kly-color-contrast: var(--klyroo-chart-4-contrast, var(--klyroo-error-contrast)); }
+  [data-color='chart-5'] { --kly-color: var(--klyroo-chart-5, var(--klyroo-success)); --kly-color-text: var(--klyroo-chart-5-text, var(--klyroo-success-text)); --kly-color-contrast: var(--klyroo-chart-5-contrast, var(--klyroo-success-contrast)); }
+  [data-color='chart-6'] { --kly-color: var(--klyroo-chart-6, var(--klyroo-warning)); --kly-color-text: var(--klyroo-chart-6-text, var(--klyroo-warning-text)); --kly-color-contrast: var(--klyroo-chart-6-contrast, var(--klyroo-warning-contrast)); }
+
+  /* Structural wrappers of custom elements must not affect layout. */
+  kly-popover,
+  kly-modal,
+  kly-tooltip,
+  kly-toaster,
+  :is(kly-popover, kly-modal, kly-tooltip) > [data-slot='trigger'] {
+    display: contents;
+  }
+
+  kly-tabs,
+  kly-accordion,
+  kly-select,
+  kly-collapsible,
+  kly-tree,
+  kly-splitter,
+  kly-scroll-area {
+    display: block;
+  }
+
+  /* Marquee: two copies of the content slide by their own length, so the loop has no seam. */
+  [data-kly-marquee] {
+    --kly-gap: 1rem;
+  }
+  [data-kly-marquee][data-overlay='true'][data-orientation='horizontal'] {
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-kly-marquee][data-overlay='true'][data-orientation='vertical'] {
+    mask-image: linear-gradient(to bottom, transparent, #000 10%, #000 90%, transparent);
+  }
+  [data-kly-marquee] > [data-kly-marquee-group] {
+    animation: kly-marquee-x var(--kly-marquee-duration, 30s) linear infinite;
+  }
+  [data-kly-marquee][data-orientation='vertical'] > [data-kly-marquee-group] {
+    animation-name: kly-marquee-y;
+  }
+  [data-kly-marquee][data-reverse='true'] > [data-kly-marquee-group] {
+    animation-direction: reverse;
+  }
+  /* Right to left: the copies sit side by side from the right edge, so a horizontal marquee slides the other way. */
+  :dir(rtl) [data-kly-marquee][data-orientation='horizontal'] > [data-kly-marquee-group] {
+    animation-direction: reverse;
+  }
+  :dir(rtl) [data-kly-marquee][data-orientation='horizontal'][data-reverse='true'] > [data-kly-marquee-group] {
+    animation-direction: normal;
+  }
+  [data-kly-marquee][data-pause-on-hover='true']:is(:hover, :focus-within) > [data-kly-marquee-group] {
+    animation-play-state: paused;
+  }
+  @keyframes kly-marquee-x {
+    to { transform: translateX(calc(-100% - var(--kly-gap))); }
+  }
+  @keyframes kly-marquee-y {
+    to { transform: translateY(calc(-100% - var(--kly-gap))); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    [data-kly-marquee] { overflow: auto; mask-image: none !important; }
+    [data-kly-marquee] > [data-kly-marquee-group] { animation: none; }
+    [data-kly-marquee] > [data-kly-marquee-group][aria-hidden='true'] { display: none; }
+  }
+
+  kly-banner {
+    display: block;
+  }
+
+  /* A dismissed banner: the element sets [hidden], which the rule above would otherwise override. */
+  kly-banner[hidden] {
+    display: none;
+  }
+
+  /*
+   * Touch screens: controls get a hit area of at least 44 x 44 CSS pixels (WCAG 2.5.5, Apple HIG; 2.5.8 asks for 24). Only a
+   * coarse primary pointer: a mouse keeps the compact sizes. The control keeps its size and its place in the layout: an
+   * invisible ::after reaches out from its box, centered, to 44px on each axis where the box is smaller (it never shrinks
+   * the hit area of a box that is already larger). Inline links in text are exempt, so anchors are not listed, and so are
+   * rows of a list (menu items, options), which touch each other: their own height is what counts. A native select, input
+   * or textarea cannot have a ::after and keeps its size; the switch is wrapped in a label for that reason.
+   * data-kly-compact opts an element (a dense table action, say) out. --kly-hit-x and --kly-hit-y set the reach on one axis:
+   * the number stepper reaches sideways only (its two halves share the height), the remove button of a tag chip reaches 24px
+   * (WCAG 2.5.8) so it stays inside the chip, and a calendar day does not reach at all.
+   */
+  @media (pointer: coarse) {
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-kly-compact], [hidden]) {
+      position: relative;
+    }
+    :where(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(input, [data-kly-compact], [hidden])::after {
+      content: '';
+      position: absolute;
+      inset-inline: min(0px, calc((100% - var(--kly-hit-x, 2.75rem)) / 2));
+      inset-block: min(0px, calc((100% - var(--kly-hit-y, 2.75rem)) / 2));
+    }
+    /*
+     * A hit area is painted after the controls before it, so it would cover the right edge of the previous control of a row
+     * (two 24px buttons 4px apart: a tap 4px inside the first one went to the second). Nothing in CSS knows how far the
+     * neighbours are, so a control that shares its parent with others, or sits alone in a wrapper (a list item, a tooltip
+     * trigger) that does, gets no reach along the row: it keeps its own box. The reach across the row (above and below) stays,
+     * which is where a row has free space. Rows that wrap or stack (a vertical group, data-kly-tight on a wrapping list of small
+     * buttons such as the pagination and the editor toolbar) have no free space on either axis and keep their boxes.
+     */
+    :where(:is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):not(:only-child), :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child, :not(:only-child) > :only-child > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --kly-hit-x: 100%;
+    }
+    :where([data-kly-tight], [data-kly-tight] *) {
+      --kly-hit-x: 100%;
+      --kly-hit-y: 100%;
+    }
+    :where(:where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])),
+    :where(.flex-col, [data-orientation='vertical'], [aria-orientation='vertical']) > :not(:only-child) > :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch'])):only-child) {
+      --kly-hit-y: 100%;
+    }
+    /* The items of a list stack, wherever the control sits inside the item (a menu entry, a collapsible's trigger). */
+    :where(li:not(:only-child) :is(button, summary, [role='button'], [role='tab'], [role='switch'], [role='checkbox'], [role='radio'], label:has(> input[role='switch']))) {
+      --kly-hit-y: 100%;
+    }
+    [data-slot='increment'], [data-slot='decrement'] { --kly-hit-y: 0px; }
+    [data-remove] { --kly-hit-x: 1.5rem; --kly-hit-y: 1.5rem; }
+    [data-date] { --kly-hit-x: 0px; --kly-hit-y: 0px; }
+    /* Checkboxes and radios are small boxes: the label next to them is the target, so give it room. */
+    /* Not the label that wraps a switch track: its ::after already reaches 44px, and growing it would push the track
+       below the switch's text. */
+    :where(label):has(> input:is([type='checkbox'], [type='radio']):not([role='switch'])) {
+      min-block-size: 2.75rem;
+    }
+  }
+
+  /*
+   * TV mode (experimental): <html data-kly-tv>, set by <KlyApp SpatialNavigation="true"> or Klyroo.setSpatialNavigation(true).
+   * Everything grows to the 10 foot scale (--kly-tv-scale, 1.25 by default: all rem sizes follow), the content stays
+   * inside the overscan safe area, and the focus is hard to miss from the couch. The margin is the 5% Android recommends
+   * (48dp on the sides and 27dp at the top and bottom of a 960 x 540dp screen, developer.android.com/design/ui/tv/guides/styles/layouts):
+   * --kly-tv-safe is the side margin (5vw); the top and bottom margins are 9/16 of it, the same 5% of a 16:9 screen's height.
+   * --kly-tv-inset is what both vertical margins take from the viewport height, which KlyMain subtracts from its minimum height.
+   */
+  html[data-kly-tv] {
+    --kly-tv-scale: 1.25;
+    --kly-tv-safe: 5vw;
+    --kly-tv-inset: calc(var(--kly-tv-safe) * 9 / 8);
+    font-size: calc(100% * var(--kly-tv-scale));
+    padding-inline: var(--kly-tv-safe);
+    padding-block: calc(var(--kly-tv-safe) * 9 / 16);
+    box-sizing: border-box;
+    scroll-padding: 4rem;
+  }
+  html[data-kly-tv] :is(:focus, :focus-visible) {
+    outline: 0.3rem solid var(--kly-color-text, var(--klyroo-primary-text)) !important;
+    outline-offset: 0.2rem !important;
+    transition: transform 120ms ease-out, outline-offset 120ms ease-out;
+  }
+  html[data-kly-tv] :is(button, a[href], summary, [role='button'], [role='tab'], [role='menuitem'], [role='option'], [role='switch']):is(:focus, :focus-visible) {
+    transform: scale(1.06);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html[data-kly-tv] :is(:focus, :focus-visible) { transition: none; transform: none !important; }
+  }
+  kly-spatial { display: none; }
+
+  /* A modal dialog makes the page inert; stop it from scrolling behind. */
+  html:has(kly-modal > dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+/* Indeterminate progress bars (KlyProgress): the bar is 40% wide and travels along the track. */
+@keyframes kly-progress-carousel {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@keyframes kly-progress-swing {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(150%); }
+}
+
+/* Shimmering text (KlyChatShimmer): the highlight of a wide gradient travels across the text. */
+@keyframes kly-chat-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0% 0; }
+}
