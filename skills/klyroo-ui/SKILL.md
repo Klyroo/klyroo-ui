@@ -16,7 +16,7 @@ Never write a parameter from memory. This skill holds the conventions and patter
 - `get-component` returns usage, examples, api and theme (`sections`), `get-example` the source of one example.
 - `get-installation-guide`, `search-documentation` and `get-documentation-page` cover setup and guides.
 
-If the server is not available, add it (local, offline): `dotnet tool install --global Klyroo.UI.Mcp --prerelease`, then for Claude Code `claude mcp add --transport stdio klyroo-ui -- klyroo-ui-mcp`. For other agents and for the hosted HTTP form see `/docs/mcp` of the docs site. Without any server, read `references/components.md` (every component with its parameter names) and the site's `/llms.txt`.
+If the server is not available, add it (local, offline): `dotnet tool install --global Klyroo.Stack.Mcp --prerelease`, then for Claude Code `claude mcp add --transport stdio klyroo -- klyroo-stack-mcp`. For other agents and for the hosted HTTP form see `/docs/mcp` of the docs site. Without any server, read `references/components.md` (every component with its parameter names) and the site's `/llms.txt`.
 
 ## Core rules
 
