@@ -94,6 +94,9 @@
 
     /// <summary>Keeps the header at the top of the screen while the page scrolls.</summary>
     [Parameter] public bool Sticky { get; set; } = true;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the header, see <see cref="HeaderUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public HeaderUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

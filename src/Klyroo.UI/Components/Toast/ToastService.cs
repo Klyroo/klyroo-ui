@@ -2,10 +2,14 @@ using Microsoft.JSInterop;
 
 namespace Klyroo.UI;
 
+/// <summary>A notification shown by <see cref="KlyToaster"/>.</summary>
 public sealed record KlyToast
 {
+    /// <summary>Title of the toast.</summary>
     public string? Title { get; init; }
+    /// <summary>Text under the title.</summary>
     public string? Description { get; init; }
+    /// <summary>Semantic color of the toast. Defaults to neutral.</summary>
     public KlyColor Color { get; init; } = KlyColor.Neutral;
 
     /// <summary>Time before the toast closes itself; hovering or focusing it pauses the countdown. Zero keeps it open.</summary>
@@ -15,6 +19,7 @@ public sealed record KlyToast
 /// <summary>Shows toasts in the page's <see cref="KlyToaster"/>. Needs an interactive render mode.</summary>
 public interface IToastService
 {
+    /// <summary>Shows a toast in the <see cref="KlyToaster"/> of the page.</summary>
     ValueTask Add(KlyToast toast);
 }
 

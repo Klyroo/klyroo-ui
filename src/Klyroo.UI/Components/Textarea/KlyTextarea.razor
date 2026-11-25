@@ -21,13 +21,20 @@ else
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
+    /// <summary>Number of visible lines when the field is empty. Defaults to 3.</summary>
     [Parameter] public int Rows { get; set; } = 3;
 
     /// <summary>Grow with the content (CSS field-sizing, where the browser supports it).</summary>
     [Parameter] public bool AutoResize { get; set; }
+    /// <summary>Update the bound value on every keystroke instead of on change. Costs a round trip per key in Server mode.</summary>
     [Parameter] public bool Immediate { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the textarea, see <see cref="TextareaUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TextareaUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

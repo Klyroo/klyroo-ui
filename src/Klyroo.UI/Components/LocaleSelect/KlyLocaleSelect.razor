@@ -65,11 +65,19 @@
 
     /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Size of the select, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Semantic color of the locale select: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the locale select, see <see cref="LocaleSelectUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public LocaleSelectUi? Ui { get; set; }
 
     protected override void OnParametersSet()

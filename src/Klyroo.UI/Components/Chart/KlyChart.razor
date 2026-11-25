@@ -281,6 +281,7 @@
 
     /// <summary>The series, in drawing order. With a donut the first one gives the size of each slice.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyChartCategory<TItem>> Categories { get; set; } = [];
+    /// <summary>Kind of chart to draw: line, area, bar or donut (<see cref="KlyChartType"/>).</summary>
     [Parameter] public KlyChartType Type { get; set; } = KlyChartType.Line;
 
     /// <summary>Draws bars along the x axis, with the index on the y axis. Only applies to <see cref="KlyChartType.Bar"/>.</summary>
@@ -348,6 +349,9 @@
 
     /// <summary>Content over the hole of a donut: a total, a caption.</summary>
     [Parameter] public RenderFragment? Center { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chart, see <see cref="ChartUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChartUi? Ui { get; set; }
 
     /// <summary>
@@ -395,6 +399,7 @@
 
     private static string? Dash(int series) => Dashes[series % Dashes.Length];
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("chart");

@@ -49,13 +49,20 @@
 
     /// <summary>Accessible name of the bar. Defaults to <see cref="KlyMessages.Progress"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Semantic color of the progress: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the progress, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
     /// <summary>Motion of the indeterminate bar. It stops, leaving a full faded bar, when the user prefers reduced motion.</summary>
     [Parameter] public KlyProgressAnimation Animation { get; set; } = KlyProgressAnimation.Carousel;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the progress, see <see cref="ProgressUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ProgressUi? Ui { get; set; }
 
     private bool Indeterminate => Value is null;
@@ -76,6 +83,7 @@
         return Indeterminate ? "inactive" : index < current ? "completed" : index == current ? "active" : "inactive";
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Progress, new Dictionary<string, string?>
         {

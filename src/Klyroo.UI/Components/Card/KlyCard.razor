@@ -19,12 +19,18 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Content of the header of the card.</summary>
     [Parameter] public RenderFragment? Header { get; set; }
 
     /// <summary>The body.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Content of the footer of the card.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>Look of the card: <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public CardVariant Variant { get; set; } = CardVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the card, see <see cref="CardUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CardUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

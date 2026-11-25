@@ -78,11 +78,16 @@ else
 
     /// <summary>Offers the typed text as a new value when no item has that label. A created value is kept in the value list but is not added to <see cref="Items"/>.</summary>
     [Parameter] public bool Create { get; set; }
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Label of the filter field. Defaults to <see cref="KlyMessages.SelectMenuSearch"/>.</summary>
     [Parameter] public string? SearchLabel { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the select menu, see <see cref="SelectMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SelectMenuUi? Ui { get; set; }
 
     // With a provider the options are the loaded ones; a statically rendered page has none.
@@ -101,6 +106,7 @@ else
         ? string.Join(", ", Value.Select(LabelOf))
         : Placeholder ?? "";
 
+    /// <inheritdoc />
     public override Task SetParametersAsync(ParameterView parameters)
     {
         // Items passed as null (a list that is still loading) is a list with no items; only a component given neither Items nor a provider has nothing to show.
@@ -108,6 +114,7 @@ else
         return base.SetParametersAsync(parameters);
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (!_itemsPassed && OptionsProvider is null)
@@ -147,6 +154,7 @@ else
         }, Ui, "root");
     }
 
+    /// <inheritdoc />
     protected override Task OnParametersSetAsync() =>
         _remote is not null && ResolveSelected is not null && RendererInfo.IsInteractive
             ? _remote.ResolveAsync(Value, ResolveSelected)
@@ -159,6 +167,7 @@ else
         _ = InvokeAsync(StateHasChanged);
     }
 
+    /// <inheritdoc />
     public void Dispose() => _remote?.Dispose();
 
     private EventCallback<KlySearchEventArgs> SearchHandler =>

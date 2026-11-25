@@ -96,6 +96,7 @@
     /// the browser still toggles it without a round trip, and in static rendering a bound state is not reported.
     /// </summary>
     [Parameter] public bool Collapsed { get; set; }
+    /// <summary>Raised with the new state when the sidebar collapses to icons or expands.</summary>
     [Parameter] public EventCallback<bool> CollapsedChanged { get; set; }
 
     /// <summary>Adds a handle on the edge to resize the sidebar with the mouse or the arrow keys, Home and End.</summary>
@@ -103,7 +104,9 @@
 
     /// <summary>Width in pixels when expanded and not resized yet.</summary>
     [Parameter] public int Width { get; set; } = 256;
+    /// <summary>Smallest width the user can resize the sidebar to, in pixels. Defaults to 192.</summary>
     [Parameter] public int MinWidth { get; set; } = 192;
+    /// <summary>Largest width the user can resize the sidebar to, in pixels. Defaults to 448.</summary>
     [Parameter] public int MaxWidth { get; set; } = 448;
 
     /// <summary>
@@ -123,11 +126,15 @@
 
     /// <summary>Title of the mobile panel. Defaults to the built-in text.</summary>
     [Parameter] public string? MobileTitle { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the sidebar, see <see cref="SidebarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SidebarUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         CollapsedChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         // The panel's id: the popover buttons name it, so it is rendered. It follows the storage Id when there is one, which lets KlyDashboardSidebarToggle

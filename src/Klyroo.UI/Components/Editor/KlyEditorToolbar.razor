@@ -71,10 +71,14 @@
     /// <summary>Color of pressed buttons.</summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the toolbar buttons, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Sm;
 
     /// <summary>Accessible name of the toolbar. Defaults to <see cref="KlyMessages.EditorToolbar"/>.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the editor toolbar, see <see cref="EditorToolbarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public EditorToolbarUi? Ui { get; set; }
 
     private bool Bubble => Layout == EditorToolbarLayout.Bubble;
@@ -85,6 +89,7 @@
 
     private bool HasLink => EffectiveItems.Any(i => !i.IsSeparator && i.Action == EditorAction.Link);
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.EditorToolbar, new Dictionary<string, string?>
         {

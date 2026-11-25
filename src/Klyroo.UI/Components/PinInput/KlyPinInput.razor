@@ -17,6 +17,7 @@ else
 
     /// <summary>Number of boxes.</summary>
     [Parameter] public int Length { get; set; } = 5;
+    /// <summary>Characters the cells accept: <c>Numeric</c> or <c>Alphanumeric</c>. Defaults to numeric.</summary>
     [Parameter] public PinInputType Type { get; set; } = PinInputType.Numeric;
 
     /// <summary>Hides the characters, as in a password field.</summary>
@@ -24,12 +25,17 @@ else
 
     /// <summary>Accessible name of the group when no <see cref="KlyFormField"/> label is around.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the pin input, see <see cref="PinInputUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PinInputUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.PinInput, new Dictionary<string, string?>
         {

@@ -61,11 +61,14 @@
 
     /// <summary>The trigger: its first button opens the drawer.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Title of the drawer, which also names the dialog.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Text under the title of the drawer.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Accessible name when there is no <see cref="Title"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Content of the body of the drawer.</summary>
     [Parameter] public RenderFragment? Body { get; set; }
 
     /// <summary>Footer actions. Add <c>data-kly-close</c> to a button to make it close the drawer.</summary>
@@ -73,6 +76,7 @@
 
     /// <summary>Open state. Use <c>@bind-Open</c>: the browser closes the drawer on its own (Escape, backdrop, close button).</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the drawer opens or closes, including Escape and a click outside.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
     /// <summary>The edge the drawer is docked to.</summary>
@@ -89,11 +93,15 @@
 
     /// <summary>Shows a close button in the header (a title or a description also shows the header).</summary>
     [Parameter] public bool Close { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the drawer, see <see cref="DrawerUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public DrawerUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("drawer");

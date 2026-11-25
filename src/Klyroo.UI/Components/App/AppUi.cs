@@ -5,6 +5,7 @@ namespace Klyroo.UI;
 /// <summary>Per-instance class overrides of <see cref="KlyApp"/> slots.</summary>
 public sealed record AppUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyApp"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch

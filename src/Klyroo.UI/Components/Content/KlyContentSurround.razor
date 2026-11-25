@@ -51,6 +51,9 @@
 
     /// <summary>Accessible name of the navigation landmark. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the content surround, see <see cref="ContentSurroundUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ContentSurroundUi? Ui { get; set; }
 
     protected override void OnParametersSet()

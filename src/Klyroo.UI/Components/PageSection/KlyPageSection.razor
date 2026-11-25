@@ -52,8 +52,11 @@
 
     /// <summary>Name of a built-in icon shown above the headline.</summary>
     [Parameter] public string? Icon { get; set; }
+    /// <summary>Short text above the title, such as a category.</summary>
     [Parameter] public string? Headline { get; set; }
+    /// <summary>Title of the page section.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page section, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Links rendered as buttons under the description.</summary>
@@ -79,6 +82,9 @@
 
     /// <summary>Renders the feature titles as headings of this level; they are plain text by default.</summary>
     [Parameter] public int? FeatureHeadingLevel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page section, see <see cref="PageSectionUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageSectionUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

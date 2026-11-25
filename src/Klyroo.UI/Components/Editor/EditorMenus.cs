@@ -25,7 +25,9 @@ public abstract class KlyEditorMenuBase : KlyComponentBase
 
     /// <summary>Accessible name of the list.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Size of the menu, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Md;
+    /// <summary>Per-instance class overrides of the slots of the menu, see <see cref="EditorMenuUi"/>.</summary>
     [Parameter] public EditorMenuUi? Ui { get; set; }
 
     private protected abstract string DefaultChar { get; }
@@ -36,12 +38,14 @@ public abstract class KlyEditorMenuBase : KlyComponentBase
     /// <summary>Characters typed after the trigger before the menu opens.</summary>
     private protected virtual int MinQuery => 0;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _listId ??= NewId("editor-list");
         _slots = ResolveSlots(Options.EditorMenu, new Dictionary<string, string?> { ["size"] = VariantValue.Of(Size) }, Ui, "root");
     }
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder b)
     {
         b.OpenElement(0, "kly-editor-menu");

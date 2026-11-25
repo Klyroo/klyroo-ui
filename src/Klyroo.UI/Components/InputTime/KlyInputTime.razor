@@ -24,7 +24,11 @@ else
 
     /// <summary>Accessible name of the field when it is not inside a <see cref="KlyFormField"/> with a label.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input time, see <see cref="InputTimeUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputTimeUi? Ui { get; set; }
 
     private bool Use12 => Hour12 ?? FormatCulture.DateTimeFormat.ShortTimePattern.Contains('h');
@@ -38,6 +42,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.InputTime, new Dictionary<string, string?>
         {

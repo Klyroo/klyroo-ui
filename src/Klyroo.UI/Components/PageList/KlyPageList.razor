@@ -12,6 +12,9 @@
 
     /// <summary>Draws a line between the items; otherwise they are only spaced.</summary>
     [Parameter] public bool Divide { get; set; } = true;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page list, see <see cref="PageListUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageListUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

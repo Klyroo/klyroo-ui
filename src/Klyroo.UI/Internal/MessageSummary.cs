@@ -13,9 +13,12 @@ public sealed class MessageSummary : ComponentBase, IDisposable
 {
     private EditContext? _subscribed;
 
+    /// <summary>The edit context whose validation messages are listed.</summary>
     [Parameter, EditorRequired] public EditContext For { get; set; } = default!;
+    /// <summary>Classes of the list.</summary>
     [Parameter] public string? Class { get; set; }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (ReferenceEquals(_subscribed, For))
@@ -29,6 +32,7 @@ public sealed class MessageSummary : ComponentBase, IDisposable
 
     private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e) => InvokeAsync(StateHasChanged);
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         var messages = For.GetValidationMessages().Distinct().ToList();
@@ -47,6 +51,7 @@ public sealed class MessageSummary : ComponentBase, IDisposable
         builder.CloseElement();
     }
 
+    /// <summary>Stops listening to the edit context.</summary>
     public void Dispose()
     {
         if (_subscribed is not null) _subscribed.OnValidationStateChanged -= OnValidationStateChanged;

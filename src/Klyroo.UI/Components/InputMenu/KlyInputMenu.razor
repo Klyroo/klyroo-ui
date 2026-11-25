@@ -77,8 +77,13 @@ else
     /// Otherwise (the default) the typed text is the value and suggestions only complete it.
     /// </summary>
     [Parameter] public bool Strict { get; set; }
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input menu, see <see cref="InputMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputMenuUi? Ui { get; set; }
 
     // With a provider the suggestions are the loaded ones; a statically rendered page has none.
@@ -96,6 +101,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     public override Task SetParametersAsync(ParameterView parameters)
     {
         // Items passed as null (a list that is still loading) is a list with no items; only a component given neither Items nor a provider has nothing to show.
@@ -103,6 +109,7 @@ else
         return base.SetParametersAsync(parameters);
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (!_itemsPassed && OptionsProvider is null)
@@ -141,6 +148,7 @@ else
         }, Ui, "root");
     }
 
+    /// <inheritdoc />
     protected override Task OnParametersSetAsync() =>
         _remote is not null && Strict && ResolveSelected is not null && !string.IsNullOrEmpty(Value) && RendererInfo.IsInteractive
             ? _remote.ResolveAsync([Value], ResolveSelected)
@@ -152,6 +160,7 @@ else
         _ = InvokeAsync(StateHasChanged);
     }
 
+    /// <inheritdoc />
     public void Dispose() => _remote?.Dispose();
 
     private EventCallback<KlySearchEventArgs> SearchHandler =>

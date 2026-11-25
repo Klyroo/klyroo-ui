@@ -45,6 +45,7 @@
 
     /// <summary>The <c>type</c> attribute: text, email, password, search, tel, url, number…</summary>
     [Parameter] public string Type { get; set; } = "text";
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Update the bound value on every keystroke instead of on change. Costs a round trip per key in Server mode.</summary>
@@ -75,9 +76,15 @@
     /// included, sees it. A read-only field is not cleared.
     /// </summary>
     [Parameter] public bool ClearOnEscape { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>Icon at the start of the field, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? LeadingIcon { get; set; }
+    /// <summary>Icon at the end of the field, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? TrailingIcon { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input, see <see cref="InputUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputUi? Ui { get; set; }
 
     private int _sequence;
@@ -93,6 +100,7 @@
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Input, new Dictionary<string, string?>
         {

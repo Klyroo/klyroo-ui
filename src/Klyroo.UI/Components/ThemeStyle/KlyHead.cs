@@ -25,6 +25,7 @@ public sealed class KlyHead : ComponentBase
     /// <summary>Renders the self-hosted fonts. Turn it off when the app declares none.</summary>
     [Parameter] public bool Fonts { get; set; } = true;
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         if (!Always && !KlyrooHost.IsHybrid(RendererInfo))

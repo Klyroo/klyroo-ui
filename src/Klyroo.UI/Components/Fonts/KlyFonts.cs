@@ -73,6 +73,7 @@ public sealed class KlyFonts : ComponentBase
     // A web view has no fingerprinted asset map (Assets is empty), so the route is used as it is.
     private bool Hybrid => KlyrooHost.IsHybrid(RendererInfo);
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         var manifest = ManifestJson is null ? Generated.Value : FontManifest.Parse(ManifestJson);

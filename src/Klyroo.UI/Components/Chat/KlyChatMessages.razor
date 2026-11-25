@@ -87,10 +87,14 @@
 
     /// <summary>Replaces the message shown when <see cref="Status"/> is Error.</summary>
     [Parameter] public RenderFragment? Error { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat messages, see <see cref="ChatMessagesUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatMessagesUi? Ui { get; set; }
 
     private bool Busy => Status is ChatStatus.Submitted or ChatStatus.Streaming;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _status = ChatValue.Of(Status);

@@ -78,7 +78,9 @@
 
     /// <summary>Open state. Use <c>@bind-Open</c>; the browser opens and closes the search on its own.</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the search dialog opens or closes.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    /// <summary>Hint of the search field. Defaults to the built-in text.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Accessible name of the dialog and the search field. Defaults to the built-in text.</summary>

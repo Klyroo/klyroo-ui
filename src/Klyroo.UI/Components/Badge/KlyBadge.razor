@@ -19,15 +19,27 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Text of the badge. Use <c>ChildContent</c> for markup.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Content of the badge.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>
+    /// Semantic color of the badge: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Look of the badge: <c>Solid</c>, <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Solid;
+    /// <summary>Size of the badge, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>Icon shown before the label, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? LeadingIcon { get; set; }
+    /// <summary>Icon shown after the label, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? TrailingIcon { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the badge, see <see cref="BadgeUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public BadgeUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

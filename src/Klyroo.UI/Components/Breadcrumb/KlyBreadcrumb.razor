@@ -30,6 +30,7 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The pages of the trail, from the root to the current page, as <see cref="KlyBreadcrumbItem"/>. The last one is the current page.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyBreadcrumbItem> Items { get; set; } = [];
 
     /// <summary>Replaces the chevron between items. Decorative: it is hidden from assistive technology.</summary>
@@ -37,6 +38,9 @@
 
     /// <summary>Accessible name of the landmark. Defaults to <see cref="KlyMessages.Breadcrumb"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the breadcrumb, see <see cref="BreadcrumbUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public BreadcrumbUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -27,8 +27,12 @@
     private SlotSet _slots = default!;
     private string _id = default!;
 
+    /// <summary>
+    /// Semantic color of the color mode switch: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the color mode switch, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
@@ -37,6 +41,9 @@
 
     /// <summary>Accessible name when there is no visible label. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the color mode switch, see <see cref="ColorModeSwitchUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ColorModeSwitchUi? Ui { get; set; }
 
     protected override void OnParametersSet()

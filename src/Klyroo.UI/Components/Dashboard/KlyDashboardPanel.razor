@@ -49,6 +49,7 @@
 
     /// <summary>The scrollable middle.</summary>
     [Parameter] public RenderFragment? Body { get; set; }
+    /// <summary>Content of the footer of the panel, below its scrollable body.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
 
     /// <summary>Adds a <see cref="KlyDashboardResizeHandle"/> on the trailing edge, to resize the panel against the next one.</summary>
@@ -56,15 +57,21 @@
 
     /// <summary>Size in percent when nothing is remembered. Panels without one share what the others leave.</summary>
     [Parameter] public double? Size { get; set; }
+    /// <summary>Smallest share of the group the panel can take, in percent.</summary>
     [Parameter] public double MinSize { get; set; }
+    /// <summary>Largest share of the group the panel can take, in percent. Defaults to 100.</summary>
     [Parameter] public double MaxSize { get; set; } = 100;
 
     /// <summary>Accessible name of the resize handle. Defaults to the built-in text.</summary>
     [Parameter] public string? ResizeLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the dashboard panel, see <see cref="DashboardPanelUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public DashboardPanelUi? Ui { get; set; }
 
     private static string Num(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("dashboard-panel");

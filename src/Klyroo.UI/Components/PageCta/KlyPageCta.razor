@@ -27,7 +27,9 @@
     private SlotSet _slots = default!;
     private readonly string _titleId = NewId("pagecta");
 
+    /// <summary>Title of the page cta.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page cta, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Links rendered as buttons beside (horizontal) or under (vertical) the text.</summary>
@@ -35,7 +37,11 @@
 
     /// <summary>Extra content under the description.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Look of the band: <c>Solid</c>, <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Outline;
+    /// <summary>
+    /// Semantic color of the page cta: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
@@ -47,6 +53,9 @@
 
     /// <summary>Level of the title heading, 1 to 6.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 2;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page cta, see <see cref="PageCtaUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageCtaUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

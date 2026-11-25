@@ -32,6 +32,7 @@ else
 
     /// <summary>The selected dates in <c>Multiple</c> mode.</summary>
     [Parameter] public IReadOnlyList<DateOnly>? Values { get; set; }
+    /// <summary>Raised with the selected dates when the mode is <c>Multiple</c>.</summary>
     [Parameter] public EventCallback<IReadOnlyList<DateOnly>> ValuesChanged { get; set; }
 
     /// <summary>Lets an <c>EditForm</c> name the posted entries and validate <see cref="Values"/>. Set by <c>@bind-Values</c>. Each date posts as its own entry.</summary>
@@ -39,6 +40,7 @@ else
 
     /// <summary>The selected range in <c>Range</c> mode.</summary>
     [Parameter] public KlyDateRange? Range { get; set; }
+    /// <summary>Raised with the selected range when the mode is <c>Range</c>.</summary>
     [Parameter] public EventCallback<KlyDateRange> RangeChanged { get; set; }
 
     /// <summary>Lets an <c>EditForm</c> name the posted entries and validate <see cref="Range"/>. Set by <c>@bind-Range</c>. The range posts as <c>name.Start</c> and <c>name.End</c>.</summary>
@@ -61,6 +63,9 @@ else
 
     /// <summary>Accessible name of the calendar.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the calendar, see <see cref="CalendarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CalendarUi? Ui { get; set; }
 
     private bool Bound => Mode switch
@@ -80,6 +85,7 @@ else
         _ => Iso.Date(Value) ?? "",
     };
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _culture = Culture ?? FormatCulture;

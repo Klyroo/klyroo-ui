@@ -71,10 +71,12 @@
     private string _id = default!;
     private int _sequence;
 
+    /// <summary>The slides, as <see cref="KlyCarouselItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyCarouselItem> Items { get; set; } = [];
 
     /// <summary>Zero-based index of the current slide. Use <c>@bind-Index</c> to follow swipes and button presses.</summary>
     [Parameter] public int Index { get; set; }
+    /// <summary>Raised with the index of the visible slide when it changes.</summary>
     [Parameter] public EventCallback<int> IndexChanged { get; set; }
 
     /// <summary>Wrap from the last slide to the first and back with the buttons and autoplay.</summary>
@@ -91,8 +93,14 @@
 
     /// <summary>Accessible name of the carousel.</summary>
     [Parameter, EditorRequired] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Semantic color of the carousel: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the carousel, see <see cref="CarouselUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CarouselUi? Ui { get; set; }
 
     private string ViewportId => _id + "-viewport";
@@ -101,6 +109,7 @@
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         IndexChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("carousel");

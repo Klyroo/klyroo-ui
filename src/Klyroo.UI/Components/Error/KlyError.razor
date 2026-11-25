@@ -66,6 +66,9 @@
 
     /// <summary>Replaces the back button.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the error, see <see cref="ErrorUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ErrorUi? Ui { get; set; }
 
     protected override void OnParametersSet()

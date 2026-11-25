@@ -27,11 +27,17 @@ public sealed class KlyColorOptions
     /// <summary>The names of the built-in semantic colors.</summary>
     public static IReadOnlyList<string> BuiltInNames => SemanticNames;
 
+    /// <summary>Palette of the primary color.</summary>
     public KlyPalette Primary { get => Get("primary"); set => Set("primary", value); }
+    /// <summary>Palette of the secondary color.</summary>
     public KlyPalette Secondary { get => Get("secondary"); set => Set("secondary", value); }
+    /// <summary>Palette of the success color.</summary>
     public KlyPalette Success { get => Get("success"); set => Set("success", value); }
+    /// <summary>Palette of the info color.</summary>
     public KlyPalette Info { get => Get("info"); set => Set("info", value); }
+    /// <summary>Palette of the warning color.</summary>
     public KlyPalette Warning { get => Get("warning"); set => Set("warning", value); }
+    /// <summary>Palette of the error color.</summary>
     public KlyPalette Error { get => Get("error"); set => Set("error", value); }
 
     /// <summary>Drives the text, background and border tokens as well.</summary>
@@ -161,7 +167,9 @@ public sealed class KlyDefaults
     private KlySize? _size;
     private volatile bool _frozen;
 
+    /// <summary>Color of the components whose <c>Color</c> parameter is not set. Null keeps the default of each component.</summary>
     public KlyColor? Color { get => _color; set { ThrowIfFrozen(); _color = value; } }
+    /// <summary>Size of the components whose <c>Size</c> parameter is not set and whose built-in size is medium. Null keeps the default of each component.</summary>
     public KlySize? Size { get => _size; set { ThrowIfFrozen(); _size = value; } }
 
     // Reading it from a component freezes the values, like a resolved theme: a late change would apply to some renders only.

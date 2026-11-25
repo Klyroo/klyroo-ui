@@ -1,8 +1,11 @@
 namespace Klyroo.UI;
 
 /// <summary>An option of <see cref="KlySelect"/>, <see cref="KlySelectMenu"/>, <see cref="KlyInputMenu"/> and <see cref="KlyListbox"/>.</summary>
+/// <param name="Value">Value the control takes when the option is chosen.</param>
+/// <param name="Label">Text of the option.</param>
 public sealed record KlySelectItem(string Value, string Label)
 {
+    /// <summary>The option is listed but cannot be chosen.</summary>
     public bool Disabled { get; init; }
 
     /// <summary>A number shown at the end of the row (matches, stock, unread): formatted for the locale, and not searched or typed ahead.</summary>

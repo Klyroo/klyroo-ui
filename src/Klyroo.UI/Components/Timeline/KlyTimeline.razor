@@ -39,18 +39,27 @@
     private SlotSet _slots = default!;
     private string _orientation = "vertical";
 
+    /// <summary>The events, as <see cref="KlyTimelineItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyTimelineItem> Items { get; set; } = [];
 
     /// <summary>Index of the last highlighted item. Null highlights none.</summary>
     [Parameter] public int? Active { get; set; }
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>
+    /// Semantic color of the timeline: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the timeline, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
     /// <summary>Accessible name of the list.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the timeline, see <see cref="TimelineUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TimelineUi? Ui { get; set; }
 
     protected override void OnParametersSet()

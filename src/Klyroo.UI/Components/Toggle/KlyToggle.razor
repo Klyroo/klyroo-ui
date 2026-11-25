@@ -17,14 +17,21 @@ else
 
     /// <summary>Text of the button. <see cref="ChildContent"/> wins when both are given.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Content of the button.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Icon of the button, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Look of the toggle: <c>Outline</c>, <c>Soft</c> or <c>Ghost</c>.</summary>
     [Parameter] public ToggleVariant Variant { get; set; } = ToggleVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the toggle, see <see cref="ToggleUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ToggleUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Toggle, new Dictionary<string, string?>
         {

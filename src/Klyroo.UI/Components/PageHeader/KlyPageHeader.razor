@@ -29,7 +29,9 @@
 
     /// <summary>Small label above the title.</summary>
     [Parameter] public string? Headline { get; set; }
+    /// <summary>Title of the page header.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page header, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Links rendered as buttons under the description.</summary>
@@ -44,6 +46,9 @@
     /// this to 2 on the secondary one.
     /// </summary>
     [Parameter] public int HeadingLevel { get; set; } = 1;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page header, see <see cref="PageHeaderUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageHeaderUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

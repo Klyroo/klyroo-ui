@@ -70,11 +70,14 @@
 
     /// <summary>Name of a built-in icon (see <see cref="KlyIcon"/>).</summary>
     [Parameter] public string? Icon { get; set; }
+    /// <summary>Title of the page card.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page card, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Makes the whole card a link, carried by the title.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>The <c>target</c> attribute of the link of the card, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
     [Parameter] public string? Target { get; set; }
 
     /// <summary>Content above the text, an image for example.</summary>
@@ -82,7 +85,9 @@
 
     /// <summary>Content beside (horizontal) or under (vertical) the text. Interactive content would sit under the stretched link: give it <c>relative z-10</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Content at the bottom of the card.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>Look of the card: <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public PageCardVariant Variant { get; set; } = PageCardVariant.Outline;
 
     /// <summary>Tints the icon, the spotlight and the hover ring.</summary>
@@ -97,6 +102,9 @@
 
     /// <summary>Level of the title heading, 1 to 6; null renders a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; } = 3;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page card, see <see cref="PageCardUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageCardUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

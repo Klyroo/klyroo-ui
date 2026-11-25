@@ -18,9 +18,15 @@ else
     private IReadOnlyList<SelectSection> _sections = [];
     private bool _hasIcons;
 
+    /// <summary>The options, as <see cref="KlySelectItem"/>. Items with a group are shown in sections.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlySelectItem> Items { get; set; } = [];
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the select, see <see cref="SelectUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SelectUi? Ui { get; set; }
 
     private KlySelectItem? Selected => Items.FirstOrDefault(i => i.Value == Value);
@@ -28,6 +34,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("select");

@@ -16,9 +16,13 @@ else
     private SlotSet _slots = default!;
     private int _sequence;
 
+    /// <summary>Smallest value of the track. Defaults to 0.</summary>
     [Parameter] public double Min { get; set; }
+    /// <summary>Largest value of the track. Defaults to 100.</summary>
     [Parameter] public double Max { get; set; } = 100;
+    /// <summary>Distance between two values the thumbs can take. Defaults to 1.</summary>
     [Parameter] public double Step { get; set; } = 1;
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
 
     /// <summary>Report every move to .NET instead of the final values. Costs a round trip per step in Server mode.</summary>
@@ -26,6 +30,9 @@ else
 
     /// <summary>Accessible name of the group when no <see cref="KlyFormField"/> label is around.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the range slider, see <see cref="SliderUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SliderUi? Ui { get; set; }
 
     private double Low => Value is { Count: > 0 } ? Value[0] : Min;
@@ -36,6 +43,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Slider, new Dictionary<string, string?>
         {

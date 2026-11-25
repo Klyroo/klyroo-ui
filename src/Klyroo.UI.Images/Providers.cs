@@ -47,10 +47,14 @@ internal static class ProviderUrl
 /// </summary>
 public sealed class CloudinaryImageProvider(string cloudName, string name = "cloudinary") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool SupportsBlur => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var parts = new List<string>();
@@ -91,10 +95,14 @@ public sealed class CloudinaryImageProvider(string cloudName, string name = "clo
 /// </summary>
 public sealed class ImgixImageProvider(string domain, string name = "imgix") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool SupportsBlur => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var pairs = new List<(string, string)>();
@@ -130,10 +138,14 @@ public sealed class ImgixImageProvider(string domain, string name = "imgix") : I
 /// </summary>
 public sealed class ImageKitImageProvider(string urlEndpoint, string name = "imagekit") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool SupportsBlur => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var parts = new List<string>();
@@ -167,11 +179,16 @@ public sealed class ImageKitImageProvider(string urlEndpoint, string name = "ima
 /// </summary>
 public sealed class CloudflareImagesProvider(string? zone = null, string name = "cloudflare") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool SupportsBlur => true;
+    /// <inheritdoc />
     public bool ValidateDomains => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var options = new List<string>();
@@ -198,10 +215,14 @@ public sealed class CloudflareImagesProvider(string? zone = null, string name = 
 /// </summary>
 public sealed class NetlifyImageProvider(string? baseUrl = null, string name = "netlify") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool ValidateDomains => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var pairs = new List<(string, string)> { ("url", src) };
@@ -237,12 +258,17 @@ public sealed class VercelImageProvider(IReadOnlyList<int>? sizes = null, string
     // The sizes of the example in the build output documentation, plus the 3840 of the url example.
     private readonly int[] _sizes = (sizes is { Count: > 0 } ? sizes : [640, 750, 828, 1080, 1200, 1920, 2048, 3840]).OrderBy(s => s).ToArray();
 
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool ValidateDomains => true;
 
+    /// <inheritdoc />
     public int GetEffectiveWidth(int width) => _sizes.FirstOrDefault(s => s >= width, _sizes[^1]);
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var width = m.Width is { } w ? GetEffectiveWidth(w) : _sizes[^1];
@@ -259,9 +285,12 @@ public sealed class VercelImageProvider(IReadOnlyList<int>? sizes = null, string
 /// </summary>
 public sealed class BunnyImageProvider(string baseUrl, string name = "bunny") : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         var pairs = new List<string>();
@@ -280,10 +309,14 @@ public sealed class BunnyImageProvider(string baseUrl, string name = "bunny") : 
 /// </summary>
 public sealed class TemplateImageProvider(string name, string template, bool validateDomains = false) : IKlyImageProvider
 {
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool ValidateDomains => validateDomains;
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m) => template
         .Replace("{src}", src, StringComparison.Ordinal)
         .Replace("{encodedSrc}", Uri.EscapeDataString(src), StringComparison.Ordinal)
@@ -313,8 +346,11 @@ public sealed class KlyLocalImageProvider(string endpoint = KlyLocalImageProvide
     /// <summary>The widths the local optimizer produces (the device and icon widths of Next.js, which suit most layouts).</summary>
     public static IReadOnlyList<int> Steps { get; } = [16, 32, 48, 64, 96, 128, 256, 384, 512, 640, 750, 828, 1080, 1200, 1920, 2048, 3840];
 
+    /// <inheritdoc />
     public string Name => name;
+    /// <inheritdoc />
     public bool CanResize => true;
+    /// <inheritdoc />
     public bool ValidateDomains => true;
 
     /// <summary>The smallest step that is at least <paramref name="width"/>, the largest when none is.</summary>
@@ -323,8 +359,10 @@ public sealed class KlyLocalImageProvider(string endpoint = KlyLocalImageProvide
     /// <summary>The quality rounded up to a multiple of 5 within 5 to 100.</summary>
     public static int SnapQuality(int quality) => Math.Clamp((Math.Clamp(quality, 1, 100) + 4) / 5 * 5, 5, 100);
 
+    /// <inheritdoc />
     public int GetEffectiveWidth(int width) => SnapWidth(width);
 
+    /// <inheritdoc />
     public string GetUrl(string src, KlyImageModifiers m)
     {
         // The endpoint takes absolute URLs only (a protocol-relative one is how a path would be smuggled in): the scheme-less form is https.
@@ -347,6 +385,7 @@ public sealed class KlyLocalImageProvider(string endpoint = KlyLocalImageProvide
         return endpoint.TrimEnd('/') + ProviderUrl.Query(pairs);
     }
 
+    /// <inheritdoc />
     public bool SupportsBlur => true;
 }
 
@@ -356,18 +395,25 @@ public static class KlyImageProviders
     /// <summary>Registers <see cref="CloudinaryImageProvider"/>. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddCloudinary(this KlyImageSettings images, string cloudName, bool makeDefault = false) => Register(images, new CloudinaryImageProvider(cloudName), makeDefault);
 
+    /// <summary>Registers <see cref="ImgixImageProvider"/> for the host of an imgix source. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddImgix(this KlyImageSettings images, string domain, bool makeDefault = false) => Register(images, new ImgixImageProvider(domain), makeDefault);
 
+    /// <summary>Registers <see cref="ImageKitImageProvider"/> for an ImageKit URL endpoint. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddImageKit(this KlyImageSettings images, string urlEndpoint, bool makeDefault = false) => Register(images, new ImageKitImageProvider(urlEndpoint), makeDefault);
 
+    /// <summary>Registers <see cref="CloudflareImagesProvider"/>, optionally with the address of the zone. Without it URLs are root-relative. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddCloudflareImages(this KlyImageSettings images, string? zone = null, bool makeDefault = false) => Register(images, new CloudflareImagesProvider(zone), makeDefault);
 
+    /// <summary>Registers <see cref="NetlifyImageProvider"/>, optionally with a site address for URLs that leave the site. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddNetlify(this KlyImageSettings images, string? baseUrl = null, bool makeDefault = false) => Register(images, new NetlifyImageProvider(baseUrl), makeDefault);
 
+    /// <summary>Registers <see cref="VercelImageProvider"/>. <paramref name="sizes"/> must list the widths of the <c>images.sizes</c> configuration of the Vercel project. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddVercel(this KlyImageSettings images, IReadOnlyList<int>? sizes = null, bool makeDefault = false) => Register(images, new VercelImageProvider(sizes), makeDefault);
 
+    /// <summary>Registers <see cref="BunnyImageProvider"/> for a Bunny Optimizer base URL. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddBunny(this KlyImageSettings images, string baseUrl, bool makeDefault = false) => Register(images, new BunnyImageProvider(baseUrl), makeDefault);
 
+    /// <summary>Registers a <see cref="TemplateImageProvider"/> under <paramref name="name"/>, for any service whose URLs follow the <paramref name="template"/>. <paramref name="makeDefault"/> also makes it the default provider.</summary>
     public static KlyImageSettings AddTemplate(this KlyImageSettings images, string name, string template, bool makeDefault = false) => Register(images, new TemplateImageProvider(name, template), makeDefault);
 
     /// <summary>Registers the URL builder of the local optimizer under the name <c>local</c> (see <see cref="KlyLocalImageProvider"/>).</summary>

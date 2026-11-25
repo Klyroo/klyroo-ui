@@ -56,11 +56,16 @@
     /// this, the list is always shown.
     /// </summary>
     [Parameter] public bool Collapsible { get; set; } = true;
+    /// <summary>Screen width from which the table of contents is a sticky list instead of a collapsible block (<see cref="KlyContentTocBreakpoint"/>).</summary>
     [Parameter] public KlyContentTocBreakpoint Breakpoint { get; set; } = KlyContentTocBreakpoint.Lg;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the content toc, see <see cref="ContentTocUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ContentTocUi? Ui { get; set; }
 
     protected override void OnInitialized() => Navigation.LocationChanged += OnLocationChanged;
 
+    /// <inheritdoc />
     public void Dispose() => Navigation.LocationChanged -= OnLocationChanged;
 
     // Enhanced navigation to the same page with another query string: the links keep pointing at the page being read.
@@ -90,6 +95,7 @@
         return hash < 0 ? relative : relative[..hash];
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("toc");

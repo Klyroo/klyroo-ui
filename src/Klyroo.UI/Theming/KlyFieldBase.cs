@@ -16,15 +16,24 @@ public abstract class KlyFieldBase<TValue> : KlyComponentBase
     [CascadingParameter] private protected EditContext? EditContext { get; set; }
     [CascadingParameter] private protected FormFieldContext? Field { get; set; }
 
+    /// <summary>The value of the control. Bind it with <c>@bind-Value</c>.</summary>
     [Parameter] public TValue? Value { get; set; }
+    /// <summary>Raised with the new value when the user changes it.</summary>
     [Parameter] public EventCallback<TValue?> ValueChanged { get; set; }
+    /// <summary>The expression of the bound field. The compiler sets it with <c>@bind-Value</c>, and validation uses it to find the field.</summary>
     [Parameter] public Expression<Func<TValue?>>? ValueExpression { get; set; }
 
     /// <summary>Form field name outside an <c>EditForm</c>. Inside one, the name comes from the bound expression.</summary>
     [Parameter] public string? Name { get; set; }
+    /// <summary>The <c>id</c> of the native control. Defaults to the one of the enclosing <see cref="KlyFormField"/>, else a generated one.</summary>
     [Parameter] public string? Id { get; set; }
+    /// <summary>Disables the control: it cannot be focused or changed and is not submitted.</summary>
     [Parameter] public bool Disabled { get; set; }
+    /// <summary>Marks the control as required, for the browser and for assistive technology.</summary>
     [Parameter] public bool Required { get; set; }
+    /// <summary>
+    /// Semantic color of the control: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else primary.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 

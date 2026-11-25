@@ -40,6 +40,7 @@
 
     [Inject] private IServiceProvider Services { get; set; } = default!;
 
+    /// <summary>The app: usually the body of the layout.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Renders the <see cref="KlyToaster"/> after the content. Turn it off when the app places its own.</summary>
@@ -75,12 +76,16 @@
 
     /// <summary>Class overrides for every component below, by component type. See <see cref="KlyTheme"/>.</summary>
     [Parameter] public IReadOnlyDictionary<Type, Klyroo.UI.Theming.ISlotOverrides>? Overrides { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the app, see <see cref="AppUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AppUi? Ui { get; set; }
 
     private System.Globalization.CultureInfo? _stored;
     private bool _storedApplied;
 
     // Only reads the store here: a culture assigned inside an async method does not flow back to the caller.
+    /// <inheritdoc />
     protected override async Task OnInitializedAsync()
     {
         if (!IsHybrid || !ApplyStoredCulture || Locale is not null) return;
@@ -89,6 +94,7 @@
         _stored = KlyCultureStoreMatch.Match(await store.GetAsync(), supported);
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (_stored is not null && !_storedApplied)

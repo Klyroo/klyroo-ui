@@ -56,11 +56,14 @@
 
     /// <summary>The trigger: its first button opens the modal.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Title of the modal, which also names the dialog.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Text under the title of the modal.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Accessible name when there is no <see cref="Title"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Content of the body of the modal.</summary>
     [Parameter] public RenderFragment? Body { get; set; }
 
     /// <summary>Footer actions. Add <c>data-kly-close</c> to a button to make it close the modal.</summary>
@@ -68,6 +71,7 @@
 
     /// <summary>Open state. Use <c>@bind-Open</c>: the browser closes the modal on its own (Escape, close button).</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the modal opens or closes, including Escape and a click outside.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
     /// <summary>Escape and a click on the backdrop close the modal.</summary>
@@ -75,12 +79,17 @@
 
     /// <summary>Shows the close button in the header.</summary>
     [Parameter] public bool Close { get; set; } = true;
+    /// <summary>Size of the modal, from <c>Xs</c> to <c>Xl</c>; it changes the width of the dialog.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Md;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the modal, see <see cref="ModalUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ModalUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("modal");

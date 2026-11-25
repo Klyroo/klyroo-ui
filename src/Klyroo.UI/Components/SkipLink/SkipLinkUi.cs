@@ -5,6 +5,7 @@ namespace Klyroo.UI;
 /// <summary>Per-instance class overrides of <see cref="KlySkipLink"/> slots.</summary>
 public sealed record SkipLinkUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlySkipLink"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch

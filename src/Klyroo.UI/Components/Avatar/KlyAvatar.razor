@@ -26,6 +26,7 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Address of the picture. When it is missing or fails to load, the avatar shows its text or icon.</summary>
     [Parameter] public string? Src { get; set; }
 
     /// <summary>Text alternative; its initials are shown when there is no image or it fails to load.</summary>
@@ -33,9 +34,14 @@
 
     /// <summary>Fallback text instead of the initials of <see cref="Alt"/>.</summary>
     [Parameter] public string? Text { get; set; }
+    /// <summary>Icon shown when there is no picture and no text, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Size of the avatar, from <c>Xs</c> to <c>Xl</c>; it also sets the pixel size asked of the image provider.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the avatar, see <see cref="AvatarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AvatarUi? Ui { get; set; }
 
     /// <summary>
@@ -61,6 +67,7 @@
         _ => 32,
     };
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _pixels = Pixels(Size);

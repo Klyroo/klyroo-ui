@@ -25,11 +25,15 @@
 
     /// <summary>Accessible name. Defaults to the built-in text.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Look of the button: <c>Solid</c>, <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>Link</c>.</summary>
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
+    /// <summary>Semantic color of the dashboard sidebar toggle: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
+    /// <summary>Size of the dashboard sidebar toggle, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.DashboardSidebarToggle, new Dictionary<string, string?>(), null, "root");
 }

@@ -49,17 +49,23 @@
 
     /// <summary>The collapsed state when nothing is remembered. <c>@bind-Collapsed</c> follows and sets it from .NET.</summary>
     [Parameter] public bool Collapsed { get; set; }
+    /// <summary>Raised with the new state when the sidebar collapses to icons or expands.</summary>
     [Parameter] public EventCallback<bool> CollapsedChanged { get; set; }
 
     /// <summary>Adds a handle on the edge to resize the sidebar with the mouse or the keyboard. Sizes are in pixels, unlike the panels.</summary>
     [Parameter] public bool Resizable { get; set; }
+    /// <summary>Initial width of the sidebar column, in pixels. Defaults to 256.</summary>
     [Parameter] public int Width { get; set; } = 256;
+    /// <summary>Smallest width the user can resize the sidebar to, in pixels. Defaults to 192.</summary>
     [Parameter] public int MinWidth { get; set; } = 192;
+    /// <summary>Largest width the user can resize the sidebar to, in pixels. Defaults to 448.</summary>
     [Parameter] public int MaxWidth { get; set; } = 448;
 
     /// <summary>The element to render, "aside" by default; use "div" inside another landmark.</summary>
     [Parameter] public string As { get; set; } = "aside";
+    /// <summary>Accessible name of the sidebar landmark. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Title of the off-canvas panel shown on small screens. Defaults to the built-in text.</summary>
     [Parameter] public string? MobileTitle { get; set; }
 
     /// <summary>Slot overrides, the same as <see cref="KlySidebar"/>.</summary>
@@ -70,6 +76,7 @@
     /// <summary>Gives the slot back, so the next sidebar of the group takes it and keeps the cookie of the key.</summary>
     public void Dispose() => ReleaseSlot();
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         // Only a sidebar named by the group takes a slot: one with its own Id leaves "key" to the next sidebar without one.

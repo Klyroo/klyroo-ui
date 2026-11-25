@@ -59,6 +59,7 @@ public sealed class KlyLocalStorageCultureStore(IJSRuntime js) : IKlyCultureStor
     }
 }
 
+/// <summary>Extension methods for <see cref="IKlyCultureStore"/>.</summary>
 public static class KlyCultureStoreExtensions
 {
     /// <summary>

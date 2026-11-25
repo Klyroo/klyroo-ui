@@ -9,6 +9,7 @@
 
     /// <summary>The <see cref="KlyChangelogVersion"/> entries, newest first.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Per-instance class overrides of the slots of the timeline, see <see cref="ChangelogVersionsUi"/>.</summary>
     [Parameter] public ChangelogVersionsUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

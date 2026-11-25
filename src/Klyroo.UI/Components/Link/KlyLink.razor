@@ -16,9 +16,13 @@
 @code {
     private bool _subscribed;
 
+    /// <summary>Address the link points to. A link without it is not followable.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>Text of the link. Use <c>ChildContent</c> for markup.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Content of the link.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>The <c>target</c> attribute, such as <c>_blank</c>.</summary>
     [Parameter] public string? Target { get; set; }
 
     /// <summary>
@@ -36,14 +40,19 @@
 
     /// <summary>Classes added while the link is not active, merged after the theme.</summary>
     [Parameter] public string? InactiveClass { get; set; }
+    /// <summary>Renders the link without an <c>href</c>, so it cannot be followed or focused.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Drops the theme classes, keeping only <see cref="KlyComponentBase.Class"/>, <see cref="ActiveClass"/> and <see cref="InactiveClass"/>.</summary>
     [Parameter] public bool Raw { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the link, see <see cref="LinkUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public LinkUi? Ui { get; set; }
 
     private bool IsActive => Active ?? (Href is not null && Matches(Href));
 
+    /// <inheritdoc />
     protected override void OnInitialized()
     {
         // Static rendering never changes address in place; an interactive page follows navigation.
@@ -57,6 +66,7 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_subscribed)

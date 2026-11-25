@@ -49,15 +49,21 @@
 
     /// <summary>Name of a built-in icon (see <see cref="KlyIcon"/>).</summary>
     [Parameter] public string? Icon { get; set; }
+    /// <summary>Title of the page feature.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page feature, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Makes the whole feature a link, carried by the title.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>The <c>target</c> attribute of the link of the feature, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
     [Parameter] public string? Target { get; set; }
 
     /// <summary>Extra content under the description. Interactive content would sit under the stretched link: give it <c>relative z-10</c>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>
+    /// Semantic color of the page feature: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
@@ -66,6 +72,9 @@
 
     /// <summary>Renders the title as a heading of this level (1 to 6) instead of a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page feature, see <see cref="PageFeatureUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageFeatureUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

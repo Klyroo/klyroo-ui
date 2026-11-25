@@ -43,6 +43,7 @@ internal sealed class DashboardContext(string? key, SidebarSlots slots)
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardGroup"/> slots.</summary>
 public sealed record DashboardGroupUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardGroup"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot == "root" ? Root : null;
@@ -51,9 +52,13 @@ public sealed record DashboardGroupUi : ISlotOverrides
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardPanel"/> slots.</summary>
 public sealed record DashboardPanelUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardPanel"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
+    /// <summary>Classes merged into the <c>header</c> slot of <see cref="KlyDashboardPanel"/>, after the theme and the app configuration.</summary>
     public string? Header { get; init; }
+    /// <summary>Classes merged into the <c>body</c> slot of <see cref="KlyDashboardPanel"/>, after the theme and the app configuration.</summary>
     public string? Body { get; init; }
+    /// <summary>Classes merged into the <c>footer</c> slot of <see cref="KlyDashboardPanel"/>, after the theme and the app configuration.</summary>
     public string? Footer { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
@@ -69,6 +74,7 @@ public sealed record DashboardPanelUi : ISlotOverrides
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardResizeHandle"/> slots.</summary>
 public sealed record DashboardResizeHandleUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardResizeHandle"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot == "root" ? Root : null;
@@ -77,10 +83,15 @@ public sealed record DashboardResizeHandleUi : ISlotOverrides
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardNavbar"/> slots.</summary>
 public sealed record DashboardNavbarUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardNavbar"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
+    /// <summary>Classes merged into the <c>left</c> slot of <see cref="KlyDashboardNavbar"/>, after the theme and the app configuration.</summary>
     public string? Left { get; init; }
+    /// <summary>Classes merged into the <c>title</c> slot of <see cref="KlyDashboardNavbar"/>, after the theme and the app configuration.</summary>
     public string? Title { get; init; }
+    /// <summary>Classes merged into the <c>center</c> slot of <see cref="KlyDashboardNavbar"/>, after the theme and the app configuration.</summary>
     public string? Center { get; init; }
+    /// <summary>Classes merged into the <c>right</c> slot of <see cref="KlyDashboardNavbar"/>, after the theme and the app configuration.</summary>
     public string? Right { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
@@ -97,9 +108,13 @@ public sealed record DashboardNavbarUi : ISlotOverrides
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardToolbar"/> slots.</summary>
 public sealed record DashboardToolbarUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardToolbar"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
+    /// <summary>Classes merged into the <c>left</c> slot of <see cref="KlyDashboardToolbar"/>, after the theme and the app configuration.</summary>
     public string? Left { get; init; }
+    /// <summary>Classes merged into the <c>center</c> slot of <see cref="KlyDashboardToolbar"/>, after the theme and the app configuration.</summary>
     public string? Center { get; init; }
+    /// <summary>Classes merged into the <c>right</c> slot of <see cref="KlyDashboardToolbar"/>, after the theme and the app configuration.</summary>
     public string? Right { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
@@ -115,9 +130,13 @@ public sealed record DashboardToolbarUi : ISlotOverrides
 /// <summary>Per-instance class overrides of <see cref="KlyDashboardSearchButton"/> slots.</summary>
 public sealed record DashboardSearchButtonUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyDashboardSearchButton"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
+    /// <summary>Classes merged into the <c>icon</c> slot of <see cref="KlyDashboardSearchButton"/>, after the theme and the app configuration.</summary>
     public string? Icon { get; init; }
+    /// <summary>Classes merged into the <c>label</c> slot of <see cref="KlyDashboardSearchButton"/>, after the theme and the app configuration.</summary>
     public string? Label { get; init; }
+    /// <summary>Classes merged into the <c>kbds</c> slot of <see cref="KlyDashboardSearchButton"/>, after the theme and the app configuration.</summary>
     public string? Kbds { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch

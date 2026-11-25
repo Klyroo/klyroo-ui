@@ -41,11 +41,14 @@
 
     [CascadingParameter] private EditContext? EditContext { get; set; }
 
+    /// <summary>Label of the control, tied to it with <c>for</c>.</summary>
     [Parameter] public string? Label { get; set; }
 
     /// <summary>Short text next to the label, such as "Optional".</summary>
     [Parameter] public string? Hint { get; set; }
+    /// <summary>Text shown under the label and tied to the control with <c>aria-describedby</c>.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>Help text shown under the control.</summary>
     [Parameter] public string? Help { get; set; }
 
     /// <summary>Error text. Without it, the first validation message of <see cref="For"/> is shown.</summary>
@@ -53,13 +56,19 @@
 
     /// <summary>The bound field, for validation messages inside an <c>EditForm</c>.</summary>
     [Parameter] public System.Linq.Expressions.Expression<Func<object?>>? For { get; set; }
+    /// <summary>Marks the label and the control as required.</summary>
     [Parameter] public bool Required { get; set; }
 
     /// <summary>Id of the control inside. Defaults to a generated one.</summary>
     [Parameter] public string? Id { get; set; }
+    /// <summary>Size passed to the controls inside, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>The control, such as a <see cref="KlyInput"/>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the form field, see <see cref="FormFieldUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public FormFieldUi? Ui { get; set; }
 
     private string InputId => Id ?? (_generatedId ??= NewId("field"));
@@ -73,6 +82,7 @@
         ? EditContext.GetValidationMessages(FieldIdentifier.Create(For)).FirstOrDefault()
         : null);
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (!ReferenceEquals(_subscribed, EditContext))
@@ -106,6 +116,7 @@
         StateHasChanged();
     }
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_subscribed is not null) _subscribed.OnValidationStateChanged -= OnValidationStateChanged;

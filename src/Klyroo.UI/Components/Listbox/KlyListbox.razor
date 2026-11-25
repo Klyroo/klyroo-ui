@@ -16,6 +16,7 @@ else
     private string _id = default!;
     private IReadOnlyList<SelectSection> _sections = [];
 
+    /// <summary>The options of the list, as <see cref="KlySelectItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlySelectItem> Items { get; set; } = [];
 
     /// <summary>Several values can be selected, each posting under <c>Name</c>.</summary>
@@ -23,6 +24,9 @@ else
 
     /// <summary>Accessible name when no <see cref="KlyFormField"/> label is around.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the listbox, see <see cref="ListboxUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ListboxUi? Ui { get; set; }
 
     protected override void OnParametersSet()

@@ -5,6 +5,7 @@ namespace Klyroo.UI;
 /// <summary>Payload of the <c>kly-toggle</c> browser event raised by Klyroo custom elements when they open or close.</summary>
 public sealed class KlyToggleEventArgs : EventArgs
 {
+    /// <summary>True when the element is open after the toggle.</summary>
     public bool Open { get; set; }
 
     /// <summary>
@@ -17,6 +18,7 @@ public sealed class KlyToggleEventArgs : EventArgs
 /// <summary>Payload of the <c>kly-change</c> browser event raised by Klyroo custom elements when their value changes.</summary>
 public sealed class KlyChangeEventArgs : EventArgs
 {
+    /// <summary>The new value of the element, as text.</summary>
     public string? Value { get; set; }
 
     /// <inheritdoc cref="KlyToggleEventArgs.Sequence"/>

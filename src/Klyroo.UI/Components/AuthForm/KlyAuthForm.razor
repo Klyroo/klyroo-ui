@@ -126,10 +126,12 @@
 
     /// <summary>Enhanced form handling in static server rendering: the post updates the page without a reload.</summary>
     [Parameter] public bool Enhance { get; set; }
+    /// <summary>Title of the form, such as "Sign in".</summary>
     [Parameter] public string? Title { get; set; }
 
     /// <summary>Level of the title heading: 2 by default.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 2;
+    /// <summary>Text under the title of the form.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Icon above the title.</summary>
@@ -140,10 +142,12 @@
 
     /// <summary>Text between the providers and the fields: <c>KlyMessages.AuthFormSeparator</c> by default. An empty string hides the line.</summary>
     [Parameter] public string? Separator { get; set; }
+    /// <summary>Label of the submit button.</summary>
     [Parameter] public string? SubmitLabel { get; set; }
 
     /// <summary>Shows the submit button as loading and disables the fields, as it does itself while <see cref="OnValidSubmit"/> runs.</summary>
     [Parameter] public bool Loading { get; set; }
+    /// <summary>Disables every field and the submit button.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>A message about the whole form (wrong password): put it here after <see cref="OnValidSubmit"/> failed.</summary>
@@ -157,7 +161,11 @@
 
     /// <summary>Called with the values by field name once they are valid. The form is busy until the task completes.</summary>
     [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnValidSubmit { get; set; }
+    /// <summary>Raised when the form is submitted and validation fails, with the current values of the fields by name.</summary>
     [Parameter] public EventCallback<IReadOnlyDictionary<string, string?>> OnInvalidSubmit { get; set; }
+    /// <summary>
+    /// Semantic color of the auth form: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
@@ -169,11 +177,16 @@
 
     /// <summary>Replaces the submit button.</summary>
     [Parameter] public RenderFragment? Submit { get; set; }
+    /// <summary>Content under the submit button, such as a link to another form.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the auth form, see <see cref="AuthFormUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AuthFormUi? Ui { get; set; }
 
     private bool Busy => Loading || _submitting;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _slots = ResolveSlots(Options.AuthForm, new Dictionary<string, string?>(), Ui, "root");

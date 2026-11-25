@@ -72,6 +72,7 @@
 
     /// <summary>Media type ("image/png"): images with a <see cref="Url"/> show a preview.</summary>
     [Parameter] public string? Type { get; set; }
+    /// <summary>Address of the file. With an image media type, the attachment shows a preview of it.</summary>
     [Parameter] public string? Url { get; set; }
 
     /// <summary>Size in bytes, shown in the description.</summary>
@@ -79,13 +80,17 @@
 
     /// <summary>Replaces the default description: the extension, then the size. For an error, put the reason here.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>Whether the file is idle, uploading or failed (<see cref="ChatAttachmentStatus"/>).</summary>
     [Parameter] public ChatAttachmentStatus Status { get; set; }
+    /// <summary>Look of the attachment: a <c>Card</c> or a <c>Thumbnail</c>.</summary>
     [Parameter] public ChatAttachmentVariant Variant { get; set; }
 
     /// <summary>Card only: a vertical card gives an image a large preview.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>Size of the chat attachment, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>Semantic color of the chat attachment: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
 
     /// <summary>Replaces the file icon.</summary>
@@ -93,7 +98,11 @@
 
     /// <summary>Shows a remove button. Raise <see cref="OnRemove"/> and take the attachment out of your list.</summary>
     [Parameter] public bool Removable { get; set; }
+    /// <summary>Raised when the user clicks the remove button. Take the attachment out of your list.</summary>
     [Parameter] public EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> OnRemove { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat attachment, see <see cref="ChatAttachmentUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatAttachmentUi? Ui { get; set; }
 
     /// <summary>
@@ -104,6 +113,7 @@
 
     private int? _pixels;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _preview = Url is not null && Type?.StartsWith("image/", StringComparison.OrdinalIgnoreCase) == true;

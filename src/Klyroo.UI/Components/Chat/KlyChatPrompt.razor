@@ -74,10 +74,12 @@
 
     /// <summary>Text the field starts with: a draft, or the message to show again after a post.</summary>
     [Parameter] public string? Value { get; set; }
+    /// <summary>Hint shown in the text area while it is empty. Defaults to the built-in text.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Accessible name of the form and the field. Defaults to the built-in text.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Disables the text area and the submit button.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Enter sends and Shift+Enter adds a line. Set it to false and Ctrl or Cmd plus Enter sends instead.</summary>
@@ -91,7 +93,11 @@
 
     /// <summary>Focuses the field when the page loads.</summary>
     [Parameter] public bool Autofocus { get; set; }
+    /// <summary>Look of the prompt, as a <see cref="FieldVariant"/>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Semantic color of the chat prompt: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
@@ -112,6 +118,9 @@
 
     /// <summary>Called when the retry button of the default submit button is pressed.</summary>
     [Parameter] public EventCallback OnReload { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat prompt, see <see cref="ChatPromptUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatPromptUi? Ui { get; set; }
 
     private bool Busy => Status is ChatStatus.Submitted or ChatStatus.Streaming;
@@ -125,6 +134,7 @@
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         OnSubmit.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _status = ChatValue.Of(Status);

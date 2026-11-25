@@ -27,8 +27,11 @@ public enum KlyImageLoading
 /// <summary>The <c>fetchpriority</c> attribute of an image and of its preload link.</summary>
 public enum KlyFetchPriority
 {
+    /// <summary>Lets the browser decide.</summary>
     Auto,
+    /// <summary>Loads the image before others.</summary>
     High,
+    /// <summary>Loads the image after others.</summary>
     Low,
 }
 

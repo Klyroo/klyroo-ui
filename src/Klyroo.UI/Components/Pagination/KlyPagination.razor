@@ -48,10 +48,12 @@
 
     /// <summary>Total number of items. The page count is <c>ceil(Total / PageSize)</c>, at least 1.</summary>
     [Parameter] public int Total { get; set; }
+    /// <summary>Number of items on a page. With <c>Total</c> it gives the number of pages. Defaults to 10.</summary>
     [Parameter] public int PageSize { get; set; } = 10;
 
     /// <summary>Current page, starting at 1.</summary>
     [Parameter] public int Page { get; set; } = 1;
+    /// <summary>Raised with the new page number when the user picks a page. Not used when <c>HrefTemplate</c> turns the pages into links.</summary>
     [Parameter] public EventCallback<int> PageChanged { get; set; }
 
     /// <summary>Pages shown on each side of the current one.</summary>
@@ -68,13 +70,20 @@
     /// The owner of the page reads the number from the URL and passes it as <see cref="Page"/>.
     /// </summary>
     [Parameter] public string? HrefTemplate { get; set; }
+    /// <summary>
+    /// Semantic color of the pagination: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the pagination, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
     /// <summary>Accessible name of the landmark. Defaults to <see cref="KlyMessages.Pagination"/>.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the pagination, see <see cref="PaginationUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PaginationUi? Ui { get; set; }
 
     private bool HasHref => !string.IsNullOrEmpty(HrefTemplate);
@@ -82,6 +91,7 @@
     // Buttons need an interactive renderer: until then they would look usable and do nothing.
     private bool Inert => !HasHref && !RendererInfo.IsInteractive;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _pageCount = Math.Max(1, (int)Math.Ceiling(Total / (double)Math.Max(1, PageSize)));

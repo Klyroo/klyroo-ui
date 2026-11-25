@@ -90,6 +90,9 @@
 
     /// <summary>Shows the translated "No more items" when <see cref="HasMore"/> is false. It is announced either way.</summary>
     [Parameter] public bool ShowEnd { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the infinite scroll, see <see cref="InfiniteScrollUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InfiniteScrollUi? Ui { get; set; }
 
     // Only a component that listens and can hear the browser asks for anything: the element does nothing otherwise. With a
@@ -113,6 +116,7 @@
         ? new() { ["data-slot"] = "trigger", ["aria-disabled"] = "true" }
         : new() { ["data-slot"] = "trigger" };
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.InfiniteScroll, new Dictionary<string, string?>(), Ui, "root");
 

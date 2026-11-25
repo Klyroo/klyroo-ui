@@ -36,8 +36,10 @@
 
     /// <summary>The color of the send button. The stop and retry buttons keep their own.</summary>
     [Parameter] public KlyColor? Color { get; set; }
+    /// <summary>Size of the button, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>Disables the button.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Called when the button is pressed while the answer is submitted or streaming.</summary>
@@ -45,6 +47,9 @@
 
     /// <summary>Called when the button is pressed after an error.</summary>
     [Parameter] public EventCallback OnReload { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat prompt submit, see <see cref="ChatPromptSubmitUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatPromptSubmitUi? Ui { get; set; }
 
     protected override void OnParametersSet()

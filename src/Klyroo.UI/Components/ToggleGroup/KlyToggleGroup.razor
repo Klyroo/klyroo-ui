@@ -14,15 +14,21 @@ else
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The buttons, as <see cref="KlyToggleItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyToggleItem> Items { get; set; } = [];
 
     /// <summary>Several items can be pressed at once; otherwise pressing an item releases the others.</summary>
     [Parameter] public bool Multiple { get; set; }
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>Look of the toggle: <c>Outline</c>, <c>Soft</c> or <c>Ghost</c>.</summary>
     [Parameter] public ToggleVariant Variant { get; set; } = ToggleVariant.Outline;
 
     /// <summary>Accessible name of the group when no <see cref="KlyFormField"/> label is around.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the toggle group, see <see cref="ToggleGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ToggleGroupUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -27,6 +27,7 @@
 
     /// <summary>The items to scroll. Avoid ids and focusable elements: the content is repeated.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Direction of the scrolling: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
 
     /// <summary>Scrolls the other way.</summary>
@@ -43,6 +44,9 @@
 
     /// <summary>Number of aria-hidden copies of the content. One is enough unless the content is narrower than the container.</summary>
     [Parameter] public int Repeat { get; set; } = 1;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the marquee, see <see cref="MarqueeUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public MarqueeUi? Ui { get; set; }
 
     protected override void OnParametersSet()

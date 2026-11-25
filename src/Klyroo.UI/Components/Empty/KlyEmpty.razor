@@ -37,11 +37,14 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Title of the placeholder, rendered with the level of <see cref="HeadingLevel"/>.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Text under the title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Illustration above the title, 24x24 icons such as <c>KlyIcons.Named("inbox")</c> fit.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Buttons or links under the text.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
 
     /// <summary>Extra content between the description and the actions.</summary>
@@ -49,9 +52,14 @@
 
     /// <summary>Renders the title as a heading of this level (1 to 6) instead of a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; }
+    /// <summary>Look of the placeholder: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c> or <c>Naked</c>.</summary>
     [Parameter] public EmptyVariant Variant { get; set; } = EmptyVariant.Outline;
+    /// <summary>Size of the empty, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the empty, see <see cref="EmptyUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public EmptyUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

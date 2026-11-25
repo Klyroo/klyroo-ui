@@ -78,6 +78,7 @@
 
     /// <summary>Level of the title heading: 3 by default, for versions under a level 2 heading.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>Text of the version, shown under its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Release date, shown in the format culture of the locale in effect (the regional current culture when it has the same language), or in <see cref="Culture"/> in a <c>time</c> element.</summary>
@@ -91,29 +92,43 @@
     /// WebAssembly render agree as long as they pick the same locale.
     /// </summary>
     [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
+    /// <summary>Text of a badge next to the title, such as "Latest".</summary>
     [Parameter] public string? Badge { get; set; }
+    /// <summary>Semantic color of the badge.</summary>
     [Parameter] public KlyColor BadgeColor { get => _badgeColor ?? DefaultColor(KlyColor.Primary); set => _badgeColor = value; }
     private KlyColor? _badgeColor;
+    /// <summary>Address of an image shown under the description.</summary>
     [Parameter] public string? Image { get; set; }
+    /// <summary>Alternative text of the image. Leave it empty when the image is decorative.</summary>
     [Parameter] public string? ImageAlt { get; set; }
 
     /// <inheritdoc cref="KlyBlogPost.ImageOptions"/>
     [Parameter] public KlyImageOptions? ImageOptions { get; set; }
+    /// <summary>The people behind the version, as <see cref="KlyPostAuthor"/> items.</summary>
     [Parameter] public IReadOnlyList<KlyPostAuthor> Authors { get; set; } = [];
 
     /// <summary>Links the title. Unlike a blog post the card is not stretched, so the rich content keeps its own links.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>The <c>target</c> attribute of the link of the version, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
     [Parameter] public string? Target { get; set; }
 
     /// <summary>Shows the dot and the line that join the versions of a <see cref="KlyChangelogVersions"/>.</summary>
     [Parameter] public bool Indicator { get; set; } = true;
+    /// <summary>
+    /// Semantic color of the changelog version: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
     /// <summary>Rich description: paragraphs, lists, links.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Buttons or links shown under the content of the version.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>Content shown at the bottom of the version.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the changelog version, see <see cref="ChangelogVersionUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChangelogVersionUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -15,6 +15,7 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Content of the scroll area.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Scrolling direction. Null scrolls both ways.</summary>
@@ -22,6 +23,9 @@
 
     /// <summary>Accessible name of the scrollable region.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the scroll area, see <see cref="ScrollAreaUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ScrollAreaUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

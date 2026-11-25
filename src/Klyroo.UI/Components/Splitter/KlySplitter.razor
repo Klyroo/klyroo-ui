@@ -42,10 +42,12 @@
     private double[] _sizes = [];
     private string _orientation = "horizontal";
 
+    /// <summary>The panels, in order, as <see cref="KlySplitterPanel"/>. A handle sits between two neighbors.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlySplitterPanel> Panels { get; set; } = [];
 
     /// <summary>Sizes in percent, one per panel. Bind it to follow resizing; unbound, resizing stays in the browser.</summary>
     [Parameter] public IReadOnlyList<double>? Sizes { get; set; }
+    /// <summary>Raised with the size of each panel, as weights in percent, once a resize gesture ends.</summary>
     [Parameter] public EventCallback<IReadOnlyList<double>> SizesChanged { get; set; }
 
     /// <summary>Horizontal places the panels side by side (the handles are vertical); Vertical stacks them.</summary>
@@ -53,8 +55,14 @@
 
     /// <summary>Size change of an arrow key press, in percent.</summary>
     [Parameter] public double Step { get; set; } = 5;
+    /// <summary>
+    /// Semantic color of the splitter: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the splitter, see <see cref="SplitterUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SplitterUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
@@ -62,6 +70,7 @@
 
     private static string Num(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("splitter");

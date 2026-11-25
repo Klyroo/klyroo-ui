@@ -17,6 +17,9 @@
 
     /// <summary>Width of the highlight, relative to the text: 2 by default, bigger is a wider band.</summary>
     [Parameter] public double Spread { get; set; } = 2;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat shimmer, see <see cref="ChatShimmerUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatShimmerUi? Ui { get; set; }
 
     protected override void OnParametersSet()

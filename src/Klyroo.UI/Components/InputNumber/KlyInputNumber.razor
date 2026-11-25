@@ -16,11 +16,14 @@ else
     private SlotSet _slots = default!;
     private int _sequence;
 
+    /// <summary>Smallest value accepted. There is no lower limit when it is null.</summary>
     [Parameter] public decimal? Min { get; set; }
+    /// <summary>Largest value accepted. There is no upper limit when it is null.</summary>
     [Parameter] public decimal? Max { get; set; }
 
     /// <summary>Amount added or removed by the buttons and the arrow keys; Page Up and Page Down use ten steps.</summary>
     [Parameter] public decimal Step { get; set; } = 1;
+    /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Culture used to show and read the number, such as <c>fr-FR</c>. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language). The posted value is always invariant.</summary>
@@ -28,7 +31,11 @@ else
 
     /// <summary>Horizontal puts the buttons on both sides of the field, vertical stacks them at its end.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input number, see <see cref="InputNumberUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputNumberUi? Ui { get; set; }
 
     private static string? Invariant(decimal? value) => value?.ToString(CultureInfo.InvariantCulture);
@@ -36,6 +43,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.InputNumber, new Dictionary<string, string?>
         {

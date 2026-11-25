@@ -14,11 +14,16 @@ else
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Hint shown while no text is being typed.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Most tags allowed. Past it, typed text is ignored. Zero means no limit.</summary>
     [Parameter] public int Max { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input tags, see <see cref="InputTagsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputTagsUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

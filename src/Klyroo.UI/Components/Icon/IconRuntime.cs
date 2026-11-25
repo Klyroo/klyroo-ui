@@ -19,8 +19,10 @@ namespace Klyroo.UI;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public sealed class KlyrooIconRegistrarAttribute : Attribute
 {
+    /// <summary>Declares the generated class that registers the icons of the assembly.</summary>
     public KlyrooIconRegistrarAttribute(Type registrar) => Registrar = registrar;
 
+    /// <summary>The generated class whose module initializer registers the icons of the assembly.</summary>
     public Type Registrar { get; }
 }
 

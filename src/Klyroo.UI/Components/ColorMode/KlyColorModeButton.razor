@@ -18,8 +18,11 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Semantic color of the button: a built-in <see cref="KlyColor"/> or the name of a color you defined. Defaults to neutral.</summary>
     [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
+    /// <summary>Look of the button: <c>Solid</c>, <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>Link</c>. Defaults to <c>Ghost</c>.</summary>
     [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Ghost;
+    /// <summary>Size of the color mode button, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 

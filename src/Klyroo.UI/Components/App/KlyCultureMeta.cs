@@ -13,6 +13,7 @@ namespace Klyroo.UI;
 /// </summary>
 public sealed class KlyCultureMeta : ComponentBase
 {
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         if (KlyrooHost.IsHybrid(RendererInfo))

@@ -13,6 +13,7 @@ public sealed partial record KlyMessages
 
     /// <summary>Error of an empty required field of an auth form; <c>{0}</c> is the field label.</summary>
     public string AuthFormRequired { get; init; } = "{0} is required.";
+    /// <summary>Error that <see cref="KlyAuthForm"/> shows when an email field holds an address that is not valid.</summary>
     public string AuthFormInvalidEmail { get; init; } = "Enter a valid email address.";
 
     /// <summary>Error of an incomplete one-time code; <c>{0}</c> is the number of characters.</summary>

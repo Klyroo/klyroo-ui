@@ -14,12 +14,18 @@
 
     /// <summary>The trigger, a focusable element.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Text of the tooltip. Use <c>Content</c> for markup.</summary>
     [Parameter] public string? Text { get; set; }
+    /// <summary>Content of the tooltip, instead of <c>Text</c>.</summary>
     [Parameter] public RenderFragment? Content { get; set; }
+    /// <summary>Floating UI placement of the tooltip: top, right, bottom or left, optionally with <c>-start</c> or <c>-end</c>. Defaults to <c>top</c>.</summary>
     [Parameter] public string Placement { get; set; } = "top";
 
     /// <summary>Hover delay before showing, in milliseconds. Keyboard focus shows it at once.</summary>
     [Parameter] public int Delay { get; set; } = 300;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the tooltip, see <see cref="TooltipUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TooltipUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -34,14 +34,21 @@
 
     /// <summary>Called with the activated item. Link items navigate instead, and items with children open their submenu.</summary>
     [Parameter] public EventCallback<KlyMenuItem> OnSelect { get; set; }
+    /// <summary>Whether the menu is open. Bind it with <c>@bind-Open</c> when .NET needs the state.</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the menu opens or closes.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    /// <summary>Floating UI placement of the menu: top, right, bottom or left, optionally with <c>-start</c> or <c>-end</c>. Defaults to <c>bottom-start</c>.</summary>
     [Parameter] public string Placement { get; set; } = "bottom-start";
+    /// <summary>
+    /// Per-instance class overrides of the slots of the dropdown menu, see <see cref="DropdownMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public DropdownMenuUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.DropdownMenu, new Dictionary<string, string?>(), Ui, "content");
 

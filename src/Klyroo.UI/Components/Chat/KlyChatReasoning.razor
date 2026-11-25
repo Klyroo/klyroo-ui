@@ -76,6 +76,7 @@
 
     /// <summary>An icon before the label.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Side of the chevron that shows the state: <c>Trailing</c> or <c>Leading</c>.</summary>
     [Parameter] public ChatChevron Chevron { get; set; } = ChatChevron.Trailing;
 
     /// <summary>Opens when streaming starts. The user's own toggle in the meantime wins over the automatic close.</summary>
@@ -83,16 +84,22 @@
 
     /// <summary>Milliseconds after streaming ends before it closes by itself. 0 keeps it open.</summary>
     [Parameter] public int AutoCloseDelay { get; set; } = 500;
+    /// <summary>Prevents the user from opening or closing the block.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Open state. Bind it with <c>@bind-Open</c> to hear about changes; unbound, nothing leaves the browser.</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the block opens or closes, by the user or by the streaming state.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat reasoning, see <see cref="ChatReasoningUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatReasoningUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("reasoning");

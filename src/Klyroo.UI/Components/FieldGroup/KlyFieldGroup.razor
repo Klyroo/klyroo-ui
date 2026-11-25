@@ -9,10 +9,14 @@
 
     /// <summary>The controls to attach to each other: <c>KlyButton</c>, <c>KlyInput</c>, <c>KlySelect</c>…</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Whether the controls sit side by side (<c>Horizontal</c>) or stacked (<c>Vertical</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
 
     /// <summary>Accessible name of the group, when it needs one.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the field group, see <see cref="FieldGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public FieldGroupUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

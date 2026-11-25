@@ -5,6 +5,7 @@ namespace Klyroo.UI.Theming;
 /// <summary>Per-instance class overrides of a component's slots.</summary>
 public interface ISlotOverrides
 {
+    /// <summary>Gets the classes to merge into a slot, or null when there are none.</summary>
     string? For(string slot);
 }
 
@@ -15,6 +16,7 @@ public interface ISlotOverrides
 public abstract class KlyComponentBase : ComponentBase
 {
     [Inject] internal ThemeResolver Resolver { get; set; } = default!;
+    /// <summary>The global options registered with <c>AddKlyrooUi</c>.</summary>
     [Inject] protected KlyrooOptions Options { get; set; } = default!;
 
     /// <summary>Classes added to the root element, merged last so they win over the theme.</summary>

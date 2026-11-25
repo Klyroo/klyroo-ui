@@ -10,6 +10,9 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>
+    /// Per-instance class overrides of the slots of the skeleton, see <see cref="SkeletonUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SkeletonUi? Ui { get; set; }
 
     /// <remarks>Size and shape come from <see cref="KlyComponentBase.Class"/>: <c>Class="h-4 w-40"</c>, <c>Class="size-12 rounded-full"</c>.</remarks>

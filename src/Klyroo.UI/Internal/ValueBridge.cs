@@ -12,11 +12,14 @@ namespace Klyroo.UI.Internal;
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class ValueBridge<TValue> : InputBase<TValue>
 {
+    /// <summary>The content, given the binding of the field.</summary>
     [Parameter, EditorRequired] public RenderFragment<EditBinding> ChildContent { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder) =>
         builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any(), EditBinding.Of(EditContext, FieldIdentifier))));
 
+    /// <inheritdoc />
     protected override bool TryParseValueFromString(string? value, out TValue result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         result = default!;

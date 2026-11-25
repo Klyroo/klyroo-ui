@@ -23,6 +23,7 @@
 
     [CascadingParameter] private KlyThemeScope? Parent { get; set; }
 
+    /// <summary>The content whose components receive the overrides.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>The component type the <see cref="Ui"/> applies to: <c>typeof(KlyButton)</c>, or <c>typeof(KlyTable&lt;&gt;)</c> for a generic one.</summary>

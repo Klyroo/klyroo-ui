@@ -36,9 +36,13 @@ else
         }
     </text>;
 
+    /// <summary>Name of the person or entity.</summary>
     [Parameter] public string? Name { get; set; }
+    /// <summary>Text under the name, such as a role or an email address.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>Address of the avatar picture.</summary>
     [Parameter] public string? AvatarSrc { get; set; }
+    /// <summary>Icon of the avatar when there is no picture, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? AvatarIcon { get; set; }
 
     /// <summary>Shows the avatar: the image, else the initials of <see cref="Name"/>.</summary>
@@ -46,10 +50,16 @@ else
 
     /// <summary>Makes the whole user a link.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
     [Parameter] public string? Target { get; set; }
+    /// <summary>Whether the name sits beside the avatar (<c>Horizontal</c>) or under it (<c>Vertical</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>Size of the user, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the user, see <see cref="UserUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public UserUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

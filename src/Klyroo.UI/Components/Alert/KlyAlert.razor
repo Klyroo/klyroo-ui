@@ -37,20 +37,32 @@
     private SlotSet _slots = default!;
     private bool _dismissed;
 
+    /// <summary>Title of the alert, shown above its description.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Text of the alert. Use <c>ChildContent</c> for markup.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Rich description, instead of <see cref="Description"/>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Icon of the alert, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Buttons or links under the description of the alert.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>
+    /// Semantic color of the alert: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Look of the alert: <c>Solid</c>, <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Solid;
 
     /// <summary>Shows a close button that removes the alert.</summary>
     [Parameter] public bool Close { get; set; }
+    /// <summary>Raised when the user closes the alert with its close button.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the alert, see <see cref="AlertUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AlertUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

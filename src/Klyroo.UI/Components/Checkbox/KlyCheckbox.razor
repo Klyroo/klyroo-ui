@@ -39,8 +39,13 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Text next to the checkbox. A <see cref="KlyFormField"/> label also names it.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Text under the label of the checkbox.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the checkbox, see <see cref="CheckboxUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CheckboxUi? Ui { get; set; }
 
     /// <summary>
@@ -60,6 +65,7 @@
 
     private string? DescriptionId => Description is null ? null : ControlId + "-description";
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (Indeterminate) _indeterminateVersion++;

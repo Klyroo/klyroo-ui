@@ -64,6 +64,7 @@
 
     /// <summary>Called with the activated command. Link commands navigate as well.</summary>
     [Parameter] public EventCallback<KlyCommandItem> OnSelect { get; set; }
+    /// <summary>Hint of the search field. Defaults to the built-in text.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
     /// <summary>Accessible name of the search field and the list. Defaults to the built-in text.</summary>
@@ -74,11 +75,15 @@
     /// <see cref="KlySlideover"/> without a round trip.
     /// </summary>
     [Parameter] public bool CloseOnSelect { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the command palette, see <see cref="CommandPaletteUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CommandPaletteUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         OnSelect.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("command");

@@ -98,7 +98,9 @@
 
     /// <summary>Level of the title heading: 3 by default, for plans under a level 2 heading.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>Secondary text of the pricing plan, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
+    /// <summary>Text of a badge next to the title, such as "Popular".</summary>
     [Parameter] public string? Badge { get; set; }
 
     /// <summary>Color of the badge; the plan's color by default.</summary>
@@ -127,7 +129,9 @@
 
     /// <summary>Makes the button a link.</summary>
     [Parameter] public string? ButtonHref { get; set; }
+    /// <summary>Color of the call to action button. Defaults to neutral for a solid plan, else to the color of the plan.</summary>
     [Parameter] public KlyColor? ButtonColor { get; set; }
+    /// <summary>Look of the call to action button. Defaults to solid for a highlighted or solid plan, else to outline.</summary>
     [Parameter] public ButtonVariant? ButtonVariant { get; set; }
 
     /// <summary>Click of the button. As for <see cref="KlyButton"/>, it stays disabled until the page is interactive.</summary>
@@ -141,12 +145,19 @@
 
     /// <summary>Enlarges the plan on wide screens so it stands out from the others.</summary>
     [Parameter] public bool Scale { get; set; }
+    /// <summary>Look of the plan card: <c>Solid</c>, <c>Outline</c>, <c>Soft</c> or <c>Subtle</c>.</summary>
     [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Outline;
 
     /// <summary>Horizontal lays the plan out in a row on wide screens: the price on the left, the features, then the button.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>
+    /// Semantic color of the pricing plan: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the pricing plan, see <see cref="PricingPlanUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PricingPlanUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -34,6 +34,9 @@
 
     /// <summary>Accessible name of the navigation landmark. Needed when the page has several.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the content navigation, see <see cref="ContentNavigationUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ContentNavigationUi? Ui { get; set; }
 
     protected override void OnInitialized()
@@ -42,6 +45,7 @@
         _subscribed = true;
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _slots = ResolveSlots(Options.ContentNavigation, new Dictionary<string, string?>(), Ui, "root");
@@ -52,6 +56,7 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_subscribed) Navigation.LocationChanged -= OnLocationChanged;

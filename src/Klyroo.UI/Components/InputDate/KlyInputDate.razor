@@ -48,7 +48,11 @@
 
     /// <summary>First column of the calendar. Defaults to the culture's first day of the week.</summary>
     [Parameter] public DayOfWeek? WeekStart { get; set; }
+    /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the input date, see <see cref="InputDateUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public InputDateUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

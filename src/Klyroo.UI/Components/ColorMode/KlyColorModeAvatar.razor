@@ -17,11 +17,18 @@
 
     /// <summary>Image in dark mode. Defaults to <see cref="Light"/>.</summary>
     [Parameter] public string? Dark { get; set; }
+    /// <summary>Alternative text of the picture. Both pictures carry it.</summary>
     [Parameter] public string? Alt { get; set; }
+    /// <summary>Initials shown when there is no picture.</summary>
     [Parameter] public string? Text { get; set; }
+    /// <summary>Icon shown when there is no picture and no text, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>Size of the color mode avatar, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the color mode avatar, see <see cref="AvatarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AvatarUi? Ui { get; set; }
 
     /// <summary>Image settings forwarded to both avatars, see <see cref="KlyAvatar.ImageOptions"/>.</summary>

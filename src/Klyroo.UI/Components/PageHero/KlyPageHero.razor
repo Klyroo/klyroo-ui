@@ -32,8 +32,11 @@
     private SlotSet _slots = default!;
     private readonly string _titleId = NewId("pagehero");
 
+    /// <summary>Short text above the title, such as an announcement or a category.</summary>
     [Parameter] public string? Headline { get; set; }
+    /// <summary>Title of the page hero.</summary>
     [Parameter] public string? Title { get; set; }
+    /// <summary>Secondary text of the page hero, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Links rendered as buttons under the description.</summary>
@@ -57,6 +60,9 @@
     /// this to 2 on the secondary one.
     /// </summary>
     [Parameter] public int HeadingLevel { get; set; } = 1;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page hero, see <see cref="PageHeroUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageHeroUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -33,23 +33,31 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
 
     /// <summary>Text in the middle of the line. It also names the separator for assistive technology.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Icon of the separator, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
 
     /// <summary>Extra decorative content in the middle, next to the icon and label.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Semantic color of the line: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get; set; } = KlyColor.Neutral;
 
     /// <summary>Thickness of the line.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Xs;
+    /// <summary>Line style: <c>Solid</c>, <c>Dashed</c> or <c>Dotted</c>.</summary>
     [Parameter] public KlySeparatorType Type { get; set; } = KlySeparatorType.Solid;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the separator, see <see cref="SeparatorUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public SeparatorUi? Ui { get; set; }
 
     private bool HasContent => Label is not null || Icon is not null || ChildContent is not null;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Separator, new Dictionary<string, string?>
         {

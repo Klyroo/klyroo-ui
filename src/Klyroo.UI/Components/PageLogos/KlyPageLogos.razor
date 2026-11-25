@@ -81,6 +81,9 @@
 
     /// <summary>Level of the title heading, 1 to 6; null renders a paragraph.</summary>
     [Parameter] public int? HeadingLevel { get; set; } = 2;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page logos, see <see cref="PageLogosUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageLogosUi? Ui { get; set; }
 
     /// <summary>Image settings forwarded to <see cref="KlyImage"/> for every image logo.</summary>

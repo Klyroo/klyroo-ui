@@ -35,6 +35,7 @@ public sealed partial class KlyPalette
     /// </summary>
     public static KlyPalette Klyroo { get; } = new("klyroo", []);
 
+    /// <summary>The name of the palette, such as <c>blue</c>.</summary>
     public string Name { get; }
 
     /// <summary>True for <see cref="Klyroo"/>, which carries no shades.</summary>
@@ -109,5 +110,6 @@ public sealed partial class KlyPalette
 
     internal string Hex(int index) => KlyColorMath.ToHex(_shades[index]);
 
+    /// <summary>Returns the name of the palette.</summary>
     public override string ToString() => Name;
 }

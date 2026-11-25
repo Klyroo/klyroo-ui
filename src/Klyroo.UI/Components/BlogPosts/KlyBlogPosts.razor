@@ -6,10 +6,14 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The posts, usually <see cref="KlyBlogPost"/> items.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Horizontal places the posts next to each other in a responsive grid, vertical stacks them in one column.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the blog posts, see <see cref="BlogPostsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public BlogPostsUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

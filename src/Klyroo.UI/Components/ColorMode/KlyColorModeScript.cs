@@ -23,6 +23,7 @@ public sealed class KlyColorModeScript : ComponentBase
         "var d=m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);" +
         "document.documentElement.classList.toggle('dark',d);document.documentElement.style.colorScheme=d?'dark':'light';}catch(e){}})();";
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         if (KlyrooHost.IsHybrid(RendererInfo))

@@ -6,11 +6,16 @@ namespace Klyroo.UI.Internal;
 /// <summary>Internal building block, not part of the supported API. A heading of a given level (1 to 6) that can carry an id, so a region can be named by it.</summary>
 public sealed class SectionHeading : ComponentBase
 {
+    /// <summary>Heading level, 1 to 6. Defaults to 2.</summary>
     [Parameter] public int Level { get; set; } = 2;
+    /// <summary>The <c>id</c> of the heading element.</summary>
     [Parameter] public string? Id { get; set; }
+    /// <summary>Classes of the heading element.</summary>
     [Parameter] public string? Class { get; set; }
+    /// <summary>Content of the heading.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         builder.OpenElement(0, "h" + Math.Clamp(Level, 1, 6));

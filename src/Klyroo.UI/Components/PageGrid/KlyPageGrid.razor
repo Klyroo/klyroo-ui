@@ -6,10 +6,14 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The items of the grid, such as <see cref="KlyPageCard"/> or <see cref="KlyPageFeature"/>.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Number of columns from the lg breakpoint, 2 to 4: one column on phones, two from sm.</summary>
     [Parameter] public int Columns { get; set; } = 3;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page grid, see <see cref="PageGridUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageGridUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

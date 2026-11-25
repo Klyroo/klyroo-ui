@@ -2,24 +2,34 @@ using Microsoft.AspNetCore.Components;
 
 namespace Klyroo.UI;
 
+/// <summary>What a <see cref="KlyMenuItem"/> is.</summary>
 public enum KlyMenuItemKind
 {
+    /// <summary>An action, or a link when <c>Href</c> is set.</summary>
     Item,
+    /// <summary>A line between two groups of items.</summary>
     Separator,
+    /// <summary>A non-interactive title of a group of items.</summary>
     Heading,
 }
 
 /// <summary>An entry of <see cref="KlyDropdownMenu"/>: an action, a link (with <see cref="Href"/>), a heading or a separator.</summary>
 public sealed record KlyMenuItem
 {
+    /// <summary>Whether the entry is an item, a separator or a heading. Defaults to an item.</summary>
     public KlyMenuItemKind Kind { get; init; } = KlyMenuItemKind.Item;
+    /// <summary>Text of the item or of the heading.</summary>
     public string Label { get; init; } = "";
 
     /// <summary>Identifies the item in <see cref="KlyDropdownMenu.OnSelect"/>. Defaults to the label.</summary>
     public string? Value { get; init; }
+    /// <summary>Address to go to. When set the item is a link.</summary>
     public string? Href { get; init; }
+    /// <summary>Icon shown before the label, as markup such as a <see cref="KlyIcon"/>.</summary>
     public RenderFragment? Icon { get; init; }
+    /// <summary>Keyboard shortcut shown at the end of the row, such as <c>Ctrl+S</c>.</summary>
     public string? Shortcut { get; init; }
+    /// <summary>Disables the item: it is listed but cannot be activated.</summary>
     public bool Disabled { get; init; }
 
     /// <summary>
@@ -37,6 +47,8 @@ public sealed record KlyMenuItem
     /// <summary>"error" for destructive actions.</summary>
     public KlyColor? Color { get; init; }
 
+    /// <summary>Creates a separator between two groups of items.</summary>
     public static KlyMenuItem Separator() => new() { Kind = KlyMenuItemKind.Separator };
+    /// <summary>Creates a heading that names the group of items below it.</summary>
     public static KlyMenuItem Heading(string label) => new() { Kind = KlyMenuItemKind.Heading, Label = label };
 }

@@ -108,8 +108,12 @@
     /// top is the <c>--kly-sticky-offset</c> CSS variable (0 by default), for pages with a fixed header.
     /// </summary>
     [Parameter] public bool Sticky { get; set; } = true;
+    /// <summary>Semantic color of the accents of the table: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the pricing table, see <see cref="PricingTableUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PricingTableUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

@@ -73,10 +73,12 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>Title of the blog post.</summary>
     [Parameter] public string? Title { get; set; }
 
     /// <summary>Level of the title heading: 3 by default, for a list of posts under a level 2 heading.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>Secondary text of the blog post, shown under or next to its title.</summary>
     [Parameter] public string? Description { get; set; }
 
     /// <summary>Publication date, shown in the format culture of the locale in effect (the regional current culture when it has the same language), or in <see cref="Culture"/> (see <see cref="DateFormat"/>) in a <c>time</c> element.</summary>
@@ -90,12 +92,15 @@
     /// WebAssembly render agree as long as they pick the same locale.
     /// </summary>
     [Parameter] public System.Globalization.CultureInfo? Culture { get; set; }
+    /// <summary>Text of a badge over the image, such as a category.</summary>
     [Parameter] public string? Badge { get; set; }
+    /// <summary>Semantic color of the badge.</summary>
     [Parameter] public KlyColor BadgeColor { get => _badgeColor ?? DefaultColor(KlyColor.Primary); set => _badgeColor = value; }
     private KlyColor? _badgeColor;
 
     /// <summary>Cover image. Decorative unless <see cref="ImageAlt"/> says what it shows.</summary>
     [Parameter] public string? Image { get; set; }
+    /// <summary>Alternative text of the image. Leave it empty when the image is decorative.</summary>
     [Parameter] public string? ImageAlt { get; set; }
 
     /// <summary>Image settings forwarded to <see cref="KlyImage"/> (format, quality, sizes, provider, preset…).</summary>
@@ -109,15 +114,25 @@
 
     /// <summary>Makes the whole card a link to this address, through the title.</summary>
     [Parameter] public string? Href { get; set; }
+    /// <summary>The <c>target</c> attribute of the link of the card, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
     [Parameter] public string? Target { get; set; }
+    /// <summary>Whether the image sits above the text (<c>Vertical</c>) or beside it (<c>Horizontal</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>Look of the card: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>Naked</c>.</summary>
     [Parameter] public BlogPostVariant Variant { get; set; } = BlogPostVariant.Outline;
+    /// <summary>
+    /// Semantic color of the blog post: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
     /// <summary>Extra content between the description and the authors.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>Content at the bottom of the card, under the description.</summary>
     [Parameter] public RenderFragment? Footer { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the blog post, see <see cref="BlogPostUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public BlogPostUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

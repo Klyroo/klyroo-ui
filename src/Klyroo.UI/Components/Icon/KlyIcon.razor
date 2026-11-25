@@ -31,7 +31,11 @@
 
     /// <summary>Accessible name. Without it the icon is decorative and hidden from assistive technology.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Size of the icon, from <c>Xs</c> to <c>Xl</c>.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Md;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the icon, see <see cref="IconUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public IconUi? Ui { get; set; }
 
     protected override void OnParametersSet()

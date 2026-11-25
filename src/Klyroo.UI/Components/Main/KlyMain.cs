@@ -12,15 +12,19 @@ public sealed class KlyMain : KlyComponentBase
 {
     private SlotSet _slots = default!;
 
+    /// <summary>Content of the main area.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>The element to render, "main" by default. A page has only one main landmark: use "div" when the layout already has one.</summary>
     [Parameter] public string As { get; set; } = "main";
+    /// <summary>Per-instance class overrides of the slots of the main area, see <see cref="MainUi"/>.</summary>
     [Parameter] public MainUi? Ui { get; set; }
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Main, new Dictionary<string, string?>(), Ui, "base");
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         builder.OpenElement(0, As);

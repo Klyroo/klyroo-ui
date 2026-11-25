@@ -48,16 +48,22 @@
 
     /// <summary>Open state. Bind it with <c>@bind-Open</c> to hear about changes; unbound, nothing leaves the browser.</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the region opens or closes.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    /// <summary>Prevents the user from opening or closing the region.</summary>
     [Parameter] public bool Disabled { get; set; }
 
     /// <summary>Shows the chevron that turns when the region opens.</summary>
     [Parameter] public bool ShowIcon { get; set; } = true;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the collapsible, see <see cref="CollapsibleUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CollapsibleUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("collapsible");

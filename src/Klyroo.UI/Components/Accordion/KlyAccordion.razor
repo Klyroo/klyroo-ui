@@ -47,10 +47,12 @@
     private int _sequence;
     private IReadOnlyList<string> _open = [];
 
+    /// <summary>The items of the accordion (<see cref="KlyAccordionItem"/>): a label and a content each, with an optional icon and value.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyAccordionItem> Items { get; set; } = [];
 
     /// <summary>Values of the open items.</summary>
     [Parameter] public IReadOnlyList<string>? Value { get; set; }
+    /// <summary>Raised with the values of the open items when the user opens or closes one. Without a handler the state stays in the browser and .NET is never called.</summary>
     [Parameter] public EventCallback<IReadOnlyList<string>> ValueChanged { get; set; }
 
     /// <summary>Several items can be open at once.</summary>
@@ -61,6 +63,9 @@
 
     /// <summary>Heading level of the item headers, to fit the page outline.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the accordion, see <see cref="AccordionUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AccordionUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
@@ -68,6 +73,7 @@
 
     private static string ValueOf(KlyAccordionItem item, int index) => item.Value ?? index.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("accordion");

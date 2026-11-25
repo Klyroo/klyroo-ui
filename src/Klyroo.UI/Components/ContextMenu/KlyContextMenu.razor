@@ -49,6 +49,7 @@
 
     /// <summary>The area that reacts to the context menu gesture.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    /// <summary>The entries of the menu, as <see cref="KlyMenuItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyMenuItem> Items { get; set; } = [];
 
     /// <summary>Called with the activated item. Link items navigate instead.</summary>
@@ -59,6 +60,7 @@
     /// since there is no pointer to open it at.
     /// </summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state when the menu opens or closes.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
     /// <summary>Lets the browser show its own context menu in the area.</summary>
@@ -69,11 +71,15 @@
 
     /// <summary>Accessible name of the menu.</summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the context menu, see <see cref="ContextMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ContextMenuUi? Ui { get; set; }
 
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.ContextMenu, new Dictionary<string, string?>(), Ui, "trigger");
 

@@ -28,10 +28,13 @@
     /// and a text is read as it is: never rely on the color alone to convey a meaning.
     /// </summary>
     [Parameter] public string? Label { get; set; }
+    /// <summary>Semantic color of the chip: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the chip, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
+    /// <summary>Corner of the content where the chip sits (<see cref="KlyChipPosition"/>). Defaults to the top right.</summary>
     [Parameter] public KlyChipPosition Position { get; set; } = KlyChipPosition.TopRight;
 
     /// <summary>Keeps the indicator inside the corner of the element instead of straddling it.</summary>
@@ -42,6 +45,9 @@
 
     /// <summary>Shows the indicator. Set it to false to hide it without removing the element it sits on.</summary>
     [Parameter] public bool Show { get; set; } = true;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chip, see <see cref="ChipUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChipUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

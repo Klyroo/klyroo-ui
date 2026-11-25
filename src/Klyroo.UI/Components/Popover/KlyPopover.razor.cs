@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Components;
 
 namespace Klyroo.UI;
 
+/// <summary>Per-instance class overrides of the slots of <see cref="KlyPopover"/>, passed to its <c>Ui</c> parameter. Each property holds the classes merged into one slot.</summary>
 public sealed record PopoverUi : ISlotOverrides
 {
+    /// <summary>Classes merged into the <c>content</c> slot of <see cref="KlyPopover"/>, after the theme and the app configuration.</summary>
     public string? Content { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot == "content" ? Content : null;
@@ -31,6 +33,7 @@ public partial class KlyPopover
 
     /// <summary>Open state. Use <c>@bind-Open</c>: the browser can close the panel on its own (Escape, click outside).</summary>
     [Parameter] public bool Open { get; set; }
+    /// <summary>Raised with the new state whenever the popover opens or closes in the browser, Escape and light dismiss included.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
     /// <summary>Floating UI placement: top, right, bottom, left, optionally suffixed with -start or -end.</summary>
@@ -49,12 +52,14 @@ public partial class KlyPopover
     /// </summary>
     [Parameter] public string? Role { get; set; } = "dialog";
 
+    /// <summary>Per-instance class overrides of the slots of the popover, see <see cref="PopoverUi"/>.</summary>
     [Parameter] public PopoverUi? Ui { get; set; }
 
     // Only listen when someone is bound: an unbound popover never calls back into .NET.
     private EventCallback<KlyToggleEventArgs> ToggleHandler =>
         OpenChanged.HasDelegate ? EventCallback.Factory.Create<KlyToggleEventArgs>(this, OnToggle) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id = _id ?? NewId("popover");

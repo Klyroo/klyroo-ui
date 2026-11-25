@@ -55,6 +55,7 @@
     private int _current;
     private string _orientation = "horizontal";
 
+    /// <summary>The steps, as <see cref="KlyStepperItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyStepperItem> Items { get; set; } = [];
 
     /// <summary>Index of the current step, starting at 0. Earlier steps are completed.</summary>
@@ -62,18 +63,27 @@
 
     /// <summary>Bind it to let users click a step; without it the stepper only displays progress.</summary>
     [Parameter] public EventCallback<int> CurrentChanged { get; set; }
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>
+    /// Semantic color of the stepper: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
+    /// <summary>Size of the stepper, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
     /// <summary>Accessible name of the list of steps.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the stepper, see <see cref="StepperUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public StepperUi? Ui { get; set; }
 
     private bool Interactive => CurrentChanged.HasDelegate;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _current = Items.Count == 0 ? -1 : Math.Clamp(Current, 0, Items.Count - 1);

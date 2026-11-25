@@ -4,9 +4,21 @@ namespace Klyroo.UI;
 
 public sealed partial class KlyrooOptions
 {
+    /// <summary>
+    /// Theme of <see cref="KlyEditor"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// </summary>
     public ComponentTheme Editor { get; } = Themes.Editor();
+    /// <summary>
+    /// Theme of <see cref="KlyEditorToolbar"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// </summary>
     public ComponentTheme EditorToolbar { get; } = Themes.EditorToolbar();
+    /// <summary>
+    /// Theme of <see cref="KlyEditorDragHandle"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// </summary>
     public ComponentTheme EditorDragHandle { get; } = Themes.EditorDragHandle();
+    /// <summary>
+    /// Theme shared by <see cref="KlyEditorSuggestionMenu"/>, <see cref="KlyEditorMentionMenu"/> and <see cref="KlyEditorEmojiMenu"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// </summary>
     public ComponentTheme EditorMenu { get; } = Themes.EditorMenu();
 
     /// <summary>

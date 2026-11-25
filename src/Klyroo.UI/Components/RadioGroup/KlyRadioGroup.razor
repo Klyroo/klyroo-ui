@@ -37,9 +37,15 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The radio buttons, as <see cref="KlyRadioItem{TValue}"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyRadioItem<TValue>> Items { get; set; } = [];
+    /// <summary>Caption of the group, rendered as the legend of its fieldset.</summary>
     [Parameter] public string? Legend { get; set; }
+    /// <summary>Whether the radio buttons are stacked (<c>Vertical</c>) or side by side (<c>Horizontal</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the radio group, see <see cref="RadioGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public RadioGroupUi? Ui { get; set; }
 
     private EditContext? _subscribed;
@@ -51,6 +57,7 @@
         ? EditContext!.GetValidationMessages(FieldIdentifier.Create(ValueExpression!)).Any()
         : Field?.Invalid == true;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         // InputRadioGroup re-renders itself on validation changes, but the fieldset carrying aria-invalid is ours.
@@ -70,6 +77,7 @@
 
     private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e) => StateHasChanged();
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_subscribed is not null) _subscribed.OnValidationStateChanged -= OnValidationStateChanged;

@@ -79,6 +79,7 @@
     private KlyColumn<TItem>? _sortColumn;
     private bool _ascending = true;
 
+    /// <summary>The rows to show. The columns come from the <see cref="KlyColumn{TItem}"/> children.</summary>
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
     /// <summary>The columns: <c>KlyColumn</c> components.</summary>
@@ -92,6 +93,9 @@
 
     /// <summary>Keeps the header visible while the table scrolls (give the table a max height through Class).</summary>
     [Parameter] public bool Sticky { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the table, see <see cref="TableUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TableUi? Ui { get; set; }
 
     // Columns register each time the table renders, in markup order, so one inserted later by an @if takes its
@@ -106,6 +110,7 @@
 
     internal void RemoveColumn(KlyColumn<TItem> column) => _columns.Remove(column);
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.Table, new Dictionary<string, string?> { ["sticky"] = VariantValue.Of(Sticky) }, Ui, "root");
 

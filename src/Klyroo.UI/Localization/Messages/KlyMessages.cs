@@ -11,8 +11,11 @@ namespace Klyroo.UI;
 /// </remarks>
 public sealed partial record KlyMessages
 {
+    /// <summary>Accessible name of the close button of alerts, banners, modals, drawers, slideovers, toasts, tags, chat attachments and the other dismissible components.</summary>
     public string Close { get; init; } = "Close";
+    /// <summary>Accessible name of the list of toasts of <see cref="KlyToaster"/>.</summary>
     public string Notifications { get; init; } = "Notifications";
+    /// <summary>Text shown by <see cref="KlyChart{TItem}"/> and <see cref="KlyTable{TItem}"/> when there is nothing to show.</summary>
     public string NoData { get; init; } = "No data";
 
     /// <summary>Tooltip of the button of a sortable column that sorts it in ascending order.</summary>

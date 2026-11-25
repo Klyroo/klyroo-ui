@@ -23,13 +23,21 @@
 
     [Inject] private NavigationManager Navigation { get; set; } = default!;
 
+    /// <summary>The links, with optional sub-items, as <see cref="KlyNavigationItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyNavigationItem> Items { get; set; } = [];
+    /// <summary><c>Horizontal</c> opens sub-items in a popover; <c>Vertical</c> shows them as collapsible groups.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>
+    /// Semantic color of the navigation menu: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
     /// <summary>Accessible name of the navigation landmark. Needed when the page has several.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the navigation menu, see <see cref="NavigationMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public NavigationMenuUi? Ui { get; set; }
 
     protected override void OnInitialized()
@@ -38,6 +46,7 @@
         _subscribed = true;
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _horizontal = Orientation == KlyOrientation.Horizontal;
@@ -50,6 +59,7 @@
     private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) =>
         _ = InvokeAsync(StateHasChanged);
 
+    /// <inheritdoc />
     public void Dispose()
     {
         if (_subscribed) Navigation.LocationChanged -= OnLocationChanged;

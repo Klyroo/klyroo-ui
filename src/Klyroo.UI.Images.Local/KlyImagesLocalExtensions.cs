@@ -9,6 +9,7 @@ using Microsoft.Net.Http.Headers;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+    /// <summary>Registers the local image optimizer in an <see cref="IServiceCollection"/>.</summary>
     public static class KlyImagesLocalServiceCollectionExtensions
     {
         /// <summary>
@@ -35,6 +36,7 @@ namespace Microsoft.Extensions.DependencyInjection
 
 namespace Microsoft.AspNetCore.Builder
 {
+    /// <summary>Maps the endpoint of the local image optimizer.</summary>
     public static class KlyImagesLocalEndpointExtensions
     {
         /// <summary>

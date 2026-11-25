@@ -28,16 +28,24 @@
 
     private sealed record NodeInfo(KlyTreeItem Item, string Path);
 
+    /// <summary>The nodes of the tree, as <see cref="KlyTreeItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyTreeItem> Items { get; set; } = [];
 
     /// <summary>Value of the selected item. Selection also works unbound: the browser keeps it.</summary>
     [Parameter] public string? Value { get; set; }
+    /// <summary>Raised with the value of the selected node when the user selects one.</summary>
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    /// <summary>
+    /// Semantic color of the tree: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
     /// <summary>Accessible name of the tree.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the tree, see <see cref="TreeUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TreeUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
@@ -48,6 +56,7 @@
     private static IEnumerable<NodeInfo> Nodes(IReadOnlyList<KlyTreeItem> items, string path) =>
         items.Select((item, i) => new NodeInfo(item, $"{path}-{i}"));
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("tree");

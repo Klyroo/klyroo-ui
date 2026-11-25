@@ -14,12 +14,19 @@ public sealed class SlotClasses : IReadOnlyDictionary<string, string>
 
     internal void Set(string slot, string classes) => _items[slot] = classes;
 
+    /// <summary>The classes added to a slot. Throws when the slot has none.</summary>
     public string this[string key] => _items[key];
+    /// <summary>The names of the slots that have classes.</summary>
     public IEnumerable<string> Keys => _items.Keys;
+    /// <summary>The classes of each slot.</summary>
     public IEnumerable<string> Values => _items.Values;
+    /// <summary>The number of slots that have classes.</summary>
     public int Count => _items.Count;
+    /// <summary>Whether the slot has classes.</summary>
     public bool ContainsKey(string key) => _items.ContainsKey(key);
+    /// <summary>Gets the classes of a slot, if it has any.</summary>
     public bool TryGetValue(string key, out string value) => _items.TryGetValue(key, out value!);
+    /// <summary>Enumerates the slots and their classes.</summary>
     public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => _items.GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
@@ -35,7 +42,9 @@ public sealed class CompoundVariant
         Classes = classes;
     }
 
+    /// <summary>The variant values that must all match, by variant name.</summary>
     public IReadOnlyDictionary<string, string> When { get; }
+    /// <summary>The classes added to each slot when every condition of <see cref="When"/> matches.</summary>
     public SlotClasses Classes { get; }
 }
 
@@ -62,6 +71,7 @@ public sealed class ComponentTheme
     private readonly List<CompoundVariant> _compounds = [];
     private readonly Dictionary<string, string> _defaults = new(StringComparer.Ordinal);
 
+    /// <summary>Creates a theme with the given slots, the first of which is the root element.</summary>
     public ComponentTheme(string name, params string[] slots)
     {
         Name = name;
@@ -71,6 +81,7 @@ public sealed class ComponentTheme
         }
     }
 
+    /// <summary>Name of the theme, which is the name of its component.</summary>
     public string Name { get; }
 
     /// <summary>Base classes of each slot. The first slot is the root element.</summary>
@@ -81,6 +92,7 @@ public sealed class ComponentTheme
         new MapView<string, Dictionary<string, SlotClasses>, IReadOnlyDictionary<string, SlotClasses>>(
             _variants, values => new MapView<string, SlotClasses, SlotClasses>(values, v => v));
 
+    /// <summary>Classes applied when several variant values match at once.</summary>
     public IReadOnlyList<CompoundVariant> CompoundVariants => new ListView<CompoundVariant>(_compounds);
 
     /// <summary>Variant value used when a component passes none.</summary>
@@ -136,6 +148,9 @@ public sealed class ComponentTheme
         return this;
     }
 
+    /// <summary>Sets the value of a variant that applies when a component does not choose one.</summary>
+    /// <param name="variant">Name of the variant.</param>
+    /// <param name="value">Value to use by default.</param>
     /// <exception cref="InvalidOperationException">The theme has already been resolved by a component.</exception>
     public ComponentTheme Default(string variant, string value)
     {

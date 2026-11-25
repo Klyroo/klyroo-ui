@@ -18,7 +18,11 @@ else
 
     /// <summary>Accessible name of the picker when it is not inside a <see cref="KlyFormField"/> with a label.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Look of the hex field, as a <see cref="FieldVariant"/>.</summary>
     [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the color picker, see <see cref="ColorPickerUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ColorPickerUi? Ui { get; set; }
 
     private string? Hex => Normalize(Value);
@@ -26,6 +30,7 @@ else
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.ColorPicker, new Dictionary<string, string?>
         {

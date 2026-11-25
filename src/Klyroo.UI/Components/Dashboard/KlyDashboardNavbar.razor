@@ -71,6 +71,9 @@ else
 
     /// <summary>Right area: actions, the user menu.</summary>
     [Parameter] public RenderFragment? Right { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the dashboard navbar, see <see cref="DashboardNavbarUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public DashboardNavbarUi? Ui { get; set; }
 
     protected override void OnParametersSet()

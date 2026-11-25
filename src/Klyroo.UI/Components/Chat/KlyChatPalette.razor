@@ -26,6 +26,9 @@
 
     /// <summary>The message form, pinned to the bottom: a <see cref="KlyChatPrompt"/>.</summary>
     [Parameter] public RenderFragment? Prompt { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the chat palette, see <see cref="ChatPaletteUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public ChatPaletteUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

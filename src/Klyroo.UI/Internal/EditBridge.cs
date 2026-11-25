@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Components.Rendering;
 namespace Klyroo.UI.Internal;
 
 /// <summary>Infrastructure of Klyroo form controls; not meant to be used directly. What a custom control needs from an <c>EditForm</c> field: its form name and its validation state.</summary>
+/// <param name="Name">Name under which the field is posted, or null.</param>
+/// <param name="Invalid">Whether the field is invalid and should be marked as such.</param>
+/// <param name="CssClass">Classes from the <c>FieldCssClassProvider</c> of the edit context, or null.</param>
 public readonly record struct EditBinding(string? Name, bool Invalid, string? CssClass = null)
 {
     /// <summary><paramref name="classes"/> followed by the classes of the field's <c>FieldCssClassProvider</c> (valid, modified, invalid, or the app's own), as <c>InputText</c> adds them to its input.</summary>
@@ -33,11 +36,14 @@ internal static class EditBindingExtensions
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class EditBridge : InputBase<string?>
 {
+    /// <summary>The content, given the binding of the field.</summary>
     [Parameter, EditorRequired] public RenderFragment<EditBinding> ChildContent { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder) =>
         builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any(), EditBinding.Of(EditContext, FieldIdentifier))));
 
+    /// <inheritdoc />
     protected override bool TryParseValueFromString(string? value, out string? result, [NotNullWhen(false)] out string? validationErrorMessage)
     {
         result = value;
@@ -53,11 +59,14 @@ public sealed class EditBridge : InputBase<string?>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class FieldBridge<TValue> : InputBase<TValue>
 {
+    /// <summary>The content, given the binding of the field.</summary>
     [Parameter, EditorRequired] public RenderFragment<EditBinding> ChildContent { get; set; } = default!;
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder) =>
         builder.AddContent(0, ChildContent(new EditBinding(NameAttributeValue, EditContext.GetValidationMessages(FieldIdentifier).Any(), EditBinding.Of(EditContext, FieldIdentifier))));
 
+    /// <inheritdoc />
     protected override bool TryParseValueFromString(string? value, [MaybeNullWhen(false)] out TValue result, [NotNullWhen(false)] out string? validationErrorMessage) =>
         throw new NotSupportedException();
 }
@@ -66,7 +75,9 @@ public sealed class FieldBridge<TValue> : InputBase<TValue>
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 public sealed class Defer : ComponentBase
 {
+    /// <summary>The content to render.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder) => builder.AddContent(0, ChildContent);
 }

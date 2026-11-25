@@ -15,20 +15,26 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The avatars to show, as <see cref="KlyAvatarItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyAvatarItem> Items { get; set; } = [];
 
     /// <summary>Most avatars to show; the others collapse into a "+N" avatar. Null shows them all.</summary>
     [Parameter] public int? Max { get; set; }
+    /// <summary>Size of the avatar group, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>
     [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
     private KlySize? _sizeParameter;
 
     /// <summary>Accessible name of the group ("Project members").</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the avatar group, see <see cref="AvatarGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public AvatarGroupUi? Ui { get; set; }
 
     private IEnumerable<KlyAvatarItem> Visible => Max is { } max && max >= 0 ? Items.Take(max) : Items;
     private int Hidden => Max is { } max && max >= 0 ? Math.Max(Items.Count - max, 0) : 0;
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.AvatarGroup, new Dictionary<string, string?>(), Ui, "root");
 }

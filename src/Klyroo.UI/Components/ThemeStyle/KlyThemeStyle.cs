@@ -38,6 +38,7 @@ public sealed partial class KlyThemeStyle : ComponentBase
     /// </summary>
     [Parameter] public string? Scope { get; set; }
 
+    /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
         string? css;

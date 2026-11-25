@@ -47,6 +47,9 @@
     /// base address and leave the page. Pass <c>aria-label</c> to rename the navigation.
     /// </summary>
     [Parameter] public IReadOnlyList<PageLinkItem>? Links { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the page anchors, see <see cref="PageAnchorsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public PageAnchorsUi? Ui { get; set; }
 
     private string? HrefOf(PageLinkItem link)
@@ -58,6 +61,7 @@
         return new Uri(Navigation.Uri).PathAndQuery + href;
     }
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.PageAnchors, new Dictionary<string, string?>(), Ui, "root");
 }

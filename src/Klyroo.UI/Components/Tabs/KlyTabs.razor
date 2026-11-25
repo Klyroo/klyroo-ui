@@ -44,18 +44,28 @@
     private string _id = default!;
     private int _sequence;
 
+    /// <summary>The tabs, as <see cref="KlyTabItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyTabItem> Items { get; set; } = [];
 
     /// <summary>Value of the selected tab. Defaults to the first enabled one.</summary>
     [Parameter] public string? Value { get; set; }
+    /// <summary>Raised with the value of the selected tab when the user picks another one.</summary>
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    /// <summary>Look of the tabs: <c>Pill</c> or <c>Link</c>.</summary>
     [Parameter] public TabsVariant Variant { get; set; } = TabsVariant.Pill;
+    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
+    /// <summary>
+    /// Semantic color of the tabs: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
+    /// </summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
     /// <summary>Accessible name of the tab list.</summary>
     [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the tabs, see <see cref="TabsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public TabsUi? Ui { get; set; }
 
     private string? Current => Value ?? FirstEnabled();
@@ -74,6 +84,7 @@
 
     private static string ValueOf(KlyTabItem item, int index) => item.Value ?? index.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("tabs");

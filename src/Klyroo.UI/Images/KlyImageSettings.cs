@@ -23,6 +23,7 @@ public sealed class KlyImageSettings
     private string _defaultProvider = NoneProvider.ProviderName;
     private volatile bool _frozen;
 
+    /// <summary>Creates the settings with the <c>none</c> provider, the Tailwind breakpoints and the densities 1 and 2.</summary>
     public KlyImageSettings()
     {
         _providers[NoneProvider.ProviderName] = NoneProvider.Instance;

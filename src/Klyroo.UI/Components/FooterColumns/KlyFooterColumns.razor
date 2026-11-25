@@ -47,6 +47,7 @@
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The columns, each a title and a list of links (<see cref="KlyFooterColumn"/>).</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyFooterColumn> Columns { get; set; } = [];
 
     /// <summary>Content before the columns on wide screens: a logo and a short description.</summary>
@@ -59,6 +60,9 @@
     [Parameter] public string? AriaLabel { get; set; }
     /// <summary>Level of the column headings: 3 by default.</summary>
     [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the footer columns, see <see cref="FooterColumnsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public FooterColumnsUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>

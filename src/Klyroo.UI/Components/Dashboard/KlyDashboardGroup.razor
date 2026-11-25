@@ -42,12 +42,17 @@
     /// resizing stays in the browser. Bound sizes are not restored from storage: your state wins.
     /// </summary>
     [Parameter] public IReadOnlyList<double>? Sizes { get; set; }
+    /// <summary>Raised with the size of each panel, as weights in percent, when the user resizes them.</summary>
     [Parameter] public EventCallback<IReadOnlyList<double>> SizesChanged { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the dashboard group, see <see cref="DashboardGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public DashboardGroupUi? Ui { get; set; }
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         SizesChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    /// <inheritdoc />
     protected override void OnParametersSet()
     {
         if (_context is null || _context.Key != StorageKey) _context = new DashboardContext(StorageKey, _sidebarSlots);

@@ -60,7 +60,9 @@ data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "size-4")"
 
     /// <summary>Form field name. A static form posts the chosen files under it.</summary>
     [Parameter] public string? Name { get; set; }
+    /// <summary>The <c>id</c> of the file input, which a <c>label</c> can point at.</summary>
     [Parameter] public string? Id { get; set; }
+    /// <summary>Allows choosing several files.</summary>
     [Parameter] public bool Multiple { get; set; }
 
     /// <summary>The native <c>accept</c> attribute: comma separated extensions (<c>.png</c>) and MIME types (<c>image/*</c>). Also enforced on dropped files.</summary>
@@ -71,8 +73,11 @@ data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "size-4")"
 
     /// <summary>Most files kept at once. Defaults to 1 unless <see cref="Multiple"/>.</summary>
     [Parameter] public int? MaxFiles { get; set; }
+    /// <summary>Disables the input and the drop zone.</summary>
     [Parameter] public bool Disabled { get; set; }
+    /// <summary>Marks the input as required for the browser and for assistive technology.</summary>
     [Parameter] public bool Required { get; set; }
+    /// <summary>Semantic color of the drop zone: a built-in <see cref="KlyColor"/> or the name of a color you defined.</summary>
     [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
     private KlyColor? _colorParameter;
 
@@ -90,12 +95,16 @@ data-icon-close="@IconRender.Svg(Options.Icons, Options.Icons.Close, "size-4")"
     /// with <c>e.GetMultipleFiles()</c> or <c>e.File</c>. Without it, the input is a plain one, which is what static forms need.
     /// </summary>
     [Parameter] public EventCallback<InputFileChangeEventArgs> OnChange { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the file upload, see <see cref="FileUploadUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public FileUploadUi? Ui { get; set; }
 
     private string? _generatedId;
 
     private string ControlId => Id ?? Field?.InputId ?? (_generatedId ??= NewId("fileupload"));
 
+    /// <inheritdoc />
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.FileUpload, new Dictionary<string, string?>
         {

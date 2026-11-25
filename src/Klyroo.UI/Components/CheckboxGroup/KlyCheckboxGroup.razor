@@ -15,9 +15,15 @@ else
 @code {
     private SlotSet _slots = default!;
 
+    /// <summary>The checkboxes of the group, as <see cref="KlyCheckboxItem{TValue}"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyCheckboxItem<TValue>> Items { get; set; } = [];
+    /// <summary>Caption of the group, rendered as the legend of its fieldset.</summary>
     [Parameter] public string? Legend { get; set; }
+    /// <summary>Whether the checkboxes are stacked (<c>Vertical</c>) or side by side (<c>Horizontal</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>
+    /// Per-instance class overrides of the slots of the checkbox group, see <see cref="CheckboxGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
     [Parameter] public CheckboxGroupUi? Ui { get; set; }
 
     protected override void OnParametersSet() =>
