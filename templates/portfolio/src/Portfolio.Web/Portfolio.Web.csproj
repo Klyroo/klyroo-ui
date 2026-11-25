@@ -6,11 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <!-- Tailwind compiled by the build (no Node): Styles/app.css becomes app.css, which App.razor links. -->
-    <LuxTailwind>true</LuxTailwind>
+    <KlyrooTailwind>true</KlyrooTailwind>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lux.UI" />
+    <PackageReference Include="Klyroo.UI" />
     <PackageReference Include="Markdig" />
     <PackageReference Include="YamlDotNet" />
   </ItemGroup>
@@ -20,10 +20,10 @@
     <None Update="content/**" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <!-- Fonts are downloaded at build time and served from the site's own origin (LxFonts in App.razor links them). -->
+  <!-- Fonts are downloaded at build time and served from the site's own origin (KlyFonts in App.razor links them). -->
   <ItemGroup>
-    <LuxFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
-    <LuxFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
+    <KlyrooFont Include="Geist" Role="sans" Weights="400..700" Subsets="latin" />
+    <KlyrooFont Include="Geist Mono" Role="mono" Weights="400..600" Subsets="latin" />
   </ItemGroup>
 
 </Project>

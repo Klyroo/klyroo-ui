@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey, scopedCookieName } from '../../src/Lux.UI/js/base-path.js';
+import { basePathFor, cookiePathFor, slugFor, sidebarCookiePrefix, scopedKey, scopedCookieName } from '../../src/Klyroo.UI/js/base-path.js';
 
 test('an app at the root keeps the cookie at /', () => {
   assert.equal(cookiePathFor('https://example.com/'), '/');
@@ -58,21 +58,21 @@ test('the slug of a base path is safe in a cookie name and never ambiguous', () 
 });
 
 test('sidebar cookie names keep the root name and differ for every base path', () => {
-  assert.equal(sidebarCookiePrefix(''), 'lux-sidebar-');
-  assert.equal(sidebarCookiePrefix('/sub'), 'lux-sidebar.sub~~');
+  assert.equal(sidebarCookiePrefix(''), 'klyroo-sidebar-');
+  assert.equal(sidebarCookiePrefix('/sub'), 'klyroo-sidebar.sub~~');
   assert.notEqual(sidebarCookiePrefix('/a'), sidebarCookiePrefix('/b'));
   // The id of a root app can never produce the name of an app below a base: they start differently.
-  assert.ok(!(sidebarCookiePrefix('/sub') + 'app').startsWith('lux-sidebar-'));
+  assert.ok(!(sidebarCookiePrefix('/sub') + 'app').startsWith('klyroo-sidebar-'));
 });
 
 test('storage keys are prefixed below a base path and untouched at the root', () => {
-  assert.equal(scopedKey('', 'lux:dashboard:app:panels'), 'lux:dashboard:app:panels');
-  assert.equal(scopedKey('/sub', 'lux:dashboard:app:panels'), '/sub:lux:dashboard:app:panels');
+  assert.equal(scopedKey('', 'klyroo:dashboard:app:panels'), 'klyroo:dashboard:app:panels');
+  assert.equal(scopedKey('/sub', 'klyroo:dashboard:app:panels'), '/sub:klyroo:dashboard:app:panels');
   assert.notEqual(scopedKey('/a', 'k'), scopedKey('/b', 'k'));
 });
 
 test('a named cookie keeps its name at the root and carries the slug below a path base', () => {
-  assert.equal(scopedCookieName('', 'lux-timezone'), 'lux-timezone');
-  assert.equal(scopedCookieName('/sub', 'lux-timezone'), 'lux-timezone.sub~~');
-  assert.equal(scopedCookieName('/a/b c', 'lux-timezone'), 'lux-timezone.a.b~20c~~');
+  assert.equal(scopedCookieName('', 'klyroo-timezone'), 'klyroo-timezone');
+  assert.equal(scopedCookieName('/sub', 'klyroo-timezone'), 'klyroo-timezone.sub~~');
+  assert.equal(scopedCookieName('/a/b c', 'klyroo-timezone'), 'klyroo-timezone.a.b~20c~~');
 });

@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "../obj/lux/lux.theme.css";
+@import "../obj/klyroo/klyroo.theme.css";
 
 /* Your own CSS goes below the two imports. The build compiles this file with the Tailwind CLI and serves the result at _content/Chat.Shared/app.css. */
 
@@ -15,11 +15,11 @@
   bullets), and an unlayered rule beats a layered one.
 */
 
-.markdown { overflow-wrap: anywhere; font-size: 0.9375rem; line-height: 1.7; color: var(--lux-text); }
+.markdown { overflow-wrap: anywhere; font-size: 0.9375rem; line-height: 1.7; color: var(--klyroo-text); }
 .markdown > :first-child { margin-top: 0; }
 .markdown > :last-child { margin-bottom: 0; }
 .markdown p { margin: 0.75rem 0; }
-.markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 { margin: 1.5rem 0 0.5rem; color: var(--lux-text-highlighted); font-weight: 600; line-height: 1.35; }
+.markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 { margin: 1.5rem 0 0.5rem; color: var(--klyroo-text-highlighted); font-weight: 600; line-height: 1.35; }
 .markdown h2 { font-size: 1.25rem; }
 .markdown h3 { font-size: 1.0625rem; }
 .markdown h4, .markdown h5, .markdown h6 { font-size: 0.9375rem; }
@@ -27,15 +27,15 @@
 .markdown ul { list-style: disc; }
 .markdown ol { list-style: decimal; }
 .markdown li { margin: 0.25rem 0; padding-inline-start: 0.25rem; }
-.markdown li::marker { color: var(--lux-text-muted); }
-.markdown strong { color: var(--lux-text-highlighted); font-weight: 600; }
-.markdown a { color: var(--lux-primary-text); text-decoration: underline; text-underline-offset: 2px; }
+.markdown li::marker { color: var(--klyroo-text-muted); }
+.markdown strong { color: var(--klyroo-text-highlighted); font-weight: 600; }
+.markdown a { color: var(--klyroo-primary-text); text-decoration: underline; text-underline-offset: 2px; }
 .markdown a:hover { text-decoration-thickness: 2px; }
-.markdown blockquote { margin: 0.75rem 0; padding: 0.125rem 0 0.125rem 1rem; border-inline-start: 3px solid var(--lux-border-accented); color: var(--lux-text-toned); }
-.markdown hr { margin: 1.5rem 0; border: 0; border-top: 1px solid var(--lux-border); }
-.markdown :not(pre) > code { padding: 0.125rem 0.375rem; border-radius: calc(var(--lux-radius) * 0.6); background: var(--lux-bg-elevated); font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.85em; color: var(--lux-text-highlighted); }
+.markdown blockquote { margin: 0.75rem 0; padding: 0.125rem 0 0.125rem 1rem; border-inline-start: 3px solid var(--klyroo-border-accented); color: var(--klyroo-text-toned); }
+.markdown hr { margin: 1.5rem 0; border: 0; border-top: 1px solid var(--klyroo-border); }
+.markdown :not(pre) > code { padding: 0.125rem 0.375rem; border-radius: calc(var(--klyroo-radius) * 0.6); background: var(--klyroo-bg-elevated); font-family: var(--font-mono, ui-monospace, monospace); font-size: 0.85em; color: var(--klyroo-text-highlighted); }
 
-/* Token colors of the code blocks, each at least 4.5:1 on the block background (--lux-bg-elevated) in light and in dark mode. */
+/* Token colors of the code blocks, each at least 4.5:1 on the block background (--klyroo-bg-elevated) in light and in dark mode. */
 :root {
   --tok-comment: #565c60;
   --tok-string: #136238;
@@ -73,8 +73,8 @@
 .code-block {
   position: relative;
   margin: 1rem 0;
-  border-radius: var(--lux-radius);
-  background: var(--lux-bg-elevated);
+  border-radius: var(--klyroo-radius);
+  background: var(--klyroo-bg-elevated);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -89,7 +89,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--lux-text-toned);
+  color: var(--klyroo-text-toned);
 }
 
 .code-block[data-language="text"]::before { content: ""; }
@@ -98,13 +98,13 @@
   margin: 0;
   padding: 2.75rem 1rem 1rem;
   overflow-x: auto;
-  border-radius: var(--lux-radius);
+  border-radius: var(--klyroo-radius);
   background: transparent;
   font-family: var(--font-mono, ui-monospace, monospace);
   tab-size: 2;
 }
 
-.code-block pre:focus-visible { outline: 2px solid var(--lux-text-highlighted); outline-offset: -2px; }
+.code-block pre:focus-visible { outline: 2px solid var(--klyroo-text-highlighted); outline-offset: -2px; }
 .code-block pre code { padding: 0; background: transparent; font-size: inherit; white-space: pre; }
 
 .code-copy {
@@ -115,42 +115,42 @@
   min-width: 4rem;
   min-height: 1.75rem;
   padding: 0 0.625rem;
-  border: 1px solid var(--lux-border-accented);
-  border-radius: calc(var(--lux-radius) * 0.75);
-  background: var(--lux-bg);
-  color: var(--lux-text-highlighted);
+  border: 1px solid var(--klyroo-border-accented);
+  border-radius: calc(var(--klyroo-radius) * 0.75);
+  background: var(--klyroo-bg);
+  color: var(--klyroo-text-highlighted);
   font-size: 0.75rem;
   line-height: 1;
   cursor: pointer;
 }
 
-.code-copy:hover { background: var(--lux-bg-accented); }
-.code-copy:focus-visible { outline: 2px solid var(--lux-text-highlighted); outline-offset: 2px; }
+.code-copy:hover { background: var(--klyroo-bg-accented); }
+.code-copy:focus-visible { outline: 2px solid var(--klyroo-text-highlighted); outline-offset: 2px; }
 
 /* Read by screen readers when the copy worked, not shown. */
 .code-copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-/* Callouts (> [!NOTE]) look like a soft LxAlert: the color of data-color at 10% for the fill, its text color for the words. */
-.callout { margin: 1rem 0; padding: 0.75rem 1rem; border-radius: var(--lux-radius); background: color-mix(in oklab, var(--lx-color) 10%, transparent); color: var(--lx-color-text); font-size: 0.875rem; }
+/* Callouts (> [!NOTE]) look like a soft KlyAlert: the color of data-color at 10% for the fill, its text color for the words. */
+.callout { margin: 1rem 0; padding: 0.75rem 1rem; border-radius: var(--klyroo-radius); background: color-mix(in oklab, var(--kly-color) 10%, transparent); color: var(--kly-color-text); font-size: 0.875rem; }
 .callout > * { margin-block: 0.5rem 0; }
 .callout > .callout-title { margin: 0; font-weight: 600; }
 .callout a, .callout code { color: inherit; }
 
 /* A wide table scrolls inside its own box instead of widening the page. */
 .table-scroll { margin: 1rem 0; overflow-x: auto; }
-.table-scroll:focus-visible { outline: 2px solid var(--lux-text-highlighted); outline-offset: 2px; }
+.table-scroll:focus-visible { outline: 2px solid var(--klyroo-text-highlighted); outline-offset: 2px; }
 .table-scroll table { width: 100%; border-collapse: collapse; font-size: 0.875rem; line-height: 1.5; }
-.table-scroll th, .table-scroll td { padding: 0.5rem 0.75rem; border: 1px solid var(--lux-border); text-align: start; vertical-align: top; }
-.table-scroll th { background: var(--lux-bg-elevated); color: var(--lux-text-highlighted); font-weight: 600; white-space: nowrap; }
+.table-scroll th, .table-scroll td { padding: 0.5rem 0.75rem; border: 1px solid var(--klyroo-border); text-align: start; vertical-align: top; }
+.table-scroll th { background: var(--klyroo-bg-elevated); color: var(--klyroo-text-highlighted); font-weight: 600; white-space: nowrap; }
 
 /* Task lists: no bullet, the box in its place. */
 .contains-task-list { list-style: none; padding-inline-start: 0.25rem; }
-.task-list-item input { margin-inline-end: 0.5rem; accent-color: var(--lux-primary-text); }
+.task-list-item input { margin-inline-end: 0.5rem; accent-color: var(--klyroo-primary-text); }
 
 /* Footnotes and definition lists. */
-.footnotes { margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid var(--lux-border); color: var(--lux-text-muted); font-size: 0.8125rem; }
+.footnotes { margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid var(--klyroo-border); color: var(--klyroo-text-muted); font-size: 0.8125rem; }
 .footnote-ref { font-size: 0.75em; vertical-align: super; }
-.markdown dt { margin-top: 0.75rem; font-weight: 600; color: var(--lux-text-highlighted); }
+.markdown dt { margin-top: 0.75rem; font-weight: 600; color: var(--klyroo-text-highlighted); }
 .markdown dd { margin-inline-start: 1.5rem; }
 
 /* Text that could not be read as Markdown is shown as the text it is. */

@@ -1,0 +1,109 @@
+@namespace Klyroo.UI
+@typeparam TValue
+@inherits KlyFieldBase<TValue>
+@implements IDisposable
+
+@* role="radiogroup" (not the fieldset's implicit "group") is what supports aria-invalid and aria-required. *@
+<fieldset id="@ControlId" role="radiogroup" class="@_slots["root"]" data-color="@Color.Value" disabled="@Disabled"
+          aria-labelledby="@(Legend is null ? Field?.LabelId : null)" aria-describedby="@Field?.DescribedBy"
+          aria-invalid="@(Invalid ? "true" : null)" aria-required="@(Required || Field?.Required == true ? "true" : null)"
+          @attributes="AdditionalAttributes">
+    @if (Legend is not null)
+    {
+        <legend class="@_slots["legend"]">@Legend</legend>
+    }
+    @if (UseEditContext)
+    {
+        <InputRadioGroup TValue="TValue" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression">
+            <div class="@_slots["fieldset"]">
+                @for (var i = 0; i < Items.Count; i++)
+                {
+                    @Item(Items[i], i, edit: true)
+                }
+            </div>
+        </InputRadioGroup>
+    }
+    else
+    {
+        <div class="@_slots["fieldset"]">
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                @Item(Items[i], i, edit: false)
+            }
+        </div>
+    }
+</fieldset>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<KlyRadioItem<TValue>> Items { get; set; } = [];
+    [Parameter] public string? Legend { get; set; }
+    [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    [Parameter] public RadioGroupUi? Ui { get; set; }
+
+    private EditContext? _subscribed;
+
+    private string GroupName => Name ?? ControlId;
+
+    // Inside an EditForm, from validation; elsewhere, from the enclosing form field.
+    private bool Invalid => UseEditContext
+        ? EditContext!.GetValidationMessages(FieldIdentifier.Create(ValueExpression!)).Any()
+        : Field?.Invalid == true;
+
+    protected override void OnParametersSet()
+    {
+        // InputRadioGroup re-renders itself on validation changes, but the fieldset carrying aria-invalid is ours.
+        if (!ReferenceEquals(_subscribed, EditContext))
+        {
+            if (_subscribed is not null) _subscribed.OnValidationStateChanged -= OnValidationStateChanged;
+            _subscribed = EditContext;
+            if (_subscribed is not null) _subscribed.OnValidationStateChanged += OnValidationStateChanged;
+        }
+
+        _slots = ResolveSlots(Options.RadioGroup, new Dictionary<string, string?>
+        {
+            ["size"] = VariantValue.Of(EffectiveSize),
+            ["orientation"] = Orientation == KlyOrientation.Horizontal ? "horizontal" : "vertical",
+        }, Ui, "root");
+    }
+
+    private void OnValidationStateChanged(object? sender, ValidationStateChangedEventArgs e) => StateHasChanged();
+
+    public void Dispose()
+    {
+        if (_subscribed is not null) _subscribed.OnValidationStateChanged -= OnValidationStateChanged;
+    }
+
+    private RenderFragment Item(KlyRadioItem<TValue> item, int index, bool edit)
+    {
+        var id = $"{ControlId}-{index}";
+        var descriptionId = item.Description is null ? null : id + "-description";
+        return @<div class="@_slots["item"]">
+            <div class="@_slots["container"]">
+                @if (edit)
+                {
+                    <InputRadio TValue="TValue" Value="item.Value" id="@id" class="@_slots["base"]" disabled="@(item.Disabled || Disabled)" aria-describedby="@descriptionId" />
+                }
+                else
+                {
+                    <input type="radio" id="@id" name="@GroupName" value="@Format(item.Value)" checked="@IsSelected(item.Value)"
+                           disabled="@(item.Disabled || Disabled)" aria-describedby="@descriptionId" class="@_slots["base"]"
+                           @onchange="(ValueChanged.HasDelegate ? EventCallback.Factory.Create<ChangeEventArgs>(this, () => SetValue(item.Value)) : default)" />
+                }
+                <span class="@_slots["indicator"]" aria-hidden="true"></span>
+            </div>
+            <div class="@_slots["wrapper"]">
+                <label for="@id" class="@_slots["label"]">@item.Label</label>
+                @if (item.Description is not null)
+                {
+                    <p id="@descriptionId" class="@_slots["description"]">@item.Description</p>
+                }
+            </div>
+        </div>;
+    }
+
+    private bool IsSelected(TValue value) => EqualityComparer<TValue>.Default.Equals(value, Value);
+
+    private static string? Format(TValue value) => Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture);
+}

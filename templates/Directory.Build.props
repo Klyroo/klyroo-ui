@@ -4,11 +4,13 @@
     has a Directory.Build.props or Directory.Build.targets: the settings live in each project file, like the output of `dotnet new`.
 
     This file stops MSBuild from importing the repository's own Directory.Build.props (central package versions of the library, warnings as errors
-    for its sources) and sets what the templates need while they are built from here. Directory.Build.targets, next to it, swaps the Lux.UI package
+    for its sources) and sets what the templates need while they are built from here. Directory.Build.targets, next to it, swaps the Klyroo.UI package
     for the source of this repository. The nearest Directory.Packages.props is the one of the template, so its package versions are the ones used.
   -->
   <PropertyGroup>
-    <LuxRepoRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..'))</LuxRepoRoot>
+    <KlyrooRepoRoot>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..'))</KlyrooRepoRoot>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- The template apps are not libraries: `dotnet pack` of the solution must only produce the Klyroo.UI packages. -->
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>

@@ -1,0 +1,204 @@
+<Project>
+  <!--
+    Tailwind compiled at build time, without Node. Opt in with
+
+      <KlyrooTailwind>true</KlyrooTailwind>
+
+    The KlyrooResolveTailwind task finds the official standalone Tailwind CLI for the machine that builds (downloaded once from the GitHub
+    release into the cache, checked against a SHA-256 embedded in the package, executable bit set on Unix), then the CLI compiles the
+    project's stylesheet. The stylesheet is the usual Tailwind v4 entry, which imports Tailwind and the Klyroo theme that
+    Klyroo.UI.targets copies to obj/klyroo/klyroo.theme.css (the theme also lists the classes the Klyroo components use, so they are
+    generated too):
+
+      @import "tailwindcss";
+      @import "../obj/klyroo/klyroo.theme.css";
+
+    The CLI finds the project's .razor, .cs and .html files itself (from the project folder, skipping what .gitignore ignores); use
+    @source in the stylesheet for anything else. The result is not written into the source tree: it is generated into
+    obj/<config>/<tfm>/klyroo/tailwind/ and added to the static web assets, so it is served at app.css from a Web project and at
+    _content/<Rcl>/app.css from a Razor class library (StaticWebAssetBasePath), for any host that references it (Web, MAUI Blazor Hybrid).
+
+      KlyrooTailwind=true            turns the feature on (default false).
+      KlyrooTailwindInput            the stylesheet to compile (default Styles/app.css, relative to the project).
+      KlyrooTailwindAssetPath        where the result is served, below the project's base path (default app.css).
+      KlyrooTailwindMinify           minifies the CSS (default: true in Release).
+      KlyrooTailwindExecutable       a Tailwind binary to use instead of the download (no download, no checksum).
+      KlyrooTailwindVersion          the release to download (default 4.3.5, the only one with embedded checksums).
+      KlyrooTailwindCacheDir         the cache of binaries (default: one per user, shared by every project: ~/.klyroo/tailwind on Linux and
+                                   macOS, %LOCALAPPDATA%\Klyroo\tailwind on Windows). A binary is hashed once; a stamp (size and modification time)
+                                   lets later builds skip the hash, and a file that changed since is hashed again and deleted if it differs.
+      KlyrooOffline=true             never download: the binary must already be in the cache or KlyrooTailwindExecutable.
+
+    KlyrooTailwindAdditionalInput    files outside the project that the stylesheet reads (items, globs allowed), for a shared project that an
+                                   @source in the stylesheet points at:
+                                     <KlyrooTailwindAdditionalInput Include="../Shared/**/*.razor;../Shared/**/*.cs" />
+
+    The compile runs again only when a .razor, .cs, .cshtml, .html or .css file of the project, the stylesheet (even outside the project), an
+    additional input, the theme, the binary or the minify setting changed. The result lives under obj, which is not an input, so a watch loop
+    does not feed itself. Design-time builds do not run it, and neither does a build with NoBuild (dotnet publish with the no-build option): the stylesheet is
+    then already in the build's static web assets.
+  -->
+  <PropertyGroup>
+    <KlyrooTailwind Condition="'$(KlyrooTailwind)' == ''">false</KlyrooTailwind>
+    <KlyrooTailwindVersion Condition="'$(KlyrooTailwindVersion)' == ''">4.3.5</KlyrooTailwindVersion>
+    <KlyrooTailwindInput Condition="'$(KlyrooTailwindInput)' == ''">Styles/app.css</KlyrooTailwindInput>
+    <KlyrooTailwindAssetPath Condition="'$(KlyrooTailwindAssetPath)' == ''">app.css</KlyrooTailwindAssetPath>
+    <KlyrooTailwindMinify Condition="'$(KlyrooTailwindMinify)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</KlyrooTailwindMinify>
+  </PropertyGroup>
+
+  <!-- `dotnet watch` rebuilds when the stylesheet changes (it is not a Compile or Content item, so it is not watched otherwise). -->
+  <ItemGroup Condition="'$(KlyrooTailwind)' == 'true'">
+    <Watch Include="$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(KlyrooTailwindInput)))" />
+    <Watch Include="@(KlyrooTailwindAdditionalInput)" />
+  </ItemGroup>
+
+  <!-- Visual Studio's fast up-to-date check only knows Compile, Content and the like: without these it would call a build with an edited stylesheet up to date. -->
+  <ItemGroup Condition="'$(KlyrooTailwind)' == 'true'">
+    <UpToDateCheckInput Include="$(KlyrooTailwindInput)" />
+    <UpToDateCheckInput Include="@(KlyrooTailwindAdditionalInput)" />
+  </ItemGroup>
+
+  <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the paths are computed here. -->
+  <Target Name="_KlyrooTailwindPaths" Condition="'$(KlyrooTailwind)' == 'true'">
+    <PropertyGroup>
+      <_KlyrooTailwindInputFile>$([MSBuild]::NormalizePath($(MSBuildProjectDirectory), $(KlyrooTailwindInput)))</_KlyrooTailwindInputFile>
+      <KlyrooTailwindOutputDir Condition="'$(KlyrooTailwindOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, tailwind))</KlyrooTailwindOutputDir>
+      <_KlyrooTailwindOutputFile>$(KlyrooTailwindOutputDir)$([System.IO.Path]::GetFileName($(KlyrooTailwindAssetPath)))</_KlyrooTailwindOutputFile>
+      <_KlyrooTailwindThemeFile>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))klyroo.theme.css</_KlyrooTailwindThemeFile>
+      <_KlyrooTailwindMinifyArg Condition="'$(KlyrooTailwindMinify)' == 'true'"> --minify</_KlyrooTailwindMinifyArg>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="KlyrooTailwindResolve" DependsOnTargets="_KlyrooTailwindPaths" Condition="'$(KlyrooTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
+    <!-- The Blazor project template ships wwwroot/app.css: two assets at one route is a build error of the SDK that does not say why. -->
+    <Error Code="KLYTW004" Condition="Exists('$(MSBuildProjectDirectory)/wwwroot/$(KlyrooTailwindAssetPath)')"
+           Text="KlyrooTailwind would serve the generated stylesheet at '$(KlyrooTailwindAssetPath)', but the project already has wwwroot/$(KlyrooTailwindAssetPath). Delete that file (and move its CSS into $(KlyrooTailwindInput)), or set KlyrooTailwindAssetPath to another name." />
+    <KlyrooResolveTailwind Executable="$(KlyrooTailwindExecutable)"
+                         Version="$(KlyrooTailwindVersion)"
+                         CacheDir="$(KlyrooTailwindCacheDir)"
+                         Offline="$(KlyrooOffline)">
+      <Output TaskParameter="ExecutablePath" PropertyName="_KlyrooTailwindExe" />
+    </KlyrooResolveTailwind>
+  </Target>
+
+  <!--
+    Inputs and Outputs make MSBuild skip the compile when the output is newer than every input. The binary is an input so a version change
+    recompiles; the output is under obj, which the glob leaves out.
+  -->
+  <Target Name="KlyrooTailwindBuild"
+          BeforeTargets="ResolveProjectStaticWebAssets"
+          DependsOnTargets="KlyrooTailwindResolve"
+          Condition="'$(KlyrooTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'"
+          Inputs="@(_KlyrooTailwindInput)"
+          Outputs="$(_KlyrooTailwindOutputFile)">
+    <Error Code="KLYTW003" Condition="!Exists('$(_KlyrooTailwindInputFile)')"
+           Text="KlyrooTailwind is on but the stylesheet '$(_KlyrooTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/klyroo/klyroo.theme.css&quot;;  or set KlyrooTailwindInput to your stylesheet." />
+    <MakeDir Directories="$(KlyrooTailwindOutputDir)" />
+    <Exec Command="&quot;$(_KlyrooTailwindExe)&quot; --input &quot;$(_KlyrooTailwindWrapper)&quot; --output &quot;$(_KlyrooTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_KlyrooTailwindMinifyArg)"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          StandardOutputImportance="low"
+          StandardErrorImportance="high"
+          IgnoreStandardErrorWarningFormat="true" />
+    <!-- The CLI does not rewrite an output whose content is unchanged, so after an edit that changes no CSS (a comment in a .cs file) the output would stay older than the inputs and this target would run on every build. -->
+    <Touch Files="$(_KlyrooTailwindOutputFile)" />
+  </Target>
+
+  <!--
+    The inputs are listed after the resolve target (Inputs are read when KlyrooTailwindBuild is about to run, after its dependencies).
+    obj and bin are left out: the output is there.
+  -->
+  <Target Name="_KlyrooTailwindCollectInputs" BeforeTargets="KlyrooTailwindBuild" DependsOnTargets="KlyrooTailwindResolve" Condition="'$(KlyrooTailwind)' == 'true' And '$(DesignTimeBuild)' != 'true' And '$(NoBuild)' != 'true'">
+    <PropertyGroup>
+      <_KlyrooTailwindObj>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath)))</_KlyrooTailwindObj>
+      <_KlyrooTailwindBin>$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseOutputPath)))</_KlyrooTailwindBin>
+    </PropertyGroup>
+    <MakeDir Directories="$(KlyrooTailwindOutputDir)" />
+    <!--
+      The CLI scans the project folder for class names, and without a .gitignore that includes obj and bin (generated sources, the
+      output itself). A small entry in obj imports the app's stylesheet and takes both out of the scan. Paths are relative to it, with
+      forward slashes, which is what CSS wants on every OS.
+    -->
+    <PropertyGroup>
+      <_KlyrooTailwindState>minify=$(KlyrooTailwindMinify) binary=$(_KlyrooTailwindExe)</_KlyrooTailwindState>
+      <_KlyrooTailwindWrapper>$(KlyrooTailwindOutputDir)klyroo.tailwind.input.css</_KlyrooTailwindWrapper>
+      <_KlyrooTailwindRelImport>$([MSBuild]::MakeRelative($(KlyrooTailwindOutputDir), $(_KlyrooTailwindInputFile)).Replace('\', '/'))</_KlyrooTailwindRelImport>
+      <_KlyrooTailwindRelObj>$([MSBuild]::MakeRelative($(KlyrooTailwindOutputDir), $(_KlyrooTailwindObj)).Replace('\', '/'))</_KlyrooTailwindRelObj>
+      <_KlyrooTailwindRelBin>$([MSBuild]::MakeRelative($(KlyrooTailwindOutputDir), $(_KlyrooTailwindBin)).Replace('\', '/'))</_KlyrooTailwindRelBin>
+      <!-- A sister package that has no precompiled stylesheet (Klyroo.UI.Tools) sets KlyrooToolsPresent: its theme (the classes of its components) is imported here, so the app only adds the package. -->
+      <_KlyrooTailwindToolsImport Condition="'$(KlyrooToolsPresent)' == 'true'">;@import &quot;$([MSBuild]::MakeRelative($(KlyrooTailwindOutputDir), $(_KlyrooTailwindObj)klyroo/klyroo-tools.theme.css).Replace('\', '/'))&quot;%3B</_KlyrooTailwindToolsImport>
+    </PropertyGroup>
+    <WriteLinesToFile File="$(_KlyrooTailwindWrapper)"
+                      Lines="/* Generated by Klyroo.UI: the app's stylesheet, with obj and bin left out of the class scan. $(_KlyrooTailwindState) */;@import &quot;$(_KlyrooTailwindRelImport)&quot;%3B$(_KlyrooTailwindToolsImport);@source not &quot;$(_KlyrooTailwindRelObj)&quot;%3B;@source not &quot;$(_KlyrooTailwindRelBin)&quot;%3B"
+                      Overwrite="true"
+                      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <_KlyrooTailwindInput Include="$(MSBuildProjectDirectory)/**/*.razor;$(MSBuildProjectDirectory)/**/*.cs;$(MSBuildProjectDirectory)/**/*.cshtml;$(MSBuildProjectDirectory)/**/*.html;$(MSBuildProjectDirectory)/**/*.css"
+                          Exclude="$(_KlyrooTailwindObj)**;$(_KlyrooTailwindBin)**;$(MSBuildProjectDirectory)/node_modules/**" />
+      <_KlyrooTailwindInput Include="$(_KlyrooTailwindThemeFile)" Condition="Exists('$(_KlyrooTailwindThemeFile)')" />
+      <_KlyrooTailwindInput Include="$(_KlyrooTailwindObj)klyroo/klyroo-tools.theme.css" Condition="'$(KlyrooToolsPresent)' == 'true' And Exists('$(_KlyrooTailwindObj)klyroo/klyroo-tools.theme.css')" />
+      <!-- The wrapper holds the minify setting and the binary: changing either rewrites it, which makes it newer than the output. -->
+      <_KlyrooTailwindInput Include="$(_KlyrooTailwindExe);$(_KlyrooTailwindWrapper);$(MSBuildProjectFullPath);$(MSBuildThisFileFullPath)" />
+      <!-- The stylesheet may live outside the project folder, and so may what it reads (KlyrooTailwindAdditionalInput). -->
+      <_KlyrooTailwindInput Include="$(_KlyrooTailwindInputFile)" />
+      <_KlyrooTailwindInput Include="@(KlyrooTailwindAdditionalInput)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    For `dotnet watch`: run it in a second terminal, next to the watch,
+
+      dotnet build -t:KlyrooTailwindWatch        (dotnet msbuild -t:KlyrooTailwindWatch does the same)
+
+    It resolves and verifies the binary exactly like the build does, then runs the CLI in the foreground with its own file watcher, on the
+    same entry file and the same output in obj, so the next page reload serves the new CSS. Ctrl+C ends it: MSBuild cancels the Exec task,
+    which stops the CLI with it. The project must have been built once (the theme is copied and the stylesheet defined by a build), and
+    nothing else runs: no static web assets, no compile.
+  -->
+  <Target Name="KlyrooTailwindWatch" DependsOnTargets="KlyrooTailwindResolve;_KlyrooTailwindCollectInputs" Condition="'$(KlyrooTailwind)' == 'true'">
+    <Error Code="KLYTW003" Condition="!Exists('$(_KlyrooTailwindInputFile)')"
+           Text="KlyrooTailwind is on but the stylesheet '$(_KlyrooTailwindInputFile)' does not exist. Create it with  @import &quot;tailwindcss&quot;;  and  @import &quot;../obj/klyroo/klyroo.theme.css&quot;;  or set KlyrooTailwindInput to your stylesheet." />
+    <Message Importance="high" Text="Tailwind is watching $(MSBuildProjectName); the CSS is regenerated into $(_KlyrooTailwindOutputFile). Reload the page after an edit. Ctrl+C stops it." />
+    <Exec Command="&quot;$(_KlyrooTailwindExe)&quot; --input &quot;$(_KlyrooTailwindWrapper)&quot; --output &quot;$(_KlyrooTailwindOutputFile)&quot; --cwd &quot;$(MSBuildProjectDirectory)&quot;$(_KlyrooTailwindMinifyArg) --watch=always"
+          WorkingDirectory="$(MSBuildProjectDirectory)"
+          StandardOutputImportance="high"
+          StandardErrorImportance="high"
+          IgnoreStandardErrorWarningFormat="true" />
+  </Target>
+
+  <!--
+    The result lives in obj, not in wwwroot, so it is defined here with its own content root instead of being discovered (the same way as
+    the fonts). BasePath is the project's: the root for a Web project, _content/<Rcl> for a Razor class library.
+  -->
+  <Target Name="KlyrooTailwindDefineAssets" AfterTargets="ResolveProjectStaticWebAssets" DependsOnTargets="_KlyrooTailwindPaths" Condition="'$(KlyrooTailwind)' == 'true' And '$(NoBuild)' != 'true' And Exists('$(_KlyrooTailwindOutputFile)')">
+    <ItemGroup>
+      <_KlyrooTailwindCandidate Include="$(_KlyrooTailwindOutputFile)" RelativePath="$(KlyrooTailwindAssetPath)" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets CandidateAssets="@(_KlyrooTailwindCandidate)"
+                           SourceType="Computed"
+                           SourceId="$(PackageId)"
+                           ContentRoot="$(KlyrooTailwindOutputDir)"
+                           BasePath="$(StaticWebAssetBasePath)"
+                           AssetKind="All"
+                           AssetMode="All"
+                           AssetRole="Primary"
+                           AssetMergeSource="$(StaticWebAssetMergeTarget)"
+                           FingerprintCandidates="$(StaticWebAssetsFingerprintContent)"
+                           FingerprintPatterns="@(StaticWebAssetFingerprintPattern)"
+                           CopyToOutputDirectory="Never"
+                           CopyToPublishDirectory="PreserveNewest">
+      <Output TaskParameter="Assets" ItemName="_KlyrooTailwindAsset" />
+    </DefineStaticWebAssets>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_KlyrooTailwindAsset)"
+                                   ContentTypeMappings="@(StaticWebAssetContentTypeMapping)">
+      <Output TaskParameter="Endpoints" ItemName="_KlyrooTailwindEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <ItemGroup>
+      <StaticWebAsset Include="@(_KlyrooTailwindAsset)" />
+      <StaticWebAssetEndpoint Include="@(_KlyrooTailwindEndpoint)" />
+      <FileWrites Include="$(_KlyrooTailwindOutputFile)" />
+    </ItemGroup>
+  </Target>
+</Project>

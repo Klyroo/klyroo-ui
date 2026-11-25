@@ -1,4 +1,4 @@
-namespace Lux.Templates.Content;
+namespace Klyroo.Templates.Content;
 
 /// <summary>How a content folder is read and rendered.</summary>
 public sealed class ContentOptions

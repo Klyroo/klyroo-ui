@@ -1,41 +1,41 @@
 @inherits LayoutComponentBase
 
-<LxApp>
-    <LxSkipLink />
+<KlyApp>
+    <KlySkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. *@
-    <LxHeader Items="SiteContent.Navigation" AriaLabel="@SiteContent.HeaderLabel" MenuTitle="@SiteContent.HeaderMenuTitle">
+    <KlyHeader Items="SiteContent.Navigation" AriaLabel="@SiteContent.HeaderLabel" MenuTitle="@SiteContent.HeaderMenuTitle">
         <Left>
-            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                <LxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                <KlyIcon Name="ph:paper-plane-tilt" Class="size-6" />
                 <span>@SiteContent.Name</span>
             </a>
         </Left>
         <Right>
-            <LxLocaleSelect Size="LxSize.Sm" />
-            <LxColorModeButton Size="LxSize.Sm" />
-            <LxButton Label="@SiteContent.HeaderButtonLabel" Href="@SiteContent.SignUpUrl" Size="LxSize.Sm" Class="ms-1 hidden sm:inline-flex" />
+            <KlyLocaleSelect Size="KlySize.Sm" />
+            <KlyColorModeButton Size="KlySize.Sm" />
+            <KlyButton Label="@SiteContent.HeaderButtonLabel" Href="@SiteContent.SignUpUrl" Size="KlySize.Sm" Class="ms-1 hidden sm:inline-flex" />
         </Right>
-    </LxHeader>
+    </KlyHeader>
 
-    <LxMain id="main" tabindex="-1" class="focus:outline-none">
+    <KlyMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </LxMain>
+    </KlyMain>
 
-    <LxFooter>
+    <KlyFooter>
         <Top>
-            <LxFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="@SiteContent.FooterLabel">
+            <KlyFooterColumns Columns="SiteContent.FooterColumns" AriaLabel="@SiteContent.FooterLabel">
                 <Left>
-                    <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                        <LxIcon Name="ph:paper-plane-tilt" Class="size-6" />
+                    <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                        <KlyIcon Name="ph:paper-plane-tilt" Class="size-6" />
                         <span>@SiteContent.Name</span>
                     </a>
-                    <p class="mt-3 max-w-xs text-sm text-(--lux-text-muted)">@SiteContent.Tagline</p>
+                    <p class="mt-3 max-w-xs text-sm text-(--klyroo-text-muted)">@SiteContent.Tagline</p>
                 </Left>
-            </LxFooterColumns>
+            </KlyFooterColumns>
         </Top>
         <Left>
-            <p class="text-sm text-(--lux-text-muted)">@SiteContent.Copyright</p>
+            <p class="text-sm text-(--klyroo-text-muted)">@SiteContent.Copyright</p>
         </Left>
-    </LxFooter>
-</LxApp>
+    </KlyFooter>
+</KlyApp>

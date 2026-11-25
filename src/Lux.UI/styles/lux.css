@@ -1,6 +1,0 @@
-/* Entry of wwwroot/lux.css: the stylesheet for apps without Tailwind. Generated, do not edit the output. */
-@layer theme, base, components, utilities;
-@import 'tailwindcss/theme.css' layer(theme);
-@import 'tailwindcss/utilities.css' layer(utilities) source(none);
-@import './lux.base.css';
-@source './generated/classes.txt';

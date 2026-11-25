@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { DIRECTIONS, pickNext, score } from '../../src/Lux.UI/js/spatial-core.js';
+import { DIRECTIONS, pickNext, score } from '../../src/Klyroo.UI/js/spatial-core.js';
 
 const box = (left, top, width = 100, height = 40) => ({ left, top, right: left + width, bottom: top + height });
 

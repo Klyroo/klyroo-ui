@@ -11,7 +11,7 @@ using Markdig.Renderers.Html;
 using Markdig.Syntax;
 using Markdig.Syntax.Inlines;
 
-namespace Lux.Templates.Content;
+namespace Klyroo.Templates.Content;
 
 /// <summary>A heading of a page: the <c>id</c> the renderer gave it, its text and its level (2 for an <c>h2</c>).</summary>
 public sealed record MarkdownHeading(string Id, string Text, int Level);

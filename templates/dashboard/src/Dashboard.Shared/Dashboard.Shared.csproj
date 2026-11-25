@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Tailwind compiled by the build (no Node): Styles/app.css becomes _content/Dashboard.Shared/app.css, for the web host and the MAUI app. -->
-    <LuxTailwind>true</LuxTailwind>
+    <KlyrooTailwind>true</KlyrooTailwind>
   </PropertyGroup>
 
   <ItemGroup>
@@ -14,13 +14,13 @@
 
   <!-- Icons the build cannot see because the page picks the name at run time (a variable, a condition). The ones written as literals are found by the build. -->
   <ItemGroup>
-    <LuxIcon Include="lucide:trending-up;lucide:trending-down;lucide:monitor;lucide:smartphone;lucide:laptop" />
+    <KlyrooIcon Include="lucide:trending-up;lucide:trending-down;lucide:monitor;lucide:smartphone;lucide:laptop" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lux.UI" />
-    <!-- The data table of the Customers page is LxDataList. Tools has no precompiled stylesheet: LuxTailwind (above) compiles its classes too. -->
-    <PackageReference Include="Lux.Table" />
+    <PackageReference Include="Klyroo.UI" />
+    <!-- The data table of the Customers page is KlyDataList. Tools has no precompiled stylesheet: KlyrooTailwind (above) compiles its classes too. -->
+    <PackageReference Include="Klyroo.Table" />
   </ItemGroup>
 
 </Project>

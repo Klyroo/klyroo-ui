@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -11,5 +11,5 @@ builder.Services.AddRemoteAssistant(new Uri(builder.HostEnvironment.BaseAddress)
 
 var host = builder.Build();
 // The client has no request: take the culture the server rendered with (meta element, cookie, lang attribute), so both pick the same locale.
-await host.Services.ApplyServerCultureAsync(LxLocales.All.Select(locale => locale.Code));
+await host.Services.ApplyServerCultureAsync(KlyLocales.All.Select(locale => locale.Code));
 await host.RunAsync();

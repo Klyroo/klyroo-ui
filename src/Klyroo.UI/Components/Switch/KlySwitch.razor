@@ -1,0 +1,36 @@
+@namespace Klyroo.UI
+@inherits KlyFieldBase<bool>
+
+<div class="@_slots["root"]" data-color="@Color.Value" data-disabled="@(Disabled ? "" : null)">
+    @* A label, so the hit area that reaches 44px on a touch screen (an ::after of the container) toggles the input. *@
+    <label class="@_slots["container"]">
+        @if (UseEditContext)
+        {
+            @* Inside an EditForm: validation, aria-invalid and the form field name come from InputBase. *@
+            <InputCheckbox Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+        }
+        else if (ValueChanged.HasDelegate)
+        {
+            <input type="checkbox" name="@Name" value="true" @bind:get="Value" @bind:set="SetValue" @attributes="Attributes()" />
+        }
+        else
+        {
+            @* Unbound: the browser keeps the state, no change event goes back to .NET. *@
+            <input type="checkbox" name="@Name" value="true" checked="@Value" @attributes="Attributes()" />
+        }
+        <span class="@_slots["thumb"]" aria-hidden="true" data-slot="thumb"></span>
+    </label>
+    @if (Label is not null || Description is not null)
+    {
+        <div class="@_slots["wrapper"]" data-slot="wrapper">
+            @if (Label is not null)
+            {
+                <label for="@ControlId" class="@_slots["label"]" data-slot="label">@Label</label>
+            }
+            @if (Description is not null)
+            {
+                <p id="@DescriptionId" class="@_slots["description"]" data-slot="description">@Description</p>
+            }
+        </div>
+    }
+</div>

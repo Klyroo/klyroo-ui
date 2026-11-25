@@ -11,8 +11,8 @@
     <link rel="alternate" type="application/atom+xml" title="@SiteInfo.FeedTitle" href="feed.xml" />
 </HeadContent>
 
-<LxContainer Class="py-8 lg:py-12">
-    <LxPageHeader Headline="@SiteInfo.Name" Title="@SiteInfo.Title" Description="@SiteInfo.Description" Links="_links" />
+<KlyContainer Class="py-8 lg:py-12">
+    <KlyPageHeader Headline="@SiteInfo.Name" Title="@SiteInfo.Title" Description="@SiteInfo.Description" Links="_links" />
 
     @if (_list is not null)
     {
@@ -23,50 +23,50 @@
     {
         @if (_visible.Count == 0)
         {
-            <LxEmpty Title="No releases yet" Description="This repository has not published a release." HeadingLevel="2" Class="mt-10" />
+            <KlyEmpty Title="No releases yet" Description="This repository has not published a release." HeadingLevel="2" Class="mt-10" />
         }
         else
         {
             @* A timeline: each release is an article with its date, its version, its author and its notes. The title of a release is an h2, so the
                headings of its notes start at h3. *@
-            <LxChangelogVersions Class="mt-10" data-testid="releases">
+            <KlyChangelogVersions Class="mt-10" data-testid="releases">
                 @foreach (var release in _visible)
                 {
-                    <LxChangelogVersion Title="@release.Title"
+                    <KlyChangelogVersion Title="@release.Title"
                                         HeadingLevel="2"
                                         Href="@($"releases/{release.Slug}")"
                                         Date="release.PublishedAt"
                                         Badge="@BadgeOf(release)"
-                                        BadgeColor="@(release.Prerelease ? LxColor.Warning : LxColor.Primary)"
+                                        BadgeColor="@(release.Prerelease ? KlyColor.Warning : KlyColor.Primary)"
                                         Authors="AuthorsOf(release)"
                                         data-testid="release">
                         @if (Body.Render(release, PageHref(_page), 3) is { Length: > 0 } html)
                         {
-                            <LxPageBody Class="markdown-body">@((MarkupString)html)</LxPageBody>
+                            <KlyPageBody Class="markdown-body">@((MarkupString)html)</KlyPageBody>
                         }
-                    </LxChangelogVersion>
+                    </KlyChangelogVersion>
                 }
-            </LxChangelogVersions>
+            </KlyChangelogVersions>
 
             @if (_pages > 1)
             {
-                <nav aria-label="Pages of releases" class="mt-10 flex items-center justify-between gap-4 border-t border-(--lux-border) pt-6" data-testid="pagination">
+                <nav aria-label="Pages of releases" class="mt-10 flex items-center justify-between gap-4 border-t border-(--klyroo-border) pt-6" data-testid="pagination">
                     @if (_page > 1)
                     {
-                        <LxButton Label="Newer releases" Href="@PageHref(_page - 1)" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" rel="prev">
-                            <LeadingIcon><LxIcon Name="ph:arrow-left" Class="size-4" /></LeadingIcon>
-                        </LxButton>
+                        <KlyButton Label="Newer releases" Href="@PageHref(_page - 1)" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" rel="prev">
+                            <LeadingIcon><KlyIcon Name="ph:arrow-left" Class="size-4" /></LeadingIcon>
+                        </KlyButton>
                     }
                     else
                     {
                         <span></span>
                     }
-                    <p class="text-sm text-(--lux-text-muted)">Page @_page of @_pages</p>
+                    <p class="text-sm text-(--klyroo-text-muted)">Page @_page of @_pages</p>
                     @if (_page < _pages)
                     {
-                        <LxButton Label="Older releases" Href="@PageHref(_page + 1)" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" rel="next">
-                            <TrailingIcon><LxIcon Name="ph:arrow-right" Class="size-4" /></TrailingIcon>
-                        </LxButton>
+                        <KlyButton Label="Older releases" Href="@PageHref(_page + 1)" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" rel="next">
+                            <TrailingIcon><KlyIcon Name="ph:arrow-right" Class="size-4" /></TrailingIcon>
+                        </KlyButton>
                     }
                     else
                     {
@@ -76,7 +76,7 @@
             }
         }
     }
-</LxContainer>
+</KlyContainer>
 
 @code {
     private IReadOnlyList<PageLinkItem> _links = [];
@@ -129,7 +129,7 @@
         var links = new List<PageLinkItem> { new("Subscribe", "feed.xml") { Icon = "ph:rss" } };
         if (list.RepositoryUrl is { } repository)
         {
-            links.Add(new PageLinkItem("View on GitHub", repository) { Icon = "ph:github-logo", Color = LxColor.Neutral, Variant = ButtonVariant.Outline });
+            links.Add(new PageLinkItem("View on GitHub", repository) { Icon = "ph:github-logo", Color = KlyColor.Neutral, Variant = ButtonVariant.Outline });
         }
         return links;
     }
@@ -140,6 +140,6 @@
     private static string? BadgeOf(ReleaseEntry release) =>
         release.Prerelease ? $"{release.Tag} pre-release" : release.Title == release.Tag ? null : release.Tag;
 
-    private static IReadOnlyList<LxPostAuthor> AuthorsOf(ReleaseEntry release) =>
-        release.Author is { } author ? [new LxPostAuthor(author.Login) { AvatarSrc = author.AvatarUrl, Href = author.ProfileUrl }] : [];
+    private static IReadOnlyList<KlyPostAuthor> AuthorsOf(ReleaseEntry release) =>
+        release.Author is { } author ? [new KlyPostAuthor(author.Login) { AvatarSrc = author.AvatarUrl, Href = author.ProfileUrl }] : [];
 }

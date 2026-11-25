@@ -5,64 +5,64 @@
 <PageTitle>General settings</PageTitle>
 
 <SettingsPage Heading="General" Description="Your profile and the language of the app." TestId="settings-general">
-    <LxCard>
+    <KlyCard>
         <Header>
-            <h2 class="font-semibold text-(--lux-text-highlighted)">Profile</h2>
-            <p class="text-sm text-(--lux-text-muted)">This is what your teammates see.</p>
+            <h2 class="font-semibold text-(--klyroo-text-highlighted)">Profile</h2>
+            <p class="text-sm text-(--klyroo-text-muted)">This is what your teammates see.</p>
         </Header>
         <ChildContent>
-            <LxForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
+            <KlyForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" class="flex flex-col gap-4" data-testid="profile-form">
                 <div class="flex items-center gap-4">
-                    <LxAvatar Alt="@Model!.Name" Size="LxSize.Xl" />
-                    <p class="text-sm text-(--lux-text-muted)">The avatar shows your initials until you upload a picture.</p>
+                    <KlyAvatar Alt="@Model!.Name" Size="KlySize.Xl" />
+                    <p class="text-sm text-(--klyroo-text-muted)">The avatar shows your initials until you upload a picture.</p>
                 </div>
-                <LxFormField Label="Name" Required For="() => Model!.Name">
-                    <LxInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
-                </LxFormField>
-                <LxFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => Model!.Email">
-                    <LxInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
-                </LxFormField>
-                <LxFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => Model!.Username">
-                    <LxInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
-                </LxFormField>
-                <LxFormField Label="Bio" For="() => Model!.Bio">
-                    <LxTextarea @bind-Value="Model!.Bio" Rows="4" />
-                </LxFormField>
+                <KlyFormField Label="Name" Required For="() => Model!.Name">
+                    <KlyInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
+                </KlyFormField>
+                <KlyFormField Label="Email" Required Description="Used to sign in and to send you notifications." For="() => Model!.Email">
+                    <KlyInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
+                </KlyFormField>
+                <KlyFormField Label="Username" Hint="3 to 20 letters, digits or dashes" For="() => Model!.Username">
+                    <KlyInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
+                </KlyFormField>
+                <KlyFormField Label="Bio" For="() => Model!.Bio">
+                    <KlyTextarea @bind-Value="Model!.Bio" Rows="4" />
+                </KlyFormField>
                 <div class="flex items-center justify-end gap-3">
-                    <p role="status" class="text-sm text-(--lux-success-text)" data-testid="profile-status">@_status</p>
-                    <LxButton Label="Save changes" Type="submit" data-testid="profile-save" />
+                    <p role="status" class="text-sm text-(--klyroo-success-text)" data-testid="profile-status">@_status</p>
+                    <KlyButton Label="Save changes" Type="submit" data-testid="profile-save" />
                 </div>
-            </LxForm>
+            </KlyForm>
         </ChildContent>
-    </LxCard>
+    </KlyCard>
 
-    <LxCard>
+    <KlyCard>
         <Header>
-            <h2 class="font-semibold text-(--lux-text-highlighted)">Language</h2>
-            <p class="text-sm text-(--lux-text-muted)">The built-in texts of the components follow it, and the choice is remembered in this browser.</p>
+            <h2 class="font-semibold text-(--klyroo-text-highlighted)">Language</h2>
+            <p class="text-sm text-(--klyroo-text-muted)">The built-in texts of the components follow it, and the choice is remembered in this browser.</p>
         </Header>
         <ChildContent>
-            <LxLocaleSelect />
+            <KlyLocaleSelect />
         </ChildContent>
-    </LxCard>
+    </KlyCard>
 
-    <LxCard Class="border-(--lux-error-text)/40">
+    <KlyCard Class="border-(--klyroo-error-text)/40">
         <Header>
-            <h2 class="font-semibold text-(--lux-error-text)">Delete account</h2>
-            <p class="text-sm text-(--lux-text-muted)">All your data would be removed. This sample app has no backend, so nothing is deleted.</p>
+            <h2 class="font-semibold text-(--klyroo-error-text)">Delete account</h2>
+            <p class="text-sm text-(--klyroo-text-muted)">All your data would be removed. This sample app has no backend, so nothing is deleted.</p>
         </Header>
         <ChildContent>
-            <LxButton Label="Delete account" Color="LxColor.Error" Variant="ButtonVariant.Soft" OnClick="@(() => _confirm = true)" data-testid="delete-account" />
+            <KlyButton Label="Delete account" Color="KlyColor.Error" Variant="ButtonVariant.Soft" OnClick="@(() => _confirm = true)" data-testid="delete-account" />
         </ChildContent>
-    </LxCard>
+    </KlyCard>
 </SettingsPage>
 
-<LxModal @bind-Open="_confirm" Title="Delete your account?" Description="This cannot be undone." data-testid="delete-account-dialog">
+<KlyModal @bind-Open="_confirm" Title="Delete your account?" Description="This cannot be undone." data-testid="delete-account-dialog">
     <Footer>
-        <LxButton Label="Keep my account" Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" data-lx-close />
-        <LxButton Label="Delete" Color="LxColor.Error" OnClick="Deleted" data-lx-close />
+        <KlyButton Label="Keep my account" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" data-kly-close />
+        <KlyButton Label="Delete" Color="KlyColor.Error" OnClick="Deleted" data-kly-close />
     </Footer>
-</LxModal>
+</KlyModal>
 
 @code {
     // Bound to the posted form, so that a form submitted before the page is interactive (a static post) is validated and handled like an interactive one.
@@ -77,11 +77,11 @@
     private async Task SaveAsync()
     {
         _status = "Profile saved.";
-        await Toasts.ToastAsync(RendererInfo.IsInteractive, new LxToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = LxColor.Success });
+        await Toasts.ToastAsync(RendererInfo.IsInteractive, new KlyToast { Title = "Profile saved", Description = "Your changes are in this session.", Color = KlyColor.Success });
     }
 
     private async Task Deleted() =>
-        await Toasts.Add(new LxToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = LxColor.Info });
+        await Toasts.Add(new KlyToast { Title = "Nothing was deleted", Description = "Connect a backend to delete accounts.", Color = KlyColor.Info });
 
     private sealed class Profile
     {

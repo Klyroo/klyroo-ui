@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace SaaS.Web.Site;
 
@@ -50,7 +50,7 @@ public static class SiteInfo
     public const string BlogHref = "blog";
     public const string ChangelogHref = "changelog";
 
-    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Lux.UI.";
+    public static string Copyright => $"© {DateTime.UtcNow.Year} {Name}. Built with Klyroo.UI.";
 
     // Layout
 
@@ -58,7 +58,7 @@ public static class SiteInfo
     public const string HeaderMenuTitle = "Menu";
     public const string FooterLabel = "Footer";
 
-    public static IReadOnlyList<LxNavigationItem> Navigation { get; } =
+    public static IReadOnlyList<KlyNavigationItem> Navigation { get; } =
     [
         new("Features") { Href = "./#features", Active = false },
         new("Pricing") { Href = PricingHref },
@@ -67,7 +67,7 @@ public static class SiteInfo
         new("Changelog") { Href = ChangelogHref },
     ];
 
-    public static IReadOnlyList<LxFooterColumn> FooterColumns { get; } =
+    public static IReadOnlyList<KlyFooterColumn> FooterColumns { get; } =
     [
         new("Product")
         {
@@ -116,7 +116,7 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> HeroLinks { get; } =
     [
         new("Start free", SignUpHref) { TrailingIcon = "ph:arrow-right" },
-        new("Read the docs", DocsHref) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Read the docs", DocsHref) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     // Features
@@ -181,7 +181,7 @@ public static class SiteInfo
     public static IReadOnlyList<PageLinkItem> CtaLinks { get; } =
     [
         new("Create an account", SignUpHref),
-        new("Talk to us", ContactUrl) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Talk to us", ContactUrl) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     // Documentation home

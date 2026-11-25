@@ -1,6 +1,6 @@
 # Changelog
 
-A release notes site on Lux.UI, built from the releases of a GitHub repository: a timeline of versions (date, version, author, notes), a page for each release, an Atom feed, and an "older releases" pagination. The releases are read from the GitHub REST API while the site runs and kept in memory for an hour. The product in the sample releases (Tern, a command line tool) and every name in them are made up.
+A release notes site on Klyroo.UI, built from the releases of a GitHub repository: a timeline of versions (date, version, author, notes), a page for each release, an Atom feed, and an "older releases" pagination. The releases are read from the GitHub REST API while the site runs and kept in memory for an hour. The product in the sample releases (Tern, a command line tool) and every name in them are made up.
 
 The pages are rendered by the server and sent as HTML: no circuit, no WebAssembly download. The notes of a release are Markdown written by other people, so they are rendered as untrusted input (see "Release notes are untrusted" below).
 
@@ -13,7 +13,7 @@ This repository is a GitHub template. After you create your repository from it, 
 dotnet run rename.cs MyApp
 ```
 
-`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Lux.UI components that contain the template name (`LxChangelogVersions`) are left alone.
+`rename.cs` is a .NET 10 file-based app. It renames the solution, the project and its folder, the namespaces and every other occurrence of the template name (including the `Changelog` section of the settings, which becomes `MyApp`), then deletes itself. The new name is one identifier: letters and digits, starting with a letter. The names of the Klyroo.UI components that contain the template name (`KlyChangelogVersions`) are left alone.
 
 <!-- rename:end -->
 ## Run
@@ -30,7 +30,7 @@ Out of the box the site shows the sample releases of `src/Changelog.Web/data/rel
 Changelog__Repository=dotnet/aspnetcore dotnet run --project src/Changelog.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Changelog.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Changelog.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## Settings
 
@@ -69,7 +69,7 @@ src/Changelog.Web/
 
 `GitHubReleaseClient` is a typed `HttpClient` (registered with `AddHttpClient`, so connections are pooled and recycled) for `GET /repos/{owner}/{repo}/releases?per_page=100`.
 
-- **What is sent.** A generic `User-Agent` (`lux-template-changelog`, GitHub requires one) and nothing about you or your site; the `Accept` and `X-GitHub-Api-Version` headers; `Authorization: Bearer` only when a token is set. The token is not logged and is not in any page.
+- **What is sent.** A generic `User-Agent` (`klyroo-template-changelog`, GitHub requires one) and nothing about you or your site; the `Accept` and `X-GitHub-Api-Version` headers; `Authorization: Bearer` only when a token is set. The token is not logged and is not in any page.
 - **Pagination.** The client follows the `Link: rel="next"` header, up to `MaxReleases` and at most ten pages, and only to the host it was configured for and over `https`: a link to another host is ignored, so the token cannot follow it.
 - **Cache.** `ReleaseService` keeps the list in memory (`IMemoryCache`) for `CacheDuration`. Visitors who arrive while the first read runs share it. After the hour the next visitor gets the saved copy at once and a refresh runs in the background, so nobody waits for GitHub.
 - **Conditional requests.** The refresh sends the `ETag` of the first page as `If-None-Match`. A `304` costs no rate limit and only renews the copy. Releases older than the first page are therefore refreshed when the first page changes, not before.
@@ -118,7 +118,7 @@ When `Changelog:SiteUrl` is not set, the links of the feed are built from the `H
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the color mode (a Lux element that needs no .NET code) and the copy buttons of the code blocks (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`; a site with a Content-Security-Policy gives that script a nonce, or serves it as a file). If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only.
+Everything that moves runs in the browser: the color mode (a Klyroo element that needs no .NET code) and the copy buttons of the code blocks (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`; a site with a Content-Security-Policy gives that script a nonce, or serves it as a file). If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only.
 
 ## Develop
 
@@ -126,7 +126,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Changelog.Web
-dotnet build src/Changelog.Web -t:LuxTailwindWatch
+dotnet build src/Changelog.Web -t:KlyrooTailwindWatch
 ```
 
 ## The shared Markdown code

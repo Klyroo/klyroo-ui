@@ -7,22 +7,22 @@
     <meta name="description" content="@SiteInfo.ChangelogDescription" />
 </HeadContent>
 
-<LxContainer Class="py-10 sm:py-14">
+<KlyContainer Class="py-10 sm:py-14">
     <div class="mx-auto max-w-3xl">
-        <LxPageHeader Title="@SiteInfo.ChangelogTitle" Description="@SiteInfo.ChangelogDescription" />
+        <KlyPageHeader Title="@SiteInfo.ChangelogTitle" Description="@SiteInfo.ChangelogDescription" />
 
         @* Each version is a file of content/changelog: the title of the page is the version, the text is the notes. *@
-        <LxChangelogVersions Class="mt-10" data-testid="releases">
+        <KlyChangelogVersions Class="mt-10" data-testid="releases">
             @foreach (var release in _releases)
             {
-                <LxChangelogVersion Title="@release.Version" Description="@release.Page.Description" Date="@release.Date" Badge="@release.Badge"
+                <KlyChangelogVersion Title="@release.Version" Description="@release.Page.Description" Date="@release.Date" Badge="@release.Badge"
                                     Href="@release.Href" HeadingLevel="2" data-testid="release">
-                    <LxPageBody Class="markdown-body">@((MarkupString)release.Page.Html)</LxPageBody>
-                </LxChangelogVersion>
+                    <KlyPageBody Class="markdown-body">@((MarkupString)release.Page.Html)</KlyPageBody>
+                </KlyChangelogVersion>
             }
-        </LxChangelogVersions>
+        </KlyChangelogVersions>
     </div>
-</LxContainer>
+</KlyContainer>
 
 @code {
     private IReadOnlyList<Release> _releases = [];

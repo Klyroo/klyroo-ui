@@ -1,0 +1,32 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    A styled scroll container. <kly-scroll-area> makes the viewport focusable (tabindex 0) while its content overflows,
+    so keyboard users can scroll it; without scripts it still scrolls with the mouse and touch.
+    Give it an AriaLabel: a focusable scroll container is announced as a region with that name.
+*@
+<kly-scroll-area class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div data-kly-scroll-viewport role="@(AriaLabel is null ? null : "region")" aria-label="@AriaLabel" class="@_slots["viewport"]">
+        @ChildContent
+    </div>
+</kly-scroll-area>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Scrolling direction. Null scrolls both ways.</summary>
+    [Parameter] public KlyOrientation? Orientation { get; set; } = KlyOrientation.Vertical;
+
+    /// <summary>Accessible name of the scrollable region.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public ScrollAreaUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ScrollArea, new Dictionary<string, string?>
+        {
+            ["orientation"] = Orientation switch { KlyOrientation.Vertical => "vertical", KlyOrientation.Horizontal => "horizontal", _ => "both" },
+        }, Ui, "root");
+}

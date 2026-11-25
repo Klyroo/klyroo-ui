@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Dashboard.Shared.Data;
 
@@ -41,7 +41,7 @@ public static class PeopleData
 
 /// <summary>
 /// A directory of people behind a delay, standing for a user directory or an identity provider: what the invite dialog searches while you type. It is a
-/// <see cref="LxOptionsProvider"/> of <c>LxSelectMenu</c>: each call returns one page of the people that match, so a directory of any size can be listed.
+/// <see cref="KlyOptionsProvider"/> of <c>KlySelectMenu</c>: each call returns one page of the people that match, so a directory of any size can be listed.
 /// </summary>
 public static class PeopleDirectory
 {
@@ -51,33 +51,33 @@ public static class PeopleDirectory
     private static readonly string[] Family =
         ["Ahlberg", "Bianchi", "Carvalho", "Delacroix", "Esposito", "Falk", "Gustafsson", "Haugen", "Ibarra", "Jansen", "Koenig", "Laurent"];
 
-    private static readonly LxSelectItem[] All =
+    private static readonly KlySelectItem[] All =
     [
         .. Given.SelectMany((g, i) => Family.Where((_, j) => (i + j) % 4 == 0)
-            .Select(f => new LxSelectItem($"{g}.{f}@example.com".ToLowerInvariant(), $"{g} {f}"))),
+            .Select(f => new KlySelectItem($"{g}.{f}@example.com".ToLowerInvariant(), $"{g} {f}"))),
     ];
 
     /// <summary>The delay of every call, in milliseconds.</summary>
     public static int LatencyMs { get; set; } = 150;
 
     /// <summary>One page of the people whose name contains the search.</summary>
-    public static async ValueTask<LxOptionsResult> Search(LxOptionsRequest request, CancellationToken cancellationToken)
+    public static async ValueTask<KlyOptionsResult> Search(KlyOptionsRequest request, CancellationToken cancellationToken)
     {
         await Task.Delay(LatencyMs, cancellationToken);
         var matches = All.Where(p => request.Search.Length == 0 || p.Label.Contains(request.Search, StringComparison.OrdinalIgnoreCase)).ToArray();
         var page = matches.Skip(request.Skip).Take(request.Take).ToArray();
-        return new LxOptionsResult(page, HasMore: request.Skip + page.Length < matches.Length);
+        return new KlyOptionsResult(page, HasMore: request.Skip + page.Length < matches.Length);
     }
 
     /// <summary>The labels of values that were never listed (a value restored from a saved form): the people with those addresses.</summary>
-    public static ValueTask<IReadOnlyList<LxSelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken cancellationToken) =>
-        ValueTask.FromResult<IReadOnlyList<LxSelectItem>>([.. All.Where(p => values.Contains(p.Value))]);
+    public static ValueTask<IReadOnlyList<KlySelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<KlySelectItem>>([.. All.Where(p => values.Contains(p.Value))]);
 }
 
 /// <summary>The countries of the new customer form, behind a delay like a remote service, paged with Skip and Take.</summary>
 public static class CountryDirectory
 {
-    private static readonly LxSelectItem[] All =
+    private static readonly KlySelectItem[] All =
     [
         new("AR", "Argentina"), new("AU", "Australia"), new("AT", "Austria"), new("BE", "Belgium"), new("BR", "Brazil"), new("CA", "Canada"),
         new("CL", "Chile"), new("CO", "Colombia"), new("HR", "Croatia"), new("CZ", "Czechia"), new("DK", "Denmark"), new("EE", "Estonia"),
@@ -89,17 +89,17 @@ public static class CountryDirectory
     ];
 
     /// <summary>One page of the countries whose name contains the search.</summary>
-    public static async ValueTask<LxOptionsResult> Search(LxOptionsRequest request, CancellationToken cancellationToken)
+    public static async ValueTask<KlyOptionsResult> Search(KlyOptionsRequest request, CancellationToken cancellationToken)
     {
         await Task.Delay(120, cancellationToken);
         var matches = All.Where(c => request.Search.Length == 0 || c.Label.Contains(request.Search, StringComparison.OrdinalIgnoreCase)).ToArray();
         var page = matches.Skip(request.Skip).Take(request.Take).ToArray();
-        return new LxOptionsResult(page, HasMore: request.Skip + page.Length < matches.Length);
+        return new KlyOptionsResult(page, HasMore: request.Skip + page.Length < matches.Length);
     }
 
     /// <summary>The name of a country by its code, for a value that was restored without its page.</summary>
-    public static ValueTask<IReadOnlyList<LxSelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken cancellationToken) =>
-        ValueTask.FromResult<IReadOnlyList<LxSelectItem>>([.. All.Where(c => values.Contains(c.Value))]);
+    public static ValueTask<IReadOnlyList<KlySelectItem>> Resolve(IReadOnlyList<string> values, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<KlySelectItem>>([.. All.Where(c => values.Contains(c.Value))]);
 
     /// <summary>The name of a country by its code.</summary>
     public static string NameOf(string code) => All.FirstOrDefault(c => c.Value == code)?.Label ?? code;

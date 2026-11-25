@@ -1,11 +1,11 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Chat.Maui.Services;
 
-/// <summary>An <see cref="ILxCultureStore"/> on MAUI Preferences: native storage that MauiProgram can read before the web view exists.</summary>
-public sealed class PreferencesCultureStore : ILxCultureStore
+/// <summary>An <see cref="IKlyCultureStore"/> on MAUI Preferences: native storage that MauiProgram can read before the web view exists.</summary>
+public sealed class PreferencesCultureStore : IKlyCultureStore
 {
-    public const string Key = "lux-culture";
+    public const string Key = "klyroo-culture";
 
     public ValueTask<string?> GetAsync() => ValueTask.FromResult(Preferences.Default.Get<string?>(Key, null));
 

@@ -1,6 +1,6 @@
-using Lux.UI;
+using Klyroo.UI;
 
-namespace Lux.Templates.Content;
+namespace Klyroo.Templates.Content;
 
 /// <summary>A page of the content folder, rendered.</summary>
 /// <param name="Slug">The address of the page below the site, without a leading slash: <c>guides/setup</c> for <c>guides/setup.md</c>, the folder for an <c>index.md</c>.</param>
@@ -33,9 +33,9 @@ public sealed record MarkdownPage(
     /// <summary>The text of the link in the navigation.</summary>
     public string LinkTitle => NavigationTitle ?? Title;
 
-    /// <summary>The table of contents: the <c>h2</c> and <c>h3</c> headings, with the ids that <see cref="LxContentToc"/> links to.</summary>
-    public IReadOnlyList<LxContentTocLink> Toc =>
-        [.. Headings.Where(h => h.Level is 2 or 3).Select(h => new LxContentTocLink(h.Id, h.Text) { Level = h.Level })];
+    /// <summary>The table of contents: the <c>h2</c> and <c>h3</c> headings, with the ids that <see cref="KlyContentToc"/> links to.</summary>
+    public IReadOnlyList<KlyContentTocLink> Toc =>
+        [.. Headings.Where(h => h.Level is 2 or 3).Select(h => new KlyContentTocLink(h.Id, h.Text) { Level = h.Level })];
 }
 
 /// <summary>A link of a page to a page that does not exist.</summary>
@@ -53,7 +53,7 @@ public sealed class MarkdownSite
     private readonly Dictionary<string, MarkdownPage> _bySlug;
     private readonly Dictionary<string, int> _position;
 
-    private MarkdownSite(IReadOnlyList<MarkdownPage> pages, IReadOnlyList<LxContentNavigationItem> navigation, IReadOnlyList<LxContentSearchPage> search, IReadOnlyList<BrokenLink> brokenLinks, IReadOnlyList<MissingImage> missingImages)
+    private MarkdownSite(IReadOnlyList<MarkdownPage> pages, IReadOnlyList<KlyContentNavigationItem> navigation, IReadOnlyList<KlyContentSearchPage> search, IReadOnlyList<BrokenLink> brokenLinks, IReadOnlyList<MissingImage> missingImages)
     {
         Pages = pages;
         Navigation = navigation;
@@ -67,11 +67,11 @@ public sealed class MarkdownSite
     /// <summary>The pages in the order of the navigation, which is the order of previous and next.</summary>
     public IReadOnlyList<MarkdownPage> Pages { get; }
 
-    /// <summary>The tree for <see cref="LxContentNavigation"/>: a folder is a group, a page is a link.</summary>
-    public IReadOnlyList<LxContentNavigationItem> Navigation { get; }
+    /// <summary>The tree for <see cref="KlyContentNavigation"/>: a folder is a group, a page is a link.</summary>
+    public IReadOnlyList<KlyContentNavigationItem> Navigation { get; }
 
-    /// <summary>The pages and their headings for <see cref="LxContentSearch"/>: titles, headings and the start of each text.</summary>
-    public IReadOnlyList<LxContentSearchPage> Search { get; }
+    /// <summary>The pages and their headings for <see cref="KlyContentSearch"/>: titles, headings and the start of each text.</summary>
+    public IReadOnlyList<KlyContentSearchPage> Search { get; }
 
     /// <summary>Links between pages that lead nowhere. Not an error: the store logs them.</summary>
     public IReadOnlyList<BrokenLink> BrokenLinks { get; }
@@ -87,13 +87,13 @@ public sealed class MarkdownSite
     public MarkdownPage? Find(string? slug) => _bySlug.GetValueOrDefault((slug ?? "").Trim('/'));
 
     /// <summary>The page before and the page after, in the order of the navigation. Either is null at the ends.</summary>
-    public (LxContentSurroundLink? Previous, LxContentSurroundLink? Next) Surround(MarkdownPage page)
+    public (KlyContentSurroundLink? Previous, KlyContentSurroundLink? Next) Surround(MarkdownPage page)
     {
         if (!_position.TryGetValue(page.Slug, out var index))
         {
             return (null, null);
         }
-        LxContentSurroundLink? Link(int i) => i >= 0 && i < Pages.Count ? new LxContentSurroundLink(Pages[i].Title, Pages[i].Href) { Description = Pages[i].Description } : null;
+        KlyContentSurroundLink? Link(int i) => i >= 0 && i < Pages.Count ? new KlyContentSurroundLink(Pages[i].Title, Pages[i].Href) { Description = Pages[i].Description } : null;
         return (Link(index - 1), Link(index + 1));
     }
 
@@ -270,22 +270,22 @@ public sealed class MarkdownSite
             .OrderBy(e => e.Order).ThenBy(e => e.Title, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Slug, StringComparer.Ordinal),
     ];
 
-    private static List<LxContentNavigationItem> ToItems(Folder folder, List<MarkdownPage> ordered)
+    private static List<KlyContentNavigationItem> ToItems(Folder folder, List<MarkdownPage> ordered)
     {
-        var items = new List<LxContentNavigationItem>();
+        var items = new List<KlyContentNavigationItem>();
         foreach (var entry in Entries(folder))
         {
             switch (entry)
             {
                 case PageEntry { Page: var page }:
                     ordered.Add(page);
-                    items.Add(new LxContentNavigationItem(page.LinkTitle) { Href = page.Href, Icon = page.Icon, Exact = true });
+                    items.Add(new KlyContentNavigationItem(page.LinkTitle) { Href = page.Href, Icon = page.Icon, Exact = true });
                     break;
                 case FolderEntry { Folder: var child }:
                     var children = ToItems(child, ordered);
                     if (children.Count > 0)
                     {
-                        items.Add(new LxContentNavigationItem(child.Title) { Icon = child.Metadata.Icon, Children = children });
+                        items.Add(new KlyContentNavigationItem(child.Title) { Icon = child.Metadata.Icon, Children = children });
                     }
                     break;
             }
@@ -295,7 +295,7 @@ public sealed class MarkdownSite
 
     // ---- Search
 
-    private static List<LxContentSearchPage> ToSearch(List<MarkdownPage> pages, Dictionary<string, DirectoryMetadata> folders, int textLimit) =>
+    private static List<KlyContentSearchPage> ToSearch(List<MarkdownPage> pages, Dictionary<string, DirectoryMetadata> folders, int textLimit) =>
     [
         .. pages.Select(page =>
         {
@@ -305,12 +305,12 @@ public sealed class MarkdownSite
             {
                 group = folders.TryGetValue(top, out var meta) && meta.Title is { Length: > 0 } title ? title : Humanize(top);
             }
-            return new LxContentSearchPage(page.Title, page.Href)
+            return new KlyContentSearchPage(page.Title, page.Href)
             {
                 Description = page.Description,
                 Group = group,
                 Keywords = Snippet(page.Text, textLimit),
-                Headings = [.. page.Headings.Where(h => h.Level is 2 or 3).Select(h => new LxContentSearchHeading(h.Text, h.Id))],
+                Headings = [.. page.Headings.Where(h => h.Level is 2 or 3).Select(h => new KlyContentSearchHeading(h.Text, h.Id))],
             };
         }),
     ];

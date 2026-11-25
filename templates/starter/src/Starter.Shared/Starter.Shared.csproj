@@ -5,7 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <!-- Tailwind compiled by the build (no Node): Styles/app.css becomes _content/Starter.Shared/app.css, for the web host and the MAUI app. -->
-    <LuxTailwind>true</LuxTailwind>
+    <KlyrooTailwind>true</KlyrooTailwind>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Lux.UI" />
+    <PackageReference Include="Klyroo.UI" />
   </ItemGroup>
 
 </Project>

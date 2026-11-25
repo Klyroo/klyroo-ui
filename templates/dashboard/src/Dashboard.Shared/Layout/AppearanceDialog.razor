@@ -2,48 +2,48 @@
 @inject AppState App
 @inject AppearanceState Appearance
 
-@* The primary color, and the color mode. The mode is Lux's own control: it is remembered in the browser and applied before the first paint. *@
-<LxModal @bind-Open="_open" Title="Appearance" Description="Pick the color of buttons, links and focus rings, and the gray of text, backgrounds and borders." data-testid="appearance">
+@* The primary color, and the color mode. The mode is Klyroo's own control: it is remembered in the browser and applied before the first paint. *@
+<KlyModal @bind-Open="_open" Title="Appearance" Description="Pick the color of buttons, links and focus rings, and the gray of text, backgrounds and borders." data-testid="appearance">
     <Body>
         <div class="flex flex-col gap-5">
-            <p class="-mb-3 text-sm font-medium text-(--lux-text-highlighted)">Primary color</p>
+            <p class="-mb-3 text-sm font-medium text-(--klyroo-text-highlighted)">Primary color</p>
             <div role="group" aria-label="Primary color" class="flex flex-wrap gap-2">
                 @foreach (var palette in AppearanceState.Palettes)
                 {
                     var current = palette;
-                    <LxButton Label="@Label(current)" Size="LxSize.Sm" Color="LxColor.Neutral"
+                    <KlyButton Label="@Label(current)" Size="KlySize.Sm" Color="KlyColor.Neutral"
                               Variant="@(current == Appearance.Primary ? ButtonVariant.Solid : ButtonVariant.Outline)"
                               aria-pressed="@(current == Appearance.Primary ? "true" : "false")"
                               data-testid="@($"palette-{current.Name}")"
                               OnClick="@(() => Appearance.SetAsync(current, Appearance.Neutral))" />
                 }
             </div>
-            <p class="-mb-3 text-sm font-medium text-(--lux-text-highlighted)">Neutral color</p>
+            <p class="-mb-3 text-sm font-medium text-(--klyroo-text-highlighted)">Neutral color</p>
             <div role="group" aria-label="Neutral color" class="flex flex-wrap gap-2">
                 @foreach (var palette in AppearanceState.Neutrals)
                 {
                     var current = palette;
-                    <LxButton Label="@Label(current)" Size="LxSize.Sm" Color="LxColor.Neutral"
+                    <KlyButton Label="@Label(current)" Size="KlySize.Sm" Color="KlyColor.Neutral"
                               Variant="@(current == Appearance.Neutral ? ButtonVariant.Solid : ButtonVariant.Outline)"
                               aria-pressed="@(current == Appearance.Neutral ? "true" : "false")"
                               data-testid="@($"neutral-{current.Name}")"
                               OnClick="@(() => Appearance.SetAsync(Appearance.Primary, current))" />
                 }
             </div>
-            <LxFormField Label="Color mode">
-                <LxColorModeSelect />
-            </LxFormField>
+            <KlyFormField Label="Color mode">
+                <KlyColorModeSelect />
+            </KlyFormField>
         </div>
     </Body>
     <Footer>
-        <LxButton Label="Done" data-lx-close />
+        <KlyButton Label="Done" data-kly-close />
     </Footer>
-</LxModal>
+</KlyModal>
 
 @code {
     private bool _open;
 
-    private static string Label(LxPalette palette) => palette.IsLux ? "Default" : char.ToUpperInvariant(palette.Name[0]) + palette.Name[1..];
+    private static string Label(KlyPalette palette) => palette.IsKlyroo ? "Default" : char.ToUpperInvariant(palette.Name[0]) + palette.Name[1..];
 
     protected override void OnInitialized()
     {

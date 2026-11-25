@@ -11,19 +11,19 @@
    interactive for the sake of one label, and would not work until the circuit or WebAssembly had started. The cost is that the plans are rendered
    twice: the copy that is not shown is display:none, so it is out of the accessibility tree and out of the layout.
    In Windows High Contrast the fill of the checked label is dropped, so forced-colors paints it with the system Highlight colors. *@
-<LxPageSection id="pricing"
+<KlyPageSection id="pricing"
                Headline="@PricingInfo.Headline"
                Title="@PricingInfo.Title"
                Description="@PricingInfo.Description"
-               Orientation="LxOrientation.Vertical"
+               Orientation="KlyOrientation.Vertical"
                HeadingLevel="1">
     <div class="group/pricing mt-10 flex flex-col items-start gap-8" data-testid="pricing">
-        <fieldset class="m-0 inline-flex rounded-full bg-(--lux-bg-elevated)/50 p-1 ring ring-(--lux-border)">
+        <fieldset class="m-0 inline-flex rounded-full bg-(--klyroo-bg-elevated)/50 p-1 ring ring-(--klyroo-border)">
             <legend class="sr-only">@PricingInfo.BillingLabel</legend>
             <input type="radio" id="billing-monthly" name="billing" value="monthly" class="peer/monthly sr-only" checked />
-            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--lux-bg-inverted) peer-checked/monthly:text-(--lux-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--lux-text)">@PricingInfo.MonthlyLabel</label>
+            <label for="billing-monthly" class="@_label peer-checked/monthly:bg-(--klyroo-bg-inverted) peer-checked/monthly:text-(--klyroo-text-inverted) forced-colors:peer-checked/monthly:bg-[Highlight] forced-colors:peer-checked/monthly:text-[HighlightText] peer-focus-visible/monthly:outline-2 peer-focus-visible/monthly:outline-offset-2 peer-focus-visible/monthly:outline-(--klyroo-text)">@PricingInfo.MonthlyLabel</label>
             <input type="radio" id="billing-yearly" name="billing" value="yearly" class="peer/yearly sr-only" />
-            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--lux-bg-inverted) peer-checked/yearly:text-(--lux-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--lux-text)">@PricingInfo.YearlyLabel</label>
+            <label for="billing-yearly" class="@_label peer-checked/yearly:bg-(--klyroo-bg-inverted) peer-checked/yearly:text-(--klyroo-text-inverted) forced-colors:peer-checked/yearly:bg-[Highlight] forced-colors:peer-checked/yearly:text-[HighlightText] peer-focus-visible/yearly:outline-2 peer-focus-visible/yearly:outline-offset-2 peer-focus-visible/yearly:outline-(--klyroo-text)">@PricingInfo.YearlyLabel</label>
         </fieldset>
 
         <div class="w-full group-has-[#billing-yearly:checked]/pricing:hidden" data-billing="monthly">
@@ -33,35 +33,35 @@
             @Plans(true)
         </div>
     </div>
-</LxPageSection>
+</KlyPageSection>
 
-@* The sticky table header sits under the sticky site header: --lx-sticky-offset is the distance from the top of the viewport. *@
-<LxPageSection id="compare"
+@* The sticky table header sits under the sticky site header: --kly-sticky-offset is the distance from the top of the viewport. *@
+<KlyPageSection id="compare"
                Headline="@PricingInfo.CompareHeadline"
                Title="@PricingInfo.CompareTitle"
-               Orientation="LxOrientation.Vertical">
-    <LxPricingTable Tiers="PricingInfo.Tiers" Sections="PricingInfo.Sections" Caption="@PricingInfo.CompareCaption"
-                    Class="mt-10 [--lx-sticky-offset:var(--lux-header-height)]" data-testid="compare" />
-</LxPageSection>
+               Orientation="KlyOrientation.Vertical">
+    <KlyPricingTable Tiers="PricingInfo.Tiers" Sections="PricingInfo.Sections" Caption="@PricingInfo.CompareCaption"
+                    Class="mt-10 [--kly-sticky-offset:var(--klyroo-header-height)]" data-testid="compare" />
+</KlyPageSection>
 
-<LxPageSection id="faq"
+<KlyPageSection id="faq"
                Headline="@PricingInfo.FaqHeadline"
                Title="@PricingInfo.FaqTitle"
-               Orientation="LxOrientation.Vertical">
-    <LxAccordion Items="_questions" Class="mt-10 max-w-3xl" />
-</LxPageSection>
+               Orientation="KlyOrientation.Vertical">
+    <KlyAccordion Items="_questions" Class="mt-10 max-w-3xl" />
+</KlyPageSection>
 
-<LxPageCta Variant="LxVariant.Outline"
+<KlyPageCta Variant="KlyVariant.Outline"
            Title="@PricingInfo.CtaTitle"
            Description="@PricingInfo.CtaDescription"
            Links="PricingInfo.CtaLinks"
            Class="mb-8" />
 
 @code {
-    private const string _label = "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-(--lux-text-muted)";
+    private const string _label = "cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium text-(--klyroo-text-muted)";
 
-    // LxAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them.
-    private static readonly LxAccordionItem[] _questions = [.. PricingInfo.Questions.Select((q, index) => new LxAccordionItem(q.Ask)
+    // KlyAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them.
+    private static readonly KlyAccordionItem[] _questions = [.. PricingInfo.Questions.Select((q, index) => new KlyAccordionItem(q.Ask)
     {
         Value = $"q{index + 1}",
         Content = builder =>
@@ -73,21 +73,21 @@
     })];
 
     private static RenderFragment Plans(bool yearly) =>
-        @<LxPricingPlans>
+        @<KlyPricingPlans>
             @foreach (var plan in PricingInfo.Plans)
             {
-                <LxPricingPlan Title="@plan.Name" HeadingLevel="2"
+                <KlyPricingPlan Title="@plan.Name" HeadingLevel="2"
                                Description="@plan.Description"
                                Badge="@plan.Badge"
                                Highlight="@plan.Highlight"
                                Price="@plan.Price(yearly)"
                                BillingCycle="@PricingInfo.PerMonth"
                                Terms="@plan.Terms(yearly)"
-                               Features="@(plan.Features.Select(f => new LxPricingFeature(f)).ToArray())"
+                               Features="@(plan.Features.Select(f => new KlyPricingFeature(f)).ToArray())"
                                ButtonLabel="@plan.ButtonLabel"
                                ButtonHref="@plan.ButtonHref"
                                ButtonVariant="@(plan.Highlight ? ButtonVariant.Solid : ButtonVariant.Outline)"
-                               ButtonColor="@(plan.Highlight ? LxColor.Primary : LxColor.Neutral)" />
+                               ButtonColor="@(plan.Highlight ? KlyColor.Primary : KlyColor.Neutral)" />
             }
-        </LxPricingPlans>;
+        </KlyPricingPlans>;
 }

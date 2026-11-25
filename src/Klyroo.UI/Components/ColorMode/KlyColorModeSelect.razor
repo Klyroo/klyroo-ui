@@ -1,0 +1,36 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    A native select of System, Light and Dark. The browser script sets its value from the stored mode and writes the
+    choice, so it works on static pages and stays in sync with every other color mode control.
+*@
+<div class="@_slots["root"]" data-color="@Color.Value" @attributes="AdditionalAttributes">
+    <select class="@_slots["base"]" aria-label="@(AriaLabel ?? Messages.ColorMode)" data-kly-color-mode="select">
+        <option value="system">@Messages.ColorModeSystem</option>
+        <option value="light">@Messages.ColorModeLight</option>
+        <option value="dark">@Messages.ColorModeDark</option>
+    </select>
+    @RenderIcon(Options.Icons.ChevronUpDown, _slots["trailingIcon"])
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
+    private KlySize? _sizeParameter;
+
+    /// <summary>Accessible name of the select. Defaults to the built-in text.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public ColorModeSelectUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ColorModeSelect, new Dictionary<string, string?>
+        {
+            ["variant"] = Variant.ToString().ToLowerInvariant(),
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "root");
+}

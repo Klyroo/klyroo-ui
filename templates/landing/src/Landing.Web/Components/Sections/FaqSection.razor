@@ -1,13 +1,13 @@
-@* LxAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them. *@
-<LxPageSection id="faq"
+@* KlyAccordion opens and closes in the browser, so it works without a circuit. Closed answers use hidden="until-found": find-in-page still finds them. *@
+<KlyPageSection id="faq"
                Headline="@SiteContent.FaqHeadline"
                Title="@SiteContent.FaqTitle"
-               Orientation="LxOrientation.Vertical">
-    <LxAccordion Items="_items" Class="mt-10 max-w-3xl" />
-</LxPageSection>
+               Orientation="KlyOrientation.Vertical">
+    <KlyAccordion Items="_items" Class="mt-10 max-w-3xl" />
+</KlyPageSection>
 
 @code {
-    private static readonly LxAccordionItem[] _items = [.. SiteContent.Questions.Select((q, index) => new LxAccordionItem(q.Ask)
+    private static readonly KlyAccordionItem[] _items = [.. SiteContent.Questions.Select((q, index) => new KlyAccordionItem(q.Ask)
     {
         Value = $"q{index + 1}",
         Content = builder =>

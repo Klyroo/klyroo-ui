@@ -1,0 +1,139 @@
+<Project>
+  <!--
+    Self-hosted fonts. The app declares fonts as items:
+
+      <KlyrooFont Include="Public Sans" Role="sans" Provider="google" Weights="400;700" Styles="normal;italic" Subsets="latin;latin-ext" />
+
+    At build time the KlyrooResolveFonts task asks the providers, downloads only the requested files (cached), and generates
+    klyroo.fonts.css (@font-face, a fallback face per family, the klyroo-font-sans and klyroo-font-mono variables) and the font files into
+    obj/<config>/<tfm>/klyroo/fonts/. They are added to the static web assets at _klyroo/fonts/, so MapStaticAssets serves them from
+    the app's own origin. KlyFonts links the stylesheet and preloads the main face from a manifest generated into the assembly
+    (obj/<config>/<tfm>/klyroo/KlyrooFontsManifest.g.cs, next to the fonts folder and not in it: everything in the folder is served).
+    Nothing is requested from a third party when the page runs. KlyrooFonts=false turns the feature off.
+
+    Declare the items in the project that hosts the app (the server project of a Server or Auto app): KlyFonts reads the manifest
+    of the entry assembly. Declaring them in a Blazor WebAssembly project is a build error (KLYFONT010).
+  -->
+  <PropertyGroup>
+    <KlyrooFonts Condition="'$(KlyrooFonts)' == ''">true</KlyrooFonts>
+    <KlyrooFontsProviderPriority Condition="'$(KlyrooFontsProviderPriority)' == ''">google;bunny;fontsource</KlyrooFontsProviderPriority>
+    <KlyrooFontsCacheDir Condition="'$(KlyrooFontsCacheDir)' == ''">$([MSBuild]::NormalizeDirectory($(KlyrooCacheDir), fonts-cache))</KlyrooFontsCacheDir>
+    <KlyrooFontsCacheDays Condition="'$(KlyrooFontsCacheDays)' == ''">7</KlyrooFontsCacheDays>
+    <KlyrooFontsFailOnError Condition="'$(KlyrooFontsFailOnError)' == ''">$([System.String]::Equals('$(Configuration)', 'Release'))</KlyrooFontsFailOnError>
+    <!-- The generated names carry a hash of the content, so a font never changes at its URL. -->
+    <KlyrooFontsCacheControl Condition="'$(KlyrooFontsCacheControl)' == ''">max-age=31536000, immutable</KlyrooFontsCacheControl>
+  </PropertyGroup>
+
+  <!--
+    A Blazor WebAssembly project (a standalone app or the client project of an Auto app) is not the host of the page: the server
+    renders the head, and KlyFonts reads the manifest of the entry assembly, which on the server is the server project. Fonts
+    declared in the client would render nothing there, and both projects would publish the same _klyroo/fonts/klyroo.fonts.css.
+  -->
+  <Target Name="KlyrooFontsCheckProject"
+          BeforeTargets="KlyrooResolveFonts;KlyrooFontsDesignTime;ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(KlyrooFonts)' != 'false' And '@(KlyrooFont)' != '' And '$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">
+    <Error Code="KLYFONT010"
+           Text="KlyrooFont items are declared in '$(MSBuildProjectName)', a Blazor WebAssembly project. The server renders the page head, so fonts are self-hosted by the server project: declare the KlyrooFont items in the server project (the one that has the App component with KlyFonts), and remove them here. Set KlyrooFonts=false in this project to silence this error." />
+  </Target>
+
+  <!--
+    Design-time builds (IntelliSense, the IDE's evaluation) never touch the network and generate nothing: they only expose what
+    an earlier real build left, so the manifest source and the static web assets are the same as at the last build.
+  -->
+  <Target Name="KlyrooFontsDesignTime"
+          BeforeTargets="ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(KlyrooFonts)' != 'false' And '@(KlyrooFont)' != '' And '$(DesignTimeBuild)' == 'true'">
+    <PropertyGroup>
+      <KlyrooFontsOutputDir Condition="'$(KlyrooFontsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, fonts))</KlyrooFontsOutputDir>
+      <KlyrooFontsManifestFile Condition="'$(KlyrooFontsManifestFile)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo))KlyrooFontsManifest.g.cs</KlyrooFontsManifestFile>
+    </PropertyGroup>
+    <ItemGroup>
+      <_KlyrooFontExisting Include="$(KlyrooFontsOutputDir)*.woff2;$(KlyrooFontsOutputDir)*.woff;$(KlyrooFontsOutputDir)*.ttf;$(KlyrooFontsOutputDir)*.otf;$(KlyrooFontsOutputDir)klyroo.fonts.css" Condition="Exists('$(KlyrooFontsOutputDir)klyroo.fonts.css')" />
+      <_KlyrooFontFile Include="@(_KlyrooFontExisting)" KlyrooFile="%(Filename)%(Extension)" />
+      <Compile Include="$(KlyrooFontsManifestFile)" Condition="Exists('$(KlyrooFontsManifestFile)')" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="KlyrooResolveFonts"
+          BeforeTargets="ResolveProjectStaticWebAssets;CoreCompile"
+          Condition="'$(KlyrooFonts)' != 'false' And '@(KlyrooFont)' != '' And '$(DesignTimeBuild)' != 'true'">
+    <!-- IntermediateOutputPath is only known once the SDK targets are evaluated, so the defaults are computed here. -->
+    <PropertyGroup>
+      <KlyrooFontsOutputDir Condition="'$(KlyrooFontsOutputDir)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo, fonts))</KlyrooFontsOutputDir>
+      <!-- Outside the fonts folder: every file of that folder that the task lists becomes a static web asset. -->
+      <KlyrooFontsManifestFile Condition="'$(KlyrooFontsManifestFile)' == ''">$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(IntermediateOutputPath), klyroo))KlyrooFontsManifest.g.cs</KlyrooFontsManifestFile>
+    </PropertyGroup>
+
+    <KlyrooResolveFonts Fonts="@(KlyrooFont)"
+                      OutputDir="$(KlyrooFontsOutputDir)"
+                      CacheDir="$(KlyrooFontsCacheDir)"
+                      ProjectDirectory="$(MSBuildProjectDirectory)"
+                      ProviderPriority="$(KlyrooFontsProviderPriority)"
+                      FailOnError="$(KlyrooFontsFailOnError)"
+                      Offline="$(KlyrooOffline)"
+                      CacheDays="$(KlyrooFontsCacheDays)"
+                      ManifestSourceFile="$(KlyrooFontsManifestFile)">
+      <Output TaskParameter="GeneratedFiles" ItemName="_KlyrooFontFile" />
+    </KlyrooResolveFonts>
+
+    <ItemGroup>
+      <Compile Include="$(KlyrooFontsManifestFile)" />
+      <FileWrites Include="@(_KlyrooFontFile)" />
+      <FileWrites Include="$(KlyrooFontsManifestFile)" />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Adds the generated files to the static web assets, served at /_klyroo/fonts/. They live in obj, not in wwwroot, so they are
+    defined here with their own content root (what the development server reads them from) instead of being discovered.
+    The generated file names carry a hash of their content, so a font is immutable at its URL: every route of a font file gets
+    $(KlyrooFontsCacheControl) through a content type mapping of its own for each font extension (woff2, woff, ttf, otf), whatever
+    the SDK's defaults or the app's StaticWebAssetEndpointDefaultMediaCacheControlHeader say. The stylesheet keeps the SDK's rules.
+  -->
+  <Target Name="KlyrooFontsDefineAssets" AfterTargets="ResolveProjectStaticWebAssets" Condition="'@(_KlyrooFontFile)' != ''">
+    <ItemGroup>
+      <_KlyrooFontCandidate Include="@(_KlyrooFontFile)" RelativePath="_klyroo/fonts/%(_KlyrooFontFile.KlyrooFile)" />
+      <_KlyrooFontMapping Include="font/woff2" Pattern="*.woff2" Cache="$(KlyrooFontsCacheControl)" Priority="1" />
+      <_KlyrooFontMapping Include="font/woff" Pattern="*.woff" Cache="$(KlyrooFontsCacheControl)" Priority="1" />
+      <_KlyrooFontMapping Include="font/ttf" Pattern="*.ttf" Cache="$(KlyrooFontsCacheControl)" Priority="1" />
+      <_KlyrooFontMapping Include="font/otf" Pattern="*.otf" Cache="$(KlyrooFontsCacheControl)" Priority="1" />
+    </ItemGroup>
+
+    <DefineStaticWebAssets CandidateAssets="@(_KlyrooFontCandidate)"
+                           SourceType="Computed"
+                           SourceId="$(PackageId)"
+                           ContentRoot="$(KlyrooFontsOutputDir)"
+                           BasePath="$(StaticWebAssetBasePath)"
+                           AssetKind="All"
+                           AssetMode="All"
+                           AssetRole="Primary"
+                           AssetMergeSource="$(StaticWebAssetMergeTarget)"
+                           FingerprintCandidates="$(StaticWebAssetsFingerprintContent)"
+                           FingerprintPatterns="@(StaticWebAssetFingerprintPattern)"
+                           CopyToOutputDirectory="Never"
+                           CopyToPublishDirectory="PreserveNewest">
+      <Output TaskParameter="Assets" ItemName="_KlyrooFontAsset" />
+    </DefineStaticWebAssets>
+
+    <ItemGroup>
+      <_KlyrooFontFileAsset Include="@(_KlyrooFontAsset)" Condition="'%(Extension)' != '.css'" />
+      <_KlyrooFontCssAsset Include="@(_KlyrooFontAsset)" Condition="'%(Extension)' == '.css'" />
+    </ItemGroup>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_KlyrooFontFileAsset)"
+                                   ContentTypeMappings="@(_KlyrooFontMapping)">
+      <Output TaskParameter="Endpoints" ItemName="_KlyrooFontEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <DefineStaticWebAssetEndpoints CandidateAssets="@(_KlyrooFontCssAsset)"
+                                   ContentTypeMappings="@(StaticWebAssetContentTypeMapping)"
+                                   Condition="'@(_KlyrooFontCssAsset)' != ''">
+      <Output TaskParameter="Endpoints" ItemName="_KlyrooFontEndpoint" />
+    </DefineStaticWebAssetEndpoints>
+
+    <ItemGroup>
+      <StaticWebAsset Include="@(_KlyrooFontAsset)" />
+      <StaticWebAssetEndpoint Include="@(_KlyrooFontEndpoint)" />
+    </ItemGroup>
+  </Target>
+</Project>

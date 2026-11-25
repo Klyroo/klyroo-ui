@@ -1,59 +1,59 @@
 @inherits LayoutComponentBase
 @inject MarkdownStore Store
 
-<LxApp>
-    <LxSkipLink />
+<KlyApp>
+    <KlySkipLink />
 
     @* Links are relative: they resolve against <base href>, so the site works at the root of a domain and below a path. The sections of the header
        are the top level folders of the content, each linking to its first page. *@
-    <LxHeader Items="_sections" AriaLabel="Sections">
+    <KlyHeader Items="_sections" AriaLabel="Sections">
         <Left>
-            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--lux-text-highlighted)">
-                <LxIcon Name="ph:terminal-window" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 rounded-sm font-semibold text-(--klyroo-text-highlighted)">
+                <KlyIcon Name="ph:terminal-window" Class="size-6" />
                 <span>@SiteInfo.Name</span>
             </a>
         </Left>
         <Right>
             @* Two buttons for one search, so that only one shows: the label and the shortcut where there is room, the icon alone on a phone. *@
-            <LxContentSearchButton Collapsed="false" Size="LxSize.Sm" Class="hidden sm:inline-flex sm:w-56" />
-            <LxContentSearchButton Size="LxSize.Sm" Class="sm:hidden" />
-            <LxColorModeButton Size="LxSize.Sm" />
+            <KlyContentSearchButton Collapsed="false" Size="KlySize.Sm" Class="hidden sm:inline-flex sm:w-56" />
+            <KlyContentSearchButton Size="KlySize.Sm" Class="sm:hidden" />
+            <KlyColorModeButton Size="KlySize.Sm" />
         </Right>
         <Body>
-            <LxContentNavigation Items="_site.Navigation" AriaLabel="Menu" />
+            <KlyContentNavigation Items="_site.Navigation" AriaLabel="Menu" />
         </Body>
-    </LxHeader>
+    </KlyHeader>
 
     @* The search of the whole site: Ctrl+K (Cmd+K on a Mac) or one of the buttons above. It is a list of the titles, headings and texts of the pages,
        filtered in the browser. The list is not in the page: the browser fetches search-index.json (Program.cs) the first time the search opens, so
        the pages stay small however many there are. *@
-    <LxContentSearch IndexUrl="search-index.json" />
+    <KlyContentSearch IndexUrl="search-index.json" />
 
-    <LxMain id="main" tabindex="-1" class="focus:outline-none">
+    <KlyMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </LxMain>
+    </KlyMain>
 
-    <LxFooter>
+    <KlyFooter>
         <Left>
-            <p class="text-sm text-(--lux-text-muted)">@SiteInfo.Copyright</p>
+            <p class="text-sm text-(--klyroo-text-muted)">@SiteInfo.Copyright</p>
         </Left>
         <Right>
-            <LxButton Label="Source" Href="@SiteInfo.SourceUrl" Variant="ButtonVariant.Link" Color="LxColor.Neutral" Size="LxSize.Sm" />
+            <KlyButton Label="Source" Href="@SiteInfo.SourceUrl" Variant="ButtonVariant.Link" Color="KlyColor.Neutral" Size="KlySize.Sm" />
         </Right>
-    </LxFooter>
-</LxApp>
+    </KlyFooter>
+</KlyApp>
 
 @code {
     private MarkdownSite _site = default!;
-    private IReadOnlyList<LxNavigationItem> _sections = [];
+    private IReadOnlyList<KlyNavigationItem> _sections = [];
 
     // The content as it is for this request: a reload in development swaps the whole site, never part of it.
     protected override void OnInitialized()
     {
         _site = Store.Site;
-        _sections = [.. _site.Navigation.Select(item => new LxNavigationItem(item.Title) { Href = FirstHref(item), Active = false })];
+        _sections = [.. _site.Navigation.Select(item => new KlyNavigationItem(item.Title) { Href = FirstHref(item), Active = false })];
     }
 
-    private static string? FirstHref(LxContentNavigationItem item) =>
+    private static string? FirstHref(KlyContentNavigationItem item) =>
         item.Href ?? item.Children?.Select(FirstHref).FirstOrDefault(href => href is not null);
 }

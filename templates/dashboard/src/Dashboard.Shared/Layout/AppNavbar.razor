@@ -3,25 +3,25 @@
 @inject NotificationStore Notifications
 
 @* The top bar of every page: the sidebar toggle (below lg), the title, the actions of the page, the color mode and the notifications. *@
-<LxDashboardNavbar Title="@Title">
+<KlyDashboardNavbar Title="@Title">
     <Leading>
-        <LxDashboardSidebarCollapse />
+        <KlyDashboardSidebarCollapse />
     </Leading>
     <Right>
         @Actions
-        <LxColorModeButton />
-        <LxChip Show="@(Notifications.UnreadCount > 0)" Label="@($"{Notifications.UnreadCount} unread notifications")" Size="LxSize.Sm" Inset>
-            <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Notifications" OnClick="App.OpenNotifications" data-testid="notifications-button">
-                <LeadingIcon>@LxIcons.Named("bell")</LeadingIcon>
-            </LxButton>
-        </LxChip>
-        <LxDropdownMenu Items="_create" Placement="bottom-end">
-            <LxButton Square Variant="ButtonVariant.Solid" aria-label="Create" data-testid="create-button">
-                <LeadingIcon>@LxIcons.Named("plus")</LeadingIcon>
-            </LxButton>
-        </LxDropdownMenu>
+        <KlyColorModeButton />
+        <KlyChip Show="@(Notifications.UnreadCount > 0)" Label="@($"{Notifications.UnreadCount} unread notifications")" Size="KlySize.Sm" Inset>
+            <KlyButton Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="Notifications" OnClick="App.OpenNotifications" data-testid="notifications-button">
+                <LeadingIcon>@KlyIcons.Named("bell")</LeadingIcon>
+            </KlyButton>
+        </KlyChip>
+        <KlyDropdownMenu Items="_create" Placement="bottom-end">
+            <KlyButton Square Variant="ButtonVariant.Solid" aria-label="Create" data-testid="create-button">
+                <LeadingIcon>@KlyIcons.Named("plus")</LeadingIcon>
+            </KlyButton>
+        </KlyDropdownMenu>
     </Right>
-</LxDashboardNavbar>
+</KlyDashboardNavbar>
 
 @code {
     /// <summary>The title of the page.</summary>
@@ -30,11 +30,11 @@
     /// <summary>Extra actions of the page, before the color mode button.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
 
-    private static readonly LxMenuItem[] _create =
+    private static readonly KlyMenuItem[] _create =
     [
-        new() { Label = "New message", Href = "inbox", Icon = LxIcons.Named("mail", "size-4") },
-        new() { Label = "New customer", Href = "customers?new=true", Icon = LxIcons.Named("user", "size-4") },
-        new() { Label = "Invite people", Href = "settings/members", Icon = LxIcons.Named("lucide:user-plus", "size-4") },
+        new() { Label = "New message", Href = "inbox", Icon = KlyIcons.Named("mail", "size-4") },
+        new() { Label = "New customer", Href = "customers?new=true", Icon = KlyIcons.Named("user", "size-4") },
+        new() { Label = "Invite people", Href = "settings/members", Icon = KlyIcons.Named("lucide:user-plus", "size-4") },
     ];
 
     protected override void OnInitialized() => Notifications.Changed += OnChanged;

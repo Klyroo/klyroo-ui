@@ -1,43 +1,43 @@
 @inherits LayoutComponentBase
 
-@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* KlyHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<LxHead />
+<KlyHead />
 <SystemBars />
 
-<LxApp>
-    <LxSkipLink />
+<KlyApp>
+    <KlySkipLink />
 
     @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-    <LxHeader Items="_items" AriaLabel="Main" MenuTitle="Menu">
+    <KlyHeader Items="_items" AriaLabel="Main" MenuTitle="Menu">
         <Left>
-            <a href="./" class="flex items-center gap-2 font-semibold text-(--lux-text-highlighted)">
-                <LxIcon Name="ph:stack" Class="size-6" />
+            <a href="./" class="flex items-center gap-2 font-semibold text-(--klyroo-text-highlighted)">
+                <KlyIcon Name="ph:stack" Class="size-6" />
                 <span>Starter</span>
             </a>
         </Left>
         <Right>
-            <LxLocaleSelect Size="LxSize.Sm" />
-            <LxColorModeButton Size="LxSize.Sm" />
+            <KlyLocaleSelect Size="KlySize.Sm" />
+            <KlyColorModeButton Size="KlySize.Sm" />
         </Right>
-    </LxHeader>
+    </KlyHeader>
 
-    <LxMain id="main" tabindex="-1" class="focus:outline-none">
+    <KlyMain id="main" tabindex="-1" class="focus:outline-none">
         @Body
-    </LxMain>
+    </KlyMain>
 
-    <LxFooter>
+    <KlyFooter>
         <Left>
-            <p class="text-sm text-(--lux-text-muted)">&copy; @DateTime.UtcNow.Year Starter. Built with Lux.UI.</p>
+            <p class="text-sm text-(--klyroo-text-muted)">&copy; @DateTime.UtcNow.Year Starter. Built with Klyroo.UI.</p>
         </Left>
         <Right>
             <nav aria-label="Footer" class="flex gap-4 text-sm">
-                <a href="./" class="text-(--lux-text-muted) hover:text-(--lux-text-highlighted)">Home</a>
-                <a href="about" class="text-(--lux-text-muted) hover:text-(--lux-text-highlighted)">About</a>
+                <a href="./" class="text-(--klyroo-text-muted) hover:text-(--klyroo-text-highlighted)">Home</a>
+                <a href="about" class="text-(--klyroo-text-muted) hover:text-(--klyroo-text-highlighted)">About</a>
             </nav>
         </Right>
-    </LxFooter>
-</LxApp>
+    </KlyFooter>
+</KlyApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
     An unhandled error has occurred.
@@ -46,7 +46,7 @@
 </div>
 
 @code {
-    private static readonly LxNavigationItem[] _items =
+    private static readonly KlyNavigationItem[] _items =
     [
         new("Home") { Href = "./", Exact = true },
         new("Features") { Href = "./#features", Active = false },

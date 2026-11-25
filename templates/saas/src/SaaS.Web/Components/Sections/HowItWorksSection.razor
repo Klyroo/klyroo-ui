@@ -1,5 +1,5 @@
 @* The steps on the left, a snippet on the right. The snippet goes through the renderer of the documentation: highlighted, with a copy button. *@
-<LxPageSection id="how-it-works"
+<KlyPageSection id="how-it-works"
                Headline="@SiteInfo.HowHeadline"
                Title="@SiteInfo.HowTitle"
                Description="@SiteInfo.HowDescription"
@@ -9,12 +9,12 @@
             @foreach (var (step, index) in SiteInfo.Steps.Select((s, i) => (s, i + 1)))
             {
                 <li class="flex gap-4" data-testid="step">
-                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--lux-bg-elevated) ring ring-(--lux-border)">
-                        <LxIcon Name="@step.Icon" Class="size-5 text-(--lux-text-highlighted)" />
+                    <span class="flex size-10 shrink-0 items-center justify-center rounded-full bg-(--klyroo-bg-elevated) ring ring-(--klyroo-border)">
+                        <KlyIcon Name="@step.Icon" Class="size-5 text-(--klyroo-text-highlighted)" />
                     </span>
                     <div>
-                        <h3 class="text-base font-semibold text-(--lux-text-highlighted)">@index. @step.Title</h3>
-                        <p class="mt-1 text-(--lux-text-muted)">@step.Text</p>
+                        <h3 class="text-base font-semibold text-(--klyroo-text-highlighted)">@index. @step.Title</h3>
+                        <p class="mt-1 text-(--klyroo-text-muted)">@step.Text</p>
                     </div>
                 </li>
             }
@@ -23,7 +23,7 @@
     <Media>
         <div data-testid="how-snippet" class="w-full min-w-0">@((MarkupString)_snippet)</div>
     </Media>
-</LxPageSection>
+</KlyPageSection>
 
 @code {
     // A long line of code scrolls inside its block: the media column may shrink below the width of its content.

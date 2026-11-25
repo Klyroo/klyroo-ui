@@ -1,21 +1,21 @@
 @* A project as a card: the cover, the title as the only link, the description, and the year and the stack. Used by the home page and by the work page. *@
-<LxPageCard Title="@Project.Title" Description="@Project.Description" Href="@Project.Href" HeadingLevel="HeadingLevel" Color="LxColor.Neutral" Class="h-full" data-testid="project">
+<KlyPageCard Title="@Project.Title" Description="@Project.Description" Href="@Project.Href" HeadingLevel="HeadingLevel" Color="KlyColor.Neutral" Class="h-full" data-testid="project">
     <Header>
         @if (Project.Image is not null)
         {
-            <LxImage Src="@Project.Image" Alt="@(Project.ImageAlt ?? "")" Class="aspect-[16/10] w-full object-cover" />
+            <KlyImage Src="@Project.Image" Alt="@(Project.ImageAlt ?? "")" Class="aspect-[16/10] w-full object-cover" />
         }
     </Header>
     <Footer>
         <div class="flex flex-wrap items-center gap-2">
-            <LxBadge Label="@Project.Year.ToString()" Color="LxColor.Neutral" Variant="LxVariant.Outline" Size="LxSize.Sm" />
+            <KlyBadge Label="@Project.Year.ToString()" Color="KlyColor.Neutral" Variant="KlyVariant.Outline" Size="KlySize.Sm" />
             @foreach (var item in Project.Stack.Take(3))
             {
-                <LxBadge Label="@item" Color="LxColor.Neutral" Variant="LxVariant.Subtle" Size="LxSize.Sm" />
+                <KlyBadge Label="@item" Color="KlyColor.Neutral" Variant="KlyVariant.Subtle" Size="KlySize.Sm" />
             }
         </div>
     </Footer>
-</LxPageCard>
+</KlyPageCard>
 
 @code {
     [Parameter, EditorRequired] public Project Project { get; set; } = default!;

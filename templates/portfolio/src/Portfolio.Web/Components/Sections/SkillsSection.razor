@@ -1,11 +1,11 @@
-@* LxPageSection renders each item of Features as a LxPageFeature. *@
-<LxPageSection id="skills"
+@* KlyPageSection renders each item of Features as a KlyPageFeature. *@
+<KlyPageSection id="skills"
                Headline="@SiteInfo.SkillsHeadline"
                Title="@SiteInfo.SkillsTitle"
-               Orientation="LxOrientation.Vertical"
+               Orientation="KlyOrientation.Vertical"
                Features="SiteInfo.Skills"
                Links="_links" />
 
 @code {
-    private static readonly PageLinkItem[] _links = [new("More about me", SiteInfo.AboutHref) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
+    private static readonly PageLinkItem[] _links = [new("More about me", SiteInfo.AboutHref) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline, TrailingIcon = "ph:arrow-right" }];
 }

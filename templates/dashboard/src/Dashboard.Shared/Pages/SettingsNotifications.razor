@@ -5,36 +5,36 @@
 
 <SettingsPage Heading="Notifications" Description="Where you hear about what happens, and what is worth a message." TestId="settings-notifications">
     <form @onsubmit="SaveAsync" @onsubmit:preventDefault class="flex flex-col gap-6" data-testid="notification-form">
-        <LxCard>
+        <KlyCard>
             <Header>
-                <h2 class="font-semibold text-(--lux-text-highlighted)">Channels</h2>
-                <p class="text-sm text-(--lux-text-muted)">Choose how messages reach you.</p>
+                <h2 class="font-semibold text-(--klyroo-text-highlighted)">Channels</h2>
+                <p class="text-sm text-(--klyroo-text-muted)">Choose how messages reach you.</p>
             </Header>
             <ChildContent>
                 <div class="flex flex-col gap-4">
-                    <LxSwitch @bind-Value="_email" Label="Email" Description="A message to maren@example.com." data-testid="channel-email" />
-                    <LxSwitch @bind-Value="_push" Label="Push" Description="A notification in the browser or on your phone." data-testid="channel-push" />
+                    <KlySwitch @bind-Value="_email" Label="Email" Description="A message to maren@example.com." data-testid="channel-email" />
+                    <KlySwitch @bind-Value="_push" Label="Push" Description="A notification in the browser or on your phone." data-testid="channel-push" />
                 </div>
             </ChildContent>
-        </LxCard>
+        </KlyCard>
 
-        <LxCard>
+        <KlyCard>
             <Header>
-                <h2 class="font-semibold text-(--lux-text-highlighted)">What to tell me about</h2>
-                <p class="text-sm text-(--lux-text-muted)">Each of these goes to the channels you turned on.</p>
+                <h2 class="font-semibold text-(--klyroo-text-highlighted)">What to tell me about</h2>
+                <p class="text-sm text-(--klyroo-text-muted)">Each of these goes to the channels you turned on.</p>
             </Header>
             <ChildContent>
                 <div class="flex flex-col gap-4">
-                    <LxSwitch @bind-Value="_messages" Label="New messages" Description="A customer writes to the inbox." />
-                    <LxSwitch @bind-Value="_orders" Label="Orders and payments" Description="A payment arrives, fails or is refunded." />
-                    <LxSwitch @bind-Value="_members" Label="Team changes" Description="Someone joins, leaves or changes role." />
-                    <LxSwitch @bind-Value="_digest" Label="Weekly report" Description="One summary of the week, on Monday morning." />
+                    <KlySwitch @bind-Value="_messages" Label="New messages" Description="A customer writes to the inbox." />
+                    <KlySwitch @bind-Value="_orders" Label="Orders and payments" Description="A payment arrives, fails or is refunded." />
+                    <KlySwitch @bind-Value="_members" Label="Team changes" Description="Someone joins, leaves or changes role." />
+                    <KlySwitch @bind-Value="_digest" Label="Weekly report" Description="One summary of the week, on Monday morning." />
                 </div>
             </ChildContent>
-        </LxCard>
+        </KlyCard>
 
         <div class="flex justify-end">
-            <LxButton Label="Save preferences" Type="submit" data-testid="notification-save" />
+            <KlyButton Label="Save preferences" Type="submit" data-testid="notification-save" />
         </div>
     </form>
 </SettingsPage>
@@ -51,6 +51,6 @@
     {
         var channels = new[] { (_email, "email"), (_push, "push") }.Where(c => c.Item1).Select(c => c.Item2).ToArray();
         var description = channels.Length == 0 ? "No channel is on: nothing will reach you." : $"Sent by {string.Join(" and ", channels)}.";
-        await Toasts.Add(new LxToast { Title = "Preferences saved", Description = description, Color = channels.Length == 0 ? LxColor.Warning : LxColor.Success });
+        await Toasts.Add(new KlyToast { Title = "Preferences saved", Description = description, Color = channels.Length == 0 ? KlyColor.Warning : KlyColor.Success });
     }
 }

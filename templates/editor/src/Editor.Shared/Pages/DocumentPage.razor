@@ -8,72 +8,72 @@
 
 @* One document: the navbar with its title, the editor with its toolbar, and a bar with the word count and the state of the autosave. The address says which
    document is open (d/{id}). The text is saved a moment after the user stops typing (the editor reports after 400 ms of rest) and when the focus leaves it. *@
-<LxDashboardPanel data-testid="document-panel">
+<KlyDashboardPanel data-testid="document-panel">
     <ChildContent>
-        <LxDashboardNavbar Title="@Title">
+        <KlyDashboardNavbar Title="@Title">
             <Leading>
-                <LxDashboardSidebarCollapse />
+                <KlyDashboardSidebarCollapse />
             </Leading>
             <Right>
                 @if (_document is not null)
                 {
-                    <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Rename document" OnClick="@(() => Documents.RequestRename(_document))" data-testid="document-rename">
-                        <LeadingIcon>@LxIcons.Named("lucide:pencil")</LeadingIcon>
-                    </LxButton>
-                    <LxButton Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="Delete document" OnClick="@(() => Documents.RequestDelete(_document))" data-testid="document-delete">
-                        <LeadingIcon>@LxIcons.Named("lucide:trash-2")</LeadingIcon>
-                    </LxButton>
+                    <KlyButton Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="Rename document" OnClick="@(() => Documents.RequestRename(_document))" data-testid="document-rename">
+                        <LeadingIcon>@KlyIcons.Named("lucide:pencil")</LeadingIcon>
+                    </KlyButton>
+                    <KlyButton Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="Delete document" OnClick="@(() => Documents.RequestDelete(_document))" data-testid="document-delete">
+                        <LeadingIcon>@KlyIcons.Named("lucide:trash-2")</LeadingIcon>
+                    </KlyButton>
                 }
-                <LxColorModeButton />
+                <KlyColorModeButton />
             </Right>
-        </LxDashboardNavbar>
+        </KlyDashboardNavbar>
 
         @if (!_ready)
         {
             <div class="document-column flex flex-1 flex-col gap-4 p-6" aria-hidden="true">
-                <LxSkeleton Class="h-9 w-2/3" />
-                <LxSkeleton Class="h-24 w-full" />
+                <KlySkeleton Class="h-9 w-2/3" />
+                <KlySkeleton Class="h-24 w-full" />
             </div>
         }
         else if (_document is not null && _loadingBody)
         {
             <div class="document-column flex flex-1 flex-col gap-4 p-6" role="status" aria-label="Opening the document" data-testid="document-loading">
-                <LxSkeleton Class="h-9 w-2/3" />
-                <LxSkeleton Class="h-24 w-full" />
+                <KlySkeleton Class="h-9 w-2/3" />
+                <KlySkeleton Class="h-24 w-full" />
             </div>
         }
         else if (_document is not null && _loadFailed)
         {
             <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center" data-testid="document-unreadable">
-                <p class="text-xl font-semibold text-(--lux-text-highlighted)">This document could not be opened</p>
-                <p class="max-w-[34rem] text-sm text-(--lux-text-muted)">This browser did not give the text back, so it is not shown rather than shown empty. Try again, or go back to the list.</p>
-                <LxButton Label="Try again" OnClick="RetryAsync" data-testid="document-retry" />
+                <p class="text-xl font-semibold text-(--klyroo-text-highlighted)">This document could not be opened</p>
+                <p class="max-w-[34rem] text-sm text-(--klyroo-text-muted)">This browser did not give the text back, so it is not shown rather than shown empty. Try again, or go back to the list.</p>
+                <KlyButton Label="Try again" OnClick="RetryAsync" data-testid="document-retry" />
             </div>
         }
         else if (_document is null)
         {
             <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-4 p-6 text-center" data-testid="document-missing">
-                <p class="text-xl font-semibold text-(--lux-text-highlighted)">This document is not in this browser</p>
-                <p class="max-w-[34rem] text-sm text-(--lux-text-muted)">It was deleted, or it was written in another browser: documents stay on the device that made them.</p>
-                <LxButton Label="Back home" Href="./" />
+                <p class="text-xl font-semibold text-(--klyroo-text-highlighted)">This document is not in this browser</p>
+                <p class="max-w-[34rem] text-sm text-(--klyroo-text-muted)">It was deleted, or it was written in another browser: documents stay on the device that made them.</p>
+                <KlyButton Label="Back home" Href="./" />
             </div>
         }
         else
         {
             <div class="flex min-h-0 flex-1 flex-col" data-testid="editor-area" @onfocusin="@(() => _editing = true)" @onfocusout="@(() => _editing = false)">
                 @* The editor is made again for each document, and when its text is read again from the storage (@key), with the text as the value. It never sends a text past the limit. *@
-                <LxEditor @key="@($"{_document.Id}:{_revision}")" Value="@_value" ValueChanged="OnChangedAsync" Label="Document" Placeholder="Write something, or type / for commands" Variant="FieldVariant.None"
+                <KlyEditor @key="@($"{_document.Id}:{_revision}")" Value="@_value" ValueChanged="OnChangedAsync" Label="Document" Placeholder="Write something, or type / for commands" Variant="FieldVariant.None"
                           MaxLength="DocumentLimits.MaxHtmlCharacters" OnLimit="OnLimitAsync" ImageSchemes="_imageSchemes" LinkSchemes="_linkSchemes"
                           Ui="_editorUi" data-testid="editor">
-                    <LxEditorToolbar Items="_toolbar" Label="Formatting" />
-                    <LxEditorToolbar Layout="EditorToolbarLayout.Bubble" Label="Format the selection" />
-                    <LxEditorDragHandle />
-                    <LxEditorSuggestionMenu Items="_commands" />
-                    <LxEditorEmojiMenu />
-                </LxEditor>
+                    <KlyEditorToolbar Items="_toolbar" Label="Formatting" />
+                    <KlyEditorToolbar Layout="EditorToolbarLayout.Bubble" Label="Format the selection" />
+                    <KlyEditorDragHandle />
+                    <KlyEditorSuggestionMenu Items="_commands" />
+                    <KlyEditorEmojiMenu />
+                </KlyEditor>
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-(--lux-border) px-4 py-2 text-xs text-(--lux-text-muted)" data-testid="status-bar">
+            <div class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-t border-(--klyroo-border) px-4 py-2 text-xs text-(--klyroo-text-muted)" data-testid="status-bar">
                 <span data-testid="word-count">@Counts</span>
                 <span class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
                     @if (_external == ExternalChange.Updated)
@@ -83,10 +83,10 @@
                     else if (_external == ExternalChange.Conflict)
                     {
                         <span role="status" class="flex items-center gap-1.5" data-testid="external-conflict">
-                            @LxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--lux-warning-text)")
+                            @KlyIcons.Named("lucide:triangle-alert", "size-3.5 text-(--klyroo-warning-text)")
                             <span>Another tab changed this document. Saving here replaces that version.</span>
                         </span>
-                        <LxButton Size="LxSize.Xs" Variant="ButtonVariant.Outline" Color="LxColor.Neutral" Label="Load the other version" OnClick="ReloadAsync" data-testid="external-reload" />
+                        <KlyButton Size="KlySize.Xs" Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" Label="Load the other version" OnClick="ReloadAsync" data-testid="external-reload" />
                     }
                 <span role="status" class="flex items-center gap-1.5" data-testid="save-state">
                     @switch (_state)
@@ -95,19 +95,19 @@
                             <span>Saving...</span>
                             break;
                         case SaveState.OverLimit:
-                            @LxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--lux-warning-text)")
+                            @KlyIcons.Named("lucide:triangle-alert", "size-3.5 text-(--klyroo-warning-text)")
                             <span>Not saved: this document is too long (@_overLength.ToString("N0") of @DocumentLimits.MaxHtmlCharacters.ToString("N0") characters). Shorten it to save again.</span>
                             break;
                         case SaveState.TooLong:
-                            @LxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--lux-warning-text)")
+                            @KlyIcons.Named("lucide:triangle-alert", "size-3.5 text-(--klyroo-warning-text)")
                             <span>Not saved: this document is too long to keep in the browser.</span>
                             break;
                         case SaveState.Failed:
-                            @LxIcons.Named("lucide:triangle-alert", "size-3.5 text-(--lux-warning-text)")
+                            @KlyIcons.Named("lucide:triangle-alert", "size-3.5 text-(--klyroo-warning-text)")
                             <span>Not saved: this browser did not keep it, so it lasts for this visit only.</span>
                             break;
                         default:
-                            @LxIcons.Named("lucide:check", "size-3.5")
+                            @KlyIcons.Named("lucide:check", "size-3.5")
                             <span>Saved</span>
                             break;
                     }
@@ -116,7 +116,7 @@
             </div>
         }
     </ChildContent>
-</LxDashboardPanel>
+</KlyDashboardPanel>
 
 @code {
     private enum SaveState { Saved, Saving, OverLimit, TooLong, Failed }
@@ -309,7 +309,7 @@
     });
 
     // The editor measures its text and never sends one past the limit: the last text that fit stays what is kept, and the status says what happened.
-    private Task OnLimitAsync(LxLimitEventArgs e)
+    private Task OnLimitAsync(KlyLimitEventArgs e)
     {
         if (e.Exceeded)
         {

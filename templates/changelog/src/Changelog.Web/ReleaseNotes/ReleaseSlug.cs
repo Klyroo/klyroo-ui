@@ -1,4 +1,4 @@
-using Lux.Templates.Content;
+using Klyroo.Templates.Content;
 
 namespace Changelog.Web.ReleaseNotes;
 

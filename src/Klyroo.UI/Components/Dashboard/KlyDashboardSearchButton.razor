@@ -1,0 +1,47 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    The button that opens the KlyDashboardSearch of its dashboard, showing the shortcut with KlyKbd. A click is handled in
+    the browser (js/dashboard.js). In a collapsed sidebar only the icon is left; the label stays for screen readers.
+*@
+<button type="button" class="@_slots["root"]" aria-haspopup="dialog" aria-keyshortcuts="@(Keys is null ? "Control+K Meta+K" : null)" data-kly-search-open @attributes="AdditionalAttributes">
+    @RenderIcon(Options.Icons.Search, _slots["icon"])
+    <span class="@_slots["label"]">@(Label ?? Messages.DashboardSearchButton)</span>
+    @if (Keys is null || Keys.Count > 0)
+    {
+        <kly-mod-keys class="@_slots["kbds"]" aria-hidden="true">
+            @if (Keys is null)
+            {
+                @* The modifier follows the platform: the browser sets the label (<kly-mod-keys>, js/platform-keys.js), the localized modifier name until then. *@
+                <KlyKbd Size="KlySize.Sm" data-kly-mod="" data-label="@Messages.ModifierKey" />
+                <KlyKbd Value="K" Size="KlySize.Sm" />
+            }
+            else
+            {
+                @foreach (var key in Keys)
+                {
+                    <KlyKbd Value="@key" Size="KlySize.Sm" />
+                }
+            }
+        </kly-mod-keys>
+    }
+</button>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The text of the button. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>
+    /// The keys of the shortcut to show, one <see cref="KlyKbd"/> each. Match the <c>Shortcut</c> of the search. Left out, the
+    /// hint follows the platform in the browser (the command key and K on Apple devices, Ctrl and K elsewhere), matching the
+    /// default <c>mod+k</c> shortcut, and the button announces <c>aria-keyshortcuts</c>. Keys you give are shown as given.
+    /// </summary>
+    [Parameter] public IReadOnlyList<string>? Keys { get; set; }
+    [Parameter] public DashboardSearchButtonUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DashboardSearchButton, new Dictionary<string, string?>(), Ui, "root");
+}

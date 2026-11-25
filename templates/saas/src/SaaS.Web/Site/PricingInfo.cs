@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace SaaS.Web.Site;
 
@@ -66,9 +66,9 @@ public static class PricingInfo
     public const string CompareTitle = "Every difference, in one table";
     public const string CompareCaption = "What each plan includes";
 
-    public static IReadOnlyList<LxPricingTier> Tiers { get; } =
+    public static IReadOnlyList<KlyPricingTier> Tiers { get; } =
     [
-        .. Plans.Select(plan => new LxPricingTier(plan.Id, plan.Name)
+        .. Plans.Select(plan => new KlyPricingTier(plan.Id, plan.Name)
         {
             Highlight = plan.Highlight,
             ButtonLabel = plan.ButtonLabel,
@@ -76,7 +76,7 @@ public static class PricingInfo
         }),
     ];
 
-    public static IReadOnlyList<LxPricingSection> Sections { get; } =
+    public static IReadOnlyList<KlyPricingSection> Sections { get; } =
     [
         new("Monitoring",
         [
@@ -125,6 +125,6 @@ public static class PricingInfo
     public static IReadOnlyList<PageLinkItem> CtaLinks { get; } =
     [
         new("Start free", SiteInfo.SignUpHref),
-        new("Talk to us", SiteInfo.ContactUrl) { Color = LxColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Talk to us", SiteInfo.ContactUrl) { Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 }

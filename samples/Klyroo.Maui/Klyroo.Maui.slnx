@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Klyroo.Maui.Shared/Klyroo.Maui.Shared.csproj" />
+  <Project Path="Klyroo.Maui.Web/Klyroo.Maui.Web.csproj" />
+  <Project Path="Klyroo.Maui/Klyroo.Maui.csproj" />
+</Solution>

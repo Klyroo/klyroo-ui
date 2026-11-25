@@ -1,6 +1,6 @@
-using Lux.UI;
-using Lux.Table;
-using Lux.Query;
+using Klyroo.UI;
+using Klyroo.Table;
+using Klyroo.Query;
 using Dashboard.Shared.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -11,14 +11,14 @@ public static class DashboardServices
 {
     /// <summary>
     /// The services of the app. Every host calls it (the web server, the WebAssembly client and the MAUI app), so a page behaves the same
-    /// wherever it runs. Lux is configured here: <c>o.Colors.Neutral = LxPalette.Zinc</c>, the locales, the default size of the components.
+    /// wherever it runs. Klyroo is configured here: <c>o.Colors.Neutral = KlyPalette.Zinc</c>, the locales, the default size of the components.
     /// </summary>
     public static IServiceCollection AddDashboardUi(this IServiceCollection services)
     {
-        // Lux.UI, Lux.Query, and Lux.Table. The primary color is the one of the appearance dialog (AppearanceState), not an option here.
-        services.AddLuxUi();
-        services.AddLuxQuery();
-        services.AddLuxTable();
+        // Klyroo.UI, Klyroo.Query, and Klyroo.Table. The primary color is the one of the appearance dialog (AppearanceState), not an option here.
+        services.AddKlyrooUi();
+        services.AddKlyrooQuery();
+        services.AddKlyrooTable();
         // A host with system bars (the MAUI app) registers its own before calling this; the others get one that does nothing.
         services.TryAddSingleton<ISystemBars, NoSystemBars>();
 

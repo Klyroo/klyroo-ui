@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Mode with Tailwind compiled by the app: copies the Klyroo theme (tokens, dark variant, and the list of classes the
+    components use) to a stable path, obj/klyroo/klyroo.theme.css, because the NuGet cache path changes with every version.
+    The app's stylesheet imports it after Tailwind:  @import "tailwindcss";  @import "../obj/klyroo/klyroo.theme.css";
+  -->
+  <Target Name="KlyrooCopyTailwindTheme" BeforeTargets="BeforeBuild">
+    <Copy SourceFiles="$(MSBuildThisFileDirectory)../staticwebassets/klyroo.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))"
+          SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- Build-time features (fonts, icons, Tailwind): the shared task assembly, then one targets file per feature. -->
+  <Import Project="$(MSBuildThisFileDirectory)Klyroo.UI.Tasks.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)Klyroo.UI.Fonts.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)Klyroo.UI.Icons.targets" />
+  <Import Project="$(MSBuildThisFileDirectory)Klyroo.UI.Tailwind.targets" />
+</Project>

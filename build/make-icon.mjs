@@ -1,10 +1,10 @@
-// Generates src/Lux.UI/assets/icon.png (256x256): a switch, signal yellow on near black.
+// Generates src/Klyroo.UI/assets/icon.png (256x256): Klyroo Lime (#B6FF00) switch on Charcoal (#0B0F14).
 // Pure Node (zlib only), 4x4 supersampling for smooth edges. Run: node build/make-icon.mjs
 import { deflateSync } from "node:zlib";
 import { writeFileSync, mkdirSync } from "node:fs";
 
 const SIZE = 256, SS = 4;
-const BG = [0x0a, 0x0b, 0x0c], FG = [0xff, 0xd2, 0x3f];
+const BG = [0x0b, 0x0f, 0x14], FG = [0xb6, 0xff, 0x00];
 
 // Signed distance to a rounded rectangle centered at (cx, cy).
 const rr = (x, y, cx, cy, hw, hh, r) => {
@@ -44,6 +44,6 @@ const chunk = (type, data) => {
 const ihdr = Buffer.alloc(13);
 ihdr.writeUInt32BE(SIZE, 0); ihdr.writeUInt32BE(SIZE, 4); ihdr[8] = 8; ihdr[9] = 6;
 const png = Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw, { level: 9 })), chunk("IEND", Buffer.alloc(0))]);
-mkdirSync("src/Lux.UI/assets", { recursive: true });
-writeFileSync("src/Lux.UI/assets/icon.png", png);
+mkdirSync("src/Klyroo.UI/assets", { recursive: true });
+writeFileSync("src/Klyroo.UI/assets/icon.png", png);
 console.log(`icon.png ${png.length} bytes`);

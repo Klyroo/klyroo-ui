@@ -1,6 +1,6 @@
 # Editor
 
-A document app on Lux.UI: a sidebar with your documents (new, search, rename, delete, grouped by the day they were last changed), a rich text editor with a toolbar for headings, bold, italic, underline, strikethrough, lists, task lists, links, code, quotes and images by address, a floating menu over a selection, slash commands, an autosave that tells you when the text is in the browser's storage, a word count, and light and dark mode. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
+A document app on Klyroo.UI: a sidebar with your documents (new, search, rename, delete, grouped by the day they were last changed), a rich text editor with a toolbar for headings, bold, italic, underline, strikethrough, lists, task lists, links, code, quotes and images by address, a floating menu over a selection, slash commands, an autosave that tells you when the text is in the browser's storage, a word count, and light and dark mode. The same pages run on the web (server first, then WebAssembly) and in a native app (MAUI Blazor Hybrid).
 
 There is no server side to it: the documents are kept in the browser (or the web view of the native app) of the person who writes them, and the web host only serves the pages.
 
@@ -13,7 +13,7 @@ This repository is a GitHub template. After you create your repository from it, 
 dotnet run rename.cs MyApp
 ```
 
-`rename.cs` is a .NET 10 file-based app. It renames the solution, the projects and their folders, the namespaces, the MAUI application title and id, and every other occurrence of the template name, then deletes itself. The new name is one identifier: letters and digits, starting with a letter. What Lux.UI names with "Editor" (`LxEditor`, `EditorAction`, `lx-editor`) is not the template name and is left alone.
+`rename.cs` is a .NET 10 file-based app. It renames the solution, the projects and their folders, the namespaces, the MAUI application title and id, and every other occurrence of the template name, then deletes itself. The new name is one identifier: letters and digits, starting with a letter. What Klyroo.UI names with "Editor" (`KlyEditor`, `EditorAction`, `kly-editor`) is not the template name and is left alone.
 
 <!-- rename:end -->
 ## Run
@@ -24,7 +24,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Editor.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Editor.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Editor.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## How a document is kept
 
@@ -47,7 +47,7 @@ The hub is raised to `DocumentLimits.MaxReceiveMessageBytes` = **512 KB** (`Prog
 
 `DocumentJson.TransferBytes` counts the second one exactly as the browser writes it, and a save that would pass it is refused like one that is too long, so no stored document is one the app could not read back. A document of 150,000 characters that is all quotes or backslashes is the one case this refuses before the character limit; control characters, which the allow-list drops, are the one input that can still make the editor's own message bigger than the bound (the connection then closes and the circuit starts again). The WebAssembly and MAUI hosts have no such limit; this one is for the Server renderer.
 
-The editor never sends a text past the limit: `LxEditor MaxLength="@DocumentLimits.MaxHtmlCharacters"` keeps it on the page, marks it invalid and the status bar says "Not saved: this document is too long (N of 150,000 characters)". The stored text is the last one that fitted.
+The editor never sends a text past the limit: `KlyEditor MaxLength="@DocumentLimits.MaxHtmlCharacters"` keeps it on the page, marks it invalid and the status bar says "Not saved: this document is too long (N of 150,000 characters)". The stored text is the last one that fitted.
 
 ### Other tabs
 
@@ -84,7 +84,7 @@ Run the app with `dotnet watch`, and Tailwind in a second terminal, so a new uti
 
 ```bash
 dotnet watch --project src/Editor.Web
-dotnet build src/Editor.Shared -t:LuxTailwindWatch
+dotnet build src/Editor.Shared -t:KlyrooTailwindWatch
 ```
 
 In VS Code, the `dev` task (Terminal, Run Task) builds once and starts both. `dotnet watch` does not follow the generated CSS by itself, and it does not reload the page for a CSS-only edit: reload by hand after an edit.

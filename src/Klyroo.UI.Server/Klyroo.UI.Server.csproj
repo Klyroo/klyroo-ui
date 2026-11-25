@@ -1,0 +1,51 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Server-side request access for Klyroo.UI (cookies of a static render or a prerender). Same version as the library: build/Version.props. -->
+  <Import Project="..\..\build\Version.props" />
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>Klyroo.UI.Server</RootNamespace>
+    <PackageId>Klyroo.UI.Server</PackageId>
+    <Description>Server-side request access for Klyroo.UI: lets components read cookies (the time zone of a data list) in static server rendering and prerendering. ASP.NET Core only.</Description>
+    <PackageTags>blazor;aspnetcore;ssr;cookies;timezone</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>Klyroo Contributors</Authors>
+    <Copyright>Copyright (c) 2026 Klyroo Contributors</Copyright>
+    <PackageReleaseNotes>See CHANGELOG.md in the Klyroo.UI package.</PackageReleaseNotes>
+    <RepositoryType>git</RepositoryType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <IsTrimmable>true</IsTrimmable>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+    <Deterministic>true</Deterministic>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <!-- Exact dependency version ([x.y.z]) on Klyroo.UI in the nuspec. -->
+  <Import Project="..\..\build\ExactProjectReferences.targets" />
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <!-- Not private: the build assets of Klyroo.UI (its Tailwind and icon targets) must reach an app that references this package first. -->
+    <ProjectReference Include="..\Klyroo.UI\Klyroo.UI.csproj" PrivateAssets="contentfiles;analyzers" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Klyroo.UI.Server.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Klyroo.UI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="..\Klyroo.UI\assets\icon.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+</Project>

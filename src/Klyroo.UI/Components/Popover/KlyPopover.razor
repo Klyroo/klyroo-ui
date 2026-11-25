@@ -1,0 +1,21 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    The <kly-popover> custom element owns the browser side: it shows the native [popover] when "open" is set,
+    positions it, moves focus, and reports every open/close (including Escape and light dismiss) through "kly-toggle".
+    Blazor never renders the open state of the native element itself, so the two never fight over it.
+*@
+@* data-kly-seq must come before open: Blazor applies attributes in order and the element reads it when open changes. *@
+<kly-popover data-kly-seq="@(OpenChanged.HasDelegate ? _sequence : null)"
+            open="@Open"
+            placement="@Placement"
+            offset="@Offset"
+            @onklytoggle="ToggleHandler"
+            @onklytoggle:stopPropagation="true"
+            @attributes="AdditionalAttributes">
+    <span data-slot="trigger">@ChildContent</span>
+    <div id="@_id" popover="auto" role="@Role" tabindex="-1" aria-label="@(Role is null ? null : AriaLabel)" class="@_slots["content"]" data-slot="content">
+        @Content
+    </div>
+</kly-popover>

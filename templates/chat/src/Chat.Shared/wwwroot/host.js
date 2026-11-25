@@ -1,14 +1,14 @@
 // Small helpers of the app, imported by the shared components.
 
 /**
- * Calls back with true when the page is dark, now and every time the color mode changes (Lux dispatches lx-color-mode).
+ * Calls back with true when the page is dark, now and every time the color mode changes (Klyroo dispatches kly-color-mode).
  * Returns an object whose dispose() removes the listener: call it when the component goes away.
  */
 export function watchDark(dotnet) {
   const send = () => dotnet.invokeMethodAsync('OnMode', document.documentElement.classList.contains('dark')).catch(() => {});
-  document.addEventListener('lx-color-mode', send);
+  document.addEventListener('kly-color-mode', send);
   send();
-  return { dispose: () => document.removeEventListener('lx-color-mode', send) };
+  return { dispose: () => document.removeEventListener('kly-color-mode', send) };
 }
 
 /**
@@ -44,7 +44,7 @@ export function remove(key) {
 /** Puts the focus in the field of the prompt, after the page settled (a navigation moves it to the title, and the prompt is where the user types next). */
 export function focusPrompt() {
   setTimeout(() => {
-    const field = document.querySelector('[data-lx-chat-input]');
+    const field = document.querySelector('[data-kly-chat-input]');
     if (field instanceof HTMLElement && !field.hasAttribute('disabled')) field.focus();
   }, 60);
 }

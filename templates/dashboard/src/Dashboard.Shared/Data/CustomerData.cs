@@ -1,5 +1,5 @@
 using System.Text.Json.Serialization;
-using Lux.Query;
+using Klyroo.Query;
 
 namespace Dashboard.Shared.Data;
 

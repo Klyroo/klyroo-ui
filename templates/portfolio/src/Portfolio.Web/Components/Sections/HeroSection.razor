@@ -1,19 +1,19 @@
 @* The introduction. The card on the right is plain markup: who you are, where, and whether you are taking work. Swap the avatar's initials for a
-   photo by giving LxUser an AvatarSrc (a file in wwwroot), and keep the Now list short and true: it is the first thing a visitor reads after the title. *@
-<LxPageHero Headline="@SiteInfo.HeroHeadline"
+   photo by giving KlyUser an AvatarSrc (a file in wwwroot), and keep the Now list short and true: it is the first thing a visitor reads after the title. *@
+<KlyPageHero Headline="@SiteInfo.HeroHeadline"
             Title="@SiteInfo.HeroTitle"
             Description="@SiteInfo.HeroDescription"
             Links="SiteInfo.HeroLinks"
             Ui="_ui">
     <Media>
-        <div data-testid="hero-card" class="mx-auto flex w-full max-w-[26rem] flex-col gap-6 rounded-2xl bg-(--lux-bg) p-6 shadow-xl ring ring-(--lux-border)">
-            <LxUser Name="@SiteInfo.Name" Description="@($"{SiteInfo.Role}, {SiteInfo.Location}")" Size="LxSize.Xl" />
-            <dl class="m-0 flex flex-col divide-y divide-(--lux-border) text-sm">
+        <div data-testid="hero-card" class="mx-auto flex w-full max-w-[26rem] flex-col gap-6 rounded-2xl bg-(--klyroo-bg) p-6 shadow-xl ring ring-(--klyroo-border)">
+            <KlyUser Name="@SiteInfo.Name" Description="@($"{SiteInfo.Role}, {SiteInfo.Location}")" Size="KlySize.Xl" />
+            <dl class="m-0 flex flex-col divide-y divide-(--klyroo-border) text-sm">
                 @foreach (var (label, value) in SiteInfo.Now)
                 {
                     <div class="flex flex-col gap-0.5 py-3 first:pt-0 last:pb-0 sm:flex-row sm:gap-4">
-                        <dt class="shrink-0 font-mono text-xs uppercase tracking-wider text-(--lux-text-muted) sm:w-24 sm:pt-0.5">@label</dt>
-                        <dd class="m-0 text-(--lux-text-highlighted)">@value</dd>
+                        <dt class="shrink-0 font-mono text-xs uppercase tracking-wider text-(--klyroo-text-muted) sm:w-24 sm:pt-0.5">@label</dt>
+                        <dd class="m-0 text-(--klyroo-text-highlighted)">@value</dd>
                     </div>
                 }
             </dl>
@@ -21,15 +21,15 @@
                 @foreach (var link in SiteInfo.Social)
                 {
                     <li>
-                        <LxButton Href="@link.Href" Square Variant="ButtonVariant.Ghost" Color="LxColor.Neutral" aria-label="@link.Label">
-                            <LeadingIcon><LxIcon Name="@link.Icon" Class="size-5" /></LeadingIcon>
-                        </LxButton>
+                        <KlyButton Href="@link.Href" Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="@link.Label">
+                            <LeadingIcon><KlyIcon Name="@link.Icon" Class="size-5" /></LeadingIcon>
+                        </KlyButton>
                     </li>
                 }
             </ul>
         </div>
     </Media>
-</LxPageHero>
+</KlyPageHero>
 
 @code {
     private static readonly PageHeroUi _ui = new()

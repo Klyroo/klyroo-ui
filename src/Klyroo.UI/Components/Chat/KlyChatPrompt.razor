@@ -1,0 +1,202 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    A message form. <kly-chat-prompt> grows the textarea, submits on Enter (Shift+Enter adds a line, composing with an IME
+    never submits) and decides how the text leaves:
+    - interactive: it reports the text with kly-change on the hidden sink element and clears the field; no form post;
+    - static server rendering: the form posts under FormName, and the text comes back as the posted form. A page that renders
+      interactively posts nothing, not even while it prerenders: Enter then does nothing until the page is live.
+    The sink is a separate element so a nested component's kly-change (a model select in the footer) is never read as a message.
+*@
+<kly-chat-prompt data-color="@Color.Value"
+                data-status="@_status"
+                data-busy="@(Busy ? "" : null)"
+                data-disabled="@(Disabled ? "" : null)"
+                data-kly-live="@(Live ? "" : null)"
+                data-kly-post="@(Posts ? "" : null)"
+                data-submit-on-enter="@(SubmitOnEnter ? null : "false")"
+                data-max-rows="@MaxRows"
+                class="@_slots["root"]"
+                @attributes="AdditionalAttributes">
+    <span hidden data-kly-chat-sink
+          data-kly-seq="@(OnSubmit.HasDelegate ? _sequence : null)"
+          @onklychange="ChangeHandler"
+          @onklychange:stopPropagation="true"></span>
+    <CascadingValue Value="_context" IsFixed="false">
+        @if (FormName is not null)
+        {
+            <form method="post" @formname="@FormName" @onsubmit="HandleSubmit" data-enhance="@(Enhance ? "" : null)" class="@_slots["form"]">
+                <AntiforgeryToken />
+                <input type="hidden" name="@NameOf(FormMarker)" value="@FormName" />
+                @Inner
+            </form>
+        }
+        else
+        {
+            <form class="@_slots["form"]">
+                @Inner
+            </form>
+        }
+    </CascadingValue>
+</kly-chat-prompt>
+
+@code {
+    private const string FormMarker = "__form";
+    private const string TextKey = "prompt";
+
+    private SlotSet _slots = default!;
+    private ChatPromptContext _context = new(ChatStatus.Idle, false);
+    private string _status = "idle";
+    private int _sequence;
+
+    // Filled in static server rendering when the form was posted.
+    [SupplyParameterFromForm] private Dictionary<string, string?>? Posted { get; set; }
+
+    /// <summary>Called with the text of the message, when the user sends it. Without a handler, nothing leaves the browser.</summary>
+    [Parameter] public EventCallback<string> OnSubmit { get; set; }
+
+    /// <summary>
+    /// Name of the form. Required to send in static server rendering, where the page receives the form post and calls
+    /// <see cref="OnSubmit"/>; one prompt per page and name. Posting is for static rendering only: under an interactive
+    /// render mode (prerendering included) the form never posts, and Enter does nothing until the page is interactive.
+    /// </summary>
+    [Parameter] public string? FormName { get; set; }
+
+    /// <summary>Enhanced form handling in static server rendering: the post updates the page without a reload.</summary>
+    [Parameter] public bool Enhance { get; set; }
+
+    /// <summary>
+    /// Where the conversation is. While Submitted or Streaming a message cannot be sent (the submit button becomes a stop
+    /// button); the field stays editable so the next message can be drafted.
+    /// </summary>
+    [Parameter] public ChatStatus Status { get; set; }
+
+    /// <summary>Text the field starts with: a draft, or the message to show again after a post.</summary>
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible name of the form and the field. Defaults to the built-in text.</summary>
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Enter sends and Shift+Enter adds a line. Set it to false and Ctrl or Cmd plus Enter sends instead.</summary>
+    [Parameter] public bool SubmitOnEnter { get; set; } = true;
+
+    /// <summary>Rows of an empty field.</summary>
+    [Parameter] public int Rows { get; set; } = 1;
+
+    /// <summary>The field grows with its text up to this many rows, then scrolls.</summary>
+    [Parameter] public int MaxRows { get; set; } = 6;
+
+    /// <summary>Focuses the field when the page loads.</summary>
+    [Parameter] public bool Autofocus { get; set; }
+    [Parameter] public FieldVariant Variant { get; set; } = FieldVariant.Outline;
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+
+    /// <summary>Above the field: <see cref="KlyChatAttachment"/> items. A message may be sent with no text while this is set.</summary>
+    [Parameter] public RenderFragment? Attachments { get; set; }
+
+    /// <summary>Before the field, in its row.</summary>
+    [Parameter] public RenderFragment? Leading { get; set; }
+
+    /// <summary>Replaces the submit button, after the field. An empty fragment hides it.</summary>
+    [Parameter] public RenderFragment? Trailing { get; set; }
+
+    /// <summary>Below the field: buttons to attach files, a model picker.</summary>
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    /// <summary>Called when the stop button of the default submit button is pressed.</summary>
+    [Parameter] public EventCallback OnStop { get; set; }
+
+    /// <summary>Called when the retry button of the default submit button is pressed.</summary>
+    [Parameter] public EventCallback OnReload { get; set; }
+    [Parameter] public ChatPromptUi? Ui { get; set; }
+
+    private bool Busy => Status is ChatStatus.Submitted or ChatStatus.Streaming;
+
+    // The form posts only when no render mode is assigned: an interactive page, prerendered or not, never posts.
+    private bool Posts => FormName is not null && AssignedRenderMode is null && !RendererInfo.IsInteractive;
+
+    // The text goes through kly-change once the page is interactive; before that, or without a handler, the form posts.
+    private bool Live => OnSubmit.HasDelegate && RendererInfo.IsInteractive;
+
+    private EventCallback<KlyChangeEventArgs> ChangeHandler =>
+        OnSubmit.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
+
+    protected override void OnParametersSet()
+    {
+        _status = ChatValue.Of(Status);
+        _slots = ResolveSlots(Options.ChatPrompt, new Dictionary<string, string?> { ["variant"] = VariantValue.Of(Variant) }, Ui, "root");
+        if (_context.Status != Status || _context.Disabled != Disabled)
+        {
+            _context = new ChatPromptContext(Status, Disabled);
+        }
+    }
+
+    private static string NameOf(string key) => $"{nameof(Posted)}[{key}]";
+
+    private RenderFragment Inner => @<text>
+        @if (Attachments is not null)
+        {
+            <div class="@_slots["attachments"]" data-slot="attachments" data-kly-chat-attachments>@Attachments</div>
+        }
+        <div class="@_slots["row"]" data-slot="row">
+            @Leading
+            <textarea name="@NameOf(TextKey)"
+                      rows="@Rows"
+                      value="@Value"
+                      placeholder="@(Placeholder ?? Messages.ChatPromptPlaceholder)"
+                      aria-label="@(Label ?? Messages.ChatPromptLabel)"
+                      disabled="@Disabled"
+                      autofocus="@Autofocus"
+                      enterkeyhint="send"
+                      data-kly-chat-input
+                      class="@_slots["textarea"]"></textarea>
+            <div class="@_slots["trailing"]" data-slot="trailing">
+                @if (Trailing is not null)
+                {
+                    @Trailing
+                }
+                else
+                {
+                    <KlyChatPromptSubmit OnStop="OnStop" OnReload="OnReload" />
+                }
+            </div>
+        </div>
+        @if (Footer is not null)
+        {
+            <div class="@_slots["footer"]" data-slot="footer">@Footer</div>
+        }
+    </text>;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(KlyChangeEventArgs))]
+    private async Task OnChange(KlyChangeEventArgs e)
+    {
+        _sequence = e.Sequence;
+        await Deliver(e.Value ?? "", trusted: true);
+    }
+
+    // Static server rendering: the posted form.
+    private async Task HandleSubmit()
+    {
+        if (Posted is null || FormName is null || Posted.GetValueOrDefault(FormMarker) != FormName)
+        {
+            return;
+        }
+        await Deliver(Posted.GetValueOrDefault(TextKey) ?? "", trusted: false);
+    }
+
+    // The browser already refused an empty message with nothing attached; a post is checked again here.
+    private async Task Deliver(string text, bool trusted)
+    {
+        if (Busy || Disabled || (!trusted && string.IsNullOrWhiteSpace(text) && Attachments is null))
+        {
+            return;
+        }
+        await OnSubmit.InvokeAsync(text);
+    }
+}

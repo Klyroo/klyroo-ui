@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Lux.Templates.Content;
-using Lux.UI;
+using Klyroo.Templates.Content;
+using Klyroo.UI;
 using Portfolio.Web.Components;
 using Portfolio.Web.Site;
 
@@ -25,7 +25,7 @@ if (forwardedHeaders)
     });
 }
 
-builder.Services.AddLuxUi();
+builder.Services.AddKlyrooUi();
 // Static server rendering only: no AddInteractiveServerComponents, no AddInteractiveWebAssemblyComponents. Add one of them (and a render mode on
 // the component) the day a page needs a component that runs .NET in the browser.
 builder.Services.AddRazorComponents();
@@ -78,10 +78,10 @@ if (!app.Environment.IsDevelopment())
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-// Reads the query string, the culture cookie that LxLocaleSelect writes and Accept-Language. Lux components follow the UI culture
+// Reads the query string, the culture cookie that KlyLocaleSelect writes and Accept-Language. Klyroo components follow the UI culture
 // on their own: the supported UI cultures are the codes of the built-in locales. The text of the site is English: the language select
-// translates what Lux writes itself (labels, menus, the form messages) and switches the layout to right-to-left where needed.
-var cultures = LxLocales.All.Select(locale => locale.Code).ToArray();
+// translates what Klyroo writes itself (labels, menus, the form messages) and switches the layout to right-to-left where needed.
+var cultures = KlyLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(cultures)

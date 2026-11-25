@@ -1,4 +1,4 @@
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Portfolio.Web.Site;
 
@@ -33,6 +33,6 @@ public static class Resume
         new("Practice", ["Design system documentation", "Workshops", "Code review", "Writing for engineers"]),
     ];
 
-    public static IReadOnlyList<LxTimelineItem> Timeline() =>
-        [.. Experiences.Select(e => new LxTimelineItem($"{e.Title}, {e.Organization}") { Date = e.Period, Description = e.Summary })];
+    public static IReadOnlyList<KlyTimelineItem> Timeline() =>
+        [.. Experiences.Select(e => new KlyTimelineItem($"{e.Title}, {e.Organization}") { Date = e.Period, Description = e.Summary })];
 }

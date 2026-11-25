@@ -1,0 +1,18 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+@*
+    Purely visual: hidden from assistive technology. Mark the region that is loading with aria-busy="true" and give it
+    one accessible announcement (a visually hidden role="status" text, say) instead of announcing every placeholder.
+*@
+<div aria-hidden="true" class="@_slots["base"]" @attributes="AdditionalAttributes"></div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public SkeletonUi? Ui { get; set; }
+
+    /// <remarks>Size and shape come from <see cref="KlyComponentBase.Class"/>: <c>Class="h-4 w-40"</c>, <c>Class="size-12 rounded-full"</c>.</remarks>
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Skeleton, new Dictionary<string, string?>(), Ui, "base");
+}

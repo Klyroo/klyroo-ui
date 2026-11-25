@@ -1,7 +1,7 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Lux.Templates.Content;
-using Lux.UI;
+using Klyroo.Templates.Content;
+using Klyroo.UI;
 using Docs.Web.Components;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,7 +24,7 @@ if (forwardedHeaders)
     });
 }
 
-builder.Services.AddLuxUi();
+builder.Services.AddKlyrooUi();
 // Static server rendering only: no AddInteractiveServerComponents, no AddInteractiveWebAssemblyComponents. Add one of them (and a render mode on
 // the component) the day a page needs a component that runs .NET in the browser.
 builder.Services.AddRazorComponents();

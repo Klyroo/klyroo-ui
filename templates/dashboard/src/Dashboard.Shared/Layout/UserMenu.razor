@@ -2,29 +2,29 @@
 @inject IToastService Toasts
 
 @* The signed-in user at the bottom of the sidebar. There is no sign-in in this template: the user is a sample one. *@
-<LxDropdownMenu Items="_items" OnSelect="OnSelect" Placement="top-start">
+<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="top-start">
     <button type="button"
-            class="flex w-full min-w-0 items-center gap-2 rounded-(--lux-radius) p-1.5 text-start transition-colors hover:bg-(--lux-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)"
+            class="flex w-full min-w-0 items-center gap-2 rounded-(--klyroo-radius) p-1.5 text-start transition-colors hover:bg-(--klyroo-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
             data-testid="user-menu">
         @* The avatar repeats the name next to it: hidden, so the button is named by the visible text. *@
-        <LxAvatar Alt="Maren Albrecht" Size="LxSize.Sm" aria-hidden="true" />
-        <span class="min-w-0 flex-1 truncate text-sm font-medium text-(--lux-text-highlighted) group-data-[state=collapsed]/sidebar:sr-only">Maren Albrecht</span>
-        <LxIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--lux-text-muted) group-data-[state=collapsed]/sidebar:hidden" />
+        <KlyAvatar Alt="Maren Albrecht" Size="KlySize.Sm" aria-hidden="true" />
+        <span class="min-w-0 flex-1 truncate text-sm font-medium text-(--klyroo-text-highlighted) group-data-[state=collapsed]/sidebar:sr-only">Maren Albrecht</span>
+        <KlyIcon Name="chevrons-up-down" Class="size-4 shrink-0 text-(--klyroo-text-muted) group-data-[state=collapsed]/sidebar:hidden" />
     </button>
-</LxDropdownMenu>
+</KlyDropdownMenu>
 
 @code {
-    private static readonly LxMenuItem[] _items =
+    private static readonly KlyMenuItem[] _items =
     [
-        LxMenuItem.Heading("maren@example.com"),
-        new() { Label = "Profile", Href = "settings", Icon = LxIcons.Named("user", "size-4") },
-        new() { Label = "Notifications", Value = "notifications", Icon = LxIcons.Named("bell", "size-4") },
-        new() { Label = "Appearance", Value = "appearance", Icon = LxIcons.Named("lucide:palette", "size-4") },
-        LxMenuItem.Separator(),
-        new() { Label = "Log out", Value = "logout", Icon = LxIcons.Named("log-out", "size-4"), Color = LxColor.Error },
+        KlyMenuItem.Heading("maren@example.com"),
+        new() { Label = "Profile", Href = "settings", Icon = KlyIcons.Named("user", "size-4") },
+        new() { Label = "Notifications", Value = "notifications", Icon = KlyIcons.Named("bell", "size-4") },
+        new() { Label = "Appearance", Value = "appearance", Icon = KlyIcons.Named("lucide:palette", "size-4") },
+        KlyMenuItem.Separator(),
+        new() { Label = "Log out", Value = "logout", Icon = KlyIcons.Named("log-out", "size-4"), Color = KlyColor.Error },
     ];
 
-    private async Task OnSelect(LxMenuItem item)
+    private async Task OnSelect(KlyMenuItem item)
     {
         switch (item.Value ?? item.Label)
         {
@@ -35,7 +35,7 @@
                 App.OpenAppearance();
                 break;
             case "logout":
-                await Toasts.Add(new LxToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = LxColor.Info });
+                await Toasts.Add(new KlyToast { Title = "No sign-in here", Description = "This template has no authentication: add yours and sign out from here.", Color = KlyColor.Info });
                 break;
         }
     }

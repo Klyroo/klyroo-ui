@@ -1,0 +1,66 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Groups of links under a heading, as a navigation landmark. Meant for the Top slot of a KlyFooter. *@
+<div class="@_slots["root"]" @attributes="AdditionalAttributes">
+    @if (Left is not null)
+    {
+        <div class="@_slots["left"]">@Left</div>
+    }
+    <nav aria-label="@(AriaLabel ?? Messages.FooterLinks)" class="@_slots["nav"]">
+        @foreach (var column in Columns)
+        {
+            <div class="@_slots["column"]">
+                <Heading Level="HeadingLevel" Class="@_slots["label"]">@column.Label</Heading>
+                <ul class="@_slots["list"]">
+                    @foreach (var link in column.Links)
+                    {
+                        <li class="@_slots["item"]">
+                            @if (link.Href is not null && !link.Disabled)
+                            {
+                                <a href="@link.Href" target="@link.Target" rel="@(link.Target == "_blank" ? "noopener noreferrer" : null)"
+                                   class="@_slots["link"]">
+                                    @if (link.Icon is not null)
+                                    {
+                                        <span class="@_slots["icon"]" aria-hidden="true">@link.Icon</span>
+                                    }
+                                    @link.Label
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="@_slots["link"]" aria-disabled="@(link.Disabled ? "true" : null)">@link.Label</span>
+                            }
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+    </nav>
+    @if (Right is not null)
+    {
+        <div class="@_slots["right"]">@Right</div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter, EditorRequired] public IReadOnlyList<KlyFooterColumn> Columns { get; set; } = [];
+
+    /// <summary>Content before the columns on wide screens: a logo and a short description.</summary>
+    [Parameter] public RenderFragment? Left { get; set; }
+
+    /// <summary>Content after the columns: a newsletter form.</summary>
+    [Parameter] public RenderFragment? Right { get; set; }
+
+    /// <summary>Accessible name of the links navigation. Needed when the page has several.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+    /// <summary>Level of the column headings: 3 by default.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+    [Parameter] public FooterColumnsUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.FooterColumns, new Dictionary<string, string?>(), Ui, "root");
+}

@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
-using Lux.UI;
+using Klyroo.UI;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Chat.Web;
@@ -114,9 +114,9 @@ else
 }
 app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
 
-// Reads the query string, the culture cookie that LxLocaleSelect writes and Accept-Language. Lux components follow the UI culture
+// Reads the query string, the culture cookie that KlyLocaleSelect writes and Accept-Language. Klyroo components follow the UI culture
 // on their own: the supported UI cultures are the codes of the built-in locales.
-var cultures = LxLocales.All.Select(locale => locale.Code).ToArray();
+var cultures = KlyLocales.All.Select(locale => locale.Code).ToArray();
 app.UseRequestLocalization(new RequestLocalizationOptions()
     .SetDefaultCulture("en")
     .AddSupportedCultures(cultures)

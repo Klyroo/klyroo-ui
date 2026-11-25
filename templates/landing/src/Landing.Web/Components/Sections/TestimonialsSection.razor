@@ -1,26 +1,26 @@
-@* Lux has no testimonial component: a quote is a LxCard with a figure in it, and the cards are laid out by LxPageGrid. The avatar shows the
+@* Klyroo has no testimonial component: a quote is a KlyCard with a figure in it, and the cards are laid out by KlyPageGrid. The avatar shows the
    initials and is hidden from assistive technology, the name next to it says the same. *@
-<LxPageSection id="customers"
+<KlyPageSection id="customers"
                Headline="@SiteContent.TestimonialsHeadline"
                Title="@SiteContent.TestimonialsTitle"
-               Orientation="LxOrientation.Vertical">
-    <LxPageGrid Columns="3" Class="mt-10 gap-6">
+               Orientation="KlyOrientation.Vertical">
+    <KlyPageGrid Columns="3" Class="mt-10 gap-6">
         @foreach (var testimonial in SiteContent.Testimonials)
         {
-            <LxCard Class="h-full" data-testid="testimonial">
+            <KlyCard Class="h-full" data-testid="testimonial">
                 <figure class="m-0 flex h-full flex-col gap-6">
-                    <blockquote class="m-0 text-base text-pretty text-(--lux-text)">
+                    <blockquote class="m-0 text-base text-pretty text-(--klyroo-text)">
                         <p>&ldquo;@testimonial.Quote&rdquo;</p>
                     </blockquote>
                     <figcaption class="mt-auto flex items-center gap-3">
-                        <LxAvatar Alt="@testimonial.Name" Size="LxSize.Lg" aria-hidden="true" />
+                        <KlyAvatar Alt="@testimonial.Name" Size="KlySize.Lg" aria-hidden="true" />
                         <div class="min-w-0">
-                            <p class="text-sm font-medium text-(--lux-text-highlighted)">@testimonial.Name</p>
-                            <p class="text-sm text-(--lux-text-muted)">@testimonial.Role</p>
+                            <p class="text-sm font-medium text-(--klyroo-text-highlighted)">@testimonial.Name</p>
+                            <p class="text-sm text-(--klyroo-text-muted)">@testimonial.Role</p>
                         </div>
                     </figcaption>
                 </figure>
-            </LxCard>
+            </KlyCard>
         }
-    </LxPageGrid>
-</LxPageSection>
+    </KlyPageGrid>
+</KlyPageSection>

@@ -4,7 +4,7 @@ using Chat.Maui.Services;
 using Chat.Shared;
 using Chat.Shared.Assistant;
 using Chat.Shared.Services;
-using Lux.UI;
+using Klyroo.UI;
 
 namespace Chat.Maui;
 
@@ -34,9 +34,9 @@ public static class MauiProgram
         //      builder.Services.AddAssistantProvider(new AssistantOptions { Provider = AssistantOptions.OpenAi, BaseUrl = "...", ApiKey = "...", Models = [new() { Id = "your-model-id" }] },
         //          new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = Timeout.InfiniteTimeSpan });
         builder.Services.AddAssistantProvider(new AssistantOptions { Provider = AssistantOptions.Simulated });
-        // Where LxLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
+        // Where KlyLocaleSelect keeps the language the user picks. The default is the web view's localStorage; Preferences is read
         // here, before the first page, so the app starts in the right language without a flash.
-        builder.Services.AddSingleton<ILxCultureStore, PreferencesCultureStore>();
+        builder.Services.AddSingleton<IKlyCultureStore, PreferencesCultureStore>();
 
 #if DEBUG
         builder.Services.AddBlazorWebViewDeveloperTools();
@@ -47,7 +47,7 @@ public static class MauiProgram
     }
 
     /// <summary>
-    /// A .NET process takes its culture from the device. The language the user picked in LxLocaleSelect is read here, before anything
+    /// A .NET process takes its culture from the device. The language the user picked in KlyLocaleSelect is read here, before anything
     /// renders, and becomes the default culture of every thread.
     /// </summary>
     private static void ApplyStoredCulture()

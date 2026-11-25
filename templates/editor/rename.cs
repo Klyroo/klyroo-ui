@@ -17,13 +17,13 @@ const string StateFile = ".rename-state";
 
 var skippedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".git", ".vs", "bin", "obj", "node_modules" };
 
-// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Lux...), collide with a folder or a namespace of the
+// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Klyroo...), collide with a folder or a namespace of the
 // template itself (Web, Shared, Layout...), or are the name of the template.
 var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
     Template,
     // Namespaces and frameworks.
-    "System", "Microsoft", "Lux", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
+    "System", "Microsoft", "Klyroo", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
     // Types of the framework the pages and hosts use unqualified.
     "Task", "Tasks", "Object", "String", "Boolean", "Byte", "SByte", "Char", "Decimal", "Double", "Single", "Float", "Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "IntPtr", "Void",
     "Action", "Func", "Type", "Exception", "Attribute", "Enum", "Guid", "DateTime", "TimeSpan", "Environment", "Console", "Math", "Convert", "File", "Path", "Directory", "Stream", "Thread", "Timer",
@@ -58,7 +58,7 @@ if (!Regex.IsMatch(name, "^[A-Za-z][A-Za-z0-9]*$") || name.Length > 40)
 }
 if (reserved.Contains(name) || csharpKeywords.Contains(name))
 {
-    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Lux...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
+    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Klyroo...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
 }
 
 var root = Directory.GetCurrentDirectory();
@@ -69,11 +69,11 @@ if (!File.Exists(Path.Combine(root, "rename.cs")) || (!resuming && !File.Exists(
     return Fail($"Run this from the root of the repository, the folder that holds rename.cs and {Template}.slnx (it was already renamed if the solution has another name).");
 }
 
-// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Lux.UI names with "Editor" is not the template
-// name and is left alone: the components (LxEditor, LxEditorToolbar...), their types (EditorAction, EditorToolbarItem, EditorUi...) and the elements they render
-// (lx-editor, lx-editor-toolbar).
-const string LuxEditor = "(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)";
-// (The "Add" before Editor is the setup method of this app, AddEditorUi, which does get the new name: only a bare EditorUi is the type of Lux.)
+// One pass over the three spellings, so a new name that contains the template name is never replaced again. What Klyroo.UI names with "Editor" is not the template
+// name and is left alone: the components (KlyEditor, KlyEditorToolbar...), their types (EditorAction, EditorToolbarItem, EditorUi...) and the elements they render
+// (kly-editor, kly-editor-toolbar).
+const string KlyrooEditor = "(?:Action|Toolbar|Ui|Suggestion|Mention|Emoji|DragHandle|Menu)";
+// (The "Add" before Editor is the setup method of this app, AddEditorUi, which does get the new name: only a bare EditorUi is the type of Klyroo.)
 var spellings = new Dictionary<string, string>
 {
     [Template] = name,
@@ -81,8 +81,8 @@ var spellings = new Dictionary<string, string>
     [Template.ToUpperInvariant()] = name.ToUpperInvariant(),
 };
 var spellingPattern = new Regex(string.Join("|", spellings.Keys.Select(key =>
-    key == Template ? "(?<!Lx)(?<!Sanitize)(?:(?<=Add)" + Regex.Escape(key) + "|" + Regex.Escape(key) + $"(?!{LuxEditor}(?:[A-Z]|\\b)))"
-    : key == Template.ToLowerInvariant() ? "(?<!lx-)" + Regex.Escape(key)
+    key == Template ? "(?<!Kly)(?<!Sanitize)(?:(?<=Add)" + Regex.Escape(key) + "|" + Regex.Escape(key) + $"(?!{KlyrooEditor}(?:[A-Z]|\\b)))"
+    : key == Template.ToLowerInvariant() ? "(?<!kly-)" + Regex.Escape(key)
     : Regex.Escape(key))));
 string Replace(string text) => spellingPattern.Replace(text, match => spellings[match.Value]);
 

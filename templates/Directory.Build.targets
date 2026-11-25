@@ -1,67 +1,67 @@
 <Project>
   <!--
-    Monorepo only (see Directory.Build.props). A template refers to the Lux.UI package, as the repository a user gets does. Built from here, the
+    Monorepo only (see Directory.Build.props). A template refers to the Klyroo.UI package, as the repository a user gets does. Built from here, the
     package is swapped for the source of the library, so a change to a component shows in the templates without a pack:
 
-      - the PackageReference to Lux.UI (and Lux.UI.Images, Lux.UI.Images.Local, Lux.UI.Tools, Lux.UI.Tools.Query, Lux.UI.Server) becomes a ProjectReference;
-      - the Lux build features (self-hosted fonts, bundled icons, Tailwind) come from buildTransitive/*.targets of the library, imported by hand
+      - the PackageReference to Klyroo.UI (and Klyroo.UI.Images, Klyroo.UI.Images.Local, Klyroo.UI.Tools, Klyroo.UI.Tools.Query, Klyroo.UI.Server) becomes a ProjectReference;
+      - the Klyroo build features (self-hosted fonts, bundled icons, Tailwind) come from buildTransitive/*.targets of the library, imported by hand
         into every project that uses the Razor SDK, which is what the package does through NuGet (buildTransitive reaches the projects that only
         reference the one that has the package);
-      - lux.theme.css is copied to obj/lux/, which buildTransitive/Lux.UI.targets does from a path that exists only in the package;
-      - a template whose Directory.Packages.props lists Lux.UI.Tools gets buildTransitive/Lux.UI.Tools.targets in every project of the Razor SDK, as the
-        package delivers it to every project that reaches it (LuxToolsPresent, the LUXTOOLS001 check, the Tools Tailwind theme), and lux-tools.theme.css is
-        copied to obj/lux/ from the source folder of the library, where the package has it under staticwebassets/.
+      - klyroo.theme.css is copied to obj/klyroo/, which buildTransitive/Klyroo.UI.targets does from a path that exists only in the package;
+      - a template whose Directory.Packages.props lists Klyroo.UI.Tools gets buildTransitive/Klyroo.UI.Tools.targets in every project of the Razor SDK, as the
+        package delivers it to every project that reaches it (KlyrooToolsPresent, the KLYTOOLS001 check, the Tools Tailwind theme), and klyroo-tools.theme.css is
+        copied to obj/klyroo/ from the source folder of the library, where the package has it under staticwebassets/.
 
-    The exported repository (build/export-template.mjs) has none of this: it is verified against a packed Lux.UI by build/verify-templates.mjs.
+    The exported repository (build/export-template.mjs) has none of this: it is verified against a packed Klyroo.UI by build/verify-templates.mjs.
   -->
   <ItemGroup>
-    <_LuxUi Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI'))" />
-    <_LuxImages Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images'))" />
-    <_LuxImagesLocal Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Images.Local'))" />
-    <_LuxServer Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Server'))" />
-    <_LuxTools Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools'))" />
-    <_LuxToolsQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.UI.Tools.Query'))" />
-    <_LuxTable Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.Table'))" />
-    <_LuxQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Lux.Query'))" />
+    <_KlyrooUi Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI'))" />
+    <_KlyrooImages Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI.Images'))" />
+    <_KlyrooImagesLocal Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI.Images.Local'))" />
+    <_KlyrooServer Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI.Server'))" />
+    <_KlyrooTools Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI.Tools'))" />
+    <_KlyrooToolsQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.UI.Tools.Query'))" />
+    <_KlyrooTable Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.Table'))" />
+    <_KlyrooQuery Include="@(PackageReference->WithMetadataValue('Identity', 'Klyroo.Query'))" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Remove="Lux.UI;Lux.UI.Images;Lux.UI.Images.Local;Lux.UI.Tools;Lux.UI.Tools.Query;Lux.UI.Server;Lux.Table;Lux.Query" />
-    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI/Lux.UI.csproj" Condition="'@(_LuxUi)' != ''" />
-    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Images/Lux.UI.Images.csproj" Condition="'@(_LuxImages)' != ''" />
-    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Images.Local/Lux.UI.Images.Local.csproj" Condition="'@(_LuxImagesLocal)' != ''" />
-    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Server/Lux.UI.Server.csproj" Condition="'@(_LuxServer)' != ''" />
-    <ProjectReference Include="$(LuxRepoRoot)../lux-table/src/Lux.Table/Lux.Table.csproj" Condition="'@(_LuxTools)' != '' Or '@(_LuxTable)' != ''" />
-    <ProjectReference Include="$(LuxRepoRoot)../lux-query/src/Lux.Query/Lux.Query.csproj" Condition="'@(_LuxToolsQuery)' != '' Or '@(_LuxQuery)' != ''" />
+    <PackageReference Remove="Klyroo.UI;Klyroo.UI.Images;Klyroo.UI.Images.Local;Klyroo.UI.Tools;Klyroo.UI.Tools.Query;Klyroo.UI.Server;Klyroo.Table;Klyroo.Query" />
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI/Klyroo.UI.csproj" Condition="'@(_KlyrooUi)' != ''" />
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Images/Klyroo.UI.Images.csproj" Condition="'@(_KlyrooImages)' != ''" />
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Images.Local/Klyroo.UI.Images.Local.csproj" Condition="'@(_KlyrooImagesLocal)' != ''" />
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Server/Klyroo.UI.Server.csproj" Condition="'@(_KlyrooServer)' != ''" />
+    <ProjectReference Include="$(KlyrooRepoRoot)../klyroo-table/src/Klyroo.Table/Klyroo.Table.csproj" Condition="'@(_KlyrooTools)' != '' Or '@(_KlyrooTable)' != ''" />
+    <ProjectReference Include="$(KlyrooRepoRoot)../klyroo-query/src/Klyroo.Query/Klyroo.Query.csproj" Condition="'@(_KlyrooToolsQuery)' != '' Or '@(_KlyrooQuery)' != ''" />
   </ItemGroup>
 
   <!-- The build features, for the projects of the Razor SDK (web hosts, class libraries, MAUI Blazor heads, WebAssembly projects). -->
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
     <!-- Built first; the task assembly is loaded from its output folder, not referenced. -->
-    <ProjectReference Include="$(LuxRepoRoot)src/Lux.UI.Build.Tasks/Lux.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/Klyroo.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <PropertyGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <LuxBuildTasksAssembly>$(LuxRepoRoot)src/Lux.UI.Build.Tasks/bin/$(Configuration)/netstandard2.0/Lux.UI.Build.Tasks.dll</LuxBuildTasksAssembly>
+    <KlyrooBuildTasksAssembly>$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/bin/$(Configuration)/netstandard2.0/Klyroo.UI.Build.Tasks.dll</KlyrooBuildTasksAssembly>
   </PropertyGroup>
-  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tasks.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Fonts.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Icons.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
-  <Import Project="$(LuxRepoRoot)src/Lux.UI/buildTransitive/Lux.UI.Tailwind.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Tasks.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Fonts.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Icons.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
+  <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Tailwind.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
 
   <PropertyGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true' And Exists('$(DirectoryPackagesPropsPath)')">
-    <_LuxPackagesText>$([System.IO.File]::ReadAllText('$(DirectoryPackagesPropsPath)'))</_LuxPackagesText>
-    <_LuxTemplateUsesTools Condition="$(_LuxPackagesText.Contains('Include=&quot;Lux.UI.Tools&quot;')) Or $(_LuxPackagesText.Contains('Include=&quot;Lux.Table&quot;'))">true</_LuxTemplateUsesTools>
+    <_KlyrooPackagesText>$([System.IO.File]::ReadAllText('$(DirectoryPackagesPropsPath)'))</_KlyrooPackagesText>
+    <_KlyrooTemplateUsesTools Condition="$(_KlyrooPackagesText.Contains('Include=&quot;Klyroo.UI.Tools&quot;')) Or $(_KlyrooPackagesText.Contains('Include=&quot;Klyroo.Table&quot;'))">true</_KlyrooTemplateUsesTools>
   </PropertyGroup>
 
-  <Target Name="LuxToolsCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(_LuxTemplateUsesTools)' == 'true'">
-    <Copy SourceFiles="$(LuxRepoRoot)../lux-table/src/Lux.Table/wwwroot/lux-table.theme.css"
-          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))"
+  <Target Name="KlyrooToolsCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(_KlyrooTemplateUsesTools)' == 'true'">
+    <Copy SourceFiles="$(KlyrooRepoRoot)../klyroo-table/src/Klyroo.Table/wwwroot/klyroo-table.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))"
           SkipUnchangedFiles="true" />
   </Target>
 
-  <Target Name="LuxCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <Copy SourceFiles="$(LuxRepoRoot)src/Lux.UI/wwwroot/lux.theme.css"
-          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), lux))"
+  <Target Name="KlyrooCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
+    <Copy SourceFiles="$(KlyrooRepoRoot)src/Klyroo.UI/wwwroot/klyroo.theme.css"
+          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))"
           SkipUnchangedFiles="true" />
   </Target>
 </Project>

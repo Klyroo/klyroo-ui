@@ -4,26 +4,26 @@
 
 @* The rename and delete dialogs, one of each for the whole list. The rows of the list ask for them through DocumentState. They are outside the sidebar
    on purpose: on a phone the sidebar is a panel that closes before a dialog outside it opens. *@
-<LxModal @bind-Open="_renameOpen" Title="Rename document" Description="The title is shown in the list and at the top of the document." data-testid="rename-dialog">
+<KlyModal @bind-Open="_renameOpen" Title="Rename document" Description="The title is shown in the list and at the top of the document." data-testid="rename-dialog">
     <Body>
         <form id="rename-form" @onsubmit="RenameAsync" class="flex flex-col gap-2">
-            <LxFormField Label="Title">
-                <LxInput @bind-Value="_title" Immediate Placeholder="Title" data-testid="rename-input" />
-            </LxFormField>
+            <KlyFormField Label="Title">
+                <KlyInput @bind-Value="_title" Immediate Placeholder="Title" data-testid="rename-input" />
+            </KlyFormField>
         </form>
     </Body>
     <Footer>
-        <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close />
-        <LxButton Label="Save" Type="submit" form="rename-form" Disabled="@(DocumentState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
+        <KlyButton Label="Cancel" Color="KlyColor.Neutral" Variant="ButtonVariant.Ghost" data-kly-close />
+        <KlyButton Label="Save" Type="submit" form="rename-form" Disabled="@(DocumentState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
     </Footer>
-</LxModal>
+</KlyModal>
 
-<LxModal @bind-Open="_deleteOpen" Title="Delete document?" Description="@(_target is null ? null : $"\"{_target.Title}\" is removed from this browser. This cannot be undone.")" data-testid="delete-dialog">
+<KlyModal @bind-Open="_deleteOpen" Title="Delete document?" Description="@(_target is null ? null : $"\"{_target.Title}\" is removed from this browser. This cannot be undone.")" data-testid="delete-dialog">
     <Footer>
-        <LxButton Label="Cancel" Color="LxColor.Neutral" Variant="ButtonVariant.Ghost" data-lx-close />
-        <LxButton Label="Delete" Color="LxColor.Error" OnClick="DeleteAsync" data-testid="delete-confirm" />
+        <KlyButton Label="Cancel" Color="KlyColor.Neutral" Variant="ButtonVariant.Ghost" data-kly-close />
+        <KlyButton Label="Delete" Color="KlyColor.Error" OnClick="DeleteAsync" data-testid="delete-confirm" />
     </Footer>
-</LxModal>
+</KlyModal>
 
 @code {
     private bool _renameOpen;
@@ -42,7 +42,7 @@
     private void OnNotice(StateNotice notice) => _ = InvokeAsync(async () =>
     {
         var (title, description) = notice.Describe();
-        await Toasts.Add(new LxToast { Title = title, Description = description, Color = LxColor.Warning, Duration = TimeSpan.FromSeconds(15) });
+        await Toasts.Add(new KlyToast { Title = title, Description = description, Color = KlyColor.Warning, Duration = TimeSpan.FromSeconds(15) });
     });
 
     private void OnRename(Document document) => _ = InvokeAsync(() =>
@@ -65,7 +65,7 @@
         if (_target is null || DocumentState.CleanTitle(_title).Length == 0) return;
         var saved = await Documents.RenameAsync(_target, _title);
         _renameOpen = false;
-        if (!saved) await Toasts.Add(new LxToast { Title = "Not saved", Description = "This browser did not keep the change: it applies to this visit only.", Color = LxColor.Warning });
+        if (!saved) await Toasts.Add(new KlyToast { Title = "Not saved", Description = "This browser did not keep the change: it applies to this visit only.", Color = KlyColor.Warning });
     }
 
     private async Task DeleteAsync()

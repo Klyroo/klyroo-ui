@@ -2,24 +2,24 @@
 @implements IAsyncDisposable
 @inject IJSRuntime JS
 
-@* LxHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
+@* KlyHead sends the theme variables and the self-hosted fonts to <head> through the HeadOutlet root component of the MAUI app.
    It renders nothing on the web, where App.razor places them. *@
-<LxHead />
+<KlyHead />
 <SystemBars />
 
-<LxApp Toaster="false">
-    <LxSkipLink />
+<KlyApp Toaster="false">
+    <KlySkipLink />
 
     @* The group fills its parent, so the parent needs a height: the page itself. It is the main landmark, so the sidebar and the conversation are both inside it
        (the sidebar is a div: its navigation is a landmark of its own, and a complementary one may not sit in main). *@
-    <LxMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
-        <LxDashboardGroup StorageKey="chat">
+    <KlyMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
+        <KlyDashboardGroup StorageKey="chat">
             @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-            <LxDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Conversations" MobileTitle="Conversations" data-testid="sidebar">
+            <KlyDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Conversations" MobileTitle="Conversations" data-testid="sidebar">
                 <Header>
-                    <a href="./" class="flex items-center gap-2 rounded-(--lux-radius) p-1.5 font-semibold text-(--lux-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--lux-primary-text)" data-testid="brand">
-                        <span class="flex size-7 items-center justify-center rounded-(--lux-radius) bg-(--lux-primary) text-(--lux-primary-contrast)" aria-hidden="true">
-                            @LxIcons.Named("lucide:sparkles", "size-4")
+                    <a href="./" class="flex items-center gap-2 rounded-(--klyroo-radius) p-1.5 font-semibold text-(--klyroo-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)" data-testid="brand">
+                        <span class="flex size-7 items-center justify-center rounded-(--klyroo-radius) bg-(--klyroo-primary) text-(--klyroo-primary-contrast)" aria-hidden="true">
+                            @KlyIcons.Named("lucide:sparkles", "size-4")
                         </span>
                         <span>Chat</span>
                     </a>
@@ -28,16 +28,16 @@
                     <ConversationList />
                 </ChildContent>
                 <Footer>
-                    <p class="flex items-start gap-2 p-1.5 text-xs text-(--lux-text-muted)" data-testid="storage-note">
-                        @LxIcons.Named("lucide:hard-drive", "mt-0.5 size-3.5 shrink-0")
+                    <p class="flex items-start gap-2 p-1.5 text-xs text-(--klyroo-text-muted)" data-testid="storage-note">
+                        @KlyIcons.Named("lucide:hard-drive", "mt-0.5 size-3.5 shrink-0")
                         <span>Conversations are kept in this browser, on this device only.</span>
                     </p>
                 </Footer>
-            </LxDashboardSidebar>
+            </KlyDashboardSidebar>
 
             @Body
-        </LxDashboardGroup>
-    </LxMain>
+        </KlyDashboardGroup>
+    </KlyMain>
 
     @* Says how the page renders (Static until it is interactive, then Server or WebAssembly): what the browser tests wait for before they click. *@
     <span class="sr-only" aria-hidden="true" data-testid="renderer">@RendererInfo.Name</span>
@@ -46,8 +46,8 @@
     <ConversationDialogs />
 
     @* The toasts sit at the top, in the middle: the bottom right is where the send button of the prompt is, and a toast over it would be in the way of the next question. *@
-    <LxToaster Ui="_toastUi" />
-</LxApp>
+    <KlyToaster Ui="_toastUi" />
+</KlyApp>
 
 <div id="blazor-error-ui" data-nosnippet class="fixed inset-x-0 bottom-0 z-50 hidden bg-amber-100 px-4 py-3 text-sm text-zinc-900">
     An unhandled error has occurred.
@@ -56,7 +56,7 @@
 </div>
 
 @code {
-    private static readonly ToastUi _toastUi = new() { Viewport = "top-[max(1rem,var(--lx-safe-top))] bottom-auto start-1/2 end-auto -translate-x-1/2 rtl:translate-x-1/2" };
+    private static readonly ToastUi _toastUi = new() { Viewport = "top-[max(1rem,var(--kly-safe-top))] bottom-auto start-1/2 end-auto -translate-x-1/2 rtl:translate-x-1/2" };
 
     private IJSObjectReference? _module;
 

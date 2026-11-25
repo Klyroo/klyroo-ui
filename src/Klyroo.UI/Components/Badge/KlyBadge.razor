@@ -1,0 +1,39 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+
+<span data-color="@Color.Value" class="@_slots["base"]" @attributes="AdditionalAttributes">
+    @if (LeadingIcon is not null)
+    {
+        <span class="@_slots["leadingIcon"]" aria-hidden="true">@LeadingIcon</span>
+    }
+    @if (ChildContent is not null || Label is not null)
+    {
+        <span class="@_slots["label"]">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label)))</span>
+    }
+    @if (TrailingIcon is not null)
+    {
+        <span class="@_slots["trailingIcon"]" aria-hidden="true">@TrailingIcon</span>
+    }
+</span>
+
+@code {
+    private SlotSet _slots = default!;
+
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public KlyColor Color { get => _colorParameter ?? DefaultColor(KlyColor.Primary); set => _colorParameter = value; }
+    private KlyColor? _colorParameter;
+    [Parameter] public KlyVariant Variant { get; set; } = KlyVariant.Solid;
+    [Parameter] public KlySize Size { get => _sizeParameter ?? DefaultSize(KlySize.Md); set => _sizeParameter = value; }
+    private KlySize? _sizeParameter;
+    [Parameter] public RenderFragment? LeadingIcon { get; set; }
+    [Parameter] public RenderFragment? TrailingIcon { get; set; }
+    [Parameter] public BadgeUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Badge, new Dictionary<string, string?>
+        {
+            ["variant"] = VariantValue.Of(Variant),
+            ["size"] = VariantValue.Of(Size),
+        }, Ui, "base");
+}

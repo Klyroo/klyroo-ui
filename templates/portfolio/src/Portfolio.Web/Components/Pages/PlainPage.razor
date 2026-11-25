@@ -11,12 +11,12 @@
         <meta name="description" content="@(_page.Description ?? SiteInfo.Description)" />
     </HeadContent>
 
-    <LxContainer Class="py-10 sm:py-14">
+    <KlyContainer Class="py-10 sm:py-14">
         <article class="mx-auto max-w-3xl" data-testid="plain-page">
-            <LxPageHeader Title="@_page.Title" Description="@_page.Description" />
-            <LxPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</LxPageBody>
+            <KlyPageHeader Title="@_page.Title" Description="@_page.Description" />
+            <KlyPageBody Class="markdown-body mt-8 pb-10">@((MarkupString)_page.Html)</KlyPageBody>
         </article>
-    </LxContainer>
+    </KlyContainer>
 }
 
 @code {

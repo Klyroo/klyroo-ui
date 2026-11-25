@@ -4,11 +4,11 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Lux.UI" Version="0.1.0-alpha" />
-    <!-- Lux.Table depends on exactly this version of Lux.UI (and of Lux.Query): keep the two lines in step. -->
-    <PackageVersion Include="Lux.Table" Version="0.1.0-alpha" />
-    <!-- Lux.UI.Server too: same version as Lux.UI, only the web host references it. -->
-    <PackageVersion Include="Lux.UI.Server" Version="0.1.0-alpha" />
+    <PackageVersion Include="Klyroo.UI" Version="0.1.0-alpha" />
+    <!-- Klyroo.Table depends on exactly this version of Klyroo.UI (and of Klyroo.Query): keep the two lines in step. -->
+    <PackageVersion Include="Klyroo.Table" Version="0.1.0-alpha" />
+    <!-- Klyroo.UI.Server too: same version as Klyroo.UI, only the web host references it. -->
+    <PackageVersion Include="Klyroo.UI.Server" Version="0.1.0-alpha" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.15" />
     <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="10.0.15" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Debug" Version="10.0.0" />

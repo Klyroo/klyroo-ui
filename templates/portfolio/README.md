@@ -1,6 +1,6 @@
 # Portfolio
 
-The personal site of a designer or developer, on Lux.UI: a home page with an introduction and links, a work section with a page for each project, an about page with an experience timeline, writing with tags and articles, a speaking page, a contact form, and a "uses" page. The owner (Ines Calloway, a design engineer in Lisbon) and every project, employer, client, article and talk in it are made up.
+The personal site of a designer or developer, on Klyroo.UI: a home page with an introduction and links, a work section with a page for each project, an about page with an experience timeline, writing with tags and articles, a speaking page, a contact form, and a "uses" page. The owner (Ines Calloway, a design engineer in Lisbon) and every project, employer, client, article and talk in it are made up.
 
 The site is rendered by the server and sent as HTML. There is no circuit and no WebAssembly download, so it is quick to load and cheap to host. Projects, articles and the text pages are Markdown files that you write.
 
@@ -26,7 +26,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Portfolio.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Portfolio.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Portfolio.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -52,11 +52,11 @@ src/Portfolio.Web/
 ```
 
 - Start in `Site/SiteInfo.cs`: your name, role, location, the links to your accounts and the words of the hero and the other pages. `Email`, `GitHubUrl`, `LinkedInUrl` and `MastodonUrl` are placeholders on example.com, which is reserved for documentation: point them at your own.
-- Replace the people and the places in `Site/Resume.cs` and `Site/Talks.cs`, and rewrite `content/about.md` and `content/uses.md`. The initials in the header and the hero are the avatar of `LxAvatar`: give `LxUser` and `LxAvatar` a `Src` (a file in `wwwroot`) to show a photo instead.
+- Replace the people and the places in `Site/Resume.cs` and `Site/Talks.cs`, and rewrite `content/about.md` and `content/uses.md`. The initials in the header and the hero are the avatar of `KlyAvatar`: give `KlyUser` and `KlyAvatar` a `Src` (a file in `wwwroot`) to show a photo instead.
 - Reorder, remove or add a section of the home page in `Components/Pages/Home.razor`. A section is a component, so a new one is a new file in `Components/Sections`.
-- The text is English only. The language select translates what Lux itself writes (labels, menus, the messages of the forms) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteInfo` or move the strings to resource files.
-- Tailwind is compiled by the build from `Styles/app.css` (`<LuxTailwind>true</LuxTailwind>` in `Portfolio.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
-- Package versions are in `Directory.Packages.props`. The Lux.UI version is pinned there.
+- The text is English only. The language select translates what Klyroo itself writes (labels, menus, the messages of the forms) and switches the layout to right-to-left where needed; to translate your own text, read `CultureInfo.CurrentUICulture` in `SiteInfo` or move the strings to resource files.
+- Tailwind is compiled by the build from `Styles/app.css` (`<KlyrooTailwind>true</KlyrooTailwind>` in `Portfolio.Web.csproj`), with no Node and no `package.json`. The result is served as `app.css`.
+- Package versions are in `Directory.Packages.props`. The Klyroo.UI version is pinned there.
 
 ## Write content
 
@@ -127,7 +127,7 @@ The search covers the projects, the articles, the about page and the plain pages
 
 ## The contact form is UI only
 
-`Components/Pages/Contact.razor` uses Lux's `LxForm`, posted to the server with a form name (`FormName="contact"` and a `[SupplyParameterFromForm]` model), so the page needs no circuit. The server checks the rules of `Site/ContactMessage.cs` on every post (name, a valid email, one of the topics, a message of 10 to 2000 characters) and shows the errors beside the fields. The topic is a group of radio buttons, which the browser posts by itself: the form works with JavaScript off, like the rest of the site. When everything is valid it calls `SendAsync`, which redirects to `/contact?sent=1` (Post/Redirect/Get, so that reloading the page does not send the form again), where the page says "the form is valid" and that nothing was sent. **No email is sent, nothing is stored and nothing is logged.** The page carries no other notice: this README is where it is written down.
+`Components/Pages/Contact.razor` uses Klyroo's `KlyForm`, posted to the server with a form name (`FormName="contact"` and a `[SupplyParameterFromForm]` model), so the page needs no circuit. The server checks the rules of `Site/ContactMessage.cs` on every post (name, a valid email, one of the topics, a message of 10 to 2000 characters) and shows the errors beside the fields. The topic is a group of radio buttons, which the browser posts by itself: the form works with JavaScript off, like the rest of the site. When everything is valid it calls `SendAsync`, which redirects to `/contact?sent=1` (Post/Redirect/Get, so that reloading the page does not send the form again), where the page says "the form is valid" and that nothing was sent. **No email is sent, nothing is stored and nothing is logged.** The page carries no other notice: this README is where it is written down.
 
 To make it real you need somewhere to deliver the message, and these changes:
 
@@ -138,7 +138,7 @@ To make it real you need somewhere to deliver the message, and these changes:
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the menu, the search, the color mode and the language select are Lux elements that need no .NET code, and the copy buttons are a few lines of JavaScript (`Content/CodeCopy.cs`, written into `App.razor`). The contact form is an ordinary form post.
+Everything that moves runs in the browser: the menu, the search, the color mode and the language select are Klyroo elements that need no .NET code, and the copy buttons are a few lines of JavaScript (`Content/CodeCopy.cs`, written into `App.razor`). The contact form is an ordinary form post.
 
 If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only. The rest stays static.
 
@@ -148,7 +148,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Portfolio.Web
-dotnet build src/Portfolio.Web -t:LuxTailwindWatch
+dotnet build src/Portfolio.Web -t:KlyrooTailwindWatch
 ```
 
 In Development the site reads the content again a moment after a `.md` or `.yml` file changes (reload the page to see it). A file with a mistake does not take the site down: the previous content stays and the error, with the file name, is in the log. A published site reads its files once, when it starts, and stops with the file name if one cannot be used.

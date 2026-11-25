@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>$(KlyrooSampleTfm)</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Klyroo.UI comes with its static web assets (klyroo.css, the JS initializer) and its Razor components. In your own app, this is the Klyroo.UI package. -->
+    <ProjectReference Include="..\..\..\src\Klyroo.UI\Klyroo.UI.csproj" />
+  </ItemGroup>
+
+</Project>

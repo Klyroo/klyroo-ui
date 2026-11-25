@@ -1,6 +1,6 @@
 # Docs
 
-A documentation site written in Markdown, on Lux.UI: a header with a search button and a color mode button, a navigation tree built from your folders, the page with its table of contents, previous and next links, a home page and a 404 page. The product in the sample pages (Tern, a command line tool) and every name in them are made up.
+A documentation site written in Markdown, on Klyroo.UI: a header with a search button and a color mode button, a navigation tree built from your folders, the page with its table of contents, previous and next links, a home page and a 404 page. The product in the sample pages (Tern, a command line tool) and every name in them are made up.
 
 Pages are `.md` files with a little YAML at the top. The site reads them when it starts, renders them with [Markdig](https://github.com/xoofx/markdig) and builds the navigation, the table of contents and the search from what it finds. It is rendered by the server and sent as HTML: no circuit, no WebAssembly download.
 
@@ -24,7 +24,7 @@ You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
 dotnet run --project src/Docs.Web
 ```
 
-The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Lux.UI package), the fonts of `Docs.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
+The first build downloads three things and keeps them in caches: the Tailwind CLI (once per machine, checked against a SHA-256 that ships with the Klyroo.UI package), the fonts of `Docs.Web.csproj` and the icons your pages name. Later builds, and builds without a network, reuse them.
 
 ## What is in it
 
@@ -62,7 +62,7 @@ Start the body at `##`: the title above is the only `h1`.
 | `description` | The line under the title, the meta description and the line under the title in search results. |
 | `order` | The position among the pages and folders next to it, smallest first. Without it a page comes after the ones that have one, by title. |
 | `navigationTitle` | A shorter title for the link in the navigation. |
-| `icon` | An icon name. The build cannot see names that are in Markdown: add them to the `LuxIcon` item in `Docs.Web.csproj`. |
+| `icon` | An icon name. The build cannot see names that are in Markdown: add them to the `KlyrooIcon` item in `Docs.Web.csproj`. |
 | `draft` | `true` keeps the page out of the site, the navigation and the search. Set `Content:IncludeDrafts` to `true` to see drafts. |
 
 A folder becomes a group in the navigation. Put a `_dir.yml` in it to set `title`, `order` and `icon`; without one the folder name is used ("getting-started" is "Getting started"). The top level folders also become the links of the header. Keys that are not listed are ignored, so check the spelling when a setting has no effect.
@@ -77,13 +77,13 @@ A folder becomes a group in the navigation. Put a `_dir.yml` in it to set `title
 
 ## Search, navigation and table of contents
 
-The search is a Lux `LxContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. The list is not written into every page: the site serves it as `/search-index.json` (`MapSearchIndex` in `Program.cs`, with an `ETag`), and `LxContentSearch IndexUrl="search-index.json"` makes the browser fetch it the first time the search opens, with a loading message and a "Try again" button if the fetch fails. It filters in the browser, and the pages stay small however many there are. Raise or lower the amount of text with `SearchTextLimit` in the content options (`Program.cs`).
+The search is a Klyroo `KlyContentSearch` filled from the pages when the content is read: titles, `h2` and `h3` headings and the first 2,000 characters of each page. The list is not written into every page: the site serves it as `/search-index.json` (`MapSearchIndex` in `Program.cs`, with an `ETag`), and `KlyContentSearch IndexUrl="search-index.json"` makes the browser fetch it the first time the search opens, with a loading message and a "Try again" button if the fetch fails. It filters in the browser, and the pages stay small however many there are. Raise or lower the amount of text with `SearchTextLimit` in the content options (`Program.cs`).
 
-The navigation tree, the table of contents (`h2` and `h3` of the page) and the previous and next links are Lux components fed by the same data, in the order of the navigation.
+The navigation tree, the table of contents (`h2` and `h3` of the page) and the previous and next links are Klyroo components fed by the same data, in the order of the navigation.
 
 ## Why the site is static
 
-Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode (Lux elements that need no .NET code) and the copy buttons (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`). A site with a Content-Security-Policy gives that script a nonce, or serves it as a file.
+Everything that moves runs in the browser: the menu, the search, the navigation groups, the table of contents, the color mode (Klyroo elements that need no .NET code) and the copy buttons (a few lines of JavaScript, `Content/CodeCopy.cs`, written into `App.razor`). A site with a Content-Security-Policy gives that script a nonce, or serves it as a file.
 
 If a page needs a component that runs .NET in the browser, add `AddInteractiveServerComponents()` to `Program.cs` and `@rendermode InteractiveServer` to that component only. The rest stays static.
 
@@ -99,7 +99,7 @@ Run the site with `dotnet watch`, and Tailwind in a second terminal, so a new ut
 
 ```bash
 dotnet watch --project src/Docs.Web
-dotnet build src/Docs.Web -t:LuxTailwindWatch
+dotnet build src/Docs.Web -t:KlyrooTailwindWatch
 ```
 
 In Development the site reads the content again a moment after a `.md` or `.yml` file changes (reload the page to see it). A file with a mistake does not take the site down: the previous content stays and the error, with the file name, is in the log. A published site reads its files once, when it starts, and stops with the file name if one cannot be used.

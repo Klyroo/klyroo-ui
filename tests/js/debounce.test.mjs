@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createDebouncer, parseDelay, holdsTypedText } from '../../src/Lux.UI/js/debounce.js';
+import { createDebouncer, parseDelay, holdsTypedText } from '../../src/Klyroo.UI/js/debounce.js';
 
 /** Timers driven by hand: tick(ms) advances the clock and runs what is due. */
 function fakeTimers() {

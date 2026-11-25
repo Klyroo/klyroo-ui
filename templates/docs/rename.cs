@@ -17,13 +17,13 @@ const string StateFile = ".rename-state";
 
 var skippedFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { ".git", ".vs", "bin", "obj", "node_modules" };
 
-// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Lux...), collide with a folder or a namespace of the
+// Names that would shadow a type or a namespace the projects use (System, Task, Microsoft, Klyroo...), collide with a folder or a namespace of the
 // template itself (Web, Shared, Layout...), or are the name of the template.
 var reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
 {
     Template,
     // Namespaces and frameworks.
-    "System", "Microsoft", "Lux", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
+    "System", "Microsoft", "Klyroo", "Windows", "Android", "Xamarin", "Maui", "Mono", "Blazor", "AspNetCore", "Razor", "Tailwind", "Newtonsoft", "Foundation", "UIKit", "ObjCRuntime", "CoreFoundation", "Java", "Javax", "Kotlin",
     // Types of the framework the pages and hosts use unqualified.
     "Task", "Tasks", "Object", "String", "Boolean", "Byte", "SByte", "Char", "Decimal", "Double", "Single", "Float", "Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "IntPtr", "Void",
     "Action", "Func", "Type", "Exception", "Attribute", "Enum", "Guid", "DateTime", "TimeSpan", "Environment", "Console", "Math", "Convert", "File", "Path", "Directory", "Stream", "Thread", "Timer",
@@ -56,7 +56,7 @@ if (!Regex.IsMatch(name, "^[A-Za-z][A-Za-z0-9]*$") || name.Length > 40)
 }
 if (reserved.Contains(name) || csharpKeywords.Contains(name))
 {
-    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Lux...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
+    return Fail($"'{name}' cannot be used: it is a C# keyword or the name of a framework namespace or type (System, Task, Microsoft, Klyroo...), or of a part of this template (Web, Shared...), and it would make namespaces and type names ambiguous. Pick another one (Acme, TaskBoard).");
 }
 
 var root = Directory.GetCurrentDirectory();

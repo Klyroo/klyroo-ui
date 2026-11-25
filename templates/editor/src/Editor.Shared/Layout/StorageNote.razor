@@ -2,15 +2,15 @@
 @inject DocumentState Documents
 
 @* The footer of the sidebar: where the documents are kept, and, when the browser is close to what the app keeps, a warning before the least recently used documents start to go. *@
-<div class="flex flex-col gap-2 p-1.5 text-xs text-(--lux-text-muted)">
+<div class="flex flex-col gap-2 p-1.5 text-xs text-(--klyroo-text-muted)">
     <p class="flex items-start gap-2" data-testid="storage-note">
-        @LxIcons.Named("lucide:hard-drive", "mt-0.5 size-3.5 shrink-0")
+        @KlyIcons.Named("lucide:hard-drive", "mt-0.5 size-3.5 shrink-0")
         <span>Documents are kept in this browser, on this device only.</span>
     </p>
     @if (Documents.Loaded && Documents.NearLimit)
     {
         <p class="flex items-start gap-2" role="status" data-testid="storage-warning">
-            @LxIcons.Named("lucide:triangle-alert", "mt-0.5 size-3.5 shrink-0 text-(--lux-warning-text)")
+            @KlyIcons.Named("lucide:triangle-alert", "mt-0.5 size-3.5 shrink-0 text-(--klyroo-warning-text)")
             <span>Almost full: @Documents.Items.Count of @DocumentLimits.MaxDocuments documents and @Documents.TotalCharacters.ToString("N0") of @DocumentLimits.MaxTotalHtmlCharacters.ToString("N0") characters. Past a limit, the least recently used documents are removed.</span>
         </p>
     }

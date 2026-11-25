@@ -1,0 +1,92 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+<EditForm EditContext="_context" FormName="@FormName" OnSubmit="HandleSubmit" Enhance="Enhance"
+          novalidate class="@_slots["root"]" aria-busy="@(_submitting ? "true" : null)" data-loading="@(_submitting ? "" : null)"
+          @attributes="AdditionalAttributes">
+    @if (Validate)
+    {
+        <DataAnnotationsValidator />
+    }
+    @if (ShowSummary)
+    {
+        @* Always rendered, so a screen reader announces the list when messages appear. *@
+        <div role="alert" aria-live="polite" aria-label="@Messages.FormSummaryTitle" data-slot="summary" class="@_slots["summary"]">
+            <MessageSummary For="context" Class="@_slots["summaryList"]" />
+        </div>
+    }
+    <fieldset class="@_slots["fieldset"]" disabled="@(_submitting || Disabled)">
+        @if (ChildContent is not null)
+        {
+            @ChildContent(context)
+        }
+    </fieldset>
+</EditForm>
+
+@code {
+    private SlotSet _slots = default!;
+    private bool _submitting;
+    private EditContext _context = default!;
+
+    /// <summary>The object edited. Give either this or <see cref="EditContext"/>.</summary>
+    [Parameter] public object? Model { get; set; }
+    [Parameter] public EditContext? EditContext { get; set; }
+
+    /// <summary>Name of the form in static server rendering, where it identifies the posted form.</summary>
+    [Parameter] public string? FormName { get; set; }
+
+    /// <summary>Enhanced form handling in static server rendering: the post updates the page without a reload.</summary>
+    [Parameter] public bool Enhance { get; set; }
+
+    /// <summary>Runs data annotation validation on submit and on field changes.</summary>
+    [Parameter] public bool Validate { get; set; } = true;
+
+    /// <summary>Shows the list of every validation message above the fields.</summary>
+    [Parameter] public bool ShowSummary { get; set; }
+
+    /// <summary>Disables every control inside.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Called with a valid form. While its task runs the form is busy and its controls are disabled.</summary>
+    [Parameter] public EventCallback<EditContext> OnValidSubmit { get; set; }
+    [Parameter] public EventCallback<EditContext> OnInvalidSubmit { get; set; }
+    [Parameter] public RenderFragment<EditContext>? ChildContent { get; set; }
+    [Parameter] public FormUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (EditContext is not null && Model is not null && !ReferenceEquals(EditContext.Model, Model))
+        {
+            throw new InvalidOperationException($"{nameof(KlyForm)} needs either {nameof(Model)} or {nameof(EditContext)}, not both.");
+        }
+        _context = EditContext ?? (_context is not null && ReferenceEquals(_context.Model, Model) ? _context : new EditContext(Model ?? throw new InvalidOperationException($"{nameof(KlyForm)} needs a {nameof(Model)} or an {nameof(EditContext)}.")));
+        _slots = ResolveSlots(Options.Form, new Dictionary<string, string?>(), Ui, "root");
+    }
+
+    private async Task HandleSubmit(EditContext context)
+    {
+        if (_submitting)
+        {
+            return;
+        }
+        _submitting = true;
+        StateHasChanged();
+        try
+        {
+            if (!Validate || context.Validate())
+            {
+                await OnValidSubmit.InvokeAsync(context);
+            }
+            else
+            {
+                await OnInvalidSubmit.InvokeAsync(context);
+            }
+        }
+        finally
+        {
+            _submitting = false;
+            StateHasChanged();
+        }
+    }
+}

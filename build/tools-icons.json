@@ -1,4 +1,4 @@
 {
-  "_": "Lucide icons embedded in Lux.UI.Tools, on top of those of Lux.UI. build/gen-icons.mjs writes them to src/Lux.UI.Tools/Icons/ToolsIcons.g.cs.",
+  "_": "Lucide icons embedded in Klyroo.UI.Tools, on top of those of Klyroo.UI. build/gen-icons.mjs writes them to src/Klyroo.UI.Tools/Icons/ToolsIcons.g.cs.",
   "icons": ["search-x", "columns-3", "pin", "pin-off", "grip-vertical", "arrow-up-down", "layout-grid", "table-2"]
 }
