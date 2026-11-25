@@ -13,7 +13,7 @@
     <PackageTags>klyroo;blazor;components;ui;tailwind;maui</PackageTags>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- BL0007: Color and Size have a getter that falls back to KlyrooOptions.Defaults, which an auto property cannot do. -->
-    <NoWarn>$(NoWarn);CS1591;BL0007</NoWarn>
+    <NoWarn>$(NoWarn);BL0007</NoWarn>
     <IsTrimmable>true</IsTrimmable>
   </PropertyGroup>
 
