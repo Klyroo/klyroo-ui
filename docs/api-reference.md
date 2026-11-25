@@ -2898,6 +2898,10 @@ Helpers to give the WebAssembly runtime the culture the server chose.
 
 Where the components run. A Blazor Hybrid app (`BlazorWebView` in .NET MAUI, WPF or Windows Forms) renders in a local web view: it is always interactive, has no prerendering, no `HttpContext` and no server to read cookies or to render the page head. The components that depend on a server degrade to what a web view can do (browser storage instead of cookies, no culture meta element, no inline script in the head); see docs/platforms.md in the repository.
 
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `const WebViewRendererName = "WebView"` | `string` | The `RendererInfo.Name` of a `BlazorWebView`. |
+
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `static IsHybrid(RendererInfo renderer)` | `bool` | True when `renderer` is a Blazor Hybrid web view. In a component, read `RendererInfo`. |
@@ -3017,6 +3021,10 @@ The default `IKlyCultureStore`: the `localStorage` of the web view, under the ke
 | :--- | :--- |
 | `KlyLocalStorageCultureStore(IJSRuntime js)` | The default `IKlyCultureStore`: the `localStorage` of the web view, under the key `klyroo-culture`. |
 
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `const Key = "klyroo-culture"` | `string` | The `localStorage` key. |
+
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `GetAsync()` | `ValueTask<string?>` | The stored culture name (`fr`, `pt-BR`), or null when none was chosen. |
@@ -3078,6 +3086,10 @@ Loads options from a `KlyOptionsProvider` one page at a time: the pages listed s
 | Constructor | Description |
 | :--- | :--- |
 | `KlyRemoteOptions(KlyOptionsProvider provider, Action changed)` | Creates the engine. |
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `const DefaultPageSize = 25` | `int` | The page size when none is set: 25 options. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -7188,6 +7200,10 @@ URLs of the endpoint of `Klyroo.UI.Images.Local` (`app.MapKlyrooImages()`). This
 | Constructor | Description |
 | :--- | :--- |
 | `KlyLocalImageProvider(string endpoint = "_klyroo/img", string? version = null, string name = "local")` | URLs of the endpoint of `Klyroo.UI.Images.Local` (`app.MapKlyrooImages()`). This class only builds URLs, so it is safe in a WebAssembly client: register it on the server and the client with `KlyImageProviders.AddLocal`. Widths are rounded up to `KlyLocalImageProvider.Steps` and the quality to a multiple of 5, so a page can only ask for a bounded set of variants; a height is scaled with its width so the aspect ratio holds, and `KlyLocalImageProvider.GetEffectiveWidth` reports the rounded width for the `srcset`. `v` is a cache-busting token of yours (an application version): with it the server answers with `immutable` caching. The default endpoint is relative (`KlyLocalImageProvider.DefaultEndpoint`): the browser resolves it against `<base href>`, so an app deployed under a path base (`UsePathBase("/x")` with `<base href="/x/">`) reaches its own optimizer at `/x/_klyroo/img` in every render mode, and not the one of another app on the same origin. An endpoint you pass that starts with "/" is used as it is, which is right only for an app served at the root. |
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `const DefaultEndpoint = "_klyroo/img"` | `string` | The endpoint when none is given, relative to the base of the app (`<base href>`), which `MapKlyrooImages` maps below the path base. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
