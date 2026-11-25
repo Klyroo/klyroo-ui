@@ -1,25 +1,152 @@
-name: Release NuGet
+name: Release
+
+# Releases are cut from a `v<version>` tag whose version matches Directory.Build.props
+# (VersionPrefix/VersionSuffix). The publish job runs in the `nuget` environment: configure required
+# reviewers on it (Settings > Environments) so nothing reaches nuget.org without a human approval.
+# NuGet authentication uses Trusted Publishing (GitHub OIDC): no long-lived API key is stored.
 
 on:
   push:
-    tags:
-      - 'v*'
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Build, test and pack only (no NuGet push, no GitHub Release)
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
 
 jobs:
-  publish:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    defaults:
+      run:
+        working-directory: klyroo-ui
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: klyroo-ui
+      - name: Check out klyroo-agent (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-agent
+          path: klyroo-agent
+      - name: Check out klyroo-dashboard (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-dashboard
+          path: klyroo-dashboard
+      - name: Check out klyroo-display (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-display
+          path: klyroo-display
+      - name: Check out klyroo-form (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-form
+          path: klyroo-form
+      - name: Check out klyroo-query (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-query
+          path: klyroo-query
+      - name: Check out klyroo-spreadsheet (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-spreadsheet
+          path: klyroo-spreadsheet
+      - name: Check out klyroo-stack (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-stack
+          path: klyroo-stack
+      - name: Check out klyroo-table (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-table
+          path: klyroo-table
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '10.0.x'
-      - name: Build, Test & Pack
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - name: Resolve and check the version
+        id: version
         run: |
-          dotnet build Lux.UI.slnx -c Release --nologo
-          dotnet test Lux.UI.slnx -c Release --no-build --nologo
-          dotnet pack Lux.UI.slnx -c Release --no-build -o ./artifacts/nupkgs --nologo
-      - name: Push to NuGet.org
+          version=$(dotnet msbuild src/Klyroo.UI/Klyroo.UI.csproj -getProperty:PackageVersion -p:Configuration=Release)
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [[ "$GITHUB_REF" == refs/tags/v* && "${GITHUB_REF_NAME#v}" != "$version" ]]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version $version of Directory.Build.props"
+            exit 1
+          fi
+      - name: Build
+        run: dotnet build Klyroo.UI.slnx -c Release --nologo
+      - name: Test
+        run: dotnet test Klyroo.UI.slnx -c Release --no-build --nologo
+      - name: Pack
+        run: dotnet pack Klyroo.UI.slnx -c Release --no-build -o ./artifacts/nupkgs --nologo
+      - name: Verify NuGet metadata
+        run: |
+          fail=0
+          for p in ./artifacts/nupkgs/*.nupkg; do
+            spec=$(unzip -p "$p" '*.nuspec')
+            for tag in '<id>' '<version>' '<authors>' '<description>' '<license type="expression">MIT' '<readme>' '<projectUrl>' '<repository type="git" url="https://github.com/klyroo/' '<tags>'; do
+              if ! grep -qF "$tag" <<<"$spec"; then echo "::error::$(basename "$p"): missing $tag"; fail=1; fi
+            done
+            if grep -qiE '\blux\b|luxstack' <<<"$spec"; then echo "::error::$(basename "$p"): old brand in metadata"; fail=1; fi
+          done
+          exit $fail
+      - name: Release notes from CHANGELOG.md
+        run: |
+          v="${{ steps.version.outputs.version }}"
+          awk -v v="$v" 'index($0, "## [" v "]") == 1 {on=1; next} on && /^## \[/ {exit} on' CHANGELOG.md > ./artifacts/release-notes.md
+          if [ ! -s ./artifacts/release-notes.md ]; then echo "::warning::No CHANGELOG.md section for $v"; fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release
+          path: |
+            klyroo-ui/artifacts/nupkgs/*
+            klyroo-ui/artifacts/release-notes.md
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run)
+    runs-on: ubuntu-latest
+    environment: nuget
+    permissions:
+      contents: write  # create the GitHub Release
+      id-token: write  # NuGet Trusted Publishing (OIDC)
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release
+      - name: NuGet login (OIDC, short-lived API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+      - name: Push to nuget.org
+        run: |
+          dotnet nuget push "release/nupkgs/*.nupkg" --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json --skip-duplicate
+      - name: GitHub Release
         env:
-          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
-          dotnet nuget push "./artifacts/nupkgs/*.nupkg" --api-key "$NUGET_API_KEY" --source https://api.nuget.org/v3/index.json --skip-duplicate
+          v="${{ needs.build.outputs.version }}"
+          notes=(--generate-notes)
+          [ -s release/release-notes.md ] && notes=(--notes-file release/release-notes.md)
+          prerelease=()
+          [[ "$v" == *-* ]] && prerelease=(--prerelease)
+          gh release create "v$v" release/nupkgs/*.nupkg --title "v$v" --target "$GITHUB_SHA" "${notes[@]}" "${prerelease[@]}"
