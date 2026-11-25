@@ -31,46 +31,46 @@ jobs:
       run:
         working-directory: klyroo-ui
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: klyroo-ui
       - name: Check out klyroo-agent (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-agent
           path: klyroo-agent
       - name: Check out klyroo-dashboard (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-dashboard
           path: klyroo-dashboard
       - name: Check out klyroo-display (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-display
           path: klyroo-display
       - name: Check out klyroo-form (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-form
           path: klyroo-form
       - name: Check out klyroo-query (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-query
           path: klyroo-query
       - name: Check out klyroo-spreadsheet (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-spreadsheet
           path: klyroo-spreadsheet
       - name: Check out klyroo-stack (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-stack
           path: klyroo-stack
       - name: Check out klyroo-table (referenced by relative path)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: klyroo/klyroo-table
           path: klyroo-table
