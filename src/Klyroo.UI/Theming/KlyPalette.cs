@@ -30,7 +30,7 @@ public sealed partial class KlyPalette
     }
 
     /// <summary>
-    /// The colors Klyroo.UI ships with, tuned by hand for contrast (the signal yellow primary, a teal secondary…). Assigned to a
+    /// The colors Klyroo.UI ships with, tuned by hand for contrast (a lime primary, #b6ff00, and a teal secondary). Assigned to a
     /// semantic color it keeps that color's default; it has no shades.
     /// </summary>
     public static KlyPalette Klyroo { get; } = new("klyroo", []);

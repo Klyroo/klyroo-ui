@@ -6,7 +6,7 @@ namespace Klyroo.UI;
 /// Where the components run. A Blazor Hybrid app (<c>BlazorWebView</c> in .NET MAUI, WPF or Windows Forms) renders in a local
 /// web view: it is always interactive, has no prerendering, no <c>HttpContext</c> and no server to read cookies or to render the
 /// page head. The components that depend on a server degrade to what a web view can do (browser storage instead of cookies, no
-/// culture meta element, no inline script in the head); see the MAUI guide.
+/// culture meta element, no inline script in the head); see docs/platforms.md in the repository.
 /// </summary>
 public static class KlyrooHost
 {

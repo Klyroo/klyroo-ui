@@ -31,7 +31,7 @@ public sealed class KlyrooFontsManifestAttribute(string json) : Attribute
 /// loaded assemblies when there is no entry assembly, and the links are the plain routes served from the app's <c>wwwroot</c>. The manifest is an assembly
 /// attribute generated at build, so it is the same in static rendering, prerendering and every interactive mode; the
 /// stylesheet link follows the fingerprint of the static web assets (<c>@Assets</c>), the preload links the stable route of the
-/// file, which is also what the stylesheet requests, so the font is downloaded once. See the Fonts guide.
+/// file, which is also what the stylesheet requests, so the font is downloaded once. See docs/guides.md in the repository.
 /// </remarks>
 public sealed class KlyFonts : ComponentBase
 {

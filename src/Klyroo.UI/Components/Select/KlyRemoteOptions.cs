@@ -24,8 +24,8 @@ public enum KlyRemoteStatus
 
 /// <summary>
 /// Loads options from a <see cref="KlyOptionsProvider"/> one page at a time: the pages listed so far, the search term, the cancellation of stale requests and the error state.
-/// It is the engine behind <see cref="KlySelectMenu"/> and <see cref="KlyInputMenu"/> when they have an <c>OptionsProvider</c>, public so that other components (the filter editors of
-/// <c>Klyroo.UI.Tools</c>) list remote options the same way. A plain class with no rendering: <c>changed</c> is called after every transition, possibly on another thread, so a component calls
+/// It is the engine behind <see cref="KlySelectMenu"/> and <see cref="KlyInputMenu"/> when they have an <c>OptionsProvider</c>, public so that components of other Klyroo libraries
+/// (such as filter editors) list remote options the same way. A plain class with no rendering: <c>changed</c> is called after every transition, possibly on another thread, so a component calls
 /// <c>InvokeAsync(StateHasChanged)</c>. Dispose it with the component: it cancels the request in flight.
 /// </summary>
 public sealed class KlyRemoteOptions : IDisposable

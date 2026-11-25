@@ -49,7 +49,7 @@ public static class KlyrooCulture
         CultureInfo.CurrentUICulture = chosen.UICulture;
     }
 
-    /// <summary>The first version of <see cref="ApplyServerCultureAsync"/>, which only read the cookie and ignored the <c>lang</c> attribute.</summary>
+    /// <summary>Reads only the culture cookie and ignores the <c>lang</c> attribute and the culture meta element. Obsolete: use <see cref="ApplyServerCultureAsync"/>.</summary>
     [Obsolete("Use ApplyServerCultureAsync: it also follows the culture the server picked without a cookie and can check the supported cultures.")]
     public static Task ApplyCultureCookieAsync(this IServiceProvider services, string cookieName = ".AspNetCore.Culture") =>
         ApplyServerCultureAsync(services, null, cookieName);

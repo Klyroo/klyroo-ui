@@ -7,7 +7,7 @@ namespace Klyroo.UI;
 /// The icons components draw: every property is an icon name (<c>i-lucide-x</c>, <c>ph:x</c>, <c>mdi:close</c>,
 /// or a bare Lucide name) with a Lucide default. Set them in <c>AddKlyrooUi</c> to replace an icon everywhere components use it:
 /// <c>o.Icons.Close = "ph:x"</c>. A name that is not one of the Lucide icons built into the library is bundled at build time when the
-/// assignment is a literal (see the Icons guide); a name written another way goes in a <c>KlyrooIcon</c> item.
+/// assignment is a literal (see docs/guides.md in the repository); a name written another way goes in a <c>KlyrooIcon</c> item.
 /// The values become read-only the first time a component draws an icon.
 /// </summary>
 public sealed class KlyrooIconOptions
