@@ -2,7 +2,7 @@
 
 klyroo-ui follows Nuxt UI's catalog and API where it makes sense, adapted to Blazor and to its render modes.
 Reference for a component's features: `https://ui.nuxt.com/raw/docs/components/<slug>.md`.
-Read `PLAN.md` for the design decisions; this file is the checklist.
+This file is the checklist for adding or changing a component.
 
 ## Rules that are not negotiable
 

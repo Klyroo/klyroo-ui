@@ -12,7 +12,7 @@
     <Authors>Klyroo Contributors</Authors>
     <Copyright>Copyright (c) 2026 Klyroo Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://docs.klyroo.dev/ui</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/klyroo/klyroo-ui</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/klyroo/klyroo-ui</RepositoryUrl>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>

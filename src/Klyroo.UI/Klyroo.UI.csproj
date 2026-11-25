@@ -26,7 +26,7 @@
     <PackageReleaseNotes>See CHANGELOG.md, included in this package.</PackageReleaseNotes>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/klyroo/klyroo-ui</RepositoryUrl>
-    <PackageProjectUrl>https://docs.klyroo.dev/ui</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/klyroo/klyroo-ui</PackageProjectUrl>
   </PropertyGroup>
 
   <!-- Reproducible build and debugging experience. SourceLink for GitHub is built into the .NET SDK (8+): no package reference. -->
