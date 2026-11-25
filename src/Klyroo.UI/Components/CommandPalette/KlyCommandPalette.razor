@@ -17,6 +17,14 @@
                aria-expanded="true" aria-controls="@(_id + "-listbox")" aria-autocomplete="list"
                aria-label="@(Label ?? Messages.SearchCommands)"
                placeholder="@Placeholder" autocomplete="off" spellcheck="false" />
+        @if (CloseOnSelect)
+        {
+            <button type="button" data-kly-close
+                    class="inline-flex min-h-6 shrink-0 cursor-pointer items-center rounded-md border border-(--klyroo-border) bg-(--klyroo-bg-muted) px-1.5 py-0.5 font-mono text-[11px] text-(--klyroo-text-muted) transition-colors hover:border-(--klyroo-border-accented) hover:text-(--klyroo-text-highlighted)"
+                    aria-label="@Messages.Close">
+                Esc
+            </button>
+        }
     </div>
     <div id="@(_id + "-listbox")" role="listbox" tabindex="-1" class="@_slots["listbox"]" data-slot="listbox"
          aria-label="@(Label ?? Messages.SearchCommands)">

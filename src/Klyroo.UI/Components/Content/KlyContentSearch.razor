@@ -34,11 +34,18 @@
         }
         <KlyCommandPalette Groups="_groups" OnSelect="OnSelect" CloseOnSelect Label="@(Label ?? Messages.ContentSearch)"
                           Placeholder="@(Placeholder ?? Messages.ContentSearchPlaceholder)" Ui="Ui" />
+        <div class="flex flex-wrap items-center justify-between gap-2 border-t border-(--klyroo-border) bg-(--klyroo-bg-muted)/45 px-4 py-2 font-mono text-[11px] text-(--klyroo-text-muted)" aria-hidden="true">
+            <div class="flex items-center gap-3">
+                <span class="inline-flex items-center gap-1"><kbd class="rounded border border-(--klyroo-border) bg-(--klyroo-bg) px-1 py-0.5 text-[10px]">↑↓</kbd> navigate</span>
+                <span class="inline-flex items-center gap-1"><kbd class="rounded border border-(--klyroo-border) bg-(--klyroo-bg) px-1 py-0.5 text-[10px]">↵</kbd> open</span>
+            </div>
+            <span class="inline-flex items-center gap-1"><kbd class="rounded border border-(--klyroo-border) bg-(--klyroo-bg) px-1 py-0.5 text-[10px]">Esc</kbd> close</span>
+        </div>
     </Body>
 </KlyModal>
 
 @code {
-    private ModalUi _modalUi = new() { Body = "p-0 sm:p-0" };
+    private ModalUi _modalUi = new() { Content = "overflow-hidden", Body = "p-0 sm:p-0" };
     private IReadOnlyList<KlyCommandGroup> _groups = [];
     private SlotSet _palette = default!;
 
