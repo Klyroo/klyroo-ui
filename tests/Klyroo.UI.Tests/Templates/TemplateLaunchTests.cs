@@ -237,9 +237,9 @@ public class TemplateLaunchTests
     // ---- The registry and the repository address
 
     [Fact]
-    public void The_gallery_lists_ten_templates_and_only_available_ones_can_be_run()
+    public void The_gallery_lists_nine_templates_and_only_available_ones_can_be_run()
     {
-        Assert.Equal(10, TemplateRegistry.All.Count);
+        Assert.Equal(9, TemplateRegistry.All.Count);
         Assert.Equal(TemplateRegistry.All.Count, TemplateRegistry.All.Select(t => t.Name).Distinct().Count());
         Assert.All(TemplateRegistry.All, t => Assert.Equal(3, t.Features.Count));
         Assert.All(TemplateRegistry.All.Where(t => t.HasDemo), t =>
@@ -248,7 +248,7 @@ public class TemplateLaunchTests
             Assert.False(string.IsNullOrEmpty(t.WebAssembly));
         });
         Assert.All(TemplateRegistry.All.Where(t => !t.HasDemo), t => Assert.Null(t.WebAssembly));
-        Assert.Equal(["starter", "dashboard", "landing", "saas", "docs", "portfolio", "changelog", "chat", "editor"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
+        Assert.Equal(["dashboard", "saas", "landing", "chat", "editor", "docs", "portfolio", "changelog", "starter"], TemplateRegistry.All.Where(t => t.HasDemo).Select(t => t.Name));
     }
 
     [Fact]
