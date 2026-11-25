@@ -7,7 +7,9 @@ A component that renders for a request and has no browser yet, in a static rende
 left in a cookie, such as a time zone. Klyroo.UI is also loaded by WebAssembly and MAUI apps, where there is no ASP.NET Core
 request, so it only knows the abstraction `IKlyRequestCookies`. This package implements it over `IHttpContextAccessor`.
 
-    dotnet add package Klyroo.UI.Server --prerelease
+```bash
+dotnet add package Klyroo.UI.Server --prerelease
+```
 
 ```csharp
 using Klyroo.UI;

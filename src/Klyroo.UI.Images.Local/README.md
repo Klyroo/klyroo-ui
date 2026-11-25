@@ -4,7 +4,9 @@ An ASP.NET Core endpoint that resizes and converts images on your own server wit
 (through [NetVips](https://github.com/kleisauke/net-vips)), and the `local` provider that makes `KlyImage`, `KlyAvatar`,
 `KlyBlogPost` and the other image components of [Klyroo.UI](https://www.nuget.org/packages/Klyroo.UI) use it.
 
-    dotnet add package Klyroo.UI.Images.Local --prerelease
+```bash
+dotnet add package Klyroo.UI.Images.Local --prerelease
+```
 
 ```csharp
 using Klyroo.UI;

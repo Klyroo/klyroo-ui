@@ -4,7 +4,9 @@ Image providers for the `KlyImage` component of [Klyroo.UI](https://www.nuget.or
 path into the URL of a resized, converted image on an image CDN, so `KlyImage`, `KlyAvatar`, `KlyBlogPost` and the other
 image components render a responsive `srcset`.
 
-    dotnet add package Klyroo.UI.Images --prerelease
+```bash
+dotnet add package Klyroo.UI.Images --prerelease
+```
 
 Register a provider in `AddKlyrooUi`, on the server and in the WebAssembly client alike:
 

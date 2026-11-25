@@ -54,7 +54,9 @@ The other three packages have the same version as `Klyroo.UI` and build on it. `
 
 ## Installation
 
-    dotnet add package Klyroo.UI --prerelease
+```bash
+dotnet add package Klyroo.UI --prerelease
+```
 
 Register the services in the server `Program.cs` and, for a WebAssembly or Auto app, in the `.Client` project with the
 same configuration:
