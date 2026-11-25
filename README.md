@@ -1,221 +1,202 @@
-# klyroo-ui
+# Klyroo.UI
 
-*Part of [Klyroo](https://klyroo.dev): Build better. Compose freely.*
+Accessible Blazor components styled with Tailwind CSS v4, for .NET developers who build web apps and .NET MAUI Blazor Hybrid apps.
 
-[![CI](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml) [![NuGet](https://img.shields.io/badge/NuGet-0.1.0--preview.1-004880.svg)](https://www.nuget.org/packages/Klyroo.UI) [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](https://dotnet.microsoft.com/) [![NativeAOT](https://img.shields.io/badge/NativeAOT-Compatible-10b981.svg)](https://klyroo.dev/why) [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![CI](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml)
+[![NuGet](https://img.shields.io/nuget/vpre/Klyroo.UI.svg)](https://www.nuget.org/packages/Klyroo.UI)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Accessible, themable Blazor components styled with Tailwind CSS v4.
-Status: early development. 133 accessible Blazor components across core UI families:
+Klyroo.UI gives a Blazor app a complete set of components, a design system built on CSS variables and a build that
+bundles icons, fonts and Tailwind for you. Opening, closing, focus and keyboard handling run in the browser, so the
+components work in static server rendering, Interactive Server, WebAssembly and Auto, and in a `BlazorWebView`.
 
-- **Elements**: Button, Badge, Avatar, AvatarGroup, Card, Alert, Banner, Chip, Container, Empty, FieldGroup, Icon, Kbd, Link,
-  Progress, Separator, Skeleton, User
-- **Form**: Form, FormField, Input, InputNumber, InputTags, InputMenu, InputDate, InputTime, InputRating, PinInput, Textarea,
-  Checkbox, CheckboxGroup, Switch, RadioGroup, Select, SelectMenu, Listbox, Slider, Toggle, ToggleGroup, Calendar, ColorPicker,
-  FileUpload
-- **Overlay**: Modal, Slideover, Drawer, Popover, Tooltip, DropdownMenu, ContextMenu, CommandPalette, Toast, and the color mode
-  controls (ColorModeButton, ColorModeSwitch, ColorModeSelect, ColorModeAvatar, ColorModeImage)
-- **Navigation**: Tabs, Accordion, Collapsible, Breadcrumb, Pagination, Stepper, Timeline, NavigationMenu, Tree, Marquee,
-  ScrollArea, Splitter, and the content components (ContentNavigation, ContentSearch, ContentSearchButton, ContentSurround, ContentToc)
-- **Data**: Table, Chart, Carousel
-- **Layout**: App, Header, Main, Footer, FooterColumns, Sidebar, Error, LocaleSelect, Theme
-- **Page**: Page, PageHeader, PageHero, PageSection, PageFeature, PageGrid, PageColumns, PageCard, PageCta, PageLinks, PageList,
-  PageLogos, PageAnchors, PageAside, PageBody, AuthForm, PricingPlan, PricingPlans, PricingTable, BlogPost, BlogPosts,
-  ChangelogVersion, ChangelogVersions
-- **Dashboard**: DashboardGroup, DashboardSidebar, DashboardSidebarCollapse, DashboardSidebarToggle, DashboardPanel,
-  DashboardResizeHandle, DashboardNavbar, DashboardToolbar, DashboardSearch, DashboardSearchButton
-- **Chat**: ChatMessages, ChatMessage, ChatPrompt, ChatPromptSubmit, ChatPalette, ChatAttachment, ChatReasoning, ChatShimmer, ChatTool
-- **Editor**: Editor, EditorToolbar, EditorDragHandle, EditorSuggestionMenu, EditorMentionMenu, EditorEmojiMenu
+## Features
 
-Each one has a documentation page with live examples in the four render modes.
+- **143 components**: elements, form controls, overlays, navigation, data, layout, page sections, dashboards, chat and a rich text editor, listed [below](#components).
+- **Every render mode**: the same markup in static server rendering, Interactive Server, WebAssembly and Auto, because UI state lives in custom elements in the browser unless you bind it.
+- **Two stylesheet modes**: load the precompiled `klyroo.css`, or let the build compile your Tailwind v4 stylesheet with the Klyroo theme and no Node.
+- **Design tokens and palettes**: map the semantic colors to any Tailwind palette in C#, with the contrast rules checked, or override `--klyroo-*` CSS variables.
+- **Build-time icons and fonts**: any Iconify icon works by name and fonts are self-hosted, with no request to a third party when the page runs.
+- **Responsive images**: `KlyImage` fills `srcset` and `sizes` through providers for Cloudinary, imgix, ImageKit, Cloudflare, Netlify, Vercel and Bunny, or through your own server with libvips.
+- **Twelve locales**: every text comes from a locale, components follow the culture of the user, and Arabic renders right to left.
+- **.NET MAUI Blazor Hybrid**: the same pages run in a `BlazorWebView`, with a sample project.
 
-## Platforms
+## Components
 
-The same components run on the web and in .NET MAUI Blazor Hybrid apps (a `BlazorWebView`), so one set of pages can ship as a web app and as a native app.
+Every component name starts with `Kly`, so `Button` is `KlyButton`. The list counts the 143 public components that you place in a page.
+The records they take (`KlyTabItem`, `KlySelectItem`, ...), the `*Ui` slot records, the base classes and the internal helper components
+that the [API reference](docs/api-reference.md) also lists are not counted.
 
-| Target | Status |
-| --- | --- |
-| Web: static SSR, Server, WebAssembly, Auto | Tested in all four render modes, same markup |
-| Android (phone) | Built and tested on the emulator |
-| iOS 17 or later (the native popover is required) | CI build job set up but not run yet; not run on a device |
-| Windows | CI build job set up but not run yet; not run on a device |
-| macOS (Mac Catalyst) | CI build job set up but not run yet; not run on a device |
-| Android TV | Experimental: D-pad navigation, editing mode for text fields, Back closes overlays. Tested on the emulator; the soft keyboard has not been seen yet (the TV emulator has none) |
-| Tizen (Samsung TV) | Not supported: there is no BlazorWebView |
+- **Elements** (20): Button, Badge, Avatar, AvatarGroup, Card, Alert, Banner, Chip, Container, Empty, FieldGroup, Icon, Image, InfiniteScroll, Kbd, Link, Progress, Separator, Skeleton, User
+- **Form** (25): Form, FormField, Input, InputNumber, InputTags, InputMenu, InputDate, InputTime, InputRating, PinInput, Textarea, Checkbox, CheckboxGroup, Switch, RadioGroup, Select, SelectMenu, Listbox, Slider, RangeSlider, Toggle, ToggleGroup, Calendar, ColorPicker, FileUpload
+- **Overlay** (9): Modal, Slideover, Drawer, Popover, Tooltip, DropdownMenu, ContextMenu, CommandPalette, Toaster
+- **Color mode** (5): ColorModeButton, ColorModeSwitch, ColorModeSelect, ColorModeAvatar, ColorModeImage
+- **Navigation** (12): Tabs, Accordion, Collapsible, Breadcrumb, Pagination, Stepper, Timeline, NavigationMenu, Tree, Marquee, ScrollArea, Splitter
+- **Content** (5): ContentNavigation, ContentSearch, ContentSearchButton, ContentSurround, ContentToc
+- **Data** (4): Table, Column, Chart, Carousel
+- **Layout** (10): App, Header, Main, Footer, FooterColumns, Sidebar, SkipLink, Error, LocaleSelect, Theme
+- **Page** (23): Page, PageHeader, PageHero, PageSection, PageFeature, PageGrid, PageColumns, PageCard, PageCta, PageLinks, PageList, PageLogos, PageAnchors, PageAside, PageBody, AuthForm, PricingPlan, PricingPlans, PricingTable, BlogPost, BlogPosts, ChangelogVersion, ChangelogVersions
+- **Dashboard** (10): DashboardGroup, DashboardSidebar, DashboardSidebarCollapse, DashboardSidebarToggle, DashboardPanel, DashboardResizeHandle, DashboardNavbar, DashboardToolbar, DashboardSearch, DashboardSearchButton
+- **Chat** (9): ChatMessages, ChatMessage, ChatPrompt, ChatPromptSubmit, ChatPalette, ChatAttachment, ChatReasoning, ChatShimmer, ChatTool
+- **Editor** (6): Editor, EditorToolbar, EditorDragHandle, EditorSuggestionMenu, EditorMentionMenu, EditorEmojiMenu
+- **Head** (5): ColorModeScript, CultureMeta, Fonts, Head, ThemeStyle (the components that go in `<head>`)
 
-See [`samples/Klyroo.Maui`](samples/Klyroo.Maui) and the "MAUI and Blazor Hybrid" guide of the docs site.
+## Packages
 
-## Install
+| Package | Description |
+| :--- | :--- |
+| [`Klyroo.UI`](https://www.nuget.org/packages/Klyroo.UI) | The components, themes, twelve locales, stylesheets, JavaScript and the build targets for fonts, icons and Tailwind. |
+| [`Klyroo.UI.Server`](https://www.nuget.org/packages/Klyroo.UI.Server) | Lets components read cookies in static rendering and prerendering over `HttpContext`. ASP.NET Core server projects only. |
+| [`Klyroo.UI.Images`](https://www.nuget.org/packages/Klyroo.UI.Images) | Image providers for `KlyImage`: Cloudinary, imgix, ImageKit, Cloudflare Images, Netlify, Vercel, Bunny and URL templates. |
+| [`Klyroo.UI.Images.Local`](https://www.nuget.org/packages/Klyroo.UI.Images.Local) | An ASP.NET Core endpoint that resizes and converts images with libvips, and the provider that uses it. |
 
-Requires .NET 10.
+The other three packages have the same version as `Klyroo.UI` and build on it. `Klyroo.UI.Server` depends on exactly that version.
 
-```bash
-dotnet add package Klyroo.UI
-```
+## Installation
 
-### Packages
+    dotnet add package Klyroo.UI --prerelease
 
-| Package | What it is |
-|---|---|
-| `Klyroo.UI` | The components, themes, 12 locales and the build-time features (fonts, icons, Tailwind). |
-| `Klyroo.UI.Images` | Image CDN providers (Cloudinary, imgix, ImageKit...) for `KlyImage`. |
-| `Klyroo.UI.Images.Local` | A local image optimizer endpoint (NetVips). |
-| `Klyroo.UI.Server` | Server-side request access (`services.AddKlyrooServer()`): lets components read cookies, such as the time zone of a data list, in static rendering and prerendering. ASP.NET Core only; call it in the server project. |
-| `Klyroo.UI.Tools` | Data-heavy components built on Klyroo.UI (the data list and its parts, under construction). `services.AddKlyrooUiTools()` registers it, and Klyroo.UI with it. **Requires Tailwind compiled by your app**: no precompiled stylesheet, because a second one would override the variants of `klyroo.css`. With `<KlyrooTailwind>true</KlyrooTailwind>` the build imports its classes for you; with your own Tailwind, import `obj/klyroo/klyroo-tools.theme.css` after `klyroo.theme.css` and set `<KlyrooToolsOwnTailwind>true</KlyrooToolsOwnTailwind>`. Depends on exactly the same version of `Klyroo.UI`. |
-| `Klyroo.UI.Tools.Query` | The Blazor-free request and filter models of the data list, for API servers (no ASP.NET Core, no Klyroo.UI). |
-| `Klyroo.UI.Mcp` | The MCP server for agents (a dotnet tool). |
-
-## Use it
+Register the services in the server `Program.cs` and, for a WebAssembly or Auto app, in the `.Client` project with the
+same configuration:
 
 ```csharp
-// Program.cs of the server AND of the .Client project (share the call in a method of the client project)
+using Klyroo.UI;
+
 builder.Services.AddKlyrooUi();
 ```
 
-Styles come in two modes. Without Tailwind in your app, load the precompiled stylesheets:
+Import the namespace in `_Imports.razor`:
 
 ```razor
-@* App.razor, in <head> *@
+@using Klyroo.UI
+```
+
+Load the styles in `<head>` of `App.razor`. Without Tailwind in your app, link the precompiled sheets:
+
+```razor
 <KlyColorModeScript />
-<KlyThemeStyle /> @* only needed when you configure palettes *@
+<KlyThemeStyle />
 <link rel="stylesheet" href="@Assets["_content/Klyroo.UI/klyroo.preflight.css"]" />
 <link rel="stylesheet" href="@Assets["_content/Klyroo.UI/klyroo.css"]" />
 ```
 
-```razor
-@using Klyroo.UI
+If your app compiles Tailwind v4, turn on `KlyrooTailwind` in the project file, import the Klyroo theme after Tailwind and
+load your own compiled sheet instead:
 
-<KlyButton Label="Save" OnClick="Save" />
-<KlySwitch @bind-Value="notify" Label="Email notifications" />
-<KlyPopover @bind-Open="open">
-    <ChildContent><KlyButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
-    <Content><p class="p-3">Panel</p></Content>
-</KlyPopover>
+```xml
+<PropertyGroup>
+  <KlyrooTailwind>true</KlyrooTailwind>
+</PropertyGroup>
 ```
-
-### Render modes
-
-Components work in Interactive Server, WebAssembly and Auto, and in static server rendering (Switch posts forms,
-Popover opens and closes in the browser). A button with `OnClick` renders disabled until the page is interactive,
-because its handler cannot run before that. A Popover trigger must contain a `<button>`; bind `@bind-Open` when .NET needs
-to know the state, otherwise opening and closing never leave the browser. If your app still loads Bootstrap from the Blazor template, remove it or import it
-in a layer (`@import url(bootstrap.css) layer(bootstrap);`): unlayered CSS overrides Tailwind v4's layered CSS.
-
-### Styles with Tailwind v4 compiled by your app
-
-Every build copies the Klyroo theme (tokens, dark variant, the classes components use) to `obj/klyroo/klyroo.theme.css`.
-Import it after Tailwind, and load only your compiled stylesheet (not `klyroo.css` nor `klyroo.preflight.css`):
 
 ```css
 @import "tailwindcss";
-@import "../obj/klyroo/klyroo.theme.css"; /* path relative to this file */
+@import "../obj/klyroo/klyroo.theme.css";
 ```
 
-`Class` and `Ui` then accept any utility, since your Tailwind build sees them in your Razor files.
+Remove Bootstrap if the Blazor template added it: CSS outside a cascade layer overrides the layered CSS of Tailwind v4.
 
-## Languages
+## Quick start
 
-Twelve locales are built in (English, French, German, Spanish, Italian, Portuguese, Brazilian Portuguese, Dutch, Japanese, Simplified
-Chinese, Arabic and Russian). Components follow the culture of the user on their own: with ASP.NET Core request localization on the
-server, or the culture of the browser in WebAssembly, no code is needed. A `KlyApp` writes `lang` and `dir` (Arabic is right to left).
+Wrap the layout in `KlyApp`, once, around the body. It renders the toaster, resolves the locale and writes `lang` and `dir`:
 
 ```razor
-<KlyApp Locale="KlyLocales.Fr"> @Body </KlyApp>
+@inherits LayoutComponentBase
+
+<KlyApp>
+    <KlyMain>
+        @Body
+    </KlyMain>
+</KlyApp>
 ```
 
-```csharp
-builder.Services.AddKlyrooUi(o => o.Locale = KlyLocales.Extend(KlyLocales.En, code: "en-AU", messages: m => m with { Close = "Dismiss" }));
-```
-
-See the Internationalization guide of the documentation site.
-
-## Customize
-
-- **Palettes**: map the semantic colors to Tailwind palettes or your own. Klyroo computes the
-  fill, text and on-fill tokens so the contrast rules still hold, and `KlyThemeStyle` (in `<head>`, next to
-  `KlyColorModeScript`) delivers them; it renders nothing while the colors are the defaults.
-
-  ```csharp
-  builder.Services.AddKlyrooUi(o =>
-  {
-      o.Colors.Primary = KlyPalette.Blue;                 // 26 Tailwind v4 palettes, or KlyPalette.Custom("brand", shades)
-      o.Colors.Neutral = KlyPalette.Zinc;                 // also drives the text, background and border tokens
-      o.Colors.Add("tertiary", KlyPalette.Indigo);        // then Color="@("tertiary")", no CSS to write
-      o.Defaults.Color = KlyColor.Secondary;              // used when a component's Color is not set (Size likewise)
-  });
-  ```
-
-- **Tokens** (works everywhere): override `--klyroo-primary`, `--klyroo-radius`, `--klyroo-bg`… in your CSS, in both
-  `:root` and `.dark`. Your unlayered `:root` rule beats the library's dark values, so a color overridden only in
-  `:root` keeps its light value in dark mode while its paired `-contrast` token still flips. The full list: text
-  (`--klyroo-text`, `-text-toned`, `-text-muted`, `-text-dimmed`, `-text-highlighted`, `-text-inverted`), backgrounds
-  (`--klyroo-bg`, `-bg-muted`, `-bg-elevated`, `-bg-accented`, `-bg-overlay`, `-bg-inverted`), borders (`--klyroo-border`,
-  `-border-muted`, `-border-accented`, `-border-inverted`), `--klyroo-radius` (the `rounded-*` scale is computed from it),
-  `--klyroo-container`, `--klyroo-header-height` and `--klyroo-chart-1` to `-6` (unset by default, they fall back to the semantic colors).
-- **Fonts**: name them in the project file, and the build downloads and self-hosts them (no request to a font provider
-  when the page runs), with `@font-face`, a metrics-adjusted fallback face and a preload. Put `<KlyFonts />` in `<head>`.
-  They set `--klyroo-font-sans` and `--klyroo-font-mono`, which the page font, `font-sans` and `font-mono` follow.
-
-  ```xml
-  <ItemGroup>
-    <KlyrooFont Include="Public Sans" Role="sans" Weights="400;700" Subsets="latin;latin-ext" />  <!-- google, bunny, fontsource or local -->
-  </ItemGroup>
-  ```
-
-- **Tailwind utilities** (Tailwind compiled by your app): `text-default`, `text-muted`, `text-dimmed`, `text-toned`,
-  `text-highlighted`, `text-inverted`, `bg-default`, `bg-muted`, `bg-elevated`, `bg-accented`, `bg-inverted`,
-  `border-default`, `border-muted`, `border-accented`, `border-inverted` (also `ring-`, `divide-`, `outline-`), the semantic
-  colors (`bg-primary`, `text-error`…) and `rounded-*`, which follows `--klyroo-radius`.
-- **Custom color by hand**: `Color="@("brand")"` plus `[data-color='brand'] { --kly-color: …; --kly-color-text: …; --kly-color-contrast: …; }`.
-- **Global theme**: `AddKlyrooUi(o => o.Button.Slot("base", "font-semibold"))`.
-- **Per instance**: `Class="…"` on the root and `Ui="@(new ButtonUi { Label = "…" })"` per slot. These take Tailwind
-  utilities, so they need Tailwind compiled by your app; without it, only classes already in `klyroo.css` or your own CSS apply.
-
-## Images
-
-`KlyImage` renders an `img` with the `width`, `height`, `srcset`, `sizes` and `loading` an image provider can fill in;
-the avatar, blog post, changelog, logos and chat attachment components use it and take an `ImageOptions` parameter.
-Without a provider images are rendered as they are. Pick one in `AddKlyrooUi`:
-
-```csharp
-o.Images.AddCloudinary("my-cloud", makeDefault: true);   // Klyroo.UI.Images: also imgix, ImageKit, Cloudflare, Netlify, Vercel, Bunny
-// or resize on your own server with Klyroo.UI.Images.Local:  services.AddKlyrooImagesLocal();  app.MapKlyrooImages();
-```
+Then use the components:
 
 ```razor
-<KlyImage Src="/img/team.jpg" Alt="The team" Width="640" Height="360" Sizes="100vw md:640px" Format="webp" />
+@page "/settings"
+
+<KlyFormField Label="Display name">
+    <KlyInput @bind-Value="_name" Placeholder="Ada Lovelace" />
+</KlyFormField>
+<KlySwitch @bind-Value="_notify" Label="Email notifications" />
+<KlyPopover>
+    <ChildContent><KlyButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
+    <Content><p class="p-3">Opens and closes in the browser, with no round trip.</p></Content>
+</KlyPopover>
+<KlyButton Label="Save" OnClick="SaveAsync" />
+
+@code {
+    private string? _name;
+    private bool _notify = true;
+
+    private Task SaveAsync() => Task.CompletedTask;
+}
 ```
 
-See the "Images" guide of the docs site.
+The popover has no `@bind-Open`, so .NET is never called when it opens. The save button has an `OnClick`, so it renders disabled until the
+page is interactive; use `Href` or `Type="submit"` on a button that must work in a static page.
+[Getting started](docs/getting-started.md) builds a complete form step by step.
 
-## MAUI and Blazor Hybrid
+## Theming
 
-Klyroo runs in a `BlazorWebView` (.NET MAUI), so the same pages can ship as a web app and as an Android, Windows, iOS (17 or later) and Mac Catalyst app, for example from the
-`maui-blazor-web` template. Server features degrade by themselves in a web view (storage in `localStorage`, a pluggable culture store, head content through `KlyHead` and a
-`HeadOutlet` root component); the local image optimizer is web only. Tooltips follow touch, targets are 44 px on coarse pointers, safe areas are respected, and an experimental
-TV mode (`<KlyApp SpatialNavigation="true">`) serves remote controls. See the Platforms table above for the status of each target, `samples/Klyroo.Maui` and the "MAUI and Blazor Hybrid" guide.
+Map the semantic colors to palettes in `AddKlyrooUi`. Klyroo.UI computes the fill, the text color and the on-fill color for
+light and dark mode and keeps the contrast ratios.
 
-## AI tooling
+```csharp
+using Klyroo.UI;
 
-Agents can read the real API instead of guessing it. All of it is generated from the docs catalog and the library, so it follows every change.
+builder.Services.AddKlyrooUi(o =>
+{
+    o.Colors.Primary = KlyPalette.Blue;
+    o.Colors.Neutral = KlyPalette.Zinc;
+    o.Colors.Add("tertiary", KlyPalette.Indigo);
+    o.Button.Slot("base", "font-semibold");
+});
+```
 
-- **MCP server**: `dotnet tool install --global Klyroo.UI.Mcp --prerelease`, then `claude mcp add --transport stdio klyroo-ui -- klyroo-ui-mcp`. It searches components,
-  returns parameters, events, slots and theme, example sources and guides. The docs site serves the same server at `/mcp`.
-- **llms.txt**: `/llms.txt` (overview with links) and `/llms-full.txt` (everything) on the docs site.
-- **Skill**: `skills/klyroo-ui` holds conventions, patterns and a routing table for coding agents (`npx skills add <repo>`).
+Four levels of customization, from the broadest to the narrowest: the palettes, the `--klyroo-*` CSS variables, the theme of
+each component in `AddKlyrooUi`, and the `Class` and `Ui` parameters of one instance. See the
+[guides](docs/guides.md#change-the-palette-and-the-design-tokens) and [Concepts](docs/concepts.md#components-slots-and-themes).
 
-See the "AI" guides of the docs site.
+## Documentation
+
+| | |
+| :--- | :--- |
+| [Getting started](docs/getting-started.md) | Step-by-step first integration |
+| [Guides](docs/guides.md) | Task-oriented recipes |
+| [Concepts](docs/concepts.md) | How the library works |
+| [Platforms](docs/platforms.md) | Render modes, .NET MAUI, NativeAOT |
+| [API reference](docs/api-reference.md) | Every public type and member |
+| [FAQ](docs/faq.md) | Troubleshooting and limitations |
+
+## Requirements
+
+- The .NET 10 SDK. Every package targets `net10.0`.
+- Static server rendering, Interactive Server, WebAssembly and Auto, and a .NET MAUI `BlazorWebView`. The components use the native popover API, so a web view needs iOS 17 or Mac Catalyst 17, or an Android System WebView of Chrome 114 or later.
+- `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` are marked trimmable. NativeAOT is not declared for any package.
+- Fonts, icons and Tailwind are resolved by the build, which needs the network once (or a filled cache). Tailwind needs no Node.
+
+## Klyroo ecosystem
+
+Klyroo is a family of independent .NET libraries that compose. Each one has its own repository, versions and releases.
+
+| Library | Description |
+| :--- | :--- |
+| [**Klyroo.UI**](https://github.com/klyroo/klyroo-ui) | Accessible Blazor and .NET MAUI Hybrid components styled with Tailwind CSS v4 |
+| [Klyroo.Query](https://github.com/klyroo/klyroo-query) | Typed query model, URL codecs and IQueryable / EF Core execution |
+| [Klyroo.Table](https://github.com/klyroo/klyroo-table) | Data lists and trees built on Klyroo.Query |
+| [Klyroo.Form](https://github.com/klyroo/klyroo-form) | Schema-driven forms, validation and wizards |
+| [Klyroo.Dashboard](https://github.com/klyroo/klyroo-dashboard) | Analytical dashboards with filters, comparisons and KPI blocks |
+| [Klyroo.Display](https://github.com/klyroo/klyroo-display) | Read-only display blocks, media players and file preview |
+| [Klyroo.Spreadsheet](https://github.com/klyroo/klyroo-spreadsheet) | CSV and TSV import with column mapping and validation |
+| [Klyroo.Agent](https://github.com/klyroo/klyroo-agent) | Bridge that lets AI agents read and act on a Blazor UI |
+| [Klyroo.Stack](https://github.com/klyroo/klyroo-stack) | Meta-package, MCP server and `dotnet new` templates |
 
 ## Contributing
 
-Issues and pull requests are welcome. Read [CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow (Conventional
-Commits, tests, documentation), follow the [Code of Conduct](./CODE_OF_CONDUCT.md), and report vulnerabilities
-privately as described in [SECURITY.md](./SECURITY.md).
-
-## Migrating from Lux
-
-This library was previously named `lux-ui`. [MIGRATION.md](./MIGRATION.md) lists every renamed package, namespace,
-component, CSS token and build setting.
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and follow the
+[code of conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md).
 
 ## License
 
-MIT
+[MIT](LICENSE)
