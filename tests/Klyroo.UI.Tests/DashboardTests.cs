@@ -434,8 +434,10 @@ public class DashboardTests : KlyrooTestContext
         var dialog = cut.Find("dialog");
         Assert.True(dialog.HasAttribute("data-kly-dashboard-search"));
         Assert.Equal("Search", dialog.GetAttribute("aria-label"));
-        // A palette is not given a close button: Escape and a selection close it.
-        Assert.Empty(dialog.QuerySelectorAll("button[aria-label='Close']"));
+        // The modal has no close button of its own: the palette shows an Esc key that closes it, like a selection does.
+        var close = Assert.Single(dialog.QuerySelectorAll("button[aria-label='Close']"));
+        Assert.True(close.HasAttribute("data-kly-close"));
+        Assert.Equal("Esc", close.TextContent.Trim());
         var trigger = cut.Find("kly-modal [data-slot=trigger] button");
         Assert.Equal("mod+k", trigger.GetAttribute("data-kly-hotkey"));
         Assert.True(trigger.HasAttribute("data-kly-hotkey-always"));
