@@ -40,20 +40,22 @@
     {
         _service = RendererInfo.IsInteractive ? Service as OverlayService : null;
         if (_service is null) return;
-        _location = WithoutFragment(Navigation.Uri);
+        _location = PageOf(Navigation.Uri);
         Navigation.LocationChanged += OnLocationChanged;
         _service.Attach(this, action => InvokeAsync(action), () => _ = InvokeAsync(StateHasChanged));
     }
 
-    private static string WithoutFragment(string uri)
+    // The page a location shows: the address without its query and fragment. A page that keeps its state in the query (the filters
+    // of a data list or a dashboard) rewrites it while a dialog is open, and that is not the user leaving.
+    private static string PageOf(string uri)
     {
-        var hash = uri.IndexOf('#');
-        return hash < 0 ? uri : uri[..hash];
+        var end = uri.IndexOfAny(['?', '#']);
+        return (end < 0 ? uri : uri[..end]).TrimEnd('/');
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
     {
-        var location = WithoutFragment(e.Location);
+        var location = PageOf(e.Location);
         if (location == _location) return;
         _location = location;
         _service?.CancelForNavigation();

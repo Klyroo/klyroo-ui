@@ -519,7 +519,7 @@ panel instead of a centered modal. Both methods take a `CancellationToken` that 
 
 Dialogs stack: open a second one from the first and the newest sits on top, with Escape closing only that one. The task
 returned by `ShowAsync` always completes, so a caller is never left waiting. A dialog also ends as canceled when the user
-navigates to another page (a different path or query string; a change of the fragment alone does not count) and when the
+navigates to another page (a different path; a change of the query string or the fragment alone does not count, so a page that keeps its filters in the URL can rewrite them while a dialog is open) and when the
 last host disappears (the page was left, the circuit ended).
 
 When to call it. The host attaches only in an interactive render, after the page that contains it has initialized. So call

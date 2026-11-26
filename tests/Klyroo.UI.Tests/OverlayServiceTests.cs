@@ -261,7 +261,7 @@ public class OverlayServiceTests : KlyrooTestContext
     }
 
     [Fact]
-    public async Task A_navigation_cancels_the_open_dialogs_but_a_fragment_change_does_not()
+    public async Task A_navigation_to_another_page_cancels_the_open_dialogs_but_a_query_or_fragment_change_does_not()
     {
         var cut = Render<KlyOverlayHost>();
         var navigation = Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
@@ -269,6 +269,9 @@ public class OverlayServiceTests : KlyrooTestContext
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         navigation.NavigateTo(navigation.Uri + "#section");
+        Assert.False(pending.IsCompleted);
+        // A page that keeps its filters in the query rewrites it while the dialog is open.
+        navigation.NavigateTo(navigation.GetUriWithQueryParameter("region", "eu"), replace: true);
         Assert.False(pending.IsCompleted);
 
         navigation.NavigateTo("/elsewhere");
