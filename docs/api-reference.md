@@ -6584,7 +6584,7 @@ Turns a source image into the URL of a resized, converted version of it. Registe
 
 `Klyroo.UI` · interface
 
-Opens dialogs from code and awaits how they end. Needs an interactive render mode and a `KlyOverlayHost` (`KlyApp` renders one), like `IToastService` needs a toaster.
+Opens dialogs from code and awaits how they end. Needs an interactive render mode and a `KlyOverlayHost` (`KlyApp` renders one), like `IToastService` needs a toaster. Call it from an event handler or `OnAfterRenderAsync`, never from `OnInitialized` or while prerendering.
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
