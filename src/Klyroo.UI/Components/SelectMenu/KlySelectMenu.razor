@@ -20,7 +20,7 @@ else
     private bool _iconsSeen;
     private IReadOnlyList<IKlySelectItem<TValue>>? _items;
     private bool _itemsPassed;
-    private object? _optionsKey;
+    private string? _optionsKey;
 
     /// <summary>
     /// The options. Not needed when <see cref="OptionsProvider"/> loads them; given together with it, these items are not listed but
@@ -52,11 +52,11 @@ else
 
     /// <summary>
     /// With <see cref="OptionsProvider"/>: what the options depend on besides the search text (the country whose cities are listed). When it changes
-    /// (<c>object.Equals</c>), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again,
+    /// (compared ordinally), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again,
     /// and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded: the provider is only
     /// asked for what was not loaded yet. Without a key the source is assumed not to change.
     /// </summary>
-    [Parameter] public object? OptionsKey { get; set; }
+    [Parameter] public string? OptionsKey { get; set; }
 
     /// <summary>
     /// With <see cref="OptionsProvider"/>: returns the options of selected values the loaded pages do not contain (values restored from
@@ -146,7 +146,7 @@ else
                 _remote = new KlyRemoteOptions(OptionsProvider, OnRemoteChanged);
                 _optionsKey = OptionsKey;
             }
-            else if (!Equals(_optionsKey, OptionsKey))
+            else if (!string.Equals(_optionsKey, OptionsKey, StringComparison.Ordinal))
             {
                 _optionsKey = OptionsKey;
                 _remote.Reset();
