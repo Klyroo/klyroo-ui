@@ -53,9 +53,14 @@
     <_KlyrooTemplateUsesTools Condition="$(_KlyrooPackagesText.Contains('Include=&quot;Klyroo.UI.Tools&quot;')) Or $(_KlyrooPackagesText.Contains('Include=&quot;Klyroo.Table&quot;'))">true</_KlyrooTemplateUsesTools>
   </PropertyGroup>
 
+  <!-- What Klyroo.Table.targets does for a package reference: KlyrooToolsPresent makes the generated Tailwind entry import the theme, which it reads as klyroo-tools.theme.css. -->
+  <PropertyGroup Condition="'$(_KlyrooTemplateUsesTools)' == 'true'">
+    <KlyrooToolsPresent>true</KlyrooToolsPresent>
+  </PropertyGroup>
+
   <Target Name="KlyrooToolsCopyTailwindTheme" BeforeTargets="BeforeBuild" Condition="'$(_KlyrooTemplateUsesTools)' == 'true'">
     <Copy SourceFiles="$(KlyrooRepoRoot)../klyroo-table/src/Klyroo.Table/wwwroot/klyroo-table.theme.css"
-          DestinationFolder="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))"
+          DestinationFiles="$([MSBuild]::NormalizeDirectory($(MSBuildProjectDirectory), $(BaseIntermediateOutputPath), klyroo))klyroo-tools.theme.css"
           SkipUnchangedFiles="true" />
   </Target>
 
