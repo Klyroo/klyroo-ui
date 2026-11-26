@@ -32,16 +32,93 @@ public sealed record KlyPricingTier(string Id, string Title)
 /// <param name="Features">The rows of the group.</param>
 public sealed record KlyPricingSection(string Title, IReadOnlyList<KlyPricingTableFeature> Features);
 
+/// <summary>The kinds of cell a <see cref="KlyPricingTableValue"/> can be.</summary>
+internal enum PricingValueKind
+{
+    None,
+    Included,
+    Text,
+    Number,
+}
+
+/// <summary>
+/// The cell of a feature for one tier of a <see cref="KlyPricingTable"/>: a check mark (<c>true</c>), a minus sign (<c>false</c>, <c>null</c> or the default value), a text or a number.
+/// <c>bool</c>, <c>string</c>, <c>int</c>, <c>long</c> and <c>decimal</c> convert to it implicitly, so <c>[true, "10 GB", false, 5]</c> is a list of values.
+/// A number is shown with the format culture of the locale in effect.
+/// </summary>
+public readonly record struct KlyPricingTableValue
+{
+    private readonly PricingValueKind _kind;
+    private readonly string? _text;
+    private readonly decimal _number;
+
+    private KlyPricingTableValue(PricingValueKind kind, string? text, decimal number)
+    {
+        _kind = kind;
+        _text = text;
+        _number = number;
+    }
+
+    /// <summary>A check mark: the tier includes the feature.</summary>
+    public static KlyPricingTableValue Included { get; } = new(PricingValueKind.Included, null, 0);
+
+    /// <summary>A minus sign: the tier does not include the feature.</summary>
+    public static KlyPricingTableValue NotIncluded { get; } = default;
+
+    /// <summary>A text such as <c>"10 GB"</c>. <c>null</c> is a minus sign.</summary>
+    /// <param name="text">The text shown in the cell.</param>
+    public static KlyPricingTableValue Text(string? text) => text is null ? default : new(PricingValueKind.Text, text, 0);
+
+    /// <summary>A number, shown with the format culture of the locale in effect.</summary>
+    /// <param name="number">The number shown in the cell.</param>
+    public static KlyPricingTableValue Number(decimal number) => new(PricingValueKind.Number, null, number);
+
+    /// <summary>A check mark for <c>true</c>, a minus sign for <c>false</c>.</summary>
+    public static implicit operator KlyPricingTableValue(bool included) => included ? Included : NotIncluded;
+
+    /// <summary>A text, or a minus sign for <c>null</c>.</summary>
+    public static implicit operator KlyPricingTableValue(string? text) => Text(text);
+
+    /// <summary>A number.</summary>
+    public static implicit operator KlyPricingTableValue(int number) => Number(number);
+
+    /// <summary>A number.</summary>
+    public static implicit operator KlyPricingTableValue(long number) => Number(number);
+
+    /// <summary>A number.</summary>
+    public static implicit operator KlyPricingTableValue(decimal number) => Number(number);
+
+    /// <summary>The text of the cell, a number in the invariant culture: <c>"true"</c> for a check mark and an empty text for a minus sign.</summary>
+    public override string ToString() => _kind switch
+    {
+        PricingValueKind.Included => "true",
+        PricingValueKind.Text => _text!,
+        PricingValueKind.Number => _number.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+        _ => "",
+    };
+
+    internal bool IsIncluded => _kind == PricingValueKind.Included;
+
+    internal bool IsNotIncluded => _kind == PricingValueKind.None;
+
+    internal string TextOf(IFormatProvider culture) => _kind switch
+    {
+        PricingValueKind.Text => _text!,
+        PricingValueKind.Number => _number.ToString(null, culture),
+        _ => "",
+    };
+}
+
 /// <summary>
 /// A row of a <see cref="KlyPricingTable"/>. <see cref="Values"/> are the cells in the order of the tiers (or give
-/// <see cref="ByTier"/>): <c>true</c> is a check mark, <c>false</c> or <c>null</c> a minus sign, anything else is shown as text.
+/// <see cref="ByTier"/>): <c>true</c> is a check mark, <c>false</c> or <c>null</c> a minus sign, a text or a number is shown as it is.
 /// </summary>
 /// <param name="Title">Name of the feature, shown in the first column.</param>
-/// <param name="Values">The cells, in the order of the tiers: <c>true</c> is a check mark, <c>false</c> or <c>null</c> a minus sign, anything else is shown as text.</param>
-public sealed record KlyPricingTableFeature(string Title, params object?[] Values)
+/// <param name="Values">The cells, in the order of the tiers: <c>true</c> is a check mark, <c>false</c> or <c>null</c> a minus sign, a text or a number is shown as it is.</param>
+public sealed record KlyPricingTableFeature(string Title, params KlyPricingTableValue[] Values)
 {
     /// <summary>Cells by tier id, instead of by position. A tier missing from it falls back to its position in <see cref="Values"/>.</summary>
-    public IReadOnlyDictionary<string, object?>? ByTier { get; init; }
+    public IReadOnlyDictionary<string, KlyPricingTableValue>? ByTier { get; init; }
 }
 
 /// <summary>

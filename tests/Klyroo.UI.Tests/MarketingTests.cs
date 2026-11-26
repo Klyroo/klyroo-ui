@@ -336,7 +336,7 @@ public class MarketingTests : KlyrooTestContext
         [
             new("Projects", 3, "Unlimited"),
             new("SSO", false, true),
-            new("Audit log", true, null) { ByTier = new Dictionary<string, object?> { ["pro"] = true } },
+            new("Audit log", true, null) { ByTier = new Dictionary<string, KlyPricingTableValue> { ["pro"] = true } },
         ]),
         new("Support", [new("Forum", true, true)]),
     ];

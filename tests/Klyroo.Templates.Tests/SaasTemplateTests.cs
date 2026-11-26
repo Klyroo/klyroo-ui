@@ -241,8 +241,8 @@ public class SaasTemplateTests
         var users = PricingInfo.Sections.SelectMany(s => s.Features).Single(f => f.Title == "Users");
         var limits = Sample().Find("docs/reference/limits")!.Text;
 
-        Assert.Equal(["5", "50", "Unlimited"], monitors.Values.Select(v => v?.ToString()));
-        Assert.Equal(["1", "10", "50"], users.Values.Select(v => v?.ToString()));
+        Assert.Equal(["5", "50", "Unlimited"], monitors.Values.Select(v => v.ToString()));
+        Assert.Equal(["1", "10", "50"], users.Values.Select(v => v.ToString()));
         Assert.Contains("Unlimited", limits);
         Assert.Contains("Monitors 5 50 Unlimited", limits);
         Assert.Contains("Users 1 10 50", limits);

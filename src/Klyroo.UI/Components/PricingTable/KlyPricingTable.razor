@@ -68,19 +68,19 @@
                             var tier = Tiers[i];
                             var value = ValueOf(feature, tier, i);
                             <td role="cell" data-label="@tier.Title" class="@_slots["cell"]">
-                                @if (value is true)
+                                @if (value.IsIncluded)
                                 {
                                     @RenderIcon(Options.Icons.Check, $"{_slots["valueIcon"]} {_slots["included"]}")
                                     <span class="@_slots["srOnly"]">@Messages.PricingIncluded</span>
                                 }
-                                else if (value is false or null)
+                                else if (value.IsNotIncluded)
                                 {
                                     @RenderIcon(Options.Icons.Minus, $"{_slots["valueIcon"]} {_slots["notIncluded"]}")
                                     <span class="@_slots["srOnly"]">@Messages.PricingNotIncluded</span>
                                 }
                                 else
                                 {
-                                    <span>@(value is IFormattable formattable ? formattable.ToString(null, FormatCulture) : value.ToString())</span>
+                                    <span>@value.TextOf(FormatCulture)</span>
                                 }
                             </td>
                         }
@@ -122,8 +122,8 @@
             ["sticky"] = VariantValue.Of(Sticky),
         }, Ui, "root");
 
-    private static object? ValueOf(KlyPricingTableFeature feature, KlyPricingTier tier, int index) =>
+    private static KlyPricingTableValue ValueOf(KlyPricingTableFeature feature, KlyPricingTier tier, int index) =>
         feature.ByTier is not null && feature.ByTier.TryGetValue(tier.Id, out var byId) ? byId
         : index < feature.Values.Length ? feature.Values[index]
-        : null;
+        : default;
 }
