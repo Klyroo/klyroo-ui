@@ -27,8 +27,41 @@ internal static partial class HtmlText
         }
         catch (RegexMatchTimeoutException)
         {
-            // Pathological input: show nothing rather than risk markup.
-            return "";
+            // A busy server or pathological input: drop every tag in one linear pass instead of showing nothing. The result is
+            // still rendered escaped, so no markup can survive either way; only the line breaks of block elements are lost.
+            return WebUtility.HtmlDecode(StripTags(html)).Trim();
         }
+    }
+
+    // Everything outside < ... >, and nothing inside script or style elements.
+    internal static string StripTags(string html)
+    {
+        var text = new System.Text.StringBuilder(html.Length);
+        var i = 0;
+        while (i < html.Length)
+        {
+            var c = html[i];
+            if (c != '<')
+            {
+                text.Append(c);
+                i++;
+                continue;
+            }
+            var close = html.IndexOf('>', i + 1);
+            if (close < 0) break;
+            var tag = html.AsSpan(i + 1, close - i - 1).TrimStart();
+            i = close + 1;
+            foreach (var hidden in (ReadOnlySpan<string>)["script", "style"])
+            {
+                if (tag.StartsWith(hidden, StringComparison.OrdinalIgnoreCase)
+                    && (tag.Length == hidden.Length || !char.IsLetterOrDigit(tag[hidden.Length])))
+                {
+                    var end = html.IndexOf("</" + hidden, i, StringComparison.OrdinalIgnoreCase);
+                    i = end < 0 ? html.Length : end;
+                    break;
+                }
+            }
+        }
+        return text.ToString();
     }
 }
