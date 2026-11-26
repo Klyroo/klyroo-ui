@@ -168,7 +168,7 @@ current System WebView (Chrome 114 or later).
   only its URL builder (`AddLocal`, in `Klyroo.UI.Images`) is.
 - The first Release build of a project that bundles icons, fonts or the Tailwind binary needs the network, or a cache
   that an earlier build filled.
-- NativeAOT is not declared or tested for any package. See [Platforms](platforms.md#trimming-and-nativeaot).
+- `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` declare `IsAotCompatible` (clean under the analyzers), but no NativeAOT app is published and tested here, and `Klyroo.UI.Images.Local` does not declare it. See [Platforms](platforms.md#trimming-and-nativeaot).
 - The chat components render no Markdown: give them rendered markup or plain text.
 - A unit test cannot exercise the in-browser behavior, because bUnit runs no JavaScript.
 - TV mode (`SpatialNavigation`) is experimental.

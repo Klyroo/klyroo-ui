@@ -14,7 +14,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <!-- BL0007: Color and Size have a getter that falls back to KlyrooOptions.Defaults, which an auto property cannot do. -->
     <NoWarn>$(NoWarn);BL0007</NoWarn>
-    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <!-- Package metadata. -->

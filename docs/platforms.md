@@ -118,13 +118,18 @@ What changes in a web view:
 
 ## Trimming and NativeAOT
 
-`Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` set `IsTrimmable`. The components avoid reflection in their
+`Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` set `IsAotCompatible`, which turns on the trimming, AOT and single-file
+analyzers and marks the assembly trimmable. They build with no warning from those analyzers, and the build treats warnings as
+errors, so a change that adds reflection the trimmer cannot see fails the build. The components avoid reflection in their
 interop: calls into JavaScript pass strings and numbers, event handlers carry `DynamicDependency` attributes so their
 event arguments survive trimming, and the generic radio group carries the annotation that `InputRadioGroup<T>`
-requires. `Klyroo.UI.Images.Local` does not set `IsTrimmable`, because it depends on NetVips and its native binaries.
+requires. The dialogs of `IKlyOverlayService` open the component you name with `ShowAsync<TComponent>`, a generic method
+that carries the annotation Blazor needs to keep the constructors and properties of that type. `Klyroo.UI.Images.Local` does
+not set `IsAotCompatible` or `IsTrimmable`, because it depends on NetVips and its native binaries.
 
-None of the packages sets `IsAotCompatible` or is tested here as a NativeAOT target. Treat NativeAOT as unverified: publish
-your app with the setting you intend to use and test it.
+The declaration says the library code is clean under the analyzers. It is not a test of a published NativeAOT app: Blazor
+itself, your own components and your own libraries decide whether an app can be published that way. Publish your app with
+the setting you intend to use and test it.
 
 ## Supported platform
 

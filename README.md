@@ -187,7 +187,7 @@ each component in `AddKlyrooUi`, and the `Class` and `Ui` parameters of one inst
 
 - The .NET 10 SDK. Every package targets `net10.0`.
 - Static server rendering, Interactive Server, WebAssembly and Auto, and a .NET MAUI `BlazorWebView`. The components use the native popover API, so a web view needs iOS 17 or Mac Catalyst 17, or an Android System WebView of Chrome 114 or later.
-- `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` are marked trimmable. NativeAOT is not declared for any package.
+- `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` declare `IsAotCompatible`: the trimming and AOT analyzers report no warning. No NativeAOT app is published and tested here, and `Klyroo.UI.Images.Local` does not declare it.
 - Fonts, icons and Tailwind are resolved by the build, which needs the network once (or a filled cache). Tailwind needs no Node.
 
 ## Klyroo ecosystem
