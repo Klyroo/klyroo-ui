@@ -242,8 +242,8 @@ public sealed partial class KlyrooOptions
     /// </example>
     public T Extension<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] T>() where T : class, new() => (T)Extension(typeof(T));
 
-    /// <summary>The non-generic form of <see cref="Extension{T}"/>, for tooling. <paramref name="type"/> must be a non-abstract class with a public parameterless constructor.</summary>
-    public object Extension([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] Type type)
+    /// <summary>The non-generic form of <see cref="Extension{T}"/>, for the build tooling. <paramref name="type"/> must be a non-abstract class with a public parameterless constructor.</summary>
+    internal object Extension([System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(ExtensionMembers)] Type type)
     {
         ArgumentNullException.ThrowIfNull(type);
         if (type == typeof(KlyrooOptions))
@@ -265,8 +265,8 @@ public sealed partial class KlyrooOptions
         }
     }
 
-    /// <summary>The options objects registered so far with <see cref="Extension{T}"/>, ordered by type name.</summary>
-    public IReadOnlyList<object> Extensions
+    /// <summary>The options objects registered so far with <see cref="Extension{T}"/>, ordered by type name. For the build tooling.</summary>
+    internal IReadOnlyList<object> Extensions
     {
         get
         {
