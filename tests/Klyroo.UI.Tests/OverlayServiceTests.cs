@@ -27,6 +27,11 @@ public sealed class OverlayPicker : ComponentBase
     }
 }
 
+public sealed class OverlayPlain : ComponentBase
+{
+    protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder) => builder.AddContent(0, "plain");
+}
+
 public sealed class OverlayHosts : ComponentBase
 {
     [Parameter] public bool Second { get; set; }
@@ -61,6 +66,48 @@ public class OverlayServiceTests : KlyrooTestContext
         var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Overlays.ShowAsync<OverlayPicker, string>(cancellationToken: Xunit.TestContext.Current.CancellationToken));
 
         Assert.Contains("KlyOverlayHost", ex.Message);
+    }
+
+    [Fact]
+    public void Show_without_a_host_throws_at_the_call_not_at_the_await()
+    {
+        // No await: the exception must come out of the call itself.
+        Assert.Throws<InvalidOperationException>(() => { _ = Overlays.ShowAsync<OverlayPicker, string>(cancellationToken: Xunit.TestContext.Current.CancellationToken); });
+        Assert.Throws<InvalidOperationException>(() => { _ = Overlays.ShowAsync<string>(_ => { }, cancellationToken: Xunit.TestContext.Current.CancellationToken); });
+    }
+
+    [Fact]
+    public void Show_validates_its_arguments_at_the_call_not_at_the_await()
+    {
+        Render<KlyOverlayHost>();
+
+        Assert.Throws<ArgumentNullException>(() => { _ = Overlays.ShowAsync<string>(null!, cancellationToken: Xunit.TestContext.Current.CancellationToken); });
+        Assert.Throws<ArgumentNullException>(() => { _ = Overlays.ConfirmAsync(null!, cancellationToken: Xunit.TestContext.Current.CancellationToken); });
+    }
+
+    [Fact]
+    public void Show_rejects_a_component_that_asks_for_another_result_type()
+    {
+        Render<KlyOverlayHost>();
+
+        var ex = Assert.Throws<ArgumentException>(() => { _ = Overlays.ShowAsync<OverlayPicker, bool>(cancellationToken: Xunit.TestContext.Current.CancellationToken); });
+
+        Assert.Contains(nameof(OverlayPicker), ex.Message);
+        Assert.Contains("KlyOverlayContext<String>", ex.Message);
+        Assert.Contains("Boolean", ex.Message);
+    }
+
+    [Fact]
+    public async Task Show_accepts_a_component_without_an_overlay_context()
+    {
+        var cut = Render<KlyOverlayHost>();
+        using var cts = new CancellationTokenSource();
+
+        var pending = Overlays.ShowAsync<OverlayPlain, bool>(cancellationToken: cts.Token);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
+        await cts.CancelAsync();
+
+        Assert.True((await pending).Canceled);
     }
 
     [Fact]

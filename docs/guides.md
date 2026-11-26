@@ -612,8 +612,11 @@ The parameters are a dictionary by name because Blazor creates the component and
 argument of the service. `result.Value` is the string (or `default` when the dialog was canceled), and `result.Canceled` says which
 way it ended. A dialog with nothing to return can use `bool` and call `Close(true)`.
 
+The `TResult` you pass must be the one the component declares: `ShowAsync<RenamePrompt, bool>` throws an `ArgumentException` that names both
+types, because the component would otherwise never receive its context and fail on `Close`.
+
 To show markup without writing a component, pass a `RenderFragment` to `ShowAsync<TResult>`. The content ends the dialog through
-the same cascading `KlyOverlayContext<TResult>`, which any component in the fragment can read:
+the same cascading `KlyOverlayContext<TResult>`, which any component in the fragment can read (the service cannot check the type such a component asks for, so keep it equal to `TResult`):
 
 ```csharp
 var picked = await Overlays.ShowAsync<int>(
@@ -633,7 +636,7 @@ last host disappears (the page was left, the circuit ended).
 When to call it. The host attaches only in an interactive render, after the page that contains it has initialized. So call
 the service from an event handler or from `OnAfterRenderAsync`, not from `OnInitialized` or `OnInitializedAsync`: on the
 first load the page initializes before the host exists, and during prerendering or static rendering there is no host at all.
-In those cases the call throws an `InvalidOperationException` that says so, instead of hanging the request. It is safe to
+In those cases the call throws an `InvalidOperationException` that says so, instead of hanging the request: it throws from the call itself, not when the returned task is awaited. It is safe to
 call from another thread (a timer, a background task): the dialog is added where the host renders.
 
 If you set `KlyApp.Overlays` to `false`, place a `<KlyOverlayHost />` yourself. An `@rendermode` island that has no `KlyApp`

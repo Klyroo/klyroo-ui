@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 
@@ -109,6 +110,8 @@ public interface IKlyOverlayService
     /// <param name="options">Title, size and behavior of the dialog.</param>
     /// <param name="cancellationToken">Cancels the dialog (it closes and the result is canceled).</param>
     /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is attached: the page has not rendered yet (call it from <c>OnAfterRenderAsync</c> or an event handler, not <c>OnInitialized</c>), or the render is static or a prerender.</exception>
+    /// <exception cref="ArgumentException"><typeparamref name="TComponent"/> declares a <c>KlyOverlayContext&lt;X&gt;</c> cascading parameter with an <c>X</c> other than <typeparamref name="TResult"/>: it would never receive its context.</exception>
+    /// <remarks>Both exceptions are thrown by the call itself, not when the returned task is awaited.</remarks>
     Task<KlyOverlayResult<TResult>> ShowAsync<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent, TResult>(
         IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
@@ -123,6 +126,10 @@ public interface IKlyOverlayService
     /// <param name="options">Title, size and behavior of the dialog.</param>
     /// <param name="cancellationToken">Cancels the dialog (it closes and the result is canceled).</param>
     /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is attached, as for <see cref="ShowAsync{TComponent, TResult}"/>.</exception>
+    /// <remarks>
+    /// Unlike the component overload this cannot check the type a component placed in <paramref name="content"/> asks for, because the fragment is opaque until it renders:
+    /// one that declares another <c>KlyOverlayContext&lt;X&gt;</c> than <typeparamref name="TResult"/> receives no context. The exception is thrown by the call itself, not when the task is awaited.
+    /// </remarks>
     Task<KlyOverlayResult<TResult>> ShowAsync<TResult>(
         RenderFragment content, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default);
 
@@ -224,18 +231,24 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         else action();
     }
 
+    // Not async on purpose: the missing host and the bad arguments throw at the call, as the interface documents, not when the task is awaited.
     public Task<KlyOverlayResult<TResult>> ShowAsync<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent, TResult>(
         IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
-        where TComponent : IComponent =>
-        ShowAsync<TResult>(builder => RenderComponent<TComponent>(builder, parameters), options, cancellationToken);
+        where TComponent : IComponent
+    {
+        EnsureContextMatches<TComponent, TResult>();
+        return ShowAsync<TResult>(builder => RenderComponent<TComponent>(builder, parameters), options, cancellationToken);
+    }
 
-    public async Task<KlyOverlayResult<TResult>> ShowAsync<TResult>(
+    public Task<KlyOverlayResult<TResult>> ShowAsync<TResult>(
         RenderFragment content, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(content);
         var entry = new OverlayEntry(this, null, options ?? new KlyOverlayOptions(), null);
         // The context is cascaded here, where TResult is known: a component asks for exactly KlyOverlayContext<TResult>.
+        // A fragment is opaque (the components in it exist only once it renders), so unlike the component overload this cannot check
+        // that they ask for that type; one that asks for another gets no value from the cascade.
         var context = new KlyOverlayContext<TResult>(entry);
         entry.Body = builder =>
         {
@@ -245,19 +258,51 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
             builder.AddComponentParameter(3, "ChildContent", content);
             builder.CloseComponent();
         };
-        var outcome = await Open(entry, cancellationToken);
+        // Open throws now when no host is attached; only the wait for the outcome is asynchronous.
+        return Typed<TResult>(Open(entry, cancellationToken));
+    }
+
+    private static async Task<KlyOverlayResult<TResult>> Typed<TResult>(Task<OverlayOutcome> pending)
+    {
+        var outcome = await pending;
         return outcome.Canceled
             ? new KlyOverlayResult<TResult>(true, default)
             : new KlyOverlayResult<TResult>(false, outcome.Value is TResult value ? value : default);
     }
 
-    public async Task<bool> ConfirmAsync(string title, string? message = null, string? confirmLabel = null, string? cancelLabel = null,
+    public Task<bool> ConfirmAsync(string title, string? message = null, string? confirmLabel = null, string? cancelLabel = null,
         KlyColor? color = null, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(title);
         var options = new KlyOverlayOptions { Title = title, Description = message };
-        var result = await Open(new OverlayEntry(this, null, options, new ConfirmContent(confirmLabel, cancelLabel, color)), cancellationToken);
+        return Confirmed(Open(new OverlayEntry(this, null, options, new ConfirmContent(confirmLabel, cancelLabel, color)), cancellationToken));
+    }
+
+    private static async Task<bool> Confirmed(Task<OverlayOutcome> pending)
+    {
+        var result = await pending;
         return !result.Canceled && result.Value is true;
+    }
+
+    /// <summary>
+    /// A component that declares a <c>KlyOverlayContext&lt;X&gt;</c> cascading parameter with an X other than <typeparamref name="TResult"/> would get
+    /// null from the cascade and fail on its first <c>Close</c>, which ends a Server circuit. Fail here instead, with both types named.
+    /// </summary>
+    private static void EnsureContextMatches<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent, TResult>()
+    {
+        foreach (var property in typeof(TComponent).GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic))
+        {
+            var type = property.PropertyType;
+            if (!type.IsGenericType || type.GetGenericTypeDefinition() != typeof(KlyOverlayContext<>)) continue;
+            if (property.GetCustomAttribute<CascadingParameterAttribute>() is null) continue;
+            var declared = type.GetGenericArguments()[0];
+            if (declared == typeof(TResult)) continue;
+            throw new ArgumentException(
+                $"{typeof(TComponent).Name} declares a cascading parameter of type KlyOverlayContext<{declared.Name}> but ShowAsync was called with TResult = {typeof(TResult).Name}. " +
+                $"Call ShowAsync<{typeof(TComponent).Name}, {declared.Name}>, or declare KlyOverlayContext<{typeof(TResult).Name}>.",
+                nameof(TResult));
+        }
     }
 
     private static void RenderComponent<
