@@ -4,21 +4,21 @@ Short, complete patterns for the jobs that come up most. Check parameters with `
 
 ## Data table
 
-`KlyTable` takes `Items`; each `KlyColumn` names its `TItem`, a `Title`, and either a `Field` (shown and used for sorting) or a `Template` for custom cells. A `Sortable` column with a `Field` gets a sort button; sorting runs in .NET, so the buttons stay disabled until the page is interactive. A `Caption` names the table for assistive technology.
+`KlyTable` takes `Items`; Blazor infers `TItem` for the columns from it. A `KlyColumn` has a `Title` and a typed `Field` (`Func<TItem, TValue>`, shown and used for sorting, with `TValue` inferred from the lambda); give it a `Template` too to show markup while the `Field` still sorts. A `KlyTemplateColumn` has only a `Template` and cannot be sorted. A `Sortable` column gets a sort button; sorting runs in .NET, compared by the type of the value (numbers by number, dates by date), so the buttons stay disabled until the page is interactive. A `Caption` names the table for assistive technology.
 
 ```razor
 <KlyTable Items="_people" Caption="Team members" Class="rounded-xl border border-(--klyroo-border)">
-    <KlyColumn TItem="Person" Title="Name" Field="p => p.Name" Sortable Class="font-medium text-(--klyroo-text)" />
-    <KlyColumn TItem="Person" Title="Role" Field="p => p.Role" Sortable />
-    <KlyColumn TItem="Person" Title="Joined" Field="p => p.Joined" Sortable>
+    <KlyColumn Title="Name" Field="p => p.Name" Sortable Class="font-medium text-(--klyroo-text)" />
+    <KlyColumn Title="Role" Field="p => p.Role" Sortable />
+    <KlyColumn Title="Joined" Field="p => p.Joined" Sortable>
         <Template>@context.Joined.ToString("MMM yyyy")</Template>
     </KlyColumn>
-    <KlyColumn TItem="Person" Title="Status">
+    <KlyTemplateColumn Title="Status">
         <Template>
             <KlyBadge Label="@context.Status" Variant="KlyVariant.Subtle" Size="KlySize.Sm"
                      Color="@(context.Status == "Active" ? KlyColor.Success : KlyColor.Neutral)" />
         </Template>
-    </KlyColumn>
+    </KlyTemplateColumn>
 </KlyTable>
 
 @code {

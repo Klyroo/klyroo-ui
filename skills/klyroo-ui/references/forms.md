@@ -13,10 +13,10 @@ Data annotations on a class, bound through `[SupplyParameterFromForm]` so the sa
 @using System.ComponentModel.DataAnnotations
 
 <KlyForm Model="Model" FormName="kly-form" OnValidSubmit="SaveAsync" ShowSummary class="flex w-full max-w-sm flex-col">
-    <KlyFormField Label="Name" Required For="() => Model!.Name">
+    <KlyFormField Label="Name" Required Field="FieldIdentifier.Create(() => Model!.Name)">
         <KlyInput @bind-Value="Model!.Name" />
     </KlyFormField>
-    <KlyFormField Label="Seats" For="() => Model!.Seats">
+    <KlyFormField Label="Seats" Field="FieldIdentifier.Create(() => Model!.Seats)">
         <KlyInputNumber @bind-Value="Model!.Seats" Min="1" Max="50" />
     </KlyFormField>
     <KlyButton Type="submit" Label="Create workspace" />
@@ -59,13 +59,13 @@ Rules that make it work in every render mode:
 ```razor
 <EditForm Model="Model" FormName="signup" OnValidSubmit="Submit" class="flex w-full max-w-sm flex-col gap-4" novalidate>
     <DataAnnotationsValidator />
-    <KlyFormField Label="Email" Required For="() => Model!.Email" Description="We never share it.">
+    <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)" Description="We never share it.">
         <KlyInput Type="email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
     </KlyFormField>
     <KlyFormField Label="Role" Hint="Optional">
         <KlySelect @bind-Value="Model!.Role" Items="Roles" Placeholder="Pick one" />
     </KlyFormField>
-    <KlyFormField Label="About you" Help="Markdown is supported." For="() => Model!.Bio">
+    <KlyFormField Label="About you" Help="Markdown is supported." Field="FieldIdentifier.Create(() => Model!.Bio)">
         <KlyTextarea @bind-Value="Model!.Bio" Rows="3" />
     </KlyFormField>
     <KlyCheckbox @bind-Value="Model!.Newsletter" Label="Send me the newsletter" />

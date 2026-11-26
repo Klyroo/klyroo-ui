@@ -288,6 +288,10 @@ builder.Services.AddKlyrooUi(o =>
 <KlyAvatar Src="/img/ada.jpg" Alt="Ada Lovelace" ImageOptions="@(new KlyImageOptions { Preset = "thumb" })" />
 ```
 
+`Width` and `Height` are whole numbers of CSS pixels (`int?`), not text, so write `Width="640"`, never `Width="640px"`.
+`Placeholder` takes a `KlyImagePlaceholder`: `KlyImagePlaceholder.Url("/img/team-tiny.jpg")` for a small image you already have, or
+`KlyImagePlaceholder.Auto` to ask the provider for a tiny, blurred version of the image itself.
+
 `Klyroo.UI.Images` holds Cloudinary, imgix, ImageKit, Cloudflare Images, Netlify, Vercel, Bunny and a URL template
 provider. `Alt` is required: pass an empty string for a decorative image. A remote `src` goes only to the providers
 that fetch remote images (Cloudflare, Netlify, Vercel and the local one) when its host is in `o.Images.Domains`.
@@ -405,10 +409,10 @@ Use a plain `EditForm` when you want Blazor's own parts with Klyroo controls:
 
 <EditForm Model="Model" FormName="signup" OnValidSubmit="Submit" class="flex max-w-sm flex-col gap-4" novalidate>
     <DataAnnotationsValidator />
-    <KlyFormField Label="Email" Required For="() => Model!.Email">
+    <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)">
         <KlyInput Type="email" @bind-Value="Model!.Email" />
     </KlyFormField>
-    <KlyFormField Label="About you" Help="Markdown is supported." For="() => Model!.Bio">
+    <KlyFormField Label="About you" Help="Markdown is supported." Field="FieldIdentifier.Create(() => Model!.Bio)">
         <KlyTextarea @bind-Value="Model!.Bio" Rows="3" />
     </KlyFormField>
     <KlySwitch @bind-Value="Model!.Newsletter" Label="Send me the newsletter" />
@@ -449,16 +453,16 @@ The `EditContext` field is the property itself, so `For`, data annotations and t
 ```razor
 <EditForm Model="Model" FormName="order" OnValidSubmit="Submit" novalidate>
     <DataAnnotationsValidator />
-    <KlyFormField Label="Category" Required For="() => Model!.CategoryId">
+    <KlyFormField Label="Category" Required Field="FieldIdentifier.Create(() => Model!.CategoryId)">
         <KlySelect @bind-Value="Model!.CategoryId" Items="_categories" Placeholder="Choose a category" />
     </KlyFormField>
-    <KlyFormField Label="Status" For="() => Model!.Status">
+    <KlyFormField Label="Status" Field="FieldIdentifier.Create(() => Model!.Status)">
         <KlySelect @bind-Value="Model!.Status" Items="_statuses" />
     </KlyFormField>
-    <KlyFormField Label="Quantity" For="() => Model!.Quantity">
+    <KlyFormField Label="Quantity" Field="FieldIdentifier.Create(() => Model!.Quantity)">
         <KlyInputNumber @bind-Value="Model!.Quantity" Min="1" Max="100" />
     </KlyFormField>
-    <KlyFormField Label="Due" For="() => Model!.Due">
+    <KlyFormField Label="Due" Field="FieldIdentifier.Create(() => Model!.Due)">
         <KlyInputDate @bind-Value="Model!.Due" />
     </KlyFormField>
     <KlyButton Type="submit" Label="Save" />
@@ -516,14 +520,16 @@ Goal: drill down when the user picks a bar, a point or a slice.
 `KlyChart.OnSelect` is raised by a click on a bar, a point of a line or area chart or a donut slice, and by Enter or Space on the row the arrow keys have moved the focus to. Only a chart with a handler is clickable: it gets a pointer cursor, and its keyboard hint says that Enter selects.
 
 ```razor
-<KlyChart TItem="Sale" Data="_sales" Index="@(s => s.Month)" Categories="_categories" Type="KlyChartType.Bar" OnSelect="Pick" />
+<KlyChart TItem="Sale" TIndex="string" Data="_sales" Index="@(s => s.Month)" Categories="_categories" Type="KlyChartType.Bar" OnSelect="Pick" />
 
 @code {
-    private void Pick(KlyChartSelectEventArgs<Sale> pick) => Filter = $"{pick.Index}: {pick.SeriesKey} = {pick.Value}";
+    private void Pick(KlyChartSelectEventArgs<Sale, string> pick) => Filter = $"{pick.Index}: {pick.SeriesKey} = {pick.Value}";
 }
 ```
 
-The arguments carry the position of the row (`Row`), its `Index` (the x value), the `SeriesKey` and `SeriesIndex` of the series that was picked, its `Value` (null for a gap) and the row `Item`. A click on a bar reports the bar under the pointer, a click on a line or area chart the series whose point is nearest the pointer, a slice the single category; from the keyboard, with several series, no series is named (`SeriesIndex` is -1, `SeriesKey` and `Value` are null) and your handler chooses from `Item`, while a chart with one series always names it. Enter and Space select the row the arrow keys are on, not the one the pointer hovers. The pick is reported by the browser, so it needs an interactive render, and it needs `Tooltip` (the default), since the row of the keyboard is the highlighted one.
+`KlyChart<TItem, TIndex>` has two type arguments: the row type and the type of the x value that `Index` returns (a `string`, a `DateOnly`, a number). Blazor infers both from `Data` and `Index`, so you can leave `TItem` and `TIndex` out when you have no handler. A handler written as a method group, as above, needs them spelled out because Blazor cannot infer through it; with inferred types write the handler as a lambda that names the argument type: `OnSelect="@((KlyChartSelectEventArgs<Sale, DateOnly> pick) => Pick(pick))"`.
+
+The arguments carry the position of the row (`Row`), its `Index` (the x value, typed as `TIndex`), the `SeriesKey` and `SeriesIndex` of the series that was picked, its `Value` (null for a gap) and the row `Item`. A click on a bar reports the bar under the pointer, a click on a line or area chart the series whose point is nearest the pointer, a slice the single category; from the keyboard, with several series, no series is named (`SeriesIndex` is -1, `SeriesKey` and `Value` are null) and your handler chooses from `Item`, while a chart with one series always names it. Enter and Space select the row the arrow keys are on, not the one the pointer hovers. The pick is reported by the browser, so it needs an interactive render, and it needs `Tooltip` (the default), since the row of the keyboard is the highlighted one.
 
 ## Control the color mode
 
@@ -574,8 +580,9 @@ For a yes or no question, `ConfirmAsync` returns a `bool`. Escape, a click on th
 
 The labels default to the localized "Cancel" and "Confirm".
 
-For your own content, write a component and open it with `ShowAsync<TComponent>`. The component receives a
-`KlyOverlayContext` as a cascading parameter and ends the dialog with `Close(data)` or `Cancel()`:
+For your own content, write a component and open it with `ShowAsync<TComponent, TResult>`. `TResult` is the type of the
+value the dialog returns. The component receives a `KlyOverlayContext<TResult>` as a cascading parameter and ends the dialog
+with `Close(value)` or `Cancel()`:
 
 ```razor
 @* RenamePrompt.razor *@
@@ -586,7 +593,7 @@ For your own content, write a component and open it with `ShowAsync<TComponent>`
 </div>
 
 @code {
-    [CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;
+    [CascadingParameter] public KlyOverlayContext<string> Overlay { get; set; } = default!;
     [Parameter] public string Name { get; set; } = "";
     private string _name = "";
     protected override void OnInitialized() => _name = Name;
@@ -594,11 +601,24 @@ For your own content, write a component and open it with `ShowAsync<TComponent>`
 ```
 
 ```razor
-var result = await Overlays.ShowAsync<RenamePrompt>(
+var result = await Overlays.ShowAsync<RenamePrompt, string>(
     new Dictionary<string, object?> { ["Name"] = file.Name },
     new KlyOverlayOptions { Title = "Rename file", Size = KlySize.Sm });
 
-if (!result.Canceled) file.Name = result.GetData<string>()!;
+if (result.TryGetValue(out var name)) file.Name = name;
+```
+
+The parameters are a dictionary by name because Blazor creates the component and sets its parameters by name; that is the one untyped
+argument of the service. `result.Value` is the string (or `default` when the dialog was canceled), and `result.Canceled` says which
+way it ended. A dialog with nothing to return can use `bool` and call `Close(true)`.
+
+To show markup without writing a component, pass a `RenderFragment` to `ShowAsync<TResult>`. The content ends the dialog through
+the same cascading `KlyOverlayContext<TResult>`, which any component in the fragment can read:
+
+```csharp
+var picked = await Overlays.ShowAsync<int>(
+    builder => { builder.OpenComponent<SeatPicker>(0); builder.CloseComponent(); },
+    new KlyOverlayOptions { Title = "Pick a seat" });
 ```
 
 `KlyOverlayOptions` sets the `Title`, `Description`, `Size`, whether Escape and the backdrop dismiss it (`Dismissible`)

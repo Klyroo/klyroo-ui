@@ -123,7 +123,7 @@ analyzers and marks the assembly trimmable. They build with no warning from thos
 errors, so a change that adds reflection the trimmer cannot see fails the build. The components avoid reflection in their
 interop: calls into JavaScript pass strings and numbers, event handlers carry `DynamicDependency` attributes so their
 event arguments survive trimming, and the generic radio group carries the annotation that `InputRadioGroup<T>`
-requires. The dialogs of `IKlyOverlayService` open the component you name with `ShowAsync<TComponent>`, a generic method
+requires. The dialogs of `IKlyOverlayService` open the component you name with `ShowAsync<TComponent, TResult>`, a generic method
 that carries the annotation Blazor needs to keep the constructors and properties of that type. `Klyroo.UI.Images.Local` does
 not set `IsAotCompatible` or `IsTrimmable`, because it depends on NetVips and its native binaries.
 

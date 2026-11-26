@@ -1,10 +1,10 @@
-# Klyroo.UI API reference
+# Klyroo.UI API reference API reference
 
 > Generated from the compiled assemblies and their XML documentation. Do not edit by hand.
 
 ## Klyroo.UI
 
-Components (156) · Static classes and extensions (11) · Classes (22) · Records (175) · Structs (2) · Interfaces (8) · Enums (39) · Delegates (2)
+Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (3) · Interfaces (8) · Enums (39) · Delegates (2)
 
 ### Components
 
@@ -372,7 +372,7 @@ Timeline of `KlyChangelogVersion` entries.
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlyChart<TItem>`
+#### `KlyChart<TItem, TIndex>`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
 
@@ -392,10 +392,10 @@ Line, area, bar or donut chart drawn as SVG on the server, with a generated text
 | `Grid` | `bool` | Draws the grid lines at the ticks of the value axis. |
 | `Height` | `int` | The height of the drawing in pixels, at `KlyChart.Width`. The chart scales down with its container. |
 | `Horizontal` | `bool` | Draws bars along the x axis, with the index on the y axis. Only applies to `KlyChartType.Bar`. |
-| `Index` | `Func<TItem, object?>` | The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language). |
+| `Index` | `Func<TItem, TIndex>` | The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language). |
 | `IndexFormat` | `string?` | The format string of an index that is formattable (a date, a number). |
 | `Legend` | `bool?` | Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut. |
-| `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, with several series, no series is named (`SeriesIndex` -1, `SeriesKey` and `Value` null) and the handler chooses from the row item. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
+| `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem, TIndex>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, with several series, no series is named (`SeriesIndex` -1, `SeriesKey` and `Value` null) and the handler chooses from the row item. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
 | `Points` | `bool` | Always shows a marker at each value of a line chart. Without it the marker shows on the value under the pointer or the keyboard. |
 | `Stacked` | `bool` | Stacks the series instead of drawing them side by side or over one another. Only applies to area and bar. |
 | `Table` | `KlyChartTable` | Where the table with the chart's data goes. It is always rendered; by default it is visually hidden. |
@@ -726,8 +726,10 @@ Image with one source for light mode and one for dark mode. CSS shows the matchi
 | :--- | :--- | :--- |
 | `Alt` | `string?` | Text alternative. Leave empty for a decorative image. |
 | `Dark` | `string?` | Image in dark mode. Defaults to `KlyColorModeImage.Light`. |
+| `Height` | `int?` | Height of both images in CSS pixels, see `KlyImage.Height`. |
 | `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to both light and dark images. |
 | `Light` | `string?` | Image in light mode. |
+| `Width` | `int?` | Width of both images in CSS pixels, see `KlyImage.Width`. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -787,18 +789,29 @@ Color picker with a saturation and brightness area, a hue slider and a hex field
 
 Also accepts the parameters of `KlyFieldBase<string>`.
 
-#### `KlyColumn<TItem>`
+#### `KlyColumn<TItem, TValue>`
+
+`Klyroo.UI` · component · inherits `KlyColumnBase<TItem>`
+
+A column of `KlyTable` that shows a value of each item. It is also the sort key when `KlyColumn.Sortable`, compared with the default comparer of `TValue`. Give a `KlyColumn.Template` to show markup in the cells while `KlyColumn.Field` still sorts them; for a column that has no value to sort by use `KlyTemplateColumn`.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Field` | `Func<TItem, TValue>` | Value shown in the cell, and the sort key when `KlyColumn.Sortable`. Dates and numbers are shown with the culture of the page (`null` shows nothing). |
+| `Sortable` | `bool` | Sorts the table by `KlyColumn.Field` when the header is clicked. |
+| `Template` | `RenderFragment<TItem>?` | Cell content built from the item, shown instead of the text of `KlyColumn.Field`, which still orders the column. |
+
+Also accepts the parameters of `KlyColumnBase<TItem>`.
+
+#### `KlyColumnBase<TItem>`
 
 `Klyroo.UI` · component · inherits `ComponentBase`
 
-A column of `KlyTable`. Renders nothing itself: it registers with its table.
+What every column of a `KlyTable` has: a title, cell classes, and the registration with its table. Columns render nothing themselves. Use `KlyColumn` to show a value of the item or `KlyTemplateColumn` for custom cells.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Class` | `string?` | Classes added to the cells of this column. |
-| `Field` | `Func<TItem, object?>?` | Value shown in the cell, and the sort key when `KlyColumn.Sortable`. |
-| `Sortable` | `bool` | Sorts by `KlyColumn.Field`; ignored without one. |
-| `Template` | `RenderFragment<TItem>?` | Cell content, instead of `KlyColumn.Field`'s value. |
 | `Title` | `string` | Text of the column header. |
 
 #### `KlyCommandPalette`
@@ -1432,8 +1445,8 @@ Wrapper that gives a control its label, description, hint and error, and ties th
 | :--- | :--- | :--- |
 | `ChildContent` | `RenderFragment?` | The control, such as a `KlyInput`. |
 | `Description` | `string?` | Text shown under the label and tied to the control with `aria-describedby`. |
-| `Error` | `string?` | Error text. Without it, the first validation message of `KlyFormField.For` is shown. |
-| `For` | `Expression<Func<object?>>?` | The bound field, for validation messages inside an `EditForm`. |
+| `Error` | `string?` | Error text. Without it, the first validation message of `KlyFormField.Field` is shown. |
+| `Field` | `FieldIdentifier?` | The bound field, for validation messages inside an `EditForm`: `Field="FieldIdentifier.Create(() => Model.Email)"` (or `new FieldIdentifier(Model, nameof(Model.Email))`). It names the same field the control inside is bound to, so the message under the control is the one the control's own error styling follows. |
 | `Help` | `string?` | Help text shown under the control. |
 | `Hint` | `string?` | Short text next to the label, such as "Optional". |
 | `Id` | `string?` | Id of the control inside. Defaults to a generated one. |
@@ -1508,18 +1521,18 @@ Image element that fills in the width, height, srcset, sizes and loading attribu
 | `FetchPriority` | `KlyFetchPriority?` | `high` speeds up the image that matters most (the hero); preloading sets it to high unless you choose. |
 | `Fit` | `KlyImageFit?` | How the image fills `KlyImage.Width` by `KlyImage.Height`. Cover when unset. |
 | `Format` | `string?` | Output format: "webp", "avif", "jpeg", "png", "gif" or "svg". Only a provider that converts honors it. |
-| `Height` | `object?` | Height of the image in CSS pixels, a number or text like `KlyImage.Width`. |
+| `Height` | `int?` | Height of the image in CSS pixels, with the same rules as `KlyImage.Width`. |
 | `ImageOptions` | `KlyImageOptions?` | Settings shared with the other image parameters: the parameters below override the ones set here. |
 | `Loading` | `KlyImageLoading?` | Lazy by default, eager when `KlyImage.Preload` is set. Use eager for the image visible at first paint. |
 | `Modifiers` | `IReadOnlyDictionary<string, string>?` | Provider specific modifiers (for example `gravity`), merged over the preset's. |
-| `Placeholder` | `object?` | A placeholder shown behind the image while it loads: the address of a small image, or `true` to ask the provider for a tiny (and, when it can blur, blurred) version of the image. It is painted as the background of the element. |
+| `Placeholder` | `KlyImagePlaceholder?` | A placeholder shown behind the image while it loads: `KlyImagePlaceholder.Url` for a small image of yours, or `KlyImagePlaceholder.Auto` to ask the provider for a tiny (and, when it can blur, blurred) version of the image. It is painted as the background of the element. |
 | `Preload` | `bool?` | Adds `<link rel="preload" as="image" imagesrcset imagesizes>` to the document head, and loads eagerly. It goes through `HeadContent`, so the app needs a `HeadOutlet` (the Blazor Web App template has one). In a Blazor Hybrid web view no link is added (the image only loads eagerly with a high priority). |
 | `Preset` | `string?` | Name of an entry of `KlyImageSettings.Presets`. |
 | `Provider` | `string?` | Name of a registered provider; `KlyImageSettings.DefaultProvider` when unset. |
 | `Quality` | `int?` | Quality from 1 to 100. |
 | `Sizes` | `string?` | Responsive sizes: `"100vw sm:50vw md:400px"` (an unprefixed entry is the default; each breakpoint applies from its width upward). Breakpoints come from `KlyImageSettings.Screens`. It becomes the `sizes` attribute and decides the widths of the `srcset`. |
 | `Src` | `string?` | Address of the image: a root-relative path ("/img/team.jpg") or an absolute URL. |
-| `Width` | `object?` | Width of the image in CSS pixels, as a number or as text (`"100"`, `"100px"`): text so that a `width="100"` forwarded as an unmatched attribute keeps working. It is also the base of the 1x, 2x… candidates, and it reserves the space before the image loads. |
+| `Width` | `int?` | Width of the image in CSS pixels. It is also the base of the 1x, 2x… candidates, and it reserves the space before the image loads. A value that is not positive is written as given and takes no part in the resolution. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -1595,7 +1608,7 @@ Text input with a list of suggestions that filters as the user types, bound to t
 | `Debounce` | `int` | With `KlyInputMenu.OptionsProvider`: the quiet time in milliseconds after typing before the source is searched. |
 | `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The suggestions, filtered by what is typed. Not needed when `KlyInputMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a `KlyInputMenu.Strict` value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
 | `MinLength` | `int` | With `KlyInputMenu.OptionsProvider`: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing. |
-| `OptionsKey` | `object?` | With `KlyInputMenu.OptionsProvider`: what the suggestions depend on besides the typed text (the country whose cities are suggested). When it changes (`object.Equals`), the loaded pages, the search text, the cursor and the resolved label are forgotten, a `KlyInputMenu.Strict` value is resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded. Without a key the source is assumed not to change. |
+| `OptionsKey` | `string?` | With `KlyInputMenu.OptionsProvider`: what the suggestions depend on besides the typed text (the country whose cities are suggested). When it changes (compared ordinally), the loaded pages, the search text, the cursor and the resolved label are forgotten, a `KlyInputMenu.Strict` value is resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded. Without a key the source is assumed not to change. |
 | `OptionsProvider` | `KlyOptionsProvider?` | Loads the suggestions from a remote source, one page at a time, instead of listing `KlyInputMenu.Items`. The browser stops filtering and the field searches the source with what is typed: the text is trimmed, sent after `KlyInputMenu.Debounce` milliseconds of quiet and only when it has at least `KlyInputMenu.MinLength` characters (an empty text lists the unfiltered suggestions; a `KlyInputMenu.Strict` field searches the empty text when it opens, as it always lists everything); an older request is cancelled and an older answer never replaces a newer one. The next page loads as the list scrolls, a bit before its end, and by a "Load more" button. While loading the list is `aria-busy` and a polite status says so; when the provider throws, the list shows a translated error with a Retry button (Enter in the field also retries). Interactive only: a statically rendered page (and the prerender before the page becomes interactive) never calls the provider. A free text field then works as a plain text field with no suggestions; a `KlyInputMenu.Strict` field shows its value as it was given (read only, since no suggestion can be chosen) and still posts it. A parent that renders again with an equal or a new delegate keeps the loaded state; give the component a `@key` to start from scratch. |
 | `PageSize` | `int` | With `KlyInputMenu.OptionsProvider`: the number of suggestions requested per page. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
@@ -2312,7 +2325,7 @@ Select with a searchable popup list, single or multiple selection, bound to a li
 | `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The options. Not needed when `KlySelectMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
 | `MinLength` | `int` | With `KlySelectMenu.OptionsProvider`: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing. |
 | `Multiple` | `bool` | Several values can be selected; each one posts under `Name`. Otherwise the list holds at most one value. |
-| `OptionsKey` | `object?` | With `KlySelectMenu.OptionsProvider`: what the options depend on besides the search text (the country whose cities are listed). When it changes (`object.Equals`), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded: the provider is only asked for what was not loaded yet. Without a key the source is assumed not to change. |
+| `OptionsKey` | `string?` | With `KlySelectMenu.OptionsProvider`: what the options depend on besides the search text (the country whose cities are listed). When it changes (compared ordinally), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded: the provider is only asked for what was not loaded yet. Without a key the source is assumed not to change. |
 | `OptionsProvider` | `KlyOptionsProvider?` | Loads the options from a remote source, one page at a time, instead of listing `KlySelectMenu.Items`. The filter field searches the source (the browser does not filter): the text is trimmed, sent after `KlySelectMenu.Debounce` milliseconds and only when it has at least `KlySelectMenu.MinLength` characters (an empty text lists the unfiltered options); an older request is cancelled and an old answer never replaces a newer one. The next page loads as the list scrolls, a bit before its end, and by the "Load more" button. While loading the list is `aria-busy` and a polite status says so; when the provider throws, the list shows a translated error with a Retry button (also reached with Enter in the filter field). Interactive only: a statically rendered page (and the prerender before the page becomes interactive) has nobody to call the provider, so the field renders its current values (as their raw values, unless `KlySelectMenu.Items` names them) with a disabled trigger, and still posts them with the form. The provider is first called when the list opens. A parent that renders again with an equal or a new delegate keeps the loaded state; give the component a `@key` to start from scratch. |
 | `PageSize` | `int` | With `KlySelectMenu.OptionsProvider`: the number of options requested per page. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
@@ -2494,14 +2507,14 @@ Also accepts the parameters of `KlyFieldBase<bool>`.
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
 
-Table of items whose columns are declared with `KlyColumn` children, with optional sorting and custom cells.
+Table of items whose columns are declared with `KlyColumn` and `KlyTemplateColumn` children, with optional sorting and custom cells.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Caption` | `string?` | Describes the table for assistive technologies (visually hidden). |
-| `ChildContent` | `RenderFragment?` | The columns: `KlyColumn` components. |
+| `ChildContent` | `RenderFragment?` | The columns: `KlyColumn` and `KlyTemplateColumn` components. |
 | `Empty` | `RenderFragment?` | Shown when there are no items. |
-| `Items` | `IEnumerable<TItem>?` | The rows to show. The columns come from the `KlyColumn` children. |
+| `Items` | `IEnumerable<TItem>?` | The rows to show. The columns come from the `KlyColumn` and `KlyTemplateColumn` children. |
 | `Sticky` | `bool` | Keeps the header visible while the table scrolls (give the table a max height through Class). |
 | `Ui` | `TableUi?` | Per-instance class overrides of the slots of the table, see `TableUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -2525,6 +2538,18 @@ Tabs that switch between content panels, following the WAI-ARIA tabs pattern. Se
 | `Variant` | `TabsVariant` | Look of the tabs: `Pill` or `Link`. |
 
 Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyTemplateColumn<TItem>`
+
+`Klyroo.UI` · component · inherits `KlyColumnBase<TItem>`
+
+A column of `KlyTable` whose cells are markup built from the item. It cannot be sorted: use `KlyColumn` for that.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Template` | `RenderFragment<TItem>` | The content of the cell of an item. |
+
+Also accepts the parameters of `KlyColumnBase<TItem>`.
 
 #### `KlyTextarea`
 
@@ -3003,6 +3028,20 @@ Default `Color` and `Size` applied across components.
 | `Color` (get, set) | `KlyColor?` | Color of the components whose `Color` parameter is not set. Null keeps the default of each component. |
 | `Size` (get, set) | `KlySize?` | Size of the components whose `Size` parameter is not set and whose built-in size is medium. Null keeps the default of each component. |
 
+#### `KlyImagePlaceholder`
+
+`Klyroo.UI` · class
+
+What `KlyImage` paints behind the image while it loads: `KlyImagePlaceholder.Auto` asks the image provider for a tiny (and, when it can blur, blurred) version of the image, `KlyImagePlaceholder.Url` uses a small image you already have.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `static Auto` | `KlyImagePlaceholder` | A tiny version of the image itself, made by the image provider (blurred when it can blur). |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static Url(string address)` | `KlyImagePlaceholder` | A small image at `address`, used as is: a root-relative path or an absolute URL, or a `data:` URL. An empty address shows no placeholder. |
+
 #### `KlyImageSettings`
 
 `Klyroo.UI` · class
@@ -3060,11 +3099,11 @@ The default `IKlyCultureStore`: the `localStorage` of the web view, under the ke
 | `GetAsync()` | `ValueTask<string?>` | The stored culture name (`fr`, `pt-BR`), or null when none was chosen. |
 | `SetAsync(string culture)` | `ValueTask` | Remembers the culture name the user chose. |
 
-#### `KlyOverlayContext`
+#### `KlyOverlayContext<TResult>`
 
 `Klyroo.UI` · class
 
-Handed to the component shown by `IKlyOverlayService` as a cascading parameter, so it can end its own dialog: `[CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;`
+Handed to the component shown by `IKlyOverlayService` as a cascading parameter, so it can end its own dialog: `[CascadingParameter] public KlyOverlayContext<Person> Overlay { get; set; } = default!;` with the same `TResult` the caller of `ShowAsync` gave.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -3073,7 +3112,7 @@ Handed to the component shown by `IKlyOverlayService` as a cascading parameter, 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `Cancel()` | `void` | Dismisses the dialog: closes it and gives the caller a canceled result. Does nothing once the dialog has ended. |
-| `Close(object? data = null)` | `void` | Completes the dialog: closes it and hands `data` to the caller of `ShowAsync`. Does nothing once the dialog has ended. |
+| `Close(TResult value)` | `void` | Completes the dialog: closes it and hands `value` to the caller of `ShowAsync`. Does nothing once the dialog has ended. |
 
 #### `KlyPalette`
 
@@ -3351,7 +3390,6 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `EditorToolbar` | `ComponentTheme` | Theme of `KlyEditorToolbar`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Empty` | `ComponentTheme` | Theme of `KlyEmpty`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Error` | `ComponentTheme` | Theme of `KlyError`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
-| `Extensions` | `IReadOnlyList<object>` | The options objects registered so far with `KlyrooOptions.Extension``, ordered by type name. |
 | `FieldGroup` | `ComponentTheme` | Theme of `KlyFieldGroup`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `FileUpload` | `ComponentTheme` | Theme of `KlyFileUpload`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Footer` | `ComponentTheme` | Theme of `KlyFooter`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3431,7 +3469,6 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `Extension<T>()` | `T` | The options of a sister package, created on the first call and shared afterwards: one instance per `T` and per `KlyrooOptions`, whichever thread asks first. Its public `ComponentTheme` properties are themes like those of this class: `KlyrooOptions.AllThemes` lists them, the Tailwind class extractor and the docs bundle read them, and a theme becomes read-only when a component resolves it, with the same `InvalidOperationException` as the themes of this class. |
-| `Extension(Type type)` | `object` | The non-generic form of `KlyrooOptions.Extension``, for tooling. `type` must be a non-abstract class with a public parameterless constructor. |
 | `ResolveLocale(CultureInfo culture)` | `KlyLocale` | The locale for a culture: `KlyrooOptions.Locale` when set, otherwise the match in `KlyrooOptions.Locales` (see `KlyLocales.Resolve`). The result of each culture is cached, and the first call makes `KlyrooOptions.Locale` and `KlyrooOptions.Locales` read-only. |
 
 #### `KlySearchEventArgs`
@@ -4863,7 +4900,7 @@ One series of a chart: where its value comes from in a row, and how it is named 
 | `Label` (init) | `string?` | The name shown in the legend, the tooltip and the table. Defaults to `KlyChartCategory.Key`. |
 | `Value` (init) | `Func<TItem, double?>` | The value of the series in a row. `null` leaves a gap. |
 
-#### `KlyChartSelectEventArgs<TItem>`
+#### `KlyChartSelectEventArgs<TItem, TIndex>`
 
 `Klyroo.UI` · record
 
@@ -4871,11 +4908,11 @@ What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was cl
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyChartSelectEventArgs<TItem>(int Row, object? Index, string? SeriesKey, int SeriesIndex, double? Value, TItem Item)` | What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was clicked or chosen with Enter or Space. |
+| `KlyChartSelectEventArgs<TItem, TIndex>(int Row, TIndex Index, string? SeriesKey, int SeriesIndex, double? Value, TItem Item)` | What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was clicked or chosen with Enter or Space. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `Index` (init) | `object?` | The value of the row on the x axis (`KlyChart.Index`): a date, a number, a label. The label of the slice with a donut. |
+| `Index` (init) | `TIndex` | The value of the row on the x axis (`KlyChart.Index`): a date, a number, a label. The label of the slice with a donut. |
 | `Item` (init) | `TItem` | The row of `KlyChart.Data`. |
 | `Row` (init) | `int` | The position of the row in `KlyChart.Data`. |
 | `SeriesIndex` (init) | `int` | The position of that series in `KlyChart.Categories`, or -1 when the chart has none or the pick named none. |
@@ -5425,7 +5462,7 @@ Presentation of a dialog opened with `IKlyOverlayService`.
 | `Size` (init) | `KlySize` | Size of a modal, from `Xs` to `Xl`. Ignored for a slideover. |
 | `Title` (init) | `string?` | Title of the dialog, which also names it for assistive technology. |
 
-#### `KlyOverlayResult`
+#### `KlyOverlayResult<TResult>`
 
 `Klyroo.UI` · record
 
@@ -5434,12 +5471,11 @@ How a dialog opened with `IKlyOverlayService` ended.
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Canceled` | `bool` | True when the dialog was dismissed (Escape, backdrop, close button, `KlyOverlayContext.Cancel` or a cancellation token) instead of completed. |
-| `Data` | `object?` | The value passed to `KlyOverlayContext.Close`, or `null` when the dialog was canceled. |
+| `Value` | `TResult` | The value passed to `KlyOverlayContext.Close`, or `default` when the dialog was canceled. |
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `GetData<T>()` | `T` | The data as `T`, or `default` when the dialog was canceled or the data has another type. |
-| `TryGetData<T>(out T data)` | `bool` | Gets the data as `T` when the dialog completed with a value of that type. |
+| `TryGetValue(out TResult value)` | `bool` | Gets the value when the dialog completed with one (it was not canceled). |
 
 #### `KlyPostAuthor`
 
@@ -5492,17 +5528,17 @@ A group of rows of a `KlyPricingTable`.
 
 `Klyroo.UI` · record
 
-A row of a `KlyPricingTable`. `KlyPricingTableFeature.Values` are the cells in the order of the tiers (or give `KlyPricingTableFeature.ByTier`): `true` is a check mark, `false` or `null` a minus sign, anything else is shown as text.
+A row of a `KlyPricingTable`. `KlyPricingTableFeature.Values` are the cells in the order of the tiers (or give `KlyPricingTableFeature.ByTier`): `true` is a check mark, `false` or `null` a minus sign, a text or a number is shown as it is.
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyPricingTableFeature(string Title, params object?[] Values)` | A row of a `KlyPricingTable`. `KlyPricingTableFeature.Values` are the cells in the order of the tiers (or give `KlyPricingTableFeature.ByTier`): `true` is a check mark, `false` or `null` a minus sign, anything else is shown as text. |
+| `KlyPricingTableFeature(string Title, params KlyPricingTableValue[] Values)` | A row of a `KlyPricingTable`. `KlyPricingTableFeature.Values` are the cells in the order of the tiers (or give `KlyPricingTableFeature.ByTier`): `true` is a check mark, `false` or `null` a minus sign, a text or a number is shown as it is. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `ByTier` (init) | `IReadOnlyDictionary<string, object?>?` | Cells by tier id, instead of by position. A tier missing from it falls back to its position in `KlyPricingTableFeature.Values`. |
+| `ByTier` (init) | `IReadOnlyDictionary<string, KlyPricingTableValue>?` | Cells by tier id, instead of by position. A tier missing from it falls back to its position in `KlyPricingTableFeature.Values`. |
 | `Title` (init) | `string` | Name of the feature, shown in the first column. |
-| `Values` (init) | `object?[]` | The cells, in the order of the tiers: `true` is a check mark, `false` or `null` a minus sign, anything else is shown as text. |
+| `Values` (init) | `KlyPricingTableValue[]` | The cells, in the order of the tiers: `true` is a check mark, `false` or `null` a minus sign, a text or a number is shown as it is. |
 
 #### `KlyPricingTier`
 
@@ -6592,6 +6628,22 @@ Semantic color of a component, rendered as `data-color`. Built-in colors map to 
 | `Value` | `string` | The name of the color, such as `primary`. |
 | `static Warning` | `KlyColor` | The color of warnings. |
 
+#### `KlyPricingTableValue`
+
+`Klyroo.UI` · struct
+
+The cell of a feature for one tier of a `KlyPricingTable`: a check mark (`true`), a minus sign (`false`, `null` or the default value), a text or a number. `bool`, `string`, `int`, `long` and `decimal` convert to it implicitly, so `[true, "10 GB", false, 5]` is a list of values. A number is shown with the format culture of the locale in effect.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `static Included` | `KlyPricingTableValue` | A check mark: the tier includes the feature. |
+| `static NotIncluded` | `KlyPricingTableValue` | A minus sign: the tier does not include the feature. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static Number(decimal number)` | `KlyPricingTableValue` | A number, shown with the format culture of the locale in effect. |
+| `static Text(string? text)` | `KlyPricingTableValue` | A text such as `"10 GB"`. `null` is a minus sign. |
+
 #### `EditBinding`
 
 `Klyroo.UI.Internal` · struct
@@ -6652,7 +6704,8 @@ Opens dialogs from code and awaits how they end. Needs an interactive render mod
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `ConfirmAsync(string title, string? message = null, string? confirmLabel = null, string? cancelLabel = null, KlyColor? color = null, CancellationToken cancellationToken = null)` | `Task<bool>` | Asks a yes or no question in a dialog and returns true when the user confirms, false when they cancel or dismiss it. |
-| `ShowAsync<TComponent>(IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = null)` | `Task<KlyOverlayResult>` | Shows `TComponent` in a dialog and completes when the dialog ends: with the data the component passed to `KlyOverlayContext.Close`, or with a canceled result after Escape, a click on the backdrop, the close button, `KlyOverlayContext.Cancel` or `cancellationToken`. |
+| `ShowAsync<TComponent, TResult>(IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = null)` | `Task<KlyOverlayResult<TResult>>` | Shows `TComponent` in a dialog and completes when the dialog ends: with the value the component passed to `KlyOverlayContext.Close`, or with a canceled result after Escape, a click on the backdrop, the close button, `KlyOverlayContext.Cancel` or `cancellationToken`. The component reads its context with `[CascadingParameter] KlyOverlayContext<TResult>`. A dialog with nothing to return uses `bool`. |
+| `ShowAsync<TResult>(RenderFragment content, KlyOverlayOptions? options = null, CancellationToken cancellationToken = null)` | `Task<KlyOverlayResult<TResult>>` | Shows `content` in a dialog and completes when the dialog ends, like `IKlyOverlayService.ShowAsync``. A component placed in the content ends the dialog through a `KlyOverlayContext<TResult>` cascading parameter. |
 
 #### `IKlyRequestCookies`
 

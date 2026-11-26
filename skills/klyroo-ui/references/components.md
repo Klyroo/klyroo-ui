@@ -665,8 +665,11 @@
   - Slots: `Empty`, `ChildContent`
   - `Ui` (`TableUi`): `Root`, `Base`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`
 - `<KlyColumn>`
-  - Parameters: `Class`, `Field`, `Sortable`, `Title` (required)
+  - Parameters: `Class`, `Field` (required), `Sortable`, `Title` (required)
   - Slots: `Template`
+- `<KlyTemplateColumn>`
+  - Parameters: `Class`, `Title` (required)
+  - Slots: `Template` (required)
 
 ### DataList
 

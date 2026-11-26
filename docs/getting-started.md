@@ -111,10 +111,10 @@ Create `Components/Pages/Subscribe.razor`. The model carries data annotations, t
 
 <KlyContainer Class="py-12">
     <KlyForm Model="Model" FormName="subscribe" OnValidSubmit="SubscribeAsync" ShowSummary Class="flex max-w-sm flex-col gap-4">
-        <KlyFormField Label="Email" Required For="() => Model!.Email" Description="We send one message a month.">
+        <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)" Description="We send one message a month.">
             <KlyInput Type="email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
         </KlyFormField>
-        <KlyFormField Label="Topic" For="() => Model!.Topic">
+        <KlyFormField Label="Topic" Field="FieldIdentifier.Create(() => Model!.Topic)">
             <KlySelect @bind-Value="Model!.Topic" Items="Topics" Placeholder="Pick a topic" />
         </KlyFormField>
         <KlyCheckbox @bind-Value="Model!.Terms" Label="I accept the terms" />
