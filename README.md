@@ -112,7 +112,7 @@ Remove Bootstrap if the Blazor template added it: CSS outside a cascade layer ov
 
 ## Quick start
 
-Wrap the layout in `KlyApp`, once, around the body. It renders the toaster, resolves the locale and writes `lang` and `dir`:
+Wrap the layout in `KlyApp`, once, around the body. It renders the toaster and the host of `IKlyOverlayService` (dialogs opened from code), resolves the locale and writes `lang` and `dir`:
 
 ```razor
 @inherits LayoutComponentBase

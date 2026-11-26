@@ -170,6 +170,8 @@ public static partial class KlyLocales
             ColorModeLight = "浅色",
             ColorModeDark = "深色",
             ColorModeSystem = "跟随系统",
+            Cancel = "取消",
+            Confirm = "确认",
             PageLinks = "链接",
             PageAnchors = "本页内容",
             OpensInNewTab = "（在新标签页中打开）",

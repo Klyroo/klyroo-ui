@@ -170,6 +170,8 @@ public static partial class KlyLocales
             ColorModeLight = "ライト",
             ColorModeDark = "ダーク",
             ColorModeSystem = "システム",
+            Cancel = "キャンセル",
+            Confirm = "確認",
             PageLinks = "リンク",
             PageAnchors = "このページの内容",
             OpensInNewTab = "(新しいタブで開きます)",

@@ -12,6 +12,7 @@ Each section solves one task. The code is complete for the task it shows. For th
 - [Localize the app](#localize-the-app)
 - [Validate a form in every render mode](#validate-a-form-in-every-render-mode)
 - [Control the color mode](#control-the-color-mode)
+- [Open a dialog from code](#open-a-dialog-from-code)
 - [Test components with bUnit](#test-components-with-bunit)
 
 ## Change the palette and the design tokens
@@ -454,6 +455,76 @@ on `<html>`.
 From JavaScript, call `Klyroo.setColorMode('dark')` or `Klyroo.getColorMode()`. From .NET, call
 `IJSRuntime.InvokeVoidAsync("Klyroo.setColorMode", "dark")`. The images and avatars of `KlyColorModeImage` and
 `KlyColorModeAvatar` render both versions and let CSS pick one, so there is no flash and no script.
+
+## Open a dialog from code
+
+Goal: open a confirmation or a form in a dialog from an event handler or a service, and await how it ended.
+
+`IKlyOverlayService` is registered by `AddKlyrooUi` (scoped). `KlyApp` renders the outlet that shows the dialogs, a
+`KlyOverlayHost`, so there is nothing else to place. Each dialog is a `KlyModal` (or a `KlySlideover`), so the focus trap,
+Escape, the return of focus to the button that opened it and the aria wiring come from those components. Like
+`IToastService`, call it from interactive code (an event handler, `OnAfterRenderAsync`), not from a static render.
+
+For a yes or no question, `ConfirmAsync` returns a `bool`. Escape, a click on the backdrop and the close button count as no:
+
+```razor
+@inject IKlyOverlayService Overlays
+
+<KlyButton Color="KlyColor.Error" OnClick="Delete">Delete</KlyButton>
+
+@code {
+    private async Task Delete()
+    {
+        if (await Overlays.ConfirmAsync("Delete this file?", "This cannot be undone.",
+                confirmLabel: "Delete", color: KlyColor.Error))
+        {
+            await Files.DeleteAsync(id);
+        }
+    }
+}
+```
+
+The labels default to the localized "Cancel" and "Confirm".
+
+For your own content, write a component and open it with `ShowAsync<TComponent>`. The component receives a
+`KlyOverlayContext` as a cascading parameter and ends the dialog with `Close(data)` or `Cancel()`:
+
+```razor
+@* RenamePrompt.razor *@
+<KlyInput @bind-Value="_name" aria-label="Name" />
+<div class="mt-4 flex justify-end gap-2">
+    <KlyButton Variant="ButtonVariant.Outline" OnClick="() => Overlay.Cancel()">Cancel</KlyButton>
+    <KlyButton OnClick="() => Overlay.Close(_name)">Rename</KlyButton>
+</div>
+
+@code {
+    [CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;
+    [Parameter] public string Name { get; set; } = "";
+    private string _name = "";
+    protected override void OnInitialized() => _name = Name;
+}
+```
+
+```razor
+var result = await Overlays.ShowAsync<RenamePrompt>(
+    new Dictionary<string, object?> { ["Name"] = file.Name },
+    new KlyOverlayOptions { Title = "Rename file", Size = KlySize.Sm });
+
+if (!result.Canceled) file.Name = result.GetData<string>()!;
+```
+
+`KlyOverlayOptions` sets the `Title`, `Description`, `Size`, whether Escape and the backdrop dismiss it (`Dismissible`)
+and whether the header shows a close button (`Close`). Set `Kind = KlyOverlayKind.Slideover` (and `Side`) to get a side
+panel instead of a centered modal. Both methods take a `CancellationToken` that closes the dialog with a canceled result.
+
+Dialogs stack: open a second one from the first and the newest sits on top, with Escape closing only that one. The task
+returned by `ShowAsync` always completes, so a caller is never left waiting: a dialog whose host disappears (the page was
+left, the circuit ended) ends as canceled.
+
+Calling the service when no `KlyOverlayHost` is rendered throws an `InvalidOperationException` that says so. If you set
+`KlyApp.Overlays` to `false`, place a single `<KlyOverlayHost />` yourself. Like the toaster, it must live in the same
+interactive render tree as the code that calls the service: an `@rendermode` island that has no `KlyApp` of its own needs
+one.
 
 ## Test components with bUnit
 

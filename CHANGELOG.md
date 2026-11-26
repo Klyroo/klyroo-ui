@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Added
 
+- `IKlyOverlayService`, a scoped service registered by `AddKlyrooUi`, to open dialogs from code. `ShowAsync<TComponent>(parameters, options)` shows a component in a `KlyModal` or `KlySlideover` and returns a `KlyOverlayResult` that the component completes through the cascading `KlyOverlayContext` (`Close(data)` or `Cancel()`); `ConfirmAsync(title, message, confirmLabel, cancelLabel, color)` returns a `bool`. Escape, the backdrop and the close button are a cancel result, dialogs stack, and a `CancellationToken` closes them. `KlyApp` renders the new `KlyOverlayHost` that shows them (`KlyApp.Overlays` turns it off). New messages `Cancel` and `Confirm` in the twelve locales.
 - `KlyPersistedStateBudget`, a scoped service registered by `AddKlyrooUi`, and `KlyrooOptions.PersistedStateMaxBytes` (28 KB): the budget of persistent component state that the Klyroo packages of one page share when they hand prerendered data to the interactive render, counted as sent (`SentBytes` adds the JSON escaping and the two base64 encodings Blazor applies). Klyroo.Table and Klyroo.Dashboard draw on it, so together they stay under SignalR's 32 KB limit on the message that starts an Interactive Server circuit.
 
 ## [0.1.0-preview.1] - 2026-11-24

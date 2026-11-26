@@ -3,7 +3,7 @@
 
 @*
     The root wrapper of an app, placed once in the layout around @Body. It renders the toaster (so IToastService
-    works), sets the language and text direction of the tree, and cascades global class overrides to every component
+    works) and the overlay host (so IKlyOverlayService works), sets the language and text direction of the tree, and cascades global class overrides to every component
     through a KlyTheme. It also resolves the locale (its Locale parameter, else the one of AddKlyrooUi, else the one matching
     the current UI culture), cascades it to every component and writes it as lang and dir. The locale is cascaded as a
     fixed value, so a re-render of the app (each navigation re-renders the layout) does not re-render every component
@@ -28,6 +28,10 @@
                 {
                     <KlyToaster Duration="ToastDuration" />
                 }
+                @if (Overlays)
+                {
+                    <KlyOverlayHost />
+                }
             </div>
         </KlyTheme>
     </CascadingValue>
@@ -45,6 +49,9 @@
 
     /// <summary>Renders the <see cref="KlyToaster"/> after the content. Turn it off when the app places its own.</summary>
     [Parameter] public bool Toaster { get; set; } = true;
+
+    /// <summary>Renders the <see cref="KlyOverlayHost"/> after the content, which shows the dialogs opened with <see cref="IKlyOverlayService"/>. Turn it off when the app places its own.</summary>
+    [Parameter] public bool Overlays { get; set; } = true;
 
     /// <summary>How long a toast stays on screen.</summary>
     [Parameter] public TimeSpan ToastDuration { get; set; } = TimeSpan.FromSeconds(5);

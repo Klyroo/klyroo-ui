@@ -170,6 +170,8 @@ public static partial class KlyLocales
             ColorModeLight = "فاتح",
             ColorModeDark = "داكن",
             ColorModeSystem = "النظام",
+            Cancel = "إلغاء",
+            Confirm = "تأكيد",
             PageLinks = "روابط",
             PageAnchors = "في هذه الصفحة",
             OpensInNewTab = "(يفتح في علامة تبويب جديدة)",

@@ -1,0 +1,67 @@
+@namespace Klyroo.UI
+@inherits KlyComponentBase
+@implements IDisposable
+
+@*
+    Renders the dialogs opened with IKlyOverlayService, each on a KlyModal or KlySlideover: the native dialog gives them the
+    focus trap, Escape, the return of focus and the aria wiring. KlyApp renders one; place it yourself only when you turn
+    KlyApp.Overlays off, and place a single one per interactive render tree.
+*@
+@foreach (var entry in _service?.Entries.ToArray() ?? [])
+{
+    var current = entry;
+    var options = current.Options;
+    if (options.Kind == KlyOverlayKind.Slideover)
+    {
+        <KlySlideover @key="current" Open="current.Open" OpenChanged="open => OnOpenChanged(current, open)"
+                      Title="@options.Title" Description="@options.Description" AriaLabel="@options.AriaLabel"
+                      Side="options.Side" Dismissible="options.Dismissible" Close="options.Close"
+                      Body="BodyOf(current)" Footer="FooterOf(current)" />
+    }
+    else
+    {
+        <KlyModal @key="current" Open="current.Open" OpenChanged="open => OnOpenChanged(current, open)"
+                  Title="@options.Title" Description="@options.Description" AriaLabel="@options.AriaLabel"
+                  Size="options.Size" Dismissible="options.Dismissible" Close="options.Close"
+                  Body="BodyOf(current)" Footer="FooterOf(current)" />
+    }
+}
+
+@code {
+    private OverlayService? _service;
+
+    [Inject] private IKlyOverlayService Service { get; set; } = default!;
+
+    /// <inheritdoc />
+    protected override void OnInitialized()
+    {
+        _service = Service as OverlayService;
+        _service?.Attach(this, () => _ = InvokeAsync(StateHasChanged));
+    }
+
+    private void OnOpenChanged(OverlayEntry entry, bool open)
+    {
+        if (!open) _service?.Dismissed(entry);
+    }
+
+    private static RenderFragment? BodyOf(OverlayEntry entry) => entry.Body is null ? null : builder =>
+    {
+        builder.OpenComponent<CascadingValue<KlyOverlayContext>>(0);
+        builder.AddComponentParameter(1, "Value", entry.Context);
+        builder.AddComponentParameter(2, "IsFixed", true);
+        builder.AddComponentParameter(3, "ChildContent", entry.Body);
+        builder.CloseComponent();
+    };
+
+    private RenderFragment? FooterOf(OverlayEntry entry)
+    {
+        if (entry.Confirm is not { } confirm) return null;
+        return @<text>
+            <KlyButton Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" OnClick="() => entry.Context!.Cancel()">@(confirm.CancelLabel ?? Messages.Cancel)</KlyButton>
+            <KlyButton Color="confirm.Color ?? KlyColor.Primary" OnClick="() => entry.Context!.Close(true)">@(confirm.ConfirmLabel ?? Messages.Confirm)</KlyButton>
+        </text>;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _service?.Detach(this);
+}

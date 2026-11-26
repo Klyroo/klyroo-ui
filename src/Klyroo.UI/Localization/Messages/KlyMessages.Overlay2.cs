@@ -21,4 +21,9 @@ public sealed partial record KlyMessages
     public string ColorModeDark { get; init; } = "Dark";
     /// <summary>Label of the option of <see cref="KlyColorModeSelect"/> that follows the system setting.</summary>
     public string ColorModeSystem { get; init; } = "System";
+
+    /// <summary>Label of the cancel button of the dialog opened by <see cref="IKlyOverlayService.ConfirmAsync"/>.</summary>
+    public string Cancel { get; init; } = "Cancel";
+    /// <summary>Label of the confirm button of the dialog opened by <see cref="IKlyOverlayService.ConfirmAsync"/>.</summary>
+    public string Confirm { get; init; } = "Confirm";
 }

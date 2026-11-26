@@ -170,6 +170,8 @@ public static partial class KlyLocales
             ColorModeLight = "Claro",
             ColorModeDark = "Escuro",
             ColorModeSystem = "Sistema",
+            Cancel = "Cancelar",
+            Confirm = "Confirmar",
             PageLinks = "Links",
             PageAnchors = "Nesta página",
             OpensInNewTab = "(abre em uma nova aba)",

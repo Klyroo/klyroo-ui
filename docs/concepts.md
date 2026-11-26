@@ -101,6 +101,11 @@ The JavaScript initializer, `Klyroo.UI.lib.module.js`, is loaded automatically b
 `Klyroo`: `Klyroo.setColorMode('light' | 'dark' | 'system')`, `Klyroo.getColorMode()` and `Klyroo.toast(...)`, which
 `IToastService` calls. All interop calls from .NET pass strings and numbers only, so they survive trimming.
 
+Dialogs opened from code with `IKlyOverlayService` need no extra JavaScript: a `KlyOverlayHost` (rendered by `KlyApp`) turns each
+call into a `KlyModal` or `KlySlideover` in the Blazor tree, so the native dialog does the focus work. Unlike toasts, the dialog
+is ordinary Blazor markup, which is what lets the component you open receive parameters and hand a result back. See
+[Open a dialog from code](guides.md#open-a-dialog-from-code).
+
 ## Render modes
 
 Every component works in static server rendering, Interactive Server, WebAssembly and Auto, with the same markup.

@@ -319,6 +319,7 @@ public static class KlyrooServiceCollectionExtensions
         services.TryAddSingleton<IClassMerger, TailwindClassMerger>();
         services.TryAddSingleton<ThemeResolver>();
         services.TryAddScoped<IToastService, ToastService>();
+        services.TryAddScoped<IKlyOverlayService, OverlayService>();
         services.TryAddScoped<IKlyCultureStore, KlyLocalStorageCultureStore>();
         services.TryAddScoped<KlyPersistedStateBudget>();
         return services;

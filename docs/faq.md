@@ -89,6 +89,12 @@ with `Model ??= new()` in `OnInitialized`, and use `Type="submit"` on the button
 
 **Fix.** Call it from an interactive component. `KlyApp` renders a toaster; do not also place your own `KlyToaster`.
 
+### `IKlyOverlayService` throws that no `KlyOverlayHost` is rendered
+
+**Cause.** The service shows dialogs through a `KlyOverlayHost` in the interactive render tree of the caller. There is none when `KlyApp.Overlays` is `false`, when the layout has no `KlyApp`, or when the code runs in an `@rendermode` island that has no `KlyApp` of its own.
+
+**Fix.** Wrap the layout in `KlyApp` (it renders the host), or place one `<KlyOverlayHost />` inside the island that calls the service.
+
 ### The page has the wrong language, or dates differ between the prerender and the client
 
 **Cause.** A WebAssembly client has no request and starts from the language of the browser. Also, there is no "same
