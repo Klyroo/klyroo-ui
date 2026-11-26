@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0} ({1} tot {2})",
             ChartSlice = "{0} {1} ({2})",
             ChartHint = "Diagramwaarden. Gebruik de pijltoetsen om tussen punten te navigeren.",
+            ChartHintSelect = "Druk op Enter om het punt te selecteren.",
             ChartTable = "Gegevenstabel",
             ChartIndex = "Categorie",
             ChartLegend = "Legenda",

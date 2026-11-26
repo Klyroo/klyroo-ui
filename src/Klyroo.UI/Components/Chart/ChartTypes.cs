@@ -56,6 +56,16 @@ public sealed record KlyChartCategory<TItem>(string Key, Func<TItem, double?> Va
     internal string Name => Label ?? Key;
 }
 
+/// <summary>What <see cref="KlyChart{TItem}.OnSelect"/> reports: the row of the bar, point or slice that was clicked or chosen with Enter or Space.</summary>
+/// <typeparam name="TItem">The row type of the chart.</typeparam>
+/// <param name="Row">The position of the row in <see cref="KlyChart{TItem}.Data"/>.</param>
+/// <param name="Index">The value of the row on the x axis (<see cref="KlyChart{TItem}.Index"/>): a date, a number, a label. The label of the slice with a donut.</param>
+/// <param name="SeriesKey">The <see cref="KlyChartCategory{TItem}.Key"/> of the series that was picked (the only category of a donut), or null when the chart has none.</param>
+/// <param name="SeriesIndex">The position of that series in <see cref="KlyChart{TItem}.Categories"/>, or -1 when the chart has none.</param>
+/// <param name="Value">The value of that series in the row, or null for a gap.</param>
+/// <param name="Item">The row of <see cref="KlyChart{TItem}.Data"/>.</param>
+public sealed record KlyChartSelectEventArgs<TItem>(int Row, object? Index, string? SeriesKey, int SeriesIndex, double? Value, TItem Item);
+
 /// <summary>Per-instance class overrides of <see cref="KlyChart{TItem}"/> slots.</summary>
 public sealed record ChartUi : ISlotOverrides
 {

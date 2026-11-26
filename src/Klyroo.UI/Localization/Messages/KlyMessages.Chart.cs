@@ -31,6 +31,9 @@ public sealed partial record KlyMessages
     /// <summary>Accessible name of a chart that can be explored with the keyboard.</summary>
     public string ChartHint { get; init; } = "Chart values. Use the arrow keys to move between points.";
 
+    /// <summary>Added to <see cref="ChartHint"/> when the chart reports a selection (<c>OnSelect</c>): how to choose the point the arrow keys are on.</summary>
+    public string ChartHintSelect { get; init; } = "Press Enter to select the point.";
+
     /// <summary>Summary of the disclosure that holds the chart's data table.</summary>
     public string ChartTable { get; init; } = "Data table";
 

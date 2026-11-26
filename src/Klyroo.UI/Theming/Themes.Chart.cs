@@ -55,6 +55,9 @@ internal static partial class Themes
             .Variant("table", "visible", "tableWrapper", "mt-4 overflow-x-auto rounded-(--klyroo-radius) border border-(--klyroo-border)")
             .Variant("table", "toggle", "tableWrapper", "mt-2 overflow-x-auto rounded-(--klyroo-radius) border border-(--klyroo-border)")
             .Variant("points", "true", "marker", "opacity-100")
+            .Variant("selectable", "true", "hitArea", "cursor-pointer")
+            .Variant("selectable", "true", "slice", "cursor-pointer")
             .Default("table", "hidden")
-            .Default("points", "false");
+            .Default("points", "false")
+            .Default("selectable", "false");
 }

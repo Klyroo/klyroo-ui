@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0} ({1} bis {2})",
             ChartSlice = "{0} {1} ({2})",
             ChartHint = "Diagrammwerte. Mit den Pfeiltasten wechseln Sie zwischen den Punkten.",
+            ChartHintSelect = "Mit der Eingabetaste wählen Sie den Punkt aus.",
             ChartTable = "Datentabelle",
             ChartIndex = "Kategorie",
             ChartLegend = "Legende",

@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0} (от {1} до {2})",
             ChartSlice = "{0} {1} ({2})",
             ChartHint = "Значения диаграммы. Используйте клавиши со стрелками для перехода между точками.",
+            ChartHintSelect = "Нажмите Enter, чтобы выбрать точку.",
             ChartTable = "Таблица данных",
             ChartIndex = "Категория",
             ChartLegend = "Легенда",

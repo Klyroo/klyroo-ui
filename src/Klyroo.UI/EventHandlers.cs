@@ -35,6 +35,16 @@ public sealed class KlySearchEventArgs : EventArgs
     public int Sequence { get; set; }
 }
 
+/// <summary>Payload of the <c>kly-pick</c> browser event raised by <see cref="KlyChart{TItem}"/> when a bar, point or slice is clicked or chosen with Enter or Space.</summary>
+public sealed class KlyPickEventArgs : EventArgs
+{
+    /// <summary>The position of the row in the data of the chart.</summary>
+    public int Row { get; set; }
+
+    /// <summary>The position of the series the pick landed on, or -1 when the browser could not tell (the chart then takes the first series that has a value in the row).</summary>
+    public int Series { get; set; }
+}
+
 /// <summary>Payload of the <c>kly-limit</c> browser event raised by <see cref="KlyEditor"/> when its text goes past <see cref="KlyEditor.MaxLength"/> or comes back within it.</summary>
 public sealed class KlyLimitEventArgs : EventArgs
 {
@@ -52,5 +62,6 @@ public sealed class KlyLimitEventArgs : EventArgs
 [EventHandler("onklytoggle", typeof(KlyToggleEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklychange", typeof(KlyChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklysearch", typeof(KlySearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onklypick", typeof(KlyPickEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklylimit", typeof(KlyLimitEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 public static class EventHandlers;

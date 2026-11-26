@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0} ({1} إلى {2})",
             ChartSlice = "{0} {1} ({2})",
             ChartHint = "قيم المخطط. استخدم مفاتيح الأسهم للتنقل بين النقاط.",
+            ChartHintSelect = "اضغط على Enter لتحديد النقطة.",
             ChartTable = "جدول البيانات",
             ChartIndex = "الفئة",
             ChartLegend = "وسيلة الإيضاح",

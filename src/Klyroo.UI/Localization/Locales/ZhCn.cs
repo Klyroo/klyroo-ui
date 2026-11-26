@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0}（{1} 至 {2}）",
             ChartSlice = "{0} {1}（{2}）",
             ChartHint = "图表数值。使用方向键在数据点之间移动。",
+            ChartHintSelect = "按 Enter 键选择该数据点。",
             ChartTable = "数据表",
             ChartIndex = "类别",
             ChartLegend = "图例",

@@ -11,7 +11,8 @@
     well as by color. The tooltip and the arrow-key exploration are a custom element (js/chart.js) that reads the
     hidden "tips" and highlights the hit area under the pointer: nothing leaves the browser.
 *@
-<kly-chart class="@_slots["root"]" data-type="@_kind" @attributes="AdditionalAttributes">
+<kly-chart class="@_slots["root"]" data-type="@_kind" data-selectable="@(_selectable ? "" : null)"
+           @onklypick="PickHandler" @onklypick:stopPropagation="true" @attributes="AdditionalAttributes">
     <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
          role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
          aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? PlotDescribedBy : null)">
@@ -137,7 +138,7 @@
                             {
                                 if (_points[s].TryGetValue(row, out var point))
                                 {
-                                    <path d="@MarkerPath(s, point.X, point.Y)" data-color="@_series[s].Color.Value" class="@_slots["marker"]" />
+                                    <path d="@MarkerPath(s, point.X, point.Y)" data-series="@s" data-color="@_series[s].Color.Value" class="@_slots["marker"]" />
                                 }
                             }
                         }
@@ -201,7 +202,7 @@
     @* The group is described by these, but they are not part of its content, so they are read once. *@
     @if (_interactive)
     {
-        <span id="@(_id + "-hint")" hidden>@Messages.ChartHint</span>
+        <span id="@(_id + "-hint")" hidden>@Messages.ChartHint@(_selectable ? " " + Messages.ChartHintSelect : "")</span>
         @if (AriaDescription is not null)
         {
             <span id="@(_id + "-description")" hidden>@AriaDescription</span>
@@ -270,6 +271,7 @@
     private string _kind = "";
     private string _label = "";
     private bool _interactive;
+    private bool _selectable;
     private bool _showLegend;
     private double _naturalWidth;
 
@@ -325,6 +327,15 @@
     /// It runs in the browser, so it works in static rendering too.
     /// </summary>
     [Parameter] public bool Tooltip { get; set; } = true;
+
+    /// <summary>
+    /// Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row,
+    /// its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points
+    /// and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer;
+    /// from the keyboard, the series is the first one that has a value in the row. It needs the tooltip (the keyboard row is the highlighted one) and an
+    /// interactive render, since the pick is reported by the browser.
+    /// </summary>
+    [Parameter] public EventCallback<KlyChartSelectEventArgs<TItem>> OnSelect { get; set; }
 
     /// <summary>The width of the ring in pixels. Only applies to <see cref="KlyChartType.Donut"/>.</summary>
     [Parameter] public int Thickness { get; set; } = 24;
@@ -447,13 +458,36 @@
         _label = AriaLabel ?? Summary();
         _tipRows = donut ? _layout.Slices.Select(s => s.Row).ToList() : _layout.Hits.Select(h => h.Row).ToList();
         _interactive = Tooltip && _tipRows.Count > 0;
+        _selectable = OnSelect.HasDelegate && _tipRows.Count > 0;
         _showLegend = Legend ?? (donut ? Data.Count > 1 : categories.Count > 1);
 
         _slots = ResolveSlots(Options.Chart, new Dictionary<string, string?>
         {
             ["table"] = Table switch { KlyChartTable.Visible => "visible", KlyChartTable.Toggle => "toggle", _ => "hidden" },
             ["points"] = VariantValue.Of(Points),
+            ["selectable"] = VariantValue.Of(_selectable),
         }, Ui, "root");
+    }
+
+    private EventCallback<KlyPickEventArgs> PickHandler =>
+        _selectable ? EventCallback.Factory.Create<KlyPickEventArgs>(this, OnPick) : default;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(KlyPickEventArgs))]
+    private Task OnPick(KlyPickEventArgs e)
+    {
+        if (e.Row < 0 || e.Row >= Data.Count || _values.Count == 0) return Task.CompletedTask;
+        var item = Data[e.Row];
+        // A donut has one category (the size of the slices); the others, the one the browser found, else the first with a value in the row.
+        var series = Type == KlyChartType.Donut ? 0 : e.Series;
+        if (series < 0 || series >= _values.Count)
+        {
+            series = _values.FindIndex(v => v[e.Row] is not null);
+            if (series < 0) series = 0;
+        }
+        var category = series < Categories.Count ? Categories[series] : null;
+        return OnSelect.InvokeAsync(new KlyChartSelectEventArgs<TItem>(e.Row, Index(item), category?.Key, category is null ? -1 : series, _values[series][e.Row], item));
     }
 
     private static double? Sanitize(double? value) => value is { } v && double.IsFinite(v) ? v : null;

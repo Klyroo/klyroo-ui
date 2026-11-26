@@ -743,4 +743,88 @@ public class ChartTests : KlyrooTestContext
             Assert.DoesNotContain("Infinity", cut.Markup);
         }
     }
+
+    // ---- Selection
+
+    [Fact]
+    public void A_chart_without_OnSelect_is_not_selectable_and_has_no_pick_handler()
+    {
+        var cut = Chart();
+
+        Assert.False(cut.Find("kly-chart").HasAttribute("data-selectable"));
+        Assert.DoesNotContain("cursor-pointer", cut.Find("[data-hit] rect").GetAttribute("class"));
+        Assert.DoesNotContain("select", cut.Find("[hidden][id$=-hint]").TextContent, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void A_chart_with_OnSelect_is_selectable_with_a_pointer_cursor_and_says_so_in_its_hint()
+    {
+        var cut = Chart(p => p.Add(c => c.OnSelect, _ => { }));
+
+        Assert.True(cut.Find("kly-chart").HasAttribute("data-selectable"));
+        Assert.Contains("cursor-pointer", cut.Find("[data-hit] rect").GetAttribute("class"));
+        Assert.Contains("Press Enter", cut.Find("[hidden][id$=-hint]").TextContent);
+    }
+
+    [Fact]
+    public async Task A_pick_reports_the_row_the_series_the_value_and_the_item()
+    {
+        KlyChartSelectEventArgs<Sale>? received = null;
+        var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 1, Series = 1 });
+
+        Assert.NotNull(received);
+        Assert.Equal(1, received.Row);
+        Assert.Equal("February", received.Index);
+        Assert.Equal("mobile", received.SeriesKey);
+        Assert.Equal(1, received.SeriesIndex);
+        Assert.Equal(200, received.Value);
+        Assert.Same(Sales[1], received.Item);
+    }
+
+    [Fact]
+    public async Task A_pick_without_a_series_takes_the_first_series_that_has_a_value()
+    {
+        KlyChartSelectEventArgs<Sale>? received = null;
+        var data = new List<Sale> { new("a", null, 7), new("b", 3, 4) };
+        var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e), data);
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 0, Series = -1 });
+
+        Assert.Equal("mobile", received!.SeriesKey);
+        Assert.Equal(7, received.Value);
+    }
+
+    [Fact]
+    public async Task A_donut_slice_pick_reports_the_slice_and_its_size()
+    {
+        KlyChartSelectEventArgs<Sale>? received = null;
+        var cut = Chart(p => p.Add(c => c.Type, KlyChartType.Donut).Add(c => c.OnSelect, e => received = e));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 2, Series = 0 });
+
+        Assert.Equal("March", received!.Index);
+        Assert.Equal("desktop", received.SeriesKey);
+        Assert.Equal(237, received.Value);
+    }
+
+    [Fact]
+    public async Task A_pick_of_a_row_that_does_not_exist_is_ignored()
+    {
+        var calls = 0;
+        var cut = Chart(p => p.Add(c => c.OnSelect, _ => calls++));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 99, Series = 0 });
+
+        Assert.Equal(0, calls);
+    }
+
+    [Fact]
+    public void Markers_carry_their_series_so_the_browser_can_tell_which_point_was_picked()
+    {
+        var cut = Chart(p => p.Add(c => c.OnSelect, _ => { }));
+
+        Assert.Equal(["0", "1"], cut.FindAll("[data-hit]")[0].QuerySelectorAll("path[data-series]").Select(m => m.GetAttribute("data-series")!).ToArray());
+    }
 }

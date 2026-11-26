@@ -124,6 +124,10 @@ function registerEvents(blazor) {
     browserEventName: 'kly-limit',
     createEventArgs: (event) => ({ exceeded: event.detail.exceeded, length: event.detail.length, max: event.detail.max }),
   });
+  blazor.registerCustomEventType('klypick', {
+    browserEventName: 'kly-pick',
+    createEventArgs: (event) => ({ row: event.detail.row, series: event.detail.series }),
+  });
   blazor.registerCustomEventType('klysearch', {
     browserEventName: 'kly-search',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),

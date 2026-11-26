@@ -16,6 +16,7 @@ public static partial class KlyLocales
             ChartRange = "{0}({1}から{2})",
             ChartSlice = "{0} {1}({2})",
             ChartHint = "グラフの値です。矢印キーでポイント間を移動できます。",
+            ChartHintSelect = "Enter キーでポイントを選択できます。",
             ChartTable = "データテーブル",
             ChartIndex = "カテゴリ",
             ChartLegend = "凡例",
