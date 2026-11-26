@@ -62,7 +62,7 @@ To use the library in an app:
 - **Network access on the first build** only if your app self-hosts web fonts (`KlyrooFont`), uses icons outside the built-in set, or compiles Tailwind (`KlyrooTailwind`): the build downloads them once and caches them under `obj/klyroo`. Node.js is not needed.
 - **Tailwind CSS is optional.** Without it, link the precompiled stylesheets. With Tailwind v4 in your app, turn on `KlyrooTailwind`: the build runs the Tailwind standalone binary, so no Node.js either.
 
-To build this repository you need the .NET 10 SDK (a newer SDK works too, see `global.json`) and clones of `klyroo-query`, `klyroo-stack` (`klyroo-query` and `klyroo-stack` are used by the test projects only) in the same parent folder: some projects reference them by relative path (`../klyroo-query/...`). See [Contributing](CONTRIBUTING.md).
+To build this repository you need the .NET 10 SDK (a newer SDK works too, see `global.json`) and clones of `klyroo-query` and `klyroo-stack` (`klyroo-query` and `klyroo-stack` are used by the test projects only) in the same parent folder: some projects reference them by relative path (`../klyroo-query/...`). See [Contributing](CONTRIBUTING.md).
 
 ## Installation
 
