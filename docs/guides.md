@@ -288,7 +288,8 @@ builder.Services.AddKlyrooUi(o =>
 <KlyAvatar Src="/img/ada.jpg" Alt="Ada Lovelace" ImageOptions="@(new KlyImageOptions { Preset = "thumb" })" />
 ```
 
-`Width` and `Height` are whole numbers of CSS pixels (`int?`), not text, so write `Width="640"`, never `Width="640px"`.
+`Width` and `Height` are whole numbers of CSS pixels (`int?`), so write `Width="640"`. A text that holds an integer, with or without a `px` suffix, is also accepted when it reaches
+the component through a dictionary of attributes (`@attributes`) or a lowercase `width="640"`; any other text throws an `InvalidOperationException` that names the component and the parameter.
 `Placeholder` takes a `KlyImagePlaceholder`: `KlyImagePlaceholder.Url("/img/team-tiny.jpg")` for a small image you already have, or
 `KlyImagePlaceholder.Auto` to ask the provider for a tiny, blurred version of the image itself.
 

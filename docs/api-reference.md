@@ -3066,7 +3066,7 @@ Global image configuration (`KlyrooOptions.Images`): `AddKlyrooUi(o => { o.Image
 | `AddDefaultProvider(IKlyImageProvider provider)` | `KlyImageSettings` | Registers a provider and makes it the default one. |
 | `AddProvider(IKlyImageProvider provider)` | `KlyImageSettings` | Registers a provider under its `IKlyImageProvider.Name`, replacing a provider of the same name. |
 | `Resolve(string? src, KlyImageOptions? options = null, int? width = null, int? height = null)` | `KlyResolvedImage` | The resolved `src`, `srcset` and `sizes` of an image. Use it to render your own `img` or `picture`; `KlyImage` calls it. |
-| `ResolvePlaceholder(string? src, KlyImageOptions? options, int width, int? height)` | `string?` | The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for `Placeholder="true"`. Null when the source is not resolvable (empty, `data:`, `blob:`), the provider cannot resize or the image is remote and not allowed. Unknown providers and presets throw like `KlyImageSettings.Resolve`. |
+| `ResolvePlaceholder(string? src, KlyImageOptions? options, int width, int? height)` | `string?` | The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for `KlyImagePlaceholder.Auto`. Null when the source is not resolvable (empty, `data:`, `blob:`), the provider cannot resize or the image is remote and not allowed. Unknown providers and presets throw like `KlyImageSettings.Resolve`. |
 
 #### `KlyLimitEventArgs`
 
@@ -6632,7 +6632,7 @@ Semantic color of a component, rendered as `data-color`. Built-in colors map to 
 
 `Klyroo.UI` · struct
 
-The cell of a feature for one tier of a `KlyPricingTable`: a check mark (`true`), a minus sign (`false`, `null` or the default value), a text or a number. `bool`, `string`, `int`, `long` and `decimal` convert to it implicitly, so `[true, "10 GB", false, 5]` is a list of values. A number is shown with the format culture of the locale in effect.
+The cell of a feature for one tier of a `KlyPricingTable`: a check mark (`true`), a minus sign (`false`, `null` or the default value), a text or a number. `bool`, `string`, `int`, `long`, `decimal`, `double` and `float` convert to it implicitly, so `[true, "10 GB", false, 5, 2.5]` is a list of values. Smaller integers (`short`, `byte`) and `uint` widen to these implicitly. Any other numeric type, such as `ulong`, is cast first or passed to `KlyPricingTableValue.Number`. A number is shown with the format culture of the locale in effect.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -6725,7 +6725,7 @@ The HTTP request a component is rendering for, as far as Klyroo needs it: the co
 
 `Klyroo.UI` · interface
 
-What a list control reads of an option, whatever the type of its value: `KlySelectItem` is the usual implementation. The remote options of a menu (see `KlyOptionsResult`) are given as this interface, so one provider serves a menu of any value type.
+What a list control reads of an option, whatever the type of its value: `KlySelectItem` is the usual implementation. The value itself is on `IKlySelectItem`, which is the interface to implement. The remote options of a menu (see `KlyOptionsResult`) are given as this interface, so one provider serves a menu of any value type.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -6734,7 +6734,6 @@ What a list control reads of an option, whatever the type of its value: `KlySele
 | `Group` | `string?` | Lists the item under a heading; items without a group are listed first, with no heading. |
 | `Icon` | `string?` | An icon drawn before the label, by name like every icon of Klyroo (a Lucide name, or any Iconify name the build bundles). |
 | `Label` | `string` | Text of the option. |
-| `Value` | `object?` | Value the control takes when the option is chosen, as an object: its type is the one the control is bound to. |
 
 #### `IKlySelectItem<TValue>`
 
