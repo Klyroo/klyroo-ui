@@ -30,7 +30,7 @@ else
     /// </summary>
     [Parameter] public SelectUi? Ui { get; set; }
 
-    private IKlySelectItem<TValue>? Selected => Items.FirstOrDefault(i => EqualityComparer<TValue?>.Default.Equals(i.Value, Value));
+    private IKlySelectItem<TValue>? Selected => Items.FirstOrDefault(i => OptionValue.Key(i.Value) == Key);
 
     private string Key => OptionValue.Key(Value);
 
@@ -57,7 +57,7 @@ else
     {
         _sequence = e.Sequence;
         var value = OptionValue.FromKey<TValue>(e.Value, Items);
-        if (EqualityComparer<TValue?>.Default.Equals(value, Value))
+        if (OptionValue.Same(value, Value))
         {
             return;
         }

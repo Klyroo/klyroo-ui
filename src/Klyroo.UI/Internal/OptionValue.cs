@@ -8,15 +8,20 @@ namespace Klyroo.UI.Internal;
 /// </summary>
 internal static class OptionValue
 {
-    /// <summary>The text of a value: strings as they are, numbers, dates and <see cref="Guid"/>s in the invariant culture, enums by name. Null is the empty text.</summary>
+    /// <summary>
+    /// The one text of a value, used for every comparison (the selected option, <c>aria-selected</c>, the posted field, the selection list): strings as they are, numbers and
+    /// <see cref="Guid"/>s in the invariant culture, enums by name, and equal values always give the same text. A <see cref="decimal"/> has no trailing zeros (<c>1.00m</c> and
+    /// <c>1m</c> are "1"), a <see cref="DateTime"/> is its ticks without its <see cref="DateTimeKind"/>, a <see cref="DateTimeOffset"/> is its UTC instant. Null is the empty text.
+    /// </summary>
     public static string Key<T>(T? value)
     {
         if (value is null) return "";
         return value switch
         {
             string text => text,
-            DateTime dateTime => dateTime.ToString("O", CultureInfo.InvariantCulture),
-            DateTimeOffset offset => offset.ToString("O", CultureInfo.InvariantCulture),
+            decimal number => (number / 1.000000000000000000000000000000000m).ToString(CultureInfo.InvariantCulture),
+            DateTime dateTime => new DateTime(dateTime.Ticks, DateTimeKind.Unspecified).ToString("O", CultureInfo.InvariantCulture),
+            DateTimeOffset offset => offset.UtcDateTime.ToString("O", CultureInfo.InvariantCulture),
             DateOnly date => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
             TimeOnly time => time.ToString("HH:mm:ss", CultureInfo.InvariantCulture),
             Enum enumeration => enumeration.ToString(),
@@ -60,6 +65,12 @@ internal static class OptionValue
         T typed => typed,
         _ => throw new InvalidOperationException($"An option has a value of type {value.GetType().Name} but the control is bound to {typeof(T).Name}: build the options with KlySelectItem<{typeof(T).Name}>."),
     };
+
+    /// <summary>Whether two values are the same option: they have the same <see cref="Key{T}"/>.</summary>
+    public static bool Same<T>(T? a, T? b) => Key(a) == Key(b);
+
+    /// <summary>Whether <typeparamref name="T"/> can hold no value: a reference type or <see cref="Nullable{T}"/>. Any other value type has only <c>default</c>, which is a value.</summary>
+    public static bool CanBeEmpty<T>() => !typeof(T).IsValueType || Nullable.GetUnderlyingType(typeof(T)) is not null;
 
     /// <summary>Whether a value is "no value": null, or the empty text of a string.</summary>
     public static bool IsEmpty<T>(T? value) => value is null || (value is string text && text.Length == 0);

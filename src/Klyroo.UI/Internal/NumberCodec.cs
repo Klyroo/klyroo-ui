@@ -22,7 +22,7 @@ internal abstract class NumberCodec<T>
 
     /// <summary>
     /// Reads the text the browser reported. An empty or unreadable text is no value: null for a nullable type, zero for the others. A text outside
-    /// the range of an integer type is clamped to it; a fraction is rounded.
+    /// the range of the type (even beyond decimal) is clamped to its MinValue or MaxValue; a fraction of an integer type is rounded, halves away from zero.
     /// </summary>
     public abstract T? Parse(string? text);
 
@@ -58,11 +58,17 @@ internal static class NumberCodecs
             found = true;
             return value;
         }
-        // An integer type reads "2.6" as 3 and "300" as the largest value, as the field showed them, instead of dropping the text.
+        // An integer type reads "2.5" as 3 (halves go away from zero) and a number beyond its range as its MinValue or MaxValue, as the field showed it, instead of dropping the text.
         if (IsIntegerType<TNumber>() && decimal.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var wide))
         {
             found = true;
-            return TNumber.CreateSaturating(Math.Round(wide));
+            return TNumber.CreateSaturating(Math.Round(wide, MidpointRounding.AwayFromZero));
+        }
+        // Beyond decimal (1e40): the double says which side of the range it is on, and the type takes its limit. A decimal field clamps the same way.
+        if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var huge) && !double.IsNaN(huge))
+        {
+            found = true;
+            return TNumber.CreateSaturating(IsIntegerType<TNumber>() ? Math.Round(huge, MidpointRounding.AwayFromZero) : huge);
         }
         return default;
     }

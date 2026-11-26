@@ -1,3 +1,4 @@
+using Klyroo.UI.Internal;
 using System.ComponentModel.DataAnnotations;
 using System.Linq.Expressions;
 using Microsoft.AspNetCore.Components;
@@ -140,9 +141,10 @@ public class GenericInputsTests : KlyrooTestContext
             .Add(s => s.Items, [new KlySelectItem<DateTime?>(january, "January"), new KlySelectItem<DateTime?>(june, "June")])
             .Add(s => s.Value, value).Add(s => s.ValueChanged, (DateTime? v) => value = v));
 
-        Assert.Equal("2026-01-15T08:30:00.0000000Z", cut.Find("input[type=hidden]").GetAttribute("value"));
+        // The text of a DateTime is its ticks, without the kind, so equal instants built with another kind match.
+        Assert.Equal("2026-01-15T08:30:00.0000000", cut.Find("input[type=hidden]").GetAttribute("value"));
 
-        cut.Find("kly-select").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "2026-06-01T00:00:00.0000000Z", Sequence = 1 });
+        cut.Find("kly-select").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "2026-06-01T00:00:00.0000000", Sequence = 1 });
 
         Assert.Equal(june, value);
     }
@@ -618,5 +620,173 @@ public class GenericInputsTests : KlyrooTestContext
         cut.Find("kly-slider").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "25", Sequence = 1 });
 
         Assert.Equal(25m, amount);
+    }
+
+    // ---- One text per value
+
+    [Fact]
+    public void The_text_of_a_value_is_the_same_for_equal_values()
+    {
+        Assert.Equal(OptionValue.Key(1m), OptionValue.Key(1.00m));
+        Assert.Equal("1", OptionValue.Key(1.0000m));
+        Assert.Equal("0", OptionValue.Key(0.00m));
+        Assert.Equal("12.5", OptionValue.Key(12.50m));
+        Assert.Equal("-3", OptionValue.Key(-3.0m));
+        Assert.Equal(OptionValue.Key(new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Utc)), OptionValue.Key(new DateTime(2026, 1, 2, 3, 4, 5, DateTimeKind.Unspecified)));
+        Assert.Equal(OptionValue.Key(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.FromHours(2))), OptionValue.Key(new DateTimeOffset(2026, 1, 2, 1, 4, 5, TimeSpan.Zero)));
+        Assert.NotEqual(OptionValue.Key(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.FromHours(2))), OptionValue.Key(new DateTimeOffset(2026, 1, 2, 3, 4, 5, TimeSpan.Zero)));
+        Assert.Equal(OptionValue.Key((int?)4), OptionValue.Key(4));
+    }
+
+    [Fact]
+    public void Select_matches_a_decimal_whatever_its_scale()
+    {
+        decimal price = 1m;
+        var cut = Render<KlySelect<decimal>>(p => p
+            .Add(s => s.Items, [new KlySelectItem<decimal>(1.00m, "One euro"), new KlySelectItem<decimal>(2.50m, "Two fifty")])
+            .Add(s => s.Value, price).Add(s => s.ValueChanged, (decimal v) => price = v));
+
+        Assert.Equal("One euro", cut.Find("[data-slot=label]").GetAttribute("data-label"));
+        Assert.Equal("true", cut.FindAll("[role=option]")[0].GetAttribute("aria-selected"));
+        Assert.Equal("1", cut.Find("input[type=hidden]").GetAttribute("value"));
+        Assert.Equal(["1", "2.5"], cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-value")!));
+
+        cut.Find("kly-select").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "2.5", Sequence = 1 });
+
+        Assert.Equal(2.50m, price);
+    }
+
+    [Fact]
+    public void Select_matches_a_date_time_whatever_its_kind()
+    {
+        var utc = new DateTime(2026, 1, 15, 8, 30, 0, DateTimeKind.Utc);
+        var built = new DateTime(utc.Ticks, DateTimeKind.Unspecified);
+        var cut = Render<KlySelect<DateTime>>(p => p
+            .Add(s => s.Items, [new KlySelectItem<DateTime>(built, "Morning")]).Add(s => s.Value, utc).Add(s => s.ValueChanged, (DateTime _) => { }));
+
+        Assert.Equal("Morning", cut.Find("[data-slot=label]").GetAttribute("data-label"));
+        Assert.Equal("true", cut.Find("[role=option]").GetAttribute("aria-selected"));
+    }
+
+    [Fact]
+    public void Select_matches_a_date_time_offset_by_its_instant()
+    {
+        var local = new DateTimeOffset(2026, 3, 4, 12, 0, 0, TimeSpan.FromHours(2));
+        var utc = new DateTimeOffset(2026, 3, 4, 10, 0, 0, TimeSpan.Zero);
+        var cut = Render<KlySelect<DateTimeOffset>>(p => p
+            .Add(s => s.Items, [new KlySelectItem<DateTimeOffset>(local, "Noon in Paris")]).Add(s => s.Value, utc).Add(s => s.ValueChanged, (DateTimeOffset _) => { }));
+
+        Assert.Equal("Noon in Paris", cut.Find("[data-slot=label]").GetAttribute("data-label"));
+        Assert.Equal("true", cut.Find("[role=option]").GetAttribute("aria-selected"));
+    }
+
+    [Fact]
+    public void SelectMenu_lists_equal_values_once_and_never_selects_twice()
+    {
+        IReadOnlyList<decimal> prices = [1m, 1.00m];
+        var cut = Render<KlySelectMenu<decimal>>(p => p
+            .Add(s => s.Items, [new KlySelectItem<decimal>(1.0m, "One"), new KlySelectItem<decimal>(2m, "Two")])
+            .Add(s => s.Multiple, true).Add(s => s.Value, prices).Add(s => s.ValueChanged, (IReadOnlyList<decimal>? v) => prices = v!));
+
+        Assert.Equal("1", cut.Find("kly-select-menu").GetAttribute("data-values"));
+        Assert.Equal(["true", "false"], cut.FindAll("[role=option]").Select(o => o.GetAttribute("aria-selected")!));
+
+        cut.Find("kly-select-menu").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "1\u001f1\u001f2", Sequence = 1 });
+
+        Assert.Equal([1.0m, 2m], prices);
+    }
+
+    // ---- Remote options
+
+    [Fact]
+    public async Task A_resolved_label_names_the_value_and_is_never_read_as_an_option()
+    {
+        IReadOnlyList<int> ids = [42];
+        var cut = Render<KlySelectMenu<int>>(p => p
+            .Add(s => s.OptionsProvider, (KlyOptionsRequest _, CancellationToken _) =>
+                new ValueTask<KlyOptionsResult>(new KlyOptionsResult([new KlySelectItem<int>(3, "Music")])))
+            .Add(s => s.ResolveSelected, (IReadOnlyList<string> keys, CancellationToken _) =>
+                new ValueTask<IReadOnlyList<KlySelectItem>>(keys.Select(k => new KlySelectItem(k, "Category " + k)).ToList()))
+            .Add(s => s.Multiple, true).Add(s => s.Value, ids).Add(s => s.ValueChanged, (IReadOnlyList<int>? v) => ids = v!));
+        await cut.WaitForAssertionAsync(() => Assert.Equal("Category 42", cut.Find("[data-slot=label]").GetAttribute("data-label")));
+        await cut.Find("kly-select-menu").TriggerEventAsync("onklysearch", new KlySearchEventArgs { Value = "", Sequence = 1 });
+
+        // The value that was resolved stays when another one is added: its string item is a label, not an int.
+        await cut.Find("kly-select-menu").TriggerEventAsync("onklychange", new KlyChangeEventArgs { Value = "42\u001f3", Sequence = 1 });
+
+        Assert.Equal([42, 3], ids);
+    }
+
+    // ---- Strict input menu
+
+    [Fact]
+    public void Emptying_a_strict_input_menu_of_a_type_that_cannot_be_empty_keeps_the_value()
+    {
+        var calls = 0;
+        var id = 3;
+        var cut = Render<KlyInputMenu<int>>(p => p
+            .Add(s => s.Items, KlySelectItems.From(Categories, c => c.Id, c => c.Name))
+            .Add(s => s.Value, id).Add(s => s.ValueChanged, (int v) => { calls++; id = v; }));
+
+        cut.Find("kly-input-menu").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "", Sequence = 7 });
+
+        Assert.Equal(0, calls);
+        Assert.Equal(3, id);
+        Assert.Equal("3", cut.Find("input[type=hidden]").GetAttribute("value"));
+        Assert.Equal("Music", cut.Find("input[role=combobox]").GetAttribute("value"));
+        // The sequence moved, so the browser puts the label of the value back in the field.
+        Assert.Equal("7", cut.Find("kly-input-menu").GetAttribute("data-kly-seq"));
+    }
+
+    // ---- Number parsing
+
+    [Theory]
+    [InlineData("2.5", 3)]
+    [InlineData("-2.5", -3)]
+    [InlineData("2.4", 2)]
+    [InlineData("3.5", 4)]
+    [InlineData("1e40", int.MaxValue)]
+    [InlineData("-1e40", int.MinValue)]
+    [InlineData("99999999999999999999", int.MaxValue)]
+    public void An_int_field_rounds_halves_away_from_zero_and_clamps_to_the_type(string text, int expected)
+    {
+        var value = 1;
+        var cut = Render<KlyInputNumber<int>>(p => p.Add(n => n.Value, value).Add(n => n.ValueChanged, (int v) => value = v));
+
+        cut.Find("kly-input-number").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = text, Sequence = 1 });
+
+        Assert.Equal(expected, value);
+    }
+
+    [Fact]
+    public void Numbers_beyond_the_range_of_long_ulong_and_decimal_take_their_limits()
+    {
+        long big = 0;
+        ulong unsigned = 5;
+        decimal money = 0;
+        var longField = Render<KlyInputNumber<long>>(p => p.Add(n => n.Value, big).Add(n => n.ValueChanged, (long v) => big = v));
+        var ulongField = Render<KlyInputNumber<ulong>>(p => p.Add(n => n.Value, unsigned).Add(n => n.ValueChanged, (ulong v) => unsigned = v));
+        var decimalField = Render<KlyInputNumber<decimal>>(p => p.Add(n => n.Value, money).Add(n => n.ValueChanged, (decimal v) => money = v));
+
+        longField.Find("kly-input-number").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "-1e40", Sequence = 1 });
+        ulongField.Find("kly-input-number").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "-5", Sequence = 1 });
+        decimalField.Find("kly-input-number").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "1e40", Sequence = 1 });
+
+        Assert.Equal(long.MinValue, big);
+        Assert.Equal(0UL, unsigned);
+        Assert.Equal(decimal.MaxValue, money);
+    }
+
+    // ---- Enum aliases
+
+    private enum Level { Low = 1, Minimum = 1, High = 2 }
+
+    [Fact]
+    public void Items_from_an_enum_list_one_option_per_distinct_value()
+    {
+        var items = KlySelectItems.FromEnum<Level>();
+
+        Assert.Equal([Level.Low, Level.High], items.Select(i => i.Value));
+        Assert.Equal(Enum.GetNames<Level>().First(n => Enum.Parse<Level>(n) == Level.Low), items[0].Label);
     }
 }

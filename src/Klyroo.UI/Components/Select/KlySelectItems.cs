@@ -10,15 +10,24 @@ namespace Klyroo.UI;
 public static class KlySelectItems
 {
     /// <summary>
-    /// One option per member of an enum, in the order of its values, so <c>@bind-Value</c> binds to the enum property itself.
+    /// One option per distinct value of an enum, in the order of its values, so <c>@bind-Value</c> binds to the enum property itself. Members that share a value
+    /// (aliases) are one option, labeled by the first of their names.
     /// </summary>
     /// <typeparam name="TEnum">The enum.</typeparam>
     /// <param name="label">The text of a member. Defaults to its name split into words: <c>InProgress</c> is "In progress".</param>
     /// <returns>The options, typed with the enum. For a <c>TEnum?</c> property, call <see cref="AsNullable{TValue}"/> on them.</returns>
     public static IReadOnlyList<KlySelectItem<TEnum>> FromEnum<TEnum>(Func<TEnum, string>? label = null) where TEnum : struct, Enum
     {
-        label ??= Humanize;
-        return [.. Enum.GetValues<TEnum>().Select(value => new KlySelectItem<TEnum>(value, label(value)))];
+        var values = Enum.GetValues<TEnum>();
+        var names = Enum.GetNames<TEnum>();
+        var items = new List<KlySelectItem<TEnum>>(values.Length);
+        var seen = new HashSet<TEnum>();
+        // GetValues and GetNames list the members in the same order, so the first name of an alias is the one that labels the option.
+        for (var i = 0; i < values.Length; i++)
+        {
+            if (seen.Add(values[i])) items.Add(new KlySelectItem<TEnum>(values[i], label is null ? Humanize(names[i]) : label(values[i])));
+        }
+        return items;
     }
 
     /// <summary>
@@ -58,9 +67,8 @@ public static class KlySelectItems
     }
 
     // "InProgress" is "In progress", "HTTPServer" is "HTTP server": a word starts at a lower to upper change, or before the last capital of a run of capitals that is followed by a lower case letter.
-    private static string Humanize<TEnum>(TEnum value) where TEnum : struct, Enum
+    private static string Humanize(string name)
     {
-        var name = value.ToString();
         var text = new StringBuilder(name.Length + 4);
         for (var i = 0; i < name.Length; i++)
         {

@@ -105,7 +105,7 @@ else
 
     private string Text => !IsStrict ? Key
         : !HasValue ? ""
-        : _remote is null ? Items.FirstOrDefault(i => EqualityComparer<TValue?>.Default.Equals(i.Value, Value))?.Label ?? "" : _remote.LabelOf(Key);
+        : _remote is null ? Items.FirstOrDefault(i => OptionValue.Key(i.Value) == Key)?.Label ?? "" : _remote.LabelOf(Key);
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
@@ -195,11 +195,14 @@ else
     private async Task OnChange(KlyChangeEventArgs e)
     {
         _sequence = e.Sequence;
+        // Emptying a strict field bound to a type that cannot be empty (an int, an enum, a Guid) changes nothing: default(TValue) is a value, not "no value", so the
+        // old value stays and the render (the sequence moved) puts its label back in the field.
+        if (IsStrict && string.IsNullOrEmpty(e.Value) && !OptionValue.CanBeEmpty<TValue>()) return;
         // A typed text is the value of a string field; otherwise the browser reports the text of a chosen option (or nothing).
         var value = !IsStrict && OptionValue.IsText<TValue>()
             ? string.IsNullOrEmpty(e.Value) ? default : (TValue)(object)e.Value
             : FromKey(e.Value);
-        if (EqualityComparer<TValue?>.Default.Equals(value, Value))
+        if (OptionValue.Same(value, Value))
         {
             return;
         }

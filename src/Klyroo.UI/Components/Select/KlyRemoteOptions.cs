@@ -40,6 +40,8 @@ public sealed class KlyRemoteOptions : IDisposable
     private readonly List<KlySelectItem> _texts = [];
     private readonly HashSet<string> _listed = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IKlySelectItem> _known = new(StringComparer.Ordinal);
+    // The labels the resolver gave: only labels, by the text of the value. The items it returns carry text, not the typed values of the control, so they are never read as options.
+    private readonly Dictionary<string, string> _resolved = new(StringComparer.Ordinal);
     private readonly HashSet<string> _attempted = new(StringComparer.Ordinal);
     private readonly HashSet<string> _failedResolve = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _lifetime = new();
@@ -131,6 +133,7 @@ public sealed class KlyRemoteOptions : IDisposable
         StopRequest();
         Replace();
         _known.Clear();
+        _resolved.Clear();
         _attempted.Clear();
         _failedResolve.Clear();
         Term = "";
@@ -221,9 +224,9 @@ public sealed class KlyRemoteOptions : IDisposable
 
     /// <summary>Whether the label of a value is known: listed now, remembered, given as an item, or resolved.</summary>
     internal bool Knows(string value) =>
-        _known.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => OptionValue.Key(i.Value) == value);
+        _known.ContainsKey(value) || _resolved.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => OptionValue.Key(i.Value) == value);
 
-    /// <summary>The option, listed now, remembered or given as an item, whose value has that text.</summary>
+    /// <summary>The option, listed now, remembered or given as an item, whose value has that text. A label the resolver gave is not an option (see <see cref="LabelOf"/>): it has no typed value.</summary>
     internal IKlySelectItem? Find(string key) =>
         _items.FirstOrDefault(i => OptionValue.Key(i.Value) == key)
         ?? (_known.TryGetValue(key, out var known) ? known : null)
@@ -231,7 +234,8 @@ public sealed class KlyRemoteOptions : IDisposable
 
     /// <summary>The label of a value, or the value itself when nothing knows it (the raw value is what an unresolved value shows).</summary>
     internal string LabelOf(string value) =>
-        _known.TryGetValue(value, out var known) ? known.Label
+        _resolved.TryGetValue(value, out var resolved) ? resolved
+        : _known.TryGetValue(value, out var known) ? known.Label
         : _items.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
         ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
         ?? value;
@@ -253,16 +257,13 @@ public sealed class KlyRemoteOptions : IDisposable
     {
         foreach (var value in values ?? [])
         {
-            if (_known.TryGetValue(value, out var item))
-            {
-                yield return value;
-                yield return item.Label;
-            }
-            else if (StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value) is { } given)
-            {
-                yield return value;
-                yield return given.Label;
-            }
+            // A label the resolver gave is the one the app chose for a value no page holds: it comes first.
+            string? label = _resolved.TryGetValue(value, out var resolved) ? resolved
+                : _known.TryGetValue(value, out var item) ? item.Label
+                : StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label;
+            if (label is null) continue;
+            yield return value;
+            yield return label;
         }
     }
 
@@ -297,7 +298,7 @@ public sealed class KlyRemoteOptions : IDisposable
         {
             // Matched by the text of the value, so a resolver of numbers or dates can return the items it has.
             var key = OptionValue.Key(item.Value);
-            if (missing.Contains(key)) _known[key] = item;
+            if (missing.Contains(key)) _resolved[key] = item.Label;
         }
         _changed();
     }

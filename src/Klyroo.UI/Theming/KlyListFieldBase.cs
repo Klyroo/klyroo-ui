@@ -16,9 +16,9 @@ public abstract class KlyListFieldBase<TValue> : KlyFieldBase<IReadOnlyList<TVal
 
     private protected int? SequenceAttribute => ValueChanged.HasDelegate ? _sequence : null;
 
-    private protected string DataValues => ListValue.Join(Value?.Select(v => OptionValue.Key(v)));
+    private protected string DataValues => ListValue.Join(Value?.Select(v => OptionValue.Key(v)).Distinct(StringComparer.Ordinal));
 
-    private protected bool IsSelected(TValue value) => Value?.Contains(value) == true;
+    private protected bool IsSelected(TValue value) => SelectedKeys.Contains(OptionValue.Key(value));
 
     private IReadOnlyList<TValue>? _keysOf;
     private int _keysCount = -1;
@@ -53,9 +53,11 @@ public abstract class KlyListFieldBase<TValue> : KlyFieldBase<IReadOnlyList<TVal
     {
         _sequence = e.Sequence;
         var values = new List<TValue>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         foreach (var key in ListValue.Split(e.Value))
         {
-            if (TryParseKey(key, out var parsed)) values.Add(parsed);
+            // One entry per option, however many times the browser names it.
+            if (seen.Add(key) && TryParseKey(key, out var parsed)) values.Add(parsed);
         }
         if (ListValue.Same(values, Value))
         {
