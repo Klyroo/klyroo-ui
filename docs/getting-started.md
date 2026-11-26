@@ -3,7 +3,7 @@
 This tutorial adds Klyroo.UI to a Blazor Web App and builds a small newsletter sign-up form with it. The form works in
 static server rendering, so it also works when the page has no interactivity at all. It takes about ten minutes.
 
-You need the .NET 10 SDK.
+Check the [prerequisites](../README.md#prerequisites) first: the .NET 10 SDK, and for the components a Blazor app with Klyroo.UI set up.
 
 ## 1. Create the app
 

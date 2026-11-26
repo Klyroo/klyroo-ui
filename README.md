@@ -52,6 +52,18 @@ that the [API reference](docs/api-reference.md) also lists are not counted.
 
 The other three packages have the same version as `Klyroo.UI` and build on it. `Klyroo.UI.Server` depends on exactly that version.
 
+## Prerequisites
+
+To use the library in an app:
+
+- **The .NET 10 SDK**, and an app that targets `net10.0`. The packages are prereleases, so every `dotnet add package` command needs `--prerelease`.
+- **A Blazor app**: a Blazor Web App (static server rendering, Interactive Server, WebAssembly or Auto) or a .NET MAUI Blazor Hybrid app. Components that call .NET when the user acts (`OnClick`, `@bind-Open`) need an interactive render mode; the others also work in static server rendering. In a WebAssembly or Auto app, register the services in the server project and in the `.Client` project.
+- **A browser with the native popover API**, which Klyroo.UI uses: Chrome and Edge 114, Safari 17 or Firefox 125, or later. In a .NET MAUI app, that means iOS or Mac Catalyst 17, or an Android System WebView 114 or later.
+- **Network access on the first build** only if your app self-hosts web fonts (`KlyrooFont`), uses icons outside the built-in set, or compiles Tailwind (`KlyrooTailwind`): the build downloads them once and caches them under `obj/klyroo`. Node.js is not needed.
+- **Tailwind CSS is optional.** Without it, link the precompiled stylesheets. With Tailwind v4 in your app, turn on `KlyrooTailwind`: the build runs the Tailwind standalone binary, so no Node.js either.
+
+To build this repository you need the .NET 10 SDK (a newer SDK works too, see `global.json`) and clones of `klyroo-query`, `klyroo-stack` (`klyroo-query` and `klyroo-stack` are used by the test projects only) in the same parent folder: some projects reference them by relative path (`../klyroo-query/...`). See [Contributing](CONTRIBUTING.md).
+
 ## Installation
 
 ```bash
@@ -171,7 +183,7 @@ each component in `AddKlyrooUi`, and the `Class` and `Ui` parameters of one inst
 | [API reference](docs/api-reference.md) | Every public type and member |
 | [FAQ](docs/faq.md) | Troubleshooting and limitations |
 
-## Requirements
+## Compatibility
 
 - The .NET 10 SDK. Every package targets `net10.0`.
 - Static server rendering, Interactive Server, WebAssembly and Auto, and a .NET MAUI `BlazorWebView`. The components use the native popover API, so a web view needs iOS 17 or Mac Catalyst 17, or an Android System WebView of Chrome 114 or later.

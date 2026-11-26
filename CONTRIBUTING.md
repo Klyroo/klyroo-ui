@@ -4,6 +4,17 @@ klyroo-ui follows Nuxt UI's catalog and API where it makes sense, adapted to Bla
 Reference for a component's features: `https://ui.nuxt.com/raw/docs/components/<slug>.md`.
 This file is the checklist for adding or changing a component.
 
+## Set up
+
+- The .NET 10 SDK (`global.json` rolls forward to a newer SDK).
+- Node.js and `npm ci`, only to rebuild the generated assets (icons, theme classes, `klyroo.css`, JS bundles) with `npm run build`.
+- Clones of `klyroo-query` and `klyroo-stack` next to this repository: the test projects reference them by relative path.
+
+  ```bash
+  mkdir klyroo && cd klyroo
+  for r in ui query stack; do git clone https://github.com/klyroo/klyroo-$r.git; done
+  ```
+
 ## Rules that are not negotiable
 
 1. **Every render mode.** Each component works in Interactive Server, WebAssembly, Auto and static server rendering.
