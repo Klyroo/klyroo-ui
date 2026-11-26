@@ -784,7 +784,7 @@ public class ChartTests : KlyrooTestContext
     }
 
     [Fact]
-    public async Task A_pick_without_a_series_takes_the_first_series_that_has_a_value()
+    public async Task A_pick_that_names_no_series_on_a_chart_with_several_leaves_the_choice_to_the_handler()
     {
         KlyChartSelectEventArgs<Sale>? received = null;
         var data = new List<Sale> { new("a", null, 7), new("b", 3, 4) };
@@ -792,8 +792,23 @@ public class ChartTests : KlyrooTestContext
 
         await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 0, Series = -1 });
 
-        Assert.Equal("mobile", received!.SeriesKey);
-        Assert.Equal(7, received.Value);
+        Assert.Equal(0, received!.Row);
+        Assert.Equal(-1, received.SeriesIndex);
+        Assert.Null(received.SeriesKey);
+        Assert.Null(received.Value);
+        Assert.Same(data[0], received.Item);
+    }
+
+    [Fact]
+    public async Task A_pick_on_a_chart_with_one_series_always_names_it()
+    {
+        KlyChartSelectEventArgs<Sale>? received = null;
+        var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e), categories: [new("desktop", s => s.Desktop)]);
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 1, Series = -1 });
+
+        Assert.Equal("desktop", received!.SeriesKey);
+        Assert.Equal(305, received.Value);
     }
 
     [Fact]

@@ -14,7 +14,7 @@
  *
  * Only a chart that has the data-selectable attribute (the server renders it when OnSelect has a handler) reports a pick to .NET:
  * a click on a hit area or a donut slice, and Enter or Space on the row the keyboard is on, raise kly-pick with the row (the
- * data-index) and the series the pick landed on (-1 when it cannot be told, and .NET takes the first series with a value).
+ * data-index) and the series the pick landed on (-1 when it cannot be told: always for the keyboard on a chart with several series).
  * A bar is found by the pointer position among the bars of the row, a point by the nearest marker, a slice is the only series.
  *
  * The tooltip is filled by cloning the tip into an element the server renders empty, and the active row is only marked
@@ -22,6 +22,8 @@
  */
 export class KlyChartElement extends HTMLElement {
   #active = null;
+  // The row the arrow keys are on: kept apart from the one under the pointer, so Enter and Space pick what the keyboard chose, not what the pointer happens to hover.
+  #keyboard = null;
   #shown = null;
 
   connectedCallback() {
@@ -89,9 +91,10 @@ export class KlyChartElement extends HTMLElement {
     tooltip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
   }
 
-  #hide() {
+  #hide(keepKeyboard = false) {
     this.#active?.removeAttribute('data-active');
     this.#active = null;
+    if (!keepKeyboard) this.#keyboard = null;
     this.#shown = null;
     const tooltip = this.#plot?.querySelector(':scope > [data-slot="tooltip"]');
     if (tooltip) tooltip.dataset.state = 'closed';
@@ -103,10 +106,11 @@ export class KlyChartElement extends HTMLElement {
     if (status && tip) status.textContent = tip.dataset.text ?? '';
   }
 
-  /** The series a pick landed on, or -1. A pointer picks the bar under it (else the nearest bar of the row) or the nearest marker; the keyboard (no pointer) the first. */
+  /** The series a pick landed on, or -1. A pointer picks the bar under it (else the nearest bar of the row) or the nearest marker; the keyboard (no pointer) names none, so the consumer chooses. */
   #seriesAt(hit, pointer) {
     // A donut slice is its own series: .NET reads the one category.
     if (hit.localName !== 'g') return 0;
+    if (!pointer) return -1;
     const markers = [...hit.querySelectorAll('[data-series]')];
     if (markers.length > 0) {
       let best = markers[0];
@@ -164,7 +168,7 @@ export class KlyChartElement extends HTMLElement {
   #onPointerMove = (event) => {
     const hit = event.target instanceof Element ? event.target.closest('[data-hit]') : null;
     if (!hit || !this.#plot?.contains(hit)) {
-      this.#hide();
+      this.#hide(true);
       return;
     }
     this.#show(hit, event);
@@ -172,7 +176,7 @@ export class KlyChartElement extends HTMLElement {
 
   #onPointerLeave = () => {
     // The keyboard keeps its tooltip while the chart has focus.
-    if (!this.contains(document.activeElement) || !this.#plot?.matches(':focus-visible')) this.#hide();
+    if (!this.contains(document.activeElement) || !this.#plot?.matches(':focus-visible')) this.#hide(true);
   };
 
   #onFocusOut = (event) => {
@@ -183,15 +187,16 @@ export class KlyChartElement extends HTMLElement {
     if (event.target !== this.#plot || event.altKey || event.ctrlKey || event.metaKey) return;
     // Enter and Space pick the row the keyboard is on, when the chart reports picks.
     if ((event.key === 'Enter' || event.key === ' ') && this.hasAttribute('data-selectable')) {
-      if (this.#active) {
+      if (this.#keyboard && this.#plot?.contains(this.#keyboard)) {
         event.preventDefault();
-        this.#pick(this.#active, null);
+        this.#pick(this.#keyboard, null);
       }
       return;
     }
     const hits = this.#hits;
     if (hits.length === 0) return;
-    const index = this.#active ? hits.indexOf(this.#active) : -1;
+    const from = this.#keyboard ?? this.#active;
+    const index = from ? hits.indexOf(from) : -1;
     let next = null;
     switch (event.key) {
       case 'ArrowRight':
@@ -221,6 +226,7 @@ export class KlyChartElement extends HTMLElement {
     }
     event.preventDefault();
     this.#show(next, null);
+    this.#keyboard = next;
     this.#announce(next);
   };
 }
