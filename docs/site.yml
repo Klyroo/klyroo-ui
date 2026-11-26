@@ -20,8 +20,8 @@ packages:
 
 # The home page. headline is two lines, the second in the accent color; lead is the paragraph under it. Without them: the title and the tagline.
 headline: |
-  Accessible Blazor components,
-  styled with Tailwind.
+  Accessible Blazor
+  components.
 lead: >-
   A complete set of accessible components, a design system on CSS variables, and a build that bundles icons, fonts and Tailwind. It runs in every Blazor render mode and in a BlazorWebView.
 
@@ -37,15 +37,23 @@ texture: blueprint-grid
 demo:
   file: Settings.razor
   language: razor
-  focus: 1-8
+  focus: 1-17
   code: |
     <KlyFormField Label="Display name">
-        <KlyInput @bind-Value="_name" Placeholder="Ada Lovelace" />
+        <KlyInput @bind-Value="_name"
+                  Placeholder="Ada Lovelace" />
     </KlyFormField>
-    <KlySwitch @bind-Value="_notify" Label="Email notifications" />
+    <KlySwitch @bind-Value="_notify"
+               Label="Email notifications" />
     <KlyPopover>
-        <ChildContent><KlyButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
-        <Content><p class="p-3">Opens and closes in the browser, with no round trip.</p></Content>
+        <ChildContent>
+            <KlyButton Label="Details"
+                       Variant="ButtonVariant.Outline" />
+        </ChildContent>
+        <Content>
+            <p class="p-3">Opens and closes in the browser,
+                with no round trip.</p>
+        </Content>
     </KlyPopover>
     <KlyButton Label="Save" OnClick="SaveAsync" />
   result:
