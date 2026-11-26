@@ -14,11 +14,18 @@ on:
         description: Build, test and pack only (no NuGet push, no GitHub Release)
         type: boolean
         default: true
+      sibling-ref:
+        description: Branch or tag of the sibling repositories, used only when the run is not on a tag (a run on a tag uses that tag)
+        type: string
+        default: main
 
 permissions:
   contents: read
 
 env:
+  # The sibling repositories are built from source (relative project references), so a release builds them at the
+  # same tag: the packages then depend on exactly the code that was released with them, not on whatever main holds.
+  SIBLING_REF: ${{ github.ref_type == 'tag' && github.ref_name || inputs.sibling-ref || 'main' }}
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -34,46 +41,65 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: klyroo-ui
+      - name: Wait for the release tag in the sibling repositories
+        if: github.ref_type == 'tag'
+        run: |
+          # The nine repositories are tagged one after another: give the others time to receive the same tag.
+          for r in klyroo-agent klyroo-dashboard klyroo-display klyroo-form klyroo-query klyroo-spreadsheet klyroo-stack klyroo-table; do
+            for i in $(seq 1 30); do
+              git ls-remote --exit-code --tags "https://github.com/klyroo/$r.git" "refs/tags/$SIBLING_REF" >/dev/null && break
+              if [ "$i" = 30 ]; then echo "::error::klyroo/$r has no tag $SIBLING_REF after about 15 minutes: tag every repository with the same version"; exit 1; fi
+              sleep 30
+            done
+          done
       - name: Check out klyroo-agent (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-agent
           path: klyroo-agent
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-dashboard (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-dashboard
           path: klyroo-dashboard
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-display (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-display
           path: klyroo-display
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-form (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-form
           path: klyroo-form
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-query (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-query
           path: klyroo-query
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-spreadsheet (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-spreadsheet
           path: klyroo-spreadsheet
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-stack (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-stack
           path: klyroo-stack
+          ref: ${{ env.SIBLING_REF }}
       - name: Check out klyroo-table (referenced by relative path)
         uses: actions/checkout@v4
         with:
           repository: klyroo/klyroo-table
           path: klyroo-table
+          ref: ${{ env.SIBLING_REF }}
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |

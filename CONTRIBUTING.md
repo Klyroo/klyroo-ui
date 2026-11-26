@@ -195,10 +195,14 @@ changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.
    cache; add `--online` if framework packages are missing from it. `--packages <folder>` checks packages that were already
    packed (`dotnet pack -c Release -o <folder>`) instead of packing again, which is what the `verify-package` job of the
    release workflow does on the packages it is about to publish: that job is required, so `publish` waits for it.
-5. Commit (`Release X.Y.Z`), then tag `vX.Y.Z` on that commit and push the branch and the tag.
-6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tagged commit is
-   on `main`, that the tag equals the package version and that the changelog section is dated, rebuilds, tests and runs
-   the packaging check. A separate `publish` job then pushes the `.nupkg` files that `dotnet pack` produced (Klyroo.UI,
+5. Commit (`Release X.Y.Z`) and push `main`. The nine Klyroo repositories release together with the same version, so do
+   steps 2, 3 and 5 in each of them, then run `build/tag-release.sh` from klyroo-stack: it checks that every repository is
+   clean, on an up-to-date `main`, at that version and with a changelog section for it, and `--tag` creates the `vX.Y.Z`
+   tags without pushing them. Push the tags it lists.
+6. The `Release` workflow (`.github/workflows/release.yml`, run by a `v*` tag, or by hand as a dry run by default) waits
+   for the same tag in the sibling repositories and builds them at that tag, checks that the tag equals the package version,
+   rebuilds, tests and runs the packaging check. It does not check that the tagged commit is on `main` (`tag-release.sh`
+   does) and only warns when the changelog has no section for the version. A separate `publish` job then pushes the `.nupkg` files that `dotnet pack` produced (Klyroo.UI,
    Klyroo.UI.Images, Klyroo.UI.Images.Local and Klyroo.UI.Server, all with the same version) to nuget.org through NuGet Trusted
    Publishing, and creates the GitHub Release from the changelog section. The job runs in the `nuget` environment: create it in the
    repository settings, with required reviewers if every release should be approved by hand.
