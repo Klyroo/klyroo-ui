@@ -159,7 +159,7 @@ public sealed class KlyImageSettings
     }
 
     /// <summary>
-    /// The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for <c>Placeholder="true"</c>.
+    /// The URL of a tiny version of the image (quality 50, blurred when the provider can blur), for <see cref="KlyImagePlaceholder.Auto"/>.
     /// Null when the source is not resolvable (empty, <c>data:</c>, <c>blob:</c>), the provider cannot resize or the image is remote and not allowed.
     /// Unknown providers and presets throw like <see cref="Resolve"/>.
     /// </summary>
