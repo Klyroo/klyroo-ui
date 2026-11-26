@@ -117,7 +117,7 @@ public class InfiniteScrollTests : KlyrooTestContext
     }
 
     [Fact]
-    public void The_browser_report_calls_OnLoadMore_once_while_it_runs_and_renders_the_end_of_the_load()
+    public async Task The_browser_report_calls_OnLoadMore_once_while_it_runs_and_renders_the_end_of_the_load()
     {
         var calls = 0;
         var release = new TaskCompletionSource();
@@ -125,7 +125,7 @@ public class InfiniteScrollTests : KlyrooTestContext
         var host = cut.Find("kly-infinite-scroll");
         Assert.Equal("0", host.GetAttribute("data-loads"));
 
-        _ = host.TriggerEventAsync("onklychange", new KlyChangeEventArgs { Value = "more", Sequence = 1 });
+        var first = host.TriggerEventAsync("onklychange", new KlyChangeEventArgs { Value = "more", Sequence = 1 });
         // The load is running and shown as such, even though the parent never set Loading.
         cut.WaitForAssertion(() => Assert.True(cut.Find("kly-infinite-scroll").HasAttribute("data-loading")));
         _ = cut.Find("kly-infinite-scroll").TriggerEventAsync("onklychange", new KlyChangeEventArgs { Value = "more", Sequence = 2 });
@@ -133,6 +133,8 @@ public class InfiniteScrollTests : KlyrooTestContext
         Assert.Equal(1, calls);
 
         release.SetResult();
+        // The handler of the first report has fully returned (its finally block ran) before the next report arrives.
+        await first;
         cut.WaitForAssertion(() =>
         {
             host = cut.Find("kly-infinite-scroll");
