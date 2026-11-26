@@ -32,6 +32,10 @@
     /// <summary>Image settings forwarded to both light and dark images.</summary>
     [Parameter] public KlyImageOptions? ImageOptions { get; set; }
 
+    /// <inheritdoc />
+    public override Task SetParametersAsync(ParameterView parameters) =>
+        base.SetParametersAsync(Internal.PixelParameters.Coerce(parameters, "KlyColorModeImage", ["Width", "Height"], ApplyCascading));
+
     protected override void OnParametersSet()
     {
         var slots = ResolveSlots(Options.ColorModeImage, new Dictionary<string, string?>(), null, "light");

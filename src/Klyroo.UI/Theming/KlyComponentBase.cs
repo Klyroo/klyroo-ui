@@ -45,6 +45,13 @@ public abstract class KlyComponentBase : ComponentBase
     /// <summary>The texts of <see cref="CurrentLocale"/>.</summary>
     protected KlyMessages Messages => CurrentLocale.Messages;
 
+    /// <summary>Sets the cascading parameters of this base from <paramref name="parameter"/>, for a component that rebuilds its <see cref="ParameterView"/> before <c>SetParametersAsync</c>.</summary>
+    internal void ApplyCascading(ParameterValue parameter)
+    {
+        if (parameter.Name == nameof(CascadingLocale)) CascadingLocale = parameter.Value as KlyLocale;
+        else if (parameter.Name == nameof(ThemeScope)) ThemeScope = parameter.Value as KlyThemeScope;
+    }
+
     /// <summary>The scope of the closest enclosing <see cref="KlyTheme"/>, if any.</summary>
     [CascadingParameter] private protected KlyThemeScope? ThemeScope { get; set; }
 

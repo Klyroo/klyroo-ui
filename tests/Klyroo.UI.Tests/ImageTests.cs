@@ -25,6 +25,19 @@ internal sealed class EchoProvider(string name = "echo", bool validateDomains = 
     }
 }
 
+/// <summary>Renders <typeparamref name="TImage"/> from a dictionary of parameters, the way <c>@attributes="dict"</c> does.</summary>
+public sealed class ImageSplat<TImage> : Microsoft.AspNetCore.Components.ComponentBase where TImage : Microsoft.AspNetCore.Components.IComponent
+{
+    [Microsoft.AspNetCore.Components.Parameter] public IReadOnlyDictionary<string, object> Values { get; set; } = new Dictionary<string, object>();
+
+    protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+    {
+        builder.OpenComponent<TImage>(0);
+        builder.AddMultipleAttributes(1, Values);
+        builder.CloseComponent();
+    }
+}
+
 public class ImageTests : KlyrooTestContext
 {
     public ImageTests() : base(o =>
@@ -374,5 +387,62 @@ public class ImageTests : KlyrooTestContext
 
         Assert.Equal("1", cut.Find("img").GetAttribute("data-x"));
         Assert.Equal("T", cut.Find("img").GetAttribute("title"));
+    }
+
+    private IRenderedComponent<ImageSplat<TImage>> Splat<TImage>(params (string Name, object Value)[] values) where TImage : Microsoft.AspNetCore.Components.IComponent =>
+        Render<ImageSplat<TImage>>(p => p.Add(c => c.Values, values.ToDictionary(v => v.Name, v => v.Value)));
+
+    [Theory]
+    [InlineData("120", "120")]
+    [InlineData("120px", "120")]
+    [InlineData(" 120PX ", "120")]
+    public void Image_accepts_a_string_width_and_height_from_a_splatted_dictionary(string text, string expected)
+    {
+        var cut = Splat<KlyImage>(("Src", "/a.png"), ("Alt", "A"), ("width", text), ("Height", text));
+
+        var img = cut.Find("img");
+        Assert.Equal(expected, img.GetAttribute("width"));
+        Assert.Equal(expected, img.GetAttribute("height"));
+    }
+
+    [Fact]
+    public void ColorModeImage_accepts_a_string_width_and_height_from_a_splatted_dictionary()
+    {
+        var cut = Splat<KlyColorModeImage>(("Light", "/l.png"), ("width", "40px"), ("Height", "30"));
+
+        Assert.All(cut.FindAll("img"), i =>
+        {
+            Assert.Equal("40", i.GetAttribute("width"));
+            Assert.Equal("30", i.GetAttribute("height"));
+        });
+    }
+
+    [Theory]
+    [InlineData("wide")]
+    [InlineData("10em")]
+    [InlineData("1.5")]
+    [InlineData("")]
+    public void Image_names_the_parameter_when_a_string_size_is_not_a_number_of_pixels(string text)
+    {
+        var ex = Assert.ThrowsAny<Exception>(() => Splat<KlyImage>(("Src", "/a.png"), ("Alt", "A"), ("Width", text)));
+
+        Assert.Contains("Width", ex.ToString());
+        Assert.Contains("KlyImage", ex.ToString());
+        var colored = Assert.ThrowsAny<Exception>(() => Splat<KlyColorModeImage>(("Light", "/l.png"), ("Height", text)));
+        Assert.Contains("Height", colored.ToString());
+        Assert.Contains("KlyColorModeImage", colored.ToString());
+    }
+
+    [Fact]
+    public void Image_keeps_the_cascading_values_when_it_converts_a_string_size()
+    {
+        var cut = Render<KlyApp>(p => p.Add(a => a.ChildContent, (Microsoft.AspNetCore.Components.RenderFragment)(b =>
+        {
+            b.OpenComponent<ImageSplat<KlyImage>>(0);
+            b.AddComponentParameter(1, "Values", new Dictionary<string, object> { ["Src"] = "/a.png", ["Alt"] = "A", ["Width"] = "20px" });
+            b.CloseComponent();
+        })));
+
+        Assert.Equal("20", cut.Find("img").GetAttribute("width"));
     }
 }
