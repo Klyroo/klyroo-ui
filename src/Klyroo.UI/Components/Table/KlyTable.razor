@@ -1,6 +1,7 @@
 @namespace Klyroo.UI
 @using Klyroo.UI.Internal
 @typeparam TItem
+@attribute [CascadingTypeParameter(nameof(TItem))]
 @inherits KlyComponentBase
 
 <CascadingValue TValue="KlyTable<TItem>" Value="this" IsFixed="true">
@@ -19,7 +20,7 @@
                         @foreach (var column in _columns)
                         {
                             <th scope="col" class="@_slots["th"]" aria-sort="@AriaSort(column)">
-                                @if (column.Sortable && column.Field is not null)
+                                @if (column.CanSort)
                                 {
                                     <button type="button" class="@_slots["sortButton"]" disabled="@(!RendererInfo.IsInteractive)" title="@SortTitle(column)" @onclick="() => Sort(column)">
                                         @column.Title
@@ -55,14 +56,7 @@
                             @foreach (var column in _columns)
                             {
                                 <td class="@Resolver.Merge(_slots["td"], column.Class)">
-                                    @if (column.Template is not null)
-                                    {
-                                        @column.Template(item)
-                                    }
-                                    else
-                                    {
-                                        @column.Field?.Invoke(item)
-                                    }
+                                    @column.Cell(item)
                                 </td>
                             }
                         </tr>
@@ -74,15 +68,15 @@
 </CascadingValue>
 
 @code {
-    private readonly List<KlyColumn<TItem>> _columns = [];
+    private readonly List<KlyColumnBase<TItem>> _columns = [];
     private SlotSet _slots = default!;
-    private KlyColumn<TItem>? _sortColumn;
+    private KlyColumnBase<TItem>? _sortColumn;
     private bool _ascending = true;
 
-    /// <summary>The rows to show. The columns come from the <see cref="KlyColumn{TItem}"/> children.</summary>
+    /// <summary>The rows to show. The columns come from the <see cref="KlyColumn{TItem, TValue}"/> and <see cref="KlyTemplateColumn{TItem}"/> children.</summary>
     [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
-    /// <summary>The columns: <c>KlyColumn</c> components.</summary>
+    /// <summary>The columns: <c>KlyColumn</c> and <c>KlyTemplateColumn</c> components.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     /// <summary>Describes the table for assistive technologies (visually hidden).</summary>
@@ -103,12 +97,12 @@
     // treats as changed, so every column re-registers on each render.
     private void BeginCollectingColumns() => _columns.Clear();
 
-    internal void AddColumn(KlyColumn<TItem> column)
+    internal void AddColumn(KlyColumnBase<TItem> column)
     {
         if (!_columns.Contains(column)) _columns.Add(column);
     }
 
-    internal void RemoveColumn(KlyColumn<TItem> column) => _columns.Remove(column);
+    internal void RemoveColumn(KlyColumnBase<TItem> column) => _columns.Remove(column);
 
     /// <inheritdoc />
     protected override void OnParametersSet() =>
@@ -119,18 +113,17 @@
         get
         {
             var items = Items ?? [];
-            if (_sortColumn?.Field is not { } key) return items;
-            return _ascending ? items.OrderBy(key, Comparer<object?>.Default) : items.OrderByDescending(key, Comparer<object?>.Default);
+            return _sortColumn is { CanSort: true } column ? column.OrderItems(items, _ascending) : items;
         }
     }
 
-    private string SortTitle(KlyColumn<TItem> column) =>
+    private string SortTitle(KlyColumnBase<TItem> column) =>
         column == _sortColumn && _ascending ? Messages.SortDescending : Messages.SortAscending;
 
-    private string? AriaSort(KlyColumn<TItem> column) =>
-        column != _sortColumn ? (column.Sortable && column.Field is not null ? "none" : null) : _ascending ? "ascending" : "descending";
+    private string? AriaSort(KlyColumnBase<TItem> column) =>
+        column != _sortColumn ? (column.CanSort ? "none" : null) : _ascending ? "ascending" : "descending";
 
-    private void Sort(KlyColumn<TItem> column)
+    private void Sort(KlyColumnBase<TItem> column)
     {
         _ascending = column != _sortColumn || !_ascending;
         _sortColumn = column;

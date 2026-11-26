@@ -74,8 +74,8 @@ public class NavigationTests : KlyrooTestContext
         Person[] people = [new("Zoe", 31), new("Al", 45), new("Mia", 22)];
         var cut = Render<KlyTable<Person>>(p => p
             .Add(t => t.Items, people).Add(t => t.Caption, "People")
-            .AddChildContent<KlyColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true))
-            .AddChildContent<KlyColumn<Person>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age)));
+            .AddChildContent<KlyColumn<Person, string>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true))
+            .AddChildContent<KlyColumn<Person, int>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age)));
 
         Assert.Equal(["Name", "Age"], cut.FindAll("th").Select(th => th.TextContent.Trim()));
         Assert.Equal("none", cut.Find("th").GetAttribute("aria-sort"));
@@ -98,18 +98,18 @@ public class NavigationTests : KlyrooTestContext
         var showAge = false;
         RenderFragment Columns() => b =>
         {
-            b.OpenComponent<KlyColumn<Person>>(0);
+            b.OpenComponent<KlyColumn<Person, string>>(0);
             b.AddAttribute(1, "Title", "Name");
-            b.AddAttribute(2, "Field", (Func<Person, object?>)(x => x.Name));
+            b.AddAttribute(2, "Field", (Func<Person, string>)(x => x.Name));
             b.CloseComponent();
             if (showAge)
             {
-                b.OpenComponent<KlyColumn<Person>>(3);
+                b.OpenComponent<KlyColumn<Person, int>>(3);
                 b.AddAttribute(4, "Title", "Age");
-                b.AddAttribute(5, "Field", (Func<Person, object?>)(x => x.Age));
+                b.AddAttribute(5, "Field", (Func<Person, int>)(x => x.Age));
                 b.CloseComponent();
             }
-            b.OpenComponent<KlyColumn<Person>>(6);
+            b.OpenComponent<KlyTemplateColumn<Person>>(6);
             b.AddAttribute(7, "Title", "Notes");
             b.AddAttribute(8, "Template", (RenderFragment<Person>)(x => t => t.AddContent(0, "-")));
             b.CloseComponent();
@@ -126,11 +126,55 @@ public class NavigationTests : KlyrooTestContext
     [Fact]
     public void Column_without_field_or_template_is_rejected()
     {
-        var ex = Assert.Throws<InvalidOperationException>(() => Render<KlyTable<Person>>(p => p
+        var field = Assert.Throws<InvalidOperationException>(() => Render<KlyTable<Person>>(p => p
             .Add(t => t.Items, Array.Empty<Person>())
-            .AddChildContent<KlyColumn<Person>>(c => c.Add(x => x.Title, "Empty"))));
+            .AddChildContent<KlyColumn<Person, string>>(c => c.Add(x => x.Title, "Empty"))));
+        var template = Assert.Throws<InvalidOperationException>(() => Render<KlyTable<Person>>(p => p
+            .Add(t => t.Items, Array.Empty<Person>())
+            .AddChildContent<KlyTemplateColumn<Person>>(c => c.Add(x => x.Title, "Empty"))));
 
-        Assert.Contains("needs a Field or a Template", ex.Message);
+        Assert.Contains("needs a Field", field.Message);
+        Assert.Contains("needs a Template", template.Message);
+    }
+
+    [Fact]
+    public void A_template_column_renders_the_markup_of_each_item_and_has_no_sort_button()
+    {
+        Person[] people = [new("Zoe", 31), new("Al", 45)];
+        var cut = Render<KlyTable<Person>>(p => p
+            .Add(t => t.Items, people)
+            .AddChildContent<KlyTemplateColumn<Person>>(c => c.Add(x => x.Title, "Who").Add(x => x.Template, x => b => b.AddMarkupContent(0, $"<b>{x.Name}</b>"))));
+
+        Assert.Equal(["Zoe", "Al"], cut.FindAll("tbody td b").Select(b => b.TextContent));
+        Assert.Empty(cut.FindAll("th button"));
+        Assert.Null(cut.Find("th").GetAttribute("aria-sort"));
+    }
+
+    [Fact]
+    public void A_column_with_a_field_and_a_template_shows_the_template_and_sorts_by_the_field()
+    {
+        Person[] people = [new("Zoe", 31), new("Al", 45), new("Mia", 22)];
+        var cut = Render<KlyTable<Person>>(p => p
+            .Add(t => t.Items, people)
+            .AddChildContent<KlyColumn<Person, int>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age).Add(x => x.Sortable, true)
+                .Add(x => x.Template, x => b => b.AddContent(0, $"{x.Name} ({x.Age})"))));
+
+        cut.Find("th button").Click();
+
+        Assert.Equal(["Mia (22)", "Zoe (31)", "Al (45)"], cut.FindAll("tbody td").Select(td => td.TextContent.Trim()));
+    }
+
+    [Fact]
+    public void A_column_sorts_numbers_and_dates_by_value_not_by_text()
+    {
+        Person[] people = [new("A", 9), new("B", 10), new("C", 2)];
+        var cut = Render<KlyTable<Person>>(p => p
+            .Add(t => t.Items, people)
+            .AddChildContent<KlyColumn<Person, int>>(c => c.Add(x => x.Title, "Age").Add(x => x.Field, x => x.Age).Add(x => x.Sortable, true)));
+
+        cut.Find("th button").Click();
+
+        Assert.Equal(["2", "9", "10"], cut.FindAll("tbody td").Select(td => td.TextContent.Trim()));
     }
 
     [Fact]
@@ -138,7 +182,7 @@ public class NavigationTests : KlyrooTestContext
     {
         var cut = Render<KlyTable<Person>>(p => p
             .Add(t => t.Items, Array.Empty<Person>())
-            .AddChildContent<KlyColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name)));
+            .AddChildContent<KlyColumn<Person, string>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name)));
 
         Assert.Equal("No data", cut.Find("td").TextContent.Trim());
         Assert.Equal("1", cut.Find("td").GetAttribute("colspan"));

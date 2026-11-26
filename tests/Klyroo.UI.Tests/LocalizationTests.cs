@@ -509,7 +509,7 @@ public partial class LocalizationTests : KlyrooTestContext
     public void The_sort_button_of_a_column_says_what_a_click_does_in_the_language_of_the_locale()
     {
         var cut = Render<KlyTable<Person>>(p => p.AddCascadingValue(KlyLocales.Fr).Add(t => t.Items, [new Person("Zoe")])
-            .AddChildContent<KlyColumn<Person>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true)));
+            .AddChildContent<KlyColumn<Person, string>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name).Add(x => x.Sortable, true)));
 
         Assert.Equal("Tri croissant", cut.Find("th button").GetAttribute("title"));
         cut.Find("th button").Click();
