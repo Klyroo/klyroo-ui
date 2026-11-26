@@ -46,8 +46,6 @@ const templates = [
     name_in_files: "Dashboard",
     renames: ["Acme", "dashboardApp"],
     probe: { utility: "max-w-[72rem]", css: "max-width:72rem" },
-    // Klyroo.UI.Tools has no stylesheet of its own: its classes must be in the one the template compiles (a rule only the data list writes).
-    toolsProbe: "webkit-search-cancel-button",
     pages: ["/", "/customers", "/inbox", "/inbox/3", "/settings", "/settings/members", "/settings/notifications", "/settings/security"],
     services: true,
     // Klyroo's own components (KlyDashboardGroup, KlyDashboardSidebar...) are not the template name: rename.cs leaves them alone.
@@ -280,8 +278,8 @@ try {
   mkdirSync(feed);
   const pack = run("dotnet", ["pack", "src/Klyroo.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
   if (!check(pack.code === 0, "dotnet pack src/Klyroo.UI -c Release succeeds without warnings")) console.log(pack.out);
-  // The data list packages too, for the templates that use it (Dashboard): Klyroo.UI.Tools.Query first, Klyroo.UI.Tools depends on it and on Klyroo.UI at exactly this version.
-  for (const project of ["src/Klyroo.UI.Tools.Query", "src/Klyroo.UI.Tools", "src/Klyroo.UI.Server"]) {
+  // Klyroo.UI.Server packs too, for the templates that read the request cookies; it depends on Klyroo.UI at exactly this version.
+  for (const project of ["src/Klyroo.UI.Server"]) {
     const packed = run("dotnet", ["pack", project, "-c", "Release", "-o", feed, "-warnaserror"], root);
     if (!check(packed.code === 0, `dotnet pack ${project} -c Release succeeds without warnings`)) console.log(packed.out);
   }
@@ -292,7 +290,7 @@ try {
 
   // The sources: the feed for Klyroo.UI and nuget.org for everything else, with source mapping. The developer's global packages folder is not a source.
   const nugetConfig = `<configuration><packageSources><clear /><add key="klyroo-feed" value="${feed}" /><add key="nuget.org" value="https://api.nuget.org/v3/index.json" /></packageSources>` +
-    `<packageSourceMapping><packageSource key="klyroo-feed"><package pattern="Klyroo.UI" /><package pattern="Klyroo.UI.Tools" /><package pattern="Klyroo.UI.Tools.Query" /><package pattern="Klyroo.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
+    `<packageSourceMapping><packageSource key="klyroo-feed"><package pattern="Klyroo.UI" /><package pattern="Klyroo.UI.Server" /></packageSource><packageSource key="nuget.org"><package pattern="*" /></packageSource></packageSourceMapping></configuration>`;
   writeFileSync(join(work, "nuget.config"), nugetConfig);
 
   for (const template of templates.filter((t) => wanted.length === 0 || wanted.includes(t.name))) {
@@ -324,8 +322,6 @@ try {
     check(pinned === expectedVersion, `${template.name}: Klyroo.UI is pinned to the version of build/Version.props (${pinned} / ${expectedVersion})`);
     const serverPinned = /<PackageVersion Include="Klyroo\.UI\.Server" Version="([^"]+)"/.exec(packages)?.[1];
     if (serverPinned !== undefined) check(serverPinned === expectedVersion, `${template.name}: Klyroo.UI.Server is pinned to the version of build/Version.props, the one of Klyroo.UI (${serverPinned} / ${expectedVersion})`);
-    const toolsPinned = /<PackageVersion Include="Klyroo\.UI\.Tools" Version="([^"]+)"/.exec(packages)?.[1];
-    if (toolsPinned !== undefined) check(toolsPinned === expectedVersion, `${template.name}: Klyroo.UI.Tools is pinned to the version of build/Version.props, the one of Klyroo.UI (${toolsPinned} / ${expectedVersion})`);
 
     // 3. Restore, build (Release, warnings as errors), run.
     const web = join(repo, template.web);
@@ -359,7 +355,6 @@ try {
             check(cssRes.ok, `${template.name}: the stylesheet is served ${label} (${cssRes.status})`);
             check(body.includes(css), `${template.name}: the stylesheet contains ${utility}, a utility only the template uses ${label}`);
             check(body.includes("--klyroo-primary"), `${template.name}: the stylesheet has the Klyroo theme ${label}`);
-            if (template.toolsProbe) check(body.includes(template.toolsProbe), `${template.name}: the stylesheet has the classes of Klyroo.UI.Tools (${template.toolsProbe}) ${label}`);
           }
         } finally {
           app.child.kill();

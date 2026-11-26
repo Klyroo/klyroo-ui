@@ -142,6 +142,8 @@ try {
 
   // 4. Consumer app, from the folder feed and the local NuGet cache.
   const cache = process.env.NUGET_PACKAGES || join(homedir(), ".nuget", "packages");
+  // A folder source that does not exist makes the restore fail (NU1301): a fresh runner has no global-packages folder yet.
+  mkdirSync(cache, { recursive: true });
   const app = join(work, "app");
   mkdirSync(app);
   writeFileSync(join(app, "global.json"), JSON.stringify({ sdk: { version: "10.0.100", rollForward: "latestFeature" } }));
