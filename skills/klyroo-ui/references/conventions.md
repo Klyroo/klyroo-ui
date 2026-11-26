@@ -77,4 +77,4 @@ In a Razor `for` loop copy the index into a local before a child component's con
 
 ## Accessibility
 
-Provide an accessible name wherever the component has no visible label: `AriaLabel` on `KlyTabs`, `KlyNavigationMenu`, `KlyToggleGroup`, `KlyBreadcrumb`, `KlyCalendar`; `Label` or `aria-label` on icon-only buttons (`Square`). Landmarks: `KlyMain` is the page's `<main>` and a page has one, so inside a page that already has one pass `As="div"`.
+Provide an accessible name wherever the component has no visible label: `AriaLabel` on `KlyTabs`, `KlyNavigationMenu`, `KlyToggleGroup`, `KlyBreadcrumb`, `KlyCalendar`; `Label` or `aria-label` on icon-only buttons (`Square`). Landmarks: `KlyMain` is the page's `<main>` and a page has one, so inside a page that already has one pass `As="KlyElement.Div"`.

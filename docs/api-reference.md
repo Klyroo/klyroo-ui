@@ -1,4 +1,4 @@
-# Klyroo.UI API reference API reference
+# Klyroo.UI API reference
 
 > Generated from the compiled assemblies and their XML documentation. Do not edit by hand.
 
@@ -7214,6 +7214,7 @@ The format of the image a provider is asked to produce. A format that is not lis
 | `Gif` | GIF (`gif`). |
 | `Svg` | SVG (`svg`), a vector image that is not converted. |
 | `Auto` | The service picks the best format the browser accepts (`auto`). Only a service that negotiates honors it; the local optimizer rejects it. |
+| `Jxl` | JPEG XL (`jxl`). Only a service that serves it names it (Cloudinary `f_jxl`, imgix `fm=jxl`, and a template provider through `{format}`); every other built-in provider leaves the format out and serves the original, and the local optimizer does not produce it. Browser support is uneven, so ask for it where a fallback exists. |
 
 #### `KlyImageLoading`
 

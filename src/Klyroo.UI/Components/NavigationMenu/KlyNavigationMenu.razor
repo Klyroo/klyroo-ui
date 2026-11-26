@@ -1,4 +1,5 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @implements IDisposable
 @inherits KlyComponentBase
 
@@ -124,7 +125,7 @@
         @<text>
             @if (item.Href is not null && !item.Disabled)
             {
-                <a href="@item.Href" target="@item.Target?.Value" aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
+                <a href="@item.Href" target="@item.Target?.Value" rel="@LinkRel.For(item.Target)" aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)@if (item.Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
             }
             else
             {

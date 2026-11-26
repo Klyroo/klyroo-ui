@@ -152,4 +152,50 @@ public class EnumAttributeTests : KlyrooTestContext
         var none = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com")).Find("a");
         Assert.Null(none.GetAttribute("target"));
     }
+
+    [Fact]
+    public void A_button_link_that_opens_a_new_tab_is_protected_and_announced()
+    {
+        var blank = Render<KlyButton>(p => p.Add(b => b.Label, "Docs").Add(b => b.Href, "https://example.com").Add(b => b.Target, KlyLinkTarget.Blank)).Find("a");
+        Assert.Equal("noopener noreferrer", blank.GetAttribute("rel"));
+        Assert.Contains("(opens in a new tab)", blank.QuerySelector(".sr-only")!.TextContent);
+
+        var named = Render<KlyButton>(p => p.Add(b => b.Label, "Docs").Add(b => b.Href, "https://example.com").Add(b => b.Target, KlyLinkTarget.Named("preview"))).Find("a");
+        Assert.Null(named.GetAttribute("rel"));
+        Assert.Null(named.QuerySelector(".sr-only"));
+    }
+
+    [Fact]
+    public void A_button_link_keeps_the_rel_the_caller_passes_next_to_the_protection()
+    {
+        var blank = Render<KlyButton>(p => p.Add(b => b.Href, "https://example.com").Add(b => b.Target, KlyLinkTarget.Blank)
+            .Add(b => b.AdditionalAttributes, new Dictionary<string, object> { ["rel"] = "nofollow noopener" })).Find("a");
+        Assert.Equal("nofollow noopener noreferrer", blank.GetAttribute("rel"));
+
+        var self = Render<KlyButton>(p => p.Add(b => b.Href, "https://example.com")
+            .Add(b => b.AdditionalAttributes, new Dictionary<string, object> { ["rel"] = "nofollow" })).Find("a");
+        Assert.Equal("nofollow", self.GetAttribute("rel"));
+    }
+
+    [Fact]
+    public void The_links_of_a_banner_a_navigation_menu_and_a_page_hero_that_open_a_new_tab_are_protected()
+    {
+        var banner = Render<KlyBanner>(p => p.Add(b => b.Title, "News").Add(b => b.Href, "https://example.com").Add(b => b.Target, KlyLinkTarget.Blank)).Find("a");
+        Assert.Equal("noopener noreferrer", banner.GetAttribute("rel"));
+
+        var menu = Render<KlyNavigationMenu>(p => p.Add(m => m.Items, new[]
+        {
+            new KlyNavigationItem("Blog") { Href = "https://example.com", Target = KlyLinkTarget.Blank },
+            new KlyNavigationItem("Docs") { Href = "/docs" },
+        }));
+        var links = menu.FindAll("a");
+        Assert.Equal("noopener noreferrer", links[0].GetAttribute("rel"));
+        Assert.Contains("(opens in a new tab)", links[0].QuerySelector(".sr-only")!.TextContent);
+        Assert.Null(links[1].GetAttribute("rel"));
+        Assert.Null(links[1].QuerySelector(".sr-only"));
+
+        var hero = Render<KlyPageHero>(p => p.Add(h => h.Links, new[] { new PageLinkItem("Start", "https://example.com") { Target = KlyLinkTarget.Blank } })).Find("a[target=_blank]");
+        Assert.Equal("noopener noreferrer", hero.GetAttribute("rel"));
+        Assert.Contains("(opens in a new tab)", hero.QuerySelector(".sr-only")!.TextContent);
+    }
 }

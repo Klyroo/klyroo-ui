@@ -8,6 +8,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Added
 
+- `KlyImageFormat.Jxl` (JPEG XL). Cloudinary names it `f_jxl`, imgix `fm=jxl` and a `TemplateImageProvider` fills `{format}` with `jxl`; the other built-in providers leave the format out and serve the original, and the local optimizer does not produce it.
 - `IKlyOverlayService`, a scoped service registered by `AddKlyrooUi`, to open dialogs from code. `ShowAsync<TComponent, TResult>(parameters, options)` shows a component in a `KlyModal` or `KlySlideover` and returns a `KlyOverlayResult<TResult>` that the component completes through the cascading `KlyOverlayContext<TResult>` (`Close(value)` or `Cancel()`), and `ShowAsync<TResult>(content, options)` does the same for a `RenderFragment`; `ConfirmAsync(title, message, confirmLabel, cancelLabel, color)` returns a `bool`. Escape, the backdrop and the close button are a cancel result, dialogs stack, and a `CancellationToken` closes them. `KlyApp` renders the new `KlyOverlayHost` that shows them (`KlyApp.Overlays` turns it off). `KlyOverlayHost` attaches only in an interactive render, supports several hosts in one circuit (the newest draws, dialogs are canceled only when none remains), and a navigation to another page cancels the open dialogs. Calling the service before a host attached (`OnInitialized`, prerender, static render) throws an `InvalidOperationException` that says to use `OnAfterRenderAsync` or an event handler. The exception, and the `ArgumentException` that `ShowAsync<TComponent, TResult>` throws when the component declares a `KlyOverlayContext<X>` other than `TResult`, come from the call itself, not from awaiting the task. New messages `Cancel` and `Confirm` in the twelve locales.
 - `KlyPersistedStateBudget`, a scoped service registered by `AddKlyrooUi`, and `KlyrooOptions.PersistedStateMaxBytes` (28 KB): the budget of persistent component state that the Klyroo packages of one page share when they hand prerendered data to the interactive render, counted as sent (`SentBytes` adds the JSON escaping and the two base64 encodings Blazor applies). Klyroo.Table and Klyroo.Dashboard draw on it, so together they stay under SignalR's 32 KB limit on the message that starts an Interactive Server circuit.
 
@@ -39,6 +40,10 @@ All notable changes to this project are documented in this file. The format is b
   - `KlyImage.Densities` and `KlyImageOptions.Densities` are an `IReadOnlyList<int>?` (`[1, 2]`) instead of the text `"x1 x2"`. A density below 1 throws an `ArgumentException`, a repeated one counts once.
 - The release workflow has a required `verify-package` job that runs `build/verify-package.mjs --packages` on the packed `.nupkg` files before `publish`, and `verify-package.mjs` no longer expects the `Klyroo.UI.Tools` packages that this repository no longer contains. `Directory.Build.props` imports `build/Version.props` once instead of repeating the default version.
 - `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` declare `IsAotCompatible` (it implies trimmable and turns on the trimming, AOT and single-file analyzers, which report no warning).
+
+### Fixed
+
+- A link that opens a new tab through `KlyButton`, `KlyBanner`, `KlyNavigationMenu` or a `PageLinkItem` (which `KlyPageHero` and the other page components draw with `KlyButton`) now gets `rel="noopener noreferrer"` and the hidden "opens in a new tab" text, as `KlyLink` and the other page links did. A `rel` passed to a `KlyButton` link through attributes is kept and the two protection tokens are added to it.
 
 ## [0.1.0-preview.1] - 2026-11-24
 

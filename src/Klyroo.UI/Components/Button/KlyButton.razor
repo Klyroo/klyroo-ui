@@ -25,8 +25,13 @@ else
        data-color="@Color.Value"
        class="@_slots["base"]"
        @onclick="ClickHandler"
-       @attributes="AdditionalAttributes">
+       @attributes="AdditionalAttributes"
+       rel="@LinkRel.For(Target, AdditionalAttributes)">
         @Inner
+        @if (Target is { IsBlank: true })
+        {
+            <span class="sr-only"> @Messages.OpensInNewTab</span>
+        }
     </a>
 }
 

@@ -1,4 +1,5 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
 @*
@@ -23,7 +24,7 @@
                     else
                     {
                         @* The link stretches over the whole banner; the actions and the close button stay above it. *@
-                        <a href="@Href" target="@Target?.Value" class="@_slots["title"]" data-slot="title">@Title</a>
+                        <a href="@Href" target="@Target?.Value" rel="@LinkRel.For(Target)" class="@_slots["title"]" data-slot="title">@Title@if (Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
                     }
                 }
                 @if (Description is not null || ChildContent is not null)
