@@ -44,6 +44,7 @@ All notable changes to this project are documented in this file. The format is b
 ### Fixed
 
 - A link that opens a new tab through `KlyButton`, `KlyBanner`, `KlyNavigationMenu` or a `PageLinkItem` (which `KlyPageHero` and the other page components draw with `KlyButton`) now gets `rel="noopener noreferrer"` and the hidden "opens in a new tab" text, as `KlyLink` and the other page links did. A `rel` passed to a `KlyButton` link through attributes is kept and the two protection tokens are added to it.
+- `KlyLink` and `KlyUser` rendered their own `rel` before the attributes of the caller, so a `rel="nofollow"` passed to a link that opens a new tab replaced `noopener noreferrer`. They now merge the two through the same rule as `KlyButton` (the caller's tokens stay and the protection is added) and render `rel` after the attributes. A `KlyUser` link that opens a new tab also gets the hidden "opens in a new tab" text, and so does a `KlyLink` that is not disabled.
 
 ## [0.1.0-preview.1] - 2026-11-24
 

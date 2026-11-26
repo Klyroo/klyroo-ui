@@ -1,4 +1,5 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 @implements IDisposable
 @inject NavigationManager Navigation
@@ -6,12 +7,12 @@
 @* A disabled link has no href, so it cannot be followed or focused. *@
 <a href="@(Disabled ? null : Href)"
    target="@Target?.Value"
-   rel="@(Target is { IsBlank: true } ? "noopener noreferrer" : null)"
    role="@(Disabled ? "link" : null)"
    aria-disabled="@(Disabled ? "true" : null)"
    aria-current="@(IsActive ? "page" : null)"
    class="@ClassValue(IsActive)"
-   @attributes="AdditionalAttributes">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label)))</a>
+   @attributes="AdditionalAttributes"
+   rel="@LinkRel.For(Target, AdditionalAttributes)">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Label)))@if (!Disabled && Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
 
 @code {
     private bool _subscribed;

@@ -198,4 +198,45 @@ public class EnumAttributeTests : KlyrooTestContext
         Assert.Equal("noopener noreferrer", hero.GetAttribute("rel"));
         Assert.Contains("(opens in a new tab)", hero.QuerySelector(".sr-only")!.TextContent);
     }
+
+    [Fact]
+    public void A_link_that_opens_a_new_tab_is_protected_and_announced()
+    {
+        var blank = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Label, "Docs").Add(l => l.Target, KlyLinkTarget.Blank)).Find("a");
+        Assert.Equal("noopener noreferrer", blank.GetAttribute("rel"));
+        Assert.Contains("(opens in a new tab)", blank.QuerySelector(".sr-only")!.TextContent);
+
+        var named = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, KlyLinkTarget.Named("preview"))).Find("a");
+        Assert.Null(named.GetAttribute("rel"));
+        Assert.Null(named.QuerySelector(".sr-only"));
+
+        var disabled = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Disabled, true).Add(l => l.Target, KlyLinkTarget.Blank)).Find("a");
+        Assert.Null(disabled.GetAttribute("href"));
+        Assert.Null(disabled.QuerySelector(".sr-only"));
+    }
+
+    [Fact]
+    public void A_link_keeps_the_protection_when_the_caller_passes_its_own_rel()
+    {
+        var blank = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, KlyLinkTarget.Blank)
+            .Add(l => l.AdditionalAttributes, new Dictionary<string, object> { ["rel"] = "nofollow" })).Find("a");
+        Assert.Equal("nofollow noopener noreferrer", blank.GetAttribute("rel"));
+
+        var self = Render<KlyLink>(p => p.Add(l => l.Href, "/docs")
+            .Add(l => l.AdditionalAttributes, new Dictionary<string, object> { ["rel"] = "nofollow" })).Find("a");
+        Assert.Equal("nofollow", self.GetAttribute("rel"));
+    }
+
+    [Fact]
+    public void A_user_link_that_opens_a_new_tab_is_protected_announced_and_merges_the_rel_of_the_caller()
+    {
+        var blank = Render<KlyUser>(p => p.Add(u => u.Name, "Ada").Add(u => u.Href, "https://example.com").Add(u => u.Target, KlyLinkTarget.Blank)
+            .Add(u => u.AdditionalAttributes, new Dictionary<string, object> { ["rel"] = "nofollow" })).Find("a");
+        Assert.Equal("nofollow noopener noreferrer", blank.GetAttribute("rel"));
+        Assert.Contains("(opens in a new tab)", blank.QuerySelector(".sr-only")!.TextContent);
+
+        var self = Render<KlyUser>(p => p.Add(u => u.Name, "Ada").Add(u => u.Href, "/ada")).Find("a");
+        Assert.Null(self.GetAttribute("rel"));
+        Assert.Null(self.QuerySelector(".sr-only"));
+    }
 }
