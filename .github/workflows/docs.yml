@@ -1,0 +1,27 @@
+name: Docs
+
+# Publishes the documentation site at https://klyroo.github.io/klyroo-ui/ from README.md and docs/ (settings in docs/site.yml).
+# The build is in klyroo-stack (docs-site/), shared by every library: see its README.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - docs/**
+      - README.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: docs-pages
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    uses: Klyroo/klyroo-stack/.github/workflows/docs-pages.yml@main
+    with:
+      repo: klyroo-ui

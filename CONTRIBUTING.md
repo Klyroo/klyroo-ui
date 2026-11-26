@@ -97,6 +97,12 @@ references this repository by relative path: clone the two next to each other. G
 `src/Klyroo.UI/styles/generated`) are committed. `GeneratedAssetsTests` fails when a theme class is missing from `klyroo.css`,
 so run `npm run build` after changing a theme and commit the result.
 
+The Markdown documentation (`README.md` and `docs/`) has its own site at https://klyroo.github.io/klyroo-ui/, published by `.github/workflows/docs.yml`. The site reads the files as they are, and `docs/site.yml` holds what the Markdown cannot say: the title and tagline of the home page, the install command, the NuGet packages linked from the header, the order and grouping of the pages and the accent color. It is built from the klyroo-stack repository (`docs-site/`, whose README lists every setting). Preview it from the folder that holds this repository, `klyroo-stack` and `klyroo-ui`:
+
+```bash
+dotnet run -c Release --project klyroo-stack/docs-site/Klyroo.Docs.Site -- --repo klyroo-ui   # http://localhost:5000/
+```
+
 ## Images
 
 `KlyImage` and the provider abstraction (`IKlyImageProvider`, `KlyImageSettings`, in `src/Klyroo.UI/Images`) live in the library. Components that show a

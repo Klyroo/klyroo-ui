@@ -1,0 +1,43 @@
+# Settings of the documentation site of Klyroo.UI, published at https://klyroo.github.io/klyroo-ui/ by .github/workflows/docs.yml.
+# Every setting is optional. The site reads README.md (home page) and docs/*.md (pages) as they are, with no front matter: a page title is its first # heading,
+# a description its first paragraph. This file only adds what the Markdown cannot say. Preview it with the command in the CONTRIBUTING.md of klyroo-stack.
+
+# The name in the header and on the home page. Without it: the first heading of README.md.
+title: Klyroo.UI
+
+# The line under the title on the home page. Without it: the first paragraph of README.md.
+tagline: Accessible Blazor components styled with Tailwind CSS v4
+
+# The command next to the title on the home page.
+install: dotnet add package Klyroo.UI --prerelease
+
+# The NuGet packages linked from the header.
+packages:
+  - Klyroo.UI
+  - Klyroo.UI.Server
+  - Klyroo.UI.Images
+  - Klyroo.UI.Images.Local
+
+# The primary color of the site, the name of a Tailwind palette (blue, emerald, violet...). Without it the Klyroo colors are used.
+# accent: blue
+
+# The pages in the order of the navigation. docs/README.md comes first, as "Documentation". A page that is not listed follows, by file name.
+# An entry is a file name below docs/ without .md, or a map with page and any of: title, navTitle, description, tocDepth, indexText. A group has a group name and its pages.
+nav:
+  - group: Tutorial
+    pages:
+      - getting-started
+  - group: How-to guides
+    pages:
+      - guides
+  - group: Reference
+    pages:
+      - page: api-reference
+        description: Every public type and member, generated from the compiled assemblies and their XML documentation.
+        tocDepth: 4        # the table of contents lists the types, not only the packages and kinds
+        indexText: false   # the search finds the types by their headings, without the text of the page
+      - platforms
+      - faq
+  - group: Explanation
+    pages:
+      - concepts
