@@ -30,8 +30,8 @@ public sealed record KlyContentNavigationItem(string Title)
 
     /// <summary>Forces the current state instead of comparing <see cref="Href"/> with the current address.</summary>
     public bool? Active { get; init; }
-    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>.</summary>
-    public string? Target { get; init; }
+    /// <summary>The <c>target</c> attribute of the link, such as <see cref="KlyLinkTarget.Blank"/>.</summary>
+    public KlyLinkTarget? Target { get; init; }
 }
 
 /// <summary>A heading of the page, listed by <see cref="KlyContentToc"/>.</summary>

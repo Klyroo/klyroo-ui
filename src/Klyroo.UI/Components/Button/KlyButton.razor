@@ -18,7 +18,7 @@ else
 {
     @* A disabled link has no href, so it cannot be followed or focused. *@
     <a href="@(IsDisabled ? null : Href)"
-       target="@Target"
+       target="@Target?.Value"
        role="@(IsDisabled ? "link" : null)"
        aria-disabled="@(IsDisabled ? "true" : null)"
        aria-busy="@(Loading ? "true" : null)"

@@ -19,7 +19,7 @@
                         <li class="@_slots["item"]">
                             @if (link.Href is not null && !link.Disabled)
                             {
-                                <a href="@link.Href" target="@link.Target" rel="@(link.Target == "_blank" ? "noopener noreferrer" : null)"
+                                <a href="@link.Href" target="@link.Target?.Value" rel="@(link.Target is { IsBlank: true } ? "noopener noreferrer" : null)"
                                    class="@_slots["link"]">
                                     @if (link.Icon is not null)
                                     {

@@ -10,7 +10,7 @@ namespace Klyroo.UI;
 /// </summary>
 /// <param name="Code">A culture name such as "fr" or "pt-BR". It is the value written to the culture cookie by <see cref="KlyLocaleSelect"/>, the <c>lang</c> attribute of the page, and the culture used to format dates and numbers.</param>
 /// <param name="Name">The name of the language in that language ("Français"), shown by <see cref="KlyLocaleSelect"/>.</param>
-/// <param name="Dir">The writing direction.</param>
+/// <param name="Dir">The writing direction of the language: <see cref="KlyDirection.Ltr"/> or <see cref="KlyDirection.Rtl"/>. <see cref="KlyDirection.Auto"/> is refused, since a language has a direction; only the <c>Dir</c> parameter of <see cref="KlyApp"/> takes it.</param>
 /// <param name="Messages">The texts of the components.</param>
 public sealed record KlyLocale(string Code, string Name, KlyDirection Dir, KlyMessages Messages)
 {
@@ -35,6 +35,20 @@ public sealed record KlyLocale(string Code, string Name, KlyDirection Dir, KlyMe
         }
     });
 
-    /// <summary>The value of the <c>dir</c> attribute: "ltr", "rtl" or "auto".</summary>
+    private readonly KlyDirection _dir = CheckDirection(Dir);
+
+    /// <summary>The writing direction of the language, <see cref="KlyDirection.Ltr"/> or <see cref="KlyDirection.Rtl"/>.</summary>
+    /// <exception cref="ArgumentException">The value is <see cref="KlyDirection.Auto"/> or not a member of the enum.</exception>
+    public KlyDirection Dir
+    {
+        get => _dir;
+        init => _dir = CheckDirection(value);
+    }
+
+    /// <summary>The value of the <c>dir</c> attribute: "ltr" or "rtl".</summary>
     public string DirAttribute => Internal.Wire.Of(Dir);
+
+    private static KlyDirection CheckDirection(KlyDirection direction) => direction is KlyDirection.Ltr or KlyDirection.Rtl
+        ? direction
+        : throw new ArgumentException($"A locale has a direction: KlyDirection.Ltr or KlyDirection.Rtl, not KlyDirection.{direction}. Only KlyApp.Dir takes Auto.", nameof(Dir));
 }

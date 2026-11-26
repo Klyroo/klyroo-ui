@@ -8,7 +8,7 @@ public class PageTests : KlyrooTestContext
     private static readonly PageLinkItem[] Links =
     [
         new("Docs", "/docs"),
-        new("Source", "https://example.com/") { Target = "_blank", Icon = "code", Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
+        new("Source", "https://example.com/") { Target = KlyLinkTarget.Blank, Icon = "code", Color = KlyColor.Neutral, Variant = ButtonVariant.Outline },
     ];
 
     // Page
@@ -164,7 +164,7 @@ public class PageTests : KlyrooTestContext
     [Fact]
     public void PageFeature_link_that_opens_a_new_tab_says_so()
     {
-        var cut = Render<KlyPageFeature>(p => p.Add(c => c.Title, "Source").Add(c => c.Href, "https://example.com").Add(c => c.Target, "_blank"));
+        var cut = Render<KlyPageFeature>(p => p.Add(c => c.Title, "Source").Add(c => c.Href, "https://example.com").Add(c => c.Target, KlyLinkTarget.Blank));
 
         var link = cut.Find("a");
         Assert.Equal("noopener noreferrer", link.GetAttribute("rel"));
@@ -347,7 +347,7 @@ public class PageTests : KlyrooTestContext
     [Fact]
     public void PageLinks_external_link_gets_an_icon_hidden_from_assistive_technology_and_a_hidden_hint()
     {
-        var cut = Render<KlyPageLinks>(p => p.Add(c => c.Links, new PageLinkItem[] { new("Source", "https://example.com/") { Target = "_blank", Active = false } }));
+        var cut = Render<KlyPageLinks>(p => p.Add(c => c.Links, new PageLinkItem[] { new("Source", "https://example.com/") { Target = KlyLinkTarget.Blank, Active = false } }));
 
         var link = cut.Find("a");
         Assert.Equal("noopener noreferrer", link.GetAttribute("rel"));
@@ -422,7 +422,7 @@ public class PageTests : KlyrooTestContext
         var cut = Render<KlyPageAnchors>(p => p.Add(c => c.Links, new PageLinkItem[]
         {
             new("Install", "#install") { Icon = "download" },
-            new("Source", "https://example.com/") { Target = "_blank" },
+            new("Source", "https://example.com/") { Target = KlyLinkTarget.Blank },
         }));
 
         Assert.Equal("On this page", cut.Find("nav").GetAttribute("aria-label"));
@@ -477,7 +477,7 @@ public class PageTests : KlyrooTestContext
     [Fact]
     public void PageAside_can_render_as_a_div_to_avoid_nesting_landmarks()
     {
-        var cut = Render<KlyPageAside>(p => p.Add(c => c.As, KlyElement.Div).AddChildContent("<i>body</i>"));
+        var cut = Render<KlyPageAside>(p => p.Add(c => c.As, PageAsideElement.Div).AddChildContent("<i>body</i>"));
 
         Assert.Empty(cut.FindAll("aside"));
         Assert.Contains("sticky", cut.Find("div").ClassList);

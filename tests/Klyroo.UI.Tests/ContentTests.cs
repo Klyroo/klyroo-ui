@@ -144,7 +144,7 @@ public class ContentTests : KlyrooTestContext
     [Fact]
     public void Navigation_external_links_open_safely()
     {
-        KlyContentNavigationItem[] items = [new("GitHub") { Href = "https://github.com", Target = "_blank" }];
+        KlyContentNavigationItem[] items = [new("GitHub") { Href = "https://github.com", Target = KlyLinkTarget.Blank }];
         var cut = Render<KlyContentNavigation>(p => p.Add(n => n.Items, items));
 
         var link = cut.Find("a");

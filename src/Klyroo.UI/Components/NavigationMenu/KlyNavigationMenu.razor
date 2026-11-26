@@ -124,7 +124,7 @@
         @<text>
             @if (item.Href is not null && !item.Disabled)
             {
-                <a href="@item.Href" target="@item.Target" aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
+                <a href="@item.Href" target="@item.Target?.Value" aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
             }
             else
             {

@@ -5,8 +5,8 @@
 
 @* A disabled link has no href, so it cannot be followed or focused. *@
 <a href="@(Disabled ? null : Href)"
-   target="@Target"
-   rel="@(Target == "_blank" ? "noopener noreferrer" : null)"
+   target="@Target?.Value"
+   rel="@(Target is { IsBlank: true } ? "noopener noreferrer" : null)"
    role="@(Disabled ? "link" : null)"
    aria-disabled="@(Disabled ? "true" : null)"
    aria-current="@(IsActive ? "page" : null)"
@@ -22,8 +22,8 @@
     [Parameter] public string? Label { get; set; }
     /// <summary>Content of the link.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
-    /// <summary>The <c>target</c> attribute, such as <c>_blank</c>.</summary>
-    [Parameter] public string? Target { get; set; }
+    /// <summary>The <c>target</c> attribute, such as <see cref="KlyLinkTarget.Blank"/>.</summary>
+    [Parameter] public KlyLinkTarget? Target { get; set; }
 
     /// <summary>
     /// Requires the whole path to match to be active. Without it the link is also active on the pages below its path

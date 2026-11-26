@@ -84,8 +84,8 @@ public partial class KlyButton
 
     /// <summary>Address to link to. When set the button renders as a link.</summary>
     [Parameter] public string? Href { get; set; }
-    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>. It applies when <see cref="Href"/> is set.</summary>
-    [Parameter] public string? Target { get; set; }
+    /// <summary>The <c>target</c> attribute of the link, such as <see cref="KlyLinkTarget.Blank"/>. It applies when <see cref="Href"/> is set.</summary>
+    [Parameter] public KlyLinkTarget? Target { get; set; }
     /// <summary>Raised when the button is clicked. The button stays disabled until the page is interactive when this is set.</summary>
     [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
     /// <summary>Per-instance class overrides of the slots of the button, see <see cref="ButtonUi"/>.</summary>

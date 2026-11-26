@@ -7,7 +7,7 @@
 }
 else
 {
-    <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" class="@_slots["root"]" @attributes="AdditionalAttributes">@Inner</a>
+    <a href="@Href" target="@Target?.Value" rel="@(Target is { IsBlank: true } ? "noopener noreferrer" : null)" class="@_slots["root"]" @attributes="AdditionalAttributes">@Inner</a>
 }
 
 @code {
@@ -50,8 +50,8 @@ else
 
     /// <summary>Makes the whole user a link.</summary>
     [Parameter] public string? Href { get; set; }
-    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
-    [Parameter] public string? Target { get; set; }
+    /// <summary>The <c>target</c> attribute of the link, such as <see cref="KlyLinkTarget.Blank"/>. It applies when <c>Href</c> is set.</summary>
+    [Parameter] public KlyLinkTarget? Target { get; set; }
     /// <summary>Whether the name sits beside the avatar (<c>Horizontal</c>) or under it (<c>Vertical</c>).</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Horizontal;
     /// <summary>Size of the user, from <c>Xs</c> to <c>Xl</c>. When not set, <see cref="KlyDefaults.Size"/> applies, else the default of the component.</summary>

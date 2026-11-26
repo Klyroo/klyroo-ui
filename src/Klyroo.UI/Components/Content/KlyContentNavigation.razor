@@ -90,7 +90,7 @@
             }
             else if (item.Href is not null && !item.Disabled)
             {
-                <a href="@item.Href" target="@item.Target" rel="@(item.Target == "_blank" ? "noopener noreferrer" : null)"
+                <a href="@item.Href" target="@item.Target?.Value" rel="@(item.Target is { IsBlank: true } ? "noopener noreferrer" : null)"
                    aria-current="@(IsActive(item) ? "page" : null)" class="@_slots["link"]">@Inner(item)</a>
             }
             else

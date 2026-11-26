@@ -189,7 +189,7 @@ public class ElementsTests : KlyrooTestContext
     [Fact]
     public void Link_blank_target_gets_a_safe_rel()
     {
-        var cut = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, "_blank"));
+        var cut = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, KlyLinkTarget.Blank));
 
         Assert.Equal("noopener noreferrer", cut.Find("a").GetAttribute("rel"));
     }

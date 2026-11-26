@@ -551,8 +551,8 @@ public class MarketingTests : KlyrooTestContext
     [Fact]
     public void BlogPost_and_ChangelogVersion_links_that_open_a_new_tab_say_so_to_screen_readers()
     {
-        var post = Render<KlyBlogPost>(p => p.Add(c => c.Title, "Post").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
-        var version = Render<KlyChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Href, "https://example.com/").Add(c => c.Target, "_blank"));
+        var post = Render<KlyBlogPost>(p => p.Add(c => c.Title, "Post").Add(c => c.Href, "https://example.com/").Add(c => c.Target, KlyLinkTarget.Blank));
+        var version = Render<KlyChangelogVersion>(p => p.Add(c => c.Title, "v2").Add(c => c.Href, "https://example.com/").Add(c => c.Target, KlyLinkTarget.Blank));
 
         Assert.Equal("(opens in a new tab)", post.Find("h3 a span.sr-only").TextContent.Trim());
         Assert.Equal("(opens in a new tab)", version.Find("h3 a span.sr-only").TextContent.Trim());

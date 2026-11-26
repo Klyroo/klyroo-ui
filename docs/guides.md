@@ -290,6 +290,8 @@ builder.Services.AddKlyrooUi(o =>
 
 `Width` and `Height` are whole numbers of CSS pixels (`int?`), so write `Width="640"`. A text that holds an integer, with or without a `px` suffix, is also accepted when it reaches
 the component through a dictionary of attributes (`@attributes`) or a lowercase `width="640"`; any other text throws an `InvalidOperationException` that names the component and the parameter.
+`Format` is a `KlyImageFormat` (`WebP`, `Avif`, `Jpeg`, `Png`, `Gif`, `Svg`, `Auto`) and `Densities` a list of whole numbers (`[1, 2]`). A format outside that list goes through `Modifiers`:
+a custom `IKlyImageProvider` reads it from `KlyImageModifiers.Extra` and writes it into its URL; the built-in providers ignore the modifiers.
 `Placeholder` takes a `KlyImagePlaceholder`: `KlyImagePlaceholder.Url("/img/team-tiny.jpg")` for a small image you already have, or
 `KlyImagePlaceholder.Auto` to ask the provider for a tiny, blurred version of the image itself.
 

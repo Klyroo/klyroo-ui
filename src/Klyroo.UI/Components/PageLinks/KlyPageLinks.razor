@@ -30,7 +30,7 @@
                             <KlyIcon Name="@link.Icon" Class="@_slots["icon"]" />
                         }
                         <span class="@_slots["label"]">@link.Label</span>
-                        @if (link.Target == "_blank")
+                        @if (link.Target is { IsBlank: true })
                         {
                             <KlyIcon Name="arrow-up-right" Class="@_slots["externalIcon"]" />
                             <span class="sr-only"> @Messages.OpensInNewTab</span>

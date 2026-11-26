@@ -49,10 +49,10 @@ else
     [Parameter] public int HeadingLevel { get; set; } = 1;
 
     /// <summary>
-    /// The element to render: <see cref="KlyElement.Header"/> (default) or <see cref="KlyElement.Div"/>; any other element throws an <see cref="ArgumentException"/>. A header outside a sectioning element is the banner landmark and
-    /// a page has one: use <see cref="KlyElement.Div"/> for the second navbar of a page, such as the one of a detail panel next to a list.
+    /// The element to render: <see cref="DashboardNavbarElement.Header"/> (default) or <see cref="DashboardNavbarElement.Div"/>. A header outside a sectioning element is the banner landmark and
+    /// a page has one: use <see cref="DashboardNavbarElement.Div"/> for the second navbar of a page, such as the one of a detail panel next to a list.
     /// </summary>
-    [Parameter] public KlyElement As { get; set; } = KlyElement.Header;
+    [Parameter] public DashboardNavbarElement As { get; set; } = DashboardNavbarElement.Header;
 
     /// <summary>Shows the <see cref="KlyDashboardSidebarToggle"/> at the start, below the lg breakpoint.</summary>
     [Parameter] public bool Toggle { get; set; } = true;
@@ -78,11 +78,7 @@ else
 
     protected override void OnParametersSet()
     {
-        if (As is not (KlyElement.Header or KlyElement.Div))
-        {
-            throw new ArgumentException($"KlyDashboardNavbar: As must be KlyElement.Header or KlyElement.Div, not KlyElement.{As}.", nameof(As));
-        }
-        _tag = Wire.Of(As);
+        _tag = As == DashboardNavbarElement.Div ? "div" : "header";
         _slots = ResolveSlots(Options.DashboardNavbar, new Dictionary<string, string?>(), Ui, "root");
     }
 }

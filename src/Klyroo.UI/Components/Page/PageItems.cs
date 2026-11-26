@@ -13,8 +13,8 @@ public sealed record PageLinkItem(string Label, string? Href = null)
 
     /// <summary>Name of a built-in icon shown after the label (buttons only).</summary>
     public string? TrailingIcon { get; init; }
-    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>.</summary>
-    public string? Target { get; init; }
+    /// <summary>The <c>target</c> attribute of the link, such as <see cref="KlyLinkTarget.Blank"/>.</summary>
+    public KlyLinkTarget? Target { get; init; }
     /// <summary>Defaults to <see cref="KlyDefaults.Color"/>, or primary.</summary>
     public KlyColor? Color { get; init; }
     /// <summary>Look of the button when the link is rendered as one.</summary>
@@ -38,8 +38,8 @@ public sealed record PageFeatureItem(string Title, string? Description = null)
     public string? Icon { get; init; }
     /// <summary>Address the feature links to.</summary>
     public string? Href { get; init; }
-    /// <summary>The <c>target</c> attribute of the link, such as <c>_blank</c>.</summary>
-    public string? Target { get; init; }
+    /// <summary>The <c>target</c> attribute of the link, such as <see cref="KlyLinkTarget.Blank"/>.</summary>
+    public KlyLinkTarget? Target { get; init; }
 }
 
 /// <summary>A logo of a <see cref="KlyPageLogos"/>: a built-in icon, or an image. <see cref="Alt"/> is its accessible name.</summary>

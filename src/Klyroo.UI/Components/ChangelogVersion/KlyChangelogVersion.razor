@@ -27,7 +27,7 @@
                 <Heading Level="HeadingLevel" Class="@_slots["title"]">
                     @if (Href is not null)
                     {
-                        <a href="@Href" target="@Target" rel="@(Target == "_blank" ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target == "_blank") {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
+                        <a href="@Href" target="@Target?.Value" rel="@(Target is { IsBlank: true } ? "noopener noreferrer" : null)" data-slot="link" class="@_slots["link"]">@Title@if (Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
                     }
                     else
                     {
@@ -109,8 +109,8 @@
 
     /// <summary>Links the title. Unlike a blog post the card is not stretched, so the rich content keeps its own links.</summary>
     [Parameter] public string? Href { get; set; }
-    /// <summary>The <c>target</c> attribute of the link of the version, such as <c>_blank</c>. It applies when <c>Href</c> is set.</summary>
-    [Parameter] public string? Target { get; set; }
+    /// <summary>The <c>target</c> attribute of the link of the version, such as <see cref="KlyLinkTarget.Blank"/>. It applies when <c>Href</c> is set.</summary>
+    [Parameter] public KlyLinkTarget? Target { get; set; }
 
     /// <summary>Shows the dot and the line that join the versions of a <see cref="KlyChangelogVersions"/>.</summary>
     [Parameter] public bool Indicator { get; set; } = true;

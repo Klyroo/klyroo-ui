@@ -188,7 +188,7 @@ public class LayoutTests : KlyrooTestContext
         KlyFooterColumn[] columns =
         [
             new("Product") { Links = [new("Features") { Href = "/features" }, new("Pricing") { Href = "/pricing" }] },
-            new("Company") { Links = [new("Blog") { Href = "https://example.com", Target = "_blank" }, new("Jobs") { Href = "/jobs", Disabled = true }] },
+            new("Company") { Links = [new("Blog") { Href = "https://example.com", Target = KlyLinkTarget.Blank }, new("Jobs") { Href = "/jobs", Disabled = true }] },
         ];
         var cut = Render<KlyFooterColumns>(p => p.Add(c => c.Columns, columns).Add(c => c.AriaLabel, "Sitemap"));
 

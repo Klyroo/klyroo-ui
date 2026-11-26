@@ -375,7 +375,7 @@ public class DashboardTests : KlyrooTestContext
     [Fact]
     public void Navbar_can_be_a_div_with_a_lower_heading_so_a_second_navbar_adds_no_banner_or_h1()
     {
-        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, KlyElement.Div).Add(n => n.HeadingLevel, 2)
+        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, DashboardNavbarElement.Div).Add(n => n.HeadingLevel, 2)
             .Add(n => n.Right, "<button>Act</button>"));
 
         Assert.Empty(cut.FindAll("header"));
@@ -386,14 +386,12 @@ public class DashboardTests : KlyrooTestContext
     }
 
     [Fact]
-    public void Navbar_As_picks_the_element_and_rejects_other_elements()
+    public void Navbar_As_picks_between_a_header_and_a_div()
     {
-        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.As, KlyElement.Div));
+        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.As, DashboardNavbarElement.Div));
         Assert.Empty(cut.FindAll("header"));
         Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
-
-        var error = Assert.ThrowsAny<Exception>(() => Render<KlyDashboardNavbar>(p => p.Add(n => n.As, KlyElement.Section)));
-        Assert.Contains("As must be", (error as ArgumentException ?? error.InnerException as ArgumentException ?? error.GetBaseException() as ArgumentException)!.Message);
+        Assert.Equal("header", Render<KlyDashboardNavbar>(p => p.Add(n => n.As, DashboardNavbarElement.Header)).Find("[data-slot=left]").ParentElement!.LocalName);
     }
 
     [Fact]
@@ -404,10 +402,10 @@ public class DashboardTests : KlyrooTestContext
     }
 
     [Fact]
-    public void PageAside_As_picks_the_element_and_rejects_other_elements()
+    public void PageAside_As_picks_between_an_aside_and_a_div()
     {
-        Assert.Equal("div", Render<KlyPageAside>(p => p.Add(a => a.As, KlyElement.Div)).Find("[data-slot=body]").ParentElement!.LocalName);
-        Assert.ThrowsAny<Exception>(() => Render<KlyPageAside>(p => p.Add(a => a.As, KlyElement.Nav)));
+        Assert.Equal("div", Render<KlyPageAside>(p => p.Add(a => a.As, PageAsideElement.Div)).Find("[data-slot=body]").ParentElement!.LocalName);
+        Assert.Equal("aside", Render<KlyPageAside>(p => p.Add(a => a.As, PageAsideElement.Aside)).Find("[data-slot=body]").ParentElement!.LocalName);
     }
 
     [Fact]

@@ -103,6 +103,53 @@ public class EnumAttributeTests : KlyrooTestContext
     {
         Assert.Equal("rtl", KlyLocales.Ar.DirAttribute);
         Assert.Equal("ltr", KlyLocales.En.DirAttribute);
-        Assert.Equal("auto", KlyLocales.Extend(KlyLocales.En, "en-x", "English (auto)", KlyDirection.Auto).DirAttribute);
+    }
+
+    [Fact]
+    public void A_locale_refuses_the_auto_direction_however_it_is_built()
+    {
+        Assert.Throws<ArgumentException>(() => new KlyLocale("en-x", "English", KlyDirection.Auto, new KlyMessages()));
+        Assert.Throws<ArgumentException>(() => KlyLocales.Extend(KlyLocales.En, "en-x", "English", KlyDirection.Auto));
+        Assert.Throws<ArgumentException>(() => KlyLocales.En with { Dir = KlyDirection.Auto });
+        Assert.Throws<ArgumentException>(() => new KlyLocale("en-x", "English", (KlyDirection)42, new KlyMessages()));
+        Assert.Equal(KlyDirection.Rtl, (KlyLocales.En with { Dir = KlyDirection.Rtl }).Dir);
+    }
+
+    [Fact]
+    public void Link_target_keywords_and_names_render_their_attribute_value()
+    {
+        Assert.Equal("_self", KlyLinkTarget.Self.Value);
+        Assert.Equal("_blank", KlyLinkTarget.Blank.Value);
+        Assert.Equal("_parent", KlyLinkTarget.Parent.Value);
+        Assert.Equal("_top", KlyLinkTarget.Top.Value);
+        Assert.Equal("preview", KlyLinkTarget.Named("preview").Value);
+        Assert.Equal("_self", default(KlyLinkTarget).Value);
+        Assert.Equal(KlyLinkTarget.Blank, KlyLinkTarget.Blank);
+        Assert.True(KlyLinkTarget.Blank != KlyLinkTarget.Self);
+        Assert.True(KlyLinkTarget.Blank.IsBlank);
+        Assert.False(KlyLinkTarget.Named("blank").IsBlank);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    [InlineData("_blank")]
+    [InlineData("_custom")]
+    public void A_named_target_needs_a_name_without_a_leading_underscore(string name) =>
+        Assert.ThrowsAny<ArgumentException>(() => KlyLinkTarget.Named(name));
+
+    [Fact]
+    public void A_link_that_opens_a_new_tab_is_protected_and_a_named_frame_is_not()
+    {
+        var blank = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, KlyLinkTarget.Blank)).Find("a");
+        Assert.Equal("_blank", blank.GetAttribute("target"));
+        Assert.Equal("noopener noreferrer", blank.GetAttribute("rel"));
+
+        var named = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com").Add(l => l.Target, KlyLinkTarget.Named("preview"))).Find("a");
+        Assert.Equal("preview", named.GetAttribute("target"));
+        Assert.Null(named.GetAttribute("rel"));
+
+        var none = Render<KlyLink>(p => p.Add(l => l.Href, "https://example.com")).Find("a");
+        Assert.Null(none.GetAttribute("target"));
     }
 }

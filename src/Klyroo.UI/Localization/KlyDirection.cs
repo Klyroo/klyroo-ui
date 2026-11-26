@@ -9,6 +9,6 @@ public enum KlyDirection
     /// <summary>Right to left (Arabic, Hebrew, Persian...).</summary>
     Rtl,
 
-    /// <summary>The browser picks the direction from the first strong character of the content.</summary>
+    /// <summary>The browser picks the direction from the first strong character of the content. Only the <c>Dir</c> of <see cref="KlyApp"/> takes it; a <see cref="KlyLocale"/> refuses it.</summary>
     Auto,
 }

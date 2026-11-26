@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (3) · Interfaces (8) · Enums (45) · Delegates (2)
+Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (4) · Interfaces (8) · Enums (47) · Delegates (2)
 
 ### Components
 
@@ -172,7 +172,7 @@ Dismissible announcement bar at the top of a page. Dismissal is remembered in th
 | `Href` | `string?` | Turns the title into a link that covers the whole banner. |
 | `Icon` | `RenderFragment?` | Icon of the banner, as markup such as a `KlyIcon`. |
 | `Id` | `string?` | Identifies the banner in the browser's localStorage: a dismissed banner stays hidden on later visits. Without an Id a dismissal only lasts until the page is reloaded. |
-| `Target` | `string?` | The `target` attribute of the banner link, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the banner link, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Title` | `string?` | Title of the banner. |
 | `Ui` | `BannerUi?` | Per-instance class overrides of the slots of the banner, see `BannerUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -203,7 +203,7 @@ Card for one blog post: image, date, title, description, badge and authors, with
 | `ImageAlt` | `string?` | Alternative text of the image. Leave it empty when the image is decorative. |
 | `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to `KlyImage` (format, quality, sizes, provider, preset…). |
 | `Orientation` | `KlyOrientation` | Whether the image sits above the text (`Vertical`) or beside it (`Horizontal`). |
-| `Target` | `string?` | The `target` attribute of the link of the card, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link of the card, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Title` | `string?` | Title of the blog post. |
 | `Ui` | `BlogPostUi?` | Per-instance class overrides of the slots of the blog post, see `BlogPostUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `BlogPostVariant` | Look of the card: `Outline`, `Soft`, `Subtle`, `Ghost` or `Naked`. |
@@ -258,7 +258,7 @@ Button, rendered as a `<button>`, or as a link when `KlyButton.Href` is set. Wor
 | `OnClick` | `EventCallback<MouseEventArgs>` | Raised when the button is clicked. The button stays disabled until the page is interactive when this is set. |
 | `Size` | `KlySize` | Size of the button, from `Xs` to `Xl`. When not set, `KlyDefaults.Size` applies, else medium. |
 | `Square` | `bool` | Equal padding on every side, for icon-only buttons (give them an `aria-label`). |
-| `Target` | `string?` | The `target` attribute of the link, such as `_blank`. It applies when `KlyButton.Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. It applies when `KlyButton.Href` is set. |
 | `TrailingIcon` | `RenderFragment?` | Icon after the label, as markup such as a `KlyIcon`. |
 | `Type` | `ButtonType` | The `type` attribute of the button: `ButtonType.Button` (the default), `ButtonType.Submit` or `ButtonType.Reset`. |
 | `Ui` | `ButtonUi?` | Per-instance class overrides of the slots of the button, see `ButtonUi`. |
@@ -353,7 +353,7 @@ One entry of a changelog: version, date, description, authors and image, on a ti
 | `ImageAlt` | `string?` | Alternative text of the image. Leave it empty when the image is decorative. |
 | `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to `KlyImage` (format, quality, sizes, provider, preset…). |
 | `Indicator` | `bool` | Shows the dot and the line that join the versions of a `KlyChangelogVersions`. |
-| `Target` | `string?` | The `target` attribute of the link of the version, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link of the version, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Title` | `string?` | Version number or release name. |
 | `Ui` | `ChangelogVersionUi?` | Per-instance class overrides of the slots of the changelog version, see `ChangelogVersionUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -983,7 +983,7 @@ Top bar of a dashboard panel with the sidebar toggle, a title and left, center a
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `KlyElement` | The element to render: `KlyElement.Header` (default) or `KlyElement.Div`; any other element throws an `ArgumentException`. A header outside a sectioning element is the banner landmark and a page has one: use `KlyElement.Div` for the second navbar of a page, such as the one of a detail panel next to a list. |
+| `As` | `DashboardNavbarElement` | The element to render: `DashboardNavbarElement.Header` (default) or `DashboardNavbarElement.Div`. A header outside a sectioning element is the banner landmark and a page has one: use `DashboardNavbarElement.Div` for the second navbar of a page, such as the one of a detail panel next to a list. |
 | `ChildContent` | `RenderFragment?` | The center area, between the left and the right ones. |
 | `HeadingLevel` | `int` | Level of the title heading, 1 to 6. A page has one h1: give the navbars after the first one a lower level, or no `KlyDashboardNavbar.Title`. |
 | `Leading` | `RenderFragment?` | Before the title. |
@@ -1719,7 +1719,7 @@ Anchor that marks itself active when its address matches the current page, with 
 | `InactiveClass` | `string?` | Classes added while the link is not active, merged after the theme. |
 | `Label` | `string?` | Text of the link. Use `ChildContent` for markup. |
 | `Raw` | `bool` | Drops the theme classes, keeping only `KlyComponentBase.Class`, `KlyLink.ActiveClass` and `KlyLink.InactiveClass`. |
-| `Target` | `string?` | The `target` attribute, such as `_blank`. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute, such as `KlyLinkTarget.Blank`. |
 | `Ui` | `LinkUi?` | Per-instance class overrides of the slots of the link, see `LinkUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
@@ -1877,7 +1877,7 @@ Sticky side column of a page, shown from the lg breakpoint up.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `KlyElement` | The element to render: `KlyElement.Aside` (default) or `KlyElement.Div`; any other element throws an `ArgumentException`. |
+| `As` | `PageAsideElement` | The element to render: `PageAsideElement.Aside` (default) or `PageAsideElement.Div`. |
 | `Bottom` | `RenderFragment?` | Content at the bottom of the column. |
 | `ChildContent` | `RenderFragment?` | Content of the page aside. |
 | `Top` | `RenderFragment?` | Content at the top of the column. |
@@ -1916,7 +1916,7 @@ Card of a page, with a title, a description, an optional link that covers the wh
 | `Icon` | `string?` | Name of a built-in icon (see `KlyIcon`). |
 | `Orientation` | `KlyOrientation` | Horizontal puts the text and the content side by side from the lg breakpoint. |
 | `Reverse` | `bool` | Shows the content before the text in a horizontal card. |
-| `Target` | `string?` | The `target` attribute of the link of the card, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link of the card, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Title` | `string?` | Title of the page card. |
 | `Ui` | `PageCardUi?` | Per-instance class overrides of the slots of the page card, see `PageCardUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `PageCardVariant` | Look of the card: `Outline`, `Soft` or `Subtle`. |
@@ -1973,7 +1973,7 @@ Feature block with an icon, a title and a description, optionally linked.
 | `Href` | `string?` | Makes the whole feature a link, carried by the title. |
 | `Icon` | `string?` | Name of a built-in icon (see `KlyIcon`). |
 | `Orientation` | `KlyOrientation` | Horizontal puts the icon before the text; vertical puts it above. |
-| `Target` | `string?` | The `target` attribute of the link of the feature, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link of the feature, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Title` | `string?` | Title of the page feature. |
 | `Ui` | `PageFeatureUi?` | Per-instance class overrides of the slots of the page feature, see `PageFeatureUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -2707,7 +2707,7 @@ Avatar with a name and a description, optionally linked.
 | `Orientation` | `KlyOrientation` | Whether the name sits beside the avatar (`Horizontal`) or under it (`Vertical`). |
 | `ShowAvatar` | `bool` | Shows the avatar: the image, else the initials of `KlyUser.Name`. |
 | `Size` | `KlySize` | Size of the user, from `Xs` to `Xl`. When not set, `KlyDefaults.Size` applies, else the default of the component. |
-| `Target` | `string?` | The `target` attribute of the link, such as `_blank`. It applies when `Href` is set. |
+| `Target` | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. It applies when `Href` is set. |
 | `Ui` | `UserUi?` | Per-instance class overrides of the slots of the user, see `UserUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
@@ -4990,7 +4990,7 @@ An entry of `KlyContentNavigation`: a page link, or a group of entries when it h
 | `Href` (init) | `string?` | The page the entry links to. An entry with children is a group and has no link of its own. |
 | `Icon` (init) | `string?` | A built-in Lucide icon name ("book-open", "file"), shown before the title. |
 | `Open` (init) | `bool?` | Initial state of a group. By default a group is open when it holds the current page. |
-| `Target` (init) | `string?` | The `target` attribute of the link, such as `_blank`. |
+| `Target` (init) | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. |
 | `Title` (init) | `string` | Text of the entry. |
 
 #### `KlyContentSearchHeading`
@@ -5147,8 +5147,8 @@ A language of the UI: its code, its name, its writing direction and every text t
 | :--- | :--- | :--- |
 | `Code` (init) | `string` | A culture name such as "fr" or "pt-BR". It is the value written to the culture cookie by `KlyLocaleSelect`, the `lang` attribute of the page, and the culture used to format dates and numbers. |
 | `Culture` | `CultureInfo` | The culture of `KlyLocale.Code`, used by date, number and file size formatting when a component has no explicit `Culture`. A code the runtime does not know gives the invariant culture. |
-| `Dir` (init) | `KlyDirection` | The writing direction. |
-| `DirAttribute` | `string` | The value of the `dir` attribute: "ltr", "rtl" or "auto". |
+| `Dir` (init) | `KlyDirection` | The writing direction of the language, `KlyDirection.Ltr` or `KlyDirection.Rtl`. |
+| `DirAttribute` | `string` | The value of the `dir` attribute: "ltr" or "rtl". |
 | `Flag` (init) | `string?` | Shown before the name by `KlyLocaleSelect`: a flag emoji, or any short text. Some systems (Windows) draw flag emoji as letters. |
 | `Messages` (init) | `KlyMessages` | The texts of the components. |
 | `Name` (init) | `string` | The name of the language in that language ("Français"), shown by `KlyLocaleSelect`. |
@@ -5409,7 +5409,7 @@ A link of a `KlyNavigationMenu`, with optional sub-items.
 | `Href` (init) | `string?` | Address the item links to. An item with children and no address is a group. |
 | `Icon` (init) | `RenderFragment?` | Icon shown before the label, as markup such as a `KlyIcon`. |
 | `Label` (init) | `string` | Text of the link. |
-| `Target` (init) | `string?` | The `target` attribute of the link, such as `_blank`. |
+| `Target` (init) | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. |
 
 #### `KlyOptionsRequest`
 
@@ -5940,7 +5940,7 @@ A feature of a `KlyPageSection`.
 | `Description` (init) | `string?` | Text under the title. |
 | `Href` (init) | `string?` | Address the feature links to. |
 | `Icon` (init) | `string?` | Name of a built-in icon (see `KlyIcon`) shown above the title. |
-| `Target` (init) | `string?` | The `target` attribute of the link, such as `_blank`. |
+| `Target` (init) | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. |
 | `Title` (init) | `string` | Title of the feature. |
 
 #### `PageFeatureUi`
@@ -6021,7 +6021,7 @@ A link of the page family. `KlyPageHeader`, `KlyPageHero`, `KlyPageSection` and 
 | `Href` (init) | `string?` | Address the link points to. |
 | `Icon` (init) | `string?` | Name of a built-in icon (see `KlyIcon`) shown before the label. |
 | `Label` (init) | `string` | Text of the link. |
-| `Target` (init) | `string?` | The `target` attribute of the link, such as `_blank`. |
+| `Target` (init) | `KlyLinkTarget?` | The `target` attribute of the link, such as `KlyLinkTarget.Blank`. |
 | `TrailingIcon` (init) | `string?` | Name of a built-in icon shown after the label (buttons only). |
 | `Variant` (init) | `ButtonVariant` | Look of the button when the link is rendered as one. |
 
@@ -6628,6 +6628,25 @@ Semantic color of a component, rendered as `data-color`. Built-in colors map to 
 | `Value` | `string` | The name of the color, such as `primary`. |
 | `static Warning` | `KlyColor` | The color of warnings. |
 
+#### `KlyLinkTarget`
+
+`Klyroo.UI` · struct
+
+The `target` of a link: where the address opens. `KlyLinkTarget.Self`, `KlyLinkTarget.Blank`, `KlyLinkTarget.Parent` and `KlyLinkTarget.Top` are the keywords of the HTML standard; `KlyLinkTarget.Named` targets a frame or a window by its name. A link that opens in `KlyLinkTarget.Blank` gets `rel="noopener noreferrer"`.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `static Blank` | `KlyLinkTarget` | A new tab or window (`_blank`). |
+| `IsBlank` | `bool` | Whether the link opens a new tab or window, which makes it need `rel="noopener noreferrer"`. |
+| `static Parent` | `KlyLinkTarget` | The parent of the current frame (`_parent`). |
+| `static Self` | `KlyLinkTarget` | The same browsing context (`_self`, the default of a link). |
+| `static Top` | `KlyLinkTarget` | The top-level browsing context (`_top`). |
+| `Value` | `string` | The value of the `target` attribute. A default instance is `KlyLinkTarget.Self`. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static Named(string name)` | `KlyLinkTarget` | The frame or window with this name, created when it does not exist. |
+
 #### `KlyPricingTableValue`
 
 `Klyroo.UI` · struct
@@ -6915,6 +6934,17 @@ Look of a `KlyChatTool`.
 | `Inline` | One line of text. |
 | `Card` | A bordered block. |
 
+#### `DashboardNavbarElement`
+
+`Klyroo.UI` · enum
+
+The element a `KlyDashboardNavbar` renders as.
+
+| Value | Description |
+| :--- | :--- |
+| `Header` | A `header`: the banner landmark of the page when it sits outside any sectioning element, so a page has one. |
+| `Div` | A `div`, for the second navbar of a page, such as the one of a detail panel next to a list. |
+
 #### `DrawerDirection`
 
 `Klyroo.UI` · enum
@@ -7124,7 +7154,7 @@ The writing direction of a language: the `dir` attribute of the page.
 | :--- | :--- |
 | `Ltr` | Left to right. |
 | `Rtl` | Right to left (Arabic, Hebrew, Persian...). |
-| `Auto` | The browser picks the direction from the first strong character of the content. |
+| `Auto` | The browser picks the direction from the first strong character of the content. Only the `Dir` of `KlyApp` takes it; a `KlyLocale` refuses it. |
 
 #### `KlyElement`
 
@@ -7173,7 +7203,7 @@ How the image fills the requested width and height. Providers map it to their ow
 
 `Klyroo.UI` · enum
 
-The format of the image a provider is asked to produce.
+The format of the image a provider is asked to produce. A format that is not listed goes through `KlyImageOptions.Modifiers`: a custom `IKlyImageProvider` reads it from `KlyImageModifiers.Extra` and writes it into its URL (the built-in providers ignore the modifiers).
 
 | Value | Description |
 | :--- | :--- |
@@ -7315,6 +7345,17 @@ Look of colored surfaces: badges, alerts.
 | `Outline` | A border in the semantic color and no fill. |
 | `Soft` | A light tint of the semantic color. |
 | `Subtle` | A light tint with a border. |
+
+#### `PageAsideElement`
+
+`Klyroo.UI` · enum
+
+The element a `KlyPageAside` renders as.
+
+| Value | Description |
+| :--- | :--- |
+| `Aside` | An `aside`: a complementary landmark. Name it with `aria-label` when the page has more than one. |
+| `Div` | A `div`, inside another landmark. |
 
 #### `PageCardVariant`
 

@@ -15,7 +15,7 @@ public enum KlyImageFit
     Outside,
 }
 
-/// <summary>The format of the image a provider is asked to produce.</summary>
+/// <summary>The format of the image a provider is asked to produce. A format that is not listed goes through <see cref="KlyImageOptions.Modifiers"/>: a custom <see cref="IKlyImageProvider"/> reads it from <see cref="KlyImageModifiers.Extra"/> and writes it into its URL (the built-in providers ignore the modifiers).</summary>
 public enum KlyImageFormat
 {
     /// <summary>WebP (<c>webp</c>).</summary>
