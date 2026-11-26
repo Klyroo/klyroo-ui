@@ -4,13 +4,13 @@ public sealed partial record KlyMessages
 {
     /// <summary>Kind of chart, used in the generated description.</summary>
     public string ChartLine { get; init; } = "Line chart";
-    /// <summary>Accessible name of an area chart (<see cref="KlyChart{TItem}"/>), read before its generated description.</summary>
+    /// <summary>Accessible name of an area chart (<see cref="KlyChart{TItem, TIndex}"/>), read before its generated description.</summary>
     public string ChartArea { get; init; } = "Area chart";
-    /// <summary>Accessible name of a bar chart (<see cref="KlyChart{TItem}"/>), read before its generated description.</summary>
+    /// <summary>Accessible name of a bar chart (<see cref="KlyChart{TItem, TIndex}"/>), read before its generated description.</summary>
     public string ChartBar { get; init; } = "Bar chart";
-    /// <summary>Accessible name of a horizontal bar chart (<see cref="KlyChart{TItem}"/>), read before its generated description.</summary>
+    /// <summary>Accessible name of a horizontal bar chart (<see cref="KlyChart{TItem, TIndex}"/>), read before its generated description.</summary>
     public string ChartBarHorizontal { get; init; } = "Horizontal bar chart";
-    /// <summary>Accessible name of a donut chart (<see cref="KlyChart{TItem}"/>), read before its generated description.</summary>
+    /// <summary>Accessible name of a donut chart (<see cref="KlyChart{TItem, TIndex}"/>), read before its generated description.</summary>
     public string ChartDonut { get; init; } = "Donut chart";
 
     /// <summary>

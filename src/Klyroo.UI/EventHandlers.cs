@@ -35,7 +35,7 @@ public sealed class KlySearchEventArgs : EventArgs
     public int Sequence { get; set; }
 }
 
-/// <summary>Payload of the <c>kly-pick</c> browser event raised by <see cref="KlyChart{TItem}"/> when a bar, point or slice is clicked or chosen with Enter or Space.</summary>
+/// <summary>Payload of the <c>kly-pick</c> browser event raised by <see cref="KlyChart{TItem, TIndex}"/> when a bar, point or slice is clicked or chosen with Enter or Space.</summary>
 public sealed class KlyPickEventArgs : EventArgs
 {
     /// <summary>The position of the row in the data of the chart.</summary>

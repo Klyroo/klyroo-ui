@@ -15,7 +15,7 @@ public sealed partial record KlyMessages
     public string Close { get; init; } = "Close";
     /// <summary>Accessible name of the list of toasts of <see cref="KlyToaster"/>.</summary>
     public string Notifications { get; init; } = "Notifications";
-    /// <summary>Text shown by <see cref="KlyChart{TItem}"/> and <see cref="KlyTable{TItem}"/> when there is nothing to show.</summary>
+    /// <summary>Text shown by <see cref="KlyChart{TItem, TIndex}"/> and <see cref="KlyTable{TItem}"/> when there is nothing to show.</summary>
     public string NoData { get; init; } = "No data";
 
     /// <summary>Tooltip of the button of a sortable column that sorts it in ascending order.</summary>

@@ -39,7 +39,7 @@
                     <p class="text-sm text-(--klyroo-text-muted)">@PeriodLabel, compared with the period before.</p>
                 </Header>
                 <ChildContent>
-                    <KlyChart TItem="RevenuePoint" Data="_revenue" Index="@(p => p.Label)" Categories="_categories" Type="KlyChartType.Area" Curve="KlyChartCurve.Monotone"
+                    <KlyChart Data="_revenue" Index="@(p => p.Label)" Categories="_categories" Type="KlyChartType.Area" Curve="KlyChartCurve.Monotone"
                              Format="FormatMoney" Width="720" Height="300" AriaLabel="@($"Revenue, {PeriodLabel}, compared with the period before")" Table="KlyChartTable.Toggle" data-testid="revenue-chart" />
                 </ChildContent>
             </KlyCard>
@@ -50,7 +50,7 @@
                     <p class="text-sm text-(--klyroo-text-muted)">Where the orders came from.</p>
                 </Header>
                 <ChildContent>
-                    <KlyChart TItem="ChannelShare" Data="_channels" Index="@(c => c.Channel)" Categories="_channelCategories" Type="KlyChartType.Donut"
+                    <KlyChart Data="_channels" Index="@(c => c.Channel)" Categories="_channelCategories" Type="KlyChartType.Donut"
                              Format="FormatMoney" Height="300" Thickness="40" data-testid="channels-chart">
                         <Center>
                             <span class="text-xl font-semibold text-(--klyroo-text-highlighted)">@FormatMoney(_channels.Sum(c => c.Revenue))</span>
@@ -96,7 +96,7 @@
                     <p class="text-sm text-(--klyroo-text-muted)">The last two weeks.</p>
                 </Header>
                 <ChildContent>
-                    <KlyChart TItem="DayOrders" Data="_ordersByDay" Index="@(d => d.Day)" Categories="_orderCategories" Type="KlyChartType.Bar"
+                    <KlyChart Data="_ordersByDay" Index="@(d => d.Day)" Categories="_orderCategories" Type="KlyChartType.Bar"
                              Legend="false" Width="420" Height="300" Table="KlyChartTable.Toggle" data-testid="orders-chart" />
                 </ChildContent>
             </KlyCard>

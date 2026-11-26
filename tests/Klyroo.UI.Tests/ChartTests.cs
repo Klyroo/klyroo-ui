@@ -24,8 +24,8 @@ public class ChartTests : KlyrooTestContext
         new("mobile", s => s.Mobile) { Label = "Mobile" },
     ];
 
-    private IRenderedComponent<KlyChart<Sale>> Chart(Action<ComponentParameterCollectionBuilder<KlyChart<Sale>>>? configure = null, IReadOnlyList<Sale>? data = null, IReadOnlyList<KlyChartCategory<Sale>>? categories = null) =>
-        Render<KlyChart<Sale>>(p =>
+    private IRenderedComponent<KlyChart<Sale, string>> Chart(Action<ComponentParameterCollectionBuilder<KlyChart<Sale, string>>>? configure = null, IReadOnlyList<Sale>? data = null, IReadOnlyList<KlyChartCategory<Sale>>? categories = null) =>
+        Render<KlyChart<Sale, string>>(p =>
         {
             p.Add(c => c.Data, data ?? Sales)
              .Add(c => c.Index, s => s.Month)
@@ -34,10 +34,10 @@ public class ChartTests : KlyrooTestContext
         });
 
     /// <summary>The name of the chart: on the svg image, or on the focusable group when the chart is interactive.</summary>
-    private static string AccessibleName(IRenderedComponent<KlyChart<Sale>> cut) =>
+    private static string AccessibleName(IRenderedComponent<KlyChart<Sale, string>> cut) =>
         cut.Find("svg").GetAttribute("aria-label") ?? cut.Find("[data-slot=plot]").GetAttribute("aria-label")!;
 
-    private static string[] Texts(IRenderedComponent<KlyChart<Sale>> cut, string selector) =>
+    private static string[] Texts(IRenderedComponent<KlyChart<Sale, string>> cut, string selector) =>
         cut.FindAll(selector).Select(e => e.TextContent.Trim()).ToArray();
 
     // ---- Scale
@@ -152,7 +152,7 @@ public class ChartTests : KlyrooTestContext
     [Fact]
     public void Dates_in_the_index_are_formatted_with_the_current_culture()
     {
-        var cut = Render<KlyChart<DateTime>>(p => p
+        var cut = Render<KlyChart<DateTime, DateTime>>(p => p
             .Add(c => c.Data, [new DateTime(2026, 3, 5), new DateTime(2026, 3, 6)])
             .Add(c => c.Index, d => d)
             .Add(c => c.Categories, new KlyChartCategory<DateTime>[] { new("v", d => d.Day) })
@@ -546,7 +546,7 @@ public class ChartTests : KlyrooTestContext
     public void Static_rendering_gives_the_same_markup()
     {
         using var ctx = new StaticContext();
-        var cut = ctx.Render<KlyChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, s => s.Month).Add(c => c.Categories, Both));
+        var cut = ctx.Render<KlyChart<Sale, string>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, s => s.Month).Add(c => c.Categories, Both));
 
         Assert.Equal(6, cut.FindAll("g[data-hit]").Count);
         Assert.NotNull(cut.Find("kly-chart"));
@@ -621,8 +621,8 @@ public class ChartTests : KlyrooTestContext
     public async Task Chart_rebuilds_its_layout_on_a_parent_render_and_not_on_its_own_renders()
     {
         var calls = 0;
-        Func<Sale, object?> index = s => { calls++; return s.Month; };
-        Action<ComponentParameterCollectionBuilder<KlyChart<Sale>>> parameters = p =>
+        Func<Sale, string> index = s => { calls++; return s.Month; };
+        Action<ComponentParameterCollectionBuilder<KlyChart<Sale, string>>> parameters = p =>
             p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both);
         var cut = Render(parameters);
         var first = calls;
@@ -645,8 +645,8 @@ public class ChartTests : KlyrooTestContext
     {
         var data = new List<Sale> { new("a", 1, null), new("b", 2, null), new("c", 3, null) };
         var categories = new[] { new KlyChartCategory<Sale>("desktop", s => s.Desktop) };
-        Func<Sale, object?> index = s => s.Month;
-        Action<ComponentParameterCollectionBuilder<KlyChart<Sale>>> parameters = p =>
+        Func<Sale, string> index = s => s.Month;
+        Action<ComponentParameterCollectionBuilder<KlyChart<Sale, string>>> parameters = p =>
             p.Add(c => c.Data, data).Add(c => c.Index, index).Add(c => c.Categories, categories);
         var cut = Render(parameters);
         Assert.Contains("a: desktop 1", cut.Find("[data-tip='0']").GetAttribute("data-text"));
@@ -666,8 +666,8 @@ public class ChartTests : KlyrooTestContext
     public void Chart_rebuilds_when_the_data_changes()
     {
         var calls = 0;
-        Func<Sale, object?> index = s => { calls++; return s.Month; };
-        var cut = Render<KlyChart<Sale>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both));
+        Func<Sale, string> index = s => { calls++; return s.Month; };
+        var cut = Render<KlyChart<Sale, string>>(p => p.Add(c => c.Data, Sales).Add(c => c.Index, index).Add(c => c.Categories, Both));
         var first = calls;
 
         cut.Render(p => p.Add(c => c.Data, Sales.Take(3).ToArray()).Add(c => c.Index, index).Add(c => c.Categories, Both));
@@ -769,7 +769,7 @@ public class ChartTests : KlyrooTestContext
     [Fact]
     public async Task A_pick_reports_the_row_the_series_the_value_and_the_item()
     {
-        KlyChartSelectEventArgs<Sale>? received = null;
+        KlyChartSelectEventArgs<Sale, string>? received = null;
         var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e));
 
         await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 1, Series = 1 });
@@ -784,9 +784,26 @@ public class ChartTests : KlyrooTestContext
     }
 
     [Fact]
+    public async Task A_pick_reports_the_index_with_its_own_type()
+    {
+        KlyChartSelectEventArgs<DateTime, DateTime>? received = null;
+        var cut = Render<KlyChart<DateTime, DateTime>>(p => p
+            .Add(c => c.Data, [new DateTime(2026, 3, 5), new DateTime(2026, 3, 6)])
+            .Add(c => c.Index, d => d)
+            .Add(c => c.Categories, new KlyChartCategory<DateTime>[] { new("v", d => d.Day) })
+            .Add(c => c.OnSelect, e => received = e));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 1, Series = 0 });
+
+        Assert.NotNull(received);
+        Assert.Equal(new DateTime(2026, 3, 6), received.Index);
+        Assert.Equal(6, received.Value);
+    }
+
+    [Fact]
     public async Task A_pick_that_names_no_series_on_a_chart_with_several_leaves_the_choice_to_the_handler()
     {
-        KlyChartSelectEventArgs<Sale>? received = null;
+        KlyChartSelectEventArgs<Sale, string>? received = null;
         var data = new List<Sale> { new("a", null, 7), new("b", 3, 4) };
         var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e), data);
 
@@ -802,7 +819,7 @@ public class ChartTests : KlyrooTestContext
     [Fact]
     public async Task A_pick_on_a_chart_with_one_series_always_names_it()
     {
-        KlyChartSelectEventArgs<Sale>? received = null;
+        KlyChartSelectEventArgs<Sale, string>? received = null;
         var cut = Chart(p => p.Add(c => c.OnSelect, e => received = e), categories: [new("desktop", s => s.Desktop)]);
 
         await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 1, Series = -1 });
@@ -814,7 +831,7 @@ public class ChartTests : KlyrooTestContext
     [Fact]
     public async Task A_donut_slice_pick_reports_the_slice_and_its_size()
     {
-        KlyChartSelectEventArgs<Sale>? received = null;
+        KlyChartSelectEventArgs<Sale, string>? received = null;
         var cut = Chart(p => p.Add(c => c.Type, KlyChartType.Donut).Add(c => c.OnSelect, e => received = e));
 
         await cut.Find("kly-chart").TriggerEventAsync("onklypick", new KlyPickEventArgs { Row = 2, Series = 0 });

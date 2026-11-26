@@ -1,5 +1,6 @@
 @namespace Klyroo.UI
 @typeparam TItem
+@typeparam TIndex
 @using System.Globalization
 @using Klyroo.UI.Internal
 @using Microsoft.AspNetCore.Components.Rendering
@@ -279,7 +280,7 @@
     [Parameter, EditorRequired] public IReadOnlyList<TItem> Data { get; set; } = [];
 
     /// <summary>The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language).</summary>
-    [Parameter, EditorRequired] public Func<TItem, object?> Index { get; set; } = default!;
+    [Parameter, EditorRequired] public Func<TItem, TIndex> Index { get; set; } = default!;
 
     /// <summary>The series, in drawing order. With a donut the first one gives the size of each slice.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyChartCategory<TItem>> Categories { get; set; } = [];
@@ -335,7 +336,7 @@
     /// from the keyboard, with several series, no series is named (<c>SeriesIndex</c> -1, <c>SeriesKey</c> and <c>Value</c> null) and the handler chooses from the row item. It needs the tooltip (the keyboard row is the highlighted one) and an
     /// interactive render, since the pick is reported by the browser.
     /// </summary>
-    [Parameter] public EventCallback<KlyChartSelectEventArgs<TItem>> OnSelect { get; set; }
+    [Parameter] public EventCallback<KlyChartSelectEventArgs<TItem, TIndex>> OnSelect { get; set; }
 
     /// <summary>The width of the ring in pixels. Only applies to <see cref="KlyChartType.Donut"/>.</summary>
     [Parameter] public int Thickness { get; set; } = 24;
@@ -384,14 +385,14 @@
     private string FormatValue(double value) =>
         Format is not null ? Format(value) : (value == 0 ? 0 : value).ToString("#,0.##", Cult);
 
-    private string IndexText(object? value) => value switch
+    private string IndexText(TIndex index) => (object?)index switch
     {
         null => "",
         DateTime date => date.ToString(IndexFormat ?? "d", Cult),
         DateTimeOffset date => date.ToString(IndexFormat ?? "d", Cult),
         DateOnly date => date.ToString(IndexFormat ?? "d", Cult),
         IFormattable formattable => formattable.ToString(IndexFormat, Cult),
-        _ => value.ToString() ?? "",
+        _ => index?.ToString() ?? "",
     };
 
     // Not <text> in the markup: Razor reads that tag as its own text block.
@@ -484,10 +485,10 @@
         var series = Type == KlyChartType.Donut || _values.Count == 1 ? 0 : e.Series;
         if (series < 0 || series >= _values.Count)
         {
-            return OnSelect.InvokeAsync(new KlyChartSelectEventArgs<TItem>(e.Row, Index(item), null, -1, null, item));
+            return OnSelect.InvokeAsync(new KlyChartSelectEventArgs<TItem, TIndex>(e.Row, Index(item), null, -1, null, item));
         }
         var category = series < Categories.Count ? Categories[series] : null;
-        return OnSelect.InvokeAsync(new KlyChartSelectEventArgs<TItem>(e.Row, Index(item), category?.Key, category is null ? -1 : series, _values[series][e.Row], item));
+        return OnSelect.InvokeAsync(new KlyChartSelectEventArgs<TItem, TIndex>(e.Row, Index(item), category?.Key, category is null ? -1 : series, _values[series][e.Row], item));
     }
 
     private static double? Sanitize(double? value) => value is { } v && double.IsFinite(v) ? v : null;
