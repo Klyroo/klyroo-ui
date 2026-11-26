@@ -4,7 +4,7 @@ Accessible Blazor components styled with Tailwind CSS v4, for .NET developers wh
 
 [![CI](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/klyroo/klyroo-ui/actions/workflows/ci.yml)
 [![NuGet](https://img.shields.io/nuget/vpre/Klyroo.UI.svg)](https://www.nuget.org/packages/Klyroo.UI)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/klyroo/klyroo-ui/blob/main/LICENSE)
 
 Klyroo.UI gives a Blazor app a complete set of components, a design system built on CSS variables and a build that
 bundles icons, fonts and Tailwind for you. Opening, closing, focus and keyboard handling run in the browser, so the
@@ -25,7 +25,7 @@ components work in static server rendering, Interactive Server, WebAssembly and 
 
 Every component name starts with `Kly`, so `Button` is `KlyButton`. The list counts the 143 public components that you place in a page.
 The records they take (`KlyTabItem`, `KlySelectItem`, ...), the `*Ui` slot records, the base classes and the internal helper components
-that the [API reference](docs/api-reference.md) also lists are not counted.
+that the [API reference](https://github.com/klyroo/klyroo-ui/blob/main/docs/api-reference.md) also lists are not counted.
 
 - **Elements** (20): Button, Badge, Avatar, AvatarGroup, Card, Alert, Banner, Chip, Container, Empty, FieldGroup, Icon, Image, InfiniteScroll, Kbd, Link, Progress, Separator, Skeleton, User
 - **Form** (25): Form, FormField, Input, InputNumber, InputTags, InputMenu, InputDate, InputTime, InputRating, PinInput, Textarea, Checkbox, CheckboxGroup, Switch, RadioGroup, Select, SelectMenu, Listbox, Slider, RangeSlider, Toggle, ToggleGroup, Calendar, ColorPicker, FileUpload
@@ -62,7 +62,7 @@ To use the library in an app:
 - **Network access on the first build** only if your app self-hosts web fonts (`KlyrooFont`), uses icons outside the built-in set, or compiles Tailwind (`KlyrooTailwind`): the build downloads them once and caches them under `obj/klyroo`. Node.js is not needed.
 - **Tailwind CSS is optional.** Without it, link the precompiled stylesheets. With Tailwind v4 in your app, turn on `KlyrooTailwind`: the build runs the Tailwind standalone binary, so no Node.js either.
 
-To build this repository you need the .NET 10 SDK (a newer SDK works too, see `global.json`) and clones of `klyroo-query` and `klyroo-stack` (`klyroo-query` and `klyroo-stack` are used by the test projects only) in the same parent folder: some projects reference them by relative path (`../klyroo-query/...`). See [Contributing](CONTRIBUTING.md).
+To build this repository you need the .NET 10 SDK (a newer SDK works too, see `global.json`) and clones of `klyroo-query` and `klyroo-stack` (`klyroo-query` and `klyroo-stack` are used by the test projects only) in the same parent folder: some projects reference them by relative path (`../klyroo-query/...`). See [Contributing](https://github.com/klyroo/klyroo-ui/blob/main/CONTRIBUTING.md).
 
 ## Installation
 
@@ -149,7 +149,7 @@ Then use the components:
 
 The popover has no `@bind-Open`, so .NET is never called when it opens. The save button has an `OnClick`, so it renders disabled until the
 page is interactive; use `Href` or `Type="submit"` on a button that must work in a static page.
-[Getting started](docs/getting-started.md) builds a complete form step by step.
+[Getting started](https://github.com/klyroo/klyroo-ui/blob/main/docs/getting-started.md) builds a complete form step by step.
 
 ## Theming
 
@@ -170,18 +170,18 @@ builder.Services.AddKlyrooUi(o =>
 
 Four levels of customization, from the broadest to the narrowest: the palettes, the `--klyroo-*` CSS variables, the theme of
 each component in `AddKlyrooUi`, and the `Class` and `Ui` parameters of one instance. See the
-[guides](docs/guides.md#change-the-palette-and-the-design-tokens) and [Concepts](docs/concepts.md#components-slots-and-themes).
+[guides](https://github.com/klyroo/klyroo-ui/blob/main/docs/guides.md#change-the-palette-and-the-design-tokens) and [Concepts](https://github.com/klyroo/klyroo-ui/blob/main/docs/concepts.md#components-slots-and-themes).
 
 ## Documentation
 
 | | |
 | :--- | :--- |
-| [Getting started](docs/getting-started.md) | Step-by-step first integration |
-| [Guides](docs/guides.md) | Task-oriented recipes |
-| [Concepts](docs/concepts.md) | How the library works |
-| [Platforms](docs/platforms.md) | Render modes, .NET MAUI, NativeAOT |
-| [API reference](docs/api-reference.md) | Every public type and member |
-| [FAQ](docs/faq.md) | Troubleshooting and limitations |
+| [Getting started](https://github.com/klyroo/klyroo-ui/blob/main/docs/getting-started.md) | Step-by-step first integration |
+| [Guides](https://github.com/klyroo/klyroo-ui/blob/main/docs/guides.md) | Task-oriented recipes |
+| [Concepts](https://github.com/klyroo/klyroo-ui/blob/main/docs/concepts.md) | How the library works |
+| [Platforms](https://github.com/klyroo/klyroo-ui/blob/main/docs/platforms.md) | Render modes, .NET MAUI, NativeAOT |
+| [API reference](https://github.com/klyroo/klyroo-ui/blob/main/docs/api-reference.md) | Every public type and member |
+| [FAQ](https://github.com/klyroo/klyroo-ui/blob/main/docs/faq.md) | Troubleshooting and limitations |
 
 ## Compatibility
 
@@ -208,9 +208,9 @@ Klyroo is a family of independent .NET libraries that compose. Each one has its 
 
 ## Contributing
 
-Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request, and follow the
-[code of conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md).
+Contributions are welcome. Read [CONTRIBUTING.md](https://github.com/klyroo/klyroo-ui/blob/main/CONTRIBUTING.md) before opening a pull request, and follow the
+[code of conduct](https://github.com/klyroo/klyroo-ui/blob/main/CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](https://github.com/klyroo/klyroo-ui/blob/main/SECURITY.md).
 
 ## License
 
-[MIT](LICENSE)
+[MIT](https://github.com/klyroo/klyroo-ui/blob/main/LICENSE)

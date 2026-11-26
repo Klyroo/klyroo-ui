@@ -85,7 +85,7 @@ jobs:
           version=$(dotnet msbuild src/Klyroo.UI/Klyroo.UI.csproj -getProperty:PackageVersion -p:Configuration=Release)
           echo "version=$version" >> "$GITHUB_OUTPUT"
           if [[ "$GITHUB_REF" == refs/tags/v* && "${GITHUB_REF_NAME#v}" != "$version" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match the version $version of Directory.Build.props"
+            echo "::error::Tag $GITHUB_REF_NAME does not match the version $version of build/Version.props"
             exit 1
           fi
       - name: Build
@@ -99,7 +99,7 @@ jobs:
           fail=0
           for p in ./artifacts/nupkgs/*.nupkg; do
             spec=$(unzip -p "$p" '*.nuspec')
-            for tag in '<id>' '<version>' '<authors>' '<description>' '<license type="expression">MIT' '<readme>' '<projectUrl>' '<repository type="git" url="https://github.com/klyroo/' '<tags>'; do
+            for tag in '<id>' '<version>' '<authors>' '<description>' '<license type="expression">MIT' '<readme>' '<icon>' '<projectUrl>' '<repository type="git" url="https://github.com/klyroo/' '<tags>'; do
               if ! grep -qF "$tag" <<<"$spec"; then echo "::error::$(basename "$p"): missing $tag"; fail=1; fi
             done
             if grep -qiE '\blux\b|luxstack' <<<"$spec"; then echo "::error::$(basename "$p"): old brand in metadata"; fail=1; fi
