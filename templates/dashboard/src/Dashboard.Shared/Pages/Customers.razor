@@ -28,7 +28,7 @@
             @* The actions of a row are built in: with MaxVisible 0 they stay behind one "Actions for ..." button (a sheet below md). "Send a message" is a link, so it also works
                before the page is interactive; the others need the interactive render. *@
             <KlyDataListTable Caption="Customers" RowActions="_rowActions" RowActionsMaxVisible="0">
-                <KlyDataListColumn Key="name" Title="Customer">
+                <KlyDataListTemplateColumn Key="name" Title="Customer">
                     <Template Context="customer">
                         <div class="flex items-center gap-3">
                             <KlyAvatar Alt="@customer.Name" Size="KlySize.Sm" />
@@ -38,20 +38,20 @@
                             </div>
                         </div>
                     </Template>
-                </KlyDataListColumn>
-                <KlyDataListColumn Field="company" />
-                <KlyDataListColumn Field="country" />
-                <KlyDataListColumn Field="plan" />
-                <KlyDataListColumn Key="status" Title="Status">
+                </KlyDataListTemplateColumn>
+                <KlyDataListFieldColumn Field="company" />
+                <KlyDataListFieldColumn Field="country" />
+                <KlyDataListFieldColumn Field="plan" />
+                <KlyDataListTemplateColumn Key="status" Title="Status">
                     <Template Context="customer">
                         <KlyBadge Label="@customer.Status" Color="@StatusColor(customer.Status)" Variant="KlyVariant.Subtle" Size="KlySize.Sm" />
                     </Template>
-                </KlyDataListColumn>
-                <KlyDataListColumn Field="orders" Align="DataListAlign.End" />
-                <KlyDataListColumn Key="totalSpent" Title="Total spent" Align="DataListAlign.End">
+                </KlyDataListTemplateColumn>
+                <KlyDataListFieldColumn Field="orders" Align="DataListAlign.End" />
+                <KlyDataListTemplateColumn Key="totalSpent" Title="Total spent" Align="DataListAlign.End">
                     <Template Context="customer">@Money.Format(customer.TotalSpent)</Template>
-                </KlyDataListColumn>
-                <KlyDataListColumn Field="joined" Format="MMM d, yyyy" />
+                </KlyDataListTemplateColumn>
+                <KlyDataListFieldColumn Field="joined" Format="MMM d, yyyy" />
             </KlyDataListTable>
             @* The checkbox column comes with this bar: the rows ticked on a page stay ticked on the next one, and only those the search and the filters still match stay ticked.
                Interactive only, like every action. *@
