@@ -6,6 +6,10 @@ All notable changes to this project are documented in this file. The format is b
 
 ## [Unreleased]
 
+### Added
+
+- `KlyPersistedStateBudget`, a scoped service registered by `AddKlyrooUi`, and `KlyrooOptions.PersistedStateMaxBytes` (28 KB): the budget of persistent component state that the Klyroo packages of one page share when they hand prerendered data to the interactive render, counted as sent (`SentBytes` adds the JSON escaping and the two base64 encodings Blazor applies). Klyroo.Table and Klyroo.Dashboard draw on it, so together they stay under SignalR's 32 KB limit on the message that starts an Interactive Server circuit.
+
 ## [0.1.0-preview.1] - 2026-11-24
 
 ### Added

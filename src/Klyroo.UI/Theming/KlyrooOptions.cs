@@ -103,6 +103,25 @@ public sealed partial class KlyrooOptions
     /// <summary>Default <c>Color</c> and <c>Size</c> of the components, when a parameter is not set.</summary>
     public KlyDefaults Defaults { get; } = new();
 
+    private int _persistedStateMaxBytes = 28 * 1024;
+
+    /// <summary>
+    /// The most bytes, as sent, that the Klyroo libraries of one page hand from the prerender to the interactive render together (28 KB by
+    /// default), shared through <see cref="KlyPersistedStateBudget"/>. The browser sends the persisted state of a page back to the server in
+    /// the message that starts an Interactive Server circuit, which SignalR refuses past 32 KB by default, so the default leaves room for the
+    /// state of the app itself. Raise it only with <c>MaximumReceiveMessageSize</c> of the hub.
+    /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException">The value is negative.</exception>
+    public int PersistedStateMaxBytes
+    {
+        get => _persistedStateMaxBytes;
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfNegative(value);
+            _persistedStateMaxBytes = value;
+        }
+    }
+
     private readonly Lazy<string?> _themeCss;
 
     /// <summary>Creates the options with the default theme of every component.</summary>
@@ -301,6 +320,7 @@ public static class KlyrooServiceCollectionExtensions
         services.TryAddSingleton<ThemeResolver>();
         services.TryAddScoped<IToastService, ToastService>();
         services.TryAddScoped<IKlyCultureStore, KlyLocalStorageCultureStore>();
+        services.TryAddScoped<KlyPersistedStateBudget>();
         return services;
     }
 }

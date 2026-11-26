@@ -35,6 +35,14 @@ Features that read the request, such as the time zone cookie of a data list in a
 `Klyroo.UI.Server` in the server project and `builder.Services.AddKlyrooServer()`. Without it the feature falls back to a
 default and does not fail. The package depends on exactly the version of `Klyroo.UI` it was built with.
 
+Sister packages can hand data from the prerender to the interactive render (the results of a Klyroo.Table list, the
+resources of a Klyroo.Dashboard). The browser sends all of it back to the server in the message that starts an
+Interactive Server circuit, which SignalR refuses past 32 KB by default, and the circuit then fails to start. So the
+packages of a page share one budget, `KlyrooOptions.PersistedStateMaxBytes` (28 KB by default, counted as sent, with the
+escaping and the two base64 encodings Blazor adds), through the scoped `KlyPersistedStateBudget`. What does not fit is
+not handed over: that list or resource loads again once in the interactive render. Raise the budget only together with
+the `MaximumReceiveMessageSize` of the hub.
+
 ## .NET MAUI Blazor Hybrid
 
 The same components run in a `BlazorWebView`, so one set of pages can ship as a web app and as a native app. A web

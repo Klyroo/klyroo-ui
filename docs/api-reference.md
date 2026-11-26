@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (154) · Static classes and extensions (10) · Classes (19) · Records (171) · Structs (2) · Interfaces (5) · Enums (38) · Delegates (2)
+Components (154) · Static classes and extensions (10) · Classes (20) · Records (171) · Structs (2) · Interfaces (5) · Enums (38) · Delegates (2)
 
 ### Components
 
@@ -3077,6 +3077,26 @@ A palette of 11 shades (50, 100, 200 … 900, 950) that a semantic color is mapp
 | `static Custom(string name, params string[] shades)` | `KlyPalette` | A palette from its 11 shades, lightest (50) first. |
 | `ToString()` | `string` | Returns the name of the palette. |
 
+#### `KlyPersistedStateBudget`
+
+`Klyroo.UI` · class
+
+The share of persistent component state that the Klyroo libraries of one page may hand from the prerender to the interactive render, shared by all of them (Klyroo.Table lists, Klyroo.Dashboard resources). The browser sends everything a page persisted back to the server in the single SignalR message that starts an Interactive Server circuit, and SignalR refuses that message past 32 KB by default, which fails the circuit: each library measures what it writes with `KlyPersistedStateBudget.SentBytes` and reserves it here, and skips (then loads again) what does not fit.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyPersistedStateBudget(KlyrooOptions options)` | Creates the budget of a scope. Use the instance `AddKlyrooUi` registers rather than creating one. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `MaxBytes` | `long` | The bytes, as sent, the libraries of the page may persist together. |
+| `UsedBytes` | `long` | The bytes, as sent, already reserved in this scope. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static SentBytes(string key, string text)` | `long` | What a value persisted as text under `key` weighs in the message that starts a Server circuit. Blazor writes the text as a JSON string, which escapes quotes, `+`, `<` and non-ASCII characters, keeps it as bytes in a dictionary that is serialized with base64, then protects and base64-encodes the whole state again: about the escaped length plus the key, times 16/9. |
+| `TryReserve(long bytes)` | `bool` | Takes `bytes` from the budget when they fit, and returns whether they did. Nothing is taken when they do not. |
+
 #### `KlyRemoteOptions`
 
 `Klyroo.UI` · class
@@ -3320,6 +3340,7 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `PageLogos` | `ComponentTheme` | Theme of `KlyPageLogos`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `PageSection` | `ComponentTheme` | Theme of `KlyPageSection`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Pagination` | `ComponentTheme` | Theme of `KlyPagination`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `PersistedStateMaxBytes` (get, set) | `int` | The most bytes, as sent, that the Klyroo libraries of one page hand from the prerender to the interactive render together (28 KB by default), shared through `KlyPersistedStateBudget`. The browser sends the persisted state of a page back to the server in the message that starts an Interactive Server circuit, which SignalR refuses past 32 KB by default, so the default leaves room for the state of the app itself. Raise it only with `MaximumReceiveMessageSize` of the hub. |
 | `PinInput` | `ComponentTheme` | Theme of `KlyPinInput`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Popover` | `ComponentTheme` | Theme of `KlyPopover`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `PricingPlan` | `ComponentTheme` | Theme of `KlyPricingPlan`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
