@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (154) · Static classes and extensions (10) · Classes (20) · Records (171) · Structs (2) · Interfaces (5) · Enums (38) · Delegates (2)
+Components (155) · Static classes and extensions (10) · Classes (21) · Records (173) · Structs (2) · Interfaces (6) · Enums (39) · Delegates (2)
 
 ### Components
 
@@ -60,6 +60,7 @@ Root wrapper of an app, placed once in the layout around the body. It renders th
 | `Dir` | `string?` | Text direction (the `dir` attribute): "ltr", "rtl" or "auto". Defaults to the direction of the locale. |
 | `Lang` | `string?` | Language of the content (the `lang` attribute), for example "fr". Defaults to the code of the locale. |
 | `Locale` | `KlyLocale?` | The locale of every component below: texts, writing direction and the culture used to format dates and numbers. Defaults to the locale of an enclosing `KlyApp`, then `KlyrooOptions.Locale`, then the one matching the current UI culture among `KlyrooOptions.Locales`. |
+| `Overlays` | `bool` | Renders the `KlyOverlayHost` after the content, which shows the dialogs opened with `IKlyOverlayService`. Turn it off when the app places its own. |
 | `Overrides` | `IReadOnlyDictionary<Type, ISlotOverrides>?` | Class overrides for every component below, by component type. See `KlyTheme`. |
 | `SpatialNavigation` | `bool` | Turns on the remote control mode for TV screens (experimental, opt in): the arrow keys move focus to the nearest focusable element in that direction, the focus ring is thick and the sizes are larger (`data-kly-tv` on the `html` element). See docs/platforms.md in the repository. |
 | `ToastDuration` | `TimeSpan` | How long a toast stays on screen. |
@@ -1818,6 +1819,14 @@ Site navigation of links with optional sub-items, horizontal or vertical, with t
 
 Also accepts the parameters of `KlyComponentBase`.
 
+#### `KlyOverlayHost`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+Shows the dialogs opened with `IKlyOverlayService`, each on a `KlyModal` or a `KlySlideover`. `KlyApp` renders one for you.
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyPage`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
@@ -3029,6 +3038,21 @@ The default `IKlyCultureStore`: the `localStorage` of the web view, under the ke
 | :--- | :--- | :--- |
 | `GetAsync()` | `ValueTask<string?>` | The stored culture name (`fr`, `pt-BR`), or null when none was chosen. |
 | `SetAsync(string culture)` | `ValueTask` | Remembers the culture name the user chose. |
+
+#### `KlyOverlayContext`
+
+`Klyroo.UI` · class
+
+Handed to the component shown by `IKlyOverlayService` as a cascading parameter, so it can end its own dialog: `[CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;`
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `IsClosed` | `bool` | True once the dialog has been completed or canceled. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `Cancel()` | `void` | Dismisses the dialog: closes it and gives the caller a canceled result. Does nothing once the dialog has ended. |
+| `Close(object? data = null)` | `void` | Completes the dialog: closes it and hands `data` to the caller of `ShowAsync`. Does nothing once the dialog has ended. |
 
 #### `KlyPalette`
 
@@ -5081,6 +5105,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `AuthFormSubmit` (init) | `string` | Label of the submit button of an auth form that has none. |
 | `Breadcrumb` (init) | `string` | Accessible name of the navigation landmark of `KlyBreadcrumb`. |
 | `Brightness` (init) | `string` | Accessible name of the brightness control of `KlyColorPicker`. |
+| `Cancel` (init) | `string` | Label of the cancel button of the dialog opened by `IKlyOverlayService.ConfirmAsync`. |
 | `CarouselRoleDescription` (init) | `string` | Spoken by screen readers for the carousel itself (`aria-roledescription`). |
 | `CarouselSlideRoleDescription` (init) | `string` | Spoken by screen readers for each slide (`aria-roledescription`). |
 | `ChartArea` (init) | `string` | Accessible name of an area chart (`KlyChart`), read before its generated description. |
@@ -5124,6 +5149,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `ColorModeLight` (init) | `string` | Label of the light option of `KlyColorModeSelect`. |
 | `ColorModeSystem` (init) | `string` | Label of the option of `KlyColorModeSelect` that follows the system setting. |
 | `CommandResults` (init) | `string` | Announced to screen readers after filtering; `{0}` is the number of results. |
+| `Confirm` (init) | `string` | Label of the confirm button of the dialog opened by `IKlyOverlayService.ConfirmAsync`. |
 | `ContentNavigation` (init) | `string` | Accessible name of a `KlyContentNavigation` that has no `AriaLabel`. |
 | `ContentNext` (init) | `string` | Caption of the link to the next page. |
 | `ContentPrevious` (init) | `string` | Caption of the link to the previous page. |
@@ -5328,6 +5354,39 @@ One page of options returned by a `KlyOptionsProvider`.
 | `HasMore` (init) | `bool` | Whether another page exists. A non-null `KlyOptionsResult.NextCursor` also means there is one. |
 | `Items` (init) | `IReadOnlyList<KlySelectItem>` | The options of this page, in the order to list them. A value that an earlier page of the same search already listed is skipped. |
 | `NextCursor` (init) | `string?` | The cursor that asks for the page after this one; null when the provider pages by `Skip` and `Take` or this is the last page. |
+
+#### `KlyOverlayOptions`
+
+`Klyroo.UI` · record
+
+Presentation of a dialog opened with `IKlyOverlayService`.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `AriaLabel` (init) | `string?` | Accessible name when there is no `KlyOverlayOptions.Title`. |
+| `Close` (init) | `bool` | Shows the close button of the header, which cancels the dialog. |
+| `Description` (init) | `string?` | Text under the title. |
+| `Dismissible` (init) | `bool` | Escape and a click on the backdrop cancel the dialog. Turn it off to force an explicit answer. |
+| `Kind` (init) | `KlyOverlayKind` | A centered modal (the default) or a slideover. |
+| `Side` (init) | `SlideoverSide` | Edge a slideover comes from. Ignored for a modal. |
+| `Size` (init) | `KlySize` | Size of a modal, from `Xs` to `Xl`. Ignored for a slideover. |
+| `Title` (init) | `string?` | Title of the dialog, which also names it for assistive technology. |
+
+#### `KlyOverlayResult`
+
+`Klyroo.UI` · record
+
+How a dialog opened with `IKlyOverlayService` ended.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Canceled` | `bool` | True when the dialog was dismissed (Escape, backdrop, close button, `KlyOverlayContext.Cancel` or a cancellation token) instead of completed. |
+| `Data` | `object?` | The value passed to `KlyOverlayContext.Close`, or `null` when the dialog was canceled. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `GetData<T>()` | `T` | The data as `T`, or `default` when the dialog was canceled or the data has another type. |
+| `TryGetData<T>(out T data)` | `bool` | Gets the data as `T` when the dialog completed with a value of that type. |
 
 #### `KlyPostAuthor`
 
@@ -6521,6 +6580,17 @@ Turns a source image into the URL of a resized, converted version of it. Registe
 | `GetEffectiveWidth(int width)` | `int` | The width, in pixels, of the image the URL for `width` will really return, for the `w` descriptors of the `srcset`. A provider that rounds widths to a fixed set (`local`, `vercel`) returns the rounded one, so that a "400w" candidate is not a 512 pixel image; the others produce the width they are asked for. Defaults to `width`. |
 | `GetUrl(string src, KlyImageModifiers modifiers)` | `string` | The URL of `src` with `modifiers` applied. `src` has a leading slash when it is a local path. |
 
+#### `IKlyOverlayService`
+
+`Klyroo.UI` · interface
+
+Opens dialogs from code and awaits how they end. Needs an interactive render mode and a `KlyOverlayHost` (`KlyApp` renders one), like `IToastService` needs a toaster.
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `ConfirmAsync(string title, string? message = null, string? confirmLabel = null, string? cancelLabel = null, KlyColor? color = null, CancellationToken cancellationToken = null)` | `Task<bool>` | Asks a yes or no question in a dialog and returns true when the user confirms, false when they cancel or dismiss it. |
+| `ShowAsync<TComponent>(IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = null)` | `Task<KlyOverlayResult>` | Shows `TComponent` in a dialog and completes when the dialog ends: with the data the component passed to `KlyOverlayContext.Close`, or with a canceled result after Escape, a click on the backdrop, the close button, `KlyOverlayContext.Cancel` or `cancellationToken`. |
+
 #### `IKlyRequestCookies`
 
 `Klyroo.UI` · interface
@@ -6917,6 +6987,17 @@ Direction of a layout.
 | :--- | :--- |
 | `Horizontal` | Along the line of text. |
 | `Vertical` | Top to bottom. |
+
+#### `KlyOverlayKind`
+
+`Klyroo.UI` · enum
+
+How `IKlyOverlayService` presents the component it opens.
+
+| Value | Description |
+| :--- | :--- |
+| `Modal` | A centered modal dialog (`KlyModal`). |
+| `Slideover` | A panel on an edge of the screen (`KlySlideover`). |
 
 #### `KlyProgressAnimation`
 
