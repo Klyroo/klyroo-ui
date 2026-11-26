@@ -33,7 +33,7 @@ that the [API reference](https://github.com/klyroo/klyroo-ui/blob/main/docs/api-
 - **Color mode** (5): ColorModeButton, ColorModeSwitch, ColorModeSelect, ColorModeAvatar, ColorModeImage
 - **Navigation** (12): Tabs, Accordion, Collapsible, Breadcrumb, Pagination, Stepper, Timeline, NavigationMenu, Tree, Marquee, ScrollArea, Splitter
 - **Content** (5): ContentNavigation, ContentSearch, ContentSearchButton, ContentSurround, ContentToc
-- **Data** (4): Table, Column, Chart, Carousel
+- **Data** (4): Table, Column, Chart, Carousel. `KlyTable` is a simple client-side table over a list you already hold; for server data, paging and filters use [Klyroo.Table](https://github.com/klyroo/klyroo-table)
 - **Layout** (10): App, Header, Main, Footer, FooterColumns, Sidebar, SkipLink, Error, LocaleSelect, Theme
 - **Page** (23): Page, PageHeader, PageHero, PageSection, PageFeature, PageGrid, PageColumns, PageCard, PageCta, PageLinks, PageList, PageLogos, PageAnchors, PageAside, PageBody, AuthForm, PricingPlan, PricingPlans, PricingTable, BlogPost, BlogPosts, ChangelogVersion, ChangelogVersions
 - **Dashboard** (10): DashboardGroup, DashboardSidebar, DashboardSidebarCollapse, DashboardSidebarToggle, DashboardPanel, DashboardResizeHandle, DashboardNavbar, DashboardToolbar, DashboardSearch, DashboardSearchButton
