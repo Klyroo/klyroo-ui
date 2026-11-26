@@ -518,13 +518,20 @@ and whether the header shows a close button (`Close`). Set `Kind = KlyOverlayKin
 panel instead of a centered modal. Both methods take a `CancellationToken` that closes the dialog with a canceled result.
 
 Dialogs stack: open a second one from the first and the newest sits on top, with Escape closing only that one. The task
-returned by `ShowAsync` always completes, so a caller is never left waiting: a dialog whose host disappears (the page was
-left, the circuit ended) ends as canceled.
+returned by `ShowAsync` always completes, so a caller is never left waiting. A dialog also ends as canceled when the user
+navigates to another page (a different path or query string; a change of the fragment alone does not count) and when the
+last host disappears (the page was left, the circuit ended).
 
-Calling the service when no `KlyOverlayHost` is rendered throws an `InvalidOperationException` that says so. If you set
-`KlyApp.Overlays` to `false`, place a single `<KlyOverlayHost />` yourself. Like the toaster, it must live in the same
-interactive render tree as the code that calls the service: an `@rendermode` island that has no `KlyApp` of its own needs
-one.
+When to call it. The host attaches only in an interactive render, after the page that contains it has initialized. So call
+the service from an event handler or from `OnAfterRenderAsync`, not from `OnInitialized` or `OnInitializedAsync`: on the
+first load the page initializes before the host exists, and during prerendering or static rendering there is no host at all.
+In those cases the call throws an `InvalidOperationException` that says so, instead of hanging the request. It is safe to
+call from another thread (a timer, a background task): the dialog is added where the host renders.
+
+If you set `KlyApp.Overlays` to `false`, place a `<KlyOverlayHost />` yourself. An `@rendermode` island that has no `KlyApp`
+of its own needs one too. Several hosts can live in one circuit (one per island): the newest one that is still alive draws
+the dialogs, and when it goes away the previous one takes over without canceling anything. The dialogs are canceled only
+when no host remains.
 
 ## Test components with bUnit
 

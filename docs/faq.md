@@ -89,11 +89,11 @@ with `Model ??= new()` in `OnInitialized`, and use `Type="submit"` on the button
 
 **Fix.** Call it from an interactive component. `KlyApp` renders a toaster; do not also place your own `KlyToaster`.
 
-### `IKlyOverlayService` throws that no `KlyOverlayHost` is rendered
+### `IKlyOverlayService` throws that no `KlyOverlayHost` is attached
 
-**Cause.** The service shows dialogs through a `KlyOverlayHost` in the interactive render tree of the caller. There is none when `KlyApp.Overlays` is `false`, when the layout has no `KlyApp`, or when the code runs in an `@rendermode` island that has no `KlyApp` of its own.
+**Cause.** The service draws dialogs through a `KlyOverlayHost` that attaches only in an interactive render, after the page has initialized. There is none while a page prerenders or renders statically, during `OnInitialized` of a page on the first load (the host attaches after the page), when `KlyApp.Overlays` is `false`, when the layout has no `KlyApp`, or in an `@rendermode` island that has no host of its own.
 
-**Fix.** Wrap the layout in `KlyApp` (it renders the host), or place one `<KlyOverlayHost />` inside the island that calls the service.
+**Fix.** Call the service from an event handler or from `OnAfterRenderAsync`. Wrap the layout in `KlyApp` (it renders the host), or place a `<KlyOverlayHost />` in the island that calls the service. Several hosts in one circuit are fine: the newest one draws, and the dialogs are canceled only when none remains.
 
 ### The page has the wrong language, or dates differ between the prerender and the client
 

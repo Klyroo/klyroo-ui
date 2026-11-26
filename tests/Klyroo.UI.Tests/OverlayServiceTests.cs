@@ -27,6 +27,28 @@ public sealed class OverlayPicker : ComponentBase
     }
 }
 
+public sealed class OverlayHosts : ComponentBase
+{
+    [Parameter] public bool Second { get; set; }
+
+    protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+    {
+        builder.OpenElement(0, "section");
+        builder.AddAttribute(1, "id", "first");
+        builder.OpenComponent<KlyOverlayHost>(2);
+        builder.CloseComponent();
+        builder.CloseElement();
+        if (Second)
+        {
+            builder.OpenElement(3, "section");
+            builder.AddAttribute(4, "id", "second");
+            builder.OpenComponent<KlyOverlayHost>(5);
+            builder.CloseComponent();
+            builder.CloseElement();
+        }
+    }
+}
+
 public class OverlayServiceTests : KlyrooTestContext
 {
     private IKlyOverlayService Overlays => Services.GetRequiredService<IKlyOverlayService>();
@@ -236,5 +258,114 @@ public class OverlayServiceTests : KlyrooTestContext
         var off = Render<KlyApp>(p => p.Add(a => a.Overlays, false));
         await Assert.ThrowsAsync<InvalidOperationException>(() => Overlays.ConfirmAsync("Nowhere", cancellationToken: Xunit.TestContext.Current.CancellationToken));
         Assert.Empty(off.FindAll("kly-modal"));
+    }
+
+    [Fact]
+    public async Task A_navigation_cancels_the_open_dialogs_but_a_fragment_change_does_not()
+    {
+        var cut = Render<KlyOverlayHost>();
+        var navigation = Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
+        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
+
+        navigation.NavigateTo(navigation.Uri + "#section");
+        Assert.False(pending.IsCompleted);
+
+        navigation.NavigateTo("/elsewhere");
+        var result = await pending;
+
+        Assert.True(result.Canceled);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
+    }
+
+    [Fact]
+    public async Task A_confirm_is_false_after_a_navigation()
+    {
+        var cut = Render<KlyOverlayHost>();
+        var pending = Overlays.ConfirmAsync("Delete", cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
+
+        Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>().NavigateTo("/elsewhere");
+
+        Assert.False(await pending);
+    }
+
+    [Fact]
+    public async Task A_non_interactive_render_attaches_no_host_and_the_call_throws_with_advice()
+    {
+        using var staticContext = new StaticContext();
+
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => staticContext.Show());
+
+        Assert.Contains("OnAfterRenderAsync", ex.Message);
+        Assert.Contains("OnInitialized", ex.Message);
+        Assert.Contains("prerender", ex.Message);
+    }
+
+    [Fact]
+    public async Task Calling_before_the_host_attached_throws_and_says_to_wait_for_a_render()
+    {
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Overlays.ConfirmAsync("Too early", cancellationToken: Xunit.TestContext.Current.CancellationToken));
+
+        Assert.Contains("OnAfterRenderAsync", ex.Message);
+        Assert.Contains("event handler", ex.Message);
+    }
+
+    [Fact]
+    public async Task Show_from_a_thread_pool_thread_and_the_delayed_removal_leave_the_list_consistent()
+    {
+        var cut = Render<KlyOverlayHost>();
+        var tasks = await Task.Run(() => Enumerable.Range(0, 8)
+            .Select(i => Overlays.ShowAsync<OverlayPicker>(Name("N" + i), cancellationToken: Xunit.TestContext.Current.CancellationToken)).ToArray(), Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Equal(8, cut.FindAll("kly-modal").Count), TimeSpan.FromSeconds(3));
+
+        for (var i = 0; i < 8; i++) cut.Find($"#cancel-N{i}").Click();
+        await Task.WhenAll(tasks);
+
+        // The removals run on a timer thread and come back through the dispatcher of the host.
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
+    }
+
+    [Fact]
+    public async Task With_several_hosts_the_newest_draws_the_dialogs_and_the_last_one_to_go_cancels()
+    {
+        var cut = Render<OverlayHosts>();
+        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#first kly-modal")));
+
+        // A second host appears: it becomes the one that draws.
+        cut.Render(p => p.Add(c => c.Second, true));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#second kly-modal")));
+        Assert.Empty(cut.FindAll("#first kly-modal"));
+        Assert.False(pending.IsCompleted);
+
+        // It goes away: the dialog is not canceled, the first host draws it again.
+        cut.Render(p => p.Add(c => c.Second, false));
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#first kly-modal")));
+        Assert.False(pending.IsCompleted);
+
+        cut.Find("#done-Ada").Click();
+        Assert.Equal("ADA", (await pending).GetData<string>());
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
+    }
+
+    [Fact]
+    public async Task Removing_the_only_host_cancels_even_with_a_second_one_gone_before()
+    {
+        var cut = Render<OverlayHosts>(p => p.Add(c => c.Second, true));
+        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#second kly-modal")));
+
+        await DisposeComponentsAsync();
+
+        Assert.True((await pending).Canceled);
+    }
+
+    private sealed class StaticContext : KlyrooTestContext
+    {
+        public StaticContext() : base(interactive: false) => Render<KlyOverlayHost>();
+
+        public Task<KlyOverlayResult> Show() =>
+            Services.GetRequiredService<IKlyOverlayService>().ShowAsync<OverlayPicker>(cancellationToken: Xunit.TestContext.Current.CancellationToken);
     }
 }

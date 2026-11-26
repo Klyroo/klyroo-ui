@@ -90,7 +90,7 @@ public sealed class KlyOverlayContext
 
 /// <summary>
 /// Opens dialogs from code and awaits how they end. Needs an interactive render mode and a <see cref="KlyOverlayHost"/>
-/// (<see cref="KlyApp"/> renders one), like <see cref="IToastService"/> needs a toaster.
+/// (<see cref="KlyApp"/> renders one), like <see cref="IToastService"/> needs a toaster. Call it from an event handler or <c>OnAfterRenderAsync</c>, never from <c>OnInitialized</c> or while prerendering.
 /// </summary>
 public interface IKlyOverlayService
 {
@@ -102,7 +102,7 @@ public interface IKlyOverlayService
     /// <param name="parameters">Parameters of the component, by name.</param>
     /// <param name="options">Title, size and behavior of the dialog.</param>
     /// <param name="cancellationToken">Cancels the dialog (it closes and the result is canceled).</param>
-    /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is rendered.</exception>
+    /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is attached: the page has not rendered yet (call it from <c>OnAfterRenderAsync</c> or an event handler, not <c>OnInitialized</c>), or the render is static or a prerender.</exception>
     Task<KlyOverlayResult> ShowAsync<
         [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent>(
         IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
@@ -140,25 +140,67 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
     // Time left to the browser to close the native dialog (and return the focus) before the markup goes away.
     private static readonly TimeSpan RemovalDelay = TimeSpan.FromMilliseconds(250);
 
+    private const string NoHostMessage =
+        "No KlyOverlayHost is attached. Place <KlyApp> (it renders one) or <KlyOverlayHost /> in the layout, and call the overlay service " +
+        "from interactive code once the page has rendered: an event handler or OnAfterRenderAsync, not OnInitialized (the host attaches after " +
+        "the page on the first load) and not during prerendering or static rendering.";
+
+    /// <summary>One attached host: how to run code on its renderer, and how to ask it to render again.</summary>
+    private sealed record HostRegistration(object Host, Func<Action, Task> Invoke, Action Changed);
+
+    // The list of entries is only touched through Dispatch, so on the renderer that draws it. The list of hosts is read from any thread.
     private readonly List<OverlayEntry> _entries = [];
-    private Action? _changed;
-    private object? _host;
+    private readonly List<HostRegistration> _hosts = [];
+    private readonly object _hostsLock = new();
 
     public IReadOnlyList<OverlayEntry> Entries => _entries;
 
-    /// <summary>The last host rendered wins: a single place renders the dialogs.</summary>
-    public void Attach(object host, Action changed)
+    /// <summary>The newest host that is still attached draws the dialogs.</summary>
+    public bool IsActive(object host)
     {
-        _host = host;
-        _changed = changed;
+        lock (_hostsLock) return _hosts.Count > 0 && ReferenceEquals(_hosts[^1].Host, host);
     }
 
+    private HostRegistration? Active
+    {
+        get { lock (_hostsLock) return _hosts.Count > 0 ? _hosts[^1] : null; }
+    }
+
+    private HostRegistration[] Hosts()
+    {
+        lock (_hostsLock) return [.. _hosts];
+    }
+
+    /// <summary>Called on the renderer of the host. <paramref name="invoke"/> runs code on that renderer, <paramref name="changed"/> renders the host again.</summary>
+    public void Attach(object host, Func<Action, Task> invoke, Action changed)
+    {
+        lock (_hostsLock) _hosts.Add(new HostRegistration(host, invoke, changed));
+        NotifyAll();
+    }
+
+    /// <summary>Called on the renderer of the host. The dialogs are canceled only when no other host remains to draw them.</summary>
     public void Detach(object host)
     {
-        if (!ReferenceEquals(_host, host)) return;
-        _host = null;
-        _changed = null;
-        CancelAll();
+        bool none;
+        lock (_hostsLock)
+        {
+            _hosts.RemoveAll(h => ReferenceEquals(h.Host, host));
+            none = _hosts.Count == 0;
+        }
+        if (none) CancelAll();
+        else NotifyAll();
+    }
+
+    private void NotifyAll()
+    {
+        foreach (var host in Hosts()) host.Changed();
+    }
+
+    /// <summary>Runs <paramref name="action"/> on the renderer of the active host, so the entries are never changed while it renders.</summary>
+    private void Dispatch(Action action)
+    {
+        if (Active is { } host) _ = host.Invoke(action);
+        else action();
     }
 
     public Task<KlyOverlayResult> ShowAsync<
@@ -193,21 +235,28 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
 
     private Task<KlyOverlayResult> Open(OverlayEntry entry, CancellationToken cancellationToken)
     {
-        if (_changed is null)
-        {
-            throw new InvalidOperationException(
-                "No KlyOverlayHost is rendered. Place <KlyApp> (it renders one) or <KlyOverlayHost /> in the layout, and call the overlay service from interactive code.");
-        }
+        if (Active is not { } host) throw new InvalidOperationException(NoHostMessage);
         if (cancellationToken.IsCancellationRequested) return Task.FromResult(KlyOverlayResult.Cancel);
 
         entry.Context = new KlyOverlayContext(entry);
-        _entries.Add(entry);
         if (cancellationToken.CanBeCanceled)
         {
             var registration = cancellationToken.Register(() => Complete(entry, KlyOverlayResult.Cancel));
             entry.Completion.Task.ContinueWith(_ => registration.Dispose(), TaskScheduler.Default);
         }
-        _changed();
+        // Possibly called from another thread than the renderer's: the list changes where the host renders.
+        _ = host.Invoke(() =>
+        {
+            if (entry.Completed) return;
+            if (Active is null)
+            {
+                // The last host went away between the call and now.
+                entry.Completion.TrySetResult(KlyOverlayResult.Cancel);
+                return;
+            }
+            _entries.Add(entry);
+            NotifyAll();
+        });
         return entry.Completion.Task;
     }
 
@@ -215,9 +264,12 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
     public void Complete(OverlayEntry entry, KlyOverlayResult result)
     {
         if (!entry.Completion.TrySetResult(result)) return;
-        entry.Open = false;
-        _changed?.Invoke();
-        _ = RemoveLaterAsync(entry);
+        Dispatch(() =>
+        {
+            entry.Open = false;
+            NotifyAll();
+            _ = RemoveLaterAsync(entry);
+        });
     }
 
     /// <summary>The dialog is already closed in the browser (Escape, backdrop, close button): complete as canceled and drop it.</summary>
@@ -228,15 +280,22 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         Remove(entry);
     }
 
+    /// <summary>The user went to another page: every open dialog ends as canceled.</summary>
+    public void CancelForNavigation()
+    {
+        foreach (var entry in _entries.ToArray()) Complete(entry, KlyOverlayResult.Cancel);
+    }
+
     private async Task RemoveLaterAsync(OverlayEntry entry)
     {
         await Task.Delay(RemovalDelay).ConfigureAwait(false);
-        Remove(entry);
+        // Back on the renderer of the host: the list is not ours to change from a pool thread.
+        Dispatch(() => Remove(entry));
     }
 
     private void Remove(OverlayEntry entry)
     {
-        if (_entries.Remove(entry)) _changed?.Invoke();
+        if (_entries.Remove(entry)) NotifyAll();
     }
 
     private void CancelAll()
@@ -245,5 +304,9 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         _entries.Clear();
     }
 
-    public void Dispose() => CancelAll();
+    public void Dispose()
+    {
+        lock (_hostsLock) _hosts.Clear();
+        CancelAll();
+    }
 }
