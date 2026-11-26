@@ -11,7 +11,7 @@
 <kly-date-field class="@_slots["root"]" data-color="@Color.Value">
     @if (UseEditContext)
     {
-        <InputDate TValue="TValue" Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+        <InputDate TValue="TValue" Value="@Value" ValueChanged="EditChangeHandler" ValueExpression="ValueExpression" @attributes="Attributes()" />
     }
     else if (ValueChanged.HasDelegate)
     {
@@ -68,6 +68,16 @@
             ["size"] = VariantValue.Of(EffectiveSize),
         }, Ui, "root");
 
+    private EventCallback<TValue> EditChangeHandler => EventCallback.Factory.Create<TValue>(this, OnEditChange);
+
+    // InputDate parses the day to midnight; the value keeps the time (and offset) of the one it replaces.
+    private async Task OnEditChange(TValue parsed)
+    {
+        var value = Codec.FromDate(Codec.ToDate(parsed), Value);
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+
     private async Task OnNativeChange(ChangeEventArgs e)
     {
         var date = Iso.ParseDate(e.Value?.ToString());
@@ -75,7 +85,7 @@
         {
             return;
         }
-        var value = Codec.FromDate(date);
+        var value = Codec.FromDate(date, Value);
         Value = value;
         await ValueChanged.InvokeAsync(value);
     }

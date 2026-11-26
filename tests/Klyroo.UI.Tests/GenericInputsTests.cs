@@ -464,16 +464,55 @@ public class GenericInputsTests : KlyrooTestContext
     // ---- KlyInputDate
 
     [Fact]
-    public void InputDate_binds_a_date_time_at_midnight()
+    public void InputDate_keeps_the_time_of_day_and_the_kind_of_a_date_time()
     {
-        var due = new DateTime(2026, 11, 26, 14, 30, 0);
+        var due = new DateTime(2026, 11, 26, 14, 30, 15, DateTimeKind.Utc);
         var cut = Render<KlyInputDate<DateTime>>(p => p.Add(d => d.Value, due).Add(d => d.ValueChanged, (DateTime v) => due = v));
 
         Assert.Equal("2026-11-26", cut.Find("input[type=date]").GetAttribute("value"));
 
         cut.Find("input[type=date]").Change("2026-12-01");
 
+        Assert.Equal(new DateTime(2026, 12, 1, 14, 30, 15, DateTimeKind.Utc), due);
+        Assert.Equal(DateTimeKind.Utc, due.Kind);
+    }
+
+    [Fact]
+    public void InputDate_starts_a_date_time_that_had_no_time_at_midnight()
+    {
+        DateTime? due = null;
+        var cut = Render<KlyInputDate<DateTime?>>(p => p.Add(d => d.Value, due).Add(d => d.ValueChanged, (DateTime? v) => due = v));
+
+        cut.Find("input[type=date]").Change("2026-12-01");
+
         Assert.Equal(new DateTime(2026, 12, 1), due);
+        Assert.Equal(DateTimeKind.Unspecified, due!.Value.Kind);
+    }
+
+    [Fact]
+    public void InputDate_keeps_the_time_and_the_offset_of_a_date_time_offset()
+    {
+        DateTimeOffset? shipped = new DateTimeOffset(2026, 3, 4, 9, 45, 0, TimeSpan.FromHours(5.5));
+        var cut = Render<KlyInputDate<DateTimeOffset?>>(p => p.Add(d => d.Value, shipped).Add(d => d.ValueChanged, (DateTimeOffset? v) => shipped = v));
+
+        cut.Find("input[type=date]").Change("2026-03-09");
+
+        Assert.Equal(new DateTimeOffset(2026, 3, 9, 9, 45, 0, TimeSpan.FromHours(5.5)), shipped);
+        Assert.Equal(TimeSpan.FromHours(5.5), shipped!.Value.Offset);
+    }
+
+    [Fact]
+    public void InputDate_starts_a_date_time_offset_that_had_none_at_local_midnight_in_the_local_offset()
+    {
+        DateTimeOffset? shipped = null;
+        var cut = Render<KlyInputDate<DateTimeOffset?>>(p => p.Add(d => d.Value, shipped).Add(d => d.ValueChanged, (DateTimeOffset? v) => shipped = v));
+
+        cut.Find("input[type=date]").Change("2026-03-09");
+
+        var expected = new DateTimeOffset(new DateTime(2026, 3, 9));
+        Assert.Equal(expected, shipped);
+        Assert.Equal(TimeSpan.Zero, shipped!.Value.TimeOfDay);
+        Assert.Equal(expected.Offset, shipped.Value.Offset);
     }
 
     [Fact]
@@ -486,6 +525,7 @@ public class GenericInputsTests : KlyrooTestContext
 
         cut.Find("input[type=date]").Change("2026-03-09");
         Assert.Equal(new DateOnly(2026, 3, 9), DateOnly.FromDateTime(shipped!.Value.DateTime));
+        Assert.Equal(TimeSpan.FromHours(2), shipped.Value.Offset);
 
         cut.Find("input[type=date]").Change("");
         Assert.Null(shipped);
@@ -510,7 +550,7 @@ public class GenericInputsTests : KlyrooTestContext
     [Fact]
     public void InputDate_in_an_EditForm_binds_the_DateTime_property_and_posts_under_its_name()
     {
-        var model = new Order { Due = new DateTime(2026, 5, 6) };
+        var model = new Order { Due = new DateTime(2026, 5, 6, 7, 8, 9) };
         var cut = Render<EditForm>(p => p
             .Add(f => f.Model, model)
             .Add(f => f.ChildContent, (EditContext _) => (RenderFragment)(b =>
@@ -526,7 +566,7 @@ public class GenericInputsTests : KlyrooTestContext
 
         cut.Find("input[type=date]").Change("2026-07-08");
 
-        Assert.Equal(new DateTime(2026, 7, 8), model.Due);
+        Assert.Equal(new DateTime(2026, 7, 8, 7, 8, 9), model.Due);
     }
 
     [Fact]

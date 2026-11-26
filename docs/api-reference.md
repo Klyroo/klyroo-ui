@@ -1571,7 +1571,7 @@ Also accepts the parameters of `KlyFieldBase<string>`.
 
 `Klyroo.UI` · component · inherits `KlyFieldBase<TValue>`
 
-Date field with a calendar popup, with localized formatting. It binds to a `DateOnly`, a `DateTime` or a `DateTimeOffset`, or to the nullable form of one of them. Picking a day sets the value to that day at midnight; the time of day of a `DateTime` or `DateTimeOffset` is not kept.
+Date field with a calendar popup, with localized formatting. It binds to a `DateOnly`, a `DateTime` or a `DateTimeOffset`, or to the nullable form of one of them. Picking a day keeps the time of day of the current value (and the kind of a `DateTime`, the offset of a `DateTimeOffset`); a value that had none (null before, or the default) starts at midnight, a `DateTimeOffset` in the offset of the server's local time zone on that day.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
