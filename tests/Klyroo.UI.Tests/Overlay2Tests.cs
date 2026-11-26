@@ -306,7 +306,7 @@ public class Overlay2Tests : KlyrooTestContext
     public void ColorModeImage_renders_both_sources_and_forwards_attributes_and_class()
     {
         var cut = Render<KlyColorModeImage>(p => p.Add(i => i.Light, "/light.png").Add(i => i.Dark, "/dark.png").Add(i => i.Alt, "Logo")
-            .Add(i => i.Class, "rounded-lg").AddUnmatched("width", "120"));
+            .Add(i => i.Class, "rounded-lg").Add(i => i.Width, 120));
 
         var images = cut.FindAll("img");
         Assert.Equal(2, images.Count);

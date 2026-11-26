@@ -262,20 +262,33 @@ public class ImageTests : KlyrooTestContext
     }
 
     [Fact]
-    public void Placeholder_true_asks_the_provider_for_a_tiny_blurred_version_and_a_url_is_used_as_is()
+    public void Placeholder_auto_asks_the_provider_for_a_tiny_blurred_version_and_a_url_is_used_as_is()
     {
         var auto = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 200).Add(i => i.Height, 100)
-            .Add(i => i.Provider, "blurry").Add(i => i.Placeholder, true));
-        var url = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/tiny.png"));
+            .Add(i => i.Provider, "blurry").Add(i => i.Placeholder, KlyImagePlaceholder.Auto));
+        var url = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, KlyImagePlaceholder.Url("/tiny.png")));
 
         Assert.Contains("url(\"/cdn/a.png?w=10&h=5&q=50&blur=3\")", auto.Find("img").GetAttribute("style"));
         Assert.Contains("url(\"/tiny.png\")", url.Find("img").GetAttribute("style"));
     }
 
     [Fact]
+    public void An_empty_placeholder_url_shows_no_placeholder_and_a_size_that_is_not_positive_is_written_but_not_resolved()
+    {
+        var empty = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, KlyImagePlaceholder.Url("")));
+        Assert.False(empty.Find("img").HasAttribute("style"));
+
+        var zero = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Provider, "echo").Add(i => i.Width, 0).Add(i => i.Height, 40));
+        var img = zero.Find("img");
+        Assert.Equal("0", img.GetAttribute("width"));
+        Assert.Equal("40", img.GetAttribute("height"));
+        Assert.Equal("/cdn/a.png?h=40", img.GetAttribute("src"));
+    }
+
+    [Fact]
     public void A_placeholder_url_cannot_break_out_of_the_style_and_a_style_of_the_caller_is_kept()
     {
-        var cut = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, "/t.png\");color:red;x(\"")
+        var cut = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Placeholder, KlyImagePlaceholder.Url("/t.png\");color:red;x(\""))
             .AddUnmatched("style", "opacity:.5"));
 
         var style = cut.Find("img").GetAttribute("style")!;
@@ -318,7 +331,7 @@ public class ImageTests : KlyrooTestContext
     public void ColorModeImage_renders_two_images_that_share_the_options_and_the_size_attributes()
     {
         var cut = Render<KlyColorModeImage>(p => p.Add(i => i.Light, "/l.png").Add(i => i.Dark, "/d.png").Add(i => i.Alt, "Logo")
-            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = "webp" }).AddUnmatched("width", "40"));
+            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = "webp" }).Add(i => i.Width, 40));
 
         var images = cut.FindAll("img");
         Assert.Equal(2, images.Count);

@@ -15,6 +15,29 @@ public enum KlyImageFit
     Outside,
 }
 
+/// <summary>
+/// What <see cref="KlyImage"/> paints behind the image while it loads: <see cref="Auto"/> asks the image provider for a tiny
+/// (and, when it can blur, blurred) version of the image, <see cref="Url(string)"/> uses a small image you already have.
+/// </summary>
+public sealed class KlyImagePlaceholder
+{
+    private KlyImagePlaceholder(string? address) => Address = address;
+
+    /// <summary>The address of the placeholder image, or <c>null</c> for <see cref="Auto"/>.</summary>
+    internal string? Address { get; }
+
+    /// <summary>A tiny version of the image itself, made by the image provider (blurred when it can blur).</summary>
+    public static KlyImagePlaceholder Auto { get; } = new(null);
+
+    /// <summary>A small image at <paramref name="address"/>, used as is: a root-relative path or an absolute URL, or a <c>data:</c> URL. An empty address shows no placeholder.</summary>
+    /// <param name="address">Where the placeholder image is.</param>
+    public static KlyImagePlaceholder Url(string address)
+    {
+        ArgumentNullException.ThrowIfNull(address);
+        return new KlyImagePlaceholder(address);
+    }
+}
+
 /// <summary>The <c>loading</c> attribute of an image.</summary>
 public enum KlyImageLoading
 {
