@@ -63,7 +63,7 @@ public class FormTests : KlyrooTestContext
                 b.CloseComponent();
                 b.OpenComponent<KlyFormField>(1);
                 b.AddAttribute(2, nameof(KlyFormField.Label), "Email");
-                b.AddAttribute(3, nameof(KlyFormField.For), (Expression<Func<object?>>)(() => model.Email));
+                b.AddAttribute(3, nameof(KlyFormField.Field), FieldIdentifier.Create(() => model.Email));
                 b.AddAttribute(4, nameof(KlyFormField.ChildContent), (RenderFragment)(c =>
                 {
                     c.OpenComponent<KlyInput>(0);

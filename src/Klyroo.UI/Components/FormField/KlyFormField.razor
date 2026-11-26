@@ -51,11 +51,14 @@
     /// <summary>Help text shown under the control.</summary>
     [Parameter] public string? Help { get; set; }
 
-    /// <summary>Error text. Without it, the first validation message of <see cref="For"/> is shown.</summary>
+    /// <summary>Error text. Without it, the first validation message of <see cref="Field"/> is shown.</summary>
     [Parameter] public string? Error { get; set; }
 
-    /// <summary>The bound field, for validation messages inside an <c>EditForm</c>.</summary>
-    [Parameter] public System.Linq.Expressions.Expression<Func<object?>>? For { get; set; }
+    /// <summary>
+    /// The bound field, for validation messages inside an <c>EditForm</c>: <c>Field="FieldIdentifier.Create(() =&gt; Model.Email)"</c> (or <c>new FieldIdentifier(Model, nameof(Model.Email))</c>).
+    /// It names the same field the control inside is bound to, so the message under the control is the one the control's own error styling follows.
+    /// </summary>
+    [Parameter] public FieldIdentifier? Field { get; set; }
     /// <summary>Marks the label and the control as required.</summary>
     [Parameter] public bool Required { get; set; }
 
@@ -78,8 +81,8 @@
     private string ErrorId => InputId + "-error";
     private string? HelpId => Help is null ? null : InputId + "-help";
 
-    private string? ErrorText => Error ?? (For is not null && EditContext is not null
-        ? EditContext.GetValidationMessages(FieldIdentifier.Create(For)).FirstOrDefault()
+    private string? ErrorText => Error ?? (Field is { } bound && EditContext is not null
+        ? EditContext.GetValidationMessages(bound).FirstOrDefault()
         : null);
 
     /// <inheritdoc />

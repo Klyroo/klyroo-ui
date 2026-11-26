@@ -7,10 +7,10 @@
 
 @* FormName is how the form posts in a Blazor Web App without interactivity. In a web view the page is always interactive, so the same form just submits. *@
 <KlyForm Model="Model" FormName="profile" OnValidSubmit="SaveAsync" ShowSummary class="flex w-full max-w-md flex-col gap-4">
-    <KlyFormField Label="Name" Required For="() => Model!.Name">
+    <KlyFormField Label="Name" Required Field="FieldIdentifier.Create(() => Model!.Name)">
         <KlyInput @bind-Value="Model!.Name" data-testid="name" />
     </KlyFormField>
-    <KlyFormField Label="Country" For="() => Model!.Country">
+    <KlyFormField Label="Country" Field="FieldIdentifier.Create(() => Model!.Country)">
         <KlySelect @bind-Value="Model!.Country" Items="_countries" Placeholder="Choose a country" data-testid="country" />
     </KlyFormField>
     <KlyFormField Label="Bio">

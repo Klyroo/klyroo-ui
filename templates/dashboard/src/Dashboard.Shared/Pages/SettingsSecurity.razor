@@ -12,13 +12,13 @@
         </Header>
         <ChildContent>
             <KlyForm Model="Model" FormName="password" OnValidSubmit="ChangePasswordAsync" class="flex flex-col gap-4" data-testid="password-form">
-                <KlyFormField Label="Current password" Required For="() => Model!.Current">
+                <KlyFormField Label="Current password" Required Field="FieldIdentifier.Create(() => Model!.Current)">
                     <KlyInput @bind-Value="Model!.Current" Type="password" autocomplete="current-password" data-testid="password-current" />
                 </KlyFormField>
-                <KlyFormField Label="New password" Required For="() => Model!.New">
+                <KlyFormField Label="New password" Required Field="FieldIdentifier.Create(() => Model!.New)">
                     <KlyInput @bind-Value="Model!.New" Type="password" autocomplete="new-password" data-testid="password-new" />
                 </KlyFormField>
-                <KlyFormField Label="Confirm the new password" Required For="() => Model!.Confirm">
+                <KlyFormField Label="Confirm the new password" Required Field="FieldIdentifier.Create(() => Model!.Confirm)">
                     <KlyInput @bind-Value="Model!.Confirm" Type="password" autocomplete="new-password" data-testid="password-confirm" />
                 </KlyFormField>
                 <div class="flex items-center justify-end gap-3">
