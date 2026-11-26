@@ -5,7 +5,7 @@ namespace Klyroo.UI.Tests;
 
 public sealed class OverlayPicker : ComponentBase
 {
-    [CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;
+    [CascadingParameter] public KlyOverlayContext<string> Overlay { get; set; } = default!;
     [Parameter] public string Name { get; set; } = "";
 
     protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
@@ -58,7 +58,7 @@ public class OverlayServiceTests : KlyrooTestContext
     [Fact]
     public async Task Show_without_a_host_explains_what_is_missing()
     {
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Overlays.ShowAsync<OverlayPicker>(cancellationToken: Xunit.TestContext.Current.CancellationToken));
+        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => Overlays.ShowAsync<OverlayPicker, string>(cancellationToken: Xunit.TestContext.Current.CancellationToken));
 
         Assert.Contains("KlyOverlayHost", ex.Message);
     }
@@ -68,7 +68,7 @@ public class OverlayServiceTests : KlyrooTestContext
     {
         var cut = Render<KlyOverlayHost>();
 
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), new KlyOverlayOptions { Title = "Pick", Description = "Choose one", Size = KlySize.Lg }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), new KlyOverlayOptions { Title = "Pick", Description = "Choose one", Size = KlySize.Lg }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         Assert.True(cut.Find("kly-modal").HasAttribute("open"));
@@ -81,17 +81,16 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task The_component_completes_the_dialog_with_a_result()
     {
         var cut = Render<KlyOverlayHost>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         cut.Find("#done-Ada").Click();
         var result = await pending;
 
         Assert.False(result.Canceled);
-        Assert.Equal("ADA", result.GetData<string>());
-        Assert.True(result.TryGetData<string>(out var text));
+        Assert.Equal("ADA", result.Value);
+        Assert.True(result.TryGetValue(out var text));
         Assert.Equal("ADA", text);
-        Assert.False(result.TryGetData<int>(out _));
         // The dialog is told to close, then its markup goes away once the browser has closed it.
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
     }
@@ -100,22 +99,72 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task The_component_can_cancel()
     {
         var cut = Render<KlyOverlayHost>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         cut.Find("#cancel-Ada").Click();
         var result = await pending;
 
         Assert.True(result.Canceled);
-        Assert.Null(result.Data);
-        Assert.Null(result.GetData<string>());
+        Assert.Null(result.Value);
+        Assert.False(result.TryGetValue(out _));
+    }
+
+    private sealed class NumberPicker : ComponentBase
+    {
+        [CascadingParameter] public KlyOverlayContext<int> Overlay { get; set; } = default!;
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "button");
+            builder.AddAttribute(1, "id", "seven");
+            builder.AddAttribute(2, "onclick", EventCallback.Factory.Create(this, () => Overlay.Close(7)));
+            builder.AddContent(3, "Seven");
+            builder.CloseElement();
+        }
+    }
+
+    [Fact]
+    public async Task The_result_has_the_type_the_caller_asked_for_and_content_can_end_the_dialog_too()
+    {
+        var cut = Render<KlyOverlayHost>();
+        var typed = Overlays.ShowAsync<NumberPicker, int>(cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
+        cut.Find("#seven").Click();
+        var number = await typed;
+        Assert.False(number.Canceled);
+        Assert.Equal(7, number.Value);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
+
+        var content = Overlays.ShowAsync<int>(b =>
+        {
+            b.OpenComponent<NumberPicker>(0);
+            b.CloseComponent();
+        }, new KlyOverlayOptions { Title = "Fragment" }, Xunit.TestContext.Current.CancellationToken);
+        cut.WaitForAssertion(() => Assert.Equal("Fragment", cut.Find("kly-modal h2").TextContent.Trim()));
+        cut.Find("#seven").Click();
+        Assert.Equal(7, (await content).Value);
+        cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
+
+        using var source = new CancellationTokenSource();
+        var dismissed = Overlays.ShowAsync<int>(b =>
+        {
+            b.OpenComponent<NumberPicker>(0);
+            b.CloseComponent();
+        }, cancellationToken: source.Token);
+        cut.WaitForAssertion(() => Assert.NotEmpty(cut.FindAll("#seven")));
+        source.Cancel();
+        var result = await dismissed;
+        Assert.True(result.Canceled);
+        Assert.Equal(0, result.Value);
+        Assert.False(result.TryGetValue(out _));
     }
 
     [Fact]
     public async Task Escape_backdrop_and_close_button_are_a_cancel_result()
     {
         var cut = Render<KlyOverlayHost>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), new KlyOverlayOptions { Title = "Pick" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), new KlyOverlayOptions { Title = "Pick" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         // The browser closes the native dialog on Escape, a click outside or the close button and reports it as a toggle.
@@ -130,7 +179,7 @@ public class OverlayServiceTests : KlyrooTestContext
     public void Dismissible_false_and_close_false_are_passed_to_the_modal()
     {
         var cut = Render<KlyOverlayHost>();
-        _ = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), new KlyOverlayOptions { Title = "Pick", Dismissible = false, Close = false }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        _ = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), new KlyOverlayOptions { Title = "Pick", Dismissible = false, Close = false }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         Assert.False(cut.Find("kly-modal").HasAttribute("dismissible"));
@@ -141,7 +190,7 @@ public class OverlayServiceTests : KlyrooTestContext
     public void A_slideover_is_available_through_the_options()
     {
         var cut = Render<KlyOverlayHost>();
-        _ = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), new KlyOverlayOptions { Title = "Panel", Kind = KlyOverlayKind.Slideover, Side = SlideoverSide.Left }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        _ = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), new KlyOverlayOptions { Title = "Panel", Kind = KlyOverlayKind.Slideover, Side = SlideoverSide.Left }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         Assert.Equal("left", cut.Find("dialog").GetAttribute("data-side"));
@@ -151,8 +200,8 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task Two_dialogs_stack_and_end_independently()
     {
         var cut = Render<KlyOverlayHost>();
-        var first = Overlays.ShowAsync<OverlayPicker>(Name("One"), new KlyOverlayOptions { Title = "First" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
-        var second = Overlays.ShowAsync<OverlayPicker>(Name("Two"), new KlyOverlayOptions { Title = "Second" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var first = Overlays.ShowAsync<OverlayPicker, string>(Name("One"), new KlyOverlayOptions { Title = "First" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var second = Overlays.ShowAsync<OverlayPicker, string>(Name("Two"), new KlyOverlayOptions { Title = "Second" }, cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Equal(2, cut.FindAll("kly-modal").Count));
 
         // The second one is rendered after the first, so it is on top in the browser.
@@ -165,7 +214,7 @@ public class OverlayServiceTests : KlyrooTestContext
         Assert.Equal("First", cut.Find("h2").TextContent);
 
         cut.Find("#done-One").Click();
-        Assert.Equal("ONE", (await first).GetData<string>());
+        Assert.Equal("ONE", (await first).Value);
     }
 
     [Fact]
@@ -173,7 +222,7 @@ public class OverlayServiceTests : KlyrooTestContext
     {
         var cut = Render<KlyOverlayHost>();
         using var source = new CancellationTokenSource();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: source.Token);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: source.Token);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         await source.CancelAsync();
@@ -185,7 +234,7 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task Removing_the_host_cancels_what_is_open()
     {
         var cut = Render<KlyOverlayHost>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         await DisposeComponentsAsync();
@@ -265,7 +314,7 @@ public class OverlayServiceTests : KlyrooTestContext
     {
         var cut = Render<KlyOverlayHost>();
         var navigation = Services.GetRequiredService<Microsoft.AspNetCore.Components.NavigationManager>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("kly-modal")));
 
         navigation.NavigateTo(navigation.Uri + "#section");
@@ -319,7 +368,7 @@ public class OverlayServiceTests : KlyrooTestContext
     {
         var cut = Render<KlyOverlayHost>();
         var tasks = await Task.Run(() => Enumerable.Range(0, 8)
-            .Select(i => Overlays.ShowAsync<OverlayPicker>(Name("N" + i), cancellationToken: Xunit.TestContext.Current.CancellationToken)).ToArray(), Xunit.TestContext.Current.CancellationToken);
+            .Select(i => Overlays.ShowAsync<OverlayPicker, string>(Name("N" + i), cancellationToken: Xunit.TestContext.Current.CancellationToken)).ToArray(), Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Equal(8, cut.FindAll("kly-modal").Count), TimeSpan.FromSeconds(3));
 
         for (var i = 0; i < 8; i++) cut.Find($"#cancel-N{i}").Click();
@@ -333,7 +382,7 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task With_several_hosts_the_newest_draws_the_dialogs_and_the_last_one_to_go_cancels()
     {
         var cut = Render<OverlayHosts>();
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#first kly-modal")));
 
         // A second host appears: it becomes the one that draws.
@@ -348,7 +397,7 @@ public class OverlayServiceTests : KlyrooTestContext
         Assert.False(pending.IsCompleted);
 
         cut.Find("#done-Ada").Click();
-        Assert.Equal("ADA", (await pending).GetData<string>());
+        Assert.Equal("ADA", (await pending).Value);
         cut.WaitForAssertion(() => Assert.Empty(cut.FindAll("kly-modal")), TimeSpan.FromSeconds(3));
     }
 
@@ -356,7 +405,7 @@ public class OverlayServiceTests : KlyrooTestContext
     public async Task Removing_the_only_host_cancels_even_with_a_second_one_gone_before()
     {
         var cut = Render<OverlayHosts>(p => p.Add(c => c.Second, true));
-        var pending = Overlays.ShowAsync<OverlayPicker>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        var pending = Overlays.ShowAsync<OverlayPicker, string>(Name("Ada"), cancellationToken: Xunit.TestContext.Current.CancellationToken);
         cut.WaitForAssertion(() => Assert.Single(cut.FindAll("#second kly-modal")));
 
         await DisposeComponentsAsync();
@@ -368,7 +417,7 @@ public class OverlayServiceTests : KlyrooTestContext
     {
         public StaticContext() : base(interactive: false) => Render<KlyOverlayHost>();
 
-        public Task<KlyOverlayResult> Show() =>
-            Services.GetRequiredService<IKlyOverlayService>().ShowAsync<OverlayPicker>(cancellationToken: Xunit.TestContext.Current.CancellationToken);
+        public Task<KlyOverlayResult<string>> Show() =>
+            Services.GetRequiredService<IKlyOverlayService>().ShowAsync<OverlayPicker, string>(cancellationToken: Xunit.TestContext.Current.CancellationToken);
     }
 }

@@ -17,14 +17,14 @@
         <KlySlideover @key="current" Open="current.Open" OpenChanged="open => OnOpenChanged(current, open)"
                       Title="@options.Title" Description="@options.Description" AriaLabel="@options.AriaLabel"
                       Side="options.Side" Dismissible="options.Dismissible" Close="options.Close"
-                      Body="BodyOf(current)" Footer="FooterOf(current)" />
+                      Body="current.Body" Footer="FooterOf(current)" />
     }
     else
     {
         <KlyModal @key="current" Open="current.Open" OpenChanged="open => OnOpenChanged(current, open)"
                   Title="@options.Title" Description="@options.Description" AriaLabel="@options.AriaLabel"
                   Size="options.Size" Dismissible="options.Dismissible" Close="options.Close"
-                  Body="BodyOf(current)" Footer="FooterOf(current)" />
+                  Body="current.Body" Footer="FooterOf(current)" />
     }
 }
 
@@ -66,21 +66,12 @@
         if (!open) _service?.Dismissed(entry);
     }
 
-    private static RenderFragment? BodyOf(OverlayEntry entry) => entry.Body is null ? null : builder =>
-    {
-        builder.OpenComponent<CascadingValue<KlyOverlayContext>>(0);
-        builder.AddComponentParameter(1, "Value", entry.Context);
-        builder.AddComponentParameter(2, "IsFixed", true);
-        builder.AddComponentParameter(3, "ChildContent", entry.Body);
-        builder.CloseComponent();
-    };
-
     private RenderFragment? FooterOf(OverlayEntry entry)
     {
         if (entry.Confirm is not { } confirm) return null;
         return @<text>
-            <KlyButton Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" OnClick="() => entry.Context!.Cancel()">@(confirm.CancelLabel ?? Messages.Cancel)</KlyButton>
-            <KlyButton Color="confirm.Color ?? KlyColor.Primary" OnClick="() => entry.Context!.Close(true)">@(confirm.ConfirmLabel ?? Messages.Confirm)</KlyButton>
+            <KlyButton Variant="ButtonVariant.Outline" Color="KlyColor.Neutral" OnClick="() => entry.Cancel()">@(confirm.CancelLabel ?? Messages.Cancel)</KlyButton>
+            <KlyButton Color="confirm.Color ?? KlyColor.Primary" OnClick="() => entry.Complete(true)">@(confirm.ConfirmLabel ?? Messages.Confirm)</KlyButton>
         </text>;
     }
 

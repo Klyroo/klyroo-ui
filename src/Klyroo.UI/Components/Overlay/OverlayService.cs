@@ -35,54 +35,57 @@ public sealed record KlyOverlayOptions
 }
 
 /// <summary>How a dialog opened with <see cref="IKlyOverlayService"/> ended.</summary>
-public sealed record KlyOverlayResult
+/// <typeparam name="TResult">The type of the value the dialog completes with.</typeparam>
+public sealed record KlyOverlayResult<TResult>
 {
-    internal KlyOverlayResult(bool canceled, object? data)
+    internal KlyOverlayResult(bool canceled, TResult? value)
     {
         Canceled = canceled;
-        Data = data;
+        Value = value;
     }
 
-    /// <summary>True when the dialog was dismissed (Escape, backdrop, close button, <see cref="KlyOverlayContext.Cancel"/> or a cancellation token) instead of completed.</summary>
+    /// <summary>True when the dialog was dismissed (Escape, backdrop, close button, <see cref="KlyOverlayContext{TResult}.Cancel"/> or a cancellation token) instead of completed.</summary>
     public bool Canceled { get; }
 
-    /// <summary>The value passed to <see cref="KlyOverlayContext.Close"/>, or <c>null</c> when the dialog was canceled.</summary>
-    public object? Data { get; }
+    /// <summary>The value passed to <see cref="KlyOverlayContext{TResult}.Close"/>, or <c>default</c> when the dialog was canceled.</summary>
+    public TResult? Value { get; }
 
-    /// <summary>The data as <typeparamref name="T"/>, or <c>default</c> when the dialog was canceled or the data has another type.</summary>
-    public T? GetData<T>() => Data is T data ? data : default;
-
-    /// <summary>Gets the data as <typeparamref name="T"/> when the dialog completed with a value of that type.</summary>
-    public bool TryGetData<T>([MaybeNullWhen(false)] out T data)
+    /// <summary>Gets the value when the dialog completed with one (it was not canceled).</summary>
+    public bool TryGetValue([MaybeNullWhen(false)] out TResult value)
     {
-        if (!Canceled && Data is T typed)
+        if (!Canceled)
         {
-            data = typed;
+            value = Value!;
             return true;
         }
-        data = default;
+        value = default;
         return false;
     }
+}
 
-    /// <summary>The result of a dialog that was dismissed.</summary>
-    internal static KlyOverlayResult Cancel { get; } = new(true, null);
+/// <summary>What a dialog ended with, before it is typed for the caller. Internal: the public types are <see cref="KlyOverlayResult{TResult}"/> and <see cref="KlyOverlayContext{TResult}"/>.</summary>
+internal sealed record OverlayOutcome(bool Canceled, object? Value)
+{
+    /// <summary>The outcome of a dialog that was dismissed.</summary>
+    public static OverlayOutcome Dismissed { get; } = new(true, null);
 }
 
 /// <summary>
 /// Handed to the component shown by <see cref="IKlyOverlayService"/> as a cascading parameter, so it can end its own dialog:
-/// <c>[CascadingParameter] public KlyOverlayContext Overlay { get; set; } = default!;</c>
+/// <c>[CascadingParameter] public KlyOverlayContext&lt;Person&gt; Overlay { get; set; } = default!;</c> with the same <typeparamref name="TResult"/> the caller of <c>ShowAsync</c> gave.
 /// </summary>
-public sealed class KlyOverlayContext
+/// <typeparam name="TResult">The type of the value the dialog completes with.</typeparam>
+public sealed class KlyOverlayContext<TResult>
 {
     private readonly OverlayEntry _entry;
 
     internal KlyOverlayContext(OverlayEntry entry) => _entry = entry;
 
-    /// <summary>Completes the dialog: closes it and hands <paramref name="data"/> to the caller of <c>ShowAsync</c>. Does nothing once the dialog has ended.</summary>
-    public void Close(object? data = null) => _entry.Service.Complete(_entry, new KlyOverlayResult(false, data));
+    /// <summary>Completes the dialog: closes it and hands <paramref name="value"/> to the caller of <c>ShowAsync</c>. Does nothing once the dialog has ended.</summary>
+    public void Close(TResult value) => _entry.Complete(value);
 
     /// <summary>Dismisses the dialog: closes it and gives the caller a canceled result. Does nothing once the dialog has ended.</summary>
-    public void Cancel() => _entry.Service.Complete(_entry, KlyOverlayResult.Cancel);
+    public void Cancel() => _entry.Cancel();
 
     /// <summary>True once the dialog has been completed or canceled.</summary>
     public bool IsClosed => _entry.Completed;
@@ -95,18 +98,33 @@ public sealed class KlyOverlayContext
 public interface IKlyOverlayService
 {
     /// <summary>
-    /// Shows <typeparamref name="TComponent"/> in a dialog and completes when the dialog ends: with the data the component
-    /// passed to <see cref="KlyOverlayContext.Close"/>, or with a canceled result after Escape, a click on the backdrop,
-    /// the close button, <see cref="KlyOverlayContext.Cancel"/> or <paramref name="cancellationToken"/>.
+    /// Shows <typeparamref name="TComponent"/> in a dialog and completes when the dialog ends: with the value the component
+    /// passed to <see cref="KlyOverlayContext{TResult}.Close"/>, or with a canceled result after Escape, a click on the backdrop,
+    /// the close button, <see cref="KlyOverlayContext{TResult}.Cancel"/> or <paramref name="cancellationToken"/>.
+    /// The component reads its context with <c>[CascadingParameter] KlyOverlayContext&lt;TResult&gt;</c>. A dialog with nothing to return uses <c>bool</c>.
     /// </summary>
-    /// <param name="parameters">Parameters of the component, by name.</param>
+    /// <typeparam name="TComponent">The component shown in the dialog.</typeparam>
+    /// <typeparam name="TResult">The type of the value the dialog completes with.</typeparam>
+    /// <param name="parameters">Parameters of the component, by name (the Blazor parameter dictionary: the component is created by the renderer, so they cannot be typed here).</param>
     /// <param name="options">Title, size and behavior of the dialog.</param>
     /// <param name="cancellationToken">Cancels the dialog (it closes and the result is canceled).</param>
     /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is attached: the page has not rendered yet (call it from <c>OnAfterRenderAsync</c> or an event handler, not <c>OnInitialized</c>), or the render is static or a prerender.</exception>
-    Task<KlyOverlayResult> ShowAsync<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent>(
+    Task<KlyOverlayResult<TResult>> ShowAsync<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent, TResult>(
         IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
         where TComponent : IComponent;
+
+    /// <summary>
+    /// Shows <paramref name="content"/> in a dialog and completes when the dialog ends, like <see cref="ShowAsync{TComponent, TResult}"/>.
+    /// A component placed in the content ends the dialog through a <c>KlyOverlayContext&lt;TResult&gt;</c> cascading parameter.
+    /// </summary>
+    /// <typeparam name="TResult">The type of the value the dialog completes with.</typeparam>
+    /// <param name="content">What the dialog shows.</param>
+    /// <param name="options">Title, size and behavior of the dialog.</param>
+    /// <param name="cancellationToken">Cancels the dialog (it closes and the result is canceled).</param>
+    /// <exception cref="InvalidOperationException">No <see cref="KlyOverlayHost"/> is attached, as for <see cref="ShowAsync{TComponent, TResult}"/>.</exception>
+    Task<KlyOverlayResult<TResult>> ShowAsync<TResult>(
+        RenderFragment content, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Asks a yes or no question in a dialog and returns true when the user confirms, false when they cancel or dismiss it.
@@ -124,13 +142,16 @@ public interface IKlyOverlayService
 internal sealed class OverlayEntry(OverlayService service, RenderFragment? body, KlyOverlayOptions options, ConfirmContent? confirm)
 {
     public OverlayService Service { get; } = service;
-    public RenderFragment? Body { get; } = body;
+    public RenderFragment? Body { get; set; } = body;
     public KlyOverlayOptions Options { get; } = options;
     public ConfirmContent? Confirm { get; } = confirm;
-    public TaskCompletionSource<KlyOverlayResult> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    public KlyOverlayContext? Context { get; set; }
+    public TaskCompletionSource<OverlayOutcome> Completion { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public bool Open { get; set; } = true;
     public bool Completed => Completion.Task.IsCompleted;
+
+    public void Complete(object? value) => Service.Complete(this, new OverlayOutcome(false, value));
+
+    public void Cancel() => Service.Complete(this, OverlayOutcome.Dismissed);
 }
 
 internal sealed record ConfirmContent(string? ConfirmLabel, string? CancelLabel, KlyColor? Color);
@@ -203,13 +224,31 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         else action();
     }
 
-    public Task<KlyOverlayResult> ShowAsync<
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent>(
+    public Task<KlyOverlayResult<TResult>> ShowAsync<
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] TComponent, TResult>(
         IReadOnlyDictionary<string, object?>? parameters = null, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
-        where TComponent : IComponent
+        where TComponent : IComponent =>
+        ShowAsync<TResult>(builder => RenderComponent<TComponent>(builder, parameters), options, cancellationToken);
+
+    public async Task<KlyOverlayResult<TResult>> ShowAsync<TResult>(
+        RenderFragment content, KlyOverlayOptions? options = null, CancellationToken cancellationToken = default)
     {
-        RenderFragment body = builder => RenderComponent<TComponent>(builder, parameters);
-        return Open(new OverlayEntry(this, body, options ?? new KlyOverlayOptions(), null), cancellationToken);
+        ArgumentNullException.ThrowIfNull(content);
+        var entry = new OverlayEntry(this, null, options ?? new KlyOverlayOptions(), null);
+        // The context is cascaded here, where TResult is known: a component asks for exactly KlyOverlayContext<TResult>.
+        var context = new KlyOverlayContext<TResult>(entry);
+        entry.Body = builder =>
+        {
+            builder.OpenComponent<CascadingValue<KlyOverlayContext<TResult>>>(0);
+            builder.AddComponentParameter(1, "Value", context);
+            builder.AddComponentParameter(2, "IsFixed", true);
+            builder.AddComponentParameter(3, "ChildContent", content);
+            builder.CloseComponent();
+        };
+        var outcome = await Open(entry, cancellationToken);
+        return outcome.Canceled
+            ? new KlyOverlayResult<TResult>(true, default)
+            : new KlyOverlayResult<TResult>(false, outcome.Value is TResult value ? value : default);
     }
 
     public async Task<bool> ConfirmAsync(string title, string? message = null, string? confirmLabel = null, string? cancelLabel = null,
@@ -218,7 +257,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         ArgumentNullException.ThrowIfNull(title);
         var options = new KlyOverlayOptions { Title = title, Description = message };
         var result = await Open(new OverlayEntry(this, null, options, new ConfirmContent(confirmLabel, cancelLabel, color)), cancellationToken);
-        return !result.Canceled && result.Data is true;
+        return !result.Canceled && result.Value is true;
     }
 
     private static void RenderComponent<
@@ -233,15 +272,14 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
         builder.CloseComponent();
     }
 
-    private Task<KlyOverlayResult> Open(OverlayEntry entry, CancellationToken cancellationToken)
+    private Task<OverlayOutcome> Open(OverlayEntry entry, CancellationToken cancellationToken)
     {
         if (Active is not { } host) throw new InvalidOperationException(NoHostMessage);
-        if (cancellationToken.IsCancellationRequested) return Task.FromResult(KlyOverlayResult.Cancel);
+        if (cancellationToken.IsCancellationRequested) return Task.FromResult(OverlayOutcome.Dismissed);
 
-        entry.Context = new KlyOverlayContext(entry);
         if (cancellationToken.CanBeCanceled)
         {
-            var registration = cancellationToken.Register(() => Complete(entry, KlyOverlayResult.Cancel));
+            var registration = cancellationToken.Register(() => Complete(entry, OverlayOutcome.Dismissed));
             entry.Completion.Task.ContinueWith(_ => registration.Dispose(), TaskScheduler.Default);
         }
         // Possibly called from another thread than the renderer's: the list changes where the host renders.
@@ -251,7 +289,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
             if (Active is null)
             {
                 // The last host went away between the call and now.
-                entry.Completion.TrySetResult(KlyOverlayResult.Cancel);
+                entry.Completion.TrySetResult(OverlayOutcome.Dismissed);
                 return;
             }
             _entries.Add(entry);
@@ -261,7 +299,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
     }
 
     /// <summary>Ends the entry: the caller gets the result now and the dialog is told to close.</summary>
-    public void Complete(OverlayEntry entry, KlyOverlayResult result)
+    public void Complete(OverlayEntry entry, OverlayOutcome result)
     {
         if (!entry.Completion.TrySetResult(result)) return;
         Dispatch(() =>
@@ -275,7 +313,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
     /// <summary>The dialog is already closed in the browser (Escape, backdrop, close button): complete as canceled and drop it.</summary>
     public void Dismissed(OverlayEntry entry)
     {
-        entry.Completion.TrySetResult(KlyOverlayResult.Cancel);
+        entry.Completion.TrySetResult(OverlayOutcome.Dismissed);
         entry.Open = false;
         Remove(entry);
     }
@@ -283,7 +321,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
     /// <summary>The user went to another page: every open dialog ends as canceled.</summary>
     public void CancelForNavigation()
     {
-        foreach (var entry in _entries.ToArray()) Complete(entry, KlyOverlayResult.Cancel);
+        foreach (var entry in _entries.ToArray()) Complete(entry, OverlayOutcome.Dismissed);
     }
 
     private async Task RemoveLaterAsync(OverlayEntry entry)
@@ -300,7 +338,7 @@ internal sealed class OverlayService : IKlyOverlayService, IDisposable
 
     private void CancelAll()
     {
-        foreach (var entry in _entries.ToArray()) entry.Completion.TrySetResult(KlyOverlayResult.Cancel);
+        foreach (var entry in _entries.ToArray()) entry.Completion.TrySetResult(OverlayOutcome.Dismissed);
         _entries.Clear();
     }
 
