@@ -239,7 +239,7 @@
 `/components/form-field`. Label, description, hint and validation message wired to the control inside.
 
 - `<KlyFormField>`
-  - Parameters: `Class`, `Description`, `Error`, `For`, `Help`, `Hint`, `Id`, `Label`, `Required`, `Size`, `Ui`
+  - Parameters: `Class`, `Description`, `Error`, `Field`, `Help`, `Hint`, `Id`, `Label`, `Required`, `Size`, `Ui`
   - Slots: `ChildContent`
   - `Ui` (`FormFieldUi`): `Root`, `LabelWrapper`, `Label`, `Hint`, `Description`, `Container`, `Error`, `Help`
 
@@ -509,7 +509,7 @@
 `/components/color-mode-image`. An image with one source per color mode.
 
 - `<KlyColorModeImage>`
-  - Parameters: `Alt`, `Class`, `Dark`, `ImageOptions`, `Light` (required)
+  - Parameters: `Alt`, `Class`, `Dark`, `Height`, `ImageOptions`, `Light` (required), `Width`
 
 ## Navigation
 
@@ -669,7 +669,7 @@
   - Slots: `Template`
 - `<KlyTemplateColumn>`
   - Parameters: `Class`, `Title` (required)
-  - Slots: `Template` (required)
+  - Slots: `Template`
 
 ### DataList
 
@@ -685,7 +685,13 @@
   - Slots: `DetailTemplate`, `Empty`, `ChildContent`
   - `Ui` (`DataListUi`): `Root`, `Toolbar`, `Search`, `SearchField`, `SearchInput`, `SearchClear`, `SearchClearIcon`, `SearchSubmit`, `ResultCount`, `Refresh`, `RefreshIcon`, `TableRoot`, `Table`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Skeleton`, `Pagination`, `PageSize`, `PageSizeLabel`, `PageSizeSelect`, `PageSizeForm`, `Error`, `Filters`, `FilterTags`, `FilterTag`, `FilterTagButton`, `FilterTagLabel`, `FilterTagOperator`, `FilterTagValue`, `FilterTagRemove`, `FilterTagRemoveIcon`, `AddFilter`, `ClearFilters`, `FilterPopover`, `FilterEditor`, `FilterEditorTitle`, `FilterField`, `FilterFieldLabel`, `FilterOperator`, `FilterInput`, `FilterOptions`, `FilterOption`, `FilterOptionLink`, `FilterOptionCount`, `FilterOptionCheck`, `FilterEmpty`, `FilterActions`, `FilterChoices`, `FilterMenu`, `FilterMenuItem`, `FilterMenuHeader`, `FilterBack`, `FilterSection`, `FilterRange`, `FilterRangeSlider`, `FilterPresets`, `FilterHint`, `FilterPopoverWide`, `FilterPanel`, `FilterPanelHeader`, `FilterPanelTitle`, `FilterPanelCount`, `FilterPanelDescription`, `FilterPanelSection`, `FilterPanelTrigger`, `FilterPanelContent`, `FilterPanelEditor`, `FilterPanelFooter`, `FilterPanelEmpty`, `FilterNativeInput`, `FilterNativeLabel`, `FilterPanelResults`, `SelectCell`, `RowSelected`, `SelectionActions`, `SelectionBar`, `SelectionCount`, `SelectionLive`, `SelectionScope`, `SelectionGroup`, `ActionsDropdown`, `RowActionsCell`, `RowActions`, `RowActionsInline`, `RowActionsMenu`, `RowActionsPhone`, `SheetList`, `SheetDivider`, `SheetEntry`, `SheetHeading`, `SheetItem`, `SheetReason`, `SheetIcon`, `InfiniteLoader`, `LoadMoreError`, `LoadMoreErrorText`, `CursorReset`, `InfiniteEnd`, `InfiniteStatus`, `ThPinnedStart`, `ThPinnedEnd`, `TdPinnedStart`, `TdPinnedEnd`, `ColResize`, `ColumnsPanel`, `ColumnsPopover`, `ColumnsContent`, `ColumnsHeader`, `ColumnsTitle`, `ColumnsCount`, `ColumnsList`, `ColumnsItem`, `ColumnsLabel`, `ColumnsActions`, `ColumnsIconBtn`, `ColumnsIconBtnActive`, `ColSized`, `ColumnsAll`, `ColumnsHint`, `ColumnsGrip`, `ColumnsLive`, `ColumnsPinGroup`, `ColumnsSearch`, `SortMenu`, `SortMenuPopover`, `SortMenuContent`, `SortMenuHeader`, `SortMenuTitle`, `SortMenuDirections`, `SortMenuDirection`, `SortMenuList`, `SortMenuItem`, `LayoutSwitch`, `LayoutOption`, `GridRoot`, `GridHeader`, `Grid`, `GridCard`, `GridCardTop`, `GridCardBody`, `GridCardFields`, `GridCardField`, `GridCardFieldLabel`, `GridCardFieldValue`, `GridEmpty`, `ViewToggle`, `SummaryHeader`, `SummaryList`, `SummaryRow`, `SummaryLeading`, `SummaryBody`, `SummaryTitle`, `SummaryTitleLink`, `SummaryTitleButton`, `SummaryMeta`, `SummaryStatus`, `SummaryDetails`, `SummaryActions`, `GroupRow`, `GroupCell`, `SummaryGroupRow`, `GridGroup`, `GridGroupHeader`, `GroupHeader`, `GroupToggle`, `GroupChevron`, `GroupChevronExpanded`, `GroupLabel`, `GroupSummary`, `TreeCell`, `TreeRailBlank`, `TreeRailPass`, `TreeRailBranch`, `TreeRailLast`, `TreeToggle`, `TreeChevron`, `TreeChevronExpanded`, `TreeSpacer`, `TreeContent`, `Tfoot`, `TfootRow`, `TfootCell`, `TfootCellPinnedStart`, `TfootCellPinnedEnd`, `TfootLabel`, `ProgressLine`, `ProgressLineBar`, `HeaderCell`, `HeaderMenu`, `HeaderMenuTrigger`
 - `<KlyDataListColumn>`
-  - Parameters: `Align`, `CellClass`, `Class`, `Field`, `Format`, `HeaderMenu`, `Key`, `MaxWidth`, `MinWidth`, `Order`, `Pinned`, `Property`, `Required`, `Resizable`, `Skeleton`, `Sortable`, `Summary`, `SummaryFormat`, `SummaryValue`, `Title`, `Visible`, `Width`
+  - Parameters: `Align`, `CellClass`, `Class`, `Format`, `HeaderMenu`, `Key`, `MaxWidth`, `MinWidth`, `Order`, `Pinned`, `Property` (required), `Required`, `Resizable`, `Skeleton`, `Sortable`, `Summary`, `SummaryFormat`, `SummaryValue`, `Title`, `Visible`, `Width`
+  - Slots: `HeaderTemplate`, `SummaryTemplate`, `Template`
+- `<KlyDataListFieldColumn>`
+  - Parameters: `Align`, `CellClass`, `Class`, `Field` (required), `Format`, `HeaderMenu`, `Key`, `MaxWidth`, `MinWidth`, `Order`, `Pinned`, `Required`, `Resizable`, `Skeleton`, `Sortable`, `Summary`, `SummaryFormat`, `Title`, `Visible`, `Width`
+  - Slots: `HeaderTemplate`, `SummaryTemplate`
+- `<KlyDataListTemplateColumn>`
+  - Parameters: `Align`, `CellClass`, `Class`, `Format`, `HeaderMenu`, `Key`, `MaxWidth`, `MinWidth`, `Order`, `Pinned`, `Required`, `Resizable`, `Skeleton`, `Sortable`, `Summary`, `SummaryFormat`, `Title`, `Visible`, `Width`
   - Slots: `HeaderTemplate`, `SummaryTemplate`, `Template`
 - `<KlyDataListPagination>`
   - Parameters: `AriaLabel`, `Class`, `PageSizes`, `ShowFirstLast`, `ShowPageSize`, `SiblingCount`, `Ui`
