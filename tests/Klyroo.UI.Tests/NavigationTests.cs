@@ -177,6 +177,37 @@ public class NavigationTests : KlyrooTestContext
         Assert.Equal(["2", "9", "10"], cut.FindAll("tbody td").Select(td => td.TextContent.Trim()));
     }
 
+    private sealed record Booking(string Name, DateOnly Day, DateTime At);
+
+    [Fact]
+    public void A_column_sorts_dates_by_value_not_by_text()
+    {
+        // The texts of these dates sort the other way round in most cultures ("1/5/2026" before "12/31/2025", "05.01.2026" before "31.12.2025"):
+        // only a sort by the DateOnly or DateTime itself puts December 2025 first.
+        Booking[] bookings =
+        [
+            new("late", new DateOnly(2026, 1, 5), new DateTime(2026, 1, 5, 9, 30, 0)),
+            new("early", new DateOnly(2025, 12, 31), new DateTime(2025, 12, 31, 18, 0, 0)),
+            new("middle", new DateOnly(2026, 1, 2), new DateTime(2026, 1, 2, 7, 15, 0)),
+        ];
+
+        var byDay = Render<KlyTable<Booking>>(p => p
+            .Add(t => t.Items, bookings)
+            .AddChildContent<KlyColumn<Booking, string>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name))
+            .AddChildContent<KlyColumn<Booking, DateOnly>>(c => c.Add(x => x.Title, "Day").Add(x => x.Field, x => x.Day).Add(x => x.Sortable, true)));
+        byDay.FindAll("th button")[0].Click();
+        Assert.Equal(["early", "middle", "late"], byDay.FindAll("tbody tr").Select(r => r.QuerySelector("td")!.TextContent.Trim()));
+        byDay.FindAll("th button")[0].Click();
+        Assert.Equal(["late", "middle", "early"], byDay.FindAll("tbody tr").Select(r => r.QuerySelector("td")!.TextContent.Trim()));
+
+        var byTime = Render<KlyTable<Booking>>(p => p
+            .Add(t => t.Items, bookings)
+            .AddChildContent<KlyColumn<Booking, string>>(c => c.Add(x => x.Title, "Name").Add(x => x.Field, x => x.Name))
+            .AddChildContent<KlyColumn<Booking, DateTime>>(c => c.Add(x => x.Title, "At").Add(x => x.Field, x => x.At).Add(x => x.Sortable, true)));
+        byTime.FindAll("th button")[0].Click();
+        Assert.Equal(["early", "middle", "late"], byTime.FindAll("tbody tr").Select(r => r.QuerySelector("td")!.TextContent.Trim()));
+    }
+
     [Fact]
     public void Table_without_items_shows_the_empty_state()
     {
