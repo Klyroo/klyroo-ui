@@ -32,36 +32,10 @@ accent: "#10b981"
 # The texture of the ground behind the header and the hero: blueprint-grid, dot-matrix, ruled-rows, baseline-grid, chart-ticks, halftone, cell-grid or node-dots.
 texture: blueprint-grid
 
-# What the hero demonstrates. Either board: table | form (a board with feature chips and several results, authored in docs-site), or a simple hero: the code,
-# the lines the leader line starts at (focus) and one result (output: lines of text, or preview: ui-settings | display-stat | spreadsheet-rows).
+# What the hero demonstrates: the board of the library, with feature chips and several results (authored in klyroo-stack/docs-site).
 demo:
-  file: Settings.razor
-  language: razor
-  focus: 1-17
-  code: |
-    <KlyFormField Label="Display name">
-        <KlyInput @bind-Value="_name"
-                  Placeholder="Ada Lovelace" />
-    </KlyFormField>
-    <KlySwitch @bind-Value="_notify"
-               Label="Email notifications" />
-    <KlyPopover>
-        <ChildContent>
-            <KlyButton Label="Details"
-                       Variant="ButtonVariant.Outline" />
-        </ChildContent>
-        <Content>
-            <p class="p-3">Opens and closes in the browser,
-                with no round trip.</p>
-        </Content>
-    </KlyPopover>
-    <KlyButton Label="Save" OnClick="SaveAsync" />
-  result:
-    title: What it renders
-    preview: ui-settings
+  board: ui
 
-# The pages in the order of the navigation. docs/README.md comes first, as "Documentation". A page that is not listed follows, by file name.
-# An entry is a file name below docs/ without .md, or a map with page and any of: title, navTitle, description, tocDepth, indexText. A group has a group name and its pages.
 nav:
   - group: Tutorial
     pages:
