@@ -61,8 +61,8 @@
     /// <summary>Largest width the user can resize the sidebar to, in pixels. Defaults to 448.</summary>
     [Parameter] public int MaxWidth { get; set; } = 448;
 
-    /// <summary>The element to render, "aside" by default; use "div" inside another landmark.</summary>
-    [Parameter] public string As { get; set; } = "aside";
+    /// <summary>The element to render, <see cref="KlyElement.Aside"/> by default; use <see cref="KlyElement.Div"/> inside another landmark.</summary>
+    [Parameter] public KlyElement As { get; set; } = KlyElement.Aside;
     /// <summary>Accessible name of the sidebar landmark. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
     /// <summary>Title of the off-canvas panel shown on small screens. Defaults to the built-in text.</summary>

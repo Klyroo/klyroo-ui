@@ -8,9 +8,9 @@ public class MarketingTests : KlyrooTestContext
 {
     private static readonly KlyAuthField[] SignInFields =
     [
-        new("email", "email") { Label = "Email", Required = true },
-        new("password", "password") { Label = "Password", Required = true },
-        new("remember", "checkbox") { Label = "Remember me" },
+        new("email", KlyAuthFieldType.Email) { Label = "Email", Required = true },
+        new("password", KlyAuthFieldType.Password) { Label = "Password", Required = true },
+        new("remember", KlyAuthFieldType.Checkbox) { Label = "Remember me" },
     ];
 
     private IRenderedComponent<KlyAuthForm> RenderAuth(Action<ComponentParameterCollectionBuilder<KlyAuthForm>>? configure = null, IReadOnlyList<KlyAuthField>? fields = null) =>
@@ -200,9 +200,9 @@ public class MarketingTests : KlyrooTestContext
     {
         var cut = RenderAuth(fields:
         [
-            new KlyAuthField("role", "select") { Label = "Role", Items = [new("dev", "Developer")], Value = "dev" },
-            new KlyAuthField("code", "otp") { Label = "Code", Length = 4 },
-            new KlyAuthField("terms", "checkbox") { Label = "I agree", Required = true },
+            new KlyAuthField("role", KlyAuthFieldType.Select) { Label = "Role", Items = [new("dev", "Developer")], Value = "dev" },
+            new KlyAuthField("code", KlyAuthFieldType.Otp) { Label = "Code", Length = 4 },
+            new KlyAuthField("terms", KlyAuthFieldType.Checkbox) { Label = "I agree", Required = true },
         ]);
 
         Assert.Equal("dev", cut.Find("input[type=hidden][name='Posted[role]']").GetAttribute("value"));
@@ -220,7 +220,7 @@ public class MarketingTests : KlyrooTestContext
     public void AuthForm_incomplete_code_is_reported_and_server_field_errors_are_shown()
     {
         var cut = RenderAuth(p => p.Add(f => f.FieldErrors, new Dictionary<string, string> { ["code"] = "That code is not right." }),
-            fields: [new KlyAuthField("code", "otp") { Label = "Code", Length = 6 }]);
+            fields: [new KlyAuthField("code", KlyAuthFieldType.Otp) { Label = "Code", Length = 6 }]);
         Assert.Equal("That code is not right.", cut.Find("p[data-slot=error]").TextContent.Trim());
 
         cut.Find("kly-pin-input").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "12", Sequence = 1 });
@@ -234,7 +234,7 @@ public class MarketingTests : KlyrooTestContext
     {
         using var staticContext = new StaticContext();
         var cut = staticContext.Render<KlyAuthForm>(p => p.Add(f => f.Fields,
-            [new KlyAuthField("password", "password") { Label = "Password", Value = "hunter2" }]));
+            [new KlyAuthField("password", KlyAuthFieldType.Password) { Label = "Password", Value = "hunter2" }]));
 
         Assert.False(cut.Find("input[type=password]").HasAttribute("value"));
     }

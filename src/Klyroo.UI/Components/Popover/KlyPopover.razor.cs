@@ -36,8 +36,8 @@ public partial class KlyPopover
     /// <summary>Raised with the new state whenever the popover opens or closes in the browser, Escape and light dismiss included.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
 
-    /// <summary>Floating UI placement: top, right, bottom, left, optionally suffixed with -start or -end.</summary>
-    [Parameter] public string Placement { get; set; } = "bottom";
+    /// <summary>Where the panel sits against the trigger. Defaults to <see cref="KlyPlacement.Bottom"/>.</summary>
+    [Parameter] public KlyPlacement Placement { get; set; } = KlyPlacement.Bottom;
 
     /// <summary>Distance between trigger and panel, in pixels.</summary>
     [Parameter] public int Offset { get; set; } = 8;

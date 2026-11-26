@@ -239,7 +239,7 @@ public class ElementsTests : KlyrooTestContext
     [Fact]
     public void Container_renders_the_requested_element_with_its_max_width()
     {
-        var cut = Render<KlyContainer>(p => p.Add(c => c.As, "main").Add(c => c.Size, KlySize.Sm).AddChildContent("Hi"));
+        var cut = Render<KlyContainer>(p => p.Add(c => c.As, KlyElement.Main).Add(c => c.Size, KlySize.Sm).AddChildContent("Hi"));
 
         var main = cut.Find("main");
         Assert.Contains("max-w-4xl", main.ClassList);

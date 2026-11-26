@@ -45,14 +45,14 @@ Every component works in Interactive Server, WebAssembly, Auto and static server
 
 A `KlyButton` with `OnClick` renders disabled until the page is interactive, because its handler cannot run before that. The rules:
 
-- A link (`Href`) and a submit button (`Type="submit"`) work without interactivity and are never inert.
+- A link (`Href`) and a submit button (`Type="ButtonType.Submit"`) work without interactivity and are never inert.
 - Do not put `OnClick` on a button that must work on a static page. Use a `KlyForm` or `EditForm` post, or `Href`.
 - Do not "fix" a disabled-looking button by removing `Disabled`; it enables itself once the circuit or the WebAssembly runtime is ready.
 
 ```razor
 <KlyButton Label="Save" OnClick="SaveAsync" />            @* disabled until interactive *@
 <KlyButton Label="Docs" Href="/docs" />                    @* a link, always works *@
-<KlyButton Type="submit" Label="Create" />                 @* posts the enclosing form *@
+<KlyButton Type="ButtonType.Submit" Label="Create" />                 @* posts the enclosing form *@
 ```
 
 ## Events

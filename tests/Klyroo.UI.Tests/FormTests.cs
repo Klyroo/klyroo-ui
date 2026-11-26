@@ -12,7 +12,7 @@ public class FormTests : KlyrooTestContext
     {
         string? value = null;
         var cut = Render<KlyInput>(p => p
-            .Add(i => i.Type, "email").Add(i => i.Placeholder, "you@example.com")
+            .Add(i => i.Type, InputType.Email).Add(i => i.Placeholder, "you@example.com")
             .Add(i => i.Value, value).Add(i => i.ValueChanged, (string? v) => value = v));
 
         var input = cut.Find("input");

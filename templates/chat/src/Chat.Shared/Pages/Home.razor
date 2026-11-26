@@ -21,7 +21,7 @@
             <Right>
                 @if (_conversation is not null && Conversations.Items.Contains(_conversation))
                 {
-                    <KlyDropdownMenu Items="_menu" OnSelect="OnMenu" Placement="bottom-end">
+                    <KlyDropdownMenu Items="_menu" OnSelect="OnMenu" Placement="KlyPlacement.BottomEnd">
                         <KlyButton Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="Conversation options" data-testid="conversation-options">
                             <LeadingIcon>@KlyIcons.Named("lucide:ellipsis")</LeadingIcon>
                         </KlyButton>

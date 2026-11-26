@@ -35,7 +35,7 @@ Short, complete patterns for the jobs that come up most. Check parameters with `
 
 ## Sign-in
 
-`KlyAuthForm` builds the form from `KlyAuthField` records (name, type, then `Label`, `Placeholder`, `Required`, `Autocomplete`, `Help`, `Items` for a select, `Length` for a code). It validates with a `Validate` function, shows a busy state while `OnValidSubmit` runs, and posts under its `FormName` in static rendering.
+`KlyAuthForm` builds the form from `KlyAuthField` records (name, a `KlyAuthFieldType`, then `Label`, `Placeholder`, `Required`, `Autocomplete`, `Help`, `Items` for a select, `Length` for a code). It validates with a `Validate` function, shows a busy state while `OnValidSubmit` runs, and posts under its `FormName` in static rendering.
 
 ```razor
 <KlyAuthForm FormName="auth-sign-in" Title="Welcome back" Description="Sign in to your account to continue."
@@ -52,9 +52,9 @@ Short, complete patterns for the jobs that come up most. Check parameters with `
 
     private static readonly KlyAuthField[] Fields =
     [
-        new("email", "email") { Label = "Email", Placeholder = "you@example.com", Required = true, Autocomplete = "email" },
-        new("password", "password") { Label = "Password", Required = true, Autocomplete = "current-password" },
-        new("remember", "checkbox") { Label = "Remember me" },
+        new("email", KlyAuthFieldType.Email) { Label = "Email", Placeholder = "you@example.com", Required = true, Autocomplete = "email" },
+        new("password", KlyAuthFieldType.Password) { Label = "Password", Required = true, Autocomplete = "current-password" },
+        new("remember", KlyAuthFieldType.Checkbox) { Label = "Remember me" },
     ];
 
     private static readonly KlyAuthProvider[] Providers =
@@ -109,10 +109,10 @@ Modal, slideover and drawer share one shape: the default slot is the trigger, `B
 ```
 
 - A `data-kly-close` button does not run your code. To act on the choice, bind `@bind-Open` and react to it, or use a form post.
-- **Popover:** the default slot is the trigger (it must contain a `<button>`), `Content` is the panel, `Placement` is `"bottom-start"` and the like.
+- **Popover:** the default slot is the trigger (it must contain a `<button>`), `Content` is the panel, `Placement` is a `KlyPlacement` such as `KlyPlacement.BottomStart`.
 
 ```razor
-<KlyPopover Placement="bottom-start">
+<KlyPopover Placement="KlyPlacement.BottomStart">
     <ChildContent><KlyButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
     <Content><p class="w-64 p-4 text-sm">Escape or a click outside closes me.</p></Content>
 </KlyPopover>

@@ -57,11 +57,11 @@
     /// </summary>
     [Parameter] public string? Sizes { get; set; }
 
-    /// <summary>Densities of the <c>srcset</c>, like <c>"x1 x2"</c>. Defaults to <see cref="KlyImageSettings.Densities"/>.</summary>
-    [Parameter] public string? Densities { get; set; }
+    /// <summary>Densities of the <c>srcset</c>, like <c>[1, 2]</c>. Defaults to <see cref="KlyImageSettings.Densities"/>.</summary>
+    [Parameter] public IReadOnlyList<int>? Densities { get; set; }
 
-    /// <summary>Output format: "webp", "avif", "jpeg", "png", "gif" or "svg". Only a provider that converts honors it.</summary>
-    [Parameter] public string? Format { get; set; }
+    /// <summary>Output format. Only a provider that converts honors it.</summary>
+    [Parameter] public KlyImageFormat? Format { get; set; }
 
     /// <summary>Quality from 1 to 100.</summary>
     [Parameter] public int? Quality { get; set; }

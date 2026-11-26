@@ -7,8 +7,8 @@ namespace Klyroo.UI;
 /// </summary>
 public sealed record KlyImageOptions
 {
-    /// <summary>Output format: "webp", "avif", "jpeg", "png", "gif" or "svg".</summary>
-    public string? Format { get; init; }
+    /// <summary>Output format. Null keeps the format of the source.</summary>
+    public KlyImageFormat? Format { get; init; }
 
     /// <summary>Quality from 1 to 100.</summary>
     public int? Quality { get; init; }
@@ -25,8 +25,8 @@ public sealed record KlyImageOptions
     /// </summary>
     public string? Sizes { get; init; }
 
-    /// <summary>Pixel densities of the <c>srcset</c>, like <c>"x1 x2"</c> (the default is <see cref="KlyImageSettings.Densities"/>).</summary>
-    public string? Densities { get; init; }
+    /// <summary>Pixel densities of the <c>srcset</c>, like <c>[1, 2]</c> (the default is <see cref="KlyImageSettings.Densities"/>). Every value is at least 1.</summary>
+    public IReadOnlyList<int>? Densities { get; init; }
 
     /// <summary>How the image fills its width and height (cover when null).</summary>
     public KlyImageFit? Fit { get; init; }

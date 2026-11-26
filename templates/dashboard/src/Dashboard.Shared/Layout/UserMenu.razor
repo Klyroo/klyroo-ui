@@ -2,7 +2,7 @@
 @inject IToastService Toasts
 
 @* The signed-in user at the bottom of the sidebar. There is no sign-in in this template: the user is a sample one. *@
-<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="top-start">
+<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="KlyPlacement.TopStart">
     <button type="button"
             class="flex w-full min-w-0 items-center gap-2 rounded-(--klyroo-radius) p-1.5 text-start transition-colors hover:bg-(--klyroo-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
             data-testid="user-menu">

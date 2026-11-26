@@ -79,7 +79,7 @@
             {
                 if (_horizontal)
                 {
-                    <KlyPopover Placement="bottom-start" Role="@((string?)null)" Ui="_panelUi">
+                    <KlyPopover Placement="KlyPlacement.BottomStart" Role="@((string?)null)" Ui="_panelUi">
                         <ChildContent>
                             <button type="button" disabled="@item.Disabled" data-state="@(IsActive(item) ? "active" : null)" class="@_slots["trigger"]">
                                 @Inner(item)

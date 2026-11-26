@@ -1,11 +1,12 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
 @* A menu button on <kly-popover>: arrow keys, Home, End and typeahead move between items; Escape and Tab close it.
    An item with Children opens a submenu: a sibling popover of the menu (not a child of its role="menu", which only owns items), opened by the item as its invoker. *@
 <kly-popover data-kly-seq="@(OpenChanged.HasDelegate ? _sequence : null)"
             open="@Open"
-            placement="@Placement"
+            placement="@Wire.Of(Placement)"
             offset="4"
             @onklytoggle="ToggleHandler"
             @onklytoggle:stopPropagation="true">
@@ -38,8 +39,8 @@
     [Parameter] public bool Open { get; set; }
     /// <summary>Raised with the new state when the menu opens or closes.</summary>
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
-    /// <summary>Floating UI placement of the menu: top, right, bottom or left, optionally with <c>-start</c> or <c>-end</c>. Defaults to <c>bottom-start</c>.</summary>
-    [Parameter] public string Placement { get; set; } = "bottom-start";
+    /// <summary>Where the menu sits against the trigger. Defaults to <see cref="KlyPlacement.BottomStart"/>.</summary>
+    [Parameter] public KlyPlacement Placement { get; set; } = KlyPlacement.BottomStart;
     /// <summary>
     /// Per-instance class overrides of the slots of the dropdown menu, see <see cref="DropdownMenuUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
     /// </summary>

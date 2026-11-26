@@ -11,7 +11,7 @@ repository.
 in a static render or a prerender. It enables itself once the circuit or the WebAssembly runtime is ready.
 
 **Fix.** Do not remove `Disabled` to work around it. If the button must work on a static page, give it `Href`, or give it
-`Type="submit"` inside a form that posts. A link and a submit button never wait for interactivity.
+`Type="ButtonType.Submit"` inside a form that posts. A link and a submit button never wait for interactivity.
 
 ### The components are unstyled, or the classes I pass in `Class` and `Ui` do nothing
 
@@ -75,7 +75,7 @@ browser to attach to.
 **Cause.** In static rendering the model comes from `[SupplyParameterFromForm]`, and it is matched by the form name.
 
 **Fix.** Give the form a `FormName` and use the same name in `[SupplyParameterFromForm(FormName = "...")]`. Create the model
-with `Model ??= new()` in `OnInitialized`, and use `Type="submit"` on the button.
+with `Model ??= new()` in `OnInitialized`, and use `Type="ButtonType.Submit"` on the button.
 
 ### Items in a `for` loop all use the last index
 

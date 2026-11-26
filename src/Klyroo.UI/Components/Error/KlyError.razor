@@ -58,8 +58,8 @@
     /// <summary>Text of the back button. Defaults to the built-in text.</summary>
     [Parameter] public string? ClearLabel { get; set; }
 
-    /// <summary>The element of the title: "h1" by default, "h2" when the error replaces a part of a page.</summary>
-    [Parameter] public string HeadingAs { get; set; } = "h1";
+    /// <summary>Level of the title heading, 1 to 6: 1 by default, 2 when the error replaces a part of a page.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 1;
 
     /// <summary>Extra content between the message and the actions.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -89,7 +89,7 @@
 
     private RenderFragment Heading => builder =>
     {
-        builder.OpenElement(0, HeadingAs);
+        builder.OpenElement(0, "h" + Math.Clamp(HeadingLevel, 1, 6));
         builder.AddAttribute(1, "class", _slots["statusMessage"]);
         builder.AddContent(2, _title);
         builder.CloseElement();

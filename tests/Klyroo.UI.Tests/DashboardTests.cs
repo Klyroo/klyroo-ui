@@ -34,7 +34,7 @@ public class DashboardTests : KlyrooTestContext
     public void Group_gives_its_key_to_the_sidebar_and_to_the_controls()
     {
         var cut = Render<KlyDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent<KlyDashboardSidebar>(s => s
-            .Add(x => x.As, "div")
+            .Add(x => x.As, KlyElement.Div)
             .Add(x => x.Header, b => b.AddContent(0, (Microsoft.AspNetCore.Components.RenderFragment)(inner =>
             {
                 inner.OpenComponent<KlyDashboardSidebarCollapse>(0);
@@ -71,13 +71,13 @@ public class DashboardTests : KlyrooTestContext
         var cut = Render<KlyDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent(b =>
         {
             b.OpenComponent<KlyDashboardSidebar>(0);
-            b.AddAttribute(1, nameof(KlyDashboardSidebar.As), "div");
+            b.AddAttribute(1, nameof(KlyDashboardSidebar.As), KlyElement.Div);
             b.CloseComponent();
             b.OpenComponent<KlyDashboardSidebar>(2);
-            b.AddAttribute(3, nameof(KlyDashboardSidebar.As), "div");
+            b.AddAttribute(3, nameof(KlyDashboardSidebar.As), KlyElement.Div);
             b.CloseComponent();
             b.OpenComponent<KlyDashboardSidebar>(4);
-            b.AddAttribute(5, nameof(KlyDashboardSidebar.As), "div");
+            b.AddAttribute(5, nameof(KlyDashboardSidebar.As), KlyElement.Div);
             b.AddAttribute(6, nameof(KlyDashboardSidebar.Id), "mine");
             b.CloseComponent();
         }));
@@ -111,7 +111,7 @@ public class DashboardTests : KlyrooTestContext
         private static void Sidebar(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder c, int seq, string label, string? id = null)
         {
             c.OpenComponent<KlyDashboardSidebar>(seq);
-            c.AddAttribute(seq + 1, nameof(KlyDashboardSidebar.As), "div");
+            c.AddAttribute(seq + 1, nameof(KlyDashboardSidebar.As), KlyElement.Div);
             c.AddAttribute(seq + 2, nameof(KlyDashboardSidebar.AriaLabel), label);
             c.AddAttribute(seq + 3, nameof(KlyDashboardSidebar.Id), id);
             c.SetKey(label);
@@ -213,7 +213,7 @@ public class DashboardTests : KlyrooTestContext
     [Fact]
     public void Sidebar_passes_attributes_and_class_to_the_landmark()
     {
-        var cut = Render<KlyDashboardSidebar>(p => p.Add(s => s.As, "div").Add(s => s.Class, "bg-red-500")
+        var cut = Render<KlyDashboardSidebar>(p => p.Add(s => s.As, KlyElement.Div).Add(s => s.Class, "bg-red-500")
             .AddUnmatched("data-testid", "side"));
 
         var root = cut.Find("[data-testid=side]");
@@ -264,7 +264,7 @@ public class DashboardTests : KlyrooTestContext
         var cut = Render<KlyDashboardGroup>(p => p.Add(g => g.StorageKey, "app").AddChildContent((Microsoft.AspNetCore.Components.RenderFragment)(b =>
         {
             b.OpenComponent<KlyDashboardSidebar>(0);
-            b.AddAttribute(1, nameof(KlyDashboardSidebar.As), "div");
+            b.AddAttribute(1, nameof(KlyDashboardSidebar.As), KlyElement.Div);
             b.CloseComponent();
             b.OpenComponent<KlyDashboardSidebarToggle>(2);
             b.CloseComponent();
@@ -375,7 +375,7 @@ public class DashboardTests : KlyrooTestContext
     [Fact]
     public void Navbar_can_be_a_div_with_a_lower_heading_so_a_second_navbar_adds_no_banner_or_h1()
     {
-        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, "div").Add(n => n.HeadingLevel, 2)
+        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.Title, "Message").Add(n => n.As, KlyElement.Div).Add(n => n.HeadingLevel, 2)
             .Add(n => n.Right, "<button>Act</button>"));
 
         Assert.Empty(cut.FindAll("header"));
@@ -386,28 +386,28 @@ public class DashboardTests : KlyrooTestContext
     }
 
     [Fact]
-    public void Navbar_As_is_case_insensitive_and_rejects_other_elements()
+    public void Navbar_As_picks_the_element_and_rejects_other_elements()
     {
-        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.As, "DIV"));
+        var cut = Render<KlyDashboardNavbar>(p => p.Add(n => n.As, KlyElement.Div));
         Assert.Empty(cut.FindAll("header"));
         Assert.Equal("div", cut.Find("[data-slot=left]").ParentElement!.LocalName);
 
-        var error = Assert.ThrowsAny<Exception>(() => Render<KlyDashboardNavbar>(p => p.Add(n => n.As, "section")));
+        var error = Assert.ThrowsAny<Exception>(() => Render<KlyDashboardNavbar>(p => p.Add(n => n.As, KlyElement.Section)));
         Assert.Contains("As must be", (error as ArgumentException ?? error.InnerException as ArgumentException ?? error.GetBaseException() as ArgumentException)!.Message);
     }
 
     [Fact]
-    public void Navbar_and_PageAside_take_a_missing_As_for_their_default_element()
+    public void Navbar_and_PageAside_render_their_default_element_when_As_is_not_set()
     {
-        Assert.Equal("header", Render<KlyDashboardNavbar>(p => p.Add(n => n.As, null!)).Find("[data-slot=left]").ParentElement!.LocalName);
-        Assert.Equal("aside", Render<KlyPageAside>(p => p.Add(a => a.As, null!)).Find("[data-slot=body]").ParentElement!.LocalName);
+        Assert.Equal("header", Render<KlyDashboardNavbar>().Find("[data-slot=left]").ParentElement!.LocalName);
+        Assert.Equal("aside", Render<KlyPageAside>().Find("[data-slot=body]").ParentElement!.LocalName);
     }
 
     [Fact]
-    public void PageAside_As_is_case_insensitive_and_rejects_other_elements()
+    public void PageAside_As_picks_the_element_and_rejects_other_elements()
     {
-        Assert.Equal("div", Render<KlyPageAside>(p => p.Add(a => a.As, "Div")).Find("[data-slot=body]").ParentElement!.LocalName);
-        Assert.ThrowsAny<Exception>(() => Render<KlyPageAside>(p => p.Add(a => a.As, "nav")));
+        Assert.Equal("div", Render<KlyPageAside>(p => p.Add(a => a.As, KlyElement.Div)).Find("[data-slot=body]").ParentElement!.LocalName);
+        Assert.ThrowsAny<Exception>(() => Render<KlyPageAside>(p => p.Add(a => a.As, KlyElement.Nav)));
     }
 
     [Fact]

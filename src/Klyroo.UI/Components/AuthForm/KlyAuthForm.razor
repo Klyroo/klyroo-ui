@@ -60,8 +60,8 @@
                 @foreach (var field in Fields)
                 {
                     var f = field;
-                    <KlyFormField @key="f.Name" Id="@($"{_id}-{f.Name}")" Label="@(f.Type == "checkbox" ? null : f.Label)" Description="@f.Description"
-                                 Help="@f.Help" Required="@(f.Required && f.Type != "checkbox")" Error="@ErrorOf(f)">
+                    <KlyFormField @key="f.Name" Id="@($"{_id}-{f.Name}")" Label="@(f.Type == KlyAuthFieldType.Checkbox ? null : f.Label)" Description="@f.Description"
+                                 Help="@f.Help" Required="@(f.Required && f.Type != KlyAuthFieldType.Checkbox)" Error="@ErrorOf(f)">
                         @Control(f)
                     </KlyFormField>
                 }
@@ -76,7 +76,7 @@
             }
             else
             {
-                <KlyButton Type="submit" Block Size="KlySize.Lg" Loading="Busy" Label="@(SubmitLabel ?? Messages.AuthFormSubmit)" Color="@Color" />
+                <KlyButton Type="ButtonType.Submit" Block Size="KlySize.Lg" Loading="Busy" Label="@(SubmitLabel ?? Messages.AuthFormSubmit)" Color="@Color" />
             }
         </EditForm>
     }
@@ -205,7 +205,7 @@
                     }
                 }
                 // A checkbox that is not checked is not posted: do not let its default come back.
-                foreach (var field in Fields.Where(f => f.Type == "checkbox" && !Posted.ContainsKey(f.Name)))
+                foreach (var field in Fields.Where(f => f.Type == KlyAuthFieldType.Checkbox && !Posted.ContainsKey(f.Name)))
                 {
                     _values[field.Name] = "false";
                 }
@@ -226,7 +226,7 @@
     private string? ValueOf(KlyAuthField field)
     {
         // A posted password is never sent back to the browser.
-        if (field.Type == "password" && !RendererInfo.IsInteractive)
+        if (field.Type == KlyAuthFieldType.Password && !RendererInfo.IsInteractive)
         {
             return null;
         }
@@ -241,22 +241,38 @@
     private RenderFragment? ProviderIcon(KlyAuthProvider provider) =>
         provider.IconContent ?? (provider.Icon is null ? null : RenderIcon(provider.Icon, "size-5"));
 
+    private static InputType InputTypeOf(KlyAuthFieldType type) => type switch
+    {
+        KlyAuthFieldType.Email => InputType.Email,
+        KlyAuthFieldType.Password => InputType.Password,
+        KlyAuthFieldType.Search => InputType.Search,
+        KlyAuthFieldType.Tel => InputType.Tel,
+        KlyAuthFieldType.Url => InputType.Url,
+        KlyAuthFieldType.Number => InputType.Number,
+        KlyAuthFieldType.Date => InputType.Date,
+        KlyAuthFieldType.Time => InputType.Time,
+        KlyAuthFieldType.DateTimeLocal => InputType.DateTimeLocal,
+        KlyAuthFieldType.Month => InputType.Month,
+        KlyAuthFieldType.Week => InputType.Week,
+        _ => InputType.Text,
+    };
+
     private RenderFragment Control(KlyAuthField f) => f.Type switch
     {
-        "checkbox" => @<KlyCheckbox Name="@NameOf(f)" Label="@f.Label" Required="@f.Required" Value="@(ValueOf(f) == "true")"
+        KlyAuthFieldType.Checkbox => @<KlyCheckbox Name="@NameOf(f)" Label="@f.Label" Required="@f.Required" Value="@(ValueOf(f) == "true")"
                                    ValueChanged="@((bool v) => Set(f, v ? "true" : "false"))" />,
-        "select" => @<KlySelect Name="@NameOf(f)" Items="f.Items" Placeholder="@f.Placeholder" Value="@ValueOf(f)"
+        KlyAuthFieldType.Select => @<KlySelect Name="@NameOf(f)" Items="f.Items" Placeholder="@f.Placeholder" Value="@ValueOf(f)"
                                ValueChanged="@((string? v) => Set(f, v))" />,
-        "otp" => @<KlyPinInput Name="@NameOf(f)" Length="f.Length" Value="@ValueOf(f)" ValueChanged="@((string? v) => Set(f, v))" />,
-        "password" => @<kly-password class="@_slots["passwordRoot"]">
-                          <KlyInput Type="password" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@(f.Autocomplete ?? "current-password")"
+        KlyAuthFieldType.Otp => @<KlyPinInput Name="@NameOf(f)" Length="f.Length" Value="@ValueOf(f)" ValueChanged="@((string? v) => Set(f, v))" />,
+        KlyAuthFieldType.Password => @<kly-password class="@_slots["passwordRoot"]">
+                          <KlyInput Type="InputType.Password" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@(f.Autocomplete ?? "current-password")"
                                    ValueChanged="@((string? v) => Set(f, v))" Ui="@(new InputUi { Base = _slots["passwordInput"] })" />
                           <button type="button" data-slot="toggle" class="@_slots["passwordButton"]" aria-pressed="false" aria-label="@Messages.AuthFormShowPassword">
                               @RenderIcon(Options.Icons.Eye, _slots["passwordShow"])
                               @RenderIcon(Options.Icons.EyeOff, _slots["passwordHide"])
                           </button>
                       </kly-password>,
-        _ => @<KlyInput Type="@f.Type" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@f.Autocomplete"
+        _ => @<KlyInput Type="@InputTypeOf(f.Type)" Name="@NameOf(f)" Placeholder="@f.Placeholder" Value="@ValueOf(f)" autocomplete="@f.Autocomplete"
                        ValueChanged="@((string? v) => Set(f, v))" />,
     };
 
@@ -267,7 +283,7 @@
         {
             var value = _values.GetValueOrDefault(field.Name);
             var label = field.Label ?? field.Name;
-            var empty = field.Type == "checkbox" ? value != "true" : string.IsNullOrWhiteSpace(value);
+            var empty = field.Type == KlyAuthFieldType.Checkbox ? value != "true" : string.IsNullOrWhiteSpace(value);
             if (empty)
             {
                 if (field.Required)
@@ -275,11 +291,11 @@
                     errors[field.Name] = string.Format(FormatCulture, Messages.AuthFormRequired, label);
                 }
             }
-            else if (field.Type == "email" && !IsEmail(value!.Trim()))
+            else if (field.Type == KlyAuthFieldType.Email && !IsEmail(value!.Trim()))
             {
                 errors[field.Name] = Messages.AuthFormInvalidEmail;
             }
-            else if (field.Type == "otp" && value!.Length < field.Length)
+            else if (field.Type == KlyAuthFieldType.Otp && value!.Length < field.Length)
             {
                 errors[field.Name] = string.Format(FormatCulture, Messages.AuthFormIncompleteCode, field.Length);
             }

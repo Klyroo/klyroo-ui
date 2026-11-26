@@ -45,7 +45,7 @@
     [Parameter] public AvatarUi? Ui { get; set; }
 
     /// <summary>
-    /// Image settings forwarded to <see cref="KlyImage"/>: <c>new KlyImageOptions { Format = "webp", Quality = 80 }</c>.
+    /// Image settings forwarded to <see cref="KlyImage"/>: <c>new KlyImageOptions { Format = KlyImageFormat.WebP, Quality = 80 }</c>.
     /// The avatar passes its size in pixels as the width and the height, so a provider can serve a picture of that size.
     /// </summary>
     [Parameter] public KlyImageOptions? ImageOptions { get; set; }

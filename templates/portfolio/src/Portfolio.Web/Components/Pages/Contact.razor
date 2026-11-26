@@ -32,7 +32,7 @@
                         <KlyInput @bind-Value="Model!.Name" autocomplete="name" />
                     </KlyFormField>
                     <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)">
-                        <KlyInput @bind-Value="Model!.Email" Type="email" autocomplete="email" Placeholder="you@company.com" />
+                        <KlyInput @bind-Value="Model!.Email" Type="InputType.Email" autocomplete="email" Placeholder="you@company.com" />
                     </KlyFormField>
                 </div>
                 <KlyFormField Label="What is this about?" Required Field="FieldIdentifier.Create(() => Model!.Topic)">
@@ -43,7 +43,7 @@
                     <KlyTextarea @bind-Value="Model!.Message" Rows="7" />
                 </KlyFormField>
                 <div>
-                    <KlyButton Type="submit" Label="Send the message" Size="KlySize.Lg" />
+                    <KlyButton Type="ButtonType.Submit" Label="Send the message" Size="KlySize.Lg" />
                 </div>
             </KlyForm>
         </div>

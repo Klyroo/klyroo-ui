@@ -35,9 +35,9 @@
 
     private static readonly KlyAuthField[] _fields =
     [
-        new("email", "email") { Label = "Email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
-        new("password", "password") { Label = "Password", Required = true, Autocomplete = "current-password" },
-        new("remember", "checkbox") { Label = "Remember me" },
+        new("email", KlyAuthFieldType.Email) { Label = "Email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
+        new("password", KlyAuthFieldType.Password) { Label = "Password", Required = true, Autocomplete = "current-password" },
+        new("remember", KlyAuthFieldType.Checkbox) { Label = "Remember me" },
     ];
 
     private static readonly KlyAuthProvider[] _providers =

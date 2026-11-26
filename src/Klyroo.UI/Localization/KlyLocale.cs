@@ -35,6 +35,6 @@ public sealed record KlyLocale(string Code, string Name, KlyDirection Dir, KlyMe
         }
     });
 
-    /// <summary>The value of the <c>dir</c> attribute: "ltr" or "rtl".</summary>
-    public string DirAttribute => Dir == KlyDirection.Rtl ? "rtl" : "ltr";
+    /// <summary>The value of the <c>dir</c> attribute: "ltr", "rtl" or "auto".</summary>
+    public string DirAttribute => Internal.Wire.Of(Dir);
 }

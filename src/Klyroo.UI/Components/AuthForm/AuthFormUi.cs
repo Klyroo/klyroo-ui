@@ -3,14 +3,49 @@ using Microsoft.AspNetCore.Components;
 
 namespace Klyroo.UI;
 
+/// <summary>The kind of control of a <see cref="KlyAuthField"/>.</summary>
+public enum KlyAuthFieldType
+{
+    /// <summary>A text input (the default).</summary>
+    Text,
+    /// <summary>An email address; the form checks its shape.</summary>
+    Email,
+    /// <summary>A secret with a button that shows it.</summary>
+    Password,
+    /// <summary>A search term.</summary>
+    Search,
+    /// <summary>A telephone number.</summary>
+    Tel,
+    /// <summary>A web address.</summary>
+    Url,
+    /// <summary>A number.</summary>
+    Number,
+    /// <summary>A date.</summary>
+    Date,
+    /// <summary>A time of day.</summary>
+    Time,
+    /// <summary>A date and a time without a time zone.</summary>
+    DateTimeLocal,
+    /// <summary>A month of a year.</summary>
+    Month,
+    /// <summary>A week of a year.</summary>
+    Week,
+    /// <summary>A checkbox; its value is <c>"true"</c> or <c>"false"</c>.</summary>
+    Checkbox,
+    /// <summary>A select over <see cref="KlyAuthField.Items"/>.</summary>
+    Select,
+    /// <summary>A one-time code of <see cref="KlyAuthField.Length"/> characters.</summary>
+    Otp,
+}
+
 /// <summary>
-/// A field of a <see cref="KlyAuthForm"/>. <see cref="Type"/> is <c>checkbox</c>, <c>select</c> (give <see cref="Items"/>),
-/// <c>otp</c> (a one-time code, see <see cref="Length"/>), <c>password</c> (with a button that shows it) or any
-/// <c>type</c> of an <c>input</c>: <c>text</c>, <c>email</c>, <c>tel</c>...
+/// A field of a <see cref="KlyAuthForm"/>. <see cref="Type"/> is <see cref="KlyAuthFieldType.Checkbox"/>, <see cref="KlyAuthFieldType.Select"/> (give <see cref="Items"/>),
+/// <see cref="KlyAuthFieldType.Otp"/> (a one-time code, see <see cref="Length"/>), <see cref="KlyAuthFieldType.Password"/> (with a button that shows it) or one of the
+/// kinds of text input: <see cref="KlyAuthFieldType.Text"/>, <see cref="KlyAuthFieldType.Email"/>, <see cref="KlyAuthFieldType.Tel"/>...
 /// </summary>
 /// <param name="Name">Name of the field: the <c>name</c> of the control, and the key of its value in the submitted values.</param>
-/// <param name="Type">Kind of the field: <c>text</c> by default, or <c>checkbox</c>, <c>select</c>, <c>otp</c>, <c>password</c>, or any <c>type</c> of an <c>input</c>.</param>
-public sealed record KlyAuthField(string Name, string Type = "text")
+/// <param name="Type">Kind of the field: <see cref="KlyAuthFieldType.Text"/> by default.</param>
+public sealed record KlyAuthField(string Name, KlyAuthFieldType Type = KlyAuthFieldType.Text)
 {
     /// <summary>Label of the field. Defaults to the name of the field.</summary>
     public string? Label { get; init; }

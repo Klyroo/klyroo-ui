@@ -50,7 +50,7 @@
                                         @current.Title
                                     </a>
                                     <div class="absolute end-1 top-1/2 -translate-y-1/2 lg:opacity-0 lg:group-focus-within:opacity-100 lg:group-hover:opacity-100 lg:has-[[aria-expanded=true]]:opacity-100">
-                                        <KlyDropdownMenu Items="_menu" OnSelect="@(item => OnMenu(item, current))" Placement="bottom-end">
+                                        <KlyDropdownMenu Items="_menu" OnSelect="@(item => OnMenu(item, current))" Placement="KlyPlacement.BottomEnd">
                                             <KlyButton Square Size="KlySize.Xs" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" aria-label="@($"Options for {current.Title}")" data-testid="document-menu">
                                                 <LeadingIcon>@KlyIcons.Named("lucide:ellipsis")</LeadingIcon>
                                             </KlyButton>

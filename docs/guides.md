@@ -278,13 +278,13 @@ builder.Services.AddKlyrooUi(o =>
 {
     o.Images.Domains.Add("images.example.com");
     o.Images.AddCloudinary("my-cloud", makeDefault: true);
-    o.Images.Presets["thumb"] = new KlyImageOptions { Format = "webp", Quality = 60 };
+    o.Images.Presets["thumb"] = new KlyImageOptions { Format = KlyImageFormat.WebP, Quality = 60 };
 });
 ```
 
 ```razor
 <KlyImage Src="/img/team.jpg" Alt="The team on stage" Width="640" Height="360"
-          Sizes="100vw sm:50vw md:640px" Densities="x1 x2" Format="webp" />
+          Sizes="100vw sm:50vw md:640px" Densities="@(new[] { 1, 2 })" Format="KlyImageFormat.WebP" />
 <KlyAvatar Src="/img/ada.jpg" Alt="Ada Lovelace" ImageOptions="@(new KlyImageOptions { Preset = "thumb" })" />
 ```
 
@@ -398,7 +398,7 @@ Goal: a form that validates with data annotations and works in static rendering,
 
 - Give the form a `FormName` and match it in `[SupplyParameterFromForm(FormName = "...")]`.
 - Create the model with `Model ??= new()` in `OnInitialized`: on a post the framework has filled it.
-- Use `Type="submit"` on the button. A button with `OnClick` is disabled until the page is interactive.
+- Use `Type="ButtonType.Submit"` on the button. A button with `OnClick` is disabled until the page is interactive.
 - Put the message in the annotation. `KlyFormField` shows the message of its `For` expression and ties the label, the
   description and the error to the control with the right ids. `ShowSummary` lists every message above the fields.
 - Validation runs on the server on a post. Never rely on the browser alone.
@@ -411,13 +411,13 @@ Use a plain `EditForm` when you want Blazor's own parts with Klyroo controls:
 <EditForm Model="Model" FormName="signup" OnValidSubmit="Submit" class="flex max-w-sm flex-col gap-4" novalidate>
     <DataAnnotationsValidator />
     <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)">
-        <KlyInput Type="email" @bind-Value="Model!.Email" />
+        <KlyInput Type="InputType.Email" @bind-Value="Model!.Email" />
     </KlyFormField>
     <KlyFormField Label="About you" Help="Markdown is supported." Field="FieldIdentifier.Create(() => Model!.Bio)">
         <KlyTextarea @bind-Value="Model!.Bio" Rows="3" />
     </KlyFormField>
     <KlySwitch @bind-Value="Model!.Newsletter" Label="Send me the newsletter" />
-    <KlyButton Type="submit" Label="Create account" Block />
+    <KlyButton Type="ButtonType.Submit" Label="Create account" Block />
 </EditForm>
 
 @code {
@@ -466,7 +466,7 @@ The `EditContext` field is the property itself, so `For`, data annotations and t
     <KlyFormField Label="Due" Field="FieldIdentifier.Create(() => Model!.Due)">
         <KlyInputDate @bind-Value="Model!.Due" />
     </KlyFormField>
-    <KlyButton Type="submit" Label="Save" />
+    <KlyButton Type="ButtonType.Submit" Label="Save" />
 </EditForm>
 
 @code {

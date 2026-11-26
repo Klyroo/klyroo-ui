@@ -1,9 +1,10 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
 @if (Href is null)
 {
-    <button type="@Type"
+    <button type="@Wire.Of(Type)"
             disabled="@IsDisabled"
             aria-busy="@(Loading ? "true" : null)"
             data-color="@Color.Value"

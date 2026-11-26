@@ -62,7 +62,7 @@
 
 <KlyDashboardPanel Class="@(_selected is null ? "max-lg:hidden" : "")" data-testid="mail-detail">
     <Header>
-        <KlyDashboardNavbar As="div">
+        <KlyDashboardNavbar As="KlyElement.Div">
             <Leading>
                 <KlyButton Square Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" Href="inbox" aria-label="Back to the inbox" Class="lg:hidden" data-testid="mail-back">
                     <LeadingIcon>@KlyIcons.Named("arrow-left")</LeadingIcon>
@@ -109,7 +109,7 @@
                         <KlyTextarea @bind-Value="_reply" Rows="4" Immediate Placeholder="Write your reply" data-testid="mail-reply" />
                     </KlyFormField>
                     <div class="flex justify-end">
-                        <KlyButton Label="Send reply" Type="submit" Disabled="@string.IsNullOrWhiteSpace(_reply)" data-testid="mail-send" />
+                        <KlyButton Label="Send reply" Type="ButtonType.Submit" Disabled="@string.IsNullOrWhiteSpace(_reply)" data-testid="mail-send" />
                     </div>
                 </form>
             </article>

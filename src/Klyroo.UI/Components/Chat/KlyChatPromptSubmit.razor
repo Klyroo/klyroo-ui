@@ -18,7 +18,7 @@
     private ButtonUi _buttonUi = new();
     private ChatStatus _effective;
     private bool _disabled;
-    private string _type = "submit";
+    private ButtonType _type = ButtonType.Submit;
     private KlyColor _color = KlyColor.Primary;
     private ButtonVariant _variant = ButtonVariant.Solid;
     private RenderFragment _icon = default!;
@@ -64,7 +64,7 @@
         switch (_effective)
         {
             case ChatStatus.Idle:
-                _type = "submit";
+                _type = ButtonType.Submit;
                 _color = Color ?? DefaultColor(KlyColor.Primary);
                 _variant = ButtonVariant.Solid;
                 _icon = RenderIcon(Options.Icons.ArrowUp, _slots["icon"]);
@@ -73,7 +73,7 @@
                 _onClick = default;
                 break;
             case ChatStatus.Error:
-                _type = "button";
+                _type = ButtonType.Button;
                 _color = KlyColor.Error;
                 _variant = ButtonVariant.Soft;
                 _icon = RenderIcon(Options.Icons.Reload, _slots["icon"]);
@@ -82,7 +82,7 @@
                 _onClick = EventCallback.Factory.Create<MouseEventArgs>(this, () => OnReload.InvokeAsync());
                 break;
             default:
-                _type = "button";
+                _type = ButtonType.Button;
                 _color = KlyColor.Neutral;
                 _variant = ButtonVariant.Subtle;
                 _icon = RenderIcon(Options.Icons.Stop, _slots["stopIcon"]);

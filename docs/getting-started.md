@@ -112,13 +112,13 @@ Create `Components/Pages/Subscribe.razor`. The model carries data annotations, t
 <KlyContainer Class="py-12">
     <KlyForm Model="Model" FormName="subscribe" OnValidSubmit="SubscribeAsync" ShowSummary Class="flex max-w-sm flex-col gap-4">
         <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)" Description="We send one message a month.">
-            <KlyInput Type="email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
+            <KlyInput Type="InputType.Email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
         </KlyFormField>
         <KlyFormField Label="Topic" Field="FieldIdentifier.Create(() => Model!.Topic)">
             <KlySelect @bind-Value="Model!.Topic" Items="Topics" Placeholder="Pick a topic" />
         </KlyFormField>
         <KlyCheckbox @bind-Value="Model!.Terms" Label="I accept the terms" />
-        <KlyButton Type="submit" Label="Subscribe" Block />
+        <KlyButton Type="ButtonType.Submit" Label="Subscribe" Block />
     </KlyForm>
 
     @if (_done)
@@ -167,7 +167,7 @@ Three things in that page matter in every render mode:
 
 - The form has a `FormName` that matches `[SupplyParameterFromForm(FormName = "subscribe")]`. In static rendering the
   browser posts the form, the framework fills `Model`, and `OnValidSubmit` runs on the server.
-- The submit button has `Type="submit"`. A `KlyButton` with `OnClick` renders disabled until the page is interactive,
+- The submit button has `Type="ButtonType.Submit"`. A `KlyButton` with `OnClick` renders disabled until the page is interactive,
   because a click handler cannot run before that, while a submit button works without any interactivity.
 - `Model ??= new()` creates the model on the first render. On a post the framework has already filled it.
 

@@ -32,10 +32,10 @@
 
     private static readonly KlyAuthField[] _fields =
     [
-        new("name", "text") { Label = "Full name", Required = true, Autocomplete = "name" },
-        new("email", "email") { Label = "Work email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
-        new("password", "password") { Label = "Password", Required = true, Autocomplete = "new-password", Help = "At least 8 characters." },
-        new("terms", "checkbox") { Label = "I agree to the terms of service", Required = true },
+        new("name", KlyAuthFieldType.Text) { Label = "Full name", Required = true, Autocomplete = "name" },
+        new("email", KlyAuthFieldType.Email) { Label = "Work email", Placeholder = "you@company.com", Required = true, Autocomplete = "email" },
+        new("password", KlyAuthFieldType.Password) { Label = "Password", Required = true, Autocomplete = "new-password", Help = "At least 8 characters." },
+        new("terms", KlyAuthFieldType.Checkbox) { Label = "I agree to the terms of service", Required = true },
     ];
 
     private static readonly KlyAuthProvider[] _providers =

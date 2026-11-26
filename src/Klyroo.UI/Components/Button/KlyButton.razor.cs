@@ -79,8 +79,8 @@ public partial class KlyButton
     /// <summary>Equal padding on every side, for icon-only buttons (give them an <c>aria-label</c>).</summary>
     [Parameter] public bool Square { get; set; }
 
-    /// <summary>The <c>type</c> attribute of the button: button, submit or reset.</summary>
-    [Parameter] public string Type { get; set; } = "button";
+    /// <summary>The <c>type</c> attribute of the button: <see cref="ButtonType.Button"/> (the default), <see cref="ButtonType.Submit"/> or <see cref="ButtonType.Reset"/>.</summary>
+    [Parameter] public ButtonType Type { get; set; } = ButtonType.Button;
 
     /// <summary>Address to link to. When set the button renders as a link.</summary>
     [Parameter] public string? Href { get; set; }
@@ -93,7 +93,7 @@ public partial class KlyButton
 
     // A click handler needs an interactive renderer. During prerendering or static rendering the button would look
     // usable but do nothing, so it is disabled until interactivity starts. Submit buttons and links work without it.
-    private bool IsInert => OnClick.HasDelegate && Href is null && Type == "button" && !RendererInfo.IsInteractive;
+    private bool IsInert => OnClick.HasDelegate && Href is null && Type == ButtonType.Button && !RendererInfo.IsInteractive;
 
     private bool IsDisabled => Disabled || Loading || IsInert;
 

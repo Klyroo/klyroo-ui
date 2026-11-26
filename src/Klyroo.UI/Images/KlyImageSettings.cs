@@ -127,7 +127,7 @@ public sealed class KlyImageSettings
         var (provider, merged, path, allowed) = Prepare(src!, options);
         if (!allowed) return new KlyResolvedImage(src!, null, null);
 
-        var densities = ParseDensities(merged.Densities) ?? _densities;
+        var densities = NormalizeDensities(merged.Densities) ?? _densities;
         string Url(int? w, int? h) => provider.GetUrl(path, new KlyImageModifiers(w, h, merged.Quality, merged.Format, merged.Fit, Extra: merged.Modifiers));
 
         if (!provider.CanResize)
@@ -320,19 +320,12 @@ public sealed class KlyImageSettings
         return result;
     }
 
-    // "x1 x2": null when the text is empty, an error when it holds nothing usable.
-    private static IReadOnlyList<int>? ParseDensities(string? input)
+    // Null when nothing was asked for, an error when a density is below 1; a repeated density counts once.
+    private static IReadOnlyList<int>? NormalizeDensities(IReadOnlyList<int>? input)
     {
-        if (string.IsNullOrWhiteSpace(input)) return null;
-        var densities = new List<int>();
-        foreach (var part in input.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var value = LeadingInt(part.Replace("x", "", StringComparison.OrdinalIgnoreCase));
-            if (value > 0 && !densities.Contains(value)) densities.Add(value);
-        }
-        return densities.Count > 0
-            ? densities
-            : throw new ArgumentException($"Densities '{input}' hold no usable value; use \"x1\" to render the regular size only.");
+        if (input is null) return null;
+        if (input.Count == 0 || input.Any(d => d < 1)) throw new ArgumentException("Densities must hold at least one positive value; use [1] to render the regular size only.", nameof(input));
+        return input.Distinct().ToArray();
     }
 
     private static bool IsRemote(string src, out string host, out int port, out bool defaultPort)

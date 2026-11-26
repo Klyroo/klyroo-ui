@@ -1,8 +1,9 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
 @* Visual only, handled in the browser: never a round trip. The trigger must be focusable for keyboard users. *@
-<kly-tooltip delay="@Delay" placement="@Placement">
+<kly-tooltip delay="@Delay" placement="@Wire.Of(Placement)">
     <span data-slot="trigger">@ChildContent</span>
     <div popover="manual" role="tooltip" class="@_slots["content"]" data-slot="content" @attributes="AdditionalAttributes">
         @(Content ?? (RenderFragment)(b => b.AddContent(0, Text)))
@@ -18,8 +19,8 @@
     [Parameter] public string? Text { get; set; }
     /// <summary>Content of the tooltip, instead of <c>Text</c>.</summary>
     [Parameter] public RenderFragment? Content { get; set; }
-    /// <summary>Floating UI placement of the tooltip: top, right, bottom or left, optionally with <c>-start</c> or <c>-end</c>. Defaults to <c>top</c>.</summary>
-    [Parameter] public string Placement { get; set; } = "top";
+    /// <summary>Where the tooltip sits against the trigger. Defaults to <see cref="KlyPlacement.Top"/>.</summary>
+    [Parameter] public KlyPlacement Placement { get; set; } = KlyPlacement.Top;
 
     /// <summary>Hover delay before showing, in milliseconds. Keyboard focus shows it at once.</summary>
     [Parameter] public int Delay { get; set; } = 300;

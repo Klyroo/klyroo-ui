@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (3) · Interfaces (8) · Enums (39) · Delegates (2)
+Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (3) · Interfaces (8) · Enums (45) · Delegates (2)
 
 ### Components
 
@@ -57,7 +57,7 @@ Root wrapper of an app, placed once in the layout around the body. It renders th
 | :--- | :--- | :--- |
 | `ApplyStoredCulture` | `bool` | In a Blazor Hybrid web view, applies the culture saved by `KlyLocaleSelect` (`IKlyCultureStore`) before the content renders, unless `KlyApp.Locale` is set. Turn it off when the app applies its own culture in `MauiProgram`. It does nothing in a browser. |
 | `ChildContent` | `RenderFragment?` | The app: usually the body of the layout. |
-| `Dir` | `string?` | Text direction (the `dir` attribute): "ltr", "rtl" or "auto". Defaults to the direction of the locale. |
+| `Dir` | `KlyDirection?` | Text direction (the `dir` attribute): `KlyDirection.Ltr`, `KlyDirection.Rtl` or `KlyDirection.Auto`. Defaults to the direction of the locale. |
 | `Lang` | `string?` | Language of the content (the `lang` attribute), for example "fr". Defaults to the code of the locale. |
 | `Locale` | `KlyLocale?` | The locale of every component below: texts, writing direction and the culture used to format dates and numbers. Defaults to the locale of an enclosing `KlyApp`, then `KlyrooOptions.Locale`, then the one matching the current UI culture among `KlyrooOptions.Locales`. |
 | `Overlays` | `bool` | Renders the `KlyOverlayHost` after the content, which shows the dialogs opened with `IKlyOverlayService`. Turn it off when the app places its own. |
@@ -113,7 +113,7 @@ Round picture of a person or entity, with an icon or initials fallback when the 
 | :--- | :--- | :--- |
 | `Alt` | `string?` | Text alternative; its initials are shown when there is no image or it fails to load. |
 | `Icon` | `RenderFragment?` | Icon shown when there is no picture and no text, as markup such as a `KlyIcon`. |
-| `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to `KlyImage`: `new KlyImageOptions { Format = "webp", Quality = 80 }`. The avatar passes its size in pixels as the width and the height, so a provider can serve a picture of that size. |
+| `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to `KlyImage`: `new KlyImageOptions { Format = KlyImageFormat.WebP, Quality = 80 }`. The avatar passes its size in pixels as the width and the height, so a provider can serve a picture of that size. |
 | `Size` | `KlySize` | Size of the avatar, from `Xs` to `Xl`; it also sets the pixel size asked of the image provider. |
 | `Src` | `string?` | Address of the picture. When it is missing or fails to load, the avatar shows its text or icon. |
 | `Text` | `string?` | Fallback text instead of the initials of `KlyAvatar.Alt`. |
@@ -260,7 +260,7 @@ Button, rendered as a `<button>`, or as a link when `KlyButton.Href` is set. Wor
 | `Square` | `bool` | Equal padding on every side, for icon-only buttons (give them an `aria-label`). |
 | `Target` | `string?` | The `target` attribute of the link, such as `_blank`. It applies when `KlyButton.Href` is set. |
 | `TrailingIcon` | `RenderFragment?` | Icon after the label, as markup such as a `KlyIcon`. |
-| `Type` | `string` | The `type` attribute of the button: button, submit or reset. |
+| `Type` | `ButtonType` | The `type` attribute of the button: `ButtonType.Button` (the default), `ButtonType.Submit` or `ButtonType.Reset`. |
 | `Ui` | `ButtonUi?` | Per-instance class overrides of the slots of the button, see `ButtonUi`. |
 | `Variant` | `ButtonVariant` | Look of the button: `Solid`, `Outline`, `Soft`, `Subtle`, `Ghost` or `Link`. |
 
@@ -839,7 +839,7 @@ Centered wrapper with a maximum width and responsive horizontal padding.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `string` | The element to render, "div" by default: "main", "section", "header"… |
+| `As` | `KlyElement` | The element to render, `KlyElement.Div` by default: `KlyElement.Main`, `KlyElement.Section`, `KlyElement.Header`… |
 | `ChildContent` | `RenderFragment?` | Content of the container. |
 | `Size` | `KlySize` | Maximum width: Xs 42rem, Sm 56rem, Md 80rem (default), Lg the 2xl breakpoint, Xl none. |
 | `Ui` | `ContainerUi?` | Per-instance class overrides of the slots of the container, see `ContainerUi`. |
@@ -983,7 +983,7 @@ Top bar of a dashboard panel with the sidebar toggle, a title and left, center a
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `string` | The element to render: "header" (default) or "div", in any case; anything else throws an `ArgumentException`. A header outside a sectioning element is the banner landmark and a page has one: use "div" for the second navbar of a page, such as the one of a detail panel next to a list. |
+| `As` | `KlyElement` | The element to render: `KlyElement.Header` (default) or `KlyElement.Div`; any other element throws an `ArgumentException`. A header outside a sectioning element is the banner landmark and a page has one: use `KlyElement.Div` for the second navbar of a page, such as the one of a detail panel next to a list. |
 | `ChildContent` | `RenderFragment?` | The center area, between the left and the right ones. |
 | `HeadingLevel` | `int` | Level of the title heading, 1 to 6. A page has one h1: give the navbars after the first one a lower level, or no `KlyDashboardNavbar.Title`. |
 | `Leading` | `RenderFragment?` | Before the title. |
@@ -1075,7 +1075,7 @@ Sidebar for a dashboard: a column that collapses to icons and resizes from the l
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `AriaLabel` | `string?` | Accessible name of the sidebar landmark. Defaults to the built-in text. |
-| `As` | `string` | The element to render, "aside" by default; use "div" inside another landmark. |
+| `As` | `KlyElement` | The element to render, `KlyElement.Aside` by default; use `KlyElement.Div` inside another landmark. |
 | `ChildContent` | `RenderFragment?` | The scrollable middle: navigation, search button. |
 | `Collapsed` | `bool` | The collapsed state when nothing is remembered. `@bind-Collapsed` follows and sets it from .NET. |
 | `CollapsedChanged` | `EventCallback<bool>` | Raised with the new state when the sidebar collapses to icons or expands. |
@@ -1177,7 +1177,7 @@ Button that opens a menu of items, with submenus, keyboard navigation and typeah
 | `OnSelect` | `EventCallback<KlyMenuItem>` | Called with the activated item. Link items navigate instead, and items with children open their submenu. |
 | `Open` | `bool` | Whether the menu is open. Bind it with `@bind-Open` when .NET needs the state. |
 | `OpenChanged` | `EventCallback<bool>` | Raised with the new state when the menu opens or closes. |
-| `Placement` | `string` | Floating UI placement of the menu: top, right, bottom or left, optionally with `-start` or `-end`. Defaults to `bottom-start`. |
+| `Placement` | `KlyPlacement` | Where the menu sits against the trigger. Defaults to `KlyPlacement.BottomStart`. |
 | `Ui` | `DropdownMenuUi?` | Per-instance class overrides of the slots of the dropdown menu, see `DropdownMenuUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
@@ -1319,7 +1319,7 @@ Content of an error page: status code, title, message and a way back. Use it as 
 | `Clear` | `bool` | Shows the button that leads back to `KlyError.Href`. Ignored when `KlyError.Actions` is set. |
 | `ClearLabel` | `string?` | Text of the back button. Defaults to the built-in text. |
 | `Exception` | `Exception?` | The exception of an `ErrorBoundary`. Sets the status code to 500 when none is given. |
-| `HeadingAs` | `string` | The element of the title: "h1" by default, "h2" when the error replaces a part of a page. |
+| `HeadingLevel` | `int` | Level of the title heading, 1 to 6: 1 by default, 2 when the error replaces a part of a page. |
 | `Href` | `string` | Where the back button goes. The default "./" is the home of the app: relative to `<base href>`, so it is right below a path base too. |
 | `Message` | `string?` | The explanation under the title. Defaults to a text for `KlyError.StatusCode`. |
 | `ShowDetails` | `bool` | Shows the message of `KlyError.Exception`. Leave it off in production: exception messages can leak internals. |
@@ -1517,10 +1517,10 @@ Image element that fills in the width, height, srcset, sizes and loading attribu
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Alt` | `string?` | Text alternative. Required: pass an empty string for a decorative image. |
-| `Densities` | `string?` | Densities of the `srcset`, like `"x1 x2"`. Defaults to `KlyImageSettings.Densities`. |
+| `Densities` | `IReadOnlyList<int>?` | Densities of the `srcset`, like `[1, 2]`. Defaults to `KlyImageSettings.Densities`. |
 | `FetchPriority` | `KlyFetchPriority?` | `high` speeds up the image that matters most (the hero); preloading sets it to high unless you choose. |
 | `Fit` | `KlyImageFit?` | How the image fills `KlyImage.Width` by `KlyImage.Height`. Cover when unset. |
-| `Format` | `string?` | Output format: "webp", "avif", "jpeg", "png", "gif" or "svg". Only a provider that converts honors it. |
+| `Format` | `KlyImageFormat?` | Output format. Only a provider that converts honors it. |
 | `Height` | `int?` | Height of the image in CSS pixels, with the same rules as `KlyImage.Width`. |
 | `ImageOptions` | `KlyImageOptions?` | Settings shared with the other image parameters: the parameters below override the ones set here. |
 | `Loading` | `KlyImageLoading?` | Lazy by default, eager when `KlyImage.Preload` is set. Use eager for the image visible at first paint. |
@@ -1570,7 +1570,7 @@ Single-line text input with a variant, a size and optional leading and trailing 
 | `LeadingIcon` | `RenderFragment?` | Icon at the start of the field, as markup such as a `KlyIcon`. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
 | `TrailingIcon` | `RenderFragment?` | Icon at the end of the field, as markup such as a `KlyIcon`. |
-| `Type` | `string` | The `type` attribute: text, email, password, search, tel, url, number… |
+| `Type` | `InputType` | The `type` attribute: `InputType.Text` (the default), `InputType.Email`, `InputType.Password`, `InputType.Search`… |
 | `Ui` | `InputUi?` | Per-instance class overrides of the slots of the input, see `InputUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 
@@ -1769,7 +1769,7 @@ The main landmark of a page. Its minimum height is the viewport minus the header
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `string` | The element to render, "main" by default. A page has only one main landmark: use "div" when the layout already has one. |
+| `As` | `KlyElement` | The element to render, `KlyElement.Main` by default. A page has only one main landmark: use `KlyElement.Div` when the layout already has one. |
 | `ChildContent` | `RenderFragment?` | Content of the main area. |
 | `Ui` | `MainUi?` | Per-instance class overrides of the slots of the main area, see `MainUi`. |
 
@@ -1877,7 +1877,7 @@ Sticky side column of a page, shown from the lg breakpoint up.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `As` | `string` | The element to render: "aside" (default) or "div", in any case; anything else throws an `ArgumentException`. |
+| `As` | `KlyElement` | The element to render: `KlyElement.Aside` (default) or `KlyElement.Div`; any other element throws an `ArgumentException`. |
 | `Bottom` | `RenderFragment?` | Content at the bottom of the column. |
 | `ChildContent` | `RenderFragment?` | Content of the page aside. |
 | `Top` | `RenderFragment?` | Content at the top of the column. |
@@ -2158,7 +2158,7 @@ Non-modal floating panel anchored to a trigger. `KlyPopover.ChildContent` is the
 | `Offset` | `int` | Distance between trigger and panel, in pixels. |
 | `Open` | `bool` | Open state. Use `@bind-Open`: the browser can close the panel on its own (Escape, click outside). |
 | `OpenChanged` | `EventCallback<bool>` | Raised with the new state whenever the popover opens or closes in the browser, Escape and light dismiss included. |
-| `Placement` | `string` | Floating UI placement: top, right, bottom, left, optionally suffixed with -start or -end. |
+| `Placement` | `KlyPlacement` | Where the panel sits against the trigger. Defaults to `KlyPlacement.Bottom`. |
 | `Role` | `string?` | Role of the panel. Defaults to `dialog`. Null renders a plain panel, a disclosure as in the WAI-ARIA navigation pattern: the trigger then only reports `aria-expanded` and `aria-controls`, and `KlyPopover.AriaLabel` is not rendered because a role-less element cannot carry a name. |
 | `Ui` | `PopoverUi?` | Per-instance class overrides of the slots of the popover, see `PopoverUi`. |
 
@@ -2364,7 +2364,7 @@ Application sidebar that collapses to icons and resizes from the lg breakpoint u
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `AriaLabel` | `string?` | Accessible name of the sidebar landmark. Defaults to the built-in text. |
-| `As` | `string` | The element to render, "aside" by default. A complementary landmark must not sit inside another landmark: use "div" when the sidebar is placed inside a main element. |
+| `As` | `KlyElement` | The element to render, `KlyElement.Aside` by default. A complementary landmark must not sit inside another landmark: use `KlyElement.Div` when the sidebar is placed inside a main element. |
 | `ChildContent` | `RenderFragment?` | The scrollable middle: navigation, search. It is rendered once and serves both the column and the off-canvas panel. |
 | `Collapsed` | `bool` | The collapsed state when nothing is remembered. Use `@bind-Collapsed` to follow and set it from .NET; the browser still toggles it without a round trip, and in static rendering a bound state is not reported. |
 | `CollapsedChanged` | `EventCallback<bool>` | Raised with the new state when the sidebar collapses to icons or expands. |
@@ -2668,7 +2668,7 @@ Text label that appears when its trigger is hovered or focused. It is handled in
 | `ChildContent` | `RenderFragment?` | The trigger, a focusable element. |
 | `Content` | `RenderFragment?` | Content of the tooltip, instead of `Text`. |
 | `Delay` | `int` | Hover delay before showing, in milliseconds. Keyboard focus shows it at once. |
-| `Placement` | `string` | Floating UI placement of the tooltip: top, right, bottom or left, optionally with `-start` or `-end`. Defaults to `top`. |
+| `Placement` | `KlyPlacement` | Where the tooltip sits against the trigger. Defaults to `KlyPlacement.Top`. |
 | `Text` | `string?` | Text of the tooltip. Use `Content` for markup. |
 | `Ui` | `TooltipUi?` | Per-instance class overrides of the slots of the tooltip, see `TooltipUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -4799,11 +4799,11 @@ An item of `KlyAccordion`: a header label and a content that opens and closes.
 
 `Klyroo.UI` · record
 
-A field of a `KlyAuthForm`. `KlyAuthField.Type` is `checkbox`, `select` (give `KlyAuthField.Items`), `otp` (a one-time code, see `KlyAuthField.Length`), `password` (with a button that shows it) or any `type` of an `input`: `text`, `email`, `tel`...
+A field of a `KlyAuthForm`. `KlyAuthField.Type` is `KlyAuthFieldType.Checkbox`, `KlyAuthFieldType.Select` (give `KlyAuthField.Items`), `KlyAuthFieldType.Otp` (a one-time code, see `KlyAuthField.Length`), `KlyAuthFieldType.Password` (with a button that shows it) or one of the kinds of text input: `KlyAuthFieldType.Text`, `KlyAuthFieldType.Email`, `KlyAuthFieldType.Tel`...
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyAuthField(string Name, string Type = "text")` | A field of a `KlyAuthForm`. `KlyAuthField.Type` is `checkbox`, `select` (give `KlyAuthField.Items`), `otp` (a one-time code, see `KlyAuthField.Length`), `password` (with a button that shows it) or any `type` of an `input`: `text`, `email`, `tel`... |
+| `KlyAuthField(string Name, KlyAuthFieldType Type = Text)` | A field of a `KlyAuthForm`. `KlyAuthField.Type` is `KlyAuthFieldType.Checkbox`, `KlyAuthFieldType.Select` (give `KlyAuthField.Items`), `KlyAuthFieldType.Otp` (a one-time code, see `KlyAuthField.Length`), `KlyAuthFieldType.Password` (with a button that shows it) or one of the kinds of text input: `KlyAuthFieldType.Text`, `KlyAuthFieldType.Email`, `KlyAuthFieldType.Tel`... |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -4816,7 +4816,7 @@ A field of a `KlyAuthForm`. `KlyAuthField.Type` is `checkbox`, `select` (give `K
 | `Name` (init) | `string` | Name of the field: the `name` of the control, and the key of its value in the submitted values. |
 | `Placeholder` (init) | `string?` | Hint shown while the field is empty. |
 | `Required` (init) | `bool` | Marks the field as required. |
-| `Type` (init) | `string` | Kind of the field: `text` by default, or `checkbox`, `select`, `otp`, `password`, or any `type` of an `input`. |
+| `Type` (init) | `KlyAuthFieldType` | Kind of the field: `KlyAuthFieldType.Text` by default. |
 | `Value` (init) | `string?` | The initial value. A checkbox is checked when it is `"true"`. |
 
 #### `KlyAuthProvider`
@@ -5098,14 +5098,14 @@ What a provider is asked to produce for one URL: the source resized, converted a
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyImageModifiers(int? Width = null, int? Height = null, int? Quality = null, string? Format = null, KlyImageFit? Fit = null, int? Blur = null, IReadOnlyDictionary<string, string>? Extra = null)` | What a provider is asked to produce for one URL: the source resized, converted and compressed as described. |
+| `KlyImageModifiers(int? Width = null, int? Height = null, int? Quality = null, KlyImageFormat? Format = null, KlyImageFit? Fit = null, int? Blur = null, IReadOnlyDictionary<string, string>? Extra = null)` | What a provider is asked to produce for one URL: the source resized, converted and compressed as described. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Blur` (init) | `int?` | Blur radius for placeholders. Only asked from providers that report `IKlyImageProvider.SupportsBlur`. |
 | `Extra` (init) | `IReadOnlyDictionary<string, string>?` | Provider specific modifiers, from the `Modifiers` parameter (for example `"gravity"` or `"sharpen"`). A provider ignores the ones it does not know. |
 | `Fit` (init) | `KlyImageFit?` | How to fill `Width` by `Height`; null means the provider default (`KlyImageFit.Cover`). |
-| `Format` (init) | `string?` | "webp", "avif", "jpeg", "png", "gif" or "svg"; null keeps the format of the source (or lets the provider negotiate). |
+| `Format` (init) | `KlyImageFormat?` | The output format; null keeps the format of the source (or lets the provider negotiate). |
 | `Height` (init) | `int?` | Pixels, or null. |
 | `Quality` (init) | `int?` | 1 to 100, or null for the provider default. |
 | `Width` (init) | `int?` | Pixels, or null to keep the width (the ratio is kept when only one side is given). |
@@ -5118,9 +5118,9 @@ Image settings that a component forwards to `KlyImage` (`:image="{ src, format: 
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `Densities` (init) | `string?` | Pixel densities of the `srcset`, like `"x1 x2"` (the default is `KlyImageSettings.Densities`). |
+| `Densities` (init) | `IReadOnlyList<int>?` | Pixel densities of the `srcset`, like `[1, 2]` (the default is `KlyImageSettings.Densities`). Every value is at least 1. |
 | `Fit` (init) | `KlyImageFit?` | How the image fills its width and height (cover when null). |
-| `Format` (init) | `string?` | Output format: "webp", "avif", "jpeg", "png", "gif" or "svg". |
+| `Format` (init) | `KlyImageFormat?` | Output format. Null keeps the format of the source. |
 | `Loading` (init) | `KlyImageLoading?` | Lazy by default, eager when `KlyImageOptions.Preload` is set. |
 | `Modifiers` (init) | `IReadOnlyDictionary<string, string>?` | Provider specific modifiers, merged key by key over the preset's. |
 | `Preload` (init) | `bool?` | Adds a `<link rel="preload" as="image">` to the head. Needs a `HeadOutlet` in the app. |
@@ -5148,7 +5148,7 @@ A language of the UI: its code, its name, its writing direction and every text t
 | `Code` (init) | `string` | A culture name such as "fr" or "pt-BR". It is the value written to the culture cookie by `KlyLocaleSelect`, the `lang` attribute of the page, and the culture used to format dates and numbers. |
 | `Culture` | `CultureInfo` | The culture of `KlyLocale.Code`, used by date, number and file size formatting when a component has no explicit `Culture`. A code the runtime does not know gives the invariant culture. |
 | `Dir` (init) | `KlyDirection` | The writing direction. |
-| `DirAttribute` | `string` | The value of the `dir` attribute: "ltr" or "rtl". |
+| `DirAttribute` | `string` | The value of the `dir` attribute: "ltr", "rtl" or "auto". |
 | `Flag` (init) | `string?` | Shown before the name by `KlyLocaleSelect`: a flag emoji, or any short text. Some systems (Windows) draw flag emoji as letters. |
 | `Messages` (init) | `KlyMessages` | The texts of the components. |
 | `Name` (init) | `string` | The name of the language in that language ("Français"), shown by `KlyLocaleSelect`. |
@@ -6781,6 +6781,18 @@ Look of a `KlyBlogPost` card.
 | `Ghost` | A transparent card with the usual padding. |
 | `Naked` | A transparent card that does not clip its content. |
 
+#### `ButtonType`
+
+`Klyroo.UI` · enum
+
+The `type` attribute of a `KlyButton`.
+
+| Value | Description |
+| :--- | :--- |
+| `Button` | Does nothing by itself, even inside a form (the default). |
+| `Submit` | Submits the form it belongs to. |
+| `Reset` | Resets the form it belongs to. |
+
 #### `ButtonVariant`
 
 `Klyroo.UI` · enum
@@ -6983,6 +6995,51 @@ Look of text fields: input, textarea, select.
 | `Ghost` | No border and no background until hovered or focused. |
 | `None` | A transparent field with no border, for a field placed inside a surface of your own. |
 
+#### `InputType`
+
+`Klyroo.UI` · enum
+
+The `type` attribute of a `KlyInput`: the kinds of single-line text control the browser offers.
+
+| Value | Description |
+| :--- | :--- |
+| `Text` | Plain text (the default). |
+| `Email` | An email address. |
+| `Password` | A secret: the browser hides the characters. |
+| `Search` | A search term; the browser may add a clear button. |
+| `Tel` | A telephone number. |
+| `Url` | A web address. |
+| `Number` | A number; the value stays text in `KlyInput`, use `KlyInputNumber` for a typed number. |
+| `Date` | A date picked by the browser (`yyyy-MM-dd`); `KlyInputDate` is the typed field. |
+| `Time` | A time of day picked by the browser (`HH:mm`). |
+| `DateTimeLocal` | A date and a time without a time zone (`datetime-local`). |
+| `Month` | A month of a year (`yyyy-MM`). |
+| `Week` | A week of a year (`yyyy-Www`). |
+
+#### `KlyAuthFieldType`
+
+`Klyroo.UI` · enum
+
+The kind of control of a `KlyAuthField`.
+
+| Value | Description |
+| :--- | :--- |
+| `Text` | A text input (the default). |
+| `Email` | An email address; the form checks its shape. |
+| `Password` | A secret with a button that shows it. |
+| `Search` | A search term. |
+| `Tel` | A telephone number. |
+| `Url` | A web address. |
+| `Number` | A number. |
+| `Date` | A date. |
+| `Time` | A time of day. |
+| `DateTimeLocal` | A date and a time without a time zone. |
+| `Month` | A month of a year. |
+| `Week` | A week of a year. |
+| `Checkbox` | A checkbox; its value is `"true"` or `"false"`. |
+| `Select` | A select over `KlyAuthField.Items`. |
+| `Otp` | A one-time code of `KlyAuthField.Length` characters. |
+
 #### `KlyCalendarMode`
 
 `Klyroo.UI` · enum
@@ -7067,6 +7124,24 @@ The writing direction of a language: the `dir` attribute of the page.
 | :--- | :--- |
 | `Ltr` | Left to right. |
 | `Rtl` | Right to left (Arabic, Hebrew, Persian...). |
+| `Auto` | The browser picks the direction from the first strong character of the content. |
+
+#### `KlyElement`
+
+`Klyroo.UI` · enum
+
+The HTML element a layout component renders its box as (the `As` parameter). Layout components render a generic box by default; pick a landmark element when the box is one, keeping to one `main` and one top-level `header` per page.
+
+| Value | Description |
+| :--- | :--- |
+| `Div` | A generic box with no meaning of its own. |
+| `Section` | A thematic section of a page. |
+| `Article` | A self-contained piece of content. |
+| `Aside` | A complementary landmark, such as a sidebar. |
+| `Header` | A header: the banner landmark of the page when it sits outside any sectioning element. |
+| `Footer` | A footer: the content-info landmark of the page when it sits outside any sectioning element. |
+| `Main` | The main landmark. A page has only one. |
+| `Nav` | A navigation landmark. |
 
 #### `KlyFetchPriority`
 
@@ -7093,6 +7168,22 @@ How the image fills the requested width and height. Providers map it to their ow
 | `Fill` | Stretch to the box, distorting the picture when the ratios differ. |
 | `Inside` | Resize to stay inside the box, keeping the ratio, never enlarging. |
 | `Outside` | Resize to cover the box, keeping the ratio, without cropping. |
+
+#### `KlyImageFormat`
+
+`Klyroo.UI` · enum
+
+The format of the image a provider is asked to produce.
+
+| Value | Description |
+| :--- | :--- |
+| `WebP` | WebP (`webp`). |
+| `Avif` | AVIF (`avif`). |
+| `Jpeg` | JPEG (`jpeg`; a service that spells it `jpg` gets that spelling from its provider). |
+| `Png` | PNG (`png`). |
+| `Gif` | GIF (`gif`). |
+| `Svg` | SVG (`svg`), a vector image that is not converted. |
+| `Auto` | The service picks the best format the browser accepts (`auto`). Only a service that negotiates honors it; the local optimizer rejects it. |
 
 #### `KlyImageLoading`
 
@@ -7138,6 +7229,27 @@ How `IKlyOverlayService` presents the component it opens.
 | :--- | :--- |
 | `Modal` | A centered modal dialog (`KlyModal`). |
 | `Slideover` | A panel on an edge of the screen (`KlySlideover`). |
+
+#### `KlyPlacement`
+
+`Klyroo.UI` · enum
+
+Where a floating panel (`KlyTooltip`, `KlyPopover`, `KlyDropdownMenu`) sits against its trigger: a side, optionally aligned to the start or the end of that side. The browser flips it when there is no room.
+
+| Value | Description |
+| :--- | :--- |
+| `Top` | Above the trigger, centered. |
+| `TopStart` | Above the trigger, aligned to its start edge. |
+| `TopEnd` | Above the trigger, aligned to its end edge. |
+| `Right` | After the trigger on the right, centered. |
+| `RightStart` | On the right of the trigger, aligned to its top. |
+| `RightEnd` | On the right of the trigger, aligned to its bottom. |
+| `Bottom` | Below the trigger, centered. |
+| `BottomStart` | Below the trigger, aligned to its start edge. |
+| `BottomEnd` | Below the trigger, aligned to its end edge. |
+| `Left` | On the left of the trigger, centered. |
+| `LeftStart` | On the left of the trigger, aligned to its top. |
+| `LeftEnd` | On the left of the trigger, aligned to its bottom. |
 
 #### `KlyProgressAnimation`
 

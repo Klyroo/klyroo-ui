@@ -110,10 +110,10 @@
     [Parameter] public int MaxWidth { get; set; } = 448;
 
     /// <summary>
-    /// The element to render, "aside" by default. A complementary landmark must not sit inside another landmark:
-    /// use "div" when the sidebar is placed inside a main element.
+    /// The element to render, <see cref="KlyElement.Aside"/> by default. A complementary landmark must not sit inside another landmark:
+    /// use <see cref="KlyElement.Div"/> when the sidebar is placed inside a main element.
     /// </summary>
-    [Parameter] public string As { get; set; } = "aside";
+    [Parameter] public KlyElement As { get; set; } = KlyElement.Aside;
 
     /// <summary>Accessible name of the sidebar landmark. Defaults to the built-in text.</summary>
     [Parameter] public string? AriaLabel { get; set; }
@@ -140,7 +140,7 @@
         // The panel's id: the popover buttons name it, so it is rendered. It follows the storage Id when there is one, which lets KlyDashboardSidebarToggle
         // name the panel from the server too. (An "id" attribute is the storage Id of the sidebar, never the element's.)
         _id = Id is { Length: > 0 } ? PanelId(Id) : _generatedId ??= NewId("sidebar");
-        _tag = string.IsNullOrWhiteSpace(As) ? "aside" : As.Trim().ToLowerInvariant();
+        _tag = Klyroo.UI.Internal.Wire.Of(As);
         _slots = ResolveSlots(Options.Sidebar, new Dictionary<string, string?>(), Ui, "root");
     }
 
@@ -165,7 +165,7 @@
         builder.AddAttribute(3, "data-state", Collapsed ? "collapsed" : "expanded");
         builder.AddAttribute(4, "id", _id);
         builder.AddAttribute(5, "popover", "auto");
-        if (_tag is "aside" or "nav")
+        if (As is KlyElement.Aside or KlyElement.Nav)
         {
             builder.AddAttribute(6, "aria-label", AriaLabel ?? Messages.SidebarLabel);
         }

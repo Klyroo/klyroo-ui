@@ -18,7 +18,7 @@
     </KlyFormField>
     <KlySwitch @bind-Value="Model!.Notify" Label="Email notifications" />
     <KlyCheckbox @bind-Value="Model!.Terms" Label="I accept the terms" />
-    <KlyButton Type="submit" Label="Save profile" data-testid="save" />
+    <KlyButton Type="ButtonType.Submit" Label="Save profile" data-testid="save" />
     @if (_saved)
     {
         <p role="status" class="text-sm text-(--klyroo-success-text)" data-testid="saved">Saved @Model!.Name.</p>

@@ -18,7 +18,7 @@
 {
     <CascadingValue Value="_locale" IsFixed="true" @key="_localeKey">
         <KlyTheme Overrides="Overrides">
-            <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir ?? _locale.DirAttribute)" @attributes="AdditionalAttributes">
+            <div class="@_slots["root"]" lang="@(Lang ?? _locale.Code)" dir="@(Dir is { } dir ? Klyroo.UI.Internal.Wire.Of(dir) : _locale.DirAttribute)" @attributes="AdditionalAttributes">
                 @if (SpatialNavigation)
                 {
                     <kly-spatial hidden></kly-spatial>
@@ -66,8 +66,8 @@
     /// <summary>Language of the content (the <c>lang</c> attribute), for example "fr". Defaults to the code of the locale.</summary>
     [Parameter] public string? Lang { get; set; }
 
-    /// <summary>Text direction (the <c>dir</c> attribute): "ltr", "rtl" or "auto". Defaults to the direction of the locale.</summary>
-    [Parameter] public string? Dir { get; set; }
+    /// <summary>Text direction (the <c>dir</c> attribute): <see cref="KlyDirection.Ltr"/>, <see cref="KlyDirection.Rtl"/> or <see cref="KlyDirection.Auto"/>. Defaults to the direction of the locale.</summary>
+    [Parameter] public KlyDirection? Dir { get; set; }
 
     /// <summary>
     /// Turns on the remote control mode for TV screens (experimental, opt in): the arrow keys move focus to the nearest focusable element in

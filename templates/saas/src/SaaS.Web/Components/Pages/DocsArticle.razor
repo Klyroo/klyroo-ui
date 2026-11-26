@@ -57,11 +57,11 @@
     }
 
     // The tree in the left column. A complementary landmark inside main would be a mistake, so the aside is a plain div.
-    private RenderFragment? _nav => _page is null ? null : @<KlyPageAside As="div" Class="py-1">
+    private RenderFragment? _nav => _page is null ? null : @<KlyPageAside As="KlyElement.Div" Class="py-1">
         <KlyContentNavigation Items="_site.DocsNavigation()" AriaLabel="Documentation" />
     </KlyPageAside>;
 
-    private RenderFragment? _toc => _page is null || _page.Toc.Count == 0 ? null : @<KlyPageAside As="div">
+    private RenderFragment? _toc => _page is null || _page.Toc.Count == 0 ? null : @<KlyPageAside As="KlyElement.Div">
         <KlyContentToc Links="_page.Toc" Title="On this page" />
     </KlyPageAside>;
 }

@@ -148,7 +148,7 @@ Then use the components:
 ```
 
 The popover has no `@bind-Open`, so .NET is never called when it opens. The save button has an `OnClick`, so it renders disabled until the
-page is interactive; use `Href` or `Type="submit"` on a button that must work in a static page.
+page is interactive; use `Href` or `Type="ButtonType.Submit"` on a button that must work in a static page.
 [Getting started](https://github.com/klyroo/klyroo-ui/blob/main/docs/getting-started.md) builds a complete form step by step.
 
 ## Theming

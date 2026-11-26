@@ -20,7 +20,7 @@
                     <KlyInput @bind-Value="Model!.Name" autocomplete="name" data-testid="profile-name" />
                 </KlyFormField>
                 <KlyFormField Label="Email" Required Description="Used to sign in and to send you notifications." Field="FieldIdentifier.Create(() => Model!.Email)">
-                    <KlyInput @bind-Value="Model!.Email" Type="email" autocomplete="email" data-testid="profile-email" />
+                    <KlyInput @bind-Value="Model!.Email" Type="InputType.Email" autocomplete="email" data-testid="profile-email" />
                 </KlyFormField>
                 <KlyFormField Label="Username" Hint="3 to 20 letters, digits or dashes" Field="FieldIdentifier.Create(() => Model!.Username)">
                     <KlyInput @bind-Value="Model!.Username" autocomplete="username" data-testid="profile-username" />
@@ -30,7 +30,7 @@
                 </KlyFormField>
                 <div class="flex items-center justify-end gap-3">
                     <p role="status" class="text-sm text-(--klyroo-success-text)" data-testid="profile-status">@_status</p>
-                    <KlyButton Label="Save changes" Type="submit" data-testid="profile-save" />
+                    <KlyButton Label="Save changes" Type="ButtonType.Submit" data-testid="profile-save" />
                 </div>
             </KlyForm>
         </ChildContent>

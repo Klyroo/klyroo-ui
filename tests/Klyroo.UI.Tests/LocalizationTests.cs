@@ -361,7 +361,7 @@ public partial class LocalizationTests : KlyrooTestContext
     [Fact]
     public void App_explicit_Lang_and_Dir_win_over_the_locale()
     {
-        var cut = Render<KlyApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, KlyLocales.Ar).Add(a => a.Lang, "ar-EG").Add(a => a.Dir, "auto"));
+        var cut = Render<KlyApp>(p => p.Add(a => a.Toaster, false).Add(a => a.Locale, KlyLocales.Ar).Add(a => a.Lang, "ar-EG").Add(a => a.Dir, KlyDirection.Auto));
 
         Assert.Equal("ar-EG", cut.Find("div").GetAttribute("lang"));
         Assert.Equal("auto", cut.Find("div").GetAttribute("dir"));

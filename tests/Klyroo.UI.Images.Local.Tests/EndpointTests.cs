@@ -114,7 +114,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
     {
         var (app, client) = await fixture.StartAsync(pathBase: "/sub");
         await using var _ = app;
-        var url = new KlyLocalImageProvider().GetUrl("/img/photo.png", new KlyImageModifiers(64, null, null, "webp", null, null));
+        var url = new KlyLocalImageProvider().GetUrl("/img/photo.png", new KlyImageModifiers(64, null, null, KlyImageFormat.WebP, null, null));
 
         // What the browser does with <img src> under <base href="/sub/">.
         var resolved = new Uri(new Uri("http://localhost/sub/"), url);
@@ -351,7 +351,7 @@ public class EndpointTests(EndpointFixture fixture) : IClassFixture<EndpointFixt
         using var provider = services.BuildServiceProvider();
         var images = provider.GetRequiredService<Klyroo.UI.KlyrooOptions>().Images;
 
-        var resolved = images.Resolve("/img/photo.png", new Klyroo.UI.KlyImageOptions { Format = "webp" }, 300, null);
+        var resolved = images.Resolve("/img/photo.png", new Klyroo.UI.KlyImageOptions { Format = Klyroo.UI.KlyImageFormat.WebP }, 300, null);
 
         Assert.Equal("local", images.DefaultProvider);
         Assert.Contains("images.test", images.Domains);

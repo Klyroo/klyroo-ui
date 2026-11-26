@@ -8,7 +8,7 @@ public class PopoverTests : KlyrooTestContext
     public void Renders_the_custom_element_with_a_native_popover()
     {
         var cut = Render<KlyPopover>(p => p
-            .Add(x => x.Placement, "bottom-start")
+            .Add(x => x.Placement, KlyPlacement.BottomStart)
             .Add(x => x.ChildContent, "<button>Open</button>")
             .Add(x => x.Content, "<p>Panel</p>"));
 

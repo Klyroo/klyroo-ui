@@ -20,7 +20,7 @@
         </Header>
         <ChildContent>
             <div class="flex flex-col gap-4">
-                <KlyInput @bind-Value="_search" Immediate Type="search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
+                <KlyInput @bind-Value="_search" Immediate Type="InputType.Search" Placeholder="Filter members" aria-label="Filter members" data-testid="member-filter">
                     <LeadingIcon>@KlyIcons.Named("search")</LeadingIcon>
                 </KlyInput>
                 <ul class="flex flex-col divide-y divide-(--klyroo-border)" aria-label="Members" data-testid="member-list">

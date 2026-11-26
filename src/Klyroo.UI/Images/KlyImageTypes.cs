@@ -15,6 +15,25 @@ public enum KlyImageFit
     Outside,
 }
 
+/// <summary>The format of the image a provider is asked to produce.</summary>
+public enum KlyImageFormat
+{
+    /// <summary>WebP (<c>webp</c>).</summary>
+    WebP,
+    /// <summary>AVIF (<c>avif</c>).</summary>
+    Avif,
+    /// <summary>JPEG (<c>jpeg</c>; a service that spells it <c>jpg</c> gets that spelling from its provider).</summary>
+    Jpeg,
+    /// <summary>PNG (<c>png</c>).</summary>
+    Png,
+    /// <summary>GIF (<c>gif</c>).</summary>
+    Gif,
+    /// <summary>SVG (<c>svg</c>), a vector image that is not converted.</summary>
+    Svg,
+    /// <summary>The service picks the best format the browser accepts (<c>auto</c>). Only a service that negotiates honors it; the local optimizer rejects it.</summary>
+    Auto,
+}
+
 /// <summary>
 /// What <see cref="KlyImage"/> paints behind the image while it loads: <see cref="Auto"/> asks the image provider for a tiny
 /// (and, when it can blur, blurred) version of the image, <see cref="Url(string)"/> uses a small image you already have.
@@ -62,7 +81,7 @@ public enum KlyFetchPriority
 /// <param name="Width">Pixels, or null to keep the width (the ratio is kept when only one side is given).</param>
 /// <param name="Height">Pixels, or null.</param>
 /// <param name="Quality">1 to 100, or null for the provider default.</param>
-/// <param name="Format">"webp", "avif", "jpeg", "png", "gif" or "svg"; null keeps the format of the source (or lets the provider negotiate).</param>
+/// <param name="Format">The output format; null keeps the format of the source (or lets the provider negotiate).</param>
 /// <param name="Fit">How to fill <paramref name="Width"/> by <paramref name="Height"/>; null means the provider default (<see cref="KlyImageFit.Cover"/>).</param>
 /// <param name="Blur">Blur radius for placeholders. Only asked from providers that report <see cref="IKlyImageProvider.SupportsBlur"/>.</param>
 /// <param name="Extra">Provider specific modifiers, from the <c>Modifiers</c> parameter (for example <c>"gravity"</c> or <c>"sharpen"</c>). A provider ignores the ones it does not know.</param>
@@ -70,7 +89,7 @@ public sealed record KlyImageModifiers(
     int? Width = null,
     int? Height = null,
     int? Quality = null,
-    string? Format = null,
+    KlyImageFormat? Format = null,
     KlyImageFit? Fit = null,
     int? Blur = null,
     IReadOnlyDictionary<string, string>? Extra = null);

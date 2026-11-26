@@ -1,3 +1,4 @@
+using Klyroo.UI.Internal;
 using Klyroo.UI.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -12,8 +13,8 @@ public sealed class KlyContainer : KlyComponentBase
     /// <summary>Content of the container.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>The element to render, "div" by default: "main", "section", "header"…</summary>
-    [Parameter] public string As { get; set; } = "div";
+    /// <summary>The element to render, <see cref="KlyElement.Div"/> by default: <see cref="KlyElement.Main"/>, <see cref="KlyElement.Section"/>, <see cref="KlyElement.Header"/>…</summary>
+    [Parameter] public KlyElement As { get; set; } = KlyElement.Div;
 
     /// <summary>Maximum width: Xs 42rem, Sm 56rem, Md 80rem (default), Lg the 2xl breakpoint, Xl none.</summary>
     [Parameter] public KlySize Size { get; set; } = KlySize.Md;
@@ -27,7 +28,7 @@ public sealed class KlyContainer : KlyComponentBase
     /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
-        builder.OpenElement(0, As);
+        builder.OpenElement(0, Wire.Of(As));
         builder.AddAttribute(1, "class", _slots["base"]);
         builder.AddMultipleAttributes(2, AdditionalAttributes);
         builder.AddContent(3, ChildContent);

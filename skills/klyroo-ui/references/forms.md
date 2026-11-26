@@ -19,7 +19,7 @@ Data annotations on a class, bound through `[SupplyParameterFromForm]` so the sa
     <KlyFormField Label="Seats" Field="FieldIdentifier.Create(() => Model!.Seats)">
         <KlyInputNumber @bind-Value="Model!.Seats" Min="1" Max="50" />
     </KlyFormField>
-    <KlyButton Type="submit" Label="Create workspace" />
+    <KlyButton Type="ButtonType.Submit" Label="Create workspace" />
 </KlyForm>
 
 @code {
@@ -49,7 +49,7 @@ Rules that make it work in every render mode:
 
 - Give the form a `FormName` and match it in `[SupplyParameterFromForm(FormName = "...")]`.
 - Initialize the model with `Model ??= new();` in `OnInitialized`: on a post the framework fills it, on first render you create it.
-- Use `Type="submit"` on the button; a submit button works without interactivity.
+- Use `Type="ButtonType.Submit"` on the button; a submit button works without interactivity.
 - Server-side validation runs the same annotations on the post. Never rely on the browser alone.
 
 ## KlyFormField
@@ -60,7 +60,7 @@ Rules that make it work in every render mode:
 <EditForm Model="Model" FormName="signup" OnValidSubmit="Submit" class="flex w-full max-w-sm flex-col gap-4" novalidate>
     <DataAnnotationsValidator />
     <KlyFormField Label="Email" Required Field="FieldIdentifier.Create(() => Model!.Email)" Description="We never share it.">
-        <KlyInput Type="email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
+        <KlyInput Type="InputType.Email" @bind-Value="Model!.Email" Placeholder="you@example.com" />
     </KlyFormField>
     <KlyFormField Label="Role" Hint="Optional">
         <KlySelect @bind-Value="Model!.Role" Items="Roles" Placeholder="Pick one" />
@@ -69,7 +69,7 @@ Rules that make it work in every render mode:
         <KlyTextarea @bind-Value="Model!.Bio" Rows="3" />
     </KlyFormField>
     <KlyCheckbox @bind-Value="Model!.Newsletter" Label="Send me the newsletter" />
-    <KlyButton Type="submit" Label="Create account" Block />
+    <KlyButton Type="ButtonType.Submit" Label="Create account" Block />
 </EditForm>
 ```
 

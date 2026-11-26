@@ -893,7 +893,7 @@
 `/components/error`. The content of an error page: status code, message and a way back.
 
 - `<KlyError>`
-  - Parameters: `Class`, `Clear`, `ClearLabel`, `Exception`, `HeadingAs`, `Href`, `Message`, `ShowDetails`, `StatusCode`, `StatusMessage`, `Ui`
+  - Parameters: `Class`, `Clear`, `ClearLabel`, `Exception`, `HeadingLevel`, `Href`, `Message`, `ShowDetails`, `StatusCode`, `StatusMessage`, `Ui`
   - Slots: `Actions`, `ChildContent`
   - `Ui` (`ErrorUi`): `Root`, `StatusCode`, `StatusMessage`, `Message`, `Actions`
 

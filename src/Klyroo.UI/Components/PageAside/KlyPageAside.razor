@@ -37,8 +37,8 @@ else
     /// <summary>Content at the bottom of the column.</summary>
     [Parameter] public RenderFragment? Bottom { get; set; }
 
-    /// <summary>The element to render: "aside" (default) or "div", in any case; anything else throws an <see cref="ArgumentException"/>.</summary>
-    [Parameter] public string As { get; set; } = "aside";
+    /// <summary>The element to render: <see cref="KlyElement.Aside"/> (default) or <see cref="KlyElement.Div"/>; any other element throws an <see cref="ArgumentException"/>.</summary>
+    [Parameter] public KlyElement As { get; set; } = KlyElement.Aside;
     /// <summary>
     /// Per-instance class overrides of the slots of the page aside, see <see cref="PageAsideUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
     /// </summary>
@@ -46,11 +46,11 @@ else
 
     protected override void OnParametersSet()
     {
-        _tag = string.IsNullOrWhiteSpace(As) ? "aside" : As.Trim().ToLowerInvariant();
-        if (_tag is not ("aside" or "div"))
+        if (As is not (KlyElement.Aside or KlyElement.Div))
         {
-            throw new ArgumentException($"KlyPageAside: As must be \"aside\" or \"div\" (any case), not \"{As}\".", nameof(As));
+            throw new ArgumentException($"KlyPageAside: As must be KlyElement.Aside or KlyElement.Div, not KlyElement.{As}.", nameof(As));
         }
+        _tag = Klyroo.UI.Internal.Wire.Of(As);
         _slots = ResolveSlots(Options.PageAside, new Dictionary<string, string?>(), Ui, "root");
     }
 }

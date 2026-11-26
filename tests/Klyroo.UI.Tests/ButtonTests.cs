@@ -135,7 +135,7 @@ public class ButtonStaticRenderingTests() : KlyrooTestContext(interactive: false
     [Fact]
     public void Submit_buttons_and_plain_buttons_stay_enabled()
     {
-        var submit = Render<KlyButton>(p => p.Add(b => b.Type, "submit").Add(b => b.OnClick, (MouseEventArgs _) => { }));
+        var submit = Render<KlyButton>(p => p.Add(b => b.Type, ButtonType.Submit).Add(b => b.OnClick, (MouseEventArgs _) => { }));
         var plain = Render<KlyButton>(p => p.Add(b => b.Label, "Plain"));
 
         Assert.False(submit.Find("button").HasAttribute("disabled"));

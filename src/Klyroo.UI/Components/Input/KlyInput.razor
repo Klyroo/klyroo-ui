@@ -43,8 +43,8 @@
 @code {
     private SlotSet _slots = default!;
 
-    /// <summary>The <c>type</c> attribute: text, email, password, search, tel, url, number…</summary>
-    [Parameter] public string Type { get; set; } = "text";
+    /// <summary>The <c>type</c> attribute: <see cref="InputType.Text"/> (the default), <see cref="InputType.Email"/>, <see cref="InputType.Password"/>, <see cref="InputType.Search"/>…</summary>
+    [Parameter] public InputType Type { get; set; } = InputType.Text;
     /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
 
@@ -148,7 +148,7 @@
         var attributes = ControlAttributes(_slots["base"]);
         if (binding.Invalid) attributes["aria-invalid"] = "true";
         attributes.AddFieldClass(binding);
-        attributes["type"] = Type;
+        attributes["type"] = Klyroo.UI.Internal.Wire.Of(Type);
         if (Placeholder is not null) attributes["placeholder"] = Placeholder;
         return attributes;
     }

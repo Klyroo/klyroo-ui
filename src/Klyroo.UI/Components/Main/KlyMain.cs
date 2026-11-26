@@ -1,3 +1,4 @@
+using Klyroo.UI.Internal;
 using Klyroo.UI.Theming;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
@@ -15,8 +16,8 @@ public sealed class KlyMain : KlyComponentBase
     /// <summary>Content of the main area.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    /// <summary>The element to render, "main" by default. A page has only one main landmark: use "div" when the layout already has one.</summary>
-    [Parameter] public string As { get; set; } = "main";
+    /// <summary>The element to render, <see cref="KlyElement.Main"/> by default. A page has only one main landmark: use <see cref="KlyElement.Div"/> when the layout already has one.</summary>
+    [Parameter] public KlyElement As { get; set; } = KlyElement.Main;
     /// <summary>Per-instance class overrides of the slots of the main area, see <see cref="MainUi"/>.</summary>
     [Parameter] public MainUi? Ui { get; set; }
 
@@ -27,7 +28,7 @@ public sealed class KlyMain : KlyComponentBase
     /// <inheritdoc />
     protected override void BuildRenderTree(RenderTreeBuilder builder)
     {
-        builder.OpenElement(0, As);
+        builder.OpenElement(0, Wire.Of(As));
         builder.AddAttribute(1, "class", _slots["base"]);
         // Marks the block that owns the bottom safe area inset when no footer follows (a dashboard inside leaves it to it).
         builder.AddAttribute(2, "data-kly-main", "");

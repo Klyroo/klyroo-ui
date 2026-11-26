@@ -12,7 +12,7 @@ public class LayoutTests : KlyrooTestContext
     [Fact]
     public void App_renders_the_toaster_after_the_content_and_sets_lang_and_dir()
     {
-        var cut = Render<KlyApp>(p => p.Add(a => a.ChildContent, "<p>Body</p>").Add(a => a.Lang, "fr").Add(a => a.Dir, "rtl"));
+        var cut = Render<KlyApp>(p => p.Add(a => a.ChildContent, "<p>Body</p>").Add(a => a.Lang, "fr").Add(a => a.Dir, KlyDirection.Rtl));
 
         var root = cut.Find("div.isolate");
         Assert.Equal("fr", root.GetAttribute("lang"));
@@ -226,7 +226,7 @@ public class LayoutTests : KlyrooTestContext
     [Fact]
     public void Main_can_render_another_element_and_takes_class_overrides()
     {
-        var cut = Render<KlyMain>(p => p.Add(m => m.As, "div").Add(m => m.Class, "min-h-48"));
+        var cut = Render<KlyMain>(p => p.Add(m => m.As, KlyElement.Div).Add(m => m.Class, "min-h-48"));
 
         Assert.Empty(cut.FindAll("main"));
         var div = cut.Find("div");
@@ -344,15 +344,15 @@ public class LayoutTests : KlyrooTestContext
     }
 
     [Fact]
-    public void Sidebar_As_is_case_insensitive_and_a_missing_one_is_an_aside()
+    public void Sidebar_As_picks_the_element_and_the_default_is_an_aside()
     {
-        var upper = Render<KlySidebar>(p => p.Add(s => s.As, "Aside"));
+        var upper = Render<KlySidebar>(p => p.Add(s => s.As, KlyElement.Aside));
         Assert.Equal("aside", upper.Find("[data-slot=root]").LocalName);
         Assert.Equal("Sidebar", upper.Find("[data-slot=root]").GetAttribute("aria-label"));
 
-        var none = Render<KlySidebar>(p => p.Add(s => s.As, null!));
+        var none = Render<KlySidebar>();
         Assert.Equal("aside", none.Find("[data-slot=root]").LocalName);
-        Assert.Equal("div", Render<KlySidebar>(p => p.Add(s => s.As, "DIV")).Find("[data-slot=root]").LocalName);
+        Assert.Equal("div", Render<KlySidebar>(p => p.Add(s => s.As, KlyElement.Div)).Find("[data-slot=root]").LocalName);
     }
 
     [Fact]
@@ -389,7 +389,7 @@ public class LayoutTests : KlyrooTestContext
     [Fact]
     public void Sidebar_as_div_is_not_a_landmark()
     {
-        var cut = Render<KlySidebar>(p => p.Add(s => s.As, "div"));
+        var cut = Render<KlySidebar>(p => p.Add(s => s.As, KlyElement.Div));
 
         Assert.Empty(cut.FindAll("aside"));
         var root = cut.Find("[data-slot=root]");
@@ -437,7 +437,7 @@ public class LayoutTests : KlyrooTestContext
     public void Error_takes_explicit_texts_and_a_custom_way_back()
     {
         var cut = Render<KlyError>(p => p.Add(e => e.StatusCode, 404).Add(e => e.StatusMessage, "Gone").Add(e => e.Message, "It left.")
-            .Add(e => e.Href, "/start").Add(e => e.ClearLabel, "Start again").Add(e => e.HeadingAs, "h2"));
+            .Add(e => e.Href, "/start").Add(e => e.ClearLabel, "Start again").Add(e => e.HeadingLevel, 2));
 
         Assert.Equal("Gone", cut.Find("h2").TextContent);
         Assert.Empty(cut.FindAll("h1"));

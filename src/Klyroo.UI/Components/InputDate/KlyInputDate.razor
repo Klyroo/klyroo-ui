@@ -22,7 +22,7 @@
         <input name="@Name" type="date" value="@Iso.Date(Day)" @attributes="Attributes()" />
     }
     <span class="@_slots["trigger"]">
-        <KlyPopover Placement="bottom-end" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
+        <KlyPopover Placement="KlyPlacement.BottomEnd" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
             <ChildContent>
                 <button type="button" class="@_slots["triggerButton"]" aria-label="@Messages.ChooseDate" disabled="@Disabled">
                     @RenderIcon(Options.Icons.Calendar, _slots["triggerIcon"])

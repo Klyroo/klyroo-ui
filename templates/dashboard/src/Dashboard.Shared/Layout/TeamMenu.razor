@@ -1,7 +1,7 @@
 @inject IToastService Toasts
 
 @* The team switcher at the top of the sidebar. The teams are sample ones: the menu only changes the name shown here. *@
-<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="bottom-start">
+<KlyDropdownMenu Items="_items" OnSelect="OnSelect" Placement="KlyPlacement.BottomStart">
     <button type="button"
             class="flex w-full min-w-0 items-center gap-2 rounded-(--klyroo-radius) p-1.5 text-start transition-colors hover:bg-(--klyroo-bg-elevated) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)"
             data-testid="team-menu">

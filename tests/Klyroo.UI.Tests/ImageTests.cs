@@ -17,7 +17,7 @@ internal sealed class EchoProvider(string name = "echo", bool validateDomains = 
         if (m.Width is { } w) parts.Add($"w={w}");
         if (m.Height is { } h) parts.Add($"h={h}");
         if (m.Quality is { } q) parts.Add($"q={q}");
-        if (m.Format is { } f) parts.Add($"f={f}");
+        if (m.Format is { } f) parts.Add($"f={f.ToString().ToLowerInvariant()}");
         if (m.Fit is { } fit) parts.Add($"fit={fit.ToString().ToLowerInvariant()}");
         if (m.Blur is { } b) parts.Add($"blur={b}");
         if (m.Extra is { } extra) foreach (var (key, value) in extra) parts.Add($"{key}={value}");
@@ -46,7 +46,7 @@ public class ImageTests : KlyrooTestContext
         o.Images.AddProvider(new EchoProvider("guarded", validateDomains: true));
         o.Images.AddProvider(new EchoProvider("blurry", blur: true));
         o.Images.Domains.Add("images.example.com");
-        o.Images.Presets["thumb"] = new KlyImageOptions { Format = "webp", Quality = 60, Provider = "echo", Modifiers = new Dictionary<string, string> { ["a"] = "1", ["b"] = "2" } };
+        o.Images.Presets["thumb"] = new KlyImageOptions { Format = KlyImageFormat.WebP, Quality = 60, Provider = "echo", Modifiers = new Dictionary<string, string> { ["a"] = "1", ["b"] = "2" } };
     })
     {
     }
@@ -57,7 +57,7 @@ public class ImageTests : KlyrooTestContext
     public void Sizes_follow_the_algorithm_of_Nuxt_Image_for_breakpoints_and_densities()
     {
         // "sm:50vw" is 50% of 640, "md:400px" is 400. Each entry applies from its breakpoint to the next one.
-        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:100vw md:50vw lg:400px", Densities = "x1 x2" });
+        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:100vw md:50vw lg:400px", Densities = [1, 2] });
 
         Assert.Equal("(max-width: 767px) 100vw, (max-width: 1023px) 50vw, 400px", resolved.Sizes);
         Assert.Equal(
@@ -69,7 +69,7 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void An_unprefixed_size_is_the_default_and_a_fluid_one_is_measured_against_the_first_breakpoint()
     {
-        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "100vw sm:50vw md:400px", Densities = "x1 x2" });
+        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "100vw sm:50vw md:400px", Densities = [1, 2] });
 
         Assert.Equal("(max-width: 639px) 100vw, (max-width: 767px) 50vw, 400px", resolved.Sizes);
         Assert.Equal(
@@ -81,16 +81,25 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void Sizes_keep_the_ratio_when_width_and_height_are_given_and_forward_format_and_quality()
     {
-        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:100px md:200px", Densities = "x1", Format = "webp", Quality = 70 }, 100, 50);
+        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:100px md:200px", Densities = [1], Format = KlyImageFormat.WebP, Quality = 70 }, 100, 50);
 
         Assert.Equal("(max-width: 767px) 100px, 200px", resolved.Sizes);
         Assert.Equal("/cdn/a.png?w=100&h=50&q=70&f=webp 100w, /cdn/a.png?w=200&h=100&q=70&f=webp 200w", resolved.SrcSet);
     }
 
     [Fact]
+    public void A_repeated_density_counts_once_in_ascending_order_and_a_density_below_one_is_refused()
+    {
+        var once = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = [2, 1, 2] }, 32, 32);
+        Assert.Equal("/cdn/a.png?w=32&h=32 1x, /cdn/a.png?w=64&h=64 2x", once.SrcSet);
+        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = [1, 0] }, 32, 32));
+        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = [] }, 32, 32));
+    }
+
+    [Fact]
     public void Densities_without_sizes_scale_the_width_and_the_height()
     {
-        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = "x1 x2" }, 32, 32);
+        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = [1, 2] }, 32, 32);
 
         Assert.Equal("/cdn/a.png?w=32&h=32 1x, /cdn/a.png?w=64&h=64 2x", resolved.SrcSet);
         Assert.Equal("/cdn/a.png?w=32&h=32", resolved.Src);
@@ -100,7 +109,7 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void Without_a_width_or_a_height_there_is_nothing_to_scale_so_no_srcset()
     {
-        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Format = "webp" });
+        var resolved = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Format = KlyImageFormat.WebP });
 
         Assert.Equal("/cdn/a.png?f=webp", resolved.Src);
         Assert.Null(resolved.SrcSet);
@@ -118,9 +127,9 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void Entries_with_unusable_sizes_or_densities_are_rejected_or_skipped()
     {
-        var skipped = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:wide md:300px", Densities = "x1" });
+        var skipped = Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Sizes = "sm:wide md:300px", Densities = [1] });
         Assert.Equal("300px", skipped.Sizes);
-        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = "x0" }, 10, 10));
+        Assert.Throws<ArgumentException>(() => Images.Resolve("/a.png", new KlyImageOptions { Provider = "echo", Densities = [0] }, 10, 10));
     }
 
     [Fact]
@@ -134,7 +143,7 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void The_none_provider_returns_the_source_unchanged_without_srcset()
     {
-        var resolved = Images.Resolve("img/a.png", new KlyImageOptions { Sizes = "100vw", Format = "webp" }, 100, 50);
+        var resolved = Images.Resolve("img/a.png", new KlyImageOptions { Sizes = "100vw", Format = KlyImageFormat.WebP }, 100, 50);
 
         Assert.Equal("img/a.png", resolved.Src);
         Assert.Null(resolved.SrcSet);
@@ -195,7 +204,7 @@ public class ImageTests : KlyrooTestContext
     {
         var cut = Render<KlyImage>(p => p
             .Add(i => i.Src, "/a.png").Add(i => i.Alt, "A").Add(i => i.Width, 100).Add(i => i.Height, 50)
-            .Add(i => i.Provider, "echo").Add(i => i.Format, "webp").Add(i => i.Class, "rounded"));
+            .Add(i => i.Provider, "echo").Add(i => i.Format, KlyImageFormat.WebP).Add(i => i.Class, "rounded"));
 
         var img = cut.Find("img");
         Assert.Equal("/cdn/a.png?w=100&h=50&f=webp", img.GetAttribute("src"));
@@ -237,8 +246,8 @@ public class ImageTests : KlyrooTestContext
     {
         var cut = Render<KlyImage>(p => p
             .Add(i => i.Src, "/a.png").Add(i => i.Alt, "").Add(i => i.Width, 10)
-            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = "avif", Quality = 40, Loading = KlyImageLoading.Eager })
-            .Add(i => i.Format, "webp"));
+            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = KlyImageFormat.Avif, Quality = 40, Loading = KlyImageLoading.Eager })
+            .Add(i => i.Format, KlyImageFormat.WebP));
 
         var img = cut.Find("img");
         Assert.Equal("/cdn/a.png?w=10&q=40&f=webp", img.GetAttribute("src"));
@@ -258,7 +267,7 @@ public class ImageTests : KlyrooTestContext
             builder.AddComponentParameter(3, nameof(KlyImage.Alt), "Hero");
             builder.AddComponentParameter(4, nameof(KlyImage.Provider), "echo");
             builder.AddComponentParameter(5, nameof(KlyImage.Sizes), "sm:100vw md:50vw");
-            builder.AddComponentParameter(6, nameof(KlyImage.Densities), "x1");
+            builder.AddComponentParameter(6, nameof(KlyImage.Densities), (IReadOnlyList<int>)[1]);
             builder.AddComponentParameter(7, nameof(KlyImage.Preload), (bool?)true);
             builder.CloseComponent();
         });
@@ -316,7 +325,7 @@ public class ImageTests : KlyrooTestContext
     public void Avatar_passes_its_size_in_pixels_and_forwards_the_image_options(KlySize size, int pixels)
     {
         var cut = Render<KlyAvatar>(p => p.Add(a => a.Src, "/a.png").Add(a => a.Alt, "Ada").Add(a => a.Size, size)
-            .Add(a => a.ImageOptions, new KlyImageOptions { Provider = "echo", Format = "webp" }));
+            .Add(a => a.ImageOptions, new KlyImageOptions { Provider = "echo", Format = KlyImageFormat.WebP }));
 
         var img = cut.Find("img");
         Assert.Equal($"/cdn/a.png?w={pixels}&h={pixels}&f=webp", img.GetAttribute("src"));
@@ -344,7 +353,7 @@ public class ImageTests : KlyrooTestContext
     public void ColorModeImage_renders_two_images_that_share_the_options_and_the_size_attributes()
     {
         var cut = Render<KlyColorModeImage>(p => p.Add(i => i.Light, "/l.png").Add(i => i.Dark, "/d.png").Add(i => i.Alt, "Logo")
-            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = "webp" }).Add(i => i.Width, 40));
+            .Add(i => i.ImageOptions, new KlyImageOptions { Provider = "echo", Format = KlyImageFormat.WebP }).Add(i => i.Width, 40));
 
         var images = cut.FindAll("img");
         Assert.Equal(2, images.Count);
@@ -356,7 +365,7 @@ public class ImageTests : KlyrooTestContext
     [Fact]
     public void BlogPost_ChangelogVersion_and_PageLogos_forward_the_image_options()
     {
-        var options = new KlyImageOptions { Provider = "echo", Format = "webp", Sizes = "100vw sm:50vw", Densities = "x1" };
+        var options = new KlyImageOptions { Provider = "echo", Format = KlyImageFormat.WebP, Sizes = "100vw sm:50vw", Densities = [1] };
 
         var post = Render<KlyBlogPost>(p => p.Add(b => b.Title, "T").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));
         var version = Render<KlyChangelogVersion>(p => p.Add(b => b.Title, "v1").Add(b => b.Image, "/p.png").Add(b => b.ImageOptions, options));

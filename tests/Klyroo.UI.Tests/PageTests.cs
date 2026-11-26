@@ -477,7 +477,7 @@ public class PageTests : KlyrooTestContext
     [Fact]
     public void PageAside_can_render_as_a_div_to_avoid_nesting_landmarks()
     {
-        var cut = Render<KlyPageAside>(p => p.Add(c => c.As, "div").AddChildContent("<i>body</i>"));
+        var cut = Render<KlyPageAside>(p => p.Add(c => c.As, KlyElement.Div).AddChildContent("<i>body</i>"));
 
         Assert.Empty(cut.FindAll("aside"));
         Assert.Contains("sticky", cut.Find("div").ClassList);

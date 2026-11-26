@@ -31,7 +31,7 @@ Page-level patterns, each built from components that exist in the library. Fetch
 ```
 
 - `KlyHeader` collapses its items into a menu button below the `lg` breakpoint (`MenuTitle` names that menu). `Sticky="false"` turns the sticky behavior off.
-- `KlyMain` fills the screen below the header so a short page does not float the footer up. It is the page's `<main>`; use `As="div"` where a `main` already exists.
+- `KlyMain` fills the screen below the header so a short page does not float the footer up. It is the page's `<main>`; use `As="KlyElement.Div"` where a `main` already exists.
 - `KlyFooter` has `Left`, `Right` and the default slot; `KlyFooterColumns` puts columns of links above it.
 
 ## Dashboard
@@ -98,7 +98,7 @@ Page-level patterns, each built from components that exist in the library. Fetch
 - Labels that must disappear when the sidebar shows icons only use `group-data-[state=collapsed]/sidebar:sr-only`, so screen readers still hear them. That class needs Tailwind compiled by the app.
 - `KlyDashboardSearch` opens with Ctrl+K or the search button.
 - A sidebar outside a dashboard is `KlySidebar` (`Id`, `Header`, `ChildContent`, `Footer`); it collapses and remembers it too.
-- `KlyDashboardSidebar` and `KlySidebar` render an `aside`; pass `As="div"` when the component already sits inside a `main` landmark, as in a docs example.
+- `KlyDashboardSidebar` and `KlySidebar` render an `aside`; pass `As="KlyElement.Div"` when the component already sits inside a `main` landmark, as in a docs example.
 
 ## Docs site
 

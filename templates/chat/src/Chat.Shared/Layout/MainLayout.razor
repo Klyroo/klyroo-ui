@@ -15,7 +15,7 @@
     <KlyMain id="main" tabindex="-1" Class="h-dvh min-h-0 focus:outline-none">
         <KlyDashboardGroup StorageKey="chat">
             @* Links are relative: they resolve against <base href>, so the app works at the root of a site and below a path. *@
-            <KlyDashboardSidebar As="div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Conversations" MobileTitle="Conversations" data-testid="sidebar">
+            <KlyDashboardSidebar As="KlyElement.Div" Resizable Width="288" MinWidth="240" MaxWidth="400" AriaLabel="Conversations" MobileTitle="Conversations" data-testid="sidebar">
                 <Header>
                     <a href="./" class="flex items-center gap-2 rounded-(--klyroo-radius) p-1.5 font-semibold text-(--klyroo-text-highlighted) focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)" data-testid="brand">
                         <span class="flex size-7 items-center justify-center rounded-(--klyroo-radius) bg-(--klyroo-primary) text-(--klyroo-primary-contrast)" aria-hidden="true">

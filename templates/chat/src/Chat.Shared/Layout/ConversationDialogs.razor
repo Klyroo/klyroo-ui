@@ -14,7 +14,7 @@
     </Body>
     <Footer>
         <KlyButton Label="Cancel" Color="KlyColor.Neutral" Variant="ButtonVariant.Ghost" data-kly-close />
-        <KlyButton Label="Save" Type="submit" form="rename-form" Disabled="@(ConversationState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
+        <KlyButton Label="Save" Type="ButtonType.Submit" form="rename-form" Disabled="@(ConversationState.CleanTitle(_title).Length == 0)" data-testid="rename-save" />
     </Footer>
 </KlyModal>
 
