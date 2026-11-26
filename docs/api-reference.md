@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (155) · Static classes and extensions (10) · Classes (21) · Records (173) · Structs (2) · Interfaces (6) · Enums (39) · Delegates (2)
+Components (156) · Static classes and extensions (11) · Classes (22) · Records (175) · Structs (2) · Interfaces (8) · Enums (39) · Delegates (2)
 
 ### Components
 
@@ -395,6 +395,7 @@ Line, area, bar or donut chart drawn as SVG on the server, with a generated text
 | `Index` | `Func<TItem, object?>` | The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language). |
 | `IndexFormat` | `string?` | The format string of an index that is formattable (a date, a number). |
 | `Legend` | `bool?` | Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut. |
+| `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, the series is the first one that has a value in the row. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
 | `Points` | `bool` | Always shows a marker at each value of a line chart. Without it the marker shows on the value under the pointer or the keyboard. |
 | `Stacked` | `bool` | Stacks the series instead of drawing them side by side or over one another. Only applies to area and bar. |
 | `Table` | `KlyChartTable` | Where the table with the chart's data goes. It is always rendered; by default it is visually hidden. |
@@ -1566,63 +1567,63 @@ Also accepts the parameters of `KlyFieldBase<string>`.
 | :--- | :--- | :--- |
 | `SetValueAsync(string? value)` | `ValueTask` | Replaces the text of the field on purpose, in the browser, even text still waiting for its pause: the pending text and the debounce timer are dropped, and reports sent before the call but not yet received are ignored. Call it through `@ref`, for example from a "reset" button (`@onmousedown:preventDefault` keeps the focus in the field). The change is reported once, as a user change would be: `ValueChanged` is raised (when `value` differs from `Value`) and the edit context is notified, so a bound model stays consistent. It needs a live component, so it works in Server, WebAssembly and Auto once the page is interactive. In static server rendering there is no component to call and it does nothing. Without `KlyInput.Debounce` or `KlyInput.ClearOnEscape` the input is bound the plain way and the call only sets the value. |
 
-#### `KlyInputDate`
+#### `KlyInputDate<TValue>`
 
-`Klyroo.UI` · component · inherits `KlyFieldBase<DateOnly?>`
+`Klyroo.UI` · component · inherits `KlyFieldBase<TValue>`
 
-Date field with a calendar popup, bindable to a `DateOnly?`, with localized formatting.
+Date field with a calendar popup, with localized formatting. It binds to a `DateOnly`, a `DateTime` or a `DateTimeOffset`, or to the nullable form of one of them. Picking a day sets the value to that day at midnight; the time of day of a `DateTime` or `DateTimeOffset` is not kept.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Culture` | `CultureInfo?` | Source of the calendar's month and day names. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language). |
 | `Max` | `DateOnly?` | Latest date, for the input and the calendar. |
-| `Min` | `DateOnly?` | Earliest date, for the input and the calendar. |
+| `Min` | `DateOnly?` | Earliest date, for the input and the calendar. A day (`DateOnly`) whatever the bound type: use `DateOnly.FromDateTime(...)` to limit a `DateTime` field. |
 | `Ui` | `InputDateUi?` | Per-instance class overrides of the slots of the input date, see `InputDateUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 | `WeekStart` | `DayOfWeek?` | First column of the calendar. Defaults to the culture's first day of the week. |
 
-Also accepts the parameters of `KlyFieldBase<DateOnly?>`.
+Also accepts the parameters of `KlyFieldBase<TValue>`.
 
-#### `KlyInputMenu`
+#### `KlyInputMenu<TValue>`
 
-`Klyroo.UI` · component · inherits `KlyFieldBase<string>`
+`Klyroo.UI` · component · inherits `KlyFieldBase<TValue>`
 
-Text input with a list of suggestions that filters as the user types. The options can be static or fetched from .NET.
+Text input with a list of suggestions that filters as the user types, bound to the typed text (a string) or, with `Strict` or any other type, to the chosen option's value (a number, an enum, a `Guid`...). The options can be static or fetched from .NET.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Debounce` | `int` | With `KlyInputMenu.OptionsProvider`: the quiet time in milliseconds after typing before the source is searched. |
-| `Items` | `IReadOnlyList<KlySelectItem>` | The suggestions, filtered by what is typed. Not needed when `KlyInputMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a `KlyInputMenu.Strict` value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
+| `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The suggestions, filtered by what is typed. Not needed when `KlyInputMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a `KlyInputMenu.Strict` value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
 | `MinLength` | `int` | With `KlyInputMenu.OptionsProvider`: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing. |
 | `OptionsKey` | `object?` | With `KlyInputMenu.OptionsProvider`: what the suggestions depend on besides the typed text (the country whose cities are suggested). When it changes (`object.Equals`), the loaded pages, the search text, the cursor and the resolved label are forgotten, a `KlyInputMenu.Strict` value is resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded. Without a key the source is assumed not to change. |
 | `OptionsProvider` | `KlyOptionsProvider?` | Loads the suggestions from a remote source, one page at a time, instead of listing `KlyInputMenu.Items`. The browser stops filtering and the field searches the source with what is typed: the text is trimmed, sent after `KlyInputMenu.Debounce` milliseconds of quiet and only when it has at least `KlyInputMenu.MinLength` characters (an empty text lists the unfiltered suggestions; a `KlyInputMenu.Strict` field searches the empty text when it opens, as it always lists everything); an older request is cancelled and an older answer never replaces a newer one. The next page loads as the list scrolls, a bit before its end, and by a "Load more" button. While loading the list is `aria-busy` and a polite status says so; when the provider throws, the list shows a translated error with a Retry button (Enter in the field also retries). Interactive only: a statically rendered page (and the prerender before the page becomes interactive) never calls the provider. A free text field then works as a plain text field with no suggestions; a `KlyInputMenu.Strict` field shows its value as it was given (read only, since no suggestion can be chosen) and still posts it. A parent that renders again with an equal or a new delegate keeps the loaded state; give the component a `@key` to start from scratch. |
 | `PageSize` | `int` | With `KlyInputMenu.OptionsProvider`: the number of suggestions requested per page. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
 | `ResolveSelected` | `KlySelectedOptionsResolver?` | With `KlyInputMenu.OptionsProvider` and `KlyInputMenu.Strict`: returns the option of the value when the loaded pages do not contain it (a value restored from the address or a saved form), so the field shows its label. Called once for that value, as soon as the component is interactive. Without it the field shows the raw value. |
-| `Strict` | `bool` | Only a suggestion is a valid value: `Value` is the chosen item's value and the field shows its label. Otherwise (the default) the typed text is the value and suggestions only complete it. |
+| `Strict` | `bool` | Only a suggestion is a valid value: `Value` is the chosen item's value and the field shows its label. Otherwise (the default) the typed text is the value and suggestions only complete it. Only a string can be typed: when `TValue` is not `String` the field is always strict, whatever this parameter says. |
 | `Ui` | `InputMenuUi?` | Per-instance class overrides of the slots of the input menu, see `InputMenuUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 
-Also accepts the parameters of `KlyFieldBase<string>`.
+Also accepts the parameters of `KlyFieldBase<TValue>`.
 
-#### `KlyInputNumber`
+#### `KlyInputNumber<TNumber>`
 
-`Klyroo.UI` · component · inherits `KlyFieldBase<decimal?>`
+`Klyroo.UI` · component · inherits `KlyFieldBase<TNumber>`
 
-Number field with increment and decrement buttons, limits and localized formatting.
+Number field with increment and decrement buttons, limits and localized formatting. It binds to any built-in numeric type (`int`, `long`, `decimal`, `double`, `byte`...) and to its nullable form; only a nullable type can be empty, clearing the field of a non-nullable one sets zero.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Culture` | `CultureInfo?` | Culture used to show and read the number, such as `fr-FR`. Defaults to the format culture of the locale in effect (the regional current culture when it has the same language). The posted value is always invariant. |
 | `Max` | `decimal?` | Largest value accepted. There is no upper limit when it is null. |
-| `Min` | `decimal?` | Smallest value accepted. There is no lower limit when it is null. |
+| `Min` | `decimal?` | Smallest value accepted. There is no lower limit when it is null. A `decimal` whatever the bound type, so `Min="0"` works for an `int`, a `float` or a `decimal?`. |
 | `Orientation` | `KlyOrientation` | Horizontal puts the buttons on both sides of the field, vertical stacks them at its end. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
 | `Step` | `decimal` | Amount added or removed by the buttons and the arrow keys; Page Up and Page Down use ten steps. |
 | `Ui` | `InputNumberUi?` | Per-instance class overrides of the slots of the input number, see `InputNumberUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 
-Also accepts the parameters of `KlyFieldBase<decimal?>`.
+Also accepts the parameters of `KlyFieldBase<TNumber>`.
 
 #### `KlyInputRating`
 
@@ -1710,20 +1711,20 @@ Anchor that marks itself active when its address matches the current page, with 
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlyListbox`
+#### `KlyListbox<TValue>`
 
-`Klyroo.UI` · component · inherits `KlyListFieldBase`
+`Klyroo.UI` · component · inherits `KlyListFieldBase<TValue>`
 
-Always visible list of options with single or multiple selection.
+Always visible list of options with single or multiple selection, bound to a list of strings, numbers, enums, `Guid`s or any value that identifies an option.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `AriaLabel` | `string?` | Accessible name when no `KlyFormField` label is around. |
-| `Items` | `IReadOnlyList<KlySelectItem>` | The options of the list, as `KlySelectItem`. |
+| `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The options of the list, as `KlySelectItem` (`KlySelectItem` for strings). |
 | `Multiple` | `bool` | Several values can be selected, each posting under `Name`. |
 | `Ui` | `ListboxUi?` | Per-instance class overrides of the slots of the listbox, see `ListboxUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
-Also accepts the parameters of `KlyListFieldBase`.
+Also accepts the parameters of `KlyListFieldBase<TValue>`.
 
 #### `KlyLocaleSelect`
 
@@ -2283,32 +2284,32 @@ Styled scroll container that stays reachable with the keyboard while its content
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlySelect`
+#### `KlySelect<TValue>`
 
-`Klyroo.UI` · component · inherits `KlyFieldBase<string>`
+`Klyroo.UI` · component · inherits `KlyFieldBase<TValue>`
 
-Select that opens a list of items in a popup, bound to a string, with optional icons and sections.
+Select that opens a list of items in a popup, bound to a string, a number, an enum, a `Guid`, a date or any value that identifies an option, with optional icons and sections.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `Items` | `IReadOnlyList<KlySelectItem>` | The options, as `KlySelectItem`. Items with a group are shown in sections. |
+| `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The options, as `KlySelectItem` (`KlySelectItem` for strings). Items with a group are shown in sections. |
 | `Placeholder` | `string?` | Hint shown while the field is empty. |
 | `Ui` | `SelectUi?` | Per-instance class overrides of the slots of the select, see `SelectUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 
-Also accepts the parameters of `KlyFieldBase<string>`.
+Also accepts the parameters of `KlyFieldBase<TValue>`.
 
-#### `KlySelectMenu`
+#### `KlySelectMenu<TValue>`
 
-`Klyroo.UI` · component · inherits `KlyListFieldBase`
+`Klyroo.UI` · component · inherits `KlyListFieldBase<TValue>`
 
-Select with a searchable popup list, single or multiple selection and options that can be fetched from .NET.
+Select with a searchable popup list, single or multiple selection, bound to a list of strings, numbers, enums, `Guid`s or any value that identifies an option, and options that can be fetched from .NET.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Create` | `bool` | Offers the typed text as a new value when no item has that label. A created value is kept in the value list but is not added to `KlySelectMenu.Items`. |
 | `Debounce` | `int` | With `KlySelectMenu.OptionsProvider`: the quiet time in milliseconds after typing before the source is searched. |
-| `Items` | `IReadOnlyList<KlySelectItem>` | The options. Not needed when `KlySelectMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
+| `Items` | `IReadOnlyList<IKlySelectItem<TValue>>` | The options. Not needed when `KlySelectMenu.OptionsProvider` loads them; given together with it, these items are not listed but their labels are known (the label of a value the provider has not returned yet). The parameter must be passed when there is no provider, and a null value (`Items="@_list"` while the list is still loading) is an empty list, before and after it loads. |
 | `MinLength` | `int` | With `KlySelectMenu.OptionsProvider`: the shortest text that is searched. A shorter, non-empty text shows a hint and lists nothing. |
 | `Multiple` | `bool` | Several values can be selected; each one posts under `Name`. Otherwise the list holds at most one value. |
 | `OptionsKey` | `object?` | With `KlySelectMenu.OptionsProvider`: what the options depend on besides the search text (the country whose cities are listed). When it changes (`object.Equals`), the loaded pages, the search text, the cursor and the resolved labels are forgotten, the selected values are resolved again, and the list loads again the next time it opens. A new delegate with the same key keeps what was loaded: the provider is only asked for what was not loaded yet. Without a key the source is assumed not to change. |
@@ -2320,7 +2321,7 @@ Select with a searchable popup list, single or multiple selection and options th
 | `Ui` | `SelectMenuUi?` | Per-instance class overrides of the slots of the select menu, see `SelectMenuUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `FieldVariant` | Look of the field: `Outline`, `Soft`, `Subtle`, `Ghost` or `None`. |
 
-Also accepts the parameters of `KlyListFieldBase`.
+Also accepts the parameters of `KlyListFieldBase<TValue>`.
 
 #### `KlySeparator`
 
@@ -2420,11 +2421,11 @@ Full-height side panel in a modal dialog, with a title, a description, a body an
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlySlider`
+#### `KlySlider<TNumber>`
 
-`Klyroo.UI` · component · inherits `KlyFieldBase<double>`
+`Klyroo.UI` · component · inherits `KlyFieldBase<TNumber>`
 
-Slider with one thumb, bound to a number.
+Slider with one thumb, bound to a number of any built-in numeric type (`double`, `int`, `decimal`, `float`...) or its nullable form. A nullable slider with no value rests on its minimum; moving it sets a value.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
@@ -2436,7 +2437,7 @@ Slider with one thumb, bound to a number.
 | `Step` | `double` | Distance between two values the thumb can take. Defaults to 1. |
 | `Ui` | `SliderUi?` | Per-instance class overrides of the slots of the slider, see `SliderUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
-Also accepts the parameters of `KlyFieldBase<double>`.
+Also accepts the parameters of `KlyFieldBase<TNumber>`.
 
 #### `KlySplitter`
 
@@ -2801,11 +2802,19 @@ Also accepts the parameters of `KlyComponentBase`.
 
 #### `KlyListFieldBase`
 
-`Klyroo.UI.Theming` · component · inherits `KlyFieldBase<IReadOnlyList<string>>`
+`Klyroo.UI.Theming` · component · inherits `KlyListFieldBase<string>`
 
 Base of form controls whose value is a list of strings kept by a custom element: the element reports changes with `kly-change` (the values joined by a separator), the component renders the list back in `data-values`. Unbound, no handler is attached and the browser keeps the state.
 
-Also accepts the parameters of `KlyFieldBase<IReadOnlyList<string>>`.
+Also accepts the parameters of `KlyListFieldBase<string>`.
+
+#### `KlyListFieldBase<TValue>`
+
+`Klyroo.UI.Theming` · component · inherits `KlyFieldBase<IReadOnlyList<TValue>>`
+
+Base of form controls whose value is a list kept by a custom element: the element reports changes with `kly-change` (the invariant text of the values joined by a separator), the component renders the list back in `data-values`. Unbound, no handler is attached and the browser keeps the state.
+
+Also accepts the parameters of `KlyFieldBase<IReadOnlyList<TValue>>`.
 
 ### Static classes and extensions
 
@@ -2934,6 +2943,18 @@ Registers Klyroo.UI in an `IServiceCollection`.
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `static AddKlyrooUi(IServiceCollection services, Action<KlyrooOptions>? configure = null)` | `IServiceCollection` | Registers Klyroo.UI. Call it in the server `Program.cs` and in the client one with the same configuration, ideally through a shared method in the client project. |
+
+#### `KlySelectItems`
+
+`Klyroo.UI` · service
+
+Builds the options of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListbox` from an enum or from the rows of a list (the entities of a foreign key). None of it uses reflection beyond `Enum.GetValues``, so it is safe with trimming and native AOT.
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static AsNullable<TValue>(IEnumerable<KlySelectItem<TValue>> items)` | `IReadOnlyList<KlySelectItem<TValue?>>` | The same options for a nullable property: a control bound to an `int?` takes `KlySelectItem<int?>`, and a list of `KlySelectItem<int>` is not one (a generic class is not covariant for value types). Disabled, count, icon and group are kept. |
+| `static From<TSource, TValue>(IEnumerable<TSource> source, Func<TSource, TValue> value, Func<TSource, string> label)` | `IReadOnlyList<KlySelectItem<TValue>>` | One option per row of a list, such as the rows of a lookup table: the key of the row is the value, a column is the label. |
+| `static FromEnum<TEnum>(Func<TEnum, string>? label = null)` | `IReadOnlyList<KlySelectItem<TEnum>>` | One option per member of an enum, in the order of its values, so `@bind-Value` binds to the enum property itself. |
 
 ### Classes
 
@@ -3121,6 +3142,17 @@ The share of persistent component state that the Klyroo libraries of one page ma
 | `static SentBytes(string key, string text)` | `long` | What a value persisted as text under `key` weighs in the message that starts a Server circuit. Blazor writes the text as a JSON string, which escapes quotes, `+`, `<` and non-ASCII characters, keeps it as bytes in a dictionary that is serialized with base64, then protects and base64-encodes the whole state again: about the escaped length plus the key, times 16/9. |
 | `TryReserve(long bytes)` | `bool` | Takes `bytes` from the budget when they fit, and returns whether they did. Nothing is taken when they do not. |
 
+#### `KlyPickEventArgs`
+
+`Klyroo.UI` · class · inherits `EventArgs`
+
+Payload of the `kly-pick` browser event raised by `KlyChart` when a bar, point or slice is clicked or chosen with Enter or Space.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Row` (get, set) | `int` | The position of the row in the data of the chart. |
+| `Series` (get, set) | `int` | The position of the series the pick landed on, or -1 when the browser could not tell (the chart then takes the first series that has a value in the row). |
+
 #### `KlyRemoteOptions`
 
 `Klyroo.UI` · class
@@ -3139,7 +3171,7 @@ Loads options from a `KlyOptionsProvider` one page at a time: the pages listed s
 | :--- | :--- | :--- |
 | `Busy` | `bool` | A page is on its way: `KlyRemoteOptions.Status` is `KlyRemoteStatus.Loading` or `KlyRemoteStatus.LoadingMore`. |
 | `HasMore` | `bool` | Whether the source has another page after the last one listed (`KlyRemoteOptions.LoadMoreAsync` asks for it). |
-| `Items` | `IReadOnlyList<KlySelectItem>` | The options of the pages loaded so far, in the order of the source. The list is live: read it on the thread that renders, and copy it to keep it. |
+| `Items` | `IReadOnlyList<KlySelectItem>` | The options of the pages loaded so far, in the order of the source. The value of each is the text of the value the provider gave (a string as it is, a number or a date in the invariant culture, an enum by name), which is how the engine tells options apart. The list is live: read it on the thread that renders, and copy it to keep it. |
 | `MinLength` (get, set) | `int` | Terms shorter than this (and not empty) are not searched. An empty term always lists the unfiltered options. |
 | `PageSize` (get, set) | `int` | The number of options asked per page (at least 1). |
 | `Provider` (get, set) | `KlyOptionsProvider` | The provider used for the next request. A parent that renders again with an equal one (a lambda that captures) keeps the state of the list. |
@@ -4831,6 +4863,25 @@ One series of a chart: where its value comes from in a row, and how it is named 
 | `Label` (init) | `string?` | The name shown in the legend, the tooltip and the table. Defaults to `KlyChartCategory.Key`. |
 | `Value` (init) | `Func<TItem, double?>` | The value of the series in a row. `null` leaves a gap. |
 
+#### `KlyChartSelectEventArgs<TItem>`
+
+`Klyroo.UI` · record
+
+What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was clicked or chosen with Enter or Space.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyChartSelectEventArgs<TItem>(int Row, object? Index, string? SeriesKey, int SeriesIndex, double? Value, TItem Item)` | What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was clicked or chosen with Enter or Space. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Index` (init) | `object?` | The value of the row on the x axis (`KlyChart.Index`): a date, a number, a label. The label of the slice with a donut. |
+| `Item` (init) | `TItem` | The row of `KlyChart.Data`. |
+| `Row` (init) | `int` | The position of the row in `KlyChart.Data`. |
+| `SeriesIndex` (init) | `int` | The position of that series in `KlyChart.Categories`, or -1 when the chart has none. |
+| `SeriesKey` (init) | `string?` | The `KlyChartCategory.Key` of the series that was picked (the only category of a donut), or null when the chart has none. |
+| `Value` (init) | `double?` | The value of that series in the row, or null for a gap. |
+
 #### `KlyCheckboxItem<TValue>`
 
 `Klyroo.UI` · record
@@ -5113,6 +5164,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `ChartBarHorizontal` (init) | `string` | Accessible name of a horizontal bar chart (`KlyChart`), read before its generated description. |
 | `ChartDonut` (init) | `string` | Accessible name of a donut chart (`KlyChart`), read before its generated description. |
 | `ChartHint` (init) | `string` | Accessible name of a chart that can be explored with the keyboard. |
+| `ChartHintSelect` (init) | `string` | Added to `KlyMessages.ChartHint` when the chart reports a selection (`OnSelect`): how to choose the point the arrow keys are on. |
 | `ChartIndex` (init) | `string` | Header of the first column of the data table, when the chart has no x axis title. |
 | `ChartLegend` (init) | `string` | Accessible name of the legend. |
 | `ChartLine` (init) | `string` | Kind of chart, used in the generated description. |
@@ -5347,12 +5399,13 @@ One page of options returned by a `KlyOptionsProvider`.
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyOptionsResult(IReadOnlyList<KlySelectItem> Items, bool HasMore = false, string? NextCursor = null)` | One page of options returned by a `KlyOptionsProvider`. |
+| `KlyOptionsResult(IReadOnlyList<KlySelectItem> Items, bool HasMore = false, string? NextCursor = null)` | Creates a page of options whose values are strings. |
+| `KlyOptionsResult(IReadOnlyList<IKlySelectItem> Items, bool HasMore = false, string? NextCursor = null)` | Creates a page of options of any value type: `KlySelectItem` of the type the menu is bound to (an `int`, an enum, a `Guid`...). A menu that is given an option of another type throws when it reads it. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `HasMore` (init) | `bool` | Whether another page exists. A non-null `KlyOptionsResult.NextCursor` also means there is one. |
-| `Items` (init) | `IReadOnlyList<KlySelectItem>` | The options of this page, in the order to list them. A value that an earlier page of the same search already listed is skipped. |
+| `Items` (init) | `IReadOnlyList<IKlySelectItem>` | The options of this page, in the order to list them. |
 | `NextCursor` (init) | `string?` | The cursor that asks for the page after this one; null when the provider pages by `Skip` and `Take` or this is the last page. |
 
 #### `KlyOverlayOptions`
@@ -5509,13 +5562,23 @@ The attributes `KlyImageSettings.Resolve` computed for an image.
 
 #### `KlySelectItem`
 
+`Klyroo.UI` · record · inherits `KlySelectItem<string>`
+
+An option whose value is a string, so `new KlySelectItem("fr", "France")` keeps working. It is a `KlySelectItem` of `String`: lists of it are accepted wherever a list of `KlySelectItem<string>` is.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlySelectItem(string Value, string Label)` | An option whose value is a string, so `new KlySelectItem("fr", "France")` keeps working. It is a `KlySelectItem` of `String`: lists of it are accepted wherever a list of `KlySelectItem<string>` is. |
+
+#### `KlySelectItem<TValue>`
+
 `Klyroo.UI` · record
 
 An option of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListbox`.
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlySelectItem(string Value, string Label)` | An option of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListbox`. |
+| `KlySelectItem<TValue>(TValue Value, string Label)` | An option of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListbox`. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
@@ -5524,7 +5587,7 @@ An option of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListbox`.
 | `Group` (init) | `string?` | Lists the item under a heading. The items without a group are listed first, in their order and with no heading, then each group in the order of its first item, with all its items, wherever they are in the list (so an item without a group never sits between two groups, where it would look like part of one). The heading is not an option: the arrow keys and the typeahead skip it, and a filter hides it when none of its items matches. The list has role group, named by the heading. |
 | `Icon` (init) | `string?` | An icon drawn before the label, by name like every icon of Klyroo (a Lucide name, or any Iconify name the build bundles). |
 | `Label` (init) | `string` | Text of the option. |
-| `Value` (init) | `string` | Value the control takes when the option is chosen. |
+| `Value` (init) | `TValue` | Value the control takes when the option is chosen. |
 
 #### `KlySplitterPanel`
 
@@ -6605,6 +6668,31 @@ The HTTP request a component is rendering for, as far as Klyroo needs it: the co
 | :--- | :--- | :--- |
 | `Get(string name)` | `string?` | The value of the cookie called `name` in the current request, or `null` when there is no request or no such cookie. The name is taken as it is: scope it with `KlyPathScope.CookieName`. |
 
+#### `IKlySelectItem`
+
+`Klyroo.UI` · interface
+
+What a list control reads of an option, whatever the type of its value: `KlySelectItem` is the usual implementation. The remote options of a menu (see `KlyOptionsResult`) are given as this interface, so one provider serves a menu of any value type.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Count` | `int?` | A number shown at the end of the row (matches, stock, unread): formatted for the locale, and not searched or typed ahead. |
+| `Disabled` | `bool` | The option is listed but cannot be chosen. |
+| `Group` | `string?` | Lists the item under a heading; items without a group are listed first, with no heading. |
+| `Icon` | `string?` | An icon drawn before the label, by name like every icon of Klyroo (a Lucide name, or any Iconify name the build bundles). |
+| `Label` | `string` | Text of the option. |
+| `Value` | `object?` | Value the control takes when the option is chosen, as an object: its type is the one the control is bound to. |
+
+#### `IKlySelectItem<TValue>`
+
+`Klyroo.UI` · interface
+
+An option with a typed value. The interface is covariant in the value, so a list of `KlySelectItem` (strings) is accepted by a control bound to a `string?` property as well as one bound to a `string`.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Value` | `TValue` | Value the control takes when the option is chosen. |
+
 #### `IToastService`
 
 `Klyroo.UI` · interface
@@ -7136,7 +7224,7 @@ Loads the options of a `KlySelectMenu` or `KlyInputMenu` from a remote source, o
 
 `Klyroo.UI` · delegate
 
-Returns the options of values the component has not listed (the value was restored from the address or a saved form, and its page was never loaded), so the field can show their labels. Values it cannot find may be left out: the component then shows their raw value.
+Returns the options of values the component has not listed (the value was restored from the address or a saved form, and its page was never loaded), so the field can show their labels. Values it cannot find may be left out: the component then shows their raw value. The values come as text, whatever the type the control is bound to: strings as they are, numbers, dates and `Guid`s in the invariant culture, enums by name. Each item returned is matched by the text of its value.
 
 ## Klyroo.UI.Server
 

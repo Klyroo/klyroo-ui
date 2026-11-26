@@ -11,6 +11,8 @@ Each section solves one task. The code is complete for the task it shows. For th
 - [Serve responsive images](#serve-responsive-images)
 - [Localize the app](#localize-the-app)
 - [Validate a form in every render mode](#validate-a-form-in-every-render-mode)
+- [Bind inputs to the types of your model](#bind-inputs-to-the-types-of-your-model)
+- [React to a click on a chart](#react-to-a-click-on-a-chart)
 - [Control the color mode](#control-the-color-mode)
 - [Open a dialog from code](#open-a-dialog-from-code)
 - [Test components with bUnit](#test-components-with-bunit)
@@ -436,6 +438,92 @@ Use a plain `EditForm` when you want Blazor's own parts with Klyroo controls:
 Inside an `EditForm`, a control posts under the name of the bound property; outside one, give it `Name`. `KlyForm
 Enhance` turns on Blazor's enhanced form handling, so the post is a fetch and the page is patched. To show an error that
 does not come from validation, such as a server error, pass `Error` to `KlyFormField`.
+
+## Bind inputs to the types of your model
+
+Goal: bind a select to an `int` foreign key, an enum or a `Guid`, a number field to an `int`, a date field to a `DateTime`, with the validation of the real property.
+
+The list controls (`KlySelect`, `KlySelectMenu`, `KlyInputMenu`, `KlyListbox`), the number field (`KlyInputNumber`), the date field (`KlyInputDate`) and `KlySlider` are generic: they bind to the type of the property, and Blazor infers it from `@bind-Value`.
+The `EditContext` field is the property itself, so `For`, data annotations and the posted name work as for any other input.
+
+```razor
+<EditForm Model="Model" FormName="order" OnValidSubmit="Submit" novalidate>
+    <DataAnnotationsValidator />
+    <KlyFormField Label="Category" Required For="() => Model!.CategoryId">
+        <KlySelect @bind-Value="Model!.CategoryId" Items="_categories" Placeholder="Choose a category" />
+    </KlyFormField>
+    <KlyFormField Label="Status" For="() => Model!.Status">
+        <KlySelect @bind-Value="Model!.Status" Items="_statuses" />
+    </KlyFormField>
+    <KlyFormField Label="Quantity" For="() => Model!.Quantity">
+        <KlyInputNumber @bind-Value="Model!.Quantity" Min="1" Max="100" />
+    </KlyFormField>
+    <KlyFormField Label="Due" For="() => Model!.Due">
+        <KlyInputDate @bind-Value="Model!.Due" />
+    </KlyFormField>
+    <KlyButton Type="submit" Label="Save" />
+</EditForm>
+
+@code {
+    private enum OrderStatus { Draft, InProgress, Done }
+
+    private sealed class Order
+    {
+        [Range(1, int.MaxValue, ErrorMessage = "Choose a category.")]
+        public int CategoryId { get; set; }
+
+        public OrderStatus Status { get; set; }
+
+        [Range(1, 100)]
+        public int Quantity { get; set; } = 1;
+
+        public DateTime Due { get; set; } = DateTime.Today;
+    }
+
+    // The key of a row is the value, a column is the label. An enum is listed by its members: "In progress", not InProgress.
+    private readonly IReadOnlyList<KlySelectItem<int>> _categories = KlySelectItems.From(Catalog.Categories, c => c.Id, c => c.Name);
+    private readonly IReadOnlyList<KlySelectItem<OrderStatus>> _statuses = KlySelectItems.FromEnum<OrderStatus>();
+}
+```
+
+What each control binds to:
+
+| Control | Binds to | Notes |
+|---|---|---|
+| `KlySelect<TValue>` | `string`, `int`, `long`, an enum, `Guid`, `DateTime`... and the nullable form of a value type | `TValue` is the type of `KlySelectItem<TValue>.Value`. Use `int?` and `KlySelectItems.AsNullable()` when no option may be selected: clearing sets `null`. With a non-nullable type, no option selected is `default` (0, `Guid.Empty`), which shows the placeholder unless an option has that value. |
+| `KlySelectMenu<TValue>`, `KlyListbox<TValue>` | `IReadOnlyList<TValue>` | Single and multiple selection both bind a list, as before. `Create` (a typed value that is not an option) needs strings. |
+| `KlyInputMenu<TValue>` | `string` (typed text, or the chosen option with `Strict`) or any other type | Only a string can be typed free: with another type the field is strict, and the value is the chosen option's. |
+| `KlyInputNumber<TNumber>`, `KlySlider<TNumber>` | `sbyte`, `byte`, `short`, `ushort`, `int`, `uint`, `long`, `ulong`, `float`, `double`, `decimal`, and their nullable forms | `Min`, `Max` and `Step` stay `decimal` (the number field) and `double` (the slider) so `Min="0"` works for every type. Clearing the number field of a non-nullable property sets zero; an integer type rounds `2.6` to 3 and clamps to its range. A nullable slider with no value rests on its minimum. |
+| `KlyInputDate<TValue>` | `DateOnly`, `DateTime`, `DateTimeOffset`, and their nullable forms | `Min` and `Max` stay `DateOnly`. Picking a day sets that day at midnight; the time of day is not kept. |
+
+The values travel to the browser as invariant text (numbers and dates in the invariant culture, enums by name, `Guid` in the `D` format, a `DateTime` as ISO 8601) and the control hands back the value of the option with that text, so a value is never parsed: the exact `DateTime` or `Guid` of the option comes back.
+The number field still shows and reads the number in the culture you give it; only what is posted is invariant.
+
+`KlySelectItem` (strings) is `KlySelectItem<string>`: `new KlySelectItem("fr", "France")` and lists of it work as before. The generic controls take an `IReadOnlyList<IKlySelectItem<TValue>>`, an interface that is covariant in the value, so a list of `KlySelectItem` fits a control bound to a `string` or a `string?`.
+For a value type that is nullable on the property (`int?`), the items must be `KlySelectItem<int?>`: build them with `KlySelectItems.From(...).AsNullable()`, because a list of `KlySelectItem<int>` is not one.
+
+A remote source returns the same items: `KlyOptionsProvider` returns a `KlyOptionsResult` of `KlySelectItem<int>` for a `KlySelectMenu<int>`; the menu throws a clear error when an option has another type. `KlySelectedOptionsResolver` receives the text of the values (the strings, `"42"`, the name of an enum member) and returns the items that name them.
+
+Two things the compiler cannot infer for a generic component:
+
+- A `ValueChanged` that is a method group or a lambda with an untyped parameter (`ValueChanged="OnPick"`, `ValueChanged="@(v => _x = v)"`) cannot be typed before `TValue` is known. Use `@bind-Value`, or give the type: `<KlySelect TValue="string" Items="_items" Value="@_x" ValueChanged="OnPick" />`. Write `string`, not `string?`: the generated code rejects the annotation, and the control still accepts a null value.
+- A component with no `Value` and no `Items` of a typed list (a remote menu with only `OptionsProvider`) has nothing to infer from either: give `TValue`.
+
+## React to a click on a chart
+
+Goal: drill down when the user picks a bar, a point or a slice.
+
+`KlyChart.OnSelect` is raised by a click on a bar, a point of a line or area chart or a donut slice, and by Enter or Space on the row the arrow keys have moved the focus to. Only a chart with a handler is clickable: it gets a pointer cursor, and its keyboard hint says that Enter selects.
+
+```razor
+<KlyChart TItem="Sale" Data="_sales" Index="@(s => s.Month)" Categories="_categories" Type="KlyChartType.Bar" OnSelect="Pick" />
+
+@code {
+    private void Pick(KlyChartSelectEventArgs<Sale> pick) => Filter = $"{pick.Index}: {pick.SeriesKey} = {pick.Value}";
+}
+```
+
+The arguments carry the position of the row (`Row`), its `Index` (the x value), the `SeriesKey` and `SeriesIndex` of the series that was picked, its `Value` (null for a gap) and the row `Item`. A click on a bar reports the bar under the pointer, a click on a line or area chart the series whose point is nearest the pointer, a slice the single category; from the keyboard, the series is the first that has a value in the row. The pick is reported by the browser, so it needs an interactive render, and it needs `Tooltip` (the default), since the row of the keyboard is the highlighted one.
 
 ## Control the color mode
 

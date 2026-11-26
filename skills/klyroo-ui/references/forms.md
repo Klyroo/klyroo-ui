@@ -84,16 +84,16 @@ Rules that make it work in every render mode:
 |---|---|---|
 | Text, email, password | `KlyInput` | `string?` |
 | Long text | `KlyTextarea` | `string?` |
-| Number | `KlyInputNumber` | `decimal?` |
+| Number | `KlyInputNumber<TNumber>` | `decimal?`, `int`, `double`, any numeric type and its nullable form |
 | Yes/no | `KlySwitch`, `KlyCheckbox` | `bool` |
-| One of a few | `KlyRadioGroup`, `KlySelect` | `string?` |
-| Several of a few | `KlyCheckboxGroup`, `KlySelectMenu` with `Multiple`, `KlyToggleGroup` with `Multiple` | `IReadOnlyList<string>` |
-| Date | `KlyInputDate`, `KlyCalendar` | `DateOnly?` |
+| One of a few | `KlyRadioGroup<TValue>`, `KlySelect<TValue>` | `string?`, `int` foreign key, enum, `Guid`, `DateTime` |
+| Several of a few | `KlyCheckboxGroup<TValue>`, `KlySelectMenu<TValue>` with `Multiple`, `KlyToggleGroup` with `Multiple` | `IReadOnlyList<string>`, `IReadOnlyList<int>`... |
+| Date | `KlyInputDate<TValue>`, `KlyCalendar` | `DateOnly?`, `DateTime`, `DateTimeOffset?` (`KlyCalendar`: `DateOnly?`) |
 | Time | `KlyInputTime` | `TimeOnly?` |
 | Code, tags, rating | `KlyPinInput`, `KlyInputTags`, `KlyInputRating` | `string`, `IReadOnlyList<string>`, `double` |
 | Rich text | `KlyEditor` | HTML `string?` |
 
-Check the type of `Value` with `get-component-metadata` before binding: binding a `string` to a `decimal?` control fails at compile time.
+Check the type of `Value` with `get-component-metadata` before binding: binding a `string` to a numeric control fails at runtime when the component is set up, and a `ValueChanged` that is a method group needs the type on the tag (`TValue="string"`).
 
 ## Validation messages
 

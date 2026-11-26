@@ -31,8 +31,9 @@ Every component works in Interactive Server, WebAssembly, Auto and static server
 ```
 
 - **Unbound is the cheap default.** With no `@bind-Open` the overlay opens and closes entirely in the browser, and a Server-mode app pays no round trip per click or key. Bind only when your code reads or sets the state.
-- **Lists bind as lists.** Multiple selection components (`KlySelectMenu` and `KlyToggleGroup` with `Multiple`) bind an `IReadOnlyList<string>`; `KlyCheckboxGroup<TValue>` binds an `IReadOnlyList<TValue>`.
-- **Dates are `DateOnly?`** (`KlyCalendar`, `KlyInputDate`) and post as `yyyy-MM-dd`.
+- **Lists bind as lists.** Multiple selection components (`KlySelectMenu<TValue>`, `KlyListbox<TValue>` and `KlyCheckboxGroup<TValue>`) bind an `IReadOnlyList<TValue>`; `KlyToggleGroup` with `Multiple` binds an `IReadOnlyList<string>`.
+- **Inputs bind to the type of the property.** `KlySelect<TValue>`, `KlySelectMenu<TValue>`, `KlyInputMenu<TValue>` and `KlyListbox<TValue>` take `KlySelectItem<TValue>` (`KlySelectItem` is the string one; `KlySelectItems.From` and `FromEnum` build them), so `@bind-Value` binds an `int` foreign key, an enum, a `Guid` or a `DateTime`. `KlyInputNumber<TNumber>` and `KlySlider<TNumber>` bind any built-in numeric type and its nullable form, `KlyInputDate<TValue>` a `DateOnly`, `DateTime` or `DateTimeOffset`, nullable or not. A `ValueChanged` that is a method group or an untyped lambda needs `TValue="string"` (or the type) on the tag; `@bind-Value` does not.
+- **Dates are `DateOnly?`** by default (`KlyCalendar` always) and post as `yyyy-MM-dd`.
 
 ## Static server rendering
 
