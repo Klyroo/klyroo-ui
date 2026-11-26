@@ -32,6 +32,8 @@ public enum KlyImageFormat
     Svg,
     /// <summary>The service picks the best format the browser accepts (<c>auto</c>). Only a service that negotiates honors it; the local optimizer rejects it.</summary>
     Auto,
+    /// <summary>JPEG XL (<c>jxl</c>). Only a service that serves it names it (Cloudinary <c>f_jxl</c>, imgix <c>fm=jxl</c>, and a template provider through <c>{format}</c>); every other built-in provider leaves the format out and serves the original, and the local optimizer does not produce it. Browser support is uneven, so ask for it where a fallback exists.</summary>
+    Jxl,
 }
 
 /// <summary>

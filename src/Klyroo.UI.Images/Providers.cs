@@ -40,6 +40,7 @@ internal static class ProviderUrl
         KlyImageFormat.Gif => "gif",
         KlyImageFormat.Svg => "svg",
         KlyImageFormat.Auto => "auto",
+        KlyImageFormat.Jxl => "jxl",
         _ => throw new ArgumentOutOfRangeException(nameof(format), format, null),
     };
 
@@ -165,7 +166,7 @@ public sealed class ImageKitImageProvider(string urlEndpoint, string name = "ima
         if (m.Width is { } w) parts.Add("w-" + ProviderUrl.Num(w));
         if (m.Height is { } h) parts.Add("h-" + ProviderUrl.Num(h));
         if (m.Quality is { } q) parts.Add("q-" + ProviderUrl.Num(ProviderUrl.Quality(q)));
-        if (m.Format is { } fmt && ProviderUrl.Token(fmt) is var f) parts.Add("f-" + (f.ToLowerInvariant() == "jpeg" ? "jpg" : f.ToLowerInvariant()));
+        if (m.Format is { } fmt and not KlyImageFormat.Jxl && ProviderUrl.Token(fmt) is var f) parts.Add("f-" + (f.ToLowerInvariant() == "jpeg" ? "jpg" : f.ToLowerInvariant()));
         if ((m.Width is not null && m.Height is not null) && m.Fit is not null)
         {
             parts.Add("c-" + m.Fit switch
@@ -310,7 +311,7 @@ public sealed class BunnyImageProvider(string baseUrl, string name = "bunny") : 
         if (m.Width is { } w) pairs.Add("width=" + ProviderUrl.Num(w));
         if (m.Height is { } h) pairs.Add("height=" + ProviderUrl.Num(h));
         if (m.Quality is { } q) pairs.Add("quality=" + ProviderUrl.Num(ProviderUrl.Quality(q)));
-        if (m.Format is { } fmt && ProviderUrl.Token(fmt) is var f) pairs.Add("format=" + (ProviderUrl.NormalizeFormat(f) == "jpeg" ? "jpg" : ProviderUrl.NormalizeFormat(f)));
+        if (m.Format is { } fmt and not KlyImageFormat.Jxl && ProviderUrl.Token(fmt) is var f) pairs.Add("format=" + (ProviderUrl.NormalizeFormat(f) == "jpeg" ? "jpg" : ProviderUrl.NormalizeFormat(f)));
         return ProviderUrl.Join(baseUrl, src) + (pairs.Count > 0 ? "?" + string.Join("&", pairs) : "");
     }
 }
@@ -391,7 +392,7 @@ public sealed class KlyLocalImageProvider(string endpoint = KlyLocalImageProvide
         if (width is { } sw) pairs.Add(("w", ProviderUrl.Num(sw)));
         if (height is { } sh) pairs.Add(("h", ProviderUrl.Num(sh)));
         if (m.Quality is { } q) pairs.Add(("q", ProviderUrl.Num(SnapQuality(q))));
-        if (m.Format is { } fmt && ProviderUrl.Token(fmt) is var f) pairs.Add(("f", ProviderUrl.NormalizeFormat(f)));
+        if (m.Format is { } fmt and not KlyImageFormat.Jxl && ProviderUrl.Token(fmt) is var f) pairs.Add(("f", ProviderUrl.NormalizeFormat(f)));
         if (m.Fit is { } fit && (m.Width is not null || m.Height is not null)) pairs.Add(("fit", fit.ToString().ToLowerInvariant()));
         if (m.Blur is { } b) pairs.Add(("blur", ProviderUrl.Num(Math.Clamp(b, 1, 20))));
         if (version is not null) pairs.Add(("v", version));

@@ -217,4 +217,21 @@ public class ProviderTests
         Assert.Throws<InvalidOperationException>(() => settings.Resolve("/a.png", new KlyImageOptions { Preset = "nope" }, 10, null));
         Assert.StartsWith("_klyroo/img?src=%2Fa.png&w=16", settings.ResolvePlaceholder("/a.png", null, 10, null));
     }
+
+    [Fact]
+    public void Jpeg_xl_is_named_by_the_services_that_serve_it_and_left_out_by_the_others()
+    {
+        const KlyImageFormat jxl = KlyImageFormat.Jxl;
+
+        Assert.Equal("https://res.cloudinary.com/demo/image/upload/f_jxl/a.jpg", new CloudinaryImageProvider("demo").GetUrl("a.jpg", M(f: jxl)));
+        Assert.Equal("https://assets.imgix.net/a.jpg?fm=jxl", new ImgixImageProvider("assets.imgix.net").GetUrl("/a.jpg", M(f: jxl)));
+        Assert.Equal("https://img.acme.dev/x/q.jxl?u=%2Fa.png&raw=/a.png", new TemplateImageProvider("acme", "https://img.acme.dev/{width}x{height}/q{quality}.{format}?u={encodedSrc}&raw={src}").GetUrl("/a.png", M(f: jxl)));
+
+        // The providers that name a fixed list of formats, or that cannot be asked for JPEG XL, serve the original format instead.
+        Assert.Equal("https://ik.imagekit.io/ikmedia/tr:w-100/a.jpg", new ImageKitImageProvider("https://ik.imagekit.io/ikmedia").GetUrl("/a.jpg", M(100, f: jxl)));
+        Assert.Equal("/cdn-cgi/image/width=100/a.png", new CloudflareImagesProvider().GetUrl("/a.png", M(100, f: jxl)));
+        Assert.Equal("/.netlify/images?url=/a.jpg&w=100", new NetlifyImageProvider().GetUrl("/a.jpg", M(100, f: jxl)));
+        Assert.Equal("https://yourzone.b-cdn.net/image.jpg?width=100", new BunnyImageProvider("https://yourzone.b-cdn.net").GetUrl("/image.jpg", M(100, f: jxl)));
+        Assert.Equal("_klyroo/img?src=%2Fa.png&w=64", new KlyLocalImageProvider().GetUrl("/a.png", M(64, f: jxl)));
+    }
 }
