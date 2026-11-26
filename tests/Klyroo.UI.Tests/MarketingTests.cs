@@ -362,6 +362,32 @@ public class MarketingTests : KlyrooTestContext
     }
 
     [Fact]
+    public void PricingTable_values_convert_from_double_and_float_and_format_with_the_culture()
+    {
+        KlyPricingTableValue half = 2.5;
+        KlyPricingTableValue tenth = 0.1f;
+        Assert.Equal("2.5", half.ToString());
+        Assert.Equal("0.1", tenth.ToString());
+
+        var original = System.Globalization.CultureInfo.CurrentCulture;
+        var originalUi = System.Globalization.CultureInfo.CurrentUICulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.CurrentUICulture = new System.Globalization.CultureInfo("fr-FR");
+            KlyPricingSection[] sections = [new("Usage", [new("Rate", 2.5, 0.1f), new("Mixed", 3, 4.5m)])];
+            var cut = Render<KlyPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, sections));
+
+            var cells = cut.FindAll("tbody td").Select(c => c.TextContent.Trim()).ToList();
+            Assert.Equal(["2,5", "0,1", "3", "4,5"], cells);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = original;
+            System.Globalization.CultureInfo.CurrentUICulture = originalUi;
+        }
+    }
+
+    [Fact]
     public void PricingTable_cells_say_included_or_not_included_in_text_and_show_values()
     {
         var cut = Render<KlyPricingTable>(p => p.Add(c => c.Tiers, Tiers).Add(c => c.Sections, Sections));

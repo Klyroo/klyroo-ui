@@ -39,11 +39,13 @@ internal enum PricingValueKind
     Included,
     Text,
     Number,
+    Floating,
 }
 
 /// <summary>
 /// The cell of a feature for one tier of a <see cref="KlyPricingTable"/>: a check mark (<c>true</c>), a minus sign (<c>false</c>, <c>null</c> or the default value), a text or a number.
-/// <c>bool</c>, <c>string</c>, <c>int</c>, <c>long</c> and <c>decimal</c> convert to it implicitly, so <c>[true, "10 GB", false, 5]</c> is a list of values.
+/// <c>bool</c>, <c>string</c>, <c>int</c>, <c>long</c>, <c>decimal</c>, <c>double</c> and <c>float</c> convert to it implicitly, so <c>[true, "10 GB", false, 5, 2.5]</c> is a list of values.
+/// Smaller integers (<c>short</c>, <c>byte</c>) and <c>uint</c> widen to these implicitly. Any other numeric type, such as <c>ulong</c>, is cast first or passed to <see cref="Number"/>.
 /// A number is shown with the format culture of the locale in effect.
 /// </summary>
 public readonly record struct KlyPricingTableValue
@@ -51,12 +53,15 @@ public readonly record struct KlyPricingTableValue
     private readonly PricingValueKind _kind;
     private readonly string? _text;
     private readonly decimal _number;
+    // A double or a float, kept as it is so it prints the way its own type does (0.1f stays "0.1").
+    private readonly IFormattable? _floating;
 
-    private KlyPricingTableValue(PricingValueKind kind, string? text, decimal number)
+    private KlyPricingTableValue(PricingValueKind kind, string? text, decimal number, IFormattable? floating = null)
     {
         _kind = kind;
         _text = text;
         _number = number;
+        _floating = floating;
     }
 
     /// <summary>A check mark: the tier includes the feature.</summary>
@@ -88,12 +93,19 @@ public readonly record struct KlyPricingTableValue
     /// <summary>A number.</summary>
     public static implicit operator KlyPricingTableValue(decimal number) => Number(number);
 
+    /// <summary>A number, shown with the format culture of the locale in effect like a <c>double</c> would be.</summary>
+    public static implicit operator KlyPricingTableValue(double number) => new(PricingValueKind.Floating, null, 0, number);
+
+    /// <summary>A number, shown with the format culture of the locale in effect like a <c>float</c> would be.</summary>
+    public static implicit operator KlyPricingTableValue(float number) => new(PricingValueKind.Floating, null, 0, number);
+
     /// <summary>The text of the cell, a number in the invariant culture: <c>"true"</c> for a check mark and an empty text for a minus sign.</summary>
     public override string ToString() => _kind switch
     {
         PricingValueKind.Included => "true",
         PricingValueKind.Text => _text!,
         PricingValueKind.Number => _number.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
+        PricingValueKind.Floating => _floating!.ToString(null, System.Globalization.CultureInfo.InvariantCulture),
         _ => "",
     };
 
@@ -105,6 +117,7 @@ public readonly record struct KlyPricingTableValue
     {
         PricingValueKind.Text => _text!,
         PricingValueKind.Number => _number.ToString(null, culture),
+        PricingValueKind.Floating => _floating!.ToString(null, culture),
         _ => "",
     };
 }
