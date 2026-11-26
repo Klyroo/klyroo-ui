@@ -18,8 +18,39 @@ packages:
   - Klyroo.UI.Images
   - Klyroo.UI.Images.Local
 
-# The primary color of the site, the name of a Tailwind palette (blue, emerald, violet...). Without it the Klyroo colors are used.
-# accent: blue
+# The home page. headline is two lines, the second in the accent color; lead is the paragraph under it. Without them: the title and the tagline.
+headline: |
+  Accessible Blazor components,
+  styled with Tailwind.
+lead: >-
+  A complete set of accessible components, a design system on CSS variables, and a build that bundles icons, fonts and Tailwind. It runs in every Blazor render mode and in a BlazorWebView.
+
+# The accent of the site (#rrggbb): buttons, links, marks and the second line of the headline. The text variants that pass the contrast rules in light and
+# dark mode are computed from it. Without it: the color of the library in klyroo-stack/docs-site/Klyroo.Docs.Site/libraries.yml.
+accent: "#10b981"
+
+# The texture of the ground behind the header and the hero: blueprint-grid, dot-matrix, ruled-rows, baseline-grid, chart-ticks, halftone, cell-grid or node-dots.
+texture: blueprint-grid
+
+# What the hero demonstrates. Either board: table | form (a board with feature chips and several results, authored in docs-site), or a simple hero: the code,
+# the lines the leader line starts at (focus) and one result (output: lines of text, or preview: ui-settings | display-stat | spreadsheet-rows).
+demo:
+  file: Settings.razor
+  language: razor
+  focus: 1-8
+  code: |
+    <KlyFormField Label="Display name">
+        <KlyInput @bind-Value="_name" Placeholder="Ada Lovelace" />
+    </KlyFormField>
+    <KlySwitch @bind-Value="_notify" Label="Email notifications" />
+    <KlyPopover>
+        <ChildContent><KlyButton Label="Details" Variant="ButtonVariant.Outline" /></ChildContent>
+        <Content><p class="p-3">Opens and closes in the browser, with no round trip.</p></Content>
+    </KlyPopover>
+    <KlyButton Label="Save" OnClick="SaveAsync" />
+  result:
+    title: What it renders
+    preview: ui-settings
 
 # The pages in the order of the navigation. docs/README.md comes first, as "Documentation". A page that is not listed follows, by file name.
 # An entry is a file name below docs/ without .md, or a map with page and any of: title, navTitle, description, tocDepth, indexText. A group has a group name and its pages.
