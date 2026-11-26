@@ -65,7 +65,7 @@ else
     }
 
     private RenderFragment Option(IKlySelectItem item) =>
-        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.Value)" data-label="@item.Label"
+        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.BoxedValue)" data-label="@item.Label"
               aria-selected="@(IsSelected(item) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
               data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
 

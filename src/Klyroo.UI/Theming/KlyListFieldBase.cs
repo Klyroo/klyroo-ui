@@ -40,7 +40,7 @@ public abstract class KlyListFieldBase<TValue> : KlyFieldBase<IReadOnlyList<TVal
     }
 
     /// <summary>Whether an option, listed from the items or from a remote source, is one of the selected values.</summary>
-    private protected bool IsSelected(IKlySelectItem item) => SelectedKeys.Contains(OptionValue.Key(item.Value));
+    private protected bool IsSelected(IKlySelectItem item) => SelectedKeys.Contains(OptionValue.Key(item.BoxedValue));
 
     private protected EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;

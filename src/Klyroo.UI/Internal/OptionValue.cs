@@ -47,9 +47,9 @@ internal static class OptionValue
         {
             foreach (var item in items)
             {
-                if (Key(item.Value) == key)
+                if (Key(item.BoxedValue) == key)
                 {
-                    value = Cast<T>(item.Value);
+                    value = Cast<T>(item.BoxedValue);
                     return true;
                 }
             }

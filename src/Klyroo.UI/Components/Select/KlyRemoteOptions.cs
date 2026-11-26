@@ -210,7 +210,7 @@ public sealed class KlyRemoteOptions : IDisposable
         foreach (var item in result?.Items ?? [])
         {
             _received++;
-            var key = OptionValue.Key(item.Value);
+            var key = OptionValue.Key(item.BoxedValue);
             if (!_listed.Add(key)) continue;
             _items.Add(item);
             _texts.Add(new KlySelectItem(key, item.Label) { Disabled = item.Disabled, Count = item.Count, Icon = item.Icon, Group = item.Group });
@@ -224,20 +224,20 @@ public sealed class KlyRemoteOptions : IDisposable
 
     /// <summary>Whether the label of a value is known: listed now, remembered, given as an item, or resolved.</summary>
     internal bool Knows(string value) =>
-        _known.ContainsKey(value) || _resolved.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => OptionValue.Key(i.Value) == value);
+        _known.ContainsKey(value) || _resolved.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => OptionValue.Key(i.BoxedValue) == value);
 
     /// <summary>The option, listed now, remembered or given as an item, whose value has that text. A label the resolver gave is not an option (see <see cref="LabelOf"/>): it has no typed value.</summary>
     internal IKlySelectItem? Find(string key) =>
-        _items.FirstOrDefault(i => OptionValue.Key(i.Value) == key)
+        _items.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == key)
         ?? (_known.TryGetValue(key, out var known) ? known : null)
-        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == key);
+        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == key);
 
     /// <summary>The label of a value, or the value itself when nothing knows it (the raw value is what an unresolved value shows).</summary>
     internal string LabelOf(string value) =>
         _resolved.TryGetValue(value, out var resolved) ? resolved
         : _known.TryGetValue(value, out var known) ? known.Label
-        : _items.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
-        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
+        : _items.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == value)?.Label
+        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == value)?.Label
         ?? value;
 
     /// <summary>Keeps the options of the selected values that are listed now, so their labels survive the next search replacing the list.</summary>
@@ -247,7 +247,7 @@ public sealed class KlyRemoteOptions : IDisposable
         foreach (var value in values)
         {
             if (_known.ContainsKey(value)) continue;
-            var item = _items.FirstOrDefault(i => OptionValue.Key(i.Value) == value);
+            var item = _items.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == value);
             if (item is not null) _known[value] = item;
         }
     }
@@ -260,7 +260,7 @@ public sealed class KlyRemoteOptions : IDisposable
             // A label the resolver gave is the one the app chose for a value no page holds: it comes first.
             string? label = _resolved.TryGetValue(value, out var resolved) ? resolved
                 : _known.TryGetValue(value, out var item) ? item.Label
-                : StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label;
+                : StaticItems.FirstOrDefault(i => OptionValue.Key(i.BoxedValue) == value)?.Label;
             if (label is null) continue;
             yield return value;
             yield return label;
@@ -297,7 +297,7 @@ public sealed class KlyRemoteOptions : IDisposable
         foreach (var item in found)
         {
             // Matched by the text of the value, so a resolver of numbers or dates can return the items it has.
-            var key = OptionValue.Key(item.Value);
+            var key = OptionValue.Key(item.BoxedValue);
             if (missing.Contains(key)) _resolved[key] = item.Label;
         }
         _changed();

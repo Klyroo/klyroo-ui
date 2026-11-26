@@ -235,13 +235,13 @@ else
     {
         if (string.IsNullOrEmpty(key)) return default;
         var option = _remote?.Find(key) ?? Items.FirstOrDefault(i => OptionValue.Key(i.Value) == key);
-        if (option is not null) return OptionValue.Cast<TValue>(option.Value);
+        if (option is not null) return OptionValue.Cast<TValue>(option.BoxedValue);
         return OptionValue.IsText<TValue>() ? (TValue)(object)key : default;
     }
 
     private RenderFragment Option(IKlySelectItem item) =>
-        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.Value)" data-label="@item.Label"
-              aria-selected="@(IsStrict && OptionValue.Key(item.Value) == Key ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.BoxedValue)" data-label="@item.Label"
+              aria-selected="@(IsStrict && OptionValue.Key(item.BoxedValue) == Key ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
               data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
 
     private RenderFragment ItemContent(IKlySelectItem item) =>

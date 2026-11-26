@@ -154,12 +154,12 @@ public class DashboardTemplateTests
         Assert.Equal(8, first.Items.Count);
         Assert.True(first.HasMore);
         var second = await PeopleDirectory.Search(new KlyOptionsRequest("", 8, 8, null), CancellationToken.None);
-        Assert.Empty(first.Items.Select(i => i.Value).Intersect(second.Items.Select(i => i.Value)));
+        Assert.Empty(first.Items.Cast<IKlySelectItem<string>>().Select(i => i.Value).Intersect(second.Items.Cast<IKlySelectItem<string>>().Select(i => i.Value)));
 
         var found = await PeopleDirectory.Search(new KlyOptionsRequest("ahlberg", 0, 50, null), CancellationToken.None);
         Assert.NotEmpty(found.Items);
         Assert.All(found.Items, i => Assert.Contains("ahlberg", i.Label, StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(found.Items[0].Label, (await PeopleDirectory.Resolve([(string)found.Items[0].Value!], CancellationToken.None)).Single().Label);
+        Assert.Equal(found.Items[0].Label, (await PeopleDirectory.Resolve([((IKlySelectItem<string>)found.Items[0]).Value], CancellationToken.None)).Single().Label);
 
         var countries = await CountryDirectory.Search(new KlyOptionsRequest("land", 0, 20, null), CancellationToken.None);
         Assert.Contains(countries.Items, c => c.Label == "Finland");

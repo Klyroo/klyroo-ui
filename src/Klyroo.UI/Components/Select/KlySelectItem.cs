@@ -2,12 +2,15 @@ namespace Klyroo.UI;
 
 /// <summary>
 /// What a list control reads of an option, whatever the type of its value: <see cref="KlySelectItem{TValue}"/> is the usual implementation.
+/// The value itself is on <see cref="IKlySelectItem{TValue}"/>, which is the interface to implement.
 /// The remote options of a menu (see <see cref="KlyOptionsResult"/>) are given as this interface, so one provider serves a menu of any value type.
 /// </summary>
 public interface IKlySelectItem
 {
-    /// <summary>Value the control takes when the option is chosen, as an object: its type is the one the control is bound to.</summary>
-    object? Value { get; }
+    // The value as an object, for the library's own code that handles options of any value type (the remote options of a menu, the keys that
+    // travel to the browser). Internal on purpose: the public way to read a value is the typed IKlySelectItem<TValue>.Value. The generic
+    // interface implements it, so every implementation of IKlySelectItem<TValue> has it and none can be written against the non-generic one alone.
+    internal object? BoxedValue { get; }
 
     /// <summary>Text of the option.</summary>
     string Label { get; }
@@ -33,7 +36,9 @@ public interface IKlySelectItem
 public interface IKlySelectItem<out TValue> : IKlySelectItem
 {
     /// <summary>Value the control takes when the option is chosen.</summary>
-    new TValue Value { get; }
+    TValue Value { get; }
+
+    object? IKlySelectItem.BoxedValue => Value;
 }
 
 /// <summary>An option of <see cref="KlySelect{TValue}"/>, <see cref="KlySelectMenu{TValue}"/>, <see cref="KlyInputMenu{TValue}"/> and <see cref="KlyListbox{TValue}"/>.</summary>
@@ -42,8 +47,6 @@ public interface IKlySelectItem<out TValue> : IKlySelectItem
 /// <param name="Label">Text of the option.</param>
 public record KlySelectItem<TValue>(TValue Value, string Label) : IKlySelectItem<TValue>
 {
-    object? IKlySelectItem.Value => Value;
-
     /// <summary>The option is listed but cannot be chosen.</summary>
     public bool Disabled { get; init; }
 

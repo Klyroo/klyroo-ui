@@ -273,6 +273,40 @@ public class GenericInputsTests : KlyrooTestContext
         Assert.Equal([3], ids);
     }
 
+    private sealed class CustomItem(int id, string label) : IKlySelectItem<int>
+    {
+        public int Value => id;
+        public string Label => label;
+        public bool Disabled => false;
+        public int? Count => null;
+        public string? Icon => null;
+        public string? Group => null;
+    }
+
+    [Fact]
+    public void The_non_generic_select_item_interface_exposes_no_object_value()
+    {
+        Assert.Null(typeof(IKlySelectItem).GetProperty("Value"));
+        Assert.DoesNotContain(typeof(IKlySelectItem).GetProperties(), p => p.PropertyType == typeof(object));
+        Assert.Equal(typeof(int), typeof(IKlySelectItem<int>).GetProperty("Value")!.PropertyType);
+    }
+
+    [Fact]
+    public async Task SelectMenu_takes_remote_options_from_an_own_IKlySelectItem_implementation()
+    {
+        IReadOnlyList<int> ids = [];
+        var cut = Render<KlySelectMenu<int>>(p => p
+            .Add(s => s.OptionsProvider, (KlyOptionsRequest _, CancellationToken _) =>
+                new ValueTask<KlyOptionsResult>(new KlyOptionsResult([new CustomItem(7, "Seven"), new CustomItem(9, "Nine")])))
+            .Add(s => s.Value, ids).Add(s => s.ValueChanged, (IReadOnlyList<int>? v) => ids = v!));
+        await cut.Find("kly-select-menu").TriggerEventAsync("onklysearch", new KlySearchEventArgs { Value = "", Sequence = 1 });
+
+        Assert.Equal(["7", "9"], cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-value")!));
+        await cut.Find("kly-select-menu").TriggerEventAsync("onklychange", new KlyChangeEventArgs { Value = "9", Sequence = 1 });
+
+        Assert.Equal([9], ids);
+    }
+
     [Fact]
     public async Task SelectMenu_resolves_the_label_of_an_int_that_was_never_listed()
     {
