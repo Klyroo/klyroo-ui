@@ -552,7 +552,7 @@ public partial class LocalizationTests : KlyrooTestContext
     [Fact]
     public void InputDate_passes_the_locale_to_its_calendar()
     {
-        var cut = Render<KlyInputDate>(p => p.AddCascadingValue(KlyLocales.Fr).Add(d => d.Value, new DateOnly(2026, 3, 5)));
+        var cut = Render<KlyInputDate<DateOnly?>>(p => p.AddCascadingValue(KlyLocales.Fr).Add(d => d.Value, new DateOnly(2026, 3, 5)));
 
         Assert.Contains("mars", cut.Markup);
     }
@@ -563,7 +563,7 @@ public partial class LocalizationTests : KlyrooTestContext
         var post = Render<KlyBlogPost>(p => p.AddCascadingValue(KlyLocales.Fr).Add(c => c.Date, new DateTimeOffset(2026, 11, 12, 0, 0, 0, TimeSpan.Zero)));
         Assert.Equal("12 novembre 2026", post.Find("time").TextContent);
 
-        var number = Render<KlyInputNumber>(p => p.AddCascadingValue(KlyLocales.De).Add(n => n.Value, 1234.5m));
+        var number = Render<KlyInputNumber<decimal?>>(p => p.AddCascadingValue(KlyLocales.De).Add(n => n.Value, 1234.5m));
         Assert.Equal("de", number.Find("kly-input-number").GetAttribute("locale"));
     }
 
@@ -723,7 +723,7 @@ public partial class LocalizationTests : KlyrooTestContext
         var date = new DateTimeOffset(2026, 11, 20, 0, 0, 0, TimeSpan.Zero);
 
         var post = Render<KlyBlogPost>(p => p.AddCascadingValue(KlyLocales.En).Add(c => c.Date, date));
-        var number = Render<KlyInputNumber>(p => p.AddCascadingValue(KlyLocales.En).Add(n => n.Value, 1234.5m));
+        var number = Render<KlyInputNumber<decimal?>>(p => p.AddCascadingValue(KlyLocales.En).Add(n => n.Value, 1234.5m));
         var time = Render<KlyInputTime>(p => p.AddCascadingValue(KlyLocales.En).Add(t => t.Value, new TimeOnly(15, 30)));
         var upload = Render<KlyFileUpload>(p => p.AddCascadingValue(KlyLocales.En).Add(c => c.MaxSize, 1536L));
 
@@ -891,7 +891,7 @@ public partial class LocalizationTests : KlyrooTestContext
         "pagination" => Render<KlyPagination>(p => p.AddCascadingValue(locale).Add(c => c.Total, 100).Add(c => c.Page, 3)),
         "breadcrumb" => Render<KlyBreadcrumb>(p => p.AddCascadingValue(locale).Add(c => c.Items, [new KlyBreadcrumbItem("Home") { Href = "/" }, new KlyBreadcrumbItem("Docs")])),
         "calendar" => Render<KlyCalendar>(p => p.AddCascadingValue(locale).Add(c => c.Value, new DateOnly(2026, 3, 5))),
-        "input-date" => Render<KlyInputDate>(p => p.AddCascadingValue(locale)),
+        "input-date" => Render<KlyInputDate<DateOnly?>>(p => p.AddCascadingValue(locale)),
         "input-time" => Render<KlyInputTime>(p => p.AddCascadingValue(locale).Add(c => c.Hour12, true)),
         "file-upload" => Render<KlyFileUpload>(p => p.AddCascadingValue(locale).Add(c => c.MaxSize, 2048L)),
         "toaster" => Render<KlyToaster>(p => p.AddCascadingValue(locale)),

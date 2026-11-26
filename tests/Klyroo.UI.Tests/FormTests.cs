@@ -161,7 +161,7 @@ public class FormTests : KlyrooTestContext
     public void Select_renders_combobox_hidden_value_and_options()
     {
         KlySelectItem[] items = [new("fr", "France"), new("de", "Germany") { Disabled = true }];
-        var cut = Render<KlySelect>(p => p.Add(s => s.Items, items).Add(s => s.Value, "fr").Add(s => s.Name, "country"));
+        var cut = Render<KlySelect<string>>(p => p.Add(s => s.Items, items).Add(s => s.Value, "fr").Add(s => s.Name, "country"));
 
         var trigger = cut.Find("[role=combobox]");
         Assert.Equal("button", trigger.TagName.ToLowerInvariant());
@@ -179,7 +179,7 @@ public class FormTests : KlyrooTestContext
     {
         string? value = null;
         KlySelectItem[] items = [new("fr", "France"), new("de", "Germany")];
-        var cut = Render<KlySelect>(p => p.Add(s => s.Items, items).Add(s => s.Placeholder, "Choose")
+        var cut = Render<KlySelect<string>>(p => p.Add(s => s.Items, items).Add(s => s.Placeholder, "Choose")
             .Add(s => s.Value, value).Add(s => s.ValueChanged, (string? v) => value = v));
 
         var label = cut.Find("[data-slot=label]");

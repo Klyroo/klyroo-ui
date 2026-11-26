@@ -5,15 +5,15 @@ namespace Klyroo.UI;
 public sealed partial class KlyrooOptions
 {
     /// <summary>
-    /// Theme of <see cref="KlySelectMenu"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlySelectMenu{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme SelectMenu { get; } = Themes.SelectMenu();
     /// <summary>
-    /// Theme of <see cref="KlyInputMenu"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyInputMenu{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme InputMenu { get; } = Themes.InputMenu();
     /// <summary>
-    /// Theme of <see cref="KlyInputNumber"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyInputNumber{TNumber}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme InputNumber { get; } = Themes.InputNumber();
     /// <summary>
@@ -25,7 +25,7 @@ public sealed partial class KlyrooOptions
     /// </summary>
     public ComponentTheme PinInput { get; } = Themes.PinInput();
     /// <summary>
-    /// Theme of <see cref="KlySlider"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlySlider{TNumber}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme Slider { get; } = Themes.Slider();
     /// <summary>
@@ -41,7 +41,7 @@ public sealed partial class KlyrooOptions
     /// </summary>
     public ComponentTheme ToggleGroup { get; } = Themes.ToggleGroup();
     /// <summary>
-    /// Theme of <see cref="KlyListbox"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyListbox{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme Listbox { get; } = Themes.Listbox();
     /// <summary>

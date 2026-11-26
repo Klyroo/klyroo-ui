@@ -9,7 +9,7 @@ public sealed partial class KlyrooOptions
     /// </summary>
     public ComponentTheme Calendar { get; } = Themes.Calendar();
     /// <summary>
-    /// Theme of <see cref="KlyInputDate"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyInputDate{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme InputDate { get; } = Themes.InputDate();
     /// <summary>

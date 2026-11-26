@@ -57,7 +57,7 @@ public sealed partial class KlyrooOptions
     /// </summary>
     public ComponentTheme RadioGroup { get; } = Themes.RadioGroup();
     /// <summary>
-    /// Theme of <see cref="KlySelect"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlySelect{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme Select { get; } = Themes.Select();
     /// <summary>

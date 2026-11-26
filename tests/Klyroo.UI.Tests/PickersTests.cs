@@ -90,7 +90,7 @@ public class PickersTests : KlyrooTestContext
     [Fact]
     public void InputDate_is_a_native_date_input_with_a_calendar_popover()
     {
-        var cut = Render<KlyInputDate>(p => p.Add(d => d.Value, new DateOnly(2026, 11, 10)).Add(d => d.Name, "when")
+        var cut = Render<KlyInputDate<DateOnly?>>(p => p.Add(d => d.Value, new DateOnly(2026, 11, 10)).Add(d => d.Name, "when")
             .Add(d => d.Min, new DateOnly(2026, 1, 1)).Add(d => d.Culture, French));
 
         var input = cut.Find("kly-date-field > input");
@@ -111,7 +111,7 @@ public class PickersTests : KlyrooTestContext
         var model = new Booking { Date = new DateOnly(2026, 11, 10) };
         var cut = Render<EditForm>(p => p.Add(f => f.Model, model).Add(f => f.ChildContent, (EditContext _) => (RenderFragment)(b =>
         {
-            b.OpenComponent<KlyInputDate>(0);
+            b.OpenComponent<KlyInputDate<DateOnly?>>(0);
             b.AddAttribute(1, "Value", model.Date);
             b.AddAttribute(2, "ValueChanged", EventCallback.Factory.Create<DateOnly?>(this, v => model.Date = v));
             b.AddAttribute(3, "ValueExpression", (Expression<Func<DateOnly?>>)(() => model.Date));

@@ -10,7 +10,7 @@ namespace Klyroo.UI.Internal;
 /// load (loading, no results, text too short, error with a retry button) and <see cref="KlyInfiniteScroll"/>, whose sentinel watches
 /// this area and asks for the next page before the end is reached. The states sit beside the listbox, not in it: a listbox
 /// may only own options and groups. One polite status carries what a screen reader should hear.
-/// Shared by <see cref="KlySelectMenu"/> and <see cref="KlyInputMenu"/>, which pass their own slots and texts.
+/// Shared by <see cref="KlySelectMenu{TValue}"/> and <see cref="KlyInputMenu{TValue}"/>, which pass their own slots and texts.
 /// </summary>
 internal static class RemoteOptionsView
 {

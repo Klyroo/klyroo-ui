@@ -74,9 +74,9 @@ public class FieldCssClassTests : KlyrooTestContext
     {
         "input" => (Control<string?>(typeof(KlyInput), model, () => model.Text, () => model.Text, v => model.Text = v, 250),
             cut => cut.Find("input"), () => model.Text),
-        "input-number" => (Control<decimal?>(typeof(KlyInputNumber), model, () => model.Number, () => model.Number, v => model.Number = v),
+        "input-number" => (Control<decimal?>(typeof(KlyInputNumber<decimal?>), model, () => model.Number, () => model.Number, v => model.Number = v),
             cut => cut.Find("input[data-slot=input]"), () => model.Number),
-        "slider" => (Control<double>(typeof(KlySlider), model, () => model.Slider, () => model.Slider, v => model.Slider = v),
+        "slider" => (Control<double>(typeof(KlySlider<double>), model, () => model.Slider, () => model.Slider, v => model.Slider = v),
             cut => cut.Find("input[type=range]"), () => model.Slider),
         "toggle" => (Control<bool>(typeof(KlyToggle), model, () => model.Flag, () => model.Flag, v => model.Flag = v),
             cut => cut.Find("kly-toggle"), () => model.Flag),

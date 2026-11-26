@@ -201,7 +201,7 @@ public class AppIconsInComponentsTests() : KlyrooTestContext(o =>
     [Fact]
     public void Select_trigger_uses_the_up_down_icon_of_the_app()
     {
-        var cut = Render<KlySelect>(p => p.Add(s => s.Items, [new KlySelectItem("a", "A")]));
+        var cut = Render<KlySelect<string>>(p => p.Add(s => s.Items, [new KlySelectItem("a", "A")]));
 
         Assert.Equal("0 0 9 9", cut.Find("button svg").GetAttribute("viewBox"));
     }

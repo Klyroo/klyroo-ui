@@ -1,7 +1,8 @@
 @namespace Klyroo.UI
 @using System.Globalization
 @using Klyroo.UI.Internal
-@inherits KlyFieldBase<DateOnly?>
+@typeparam TValue
+@inherits KlyFieldBase<TValue>
 
 @*
     A native date input (typed segments in the browser's locale, always posting yyyy-MM-dd) next to a button that opens a KlyCalendar
@@ -10,15 +11,15 @@
 <kly-date-field class="@_slots["root"]" data-color="@Color.Value">
     @if (UseEditContext)
     {
-        <InputDate TValue="DateOnly?" Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
+        <InputDate TValue="TValue" Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" @attributes="Attributes()" />
     }
     else if (ValueChanged.HasDelegate)
     {
-        <input name="@Name" type="date" value="@Iso.Date(Value)" @onchange="OnNativeChange" @attributes="Attributes()" />
+        <input name="@Name" type="date" value="@Iso.Date(Day)" @onchange="OnNativeChange" @attributes="Attributes()" />
     }
     else
     {
-        <input name="@Name" type="date" value="@Iso.Date(Value)" @attributes="Attributes()" />
+        <input name="@Name" type="date" value="@Iso.Date(Day)" @attributes="Attributes()" />
     }
     <span class="@_slots["trigger"]">
         <KlyPopover Placement="bottom-end" AriaLabel="@Messages.ChooseDate" Class="@_slots["content"]">
@@ -28,7 +29,7 @@
                 </button>
             </ChildContent>
             <Content>
-                <KlyCalendar Value="@Value" Min="Min" Max="Max" Culture="Culture" WeekStart="WeekStart" Size="EffectiveSize" Color="Color" />
+                <KlyCalendar Value="@Day" Min="Min" Max="Max" Culture="Culture" WeekStart="WeekStart" Size="EffectiveSize" Color="Color" />
             </Content>
         </KlyPopover>
     </span>
@@ -37,7 +38,12 @@
 @code {
     private SlotSet _slots = default!;
 
-    /// <summary>Earliest date, for the input and the calendar.</summary>
+    private static DateCodec<TValue> Codec => DateCodec<TValue>.Instance;
+
+    // The day the field shows, whatever the type of the bound value.
+    private DateOnly? Day => Codec.ToDate(Value);
+
+    /// <summary>Earliest date, for the input and the calendar. A day (<c>DateOnly</c>) whatever the bound type: use <c>DateOnly.FromDateTime(...)</c> to limit a <c>DateTime</c> field.</summary>
     [Parameter] public DateOnly? Min { get; set; }
 
     /// <summary>Latest date, for the input and the calendar.</summary>
@@ -65,12 +71,13 @@
     private async Task OnNativeChange(ChangeEventArgs e)
     {
         var date = Iso.ParseDate(e.Value?.ToString());
-        if (date == Value)
+        if (date == Day)
         {
             return;
         }
-        Value = date;
-        await ValueChanged.InvokeAsync(date);
+        var value = Codec.FromDate(date);
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
     }
 
     private Dictionary<string, object> Attributes()

@@ -1,11 +1,12 @@
 @namespace Klyroo.UI
 @using Klyroo.UI.Internal
-@inherits KlyFieldBase<string>
+@typeparam TValue
+@inherits KlyFieldBase<TValue>
 @implements IDisposable
 
 @if (UseEditContext)
 {
-    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+    <ValueBridge TValue="TValue" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
 }
 else
 {
@@ -17,7 +18,7 @@ else
     private int _sequence;
     private string _id = default!;
     private KlyRemoteOptions? _remote;
-    private IReadOnlyList<KlySelectItem>? _items;
+    private IReadOnlyList<IKlySelectItem<TValue>>? _items;
     private bool _itemsPassed;
     private object? _optionsKey;
 
@@ -27,7 +28,7 @@ else
     /// The parameter must be passed when there is no provider, and a null value (<c>Items="@_list"</c> while the list is still loading) is an empty list, before and after it loads.
     /// </summary>
     [Parameter]
-    public IReadOnlyList<KlySelectItem> Items
+    public IReadOnlyList<IKlySelectItem<TValue>> Items
     {
         get => _items ?? [];
         set => _items = value;
@@ -74,9 +75,13 @@ else
 
     /// <summary>
     /// Only a suggestion is a valid value: <c>Value</c> is the chosen item's value and the field shows its label.
-    /// Otherwise (the default) the typed text is the value and suggestions only complete it.
+    /// Otherwise (the default) the typed text is the value and suggestions only complete it. Only a string can be typed: when
+    /// <typeparamref name="TValue"/> is not <see cref="string"/> the field is always strict, whatever this parameter says.
     /// </summary>
     [Parameter] public bool Strict { get; set; }
+
+    // Typed text is a value only for strings; any other type can only be chosen.
+    private bool IsStrict => Strict || !OptionValue.IsText<TValue>();
     /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
     /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
@@ -92,11 +97,15 @@ else
     // Only an interactive component can hear the browser and call the provider.
     private bool RemoteActive => _remote is not null && RendererInfo.IsInteractive;
 
-    private IReadOnlyList<KlySelectItem> Listed => _remote is null ? Items : _remote.Items;
+    private IReadOnlyList<IKlySelectItem> Listed => _remote is null ? Items : _remote.Options;
 
-    private string Text => !Strict ? Value ?? ""
-        : string.IsNullOrEmpty(Value) ? ""
-        : _remote is null ? Items.FirstOrDefault(i => i.Value == Value)?.Label ?? "" : _remote.LabelOf(Value);
+    private bool HasValue => !OptionValue.IsEmpty(Value);
+
+    private string Key => OptionValue.Key(Value);
+
+    private string Text => !IsStrict ? Key
+        : !HasValue ? ""
+        : _remote is null ? Items.FirstOrDefault(i => EqualityComparer<TValue?>.Default.Equals(i.Value, Value))?.Label ?? "" : _remote.LabelOf(Key);
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
@@ -105,7 +114,7 @@ else
     public override Task SetParametersAsync(ParameterView parameters)
     {
         // Items passed as null (a list that is still loading) is a list with no items; only a component given neither Items nor a provider has nothing to show.
-        if (parameters.TryGetValue<IReadOnlyList<KlySelectItem>>(nameof(Items), out _)) _itemsPassed = true;
+        if (parameters.TryGetValue<IReadOnlyList<IKlySelectItem<TValue>>>(nameof(Items), out _)) _itemsPassed = true;
         return base.SetParametersAsync(parameters);
     }
 
@@ -114,7 +123,7 @@ else
     {
         if (!_itemsPassed && OptionsProvider is null)
         {
-            throw new InvalidOperationException($"{nameof(KlyInputMenu)} needs its suggestions: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (suggestions loaded from a source).");
+            throw new InvalidOperationException($"{nameof(KlyInputMenu<TValue>)} needs its suggestions: set {nameof(Items)} (a fixed list) or {nameof(OptionsProvider)} (suggestions loaded from a source).");
         }
         _id ??= NewId("inputmenu");
         if (OptionsProvider is null)
@@ -138,7 +147,7 @@ else
             _remote.PageSize = PageSize;
             _remote.MinLength = Math.Max(0, MinLength);
             _remote.StaticItems = Items;
-            if (Strict && !string.IsNullOrEmpty(Value)) _remote.RememberSelected([Value]);
+            if (IsStrict && HasValue) _remote.RememberSelected([Key]);
         }
         _slots = ResolveSlots(Options.InputMenu, new Dictionary<string, string?>
         {
@@ -150,13 +159,13 @@ else
 
     /// <inheritdoc />
     protected override Task OnParametersSetAsync() =>
-        _remote is not null && Strict && ResolveSelected is not null && !string.IsNullOrEmpty(Value) && RendererInfo.IsInteractive
-            ? _remote.ResolveAsync([Value], ResolveSelected)
+        _remote is not null && IsStrict && ResolveSelected is not null && HasValue && RendererInfo.IsInteractive
+            ? _remote.ResolveAsync([Key], ResolveSelected)
             : Task.CompletedTask;
 
     private void OnRemoteChanged()
     {
-        if (Strict && !string.IsNullOrEmpty(Value)) _remote!.RememberSelected([Value]);
+        if (IsStrict && HasValue) _remote!.RememberSelected([Key]);
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -172,13 +181,13 @@ else
     private Task OnSearch(KlySearchEventArgs e)
     {
         // A strict field reports the empty text when it opens: its value gets another try if its resolution failed.
-        if (Strict && string.IsNullOrWhiteSpace(e.Value) && ResolveSelected is not null && !string.IsNullOrEmpty(Value)) _ = _remote!.ResolveAsync([Value], ResolveSelected, retryFailed: true);
+        if (IsStrict && string.IsNullOrWhiteSpace(e.Value) && ResolveSelected is not null && HasValue) _ = _remote!.ResolveAsync([Key], ResolveSelected, retryFailed: true);
         return _remote!.SearchAsync(e.Value);
     }
 
     // The label of a strict value the browser cannot read from the list (it may no longer hold it): value, label.
     // In every render mode: the browser must not replace the label a static render gave with the raw value.
-    private string? KnownLabels => Remote && Strict && !string.IsNullOrEmpty(Value) && ListValue.Join(_remote!.KnownLabels([Value])) is { Length: > 0 } known ? known : null;
+    private string? KnownLabels => Remote && IsStrict && HasValue && ListValue.Join(_remote!.KnownLabels([Key])) is { Length: > 0 } known ? known : null;
 
     [System.Diagnostics.CodeAnalysis.DynamicDependency(
         System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
@@ -186,8 +195,11 @@ else
     private async Task OnChange(KlyChangeEventArgs e)
     {
         _sequence = e.Sequence;
-        var value = string.IsNullOrEmpty(e.Value) ? null : e.Value;
-        if (value == Value)
+        // A typed text is the value of a string field; otherwise the browser reports the text of a chosen option (or nothing).
+        var value = !IsStrict && OptionValue.IsText<TValue>()
+            ? string.IsNullOrEmpty(e.Value) ? default : (TValue)(object)e.Value
+            : FromKey(e.Value);
+        if (EqualityComparer<TValue?>.Default.Equals(value, Value))
         {
             return;
         }
@@ -211,16 +223,25 @@ else
         attributes["aria-expanded"] = "false";
         if (Placeholder is not null) attributes["placeholder"] = Placeholder;
         // Nothing to choose from before the page is interactive: a strict value cannot be changed, so the field says so.
-        if (Remote && Strict && !RendererInfo.IsInteractive) attributes["readonly"] = true;
+        if (Remote && IsStrict && !RendererInfo.IsInteractive) attributes["readonly"] = true;
         return attributes;
     }
 
-    private RenderFragment Option(KlySelectItem item) =>
-        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
-              aria-selected="@(Strict && item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+    // The value of the option whose text the browser reported, among the options listed now or given; a strict string that nothing lists keeps its text.
+    private TValue? FromKey(string? key)
+    {
+        if (string.IsNullOrEmpty(key)) return default;
+        var option = _remote?.Find(key) ?? Items.FirstOrDefault(i => OptionValue.Key(i.Value) == key);
+        if (option is not null) return OptionValue.Cast<TValue>(option.Value);
+        return OptionValue.IsText<TValue>() ? (TValue)(object)key : default;
+    }
+
+    private RenderFragment Option(IKlySelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.Value)" data-label="@item.Label"
+              aria-selected="@(IsStrict && OptionValue.Key(item.Value) == Key ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
               data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
 
-    private RenderFragment ItemContent(KlySelectItem item) =>
+    private RenderFragment ItemContent(IKlySelectItem item) =>
         @<text>
             @if (item.Icon is not null)
             {
@@ -273,8 +294,8 @@ else
 
     private RenderFragment Markup(EditBinding binding) =>
         @<kly-input-menu data-kly-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
-                        value="@(Value ?? "")"
-                        data-strict="@(Strict ? "" : null)"
+                        value="@Key"
+                        data-strict="@(IsStrict ? "" : null)"
                         data-remote="@(RemoteActive ? "" : null)"
                         data-inert-list="@(Remote && !RemoteActive ? "" : null)"
                         data-debounce="@(RemoteActive ? Math.Max(0, Debounce).ToString() : null)"
@@ -286,7 +307,7 @@ else
                         @onklychange:stopPropagation="true"
                         @onklysearch="SearchHandler"
                         @onklysearch:stopPropagation="true">
-            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@Key" disabled="@Disabled" />
             <input value="@Text" @attributes="InputAttributes(binding)" />
             <span class="@_slots["trailing"]" aria-hidden="true">@RenderIcon(Options.Icons.ChevronDown, _slots["trailingIcon"])</span>
             <div popover="manual" class="@_slots["content"]" data-slot="content">

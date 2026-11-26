@@ -159,7 +159,7 @@ public class DashboardTemplateTests
         var found = await PeopleDirectory.Search(new KlyOptionsRequest("ahlberg", 0, 50, null), CancellationToken.None);
         Assert.NotEmpty(found.Items);
         Assert.All(found.Items, i => Assert.Contains("ahlberg", i.Label, StringComparison.OrdinalIgnoreCase));
-        Assert.Equal(found.Items[0].Label, (await PeopleDirectory.Resolve([found.Items[0].Value], CancellationToken.None)).Single().Label);
+        Assert.Equal(found.Items[0].Label, (await PeopleDirectory.Resolve([(string)found.Items[0].Value!], CancellationToken.None)).Single().Label);
 
         var countries = await CountryDirectory.Search(new KlyOptionsRequest("land", 0, 20, null), CancellationToken.None);
         Assert.Contains(countries.Items, c => c.Label == "Finland");

@@ -69,7 +69,7 @@
                     <Footer>
                         @if (_modelItems.Count > 0)
                         {
-                            <KlySelect Items="_modelItems" Value="@_model" ValueChanged="OnModel" Size="KlySize.Xs" Variant="FieldVariant.Ghost" aria-label="Model" data-testid="model" />
+                            <KlySelect TValue="string" Items="_modelItems" Value="@_model" ValueChanged="OnModel" Size="KlySize.Xs" Variant="FieldVariant.Ghost" aria-label="Model" data-testid="model" />
                         }
                     </Footer>
                 </KlyChatPrompt>

@@ -1,10 +1,11 @@
 @namespace Klyroo.UI
 @using Klyroo.UI.Internal
-@inherits KlyListFieldBase
+@typeparam TValue
+@inherits KlyListFieldBase<TValue>
 
 @if (UseEditContext)
 {
-    <ValueBridge TValue="IReadOnlyList<string>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+    <ValueBridge TValue="IReadOnlyList<TValue>" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
 }
 else
 {
@@ -16,8 +17,8 @@ else
     private string _id = default!;
     private IReadOnlyList<SelectSection> _sections = [];
 
-    /// <summary>The options of the list, as <see cref="KlySelectItem"/>.</summary>
-    [Parameter, EditorRequired] public IReadOnlyList<KlySelectItem> Items { get; set; } = [];
+    /// <summary>The options of the list, as <see cref="KlySelectItem{TValue}"/> (<see cref="KlySelectItem"/> for strings).</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<IKlySelectItem<TValue>> Items { get; set; } = [];
 
     /// <summary>Several values can be selected, each posting under <c>Name</c>.</summary>
     [Parameter] public bool Multiple { get; set; }
@@ -36,12 +37,39 @@ else
         _slots = ResolveSlots(Options.Listbox, new Dictionary<string, string?> { ["size"] = VariantValue.Of(EffectiveSize) }, Ui, "root");
     }
 
-    private RenderFragment Option(KlySelectItem item) =>
-        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
-              aria-selected="@(IsSelected(item.Value) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+    private protected override bool TryParseKey(string key, out TValue value)
+    {
+        if (Value is not null)
+        {
+            foreach (var current in Value)
+            {
+                if (OptionValue.Key(current) == key)
+                {
+                    value = current;
+                    return true;
+                }
+            }
+        }
+        if (Items.FirstOrDefault(i => OptionValue.Key(i.Value) == key) is { } option)
+        {
+            value = OptionValue.Cast<TValue>(option.Value)!;
+            return true;
+        }
+        if (OptionValue.IsText<TValue>())
+        {
+            value = (TValue)(object)key;
+            return true;
+        }
+        value = default!;
+        return false;
+    }
+
+    private RenderFragment Option(IKlySelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.Value)" data-label="@item.Label"
+              aria-selected="@(IsSelected(item) ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
               data-has-count="@(item.Count is null ? null : "")">@ItemContent(item)</div>;
 
-    private RenderFragment ItemContent(KlySelectItem item) =>
+    private RenderFragment ItemContent(IKlySelectItem item) =>
         @<text>
             @if (item.Icon is not null)
             {

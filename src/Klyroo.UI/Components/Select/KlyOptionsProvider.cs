@@ -12,13 +12,43 @@ namespace Klyroo.UI;
 public sealed record KlyOptionsRequest(string Search, int Skip, int Take, string? Cursor);
 
 /// <summary>One page of options returned by a <see cref="KlyOptionsProvider"/>.</summary>
-/// <param name="Items">The options of this page, in the order to list them. A value that an earlier page of the same search already listed is skipped.</param>
-/// <param name="HasMore">Whether another page exists. A non-null <see cref="NextCursor"/> also means there is one.</param>
-/// <param name="NextCursor">The cursor that asks for the page after this one; null when the provider pages by <c>Skip</c> and <c>Take</c> or this is the last page.</param>
-public sealed record KlyOptionsResult(IReadOnlyList<KlySelectItem> Items, bool HasMore = false, string? NextCursor = null);
+public sealed record KlyOptionsResult
+{
+    /// <summary>Creates a page of options whose values are strings.</summary>
+    /// <param name="Items">The options of this page, in the order to list them. A value that an earlier page of the same search already listed is skipped.</param>
+    /// <param name="HasMore">Whether another page exists. A non-null <c>NextCursor</c> also means there is one.</param>
+    /// <param name="NextCursor">The cursor that asks for the page after this one; null when the provider pages by <c>Skip</c> and <c>Take</c> or this is the last page.</param>
+    public KlyOptionsResult(IReadOnlyList<KlySelectItem> Items, bool HasMore = false, string? NextCursor = null)
+        : this((IReadOnlyList<IKlySelectItem>)Items, HasMore, NextCursor)
+    {
+    }
+
+    /// <summary>
+    /// Creates a page of options of any value type: <see cref="KlySelectItem{TValue}"/> of the type the menu is bound to (an <c>int</c>, an enum, a <see cref="Guid"/>...).
+    /// A menu that is given an option of another type throws when it reads it.
+    /// </summary>
+    /// <param name="Items">The options of this page, in the order to list them. A value that an earlier page of the same search already listed is skipped.</param>
+    /// <param name="HasMore">Whether another page exists. A non-null <c>NextCursor</c> also means there is one.</param>
+    /// <param name="NextCursor">The cursor that asks for the page after this one; null when the provider pages by <c>Skip</c> and <c>Take</c> or this is the last page.</param>
+    public KlyOptionsResult(IReadOnlyList<IKlySelectItem> Items, bool HasMore = false, string? NextCursor = null)
+    {
+        this.Items = Items;
+        this.HasMore = HasMore;
+        this.NextCursor = NextCursor;
+    }
+
+    /// <summary>The options of this page, in the order to list them.</summary>
+    public IReadOnlyList<IKlySelectItem> Items { get; init; }
+
+    /// <summary>Whether another page exists. A non-null <see cref="NextCursor"/> also means there is one.</summary>
+    public bool HasMore { get; init; }
+
+    /// <summary>The cursor that asks for the page after this one; null when the provider pages by <c>Skip</c> and <c>Take</c> or this is the last page.</summary>
+    public string? NextCursor { get; init; }
+}
 
 /// <summary>
-/// Loads the options of a <see cref="KlySelectMenu"/> or <see cref="KlyInputMenu"/> from a remote source, one page at a time.
+/// Loads the options of a <see cref="KlySelectMenu{TValue}"/> or <see cref="KlyInputMenu{TValue}"/> from a remote source, one page at a time.
 /// The token is cancelled when a newer search replaces the request (the component also ignores a late answer that the provider
 /// did not stop). An exception shows the translated error with a retry button; it is not logged by the component.
 /// </summary>
@@ -27,6 +57,7 @@ public delegate ValueTask<KlyOptionsResult> KlyOptionsProvider(KlyOptionsRequest
 /// <summary>
 /// Returns the options of values the component has not listed (the value was restored from the address or a saved
 /// form, and its page was never loaded), so the field can show their labels. Values it cannot find may be left out:
-/// the component then shows their raw value.
+/// the component then shows their raw value. The values come as text, whatever the type the control is bound to: strings as they are,
+/// numbers, dates and <see cref="Guid"/>s in the invariant culture, enums by name. Each item returned is matched by the text of its value.
 /// </summary>
 public delegate ValueTask<IReadOnlyList<KlySelectItem>> KlySelectedOptionsResolver(IReadOnlyList<string> values, CancellationToken cancellationToken);

@@ -38,6 +38,6 @@ internal static class ListValue
 
     public static IReadOnlyList<string> Split(string? text) => string.IsNullOrEmpty(text) ? [] : text.Split(Separator);
 
-    public static bool Same(IReadOnlyList<string>? a, IReadOnlyList<string>? b) =>
+    public static bool Same<T>(IReadOnlyList<T>? a, IReadOnlyList<T>? b) =>
         (a ?? []).SequenceEqual(b ?? []);
 }

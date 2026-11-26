@@ -39,7 +39,7 @@
                                 <p class="truncate text-xs text-(--klyroo-text-muted)">@member.Email</p>
                             </div>
                             <div class="flex items-center gap-2">
-                                <KlySelect Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="KlySize.Sm" />
+                                <KlySelect TValue="string" Items="_roles" Value="@member.Role" ValueChanged="@(role => SetRole(member, role))" Disabled="@(member.Role == "Owner")" aria-label="@($"Role of {member.Name}")" Size="KlySize.Sm" />
                                 <KlyButton Square Size="KlySize.Sm" Variant="ButtonVariant.Ghost" Color="KlyColor.Neutral" Disabled="@(member.Role == "Owner")" OnClick="@(() => Remove(member))" aria-label="@($"Remove {member.Name}")">
                                     <LeadingIcon>@KlyIcons.Named("trash")</LeadingIcon>
                                 </KlyButton>
@@ -61,7 +61,7 @@
     <Body>
         <div class="flex flex-col gap-4">
             <KlyFormField Label="People">
-                <KlySelectMenu OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
+                <KlySelectMenu TValue="string" OptionsProvider="PeopleDirectory.Search" ResolveSelected="PeopleDirectory.Resolve" PageSize="8" Multiple Placeholder="Search the directory"
                               Value="_invited" ValueChanged="@(v => _invited = v ?? [])" data-testid="invite-people" />
             </KlyFormField>
             <KlyFormField Label="Role">

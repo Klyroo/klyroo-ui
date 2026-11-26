@@ -23,17 +23,17 @@ public class RemoteInputMenuTests : KlyrooTestContext
         }
     }
 
-    private IRenderedComponent<KlyInputMenu> Open(Fake fake, Action<ComponentParameterCollectionBuilder<KlyInputMenu>>? more = null) =>
-        Render<KlyInputMenu>(p =>
+    private IRenderedComponent<KlyInputMenu<string>> Open(Fake fake, Action<ComponentParameterCollectionBuilder<KlyInputMenu<string>>>? more = null) =>
+        Render<KlyInputMenu<string>>(p =>
         {
             p.Add(s => s.OptionsProvider, fake.Load);
             more?.Invoke(p);
         });
 
-    private static Task Search(IRenderedComponent<KlyInputMenu> cut, string text) =>
+    private static Task Search(IRenderedComponent<KlyInputMenu<string>> cut, string text) =>
         cut.Find("kly-input-menu").TriggerEventAsync("onklysearch", new KlySearchEventArgs { Value = text, Sequence = 1 });
 
-    private static string[] Labels(IRenderedComponent<KlyInputMenu> cut) => [.. cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")!)];
+    private static string[] Labels(IRenderedComponent<KlyInputMenu<string>> cut) => [.. cut.FindAll("[role=option]").Select(o => o.GetAttribute("data-label")!)];
 
     [Fact]
     public void Nothing_is_requested_before_the_browser_reports_and_the_browser_is_told_it_is_remote()
@@ -131,7 +131,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     public void ResolveSelected_names_a_strict_value_that_was_never_listed()
     {
         var asked = new List<string[]>();
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Strict, true).Add(s => s.Value, "c7")
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Strict, true).Add(s => s.Value, "c7")
             .Add(s => s.ResolveSelected, (values, _) =>
             {
                 asked.Add([.. values]);
@@ -148,7 +148,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     public void A_free_text_value_is_not_resolved_and_shows_as_typed()
     {
         var called = false;
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Value, "typed text")
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Value, "typed text")
             .Add(s => s.ResolveSelected, (_, _) =>
             {
                 called = true;
@@ -163,7 +163,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     [Fact]
     public void Without_a_provider_nothing_changes_the_browser_filters_and_the_list_scrolls_by_itself()
     {
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.Items, [new KlySelectItem("a", "Alpha")]));
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.Items, [new KlySelectItem("a", "Alpha")]));
 
         var host = cut.Find("kly-input-menu");
         Assert.False(host.HasAttribute("data-remote"));
@@ -180,7 +180,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     {
         SetRendererInfo(new RendererInfo("Static", false));
         var fake = new Fake();
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Name, "city").Add(s => s.Value, "Par"));
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.OptionsProvider, fake.Load).Add(s => s.Name, "city").Add(s => s.Value, "Par"));
 
         Assert.Empty(fake.Requests);
         var host = cut.Find("kly-input-menu");
@@ -198,7 +198,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     public void Statically_rendered_a_strict_field_shows_its_value_read_only_and_still_posts_it()
     {
         SetRendererInfo(new RendererInfo("Static", false));
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Strict, true).Add(s => s.Name, "city").Add(s => s.Value, "c3"));
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Strict, true).Add(s => s.Name, "city").Add(s => s.Value, "c3"));
 
         var input = cut.Find("[data-slot=input]");
         Assert.Equal("c3", input.GetAttribute("value"));
@@ -224,7 +224,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     [Fact]
     public void Without_Items_or_OptionsProvider_the_first_render_throws_and_names_both_parameters()
     {
-        var error = Assert.ThrowsAny<Exception>(() => Render<KlyInputMenu>());
+        var error = Assert.ThrowsAny<Exception>(() => Render<KlyInputMenu<string>>());
 
         var message = (error.InnerException ?? error).Message;
         Assert.Contains("KlyInputMenu", message);
@@ -236,7 +236,7 @@ public class RemoteInputMenuTests : KlyrooTestContext
     public void Statically_rendered_a_strict_value_named_by_Items_travels_to_the_browser_with_its_label()
     {
         SetRendererInfo(new RendererInfo("Static", false));
-        var cut = Render<KlyInputMenu>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new KlySelectItem("fr", "France")]).Add(s => s.Strict, true).Add(s => s.Value, "fr"));
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(s => s.OptionsProvider, new Fake().Load).Add(s => s.Items, [new KlySelectItem("fr", "France")]).Add(s => s.Strict, true).Add(s => s.Value, "fr"));
 
         Assert.Equal("France", cut.Find("[data-slot=input]").GetAttribute("value"));
         Assert.Equal("fr" + Sep + "France", cut.Find("kly-input-menu").GetAttribute("data-known"));

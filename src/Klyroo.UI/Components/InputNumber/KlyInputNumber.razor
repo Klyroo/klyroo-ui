@@ -1,11 +1,12 @@
 @namespace Klyroo.UI
 @using System.Globalization
 @using Klyroo.UI.Internal
-@inherits KlyFieldBase<decimal?>
+@typeparam TNumber
+@inherits KlyFieldBase<TNumber>
 
 @if (UseEditContext)
 {
-    <ValueBridge TValue="decimal?" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+    <ValueBridge TValue="TNumber" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
 }
 else
 {
@@ -16,7 +17,9 @@ else
     private SlotSet _slots = default!;
     private int _sequence;
 
-    /// <summary>Smallest value accepted. There is no lower limit when it is null.</summary>
+    private static NumberCodec<TNumber> Codec => NumberCodec<TNumber>.Instance;
+
+    /// <summary>Smallest value accepted. There is no lower limit when it is null. A <c>decimal</c> whatever the bound type, so <c>Min="0"</c> works for an <c>int</c>, a <c>float</c> or a <c>decimal?</c>.</summary>
     [Parameter] public decimal? Min { get; set; }
     /// <summary>Largest value accepted. There is no upper limit when it is null.</summary>
     [Parameter] public decimal? Max { get; set; }
@@ -40,6 +43,8 @@ else
 
     private static string? Invariant(decimal? value) => value?.ToString(CultureInfo.InvariantCulture);
 
+    private string? ValueText => Codec.Format(Value);
+
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
@@ -58,8 +63,8 @@ else
     private async Task OnChange(KlyChangeEventArgs e)
     {
         _sequence = e.Sequence;
-        decimal? value = decimal.TryParse(e.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
-        if (value == Value)
+        var value = Codec.Parse(e.Value);
+        if (EqualityComparer<TNumber?>.Default.Equals(value, Value))
         {
             return;
         }
@@ -78,7 +83,7 @@ else
         attributes["data-slot"] = "input";
         attributes["type"] = "text";
         attributes["role"] = "spinbutton";
-        attributes["inputmode"] = "decimal";
+        attributes["inputmode"] = Codec.IsInteger ? "numeric" : "decimal";
         attributes["autocomplete"] = "off";
         if (Placeholder is not null) attributes["placeholder"] = Placeholder;
         return attributes;
@@ -86,7 +91,7 @@ else
 
     private RenderFragment Markup(EditBinding binding) =>
         @<kly-input-number data-kly-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
-                          value="@Invariant(Value)"
+                          value="@ValueText"
                           min="@Invariant(Min)"
                           max="@Invariant(Max)"
                           step="@Invariant(Step)"
@@ -96,7 +101,7 @@ else
                           data-color="@Color.Value"
                           @onklychange="ChangeHandler"
                           @onklychange:stopPropagation="true">
-            <input type="hidden" data-slot="value" name="@binding.Name" value="@Invariant(Value)" disabled="@Disabled" />
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@ValueText" disabled="@Disabled" />
             <input @attributes="InputAttributes(binding)" />
             <button type="button" tabindex="-1" class="@_slots["decrement"]" data-slot="decrement" aria-label="@Messages.InputNumberDecrement" disabled="@Disabled">
                 @RenderIcon(Options.Icons.Minus, _slots["icon"])

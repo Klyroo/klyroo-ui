@@ -1,11 +1,12 @@
 @namespace Klyroo.UI
 @using System.Globalization
 @using Klyroo.UI.Internal
-@inherits KlyFieldBase<double>
+@typeparam TNumber
+@inherits KlyFieldBase<TNumber>
 
 @if (UseEditContext)
 {
-    <ValueBridge TValue="double" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
+    <ValueBridge TValue="TNumber" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
 }
 else
 {
@@ -37,6 +38,9 @@ else
 
     private static string Invariant(double value) => value.ToString(CultureInfo.InvariantCulture);
 
+    // A slider with no value (a nullable type that is null) rests on its minimum.
+    private string ValueText => NumberCodec<TNumber>.Instance.Format(Value) ?? Invariant(Min);
+
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
@@ -55,7 +59,12 @@ else
     private async Task OnChange(KlyChangeEventArgs e)
     {
         _sequence = e.Sequence;
-        if (!double.TryParse(e.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) || value == Value)
+        if (!double.TryParse(e.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+        {
+            return;
+        }
+        var value = NumberCodec<TNumber>.Instance.Parse(e.Value);
+        if (EqualityComparer<TNumber?>.Default.Equals(value, Value))
         {
             return;
         }
@@ -73,7 +82,7 @@ else
             ["min"] = Invariant(Min),
             ["max"] = Invariant(Max),
             ["step"] = Invariant(Step),
-            ["value"] = Invariant(Value),
+            ["value"] = ValueText,
             ["id"] = ControlId,
             ["class"] = _slots["thumb"],
             ["data-slot"] = "thumb",
@@ -94,7 +103,7 @@ else
 
     private RenderFragment Markup(EditBinding binding) =>
         @<kly-slider data-kly-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
-                    data-values="@Invariant(Value)"
+                    data-values="@ValueText"
                     data-immediate="@(Immediate ? "" : null)"
                     class="@_slots["root"]"
                     data-color="@Color.Value"

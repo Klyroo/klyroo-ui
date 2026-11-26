@@ -6,7 +6,7 @@ public sealed partial record KlyMessages
     public string PreviousMonth { get; init; } = "Previous month";
     /// <summary>Accessible name of the next month button of <see cref="KlyCalendar"/>.</summary>
     public string NextMonth { get; init; } = "Next month";
-    /// <summary>Accessible name of the button of <see cref="KlyInputDate"/> that opens its calendar.</summary>
+    /// <summary>Accessible name of the button of <see cref="KlyInputDate{TValue}"/> that opens its calendar.</summary>
     public string ChooseDate { get; init; } = "Choose date";
     /// <summary>Accessible name of the hours segment of <see cref="KlyInputTime"/>.</summary>
     public string Hours { get; init; } = "Hours";

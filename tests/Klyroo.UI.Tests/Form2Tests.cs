@@ -14,7 +14,7 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void SelectMenu_renders_trigger_search_listbox_and_values()
     {
-        var cut = Render<KlySelectMenu>(p => p.Add(s => s.Items, Items).Add(s => s.Multiple, true).Add(s => s.Name, "tags")
+        var cut = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, Items).Add(s => s.Multiple, true).Add(s => s.Name, "tags")
             .Add(s => s.Value, ["a", "b"]));
 
         var host = cut.Find("kly-select-menu");
@@ -32,11 +32,11 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void SelectMenu_unbound_has_no_sequence_and_bound_one_hears_the_browser()
     {
-        var unbound = Render<KlySelectMenu>(p => p.Add(s => s.Items, Items));
+        var unbound = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, Items));
         Assert.False(unbound.Find("kly-select-menu").HasAttribute("data-kly-seq"));
 
         IReadOnlyList<string>? value = null;
-        var cut = Render<KlySelectMenu>(p => p.Add(s => s.Items, Items).Add(s => s.Multiple, true)
+        var cut = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, Items).Add(s => s.Multiple, true)
             .Add(s => s.Value, []).Add(s => s.ValueChanged, (IReadOnlyList<string>? v) => value = v));
 
         cut.Find("kly-select-menu").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "a" + Sep + "b", Sequence = 3 });
@@ -49,7 +49,7 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void SelectMenu_create_renders_the_hidden_create_option_and_single_posts_empty_value()
     {
-        var cut = Render<KlySelectMenu>(p => p.Add(s => s.Items, Items).Add(s => s.Create, true).Add(s => s.Name, "pick"));
+        var cut = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, Items).Add(s => s.Create, true).Add(s => s.Name, "pick"));
 
         Assert.NotNull(cut.Find("[data-slot=create]").GetAttribute("hidden"));
         Assert.True(cut.Find("kly-select-menu").HasAttribute("data-post-empty"));
@@ -62,7 +62,7 @@ public class Form2Tests : KlyrooTestContext
         var model = new Picks();
         var cut = RenderForm(model, b =>
         {
-            b.OpenComponent<KlySelectMenu>(1);
+            b.OpenComponent<KlySelectMenu<string>>(1);
             b.AddAttribute(2, "Items", Items);
             b.AddAttribute(3, "Multiple", true);
             b.AddAttribute(4, "Value", model.Values);
@@ -85,7 +85,7 @@ public class Form2Tests : KlyrooTestContext
         var cut = Render<KlyFormField>(p => p.Add(f => f.Label, "Stack").Add(f => f.Error, "Required")
             .Add(f => f.ChildContent, (RenderFragment)(b =>
             {
-                b.OpenComponent<KlySelectMenu>(0);
+                b.OpenComponent<KlySelectMenu<string>>(0);
                 b.AddAttribute(1, "Items", Items);
                 b.CloseComponent();
             })));
@@ -99,13 +99,13 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void InputMenu_free_text_shows_value_and_strict_shows_the_label()
     {
-        var free = Render<KlyInputMenu>(p => p.Add(m => m.Items, Items).Add(m => m.Value, "typed").Add(m => m.Name, "city"));
+        var free = Render<KlyInputMenu<string>>(p => p.Add(m => m.Items, Items).Add(m => m.Value, "typed").Add(m => m.Name, "city"));
         Assert.Equal("typed", free.Find("[data-slot=input]").GetAttribute("value"));
         Assert.Equal("combobox", free.Find("[data-slot=input]").GetAttribute("role"));
         Assert.Equal("list", free.Find("[data-slot=input]").GetAttribute("aria-autocomplete"));
         Assert.Equal("city", free.Find("input[type=hidden]").GetAttribute("name"));
 
-        var strict = Render<KlyInputMenu>(p => p.Add(m => m.Items, Items).Add(m => m.Strict, true).Add(m => m.Value, "b"));
+        var strict = Render<KlyInputMenu<string>>(p => p.Add(m => m.Items, Items).Add(m => m.Strict, true).Add(m => m.Value, "b"));
         Assert.Equal("Beta", strict.Find("[data-slot=input]").GetAttribute("value"));
         Assert.Equal("b", strict.Find("input[type=hidden]").GetAttribute("value"));
         Assert.NotNull(strict.Find("kly-input-menu").GetAttribute("data-strict"));
@@ -115,7 +115,7 @@ public class Form2Tests : KlyrooTestContext
     public void InputMenu_updates_the_bound_value_from_the_browser()
     {
         string? value = null;
-        var cut = Render<KlyInputMenu>(p => p.Add(m => m.Items, Items).Add(m => m.Value, value).Add(m => m.ValueChanged, (string? v) => value = v));
+        var cut = Render<KlyInputMenu<string>>(p => p.Add(m => m.Items, Items).Add(m => m.Value, value).Add(m => m.ValueChanged, (string? v) => value = v));
 
         cut.Find("kly-input-menu").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "b", Sequence = 2 });
 
@@ -125,7 +125,7 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void InputNumber_renders_spinbutton_buttons_and_invariant_value()
     {
-        var cut = Render<KlyInputNumber>(p => p.Add(n => n.Value, 1234.5m).Add(n => n.Min, 0m).Add(n => n.Max, 2000m)
+        var cut = Render<KlyInputNumber<decimal?>>(p => p.Add(n => n.Value, 1234.5m).Add(n => n.Min, 0m).Add(n => n.Max, 2000m)
             .Add(n => n.Step, 0.5m).Add(n => n.Culture, new CultureInfo("fr-FR")).Add(n => n.Name, "price"));
 
         var host = cut.Find("kly-input-number");
@@ -143,7 +143,7 @@ public class Form2Tests : KlyrooTestContext
     public void InputNumber_parses_the_invariant_value_reported_by_the_browser()
     {
         decimal? value = null;
-        var cut = Render<KlyInputNumber>(p => p.Add(n => n.Value, value).Add(n => n.ValueChanged, (decimal? v) => value = v));
+        var cut = Render<KlyInputNumber<decimal?>>(p => p.Add(n => n.Value, value).Add(n => n.ValueChanged, (decimal? v) => value = v));
 
         cut.Find("kly-input-number").TriggerEvent("onklychange", new KlyChangeEventArgs { Value = "12.5", Sequence = 1 });
         Assert.Equal(12.5m, value);
@@ -206,7 +206,7 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void Slider_renders_a_native_range_input()
     {
-        var cut = Render<KlySlider>(p => p.Add(s => s.Min, 10).Add(s => s.Max, 50).Add(s => s.Step, 5).Add(s => s.Value, 25).Add(s => s.Name, "volume"));
+        var cut = Render<KlySlider<double>>(p => p.Add(s => s.Min, 10).Add(s => s.Max, 50).Add(s => s.Step, 5).Add(s => s.Value, 25).Add(s => s.Name, "volume"));
 
         var input = cut.Find("input[type=range]");
         Assert.Equal("10", input.GetAttribute("min"));
@@ -320,7 +320,7 @@ public class Form2Tests : KlyrooTestContext
     [Fact]
     public void Listbox_renders_options_and_a_focusable_listbox()
     {
-        var cut = Render<KlyListbox>(p => p.Add(l => l.Items, Items).Add(l => l.Multiple, true).Add(l => l.AriaLabel, "Letters")
+        var cut = Render<KlyListbox<string>>(p => p.Add(l => l.Items, Items).Add(l => l.Multiple, true).Add(l => l.AriaLabel, "Letters")
             .Add(l => l.Value, ["b"]).Add(l => l.Name, "letters"));
 
         var listbox = cut.Find("[role=listbox]");

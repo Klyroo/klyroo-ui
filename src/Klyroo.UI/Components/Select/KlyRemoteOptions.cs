@@ -1,3 +1,5 @@
+using Klyroo.UI.Internal;
+
 namespace Klyroo.UI;
 
 /// <summary>Where a <see cref="KlyRemoteOptions"/> stands: nothing asked yet, a request on its way, a page listed, or a failure.</summary>
@@ -24,7 +26,7 @@ public enum KlyRemoteStatus
 
 /// <summary>
 /// Loads options from a <see cref="KlyOptionsProvider"/> one page at a time: the pages listed so far, the search term, the cancellation of stale requests and the error state.
-/// It is the engine behind <see cref="KlySelectMenu"/> and <see cref="KlyInputMenu"/> when they have an <c>OptionsProvider</c>, public so that components of other Klyroo libraries
+/// It is the engine behind <see cref="KlySelectMenu{TValue}"/> and <see cref="KlyInputMenu{TValue}"/> when they have an <c>OptionsProvider</c>, public so that components of other Klyroo libraries
 /// (such as filter editors) list remote options the same way. A plain class with no rendering: <c>changed</c> is called after every transition, possibly on another thread, so a component calls
 /// <c>InvokeAsync(StateHasChanged)</c>. Dispose it with the component: it cancels the request in flight.
 /// </summary>
@@ -34,9 +36,10 @@ public sealed class KlyRemoteOptions : IDisposable
     public const int DefaultPageSize = 25;
 
     private readonly Action _changed;
-    private readonly List<KlySelectItem> _items = [];
+    private readonly List<IKlySelectItem> _items = [];
+    private readonly List<KlySelectItem> _texts = [];
     private readonly HashSet<string> _listed = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, KlySelectItem> _known = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IKlySelectItem> _known = new(StringComparer.Ordinal);
     private readonly HashSet<string> _attempted = new(StringComparer.Ordinal);
     private readonly HashSet<string> _failedResolve = new(StringComparer.Ordinal);
     private readonly CancellationTokenSource _lifetime = new();
@@ -74,10 +77,13 @@ public sealed class KlyRemoteOptions : IDisposable
     public int MinLength { get; set; }
 
     /// <summary>Options given to the component as <c>Items</c>: not listed, but their labels are known.</summary>
-    internal IReadOnlyList<KlySelectItem> StaticItems { get; set; } = [];
+    internal IReadOnlyList<IKlySelectItem> StaticItems { get; set; } = [];
 
-    /// <summary>The options of the pages loaded so far, in the order of the source. The list is live: read it on the thread that renders, and copy it to keep it.</summary>
-    public IReadOnlyList<KlySelectItem> Items => _items;
+    /// <summary>The options of the pages loaded so far, in the order of the source. The value of each is the text of the value the provider gave (a string as it is, a number or a date in the invariant culture, an enum by name), which is how the engine tells options apart. The list is live: read it on the thread that renders, and copy it to keep it.</summary>
+    public IReadOnlyList<KlySelectItem> Items => _texts;
+
+    /// <summary>The options as the provider returned them, with their typed values: what a menu bound to an int, an enum or a Guid lists and reads its choice from.</summary>
+    internal IReadOnlyList<IKlySelectItem> Options => _items;
 
     /// <summary>Where the engine stands.</summary>
     public KlyRemoteStatus Status { get; private set; }
@@ -157,6 +163,7 @@ public sealed class KlyRemoteOptions : IDisposable
     private void Replace()
     {
         _items.Clear();
+        _texts.Clear();
         _listed.Clear();
         _received = 0;
         _cursor = null;
@@ -200,7 +207,10 @@ public sealed class KlyRemoteOptions : IDisposable
         foreach (var item in result?.Items ?? [])
         {
             _received++;
-            if (_listed.Add(item.Value)) _items.Add(item);
+            var key = OptionValue.Key(item.Value);
+            if (!_listed.Add(key)) continue;
+            _items.Add(item);
+            _texts.Add(new KlySelectItem(key, item.Label) { Disabled = item.Disabled, Count = item.Count, Icon = item.Icon, Group = item.Group });
         }
         _cursor = result?.NextCursor;
         HasMore = result is not null && (result.HasMore || result.NextCursor is not null);
@@ -211,13 +221,19 @@ public sealed class KlyRemoteOptions : IDisposable
 
     /// <summary>Whether the label of a value is known: listed now, remembered, given as an item, or resolved.</summary>
     internal bool Knows(string value) =>
-        _known.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => i.Value == value);
+        _known.ContainsKey(value) || _listed.Contains(value) || StaticItems.Any(i => OptionValue.Key(i.Value) == value);
+
+    /// <summary>The option, listed now, remembered or given as an item, whose value has that text.</summary>
+    internal IKlySelectItem? Find(string key) =>
+        _items.FirstOrDefault(i => OptionValue.Key(i.Value) == key)
+        ?? (_known.TryGetValue(key, out var known) ? known : null)
+        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == key);
 
     /// <summary>The label of a value, or the value itself when nothing knows it (the raw value is what an unresolved value shows).</summary>
     internal string LabelOf(string value) =>
         _known.TryGetValue(value, out var known) ? known.Label
-        : _items.FirstOrDefault(i => i.Value == value)?.Label
-        ?? StaticItems.FirstOrDefault(i => i.Value == value)?.Label
+        : _items.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
+        ?? StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value)?.Label
         ?? value;
 
     /// <summary>Keeps the options of the selected values that are listed now, so their labels survive the next search replacing the list.</summary>
@@ -227,7 +243,7 @@ public sealed class KlyRemoteOptions : IDisposable
         foreach (var value in values)
         {
             if (_known.ContainsKey(value)) continue;
-            var item = _items.FirstOrDefault(i => i.Value == value);
+            var item = _items.FirstOrDefault(i => OptionValue.Key(i.Value) == value);
             if (item is not null) _known[value] = item;
         }
     }
@@ -242,7 +258,7 @@ public sealed class KlyRemoteOptions : IDisposable
                 yield return value;
                 yield return item.Label;
             }
-            else if (StaticItems.FirstOrDefault(i => i.Value == value) is { } given)
+            else if (StaticItems.FirstOrDefault(i => OptionValue.Key(i.Value) == value) is { } given)
             {
                 yield return value;
                 yield return given.Label;
@@ -264,7 +280,7 @@ public sealed class KlyRemoteOptions : IDisposable
         if (missing.Count == 0) return;
         // What the answer is for: a Reset while it is on its way means another source, whose labels this one must not enter.
         var epoch = Epoch;
-        IReadOnlyList<KlySelectItem>? found;
+        IReadOnlyList<IKlySelectItem>? found;
         try
         {
             found = await resolver(missing, _resolving.Token).ConfigureAwait(true);
@@ -279,7 +295,9 @@ public sealed class KlyRemoteOptions : IDisposable
         if (_disposed || epoch != Epoch || found is null) return;
         foreach (var item in found)
         {
-            if (missing.Contains(item.Value)) _known[item.Value] = item;
+            // Matched by the text of the value, so a resolver of numbers or dates can return the items it has.
+            var key = OptionValue.Key(item.Value);
+            if (missing.Contains(key)) _known[key] = item;
         }
         _changed();
     }

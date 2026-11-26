@@ -1,22 +1,22 @@
 namespace Klyroo.UI.Internal;
 
 /// <summary>The items of one heading, or items with none (<see cref="Label"/> is null) that are listed as they are.</summary>
-internal sealed record SelectSection(string? Label, IReadOnlyList<KlySelectItem> Items);
+internal sealed record SelectSection(string? Label, IReadOnlyList<IKlySelectItem> Items);
 
 internal static class SelectSections
 {
     /// <summary>
-    /// Splits items by <see cref="KlySelectItem.Group"/>: the items without a group first, in their order and with no heading,
+    /// Splits items by <see cref="KlySelectItem{TValue}.Group"/>: the items without a group first, in their order and with no heading,
     /// then each group in the order of its first item, with all its items. Items with no group at all are one section with no
     /// heading, so a list that does not use groups renders exactly as it always did.
     /// </summary>
-    public static IReadOnlyList<SelectSection> Of(IReadOnlyList<KlySelectItem> items)
+    public static IReadOnlyList<SelectSection> Of(IReadOnlyList<IKlySelectItem> items)
     {
         if (!items.Any(i => !string.IsNullOrEmpty(i.Group))) return [new SelectSection(null, items)];
 
-        var loose = new List<KlySelectItem>();
+        var loose = new List<IKlySelectItem>();
         var groups = new List<SelectSection>();
-        var lists = new Dictionary<string, List<KlySelectItem>>(StringComparer.Ordinal);
+        var lists = new Dictionary<string, List<IKlySelectItem>>(StringComparer.Ordinal);
         foreach (var item in items)
         {
             if (string.IsNullOrEmpty(item.Group)) loose.Add(item);

@@ -2,16 +2,16 @@ namespace Klyroo.UI;
 
 public sealed partial record KlyMessages
 {
-    /// <summary>Accessible name of the filter field of the popup of <see cref="KlySelectMenu"/>.</summary>
+    /// <summary>Accessible name of the filter field of the popup of <see cref="KlySelectMenu{TValue}"/>.</summary>
     public string SelectMenuSearch { get; init; } = "Search";
-    /// <summary>Text shown by <see cref="KlySelectMenu"/> when no option matches the filter.</summary>
+    /// <summary>Text shown by <see cref="KlySelectMenu{TValue}"/> when no option matches the filter.</summary>
     public string SelectMenuNoResults { get; init; } = "No results";
 
     /// <summary>Label of the option that adds the typed text as a new value; <c>{0}</c> is the text.</summary>
     public string SelectMenuCreate { get; init; } = "Create \"{0}\"";
-    /// <summary>Text shown by <see cref="KlyInputMenu"/> when no suggestion matches what was typed.</summary>
+    /// <summary>Text shown by <see cref="KlyInputMenu{TValue}"/> when no suggestion matches what was typed.</summary>
     public string InputMenuNoResults { get; init; } = "No results";
-    /// <summary>Accessible name of the list of suggestions of <see cref="KlyInputMenu"/>.</summary>
+    /// <summary>Accessible name of the list of suggestions of <see cref="KlyInputMenu{TValue}"/>.</summary>
     public string InputMenuSuggestions { get; init; } = "Suggestions";
 
     /// <summary>Announced politely while a <c>SelectMenu</c> or <c>InputMenu</c> with an <c>OptionsProvider</c> loads its options.</summary>
@@ -25,9 +25,9 @@ public sealed partial record KlyMessages
 
     /// <summary>Shown when the typed text is shorter than <c>MinLength</c>; <c>{0}</c> is that length.</summary>
     public string RemoteOptionsMinLength { get; init; } = "Type at least {0} characters to search.";
-    /// <summary>Accessible name of the increase button of <see cref="KlyInputNumber"/>.</summary>
+    /// <summary>Accessible name of the increase button of <see cref="KlyInputNumber{TNumber}"/>.</summary>
     public string InputNumberIncrement { get; init; } = "Increase";
-    /// <summary>Accessible name of the decrease button of <see cref="KlyInputNumber"/>.</summary>
+    /// <summary>Accessible name of the decrease button of <see cref="KlyInputNumber{TNumber}"/>.</summary>
     public string InputNumberDecrement { get; init; } = "Decrease";
 
     /// <summary>Label of the button that removes a tag; <c>{0}</c> is the tag.</summary>

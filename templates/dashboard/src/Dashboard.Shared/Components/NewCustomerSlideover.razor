@@ -17,7 +17,7 @@
                 <KlyInput @bind-Value="Model!.Company" autocomplete="off" />
             </KlyFormField>
             <KlyFormField Label="Country" Required Error="@_countryError">
-                <KlySelectMenu OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
+                <KlySelectMenu TValue="string" OptionsProvider="CountryDirectory.Search" ResolveSelected="CountryDirectory.Resolve" PageSize="12" Placeholder="Search a country"
                               Value="_country" ValueChanged="OnCountry" data-testid="new-country" />
             </KlyFormField>
             <KlyFormField Label="Plan">

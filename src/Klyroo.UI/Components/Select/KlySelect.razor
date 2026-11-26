@@ -1,10 +1,11 @@
 @namespace Klyroo.UI
 @using Klyroo.UI.Internal
-@inherits KlyFieldBase<string>
+@typeparam TValue
+@inherits KlyFieldBase<TValue>
 
 @if (UseEditContext)
 {
-    <EditBridge Value="@Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</EditBridge>
+    <ValueBridge TValue="TValue" Value="Value" ValueChanged="ValueChanged" ValueExpression="ValueExpression" Context="binding">@Markup(binding)</ValueBridge>
 }
 else
 {
@@ -18,8 +19,8 @@ else
     private IReadOnlyList<SelectSection> _sections = [];
     private bool _hasIcons;
 
-    /// <summary>The options, as <see cref="KlySelectItem"/>. Items with a group are shown in sections.</summary>
-    [Parameter, EditorRequired] public IReadOnlyList<KlySelectItem> Items { get; set; } = [];
+    /// <summary>The options, as <see cref="KlySelectItem{TValue}"/> (<see cref="KlySelectItem"/> for strings). Items with a group are shown in sections.</summary>
+    [Parameter, EditorRequired] public IReadOnlyList<IKlySelectItem<TValue>> Items { get; set; } = [];
     /// <summary>Hint shown while the field is empty.</summary>
     [Parameter] public string? Placeholder { get; set; }
     /// <summary>Look of the field: <c>Outline</c>, <c>Soft</c>, <c>Subtle</c>, <c>Ghost</c> or <c>None</c>.</summary>
@@ -29,7 +30,9 @@ else
     /// </summary>
     [Parameter] public SelectUi? Ui { get; set; }
 
-    private KlySelectItem? Selected => Items.FirstOrDefault(i => i.Value == Value);
+    private IKlySelectItem<TValue>? Selected => Items.FirstOrDefault(i => EqualityComparer<TValue?>.Default.Equals(i.Value, Value));
+
+    private string Key => OptionValue.Key(Value);
 
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
@@ -53,8 +56,8 @@ else
     private async Task OnChange(KlyChangeEventArgs e)
     {
         _sequence = e.Sequence;
-        var value = string.IsNullOrEmpty(e.Value) ? null : e.Value;
-        if (value == Value)
+        var value = OptionValue.FromKey<TValue>(e.Value, Items);
+        if (EqualityComparer<TValue?>.Default.Equals(value, Value))
         {
             return;
         }
@@ -74,12 +77,12 @@ else
         return attributes;
     }
 
-    private RenderFragment Option(KlySelectItem item) =>
-        @<div role="option" class="@_slots["item"]" data-value="@item.Value" data-label="@item.Label"
-              aria-selected="@(item.Value == Value ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
+    private RenderFragment Option(IKlySelectItem item) =>
+        @<div role="option" class="@_slots["item"]" data-value="@OptionValue.Key(item.Value)" data-label="@item.Label"
+              aria-selected="@(OptionValue.Key(item.Value) == Key ? "true" : "false")" aria-disabled="@(item.Disabled ? "true" : null)"
               data-has-count="@(item.Count is null ? null : "")" data-has-icon="@(item.Icon is null ? null : "")">@ItemContent(item)</div>;
 
-    private RenderFragment ItemContent(KlySelectItem item) =>
+    private RenderFragment ItemContent(IKlySelectItem item) =>
         @<text>
             @if (item.Icon is not null)
             {
@@ -96,12 +99,12 @@ else
 
     private RenderFragment Markup(EditBinding binding) =>
         @<kly-select data-kly-seq="@(ValueChanged.HasDelegate ? _sequence : null)"
-                    value="@(Value ?? "")"
+                    value="@Key"
                     class="@_slots["root"]"
                     data-color="@Color.Value"
                     @onklychange="ChangeHandler"
                     @onklychange:stopPropagation="true">
-            <input type="hidden" data-slot="value" name="@binding.Name" value="@(Value ?? "")" disabled="@Disabled" />
+            <input type="hidden" data-slot="value" name="@binding.Name" value="@Key" disabled="@Disabled" />
             <button type="button" role="combobox" aria-haspopup="listbox" aria-expanded="false" @attributes="TriggerAttributes(binding)">
                 @if (_hasIcons)
                 {

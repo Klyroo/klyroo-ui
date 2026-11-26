@@ -11,10 +11,10 @@ public class SelectItemTests : KlyrooTestContext
 
     private IRenderedComponent<IComponent> RenderList(string kind, IReadOnlyList<KlySelectItem> items) => kind switch
     {
-        "select" => Render<KlySelect>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "selectmenu" => Render<KlySelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "inputmenu" => Render<KlyInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
-        "listbox" => Render<KlyListbox>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "select" => Render<KlySelect<string>>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "selectmenu" => Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "inputmenu" => Render<KlyInputMenu<string>>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
+        "listbox" => Render<KlyListbox<string>>(p => p.Add(s => s.Items, items).Add(s => s.Name, "n")),
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
@@ -72,8 +72,8 @@ public class SelectItemTests : KlyrooTestContext
     {
         var cut = Render<KlyApp>(p => p.Add(a => a.Locale, KlyLocales.Fr).Add(a => a.ChildContent, (RenderFragment)(b =>
         {
-            b.OpenComponent<KlyListbox>(0);
-            b.AddAttribute(1, nameof(KlyListbox.Items), (IReadOnlyList<KlySelectItem>)[new("a", "Alpha") { Count = 1204 }]);
+            b.OpenComponent<KlyListbox<string>>(0);
+            b.AddAttribute(1, nameof(KlyListbox<string>.Items), (IReadOnlyList<KlySelectItem>)[new("a", "Alpha") { Count = 1204 }]);
             b.CloseComponent();
         })));
 
@@ -153,22 +153,22 @@ public class SelectItemTests : KlyrooTestContext
     {
         KlySelectItem[] items = [new("a", "Alpha") { Group = "One", Count = 1, Icon = "star" }];
 
-        var select = Render<KlySelect>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectUi { Group = "g-1", GroupLabel = "gl-1", ItemCount = "ic-1", ItemLeadingIcon = "il-1" }));
+        var select = Render<KlySelect<string>>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectUi { Group = "g-1", GroupLabel = "gl-1", ItemCount = "ic-1", ItemLeadingIcon = "il-1" }));
         Assert.Contains("g-1", select.Find("[role=group]").ClassName);
         Assert.Contains("gl-1", select.Find("[data-slot=group-label]").ClassName);
         Assert.Contains("ic-1", select.Find("[data-slot=count]").ClassName);
         Assert.Contains("il-1", select.Find("[role=option] svg").GetAttribute("class"));
 
-        var menu = Render<KlySelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectMenuUi { Group = "g-2", GroupLabel = "gl-2", ItemCount = "ic-2", ItemLeadingIcon = "il-2" }));
+        var menu = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new SelectMenuUi { Group = "g-2", GroupLabel = "gl-2", ItemCount = "ic-2", ItemLeadingIcon = "il-2" }));
         Assert.Contains("g-2", menu.Find("[role=group]").ClassName);
         Assert.Contains("gl-2", menu.Find("[data-slot=group-label]").ClassName);
         Assert.Contains("ic-2", menu.Find("[data-slot=count]").ClassName);
 
-        var input = Render<KlyInputMenu>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new InputMenuUi { Group = "g-3", GroupLabel = "gl-3", ItemCount = "ic-3", ItemLeadingIcon = "il-3" }));
+        var input = Render<KlyInputMenu<string>>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new InputMenuUi { Group = "g-3", GroupLabel = "gl-3", ItemCount = "ic-3", ItemLeadingIcon = "il-3" }));
         Assert.Contains("g-3", input.Find("[role=group]").ClassName);
         Assert.Contains("ic-3", input.Find("[data-slot=count]").ClassName);
 
-        var list = Render<KlyListbox>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new ListboxUi { Group = "g-4", GroupLabel = "gl-4", ItemCount = "ic-4", ItemLeadingIcon = "il-4" }));
+        var list = Render<KlyListbox<string>>(p => p.Add(s => s.Items, items).Add(s => s.Ui, new ListboxUi { Group = "g-4", GroupLabel = "gl-4", ItemCount = "ic-4", ItemLeadingIcon = "il-4" }));
         Assert.Contains("g-4", list.Find("[role=group]").ClassName);
         Assert.Contains("gl-4", list.Find("[data-slot=group-label]").ClassName);
     }
@@ -178,11 +178,11 @@ public class SelectItemTests : KlyrooTestContext
     {
         KlySelectItem[] items = [new("a", "Alpha") { Group = "One" }, new("b", "Beta") { Group = "Two" }];
 
-        var select = Render<KlySelect>(p => p.Add(s => s.Items, items).Add(s => s.Value, "b").Add(s => s.Name, "n"));
+        var select = Render<KlySelect<string>>(p => p.Add(s => s.Items, items).Add(s => s.Value, "b").Add(s => s.Name, "n"));
         Assert.Equal(["false", "true"], select.FindAll("[role=option]").Select(o => o.GetAttribute("aria-selected")));
         Assert.Equal("Beta", select.Find("[data-slot=label]").GetAttribute("data-label"));
 
-        var menu = Render<KlySelectMenu>(p => p.Add(s => s.Items, items).Add(s => s.Value, (IReadOnlyList<string>)["a"]).Add(s => s.Multiple, true).Add(s => s.Create, true));
+        var menu = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, items).Add(s => s.Value, (IReadOnlyList<string>)["a"]).Add(s => s.Multiple, true).Add(s => s.Create, true));
         Assert.Equal(["true", "false"], menu.FindAll("[role=option]:not([data-slot=create])").Select(o => o.GetAttribute("aria-selected")));
         // The create option is a child of the listbox, not of a group.
         Assert.Equal("listbox", menu.Find("[data-slot=create]").ParentElement!.GetAttribute("role"));
@@ -217,19 +217,19 @@ public class SelectItemTests : KlyrooTestContext
     {
         KlySelectItem[] withIcon = [new("a", "Alpha") { Icon = "star" }, new("b", "Beta")];
 
-        var select = Render<KlySelect>(p => p.Add(s => s.Items, withIcon).Add(s => s.Value, "a"));
+        var select = Render<KlySelect<string>>(p => p.Add(s => s.Items, withIcon).Add(s => s.Value, "a"));
         var slot = select.Find("[role=combobox] [data-slot=selectedIcon]");
         // The browser fills it (Blazor renders no children there, so there is nothing to diff); the options say which have an icon.
         Assert.Empty(slot.Children);
         Assert.Equal("true", slot.GetAttribute("aria-hidden"));
         Assert.Equal(["", null], select.FindAll("[role=option]").Select(o => o.GetAttribute("data-has-icon")));
 
-        var menu = Render<KlySelectMenu>(p => p.Add(s => s.Items, withIcon));
+        var menu = Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, withIcon));
         Assert.Empty(menu.Find("button [data-slot=selectedIcon]").Children);
 
-        Assert.Empty(Render<KlySelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
-        Assert.Empty(Render<KlySelectMenu>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
-        Assert.Empty(Render<KlySelect>(p => p.Add(s => s.Items, Plain)).FindAll("[data-has-icon]"));
+        Assert.Empty(Render<KlySelect<string>>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<KlySelectMenu<string>>(p => p.Add(s => s.Items, Plain)).FindAll("[data-slot=selectedIcon]"));
+        Assert.Empty(Render<KlySelect<string>>(p => p.Add(s => s.Items, Plain)).FindAll("[data-has-icon]"));
     }
 
     [Fact]
