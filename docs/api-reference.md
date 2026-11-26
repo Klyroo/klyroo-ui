@@ -395,7 +395,7 @@ Line, area, bar or donut chart drawn as SVG on the server, with a generated text
 | `Index` | `Func<TItem, object?>` | The value of a row on the x axis (the label of a slice with a donut). Dates and numbers are formatted with the format culture of the locale in effect (the regional current culture when it has the same language). |
 | `IndexFormat` | `string?` | The format string of an index that is formattable (a date, a number). |
 | `Legend` | `bool?` | Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut. |
-| `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, the series is the first one that has a value in the row. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
+| `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, with several series, no series is named (`SeriesIndex` -1, `SeriesKey` and `Value` null) and the handler chooses from the row item. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
 | `Points` | `bool` | Always shows a marker at each value of a line chart. Without it the marker shows on the value under the pointer or the keyboard. |
 | `Stacked` | `bool` | Stacks the series instead of drawing them side by side or over one another. Only applies to area and bar. |
 | `Table` | `KlyChartTable` | Where the table with the chart's data goes. It is always rendered; by default it is visually hidden. |
@@ -2954,7 +2954,7 @@ Builds the options of `KlySelect`, `KlySelectMenu`, `KlyInputMenu` and `KlyListb
 | :--- | :--- | :--- |
 | `static AsNullable<TValue>(IEnumerable<KlySelectItem<TValue>> items)` | `IReadOnlyList<KlySelectItem<TValue?>>` | The same options for a nullable property: a control bound to an `int?` takes `KlySelectItem<int?>`, and a list of `KlySelectItem<int>` is not one (a generic class is not covariant for value types). Disabled, count, icon and group are kept. |
 | `static From<TSource, TValue>(IEnumerable<TSource> source, Func<TSource, TValue> value, Func<TSource, string> label)` | `IReadOnlyList<KlySelectItem<TValue>>` | One option per row of a list, such as the rows of a lookup table: the key of the row is the value, a column is the label. |
-| `static FromEnum<TEnum>(Func<TEnum, string>? label = null)` | `IReadOnlyList<KlySelectItem<TEnum>>` | One option per member of an enum, in the order of its values, so `@bind-Value` binds to the enum property itself. |
+| `static FromEnum<TEnum>(Func<TEnum, string>? label = null)` | `IReadOnlyList<KlySelectItem<TEnum>>` | One option per distinct value of an enum, in the order of its values, so `@bind-Value` binds to the enum property itself. Members that share a value (aliases) are one option, labeled by the first of their names. |
 
 ### Classes
 
@@ -4878,9 +4878,9 @@ What `KlyChart.OnSelect` reports: the row of the bar, point or slice that was cl
 | `Index` (init) | `object?` | The value of the row on the x axis (`KlyChart.Index`): a date, a number, a label. The label of the slice with a donut. |
 | `Item` (init) | `TItem` | The row of `KlyChart.Data`. |
 | `Row` (init) | `int` | The position of the row in `KlyChart.Data`. |
-| `SeriesIndex` (init) | `int` | The position of that series in `KlyChart.Categories`, or -1 when the chart has none. |
-| `SeriesKey` (init) | `string?` | The `KlyChartCategory.Key` of the series that was picked (the only category of a donut), or null when the chart has none. |
-| `Value` (init) | `double?` | The value of that series in the row, or null for a gap. |
+| `SeriesIndex` (init) | `int` | The position of that series in `KlyChart.Categories`, or -1 when the chart has none or the pick named none. |
+| `SeriesKey` (init) | `string?` | The `KlyChartCategory.Key` of the series that was picked (the only category of a donut or of a chart with one series), or null when the chart has none or the pick named none (the keyboard on a chart with several series: the handler chooses from `Item`). |
+| `Value` (init) | `double?` | The value of that series in the row, or null for a gap or when no series was named. |
 
 #### `KlyCheckboxItem<TValue>`
 
