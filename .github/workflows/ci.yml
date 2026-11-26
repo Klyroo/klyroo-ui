@@ -77,7 +77,9 @@ jobs:
       - name: Build
         run: dotnet build Klyroo.UI.slnx -c Release --no-restore --nologo
       - name: Test
-        run: dotnet test Klyroo.UI.slnx -c Release --no-build --nologo
+        # The browser tests (tests/Klyroo.UI.E2E) are in the solution but have a job of their own: they need a browser and take minutes.
+        # Exit code 8 is "no test ran", which is what that project reports with its tests filtered out.
+        run: dotnet test Klyroo.UI.slnx -c Release --no-build --nologo --ignore-exit-code 8 -- --filter-not-namespace Klyroo.UI.E2E
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -109,3 +111,68 @@ jobs:
         with:
           name: nupkgs-klyroo-ui
           path: klyroo-ui/artifacts/nupkgs/*
+
+  browser-tests:
+    # The templates in a real browser (tests/Klyroo.UI.E2E): slow, so only after a push to main or by hand, never for a pull request.
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: klyroo-ui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: klyroo-ui
+      - name: Check out klyroo-agent (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-agent
+          path: klyroo-agent
+      - name: Check out klyroo-dashboard (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-dashboard
+          path: klyroo-dashboard
+      - name: Check out klyroo-display (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-display
+          path: klyroo-display
+      - name: Check out klyroo-form (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-form
+          path: klyroo-form
+      - name: Check out klyroo-query (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-query
+          path: klyroo-query
+      - name: Check out klyroo-spreadsheet (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-spreadsheet
+          path: klyroo-spreadsheet
+      - name: Check out klyroo-stack (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-stack
+          path: klyroo-stack
+      - name: Check out klyroo-table (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-table
+          path: klyroo-table
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - name: Build the browser tests and the nine templates
+        run: dotnet build tests/Klyroo.UI.E2E -c Release --nologo
+      - name: Install the browser Playwright drives
+        run: pwsh tests/Klyroo.UI.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+      - name: Run the browser tests
+        run: dotnet test --project tests/Klyroo.UI.E2E -c Release --no-build --nologo

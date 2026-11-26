@@ -12,6 +12,7 @@
     <Project Path="tests/Klyroo.UI.Images.Local.Tests/Klyroo.UI.Images.Local.Tests.csproj" />
     <Project Path="tests/Klyroo.UI.Server.Tests/Klyroo.UI.Server.Tests.csproj" />
     <Project Path="tests/Klyroo.Templates.Tests/Klyroo.Templates.Tests.csproj" />
+    <Project Path="tests/Klyroo.UI.E2E/Klyroo.UI.E2E.csproj" />
   </Folder>
   <Folder Name="/templates/">
     <Project Path="templates/starter/src/Starter.Shared/Starter.Shared.csproj" />

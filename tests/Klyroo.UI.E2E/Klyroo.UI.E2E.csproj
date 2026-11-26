@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Browser tests of the project templates (templates/): each template runs as a real app on a free port and Playwright drives it. Not part of the
+    quick test run: they need a browser (see the "Browser tests" part of CONTRIBUTING.md) and take minutes. The classes are filtered by name by
+    build/verify-templates.mjs, which points them at a published copy of a template instead of the build output (KLYROO_TEMPLATE_PUBLISHED).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Playwright" />
+    <PackageReference Include="Deque.AxeCore.Playwright" />
+  </ItemGroup>
+
+  <!--
+    Built first, so that the tests start each app with dotnet run (no build) and never race a build. Never referenced by the tests: a template is
+    a separate program. The configuration the tests run in is the one the apps are built in (TemplateApp reads it from the assembly metadata).
+  -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\templates\starter\src\Starter.Web\Starter.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\dashboard\src\Dashboard.Web\Dashboard.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\landing\src\Landing.Web\Landing.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\docs\src\Docs.Web\Docs.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\saas\src\SaaS.Web\SaaS.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\portfolio\src\Portfolio.Web\Portfolio.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\changelog\src\Changelog.Web\Changelog.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\chat\src\Chat.Web\Chat.Web.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\templates\editor\src\Editor.Web\Editor.Web.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>BuildConfiguration</_Parameter1>
+      <_Parameter2>$(Configuration)</_Parameter2>
+    </AssemblyAttribute>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>RepositoryRoot</_Parameter1>
+      <_Parameter2>$([MSBuild]::NormalizeDirectory($(MSBuildThisFileDirectory), '..', '..'))</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- One browser page per test class at a time: pages that boot WebAssembly together on a loaded machine time out. -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+    <Using Include="Microsoft.Playwright" />
+  </ItemGroup>
+
+</Project>

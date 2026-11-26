@@ -74,6 +74,7 @@ This file is the checklist for adding or changing a component.
 | Docs catalog | in klyroo-stack: `site/Klyroo.Stack.Site.Client/Docs/Catalog.<Family>.cs`: `public static partial class Catalog { private static readonly ComponentDoc[] <Family> = [...]; }`, then add `.. <Family>` to `Components` in `Catalog.cs` |
 | Unit tests | `tests/Klyroo.UI.Tests/<Family>Tests.cs`, deriving from `KlyrooTestContext` |
 | E2E tests | in klyroo-stack: `tests/Klyroo.Stack.E2E/<Family>Tests.cs`: an axe theory over the family's slugs in all four modes, plus behavior tests, **bound and unbound**, and after an enhanced navigation for elements that set attributes |
+| Template browser tests | `tests/Klyroo.UI.E2E/<Name>TemplateTests.cs` (the run of the app) and `Checks/<Name>Checks.cs` (what it does in a browser, shared with the live demo test of klyroo-stack) |
 
 Form controls derive from `KlyFieldBase<T>` (EditForm integration, `FormFieldContext`); custom markup that must post
 uses `EditBridge` and a hidden input, like `KlySelect`. Overlays build on `<kly-popover>` / `<kly-modal>` patterns.
@@ -173,9 +174,35 @@ dotnet test --project tests/Klyroo.UI.Images.Tests         # provider URLs
 dotnet test --project tests/Klyroo.UI.Images.Local.Tests   # optimizer parameters, security, resizing
 dotnet test --project tests/Klyroo.UI.Server.Tests         # Klyroo.UI.Server: request cookies over IHttpContextAccessor
 dotnet test --project tests/Klyroo.Templates.Tests         # shared content code of the templates
+dotnet test --project tests/Klyroo.UI.E2E                  # the templates in a real browser (see below)
 ```
 
-End-to-end tests and the MCP tools are tested in klyroo-stack.
+The component end-to-end tests and the MCP tools are tested in klyroo-stack.
+
+### Browser tests of the templates
+
+`tests/Klyroo.UI.E2E` starts each template of `templates/` as a real app on a free port, waits until it answers, and drives it with Playwright: the same
+scenarios the templates were verified with (the pages, the forms, the data list, the editor, the chat, accessibility with axe, a path base, no horizontal
+scroll, no failed request, no console error). Building the project builds the nine web projects first, and the tests start them with `dotnet run --no-build` in
+Development. Two scenarios are about what a deployed app does (the WebAssembly hand-off of the Starter, the 503 page of a Changelog that has no releases to show):
+they run the output of `dotnet publish` in Production, made once per run in a temporary folder.
+
+Playwright needs a browser. In CI and on a machine with PowerShell:
+
+```bash
+dotnet build tests/Klyroo.UI.E2E -c Release
+pwsh tests/Klyroo.UI.E2E/bin/Release/net10.0/playwright.ps1 install --with-deps chromium
+dotnet test --project tests/Klyroo.UI.E2E -c Release --no-build
+```
+
+Without PowerShell, point the tests at a browser that is already installed: `KLYROO_BROWSER_EXECUTABLE=/usr/bin/google-chrome` (any Chromium-based browser) or
+`KLYROO_BROWSER_CHANNEL=chrome`. `KLYROO_BROWSER` picks `chromium` (default), `firefox` or `webkit`. A class runs on its own with `-- --filter-class Klyroo.UI.E2E.LandingTemplateTests`.
+The whole run takes about ten minutes. `build/verify-templates.mjs` runs the same classes against the published output of an exported template, through
+`KLYROO_TEMPLATE_PUBLISHED` and `KLYROO_TEMPLATE_ASSEMBLY`.
+
+The project is in `Klyroo.UI.slnx`, but a plain `dotnet test Klyroo.UI.slnx` would run it too, so the CI workflow leaves it out of the quick run
+(`--filter-not-namespace Klyroo.UI.E2E`) and runs it in a job of its own, on every push to `main` and by hand (Actions, Run workflow); a pull request does not wait for it.
+The checks of a template are compiled by klyroo-stack too (`tests/Klyroo.Stack.E2E`), which runs them against the live demo of the template behind the docs host.
 
 `GeneratedAssetsTests` fails when a theme class is missing from `klyroo.css` (typo, invalid Tailwind syntax) or
 `npm run build` was not run.
@@ -183,7 +210,7 @@ End-to-end tests and the MCP tools are tested in klyroo-stack.
 ## Done means
 
 - The component renders and behaves in all four modes, with XML documentation on every public member, a docs entry and live examples in klyroo-stack.
-- `dotnet build` has no warnings and all unit tests pass; the family's E2E tests in klyroo-stack pass (Chromium at least).
+- `dotnet build` has no warnings and all unit tests pass; the family's E2E tests in klyroo-stack pass (Chromium at least), and so do the browser tests of a template you changed (`tests/Klyroo.UI.E2E`).
 - Generated assets are rebuilt and committed.
 
 ## Cutting a release
