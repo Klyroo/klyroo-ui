@@ -13,6 +13,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Changed
 
+- The release workflow has a required `verify-package` job that runs `build/verify-package.mjs --packages` on the packed `.nupkg` files before `publish`, and `verify-package.mjs` no longer expects the `Klyroo.UI.Tools` packages that this repository no longer contains. `Directory.Build.props` imports `build/Version.props` once instead of repeating the default version.
 - `Klyroo.UI`, `Klyroo.UI.Images` and `Klyroo.UI.Server` declare `IsAotCompatible` (it implies trimmable and turns on the trimming, AOT and single-file analyzers, which report no warning).
 
 ## [0.1.0-preview.1] - 2026-11-24

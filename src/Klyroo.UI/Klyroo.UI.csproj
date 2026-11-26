@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
 
-  <!-- VersionPrefix and VersionSuffix live in build/Version.props, shared with the dotnet tool. -->
-  <Import Project="..\..\build\Version.props" />
-
+  <!-- VersionPrefix and VersionSuffix live in build/Version.props, imported by Directory.Build.props. -->
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Klyroo.UI</RootNamespace>

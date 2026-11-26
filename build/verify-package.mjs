@@ -1,7 +1,7 @@
-// Packaging check: packs Klyroo.UI (and the sister packages Klyroo.UI.Images, Klyroo.UI.Images.Local, Klyroo.UI.Server, Klyroo.UI.Tools.Query and Klyroo.UI.Tools) in Release, inspects the .nupkg and
-// .snupkg files, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
+// Packaging check: inspects the .nupkg and .snupkg files of Klyroo.UI and of the sister packages Klyroo.UI.Images, Klyroo.UI.Images.Local and Klyroo.UI.Server, then builds a throwaway Blazor Web App (Auto interactivity) that consumes the packages from a local folder feed, in both CSS modes.
+// Without --packages it packs the four projects in Release first; with it, it checks the packages that were already packed (the ones a release publishes).
 //
-//   node build/verify-package.mjs [--online] [--keep]
+//   node build/verify-package.mjs [--online] [--keep] [--packages <folder of .nupkg and .snupkg files>]
 //
 // Offline by default: the consumer restores from the pack output folder plus the local NuGet cache (a global-packages
 // folder is a valid folder feed), with nuget.org removed. If a framework package is missing from the cache, pass
@@ -15,6 +15,9 @@ import { fileURLToPath } from "node:url";
 
 const online = process.argv.includes("--online");
 const keep = process.argv.includes("--keep");
+const packagesIndex = process.argv.indexOf("--packages");
+const packagesDir = packagesIndex > 0 && process.argv[packagesIndex + 1] ? resolve(process.argv[packagesIndex + 1]) : null;
+if (packagesIndex > 0 && !packagesDir) { console.error("--packages needs a folder"); process.exit(2); }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const work = mkdtempSync(join(tmpdir(), "klyroo-pkgcheck-"));
 const feed = join(work, "feed");
@@ -24,6 +27,15 @@ const check = (ok, what) => { console.log(`${ok ? "ok  " : "FAIL"} ${what}`); if
 const run = (cmd, args, cwd, env = {}) => {
   const r = spawnSync(cmd, args, { cwd, encoding: "utf8", env: { ...process.env, DOTNET_NOLOGO: "1", DOTNET_CLI_TELEMETRY_OPTOUT: "1", ...env }, maxBuffer: 1 << 28 });
   return { code: r.status ?? 1, out: `${r.stdout ?? ""}${r.stderr ?? ""}` };
+};
+
+// Packs a project into the feed, or copies its already packed .nupkg and .snupkg there when --packages is given.
+const packProject = (id) => {
+  if (!packagesDir) return run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
+  const own = new RegExp(`^${id.replace(/\./g, "\\.")}\\.\\d.*\\.s?nupkg$`);
+  const files = existsSync(packagesDir) ? readdirSync(packagesDir).filter((f) => own.test(f)) : [];
+  for (const f of files) copyFileSync(join(packagesDir, f), join(feed, f));
+  return files.some((f) => f.endsWith(".nupkg") && !f.endsWith(".snupkg")) ? { code: 0, out: "" } : { code: 1, out: `no ${id} package in ${packagesDir}` };
 };
 
 // Minimal zip reader (central directory + raw deflate): no dependency, works on every OS.
@@ -54,8 +66,8 @@ try {
 
   // 1. Pack, treating warnings as errors: an empty repository URL must not warn.
   mkdirSync(feed);
-  const pack = run("dotnet", ["pack", "src/Klyroo.UI", "-c", "Release", "-o", feed, "-warnaserror"], root);
-  if (!check(pack.code === 0, "dotnet pack -c Release succeeds without warnings")) console.log(pack.out);
+  const pack = packProject("Klyroo.UI");
+  if (!check(pack.code === 0, packagesDir ? "the packed Klyroo.UI package is there" : "dotnet pack -c Release succeeds without warnings")) console.log(pack.out);
   const nupkgName = readdirSync(feed).find((f) => /^Klyroo\.UI\.\d.*\.nupkg$/.test(f));
   const snupkgName = readdirSync(feed).find((f) => /^Klyroo\.UI\.\d.*\.snupkg$/.test(f));
   check(!!nupkgName, ".nupkg produced");
@@ -99,9 +111,9 @@ try {
   check([...snupkg.keys()].every((n) => !n.endsWith(".dll")), "snupkg contains no dll");
 
   // 3b. The sister packages: same version, readme, icon, documentation, and the dependencies they promise.
-  for (const id of ["Klyroo.UI.Images", "Klyroo.UI.Images.Local", "Klyroo.UI.Server", "Klyroo.UI.Tools.Query", "Klyroo.UI.Tools", "Klyroo.UI.Tools.EntityFrameworkCore"]) {
-    const imagePack = run("dotnet", ["pack", `src/${id}`, "-c", "Release", "-o", feed, "-warnaserror"], root);
-    if (!check(imagePack.code === 0, `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
+  for (const id of ["Klyroo.UI.Images", "Klyroo.UI.Images.Local", "Klyroo.UI.Server"]) {
+    const imagePack = packProject(id);
+    if (!check(imagePack.code === 0, packagesDir ? `${id}: the packed package is there` : `${id}: dotnet pack -c Release succeeds without warnings`)) console.log(imagePack.out);
     const file = `${id}.${version}.nupkg`;
     if (!check(existsSync(join(feed, file)), `${id}: .nupkg has the version of Klyroo.UI (${version})`)) continue;
     check(existsSync(join(feed, `${id}.${version}.snupkg`)), `${id}: .snupkg produced`);
@@ -110,40 +122,16 @@ try {
     check([...pkg.keys()].every((n) => !n.endsWith(".pdb")), `${id}: no .pdb in the .nupkg`);
     const spec = pkg.has(`${id}.nuspec`) ? pkg.get(`${id}.nuspec`)() .toString("utf8") : "";
     check(/<license type="expression">MIT<\/license>/.test(spec), `${id}: license expression is MIT`);
-    // The local optimizer reaches Klyroo.UI through Klyroo.UI.Images. The query package depends on no Klyroo package and no ASP.NET Core.
-    const dependency = id.endsWith(".Local") ? "Klyroo\\.UI\\.Images" : id === "Klyroo.UI.Tools.EntityFrameworkCore" ? "Klyroo\\.UI\\.Tools" : "Klyroo\\.UI";
-    if (id === "Klyroo.UI.Tools.Query") {
-      check(!/<dependency id="Klyroo\.UI/.test(spec) && !/Microsoft\.AspNetCore/.test(spec), `${id}: depends on no Klyroo package and no ASP.NET Core`);
-    } else {
-      check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
-    }
-    if (id === "Klyroo.UI.Tools.EntityFrameworkCore") {
-      // Lockstep with Klyroo.UI.Tools, and the one outside dependency: EF Core 10. Klyroo.UI and the query package come through Klyroo.UI.Tools.
-      check(new RegExp(`<dependency id="Klyroo\\.UI\\.Tools" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Klyroo.UI.Tools [${version}]`);
-      check(/<dependency id="Microsoft\.EntityFrameworkCore" version="10\./.test(spec), `${id}: depends on Microsoft.EntityFrameworkCore 10`);
-      check(!/<dependency id="Microsoft\.EntityFrameworkCore\.(Sqlite|SqlServer|Relational)/.test(spec), `${id}: depends on no EF Core provider`);
-    }
-    if (id === "Klyroo.UI.Tools") {
-      // Lockstep: exactly the version of Klyroo.UI and of the query package, and the build assets of Klyroo.UI still flow to an app that only references Tools.
-      for (const dep of ["Klyroo\\.UI", "Klyroo\\.UI\\.Tools\\.Query"]) {
-        check(new RegExp(`<dependency id="${dep}" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly ${dep.replace(/\\/g, "")} [${version}]`);
-      }
-      check(!/<dependency id="Klyroo\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Klyroo.UI flow through this package`);
-      for (const n of ["staticwebassets/klyroo-tools.theme.css", "buildTransitive/Klyroo.UI.Tools.targets", "build/Klyroo.UI.Tools.targets"]) check(pkg.has(n), `${id}: nupkg contains ${n}`);
-      const names = [...pkg.keys()];
-      check(names.some((n) => /^staticwebassets\/Klyroo\.UI\.Tools(\.[a-z0-9]+)?\.lib\.module\.js$/.test(n)), `${id}: nupkg contains the JS initializer (Klyroo.UI.Tools.lib.module.js, fingerprinted)`);
-      check(!names.includes("staticwebassets/klyroo-tools.css"), `${id}: no precompiled stylesheet in the nupkg (it needs Tailwind compiled by the app)`);
-      check(names.some((n) => /^build\/.*StaticWebAssets/i.test(n)), `${id}: nupkg declares its static web assets for consumers`);
-      check(!names.some((n) => /^(js|styles)\//.test(n)), `${id}: sources of generated assets (js/, styles/) are not shipped`);
-      const toolsTheme = readFileSync(join(root, "src", "Klyroo.UI.Tools", "wwwroot", "klyroo-tools.theme.css"), "utf8");
-      check(pkg.has("staticwebassets/klyroo-tools.theme.css") && pkg.get("staticwebassets/klyroo-tools.theme.css")().toString("utf8") === toolsTheme, `${id}: packed klyroo-tools.theme.css equals the committed one`);
-    }
+    // The local optimizer reaches Klyroo.UI through Klyroo.UI.Images.
+    const dependency = id.endsWith(".Local") ? "Klyroo\\.UI\\.Images" : "Klyroo\\.UI";
+    check(new RegExp(`<dependency id="${dependency}"[^>]*version="\\[?${version.replace(/\./g, "\\.")}`).test(spec), `${id}: depends on ${dependency.replace(/\\/g, "")} ${version}`);
+    
     if (id === "Klyroo.UI.Server") {
       // Lockstep with Klyroo.UI, and the ASP.NET Core shared framework: a WebAssembly client must not reference it.
       check(new RegExp(`<dependency id="Klyroo\\.UI" version="\\[${version.replace(/\./g, "\\.")}\\]"`).test(spec), `${id}: depends on exactly Klyroo.UI [${version}]`);
       check(!/<dependency id="Klyroo\.UI" [^>]*exclude="[^"]*Build/.test(spec), `${id}: the build assets of Klyroo.UI flow through this package`);
       check(/<frameworkReference name="Microsoft\.AspNetCore\.App"/.test(spec), `${id}: uses the ASP.NET Core shared framework`);
-      check(!/<dependency id="Klyroo\.UI\.(Tools|Images)/.test(spec), `${id}: depends on no other Klyroo package than Klyroo.UI`);
+      check(!/<dependency id="Klyroo\.UI\.Images/.test(spec), `${id}: depends on no other Klyroo package than Klyroo.UI`);
     }
     if (id.endsWith(".Local")) {
       check(/<dependency id="NetVips" /.test(spec) && /<dependency id="NetVips\.Native" /.test(spec), `${id}: depends on NetVips and NetVips.Native`);
@@ -161,30 +149,15 @@ try {
   if (online) sources.push(`<add key="nuget.org" value="https://api.nuget.org/v3/index.json" />`);
   // Klyroo.UI comes only from the pack output: the local cache may hold an older build of the same version, which would shadow it.
   // The consumer also gets its own empty global-packages folder (NUGET_PACKAGES) for the same reason.
-  const mapping = `<packageSourceMapping><packageSource key="klyroo-feed"><package pattern="Klyroo.UI" /><package pattern="Klyroo.UI.Images" /><package pattern="Klyroo.UI.Images.Local" /><package pattern="Klyroo.UI.Server" /><package pattern="Klyroo.UI.Tools" /><package pattern="Klyroo.UI.Tools.Query" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
+  const mapping = `<packageSourceMapping><packageSource key="klyroo-feed"><package pattern="Klyroo.UI" /><package pattern="Klyroo.UI.Images" /><package pattern="Klyroo.UI.Images.Local" /><package pattern="Klyroo.UI.Server" /></packageSource><packageSource key="local-cache"><package pattern="*" /></packageSource>${online ? `<packageSource key="nuget.org"><package pattern="*" /></packageSource>` : ""}</packageSourceMapping>`;
   writeFileSync(join(app, "nuget.config"), `<configuration><packageSources><clear />${sources.join("")}</packageSources>${mapping}</configuration>`);
   const consumerEnv = { NUGET_PACKAGES: join(work, "consumer-packages") };
   const created = run("dotnet", ["new", "blazor", "-n", "Site", "-f", "net10.0", "--interactivity", "Auto", "--no-restore"], app, consumerEnv);
   if (!check(created.code === 0, "dotnet new blazor (Auto)")) { console.log(created.out); throw new Error("template failed"); }
   const server = join(app, "Site", "Site"), client = join(app, "Site", "Site.Client");
-  // The server also uses the local image optimizer; the client only needs the URL builder. Both use Klyroo.UI.Tools (a Razor class library with its own CSS and JS initializer).
+  // The server also uses the local image optimizer; the client only needs the URL builder.
   for (const [proj, extra] of [[join(server, "Site.csproj"), "Klyroo.UI.Images.Local"], [join(client, "Site.Client.csproj"), "Klyroo.UI.Images"]]) {
-    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Klyroo.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /><PackageReference Include="Klyroo.UI.Tools" Version="${version}" /></ItemGroup>\n  <PropertyGroup><KlyrooToolsOwnTailwind>true</KlyrooToolsOwnTailwind></PropertyGroup>\n</Project>`));
-  }
-  // More projects that only reach Klyroo.UI.Tools through Site.Client: a host with no Tailwind (it must not be told about Tools), one that compiles Tailwind with Node (it must),
-  // and one whose package.json only has a Tailwind plugin of Prettier (it must not: the dependency is not tailwindcss itself).
-  const extras = [
-    ["Site.Plain", null],
-    ["Site.Node", { description: "it's a host", devDependencies: { tailwindcss: "4.0.0" } }],
-    ["Site.Prettier", { devDependencies: { "prettier-plugin-tailwindcss": "0.6.0" } }],
-  ];
-  for (const [name, packageJson] of extras) {
-    const dir = join(app, "Site", name);
-    mkdirSync(dir);
-    writeFileSync(join(dir, `${name}.csproj`), `<Project Sdk="Microsoft.NET.Sdk.Razor">\n  <PropertyGroup><TargetFramework>net10.0</TargetFramework>${name === "Site.Node" ? "<KlyrooToolsOwnTailwind>true</KlyrooToolsOwnTailwind>" : ""}</PropertyGroup>\n  <ItemGroup><ProjectReference Include="..\\Site.Client\\Site.Client.csproj" /></ItemGroup>\n</Project>\n`);
-    if (packageJson) writeFileSync(join(dir, "package.json"), JSON.stringify(packageJson));
-    const added = run("dotnet", ["sln", join(app, "Site", "Site.sln"), "add", join(dir, `${name}.csproj`)], app, consumerEnv);
-    check(added.code === 0, `${name} added to the consumer solution`);
+    writeFileSync(proj, readFileSync(proj, "utf8").replace("</Project>", `  <ItemGroup><PackageReference Include="Klyroo.UI" Version="${version}" /><PackageReference Include="${extra}" Version="${version}" /></ItemGroup>\n</Project>`));
   }
   // Self-hosted fonts, offline: a font of the local provider (an OFL test font committed under build/test-assets).
   mkdirSync(join(server, "Fonts"));
@@ -203,9 +176,9 @@ try {
   const imports = join(server, "Components", "_Imports.razor");
   writeFileSync(imports, `${readFileSync(imports, "utf8")}\n@using Klyroo.UI\n`);
   const prog = join(server, "Program.cs");
-  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddKlyrooUi();\nbuilder.Services.AddKlyrooUiTools();\nbuilder.Services.AddKlyrooServer();\nbuilder.Services.AddKlyrooImagesLocal();\n\nvar app = builder.Build();\napp.MapKlyrooImages();").replace("using Site.Components;", "using Site.Components;\nusing Klyroo.UI;\nusing Klyroo.UI.Server;\nusing Klyroo.UI.Tools;"));
+  writeFileSync(prog, readFileSync(prog, "utf8").replace("var app = builder.Build();", "builder.Services.AddKlyrooUi();\nbuilder.Services.AddKlyrooServer();\nbuilder.Services.AddKlyrooImagesLocal();\n\nvar app = builder.Build();\napp.MapKlyrooImages();").replace("using Site.Components;", "using Site.Components;\nusing Klyroo.UI;\nusing Klyroo.UI.Server;"));
   const home = join(server, "Components", "Pages", "Home.razor");
-  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Klyroo.UI\n<KlyButton Label="Save" />\n<KlySwitch Label="Notify" />\n<KlyIcon Name="i-pkg-check-mark" Label="Check mark" />\n<KlyButton Label="Close" LeadingIcon='KlyIcons.Named("pkg:check-mark")' />\n@using Klyroo.UI.Tools\n<KlyDataListEmpty data-testid="pkg-empty" />\n`);
+  writeFileSync(home, `${readFileSync(home, "utf8")}\n@using Klyroo.UI\n<KlyButton Label="Save" />\n<KlySwitch Label="Notify" />\n<KlyIcon Name="i-pkg-check-mark" Label="Check mark" />\n<KlyButton Label="Close" LeadingIcon='KlyIcons.Named("pkg:check-mark")' />\n`);
   const appRazor = join(server, "Components", "App.razor");
   const original = readFileSync(appRazor, "utf8").replace("<ResourcePreloader />", "<KlyFonts />\n    <ResourcePreloader />");
   check(original.includes("<KlyFonts />"), "consumer App.razor has KlyFonts");
@@ -226,19 +199,6 @@ try {
   const manifest = existsSync(manifestFile) ? readFileSync(manifestFile, "utf8") : "";
   for (const f of ["klyroo.css", "klyroo.preflight.css", "Klyroo.UI.lib.module.js", "klyroo-editor.js"]) {
     check(manifest.includes(`_content/Klyroo.UI/${f}`), `precompiled mode: static web asset _content/Klyroo.UI/${f}`);
-  }
-  for (const f of ["klyroo-tools.theme.css", "Klyroo.UI.Tools.lib.module.js"]) {
-    check(manifest.includes(`_content/Klyroo.UI.Tools/${f}`), `precompiled mode: static web asset _content/Klyroo.UI.Tools/${f}`);
-  }
-  {
-    // Without KlyrooTailwind and without KlyrooToolsOwnTailwind the build tells the app that Tools needs Tailwind.
-    const r = run("dotnet", ["build", "-c", "Release", "-p:KlyrooToolsOwnTailwind=false", join(app, "Site", "Site.sln")], app, consumerEnv);
-    check(r.code === 0 && /warning KLYTOOLS001[^\n]*KlyrooToolsOwnTailwind/.test(r.out), "tools: referencing Klyroo.UI.Tools without Tailwind and without KlyrooToolsOwnTailwind warns with KLYTOOLS001");
-    check(/Site\.Client uses Klyroo\.UI\.Tools/.test(r.out) && /Site uses Klyroo\.UI\.Tools/.test(r.out), "tools: the projects that reference Klyroo.UI.Tools are warned");
-    check(!/Site\.Plain uses Klyroo\.UI\.Tools/.test(r.out), "tools: a project that only reaches Klyroo.UI.Tools through another one, with no Tailwind, is not warned");
-    check(!/Site\.Prettier uses Klyroo\.UI\.Tools/.test(r.out), "tools: a package.json with only prettier-plugin-tailwindcss is not Tailwind");
-    check(/Site\.Node uses Klyroo\.UI\.Tools/.test(r.out), "tools: a project that compiles Tailwind with Node (package.json) is warned even without a reference of its own");
-    build("own tailwind declared");
   }
 
   // Self-hosted fonts: generated by the task from the package's targets, then part of the static web assets.
@@ -280,8 +240,6 @@ try {
       try { const res = await fetch(url + "/"); if (res.ok) html = await res.text(); } catch { /* not up yet */ }
     }
     try {
-      check(/data-testid="pkg-empty"[^>]*>\s*<svg viewBox="0 0 24 24"[^>]*><g[^>]*><path[\s\S]*?<p class="[^"]*" data-slot="title">No results<\/p>/.test(html) && !/data-kly-missing-icon="search-x"/.test(html), "tools: the page renders KlyDataListEmpty with the icon of Klyroo.UI.Tools and its default text");
-      check(!/klyroo-tools[^"]*\.css/.test(html), "tools: the page links no precompiled Tools stylesheet (there is none)");
       check(/<svg viewBox="0 0 24 24"[^>]*data-icon="i-pkg-check-mark"[^>]*><g fill="none"[^>]*><path d="M2 2h20"/.test(html) && !html.includes("data-kly-missing-icon"), "icons: the page draws the bundled icon from the custom folder");
       const preload = /<link rel="preload" as="font" type="font\/woff2" crossorigin href="([^"]+)"/.exec(html)?.[1];
       const sheet = /<link rel="stylesheet" href="(_klyroo\/fonts\/klyroo\.fonts[^"]*\.css)"/.exec(html)?.[1];
@@ -324,13 +282,11 @@ try {
   // Mode B: Tailwind compiled by the app. The buildTransitive targets must copy the theme to obj/klyroo/ on every build.
   for (const dir of [server, client]) rmSync(join(dir, "obj", "klyroo"), { recursive: true, force: true });
   mkdirSync(join(server, "Styles"));
-  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/klyroo/klyroo.theme.css";\n@import "../obj/klyroo/klyroo-tools.theme.css";\n`);
+  writeFileSync(join(server, "Styles", "app.tailwind.css"), `@import "tailwindcss";\n@import "../obj/klyroo/klyroo.theme.css";\n`);
   build("tailwind mode");
   for (const [label, dir] of [["server", server], ["client", client]]) {
     const copied = join(dir, "obj", "klyroo", "klyroo.theme.css");
     check(existsSync(copied) && readFileSync(copied, "utf8") === themeCss, `tailwind mode: ${label} obj/klyroo/klyroo.theme.css copied by the targets, identical to the package's`);
-    const copiedTools = join(dir, "obj", "klyroo", "klyroo-tools.theme.css");
-    check(existsSync(copiedTools) && readFileSync(copiedTools, "utf8") === readFileSync(join(root, "src", "Klyroo.UI.Tools", "wwwroot", "klyroo-tools.theme.css"), "utf8"), `tailwind mode: ${label} obj/klyroo/klyroo-tools.theme.css copied by the targets, identical to the package's`);
   }
 
   // Tailwind compiled by the app at build time, without Node: KlyrooTailwind=true downloads the pinned standalone CLI. The cache is a fresh folder
@@ -385,12 +341,6 @@ try {
     check(!readFileSync(join(root, "src", "Klyroo.UI", "wwwroot", "klyroo.css"), "utf8").includes("123em"), "tailwind: that utility is not in the precompiled klyroo.css, so the check proves the app's CSS was compiled");
     check(!css().includes(".987em"), "tailwind: obj is not scanned for class names");
     check(css().includes("--klyroo-primary") && css().includes(".bg-\\(--klyroo-bg-elevated\\)"), "tailwind: the Klyroo theme tokens and the classes of the Klyroo components are generated too");
-    // Klyroo.UI.Tools has no precompiled sheet: with KlyrooTailwind the generated entry imports its theme by itself, and the single compiled sheet holds the classes of Klyroo.UI, of Tools and the variants of both.
-    const wrapperText = existsSync(join(twDir, "klyroo.tailwind.input.css")) ? readFileSync(join(twDir, "klyroo.tailwind.input.css"), "utf8") : "";
-    check(/@import "[^"]*klyroo-tools\.theme\.css";/.test(wrapperText), "tailwind: the generated entry imports the Tools theme, the app's stylesheet does not have to");
-    const toolsClasses = readFileSync(join(root, "src", "Klyroo.UI.Tools", "styles", "generated", "classes.txt"), "utf8").split("\n").filter(Boolean);
-    const escapeClass = (c) => c.replace(/[^a-zA-Z0-9_-]/g, (ch) => "\\" + ch);
-    check(toolsClasses.length > 0 && toolsClasses.every((c) => css().includes("." + escapeClass(c))), "tailwind: every class of the Tools components is in the compiled sheet");
     check(css().includes(".lg\\:flex-row") && /\.dark\\:/.test(css()), "tailwind: the same sheet has the lg: and dark: variants of the Klyroo.UI components (nothing repeats them after them)");
     check(css().trim().split("\n").length <= 3, "tailwind: Release output is minified");
     const swa = readFileSync(manifestFile, "utf8");

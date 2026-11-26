@@ -5,8 +5,6 @@
     by an app. netstandard2.0 so the same dll loads in `dotnet build` (MSBuild on .NET) and in Visual Studio (MSBuild on
     .NET Framework). No runtime dependency beyond the MSBuild assemblies the host already provides.
   -->
-  <Import Project="..\..\build\Version.props" />
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Klyroo.UI.Build</RootNamespace>

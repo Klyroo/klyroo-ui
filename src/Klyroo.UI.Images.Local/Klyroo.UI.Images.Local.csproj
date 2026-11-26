@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <!-- Same version as the library: build/Version.props. -->
-  <Import Project="..\..\build\Version.props" />
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <RootNamespace>Klyroo.UI.Images.Local</RootNamespace>

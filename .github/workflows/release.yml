@@ -1,7 +1,7 @@
 name: Release
 
-# Releases are cut from a `v<version>` tag whose version matches Directory.Build.props
-# (VersionPrefix/VersionSuffix). The publish job runs in the `nuget` environment: configure required
+# Releases are cut from a `v<version>` tag whose version matches build/Version.props
+# (VersionPrefix/VersionSuffix, imported by Directory.Build.props). The publish job runs in the `nuget` environment: configure required
 # reviewers on it (Settings > Environments) so nothing reaches nuget.org without a human approval.
 # NuGet authentication uses Trusted Publishing (GitHub OIDC): no long-lived API key is stored.
 
@@ -117,8 +117,32 @@ jobs:
             klyroo-ui/artifacts/nupkgs/*
             klyroo-ui/artifacts/release-notes.md
 
-  publish:
+  # Checks the packed .nupkg and .snupkg files themselves (contents, metadata, dependencies), then builds a throwaway
+  # Blazor app that consumes them from a local feed in both CSS modes. It is a required job: publish needs it.
+  verify-package:
     needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            10.0.x
+            11.0.x
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: release
+          path: release
+      - name: Verify the packed NuGet packages
+        # --online: the consumer app restores the framework packages and downloads the Tailwind CLI.
+        run: node build/verify-package.mjs --online --packages release/nupkgs
+
+  publish:
+    needs: [build, verify-package]
     if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && !inputs.dry-run)
     runs-on: ubuntu-latest
     environment: nuget

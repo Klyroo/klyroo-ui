@@ -1,4 +1,7 @@
 <Project>
+  <!-- One version for every project of the repository (VersionPrefix and VersionSuffix). Projects must not import this file themselves: a second import raises MSB4011. -->
+  <Import Project="$(MSBuildThisFileDirectory)build\Version.props" />
+
   <PropertyGroup>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -7,8 +10,6 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     <Deterministic>true</Deterministic>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
-    <VersionPrefix Condition="'$(VersionPrefix)' == ''">0.1.0</VersionPrefix>
-    <VersionSuffix Condition="'$(VersionSuffix)' == ''">preview.1</VersionSuffix>
     <Authors>Klyroo Contributors</Authors>
     <Copyright>Copyright (c) 2026 Klyroo Contributors</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>

@@ -184,7 +184,7 @@ End-to-end tests and the MCP tools are tested in klyroo-stack.
 
 Versions follow [Semantic Versioning](https://semver.org). While below 1.0 a minor version (0.2.0) may contain breaking
 changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.1`). The version lives in one place,
-`VersionPrefix` and `VersionSuffix` in `build/Version.props`, imported by the library and the other packages (an empty suffix is a stable release).
+`VersionPrefix` and `VersionSuffix` in `build/Version.props`, which `Directory.Build.props` imports for every project (an empty suffix is a stable release). A project must not import `build/Version.props` itself: a second import raises MSB4011.
 
 1. Make sure `main` is green: build, unit tests, and `npm run build` leaves the generated assets unchanged.
 2. In `CHANGELOG.md`, move the `[Unreleased]` content into a `## [X.Y.Z] - YYYY-MM-DD` section (Added, Changed, Fixed,
@@ -192,7 +192,9 @@ changes and a patch (0.1.1) only fixes; prereleases carry a suffix (`0.2.0-beta.
 3. Set `VersionPrefix` / `VersionSuffix` in `build/Version.props` to the release version.
 4. Run the packaging check locally: `node build/verify-package.mjs`. It packs in Release, checks the `.nupkg` and `.snupkg`
    contents, and builds a throwaway Blazor Web App against the package in both CSS modes. It restores from the local NuGet
-   cache; add `--online` if framework packages are missing from it.
+   cache; add `--online` if framework packages are missing from it. `--packages <folder>` checks packages that were already
+   packed (`dotnet pack -c Release -o <folder>`) instead of packing again, which is what the `verify-package` job of the
+   release workflow does on the packages it is about to publish: that job is required, so `publish` waits for it.
 5. Commit (`Release X.Y.Z`), then tag `vX.Y.Z` on that commit and push the branch and the tag.
 6. The `Release` workflow (`.github/workflows/release.yml`, triggered by `v*` tags only) checks that the tagged commit is
    on `main`, that the tag equals the package version and that the changelog section is dated, rebuilds, tests and runs
