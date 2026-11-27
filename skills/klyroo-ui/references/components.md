@@ -823,7 +823,7 @@
 `/components/chart`. A line, area, bar or donut chart drawn as SVG by the server, with a tooltip, a legend and a data table.
 
 - `<KlyChart>`
-  - Parameters: `AriaDescription`, `AriaLabel`, `Categories` (required), `Class`, `Colors`, `Culture`, `Curve`, `Data` (required), `Format`, `Grid`, `Height`, `Horizontal`, `Index` (required), `IndexFormat`, `Legend`, `Points`, `Stacked`, `Table`, `Thickness`, `Tooltip`, `Type`, `Ui`, `Width`, `XAxis`, `XLabel`, `YAxis`, `YLabel`
+  - Parameters: `AriaDescription`, `AriaLabel`, `Categories` (required), `Class`, `Colors`, `Culture`, `Curve`, `Data` (required), `Format`, `Grid`, `Height`, `Horizontal`, `Index` (required), `IndexFormat`, `Legend`, `Points`, `Responsive`, `Stacked`, `Table`, `Thickness`, `Tooltip`, `Type`, `Ui`, `Width`, `XAxis`, `XLabel`, `YAxis`, `YLabel`
   - Events: `OnSelect`
   - Slots: `Center`
   - `Ui` (`ChartUi`): `Root`, `Plot`, `Svg`, `Grid`, `AxisLine`, `Tick`, `AxisTitle`, `Line`, `Bar`, `Marker`, `Hit`, `HitArea`, `Slice`, `Tooltip`, `TooltipTitle`, `TooltipRow`, `TooltipIndicator`, `TooltipLabel`, `TooltipValue`, `Center`, `Legend`, `LegendItem`, `LegendSwatch`, `LegendLabel`, `LegendValue`, `Details`, `Summary`, `TableWrapper`, `Table`, `Th`, `Td`, `Funnel`, `FunnelStep`, `FunnelHeader`, `FunnelLabel`, `FunnelValue`, `FunnelBar`, `FunnelEmpty`
