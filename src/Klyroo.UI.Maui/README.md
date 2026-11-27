@@ -6,16 +6,22 @@ Klyroo.UI itself runs in a `BlazorWebView` on MAUI. This package is for apps tha
 
 ## Controls
 
-| Control | Built on | Notes |
-| :--- | :--- | :--- |
-| `KlyButton` | `Button` | `Color`, `Variant` (Solid, Outline, Soft, Subtle, Ghost, Link), `Size`, `Block`. Ripple, focus and accessibility of the platform. No spinner and no underline for `Link`. |
-| `KlyBadge` | `Border` + `Label` | `Text`, `Color`, `Variant`, `Size`. |
-| `KlyCard` | `Border` | Any content, `Variant` (Outline, Soft, Subtle). |
-| `KlyAlert` | `Border` | `Title`, `Description`, `Color`, `Variant`, `Closable`, `Closed`. |
-| `KlyAvatar` | `Border` + `Image` | `Source`, or the initials of `Text`; `Alt` for a screen reader. |
-| `KlySeparator` | `Border` | `Orientation`, `Size`, `Color`. |
-| `KlyInput`, `KlyTextarea`, `KlySelect` | `Entry`, `Editor`, `Picker` | A Klyroo frame (`Variant`, `Size`, `Color`, `Invalid`, `AccessibleName`) around the native control; `Text` and `SelectedItem` are two-way bindable. |
-| `KlyCheckbox`, `KlySwitch` | `CheckBox`, `Switch` | With a label and a description; tapping the text toggles. |
+Every component of Klyroo.UI has a native control of the same name, with the same parameters where they make sense (a `Disabled` becomes `IsEnabled`, an `EventCallback` an event, a `@bind` a two-way bindable property).
+`node build/maui-coverage.mjs` compares the Blazor components of all the Klyroo repositories with the native ones and lists the web-only components that have no native counterpart, with the reason
+(`build/maui-coverage.json`).
+
+- **Elements:** `KlyButton`, `KlyBadge`, `KlyCard`, `KlyAlert`, `KlyAvatar`, `KlySeparator`, `KlyIcon` (the Lucide icons built in, `KlyIcons.Register` for your own).
+- **Display:** `KlyAvatarGroup`, `KlyBanner`, `KlyChip`, `KlyEmpty`, `KlyFieldGroup`, `KlyImage`, `KlyInfiniteScroll`, `KlyKbd`, `KlyLink`, `KlyProgress`, `KlySkeleton`, `KlyUser`, `KlyHeading`, `KlyText`, `KlyList`, `KlyMeter`, `KlyStat`, `KlyStatGroup`, `KlyFacts`, `KlyBreakdown`, `KlyDiff`, `KlyRecordList`, `KlyDateTile`, `KlyImageGallery`.
+- **Form fields:** `KlyInput`, `KlyTextarea`, `KlySelect`, `KlyCheckbox`, `KlySwitch`, `KlyInputNumber`, `KlyInputDate`, `KlyInputTime`, `KlyInputRating`, `KlyPinInput`, `KlyInputTags`, `KlyInputMenu`, `KlySelectMenu`, `KlyListbox`, `KlySlider`, `KlyRangeSlider`, `KlyToggle`, `KlyToggleGroup`, `KlyRadioGroup`, `KlyCheckboxGroup`, `KlyCalendar`, `KlyColorPicker`, `KlyFileUpload`, `KlyForm`, `KlyFormField`.
+- **Navigation:** `KlyTabs`, `KlyAccordion`, `KlyCollapsible`, `KlyBreadcrumb`, `KlyPagination`, `KlyStepper`, `KlyTimeline`, `KlyNavigationMenu`, `KlyTree`, `KlyMarquee`, `KlyScrollArea`, `KlySplitter`, `KlyCarousel`, `KlyLocaleSelect`, and the color mode controls (`KlyColorMode`, `KlyColorModeButton`, `KlyColorModeSwitch`, `KlyColorModeSelect`, `KlyColorModeAvatar`, `KlyColorModeImage`).
+- **Overlays:** wrap the page content in `KlyOverlayHost`, then `KlyModal`, `KlySlideover`, `KlyDrawer`, `KlyPopover`, `KlyTooltip`, `KlyDropdownMenu`, `KlyContextMenu`, `KlyCommandPalette` and `KlyToaster` with `KlyToastService`.
+- **Layout and dashboard shell:** `KlyApp`, `KlyContainer`, `KlyMain`, `KlyHeader`, `KlyFooter`, `KlyFooterColumns`, `KlySidebar`, `KlyError`, `KlyThemeStyle`, `KlyDashboardGroup` and the dashboard sidebar, panel, resize handle, navbar, toolbar and search controls.
+- **Pages:** `KlyPage` and its sections (`KlyPageHeader`, `KlyPageHero`, `KlyPageSection`, `KlyPageFeature`, `KlyPageGrid`, ...), `KlyAuthForm`, the pricing, blog and changelog blocks, and the content navigation, search and table of contents.
+- **Chat:** `KlyChatMessages`, `KlyChatMessage`, `KlyChatPrompt`, `KlyChatPromptSubmit`, `KlyChatAttachment`, `KlyChatReasoning`, `KlyChatTool`, `KlyChatShimmer`, `KlyChatPalette`.
+- **Data:** `KlyChart` (line, area, bar, donut, funnel), `KlyTable`, `KlyColumn`, `KlyTemplateColumn`.
+- **Editor:** `KlyEditor` edits Markdown with a toolbar (`KlyEditorToolbar`), a block drag handle and the suggestion, mention and emoji menus. MAUI has no rich text control, so the formatting marks stay visible in the text.
+
+Not applicable on a device (they act on the HTML page): `KlyHead`, `KlyFonts`, `KlyCultureMeta`, `KlySkipLink` and `KlyColorModeScript` (its native counterpart is `KlyColorMode.ApplyStored()` at app start).
 
 ## Use
 
@@ -49,4 +55,4 @@ dotnet build samples/Klyroo.Maui.Native -t:Run   # an emulator or a device must 
 
 ## Status
 
-Verified on an Android 16 emulator (light and dark, typing, toggles, focus ring). Not run on iOS, Mac Catalyst or Windows.
+Checked on an Android emulator: the basic controls (light and dark, typing, toggles, focus ring), and tabs, accordion, progress, stat, number input, slider, charts, a modal and a toast. The other controls are covered by unit tests of their state and styling and compile for Android, but were not looked at on a device. Not run on iOS, Mac Catalyst or Windows.
