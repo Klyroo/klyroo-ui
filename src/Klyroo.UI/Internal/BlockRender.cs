@@ -29,7 +29,7 @@ internal static class BlockRender
     };
 
     /// <summary>The actions as small buttons in a wrapper; nothing when there are none.</summary>
-    public static RenderFragment Actions(IReadOnlyList<KlyActionItem>? actions, KlyrooIconOptions? icons, string? @class, object receiver) => builder =>
+    public static RenderFragment Actions(IReadOnlyList<KlyActionItem>? actions, KlyrooIconOptions? icons, string? @class, Microsoft.AspNetCore.Components.ComponentBase receiver) => builder =>
     {
         if (actions is not { Count: > 0 })
         {

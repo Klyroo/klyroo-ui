@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (158) · Static classes and extensions (11) · Classes (23) · Records (175) · Structs (4) · Interfaces (8) · Enums (47) · Delegates (2)
+Components (170) · Static classes and extensions (11) · Classes (23) · Records (200) · Structs (4) · Interfaces (8) · Enums (56) · Delegates (2)
 
 ### Components
 
@@ -34,13 +34,17 @@ Inline message with an optional icon, title, description, actions and close butt
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
+| `ActionItems` | `IReadOnlyList<KlyActionItem>?` | Buttons or links under the description, from data (`KlyActionItem`). They are shown after `KlyAlert.Actions`. |
 | `Actions` | `RenderFragment?` | Buttons or links under the description of the alert. |
 | `ChildContent` | `RenderFragment?` | Rich description, instead of `KlyAlert.Description`. |
 | `Close` | `bool` | Shows a close button that removes the alert. |
 | `Color` | `KlyColor` | Semantic color of the alert: a built-in `KlyColor` or the name of a color you defined. When not set, `KlyDefaults.Color` applies, else the default of the component. |
+| `DefaultOpen` | `bool` | Whether `KlyAlert.Details` starts open. It is read once, when the component first receives its parameters. |
 | `Description` | `string?` | Text of the alert. Use `ChildContent` for markup. |
+| `Details` | `string?` | Collapsible text under the description, opened with a Show details toggle. The toggle is disabled until the page is interactive. |
 | `Icon` | `RenderFragment?` | Icon of the alert, as markup such as a `KlyIcon`. |
 | `OnClose` | `EventCallback` | Raised when the user closes the alert with its close button. |
+| `StatusIcon` | `bool` | Shows the icon of the color (info, success, warning or error, from `KlyrooOptions.Icons`) when no `KlyAlert.Icon` is given. |
 | `Title` | `string?` | Title of the alert, shown above its description. |
 | `Ui` | `AlertUi?` | Per-instance class overrides of the slots of the alert, see `AlertUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 | `Variant` | `KlyVariant` | Look of the alert: `Solid`, `Outline`, `Soft` or `Subtle`. |
@@ -112,6 +116,7 @@ Round picture of a person or entity, with an icon or initials fallback when the 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Alt` | `string?` | Text alternative; its initials are shown when there is no image or it fails to load. |
+| `Color` | `KlyColor?` | A color that tints the avatar and its initials. Without it the avatar is neutral. |
 | `Icon` | `RenderFragment?` | Icon shown when there is no picture and no text, as markup such as a `KlyIcon`. |
 | `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to `KlyImage`: `new KlyImageOptions { Format = KlyImageFormat.WebP, Quality = 80 }`. The avatar passes its size in pixels as the width and the height, so a provider can serve a picture of that size. |
 | `Size` | `KlySize` | Size of the avatar, from `Xs` to `Xl`; it also sets the pixel size asked of the image provider. |
@@ -236,6 +241,29 @@ Navigation trail of the current page and its ancestors. It is plain markup and w
 | `Items` | `IReadOnlyList<KlyBreadcrumbItem>` | The pages of the trail, from the root to the current page, as `KlyBreadcrumbItem`. The last one is the current page. |
 | `Separator` | `RenderFragment?` | Replaces the chevron between items. Decorative: it is hidden from assistive technology. |
 | `Ui` | `BreadcrumbUi?` | Per-instance class overrides of the slots of the breadcrumb, see `BreadcrumbUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyBreakdown`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A list of labelled amounts with subtotal rows and a total row, optionally in two columns or behind a toggle.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Collapsible` | `bool` | Hides the lines behind a toggle. The total, the headers of the columns and the footnote stay visible. |
+| `CompareColumns` | `KlyBreakdownColumns?` | The headers of the two amount columns, for example `new KlyBreakdownColumns("2026", "2025")`: `KlyBreakdownLine.Amount` goes under `First` and `KlyBreakdownLine.CompareAmount` under `Second`, for the lines and the total. A line without a second amount shows a dash. Setting a `KlyBreakdownLine.CompareAmount` on any line also switches to two columns, without headers. |
+| `Culture` | `CultureInfo?` | The culture that formats the amounts. Defaults to the format culture of the locale in effect. |
+| `DefaultOpen` | `bool` | Whether a collapsible block starts open. It is read once, when the component first receives its parameters. |
+| `Footnote` | `string?` | A line of smaller text under the block. |
+| `Format` | `string` | The .NET numeric format string of the amounts (`"N2"` by default; `"C2"` shows the currency of `KlyBreakdown.Culture`). |
+| `Lines` | `IReadOnlyList<KlyBreakdownLine>?` | The lines, as `KlyBreakdownLine`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Surface` | `KlySurface?` | The surface treatment. Bordered when not set. |
+| `Title` | `string?` | The title of the block. |
+| `Total` | `KlyBreakdownLine?` | The total row, shown below the lines. |
+| `Ui` | `BreakdownUi?` | Per-instance class overrides of the slots of the breakdown, see `BreakdownUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -811,7 +839,12 @@ What every column of a `KlyTable` has: a title, cell classes, and the registrati
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
+| `Align` | `KlyColumnAlign` | The alignment of the header, the cells and the footer of the column: `KlyColumnAlign.Start` (the default) or `KlyColumnAlign.End`. |
 | `Class` | `string?` | Classes added to the cells of this column. |
+| `Footer` | `string?` | Text of the cell of this column in the footer row. The footer row shows when any column has a `KlyColumnBase.Footer` or a `KlyColumnBase.FooterTemplate`. |
+| `FooterTemplate` | `RenderFragment?` | Markup of the cell of this column in the footer row, instead of `KlyColumnBase.Footer`. |
+| `Mono` | `bool` | Renders the cells in a monospace font. |
+| `Numeric` | `bool` | Aligns the column to the end and uses tabular figures, so digits line up. |
 | `Title` | `string` | Text of the column header. |
 
 #### `KlyCommandPalette`
@@ -1139,6 +1172,43 @@ Secondary bar under a navbar, with filters and bulk actions on the left and view
 
 Also accepts the parameters of `KlyComponentBase`.
 
+#### `KlyDateTile`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A calendar tile with a title, in a plain, countdown or range mode.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Description` | `string?` | A line of smaller text under the title. |
+| `EndValue` | `DateTimeOffset?` | The end of a `KlyDateTileMode.Range`, inclusive in the day count. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Mode` | `KlyDateTileMode` | What the tile says beside the calendar: the date, the days until it, or a range. |
+| `Now` | `DateTimeOffset?` | The reference time of a `KlyDateTileMode.Countdown`. `DateTimeOffset.UtcNow` when not set. Pass it for tests and for stable server rendering. |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The title. In the default mode it replaces the formatted date; in the countdown and range modes it is a caption under the text. |
+| `Ui` | `DateTileUi?` | Per-instance class overrides of the slots of the date tile, see `DateTileUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+| `Value` | `DateTimeOffset?` | The date, or the start of a range. The current date when not set. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyDiff`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+Before and after values per field, with unchanged fields hidden unless `KlyDiff.ShowUnchanged` is set.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Items` | `IReadOnlyList<KlyDiffItem>?` | The fields, as `KlyDiffItem`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `ShowUnchanged` | `bool` | Shows the fields whose `KlyDiffItem.Changed` is `false` (`false` by default). |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The title of the block. |
+| `Ui` | `DiffUi?` | Per-instance class overrides of the slots of the diff, see `DiffUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyDrawer`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
@@ -1294,6 +1364,7 @@ Placeholder for an area without content, with an icon, a title, a description an
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
+| `ActionItems` | `IReadOnlyList<KlyActionItem>?` | Buttons or links under the text, from data (`KlyActionItem`). They are shown after `KlyEmpty.Actions`. |
 | `Actions` | `RenderFragment?` | Buttons or links under the text. |
 | `ChildContent` | `RenderFragment?` | Extra content between the description and the actions. |
 | `Description` | `string?` | Text under the title. |
@@ -1326,6 +1397,24 @@ Content of an error page: status code, title, message and a way back. Use it as 
 | `StatusCode` | `int?` | The HTTP status code, shown above the title. 404, 403 and 500 have built-in texts. |
 | `StatusMessage` | `string?` | The title. Defaults to a text for `KlyError.StatusCode`. |
 | `Ui` | `ErrorUi?` | Per-instance class overrides of the slots of the error, see `ErrorUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyFacts`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A list of label and value rows, flat or grouped, with badges, links, copy buttons and loading placeholders.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Groups` | `IReadOnlyList<KlyFactGroup>?` | The titled groups of rows. When set, they replace `KlyFacts.Items`, and `KlyFacts.Max` does not apply. |
+| `Items` | `IReadOnlyList<KlyFact>?` | The label and value rows, flat. They are ignored when `KlyFacts.Groups` is set. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Max` | `int?` | The number of rows shown before a Show more button (all rows when `null`). It applies to `KlyFacts.Items` only. |
+| `Step` | `int?` | The number of rows each click on Show more reveals (all the remaining ones when `null`). |
+| `Surface` | `KlySurface?` | The surface treatment. Bordered when not set. |
+| `Ui` | `FactsUi?` | Per-instance class overrides of the slots of the facts, see `FactsUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -1493,6 +1582,26 @@ Site header with a title or logo, links and actions. On small screens the links 
 
 Also accepts the parameters of `KlyComponentBase`.
 
+#### `KlyHeading`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A section heading with an optional icon tile, count pill, description and action button.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Action` | `KlyActionItem?` | The button at the end of the row. |
+| `Count` | `int?` | A count shown in a pill beside the title, formatted with the format culture of the locale. |
+| `Description` | `string?` | A line of smaller text under the title. |
+| `HeadingLevel` | `int` | The level of the heading element, from `1` (`h1`) to `6` (`h6`); `3` by default, and values outside are clamped. Choose it from the page outline: the look does not change with the level. |
+| `Icon` | `RenderFragment?` | The icon in the tile before the title, as markup such as a `KlyIcon`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The title, drawn as the heading element chosen by `KlyHeading.HeadingLevel`. |
+| `Ui` | `HeadingUi?` | Per-instance class overrides of the slots of the heading, see `HeadingUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyIcon`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
@@ -1533,6 +1642,25 @@ Image element that fills in the width, height, srcset, sizes and loading attribu
 | `Sizes` | `string?` | Responsive sizes: `"100vw sm:50vw md:400px"` (an unprefixed entry is the default; each breakpoint applies from its width upward). Breakpoints come from `KlyImageSettings.Screens`. It becomes the `sizes` attribute and decides the widths of the `srcset`. |
 | `Src` | `string?` | Address of the image: a root-relative path ("/img/team.jpg") or an absolute URL. |
 | `Width` | `int?` | Width of the image in CSS pixels. It is also the base of the 1x, 2x… candidates, and it reserves the space before the image loads. A value that is not positive is written as given and takes no part in the resolution. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyImageGallery`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A grid of images with a +N overflow tile.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` | `string?` | A line of smaller text under the gallery. |
+| `Columns` | `int` | The number of columns of the grid, from `1` to `6` (`3` by default; other values are clamped). |
+| `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to every `KlyImage` of the gallery. |
+| `Images` | `IReadOnlyList<KlyGalleryImage>?` | The images, as `KlyGalleryImage`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Max` | `int` | The number of tiles shown. The last one carries a +N overflow when more images exist (`3` by default, at least `1`). |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Ui` | `ImageGalleryUi?` | Per-instance class overrides of the slots of the gallery, see `ImageGalleryUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -1724,6 +1852,25 @@ Anchor that marks itself active when its address matches the current page, with 
 
 Also accepts the parameters of `KlyComponentBase`.
 
+#### `KlyList`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A list of items: plain, numbered steps or a checklist.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Items` | `IReadOnlyList<KlyListItem>?` | The items, as `KlyListItem`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Max` | `int?` | The number of items shown before a Show more button (all items when `null`). |
+| `Step` | `int?` | The number of items each click on Show more reveals (all the remaining ones when `null`). |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The title above the list. |
+| `Ui` | `ListUi?` | Per-instance class overrides of the slots of the list, see `ListUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+| `Variant` | `KlyListVariant` | The layout: `KlyListVariant.Plain` (bullets or icons), `KlyListVariant.Steps` (a numbered list) or `KlyListVariant.Checks` (a checklist). |
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyListbox<TValue>`
 
 `Klyroo.UI` · component · inherits `KlyListFieldBase<TValue>`
@@ -1791,6 +1938,31 @@ Endless horizontal or vertical scrolling strip of content, in pure CSS. It pause
 | `Repeat` | `int` | Number of aria-hidden copies of the content. One is enough unless the content is narrower than the container. |
 | `Reverse` | `bool` | Scrolls the other way. |
 | `Ui` | `MarqueeUi?` | Per-instance class overrides of the slots of the marquee, see `MarqueeUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyMeter`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A gauge in a known range: a bar, a ring or a scale of levels, with thresholds or stacked parts and a legend.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `CurrentLevel` | `int?` | The zero-based index of the current level of a scale. The levels up to it are highlighted. |
+| `Description` | `string?` | A line of smaller text under the meter. |
+| `ErrorThreshold` | `double?` | The percentage of `KlyMeter.Max` from which the bar turns to the error color. It wins over `KlyMeter.WarningThreshold`. |
+| `Layout` | `KlyMeterLayout` | The drawing: a bar, a ring with the value in its center, or a scale of discrete levels (a bar when there are no `KlyMeter.Levels`). |
+| `Levels` | `IReadOnlyList<string>?` | The level labels of a `KlyMeterLayout.Scale`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Max` | `double` | The maximum (`100` by default). When it is zero or less, the sum of `KlyMeter.Parts` is used. |
+| `Parts` | `IReadOnlyList<KlyMeterPart>?` | The segments, stacked in the bar or around the ring. When set, they replace the single value and the thresholds do not apply. A legend lists them when one of them has a `KlyMeterPart.ValueLabel`, an `KlyMeterPart.Icon` or a `KlyMeterPart.Max`. |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The label of the meter, and its accessible name (`KlyMessages.Meter` when not set). |
+| `Ui` | `MeterUi?` | Per-instance class overrides of the slots of the meter, see `MeterUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+| `Value` | `double` | The current value, clamped between 0 and `KlyMeter.Max`. |
+| `ValueText` | `string?` | The value as displayed, such as `"3.2 GB"`. When not set, the number out of the maximum (the percentage in the center of a ring). |
+| `WarningThreshold` | `double?` | The percentage of `KlyMeter.Max` from which the bar turns to the warning color. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
@@ -2282,6 +2454,26 @@ Slider with two thumbs that binds to a list of two numbers.
 
 Also accepts the parameters of `KlyFieldBase<IReadOnlyList<double>>`.
 
+#### `KlyRecordList`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A list of entity rows, each with an image, avatar or icon, a reference, a title, a secondary line, badges and a trailing value.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Count` | `int?` | A count shown beside the title, formatted with the format culture of the locale. |
+| `ImageOptions` | `KlyImageOptions?` | Image settings forwarded to the `KlyImage` of the rows that have an `KlyRecordItem.ImageSrc`. |
+| `Items` | `IReadOnlyList<KlyRecordItem>?` | The rows, as `KlyRecordItem`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Max` | `int?` | The number of rows shown before a Show more button (all rows when `null`). |
+| `Step` | `int?` | The number of rows each click on Show more reveals (all the remaining ones when `null`). |
+| `Surface` | `KlySurface?` | The surface treatment. Bordered when not set. |
+| `Title` | `string?` | The title above the rows. |
+| `Ui` | `RecordListUi?` | Per-instance class overrides of the slots of the record list, see `RecordListUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyScrollArea`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
@@ -2470,6 +2662,43 @@ Resizable panels separated by focusable handles.
 
 Also accepts the parameters of `KlyComponentBase`.
 
+#### `KlyStat`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+A highlighted value with a title, unit, delta badge, sparkline and caption.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` | `string?` | A line of smaller text under the value. |
+| `Delta` | `string?` | The change shown as a badge beside the value, for example `"+12.4%"`. It is displayed as given. |
+| `DeltaDirection` | `KlyDeltaDirection` | The direction of `KlyStat.Delta`: `KlyDeltaDirection.Up` (success color, the default), `KlyDeltaDirection.Down` (error) or `KlyDeltaDirection.Flat` (neutral). |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Surface` | `KlySurface?` | The surface treatment. Muted when not set. |
+| `Title` | `string?` | The label of the value. |
+| `Trend` | `IReadOnlyList<double>?` | The series of the sparkline, drawn from two points or more. |
+| `Ui` | `StatUi?` | Per-instance class overrides of the slots of the stat, see `StatUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+| `Unit` | `string?` | The unit shown beside the value. |
+| `Value` | `string?` | The value, displayed as given (format it with the culture of your choice). A dash when not set. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
+#### `KlyStatGroup`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+Several small metrics side by side under an optional title (the "row" of statistics).
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Items` | `IReadOnlyList<KlyStatItem>?` | The metrics, as `KlyStatItem`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `Surface` | `KlySurface?` | The surface treatment. Bordered when not set. |
+| `Title` | `string?` | The line above the metrics. |
+| `Ui` | `StatGroupUi?` | Per-instance class overrides of the slots of the stat group, see `StatGroupUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+
+Also accepts the parameters of `KlyComponentBase`.
+
 #### `KlyStepper`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
@@ -2515,6 +2744,8 @@ Table of items whose columns are declared with `KlyColumn` and `KlyTemplateColum
 | `ChildContent` | `RenderFragment?` | The columns: `KlyColumn` and `KlyTemplateColumn` components. |
 | `Empty` | `RenderFragment?` | Shown when there are no items. |
 | `Items` | `IEnumerable<TItem>?` | The rows to show. The columns come from the `KlyColumn` and `KlyTemplateColumn` children. |
+| `Max` | `int?` | The number of rows shown before a Show more button (all rows when `null`). The rows are cut after sorting. |
+| `Step` | `int?` | The number of rows each click on Show more reveals (all the remaining ones when `null`). |
 | `Sticky` | `bool` | Keeps the header visible while the table scrolls (give the table a max height through Class). |
 | `Ui` | `TableUi?` | Per-instance class overrides of the slots of the table, see `TableUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
@@ -2550,6 +2781,27 @@ A column of `KlyTable` whose cells are markup built from the item. It cannot be 
 | `Template` | `RenderFragment<TItem>` | The content of the cell of an item. |
 
 Also accepts the parameters of `KlyColumnBase<TItem>`.
+
+#### `KlyText`
+
+`Klyroo.UI` · component · inherits `KlyComponentBase`
+
+One or more paragraphs, or a quote, with an optional title, clamp to a number of lines and footer.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `Author` | `string?` | The author shown in the footer, before `KlyText.Meta`. |
+| `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
+| `MaxLines` | `int?` | When greater than zero, clamps `KlyText.Value` to this number of lines and adds a Read more toggle. The toggle shows even when the text is shorter, and `KlyText.Paragraphs` are not clamped. |
+| `Meta` | `string?` | Extra text shown in the footer, after `KlyText.Author`. |
+| `Paragraphs` | `IReadOnlyList<string>?` | The paragraphs of the block. When set, they replace `KlyText.Value`. |
+| `Surface` | `KlySurface?` | The surface treatment. Plain when not set. |
+| `Title` | `string?` | The bold first line of the text. |
+| `Ui` | `TextUi?` | Per-instance class overrides of the slots of the text, see `TextUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
+| `Value` | `string?` | The text of the block, used when `KlyText.Paragraphs` is not set. |
+| `Variant` | `KlyTextVariant` | The layout: `KlyTextVariant.Default` or `KlyTextVariant.Quote`. |
+
+Also accepts the parameters of `KlyComponentBase`.
 
 #### `KlyTextarea`
 
@@ -2601,12 +2853,17 @@ List of events along a line, with the current one highlighted.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `Active` | `int?` | Index of the last highlighted item. Null highlights none. |
+| `Active` | `int?` | Index of the last highlighted item in the default layout. Null highlights none. An item with a `KlyTimelineItem.State` uses it instead. |
 | `AriaLabel` | `string?` | Accessible name of the list. |
 | `Color` | `KlyColor` | Semantic color of the timeline: a built-in `KlyColor` or the name of a color you defined. When not set, `KlyDefaults.Color` applies, else the default of the component. |
 | `Items` | `IReadOnlyList<KlyTimelineItem>` | The events, as `KlyTimelineItem`. |
-| `Orientation` | `KlyOrientation` | Direction of the layout: `Horizontal` or `Vertical`. |
+| `Layout` | `KlyTimelineLayout` | The layout: `KlyTimelineLayout.Default` (along a line), `KlyTimelineLayout.Pipeline`, `KlyTimelineLayout.Log` or `KlyTimelineLayout.Schedule`. |
+| `Max` | `int?` | The number of events shown before a Show more button (all events when `null`). In the schedule layout the events are sorted first, so Show more reveals later events. |
+| `Now` | `DateTimeOffset?` | The reference time of the schedule layout, which names the days "Today" and "Tomorrow". `DateTimeOffset.UtcNow` when not set. Pass it for tests and for stable server rendering. |
+| `Orientation` | `KlyOrientation` | Direction of the default layout: `Horizontal` or `Vertical`. |
+| `ShowNumbers` | `bool` | Numbers the markers of the default and pipeline layouts (1, 2, 3...) when an event has no icon. |
 | `Size` | `KlySize` | Size of the timeline, from `Xs` to `Xl`. When not set, `KlyDefaults.Size` applies, else the default of the component. |
+| `Step` | `int?` | The number of events each click on Show more reveals (all the remaining ones when `null`). |
 | `Ui` | `TimelineUi?` | Per-instance class overrides of the slots of the timeline, see `TimelineUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
@@ -2699,8 +2956,11 @@ Avatar with a name and a description, optionally linked.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `AvatarIcon` | `RenderFragment?` | Icon of the avatar when there is no picture, as markup such as a `KlyIcon`. |
+| `AvatarColor` | `KlyColor?` | A color that tints the initials avatar. |
+| `AvatarIcon` | `RenderFragment?` | Icon of the avatar when there is no picture, as markup such as a `KlyIcon`. Without a picture and a `KlyUser.Name`, a person icon is shown. |
 | `AvatarSrc` | `string?` | Address of the avatar picture. |
+| `Badge` | `KlyBadgeItem?` | A badge shown at the end of the row. |
+| `Contacts` | `IReadOnlyList<KlyContactItem>?` | Contact lines under the user, each with an optional icon, link and copy button. They sit outside the link of `KlyUser.Href`. The copy buttons are disabled until the page is interactive. |
 | `Description` | `string?` | Text under the name, such as a role or an email address. |
 | `Href` | `string?` | Makes the whole user a link. |
 | `Name` | `string?` | Name of the person or entity. |
@@ -3339,6 +3599,7 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `BlogPost` | `ComponentTheme` | Theme of `KlyBlogPost`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `BlogPosts` | `ComponentTheme` | Theme of `KlyBlogPosts`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Breadcrumb` | `ComponentTheme` | Theme of `KlyBreadcrumb`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Breakdown` | `ComponentTheme` | Theme of `KlyBreakdown`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Button` | `ComponentTheme` | Theme of `KlyButton`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Calendar` | `ComponentTheme` | Theme of `KlyCalendar`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Card` | `ComponentTheme` | Theme of `KlyCard`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3381,7 +3642,9 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `DashboardSidebarCollapse` | `ComponentTheme` | Theme of `KlyDashboardSidebarCollapse`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `DashboardSidebarToggle` | `ComponentTheme` | Theme of `KlyDashboardSidebarToggle`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `DashboardToolbar` | `ComponentTheme` | Theme of `KlyDashboardToolbar`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `DateTile` | `ComponentTheme` | Theme of `KlyDateTile`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Defaults` | `KlyDefaults` | Default `Color` and `Size` of the components, when a parameter is not set. |
+| `Diff` | `ComponentTheme` | Theme of `KlyDiff`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Drawer` | `ComponentTheme` | Theme of `KlyDrawer`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `DropdownMenu` | `ComponentTheme` | Theme of `KlyDropdownMenu`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Editor` | `ComponentTheme` | Theme of `KlyEditor`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3390,6 +3653,7 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `EditorToolbar` | `ComponentTheme` | Theme of `KlyEditorToolbar`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Empty` | `ComponentTheme` | Theme of `KlyEmpty`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Error` | `ComponentTheme` | Theme of `KlyError`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Facts` | `ComponentTheme` | Theme of `KlyFacts`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `FieldGroup` | `ComponentTheme` | Theme of `KlyFieldGroup`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `FileUpload` | `ComponentTheme` | Theme of `KlyFileUpload`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Footer` | `ComponentTheme` | Theme of `KlyFooter`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3397,8 +3661,10 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `Form` | `ComponentTheme` | Theme of `KlyForm`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `FormField` | `ComponentTheme` | Theme of `KlyFormField`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Header` | `ComponentTheme` | Theme of `KlyHeader`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Heading` | `ComponentTheme` | Theme of `KlyHeading`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Icon` | `ComponentTheme` | Theme of `KlyIcon`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Icons` | `KlyrooIconOptions` | The icons components draw (`Close`, `Check`, `ChevronDown`...), replaceable by name, and `Register` to add icons in code. Any Iconify icon works by name, see `KlyIcon`. |
+| `ImageGallery` | `ComponentTheme` | Theme of `KlyImageGallery`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Images` | `KlyImageSettings` | How images are resized and delivered: providers, breakpoints, densities, allowed remote hosts and presets, global image provider and preset configuration. Read-only once an image was resolved. |
 | `InfiniteScroll` | `ComponentTheme` | Theme of `KlyInfiniteScroll`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Input` | `ComponentTheme` | Theme of `KlyInput`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3410,12 +3676,14 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `InputTime` | `ComponentTheme` | Theme of `KlyInputTime`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Kbd` | `ComponentTheme` | Theme of `KlyKbd`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Link` | `ComponentTheme` | Theme of `KlyLink`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `List` | `ComponentTheme` | Theme of `KlyList`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Listbox` | `ComponentTheme` | Theme of `KlyListbox`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Locale` (get, set) | `KlyLocale?` | The locale every component uses unless a `KlyApp` (or a `CascadingValue` of `KlyLocale`) above it sets one. Leave it unset to follow the culture of the user: the locale is then picked from `KlyrooOptions.Locales` by `CultureInfo.CurrentUICulture`. Like the themes, it becomes read-only the first time a locale is resolved: set it in `AddKlyrooUi`. |
 | `Locales` (get, set) | `IReadOnlyList<KlyLocale>` | The locales the automatic selection chooses from, and that `KlyLocaleSelect` offers by default. Defaults to `KlyLocales.All`; assign a new list to choose fewer or to add your own, for example `o.Locales = [.. KlyLocales.All, australian]`. The list is copied when assigned, so changing the original afterwards has no effect, and it becomes read-only the first time a locale is resolved (a later assignment throws `InvalidOperationException`). English (code "en"), or the first locale when there is none, is the fallback of an unmatched culture. |
 | `LocaleSelect` | `ComponentTheme` | Theme of `KlyLocaleSelect`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Main` | `ComponentTheme` | Theme of `KlyMain`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Marquee` | `ComponentTheme` | Theme of `KlyMarquee`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Meter` | `ComponentTheme` | Theme of `KlyMeter`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Modal` | `ComponentTheme` | Theme of `KlyModal`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `NavigationMenu` | `ComponentTheme` | Theme of `KlyNavigationMenu`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Page` | `ComponentTheme` | Theme of `KlyPage`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3442,6 +3710,7 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `PricingTable` | `ComponentTheme` | Theme of `KlyPricingTable`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Progress` | `ComponentTheme` | Theme of `KlyProgress`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `RadioGroup` | `ComponentTheme` | Theme of `KlyRadioGroup`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `RecordList` | `ComponentTheme` | Theme of `KlyRecordList`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `SanitizeEditorHtml` (get, set) | `Func<string, string>?` | Sanitizes editor HTML before the server shows it as markup (the read-only view displayed until the editor script loads, and on static pages). Without one, that view shows the text only, never raw markup: the value is user input and rendering it as HTML would let stored script run. Plug an allow-list sanitizer here, for example `o.SanitizeEditorHtml = html => new Ganss.Xss.HtmlSanitizer().Sanitize(html);` |
 | `ScrollArea` | `ComponentTheme` | Theme of `KlyScrollArea`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Select` | `ComponentTheme` | Theme of `KlySelect`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3453,10 +3722,13 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `Slideover` | `ComponentTheme` | Theme of `KlySlideover`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Slider` | `ComponentTheme` | Theme of `KlySlider`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Splitter` | `ComponentTheme` | Theme of `KlySplitter`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Stat` | `ComponentTheme` | Theme of `KlyStat`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `StatGroup` | `ComponentTheme` | Theme of `KlyStatGroup`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Stepper` | `ComponentTheme` | Theme of `KlyStepper`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Switch` | `ComponentTheme` | Theme of `KlySwitch`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Table` | `ComponentTheme` | Theme of `KlyTable`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Tabs` | `ComponentTheme` | Theme of `KlyTabs`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
+| `Text` | `ComponentTheme` | Theme of `KlyText`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Textarea` | `ComponentTheme` | Theme of `KlyTextarea`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Timeline` | `ComponentTheme` | Theme of `KlyTimeline`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Toast` | `ComponentTheme` | Theme of `KlyToaster` and of the toasts it shows: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -3600,9 +3872,12 @@ Per-instance class overrides of the slots of `KlyAlert`, passed to its `Ui` para
 | `Actions` (init) | `string?` | Classes merged into the `actions` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Close` (init) | `string?` | Classes merged into the `close` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyAlert`, after the theme and the app configuration. |
+| `DetailsPanel` (init) | `string?` | Classes merged into the `detailsPanel` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Icon` (init) | `string?` | Classes merged into the `icon` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyAlert`, after the theme and the app configuration. |
+| `Toggle` (init) | `string?` | Classes merged into the `toggle` slot of `KlyAlert`, after the theme and the app configuration. |
+| `ToggleIcon` (init) | `string?` | Classes merged into the `toggleIcon` slot of `KlyAlert`, after the theme and the app configuration. |
 | `Wrapper` (init) | `string?` | Classes merged into the `wrapper` slot of `KlyAlert`, after the theme and the app configuration. |
 
 #### `AppUi`
@@ -3737,6 +4012,33 @@ Per-instance class overrides of the slots of `KlyBreadcrumb`, passed to its `Ui`
 | `Separator` (init) | `string?` | Classes merged into the `separator` slot of `KlyBreadcrumb`, after the theme and the app configuration. |
 | `SeparatorIcon` (init) | `string?` | Classes merged into the `separatorIcon` slot of `KlyBreadcrumb`, after the theme and the app configuration. |
 
+#### `BreakdownUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyBreakdown`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Amount` (init) | `string?` | Classes merged into the `amount` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `ColumnHeader` (init) | `string?` | Classes merged into the `columnHeader` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Columns` (init) | `string?` | Classes merged into the `columns` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `CompareAmount` (init) | `string?` | Classes merged into the `compareAmount` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Detail` (init) | `string?` | Classes merged into the `detail` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Footnote` (init) | `string?` | Classes merged into the `footnote` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `LabelRow` (init) | `string?` | Classes merged into the `labelRow` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Lines` (init) | `string?` | Classes merged into the `lines` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Muted` (init) | `string?` | Classes merged into the `muted` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Row` (init) | `string?` | Classes merged into the `row` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Subtotal` (init) | `string?` | Classes merged into the `subtotal` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Toggle` (init) | `string?` | Classes merged into the `toggle` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `ToggleIcon` (init) | `string?` | Classes merged into the `toggleIcon` slot of `KlyBreakdown`, after the theme and the app configuration. |
+| `Total` (init) | `string?` | Classes merged into the `total` slot of `KlyBreakdown`, after the theme and the app configuration. |
+
 #### `ButtonUi`
 
 `Klyroo.UI` · record
@@ -3844,6 +4146,13 @@ Per-instance class overrides of `KlyChart` slots.
 | `Bar` (init) | `string?` | Classes merged into the `bar` slot of `KlyChart`, after the theme and the app configuration. |
 | `Center` (init) | `string?` | Classes merged into the `center` slot of `KlyChart`, after the theme and the app configuration. |
 | `Details` (init) | `string?` | Classes merged into the `details` slot of `KlyChart`, after the theme and the app configuration. |
+| `Funnel` (init) | `string?` | Classes merged into the `funnel` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelBar` (init) | `string?` | Classes merged into the `funnelBar` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelEmpty` (init) | `string?` | Classes merged into the `funnelEmpty` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelHeader` (init) | `string?` | Classes merged into the `funnelHeader` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelLabel` (init) | `string?` | Classes merged into the `funnelLabel` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelStep` (init) | `string?` | Classes merged into the `funnelStep` slot of `KlyChart`, after the theme and the app configuration. |
+| `FunnelValue` (init) | `string?` | Classes merged into the `funnelValue` slot of `KlyChart`, after the theme and the app configuration. |
 | `Grid` (init) | `string?` | Classes merged into the `grid` slot of `KlyChart`, after the theme and the app configuration. |
 | `Hit` (init) | `string?` | Classes merged into the `hit` slot of `KlyChart`, after the theme and the app configuration. |
 | `HitArea` (init) | `string?` | Classes merged into the `hitArea` slot of `KlyChart`, after the theme and the app configuration. |
@@ -4310,6 +4619,44 @@ Per-instance class overrides of `KlyDashboardToolbar` slots.
 | `Right` (init) | `string?` | Classes merged into the `right` slot of `KlyDashboardToolbar`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyDashboardToolbar`, after the theme and the app configuration. |
 
+#### `DateTileUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyDateTile`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Day` (init) | `string?` | Classes merged into the `day` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Month` (init) | `string?` | Classes merged into the `month` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Text` (init) | `string?` | Classes merged into the `text` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Tile` (init) | `string?` | Classes merged into the `tile` slot of `KlyDateTile`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyDateTile`, after the theme and the app configuration. |
+
+#### `DiffUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyDiff`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `After` (init) | `string?` | Classes merged into the `after` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Arrow` (init) | `string?` | Classes merged into the `arrow` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Before` (init) | `string?` | Classes merged into the `before` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyDiff`, after the theme and the app configuration. |
+| `List` (init) | `string?` | Classes merged into the `list` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Unchanged` (init) | `string?` | Classes merged into the `unchanged` slot of `KlyDiff`, after the theme and the app configuration. |
+| `Values` (init) | `string?` | Classes merged into the `values` slot of `KlyDiff`, after the theme and the app configuration. |
+
 #### `DrawerUi`
 
 `Klyroo.UI` · record
@@ -4517,6 +4864,38 @@ Per-instance class overrides of `KlyError` slots.
 | `StatusCode` (init) | `string?` | Classes merged into the `statusCode` slot of `KlyError`, after the theme and the app configuration. |
 | `StatusMessage` (init) | `string?` | Classes merged into the `statusMessage` slot of `KlyError`, after the theme and the app configuration. |
 
+#### `FactsUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyFacts`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Copy` (init) | `string?` | Classes merged into the `copy` slot of `KlyFacts`, after the theme and the app configuration. |
+| `CopyIcon` (init) | `string?` | Classes merged into the `copyIcon` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Empty` (init) | `string?` | Classes merged into the `empty` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Group` (init) | `string?` | Classes merged into the `group` slot of `KlyFacts`, after the theme and the app configuration. |
+| `GroupAside` (init) | `string?` | Classes merged into the `groupAside` slot of `KlyFacts`, after the theme and the app configuration. |
+| `GroupHeader` (init) | `string?` | Classes merged into the `groupHeader` slot of `KlyFacts`, after the theme and the app configuration. |
+| `GroupTitle` (init) | `string?` | Classes merged into the `groupTitle` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Hint` (init) | `string?` | Classes merged into the `hint` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyFacts`, after the theme and the app configuration. |
+| `LabelIcon` (init) | `string?` | Classes merged into the `labelIcon` slot of `KlyFacts`, after the theme and the app configuration. |
+| `LabelRow` (init) | `string?` | Classes merged into the `labelRow` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Link` (init) | `string?` | Classes merged into the `link` slot of `KlyFacts`, after the theme and the app configuration. |
+| `List` (init) | `string?` | Classes merged into the `list` slot of `KlyFacts`, after the theme and the app configuration. |
+| `More` (init) | `string?` | Classes merged into the `more` slot of `KlyFacts`, after the theme and the app configuration. |
+| `MoreIcon` (init) | `string?` | Classes merged into the `moreIcon` slot of `KlyFacts`, after the theme and the app configuration. |
+| `None` (init) | `string?` | Classes merged into the `none` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyFacts`, after the theme and the app configuration. |
+| `Value` (init) | `string?` | Classes merged into the `value` slot of `KlyFacts`, after the theme and the app configuration. |
+| `ValueEmphasis` (init) | `string?` | Classes merged into the `valueEmphasis` slot of `KlyFacts`, after the theme and the app configuration. |
+| `ValueMono` (init) | `string?` | Classes merged into the `valueMono` slot of `KlyFacts`, after the theme and the app configuration. |
+| `ValueSkeleton` (init) | `string?` | Classes merged into the `valueSkeleton` slot of `KlyFacts`, after the theme and the app configuration. |
+
 #### `FieldGroupUi`
 
 `Klyroo.UI` · record
@@ -4628,6 +5007,24 @@ Per-instance class overrides of `KlyHeader` slots.
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyHeader`, after the theme and the app configuration. |
 | `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyHeader`, after the theme and the app configuration. |
 
+#### `HeadingUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyHeading`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Count` (init) | `string?` | Classes merged into the `count` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Icon` (init) | `string?` | Classes merged into the `icon` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Lead` (init) | `string?` | Classes merged into the `lead` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Text` (init) | `string?` | Classes merged into the `text` slot of `KlyHeading`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyHeading`, after the theme and the app configuration. |
+| `TitleRow` (init) | `string?` | Classes merged into the `titleRow` slot of `KlyHeading`, after the theme and the app configuration. |
+
 #### `IconUi`
 
 `Klyroo.UI` · record
@@ -4637,6 +5034,22 @@ Per-instance class overrides of `KlyIcon` slots.
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Base` (init) | `string?` | Classes merged into the `base` slot of `KlyIcon`, after the theme and the app configuration. |
+
+#### `ImageGalleryUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyImageGallery`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Grid` (init) | `string?` | Classes merged into the `grid` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Image` (init) | `string?` | Classes merged into the `image` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Overflow` (init) | `string?` | Classes merged into the `overflow` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyImageGallery`, after the theme and the app configuration. |
+| `Tile` (init) | `string?` | Classes merged into the `tile` slot of `KlyImageGallery`, after the theme and the app configuration. |
 
 #### `InfiniteScrollUi`
 
@@ -4790,10 +5203,32 @@ An item of `KlyAccordion`: a header label and a content that opens and closes.
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Content` (init) | `RenderFragment?` | Content of the panel that opens under the header. |
+| `DefaultOpen` (init) | `bool` | Whether the item starts open when `KlyAccordion.Value` is not set. With a single open item (`KlyAccordion.Multiple` off), only the first such item opens. |
 | `Disabled` (init) | `bool` | Prevents the user from opening or closing the item. |
 | `Icon` (init) | `RenderFragment?` | Icon shown before the label, as markup such as a `KlyIcon`. |
 | `Label` (init) | `string` | Text of the header button of the item. |
+| `Text` (init) | `string?` | Text of the panel, used when `KlyAccordionItem.Content` is not set. |
 | `Value` (init) | `string?` | Identifies the item in `KlyAccordion.Value`. Defaults to its index. |
+
+#### `KlyActionItem`
+
+`Klyroo.UI` · record
+
+A button or link shown in a block, drawn as a small `KlyButton`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyActionItem(string Label)` | A button or link shown in a block, drawn as a small `KlyButton`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Color` (init) | `KlyColor` | The button color (neutral by default). |
+| `Href` (init) | `string?` | The link target. When set, the button navigates instead of only raising `KlyActionItem.OnClick`. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown before the label. |
+| `Label` (init) | `string` | The button text. |
+| `OnClick` (init) | `EventCallback` | The callback invoked when the button is clicked. The button stays disabled until the page is interactive when this is set and there is no `KlyActionItem.Href`. |
+| `Target` (init) | `KlyLinkTarget?` | The `target` of the link, such as `KlyLinkTarget.Blank`. It applies only with `KlyActionItem.Href`. |
+| `Variant` (init) | `ButtonVariant` | The button look (outline by default). |
 
 #### `KlyAuthField`
 
@@ -4849,8 +5284,27 @@ One avatar of a `KlyAvatarGroup`, with the parameters of `KlyAvatar`.
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Alt` (init) | `string?` | Alternative text of the picture, which also names the avatar. |
+| `Badge` (init) | `KlyBadgeItem?` | A badge of the person. Its label goes in the tooltip and the accessible name of the avatar, after `KlyAvatarItem.Description`. |
+| `Color` (init) | `KlyColor?` | A color that tints the initials avatar. |
+| `Description` (init) | `string?` | A line about the person, such as a role. It goes in the tooltip and the accessible name of the avatar, after `KlyAvatarItem.Alt`. |
 | `Src` (init) | `string?` | Address of the picture. |
 | `Text` (init) | `string?` | Initials shown when there is no picture. |
+
+#### `KlyBadgeItem`
+
+`Klyroo.UI` · record
+
+A small badge shown in a read-only block, drawn as a subtle small `KlyBadge`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyBadgeItem(string Label)` | A small badge shown in a read-only block, drawn as a subtle small `KlyBadge`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Color` (init) | `KlyColor?` | The badge color. Neutral when not set. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown before the label. |
+| `Label` (init) | `string` | The badge text. |
 
 #### `KlyBreadcrumbItem`
 
@@ -4867,6 +5321,42 @@ A page of the trail of a `KlyBreadcrumb`.
 | `Href` (init) | `string?` | Makes the item a link. The last item is the current page whether it has one or not. |
 | `Icon` (init) | `RenderFragment?` | Icon shown before the label, as markup such as a `KlyIcon`. |
 | `Label` (init) | `string` | Text of the item. |
+
+#### `KlyBreakdownColumns`
+
+`Klyroo.UI` · record
+
+The headers of the two amount columns of a `KlyBreakdown`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyBreakdownColumns(string First, string Second)` | The headers of the two amount columns of a `KlyBreakdown`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `First` (init) | `string` | The header over `KlyBreakdownLine.Amount`. |
+| `Second` (init) | `string` | The header over `KlyBreakdownLine.CompareAmount`. |
+
+#### `KlyBreakdownLine`
+
+`Klyroo.UI` · record
+
+One line of a `KlyBreakdown`, also used for its total.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyBreakdownLine(string Label)` | One line of a `KlyBreakdown`, also used for its total. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Amount` (init) | `decimal?` | The amount, formatted with `KlyBreakdown.Format` and `KlyBreakdown.Culture`. A missing amount renders a dash. |
+| `Badge` (init) | `KlyBadgeItem?` | A badge shown after the label. |
+| `Color` (init) | `KlyColor?` | A color for the amount, such as `KlyColor.Success` for a discount. |
+| `CompareAmount` (init) | `decimal?` | A second amount, such as the previous period, shown in a second column. Setting it on any line, or setting `KlyBreakdown.CompareColumns`, switches the block to two columns, with a dash where a line has no second amount. |
+| `Detail` (init) | `string?` | A line of smaller text under the label. |
+| `IsMuted` (init) | `bool` | Renders the line in a dimmed color. |
+| `IsSubtotal` (init) | `bool` | Renders the line as a subtotal, with a top border and bold text. |
+| `Label` (init) | `string` | The line label. |
 
 #### `KlyCarouselItem`
 
@@ -4968,6 +5458,23 @@ A command of `KlyCommandPalette`: an action, or a link when `KlyCommandItem.Href
 | `Label` (init) | `string` | Text of the command. |
 | `Shortcut` (init) | `string?` | Keyboard shortcut shown at the end of the row, such as `Ctrl+K`. |
 | `Value` (init) | `string?` | Identifies the command in `KlyCommandPalette.OnSelect`. Defaults to the label. |
+
+#### `KlyContactItem`
+
+`Klyroo.UI` · record
+
+One contact line of a `KlyUser`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyContactItem(string Value)` | One contact line of a `KlyUser`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Copy` (init) | `bool` | Whether to show a copy button (`true` by default). |
+| `Href` (init) | `string?` | A link for the value, such as a `mailto:` or `tel:` URL. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown before the value, such as `"mail"`. |
+| `Value` (init) | `string` | The text shown and copied, such as an email address. |
 
 #### `KlyContentNavigationItem`
 
@@ -5075,6 +5582,69 @@ A range of dates. `KlyDateRange.End` is null while only the start has been chose
 | `End` (init) | `DateOnly?` | Last date of the range, or null while only the start has been chosen. |
 | `Start` (init) | `DateOnly?` | First date of the range, or null when none was chosen. |
 
+#### `KlyDiffItem`
+
+`Klyroo.UI` · record
+
+One field of a `KlyDiff`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyDiffItem(string Label, string? Before, string? After)` | One field of a `KlyDiff`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `After` (init) | `string?` | The new value. |
+| `Before` (init) | `string?` | The previous value, shown struck through. |
+| `Changed` (init) | `bool` | Whether the field changed. Unchanged fields are hidden unless `KlyDiff.ShowUnchanged` is set. |
+| `Label` (init) | `string` | The field label. |
+| `Note` (init) | `KlyBadgeItem?` | A badge shown after the label, such as `"Requires approval"`. |
+
+| Method | Returns | Description |
+| :--- | :--- | :--- |
+| `static Compare<T>(string label, T before, T after, Func<T, string?>? format = null, IEqualityComparer<T>? comparer = null)` | `KlyDiffItem` | Builds a field from two typed values: it is changed when they differ, and each value is shown with `format` (`ToString()` of the value when not set; a `null` value shows nothing). |
+
+#### `KlyFact`
+
+`Klyroo.UI` · record
+
+One label and value row of a `KlyFacts`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyFact(string Label)` | One label and value row of a `KlyFacts`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Badge` (init) | `KlyBadgeItem?` | A badge shown instead of the value. |
+| `Color` (init) | `KlyColor?` | A color for the value, such as `KlyColor.Success`. It applies to plain values; a link keeps the link color and a badge its own. |
+| `Copy` (init) | `bool` | Shows a copy button that copies `KlyFact.CopyText`, or `KlyFact.Value` when that is not set. |
+| `CopyText` (init) | `string?` | The text copied by the copy button. Setting it also shows the button. |
+| `Emphasis` (init) | `bool` | Renders the value in bold. |
+| `Hint` (init) | `string?` | A short line of help shown under the label. |
+| `Href` (init) | `string?` | Renders the value as a link to this URL. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown before the label. |
+| `Label` (init) | `string` | The row label. |
+| `Loading` (init) | `bool` | Shows a placeholder instead of the value. |
+| `Mono` (init) | `bool` | Renders the value in a monospace font. |
+| `Value` (init) | `string?` | The row value. An empty value with no `KlyFact.Badge` renders a dash. |
+
+#### `KlyFactGroup`
+
+`Klyroo.UI` · record
+
+A titled group of rows of a `KlyFacts`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyFactGroup(string? Title, IReadOnlyList<KlyFact> Items)` | A titled group of rows of a `KlyFacts`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Aside` (init) | `string?` | Text shown opposite the title. |
+| `Items` (init) | `IReadOnlyList<KlyFact>` | The rows of the group. |
+| `Title` (init) | `string?` | The group title. |
+
 #### `KlyFooterColumn`
 
 `Klyroo.UI` · record
@@ -5089,6 +5659,23 @@ A column of a `KlyFooterColumns`: a heading and its links. Only the label, href,
 | :--- | :--- | :--- |
 | `Label` (init) | `string` | Heading of the column. |
 | `Links` (init) | `IReadOnlyList<KlyNavigationItem>` | The links of the column. |
+
+#### `KlyGalleryImage`
+
+`Klyroo.UI` · record
+
+One image of a `KlyImageGallery`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyGalleryImage(string Src)` | One image of a `KlyImageGallery`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Alt` (init) | `string?` | The text alternative. Defaults to `KlyMessages.ImageAlt` with the position of the image. |
+| `Height` (init) | `int?` | The height of the image in CSS pixels, as `KlyImage.Height`. |
+| `Src` (init) | `string` | The address of the image. |
+| `Width` (init) | `int?` | The width of the image in CSS pixels, as `KlyImage.Width`. |
 
 #### `KlyImageModifiers`
 
@@ -5132,6 +5719,27 @@ Image settings that a component forwards to `KlyImage` (`:image="{ src, format: 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
 | `OverDefaultsOf(KlyImageOptions? fallback)` | `KlyImageOptions` | The values of this instance, with the ones it leaves null taken from `fallback`. `KlyImageOptions.Modifiers` are merged key by key. |
+
+#### `KlyListItem`
+
+`Klyroo.UI` · record
+
+One item of a `KlyList`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyListItem(string Text)` | One item of a `KlyList`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Color` (init) | `KlyColor?` | A color for the bullet or `KlyListItem.Icon` in the plain layout. |
+| `Current` (init) | `bool` | Marks the item as the current step in the steps and checks layouts. |
+| `Description` (init) | `string?` | A line under the text. |
+| `Done` (init) | `bool` | Marks the item as done in the steps and checks layouts. |
+| `Href` (init) | `string?` | The URL the item links to. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown instead of the bullet in the plain layout. The steps and checks layouts keep their own marker. |
+| `Meta` (init) | `string?` | Text shown at the end of the row. |
+| `Text` (init) | `string` | The item text. It is a link when `KlyListItem.Href` is set. |
 
 #### `KlyLocale`
 
@@ -5185,6 +5793,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
+| `AllDay` (init) | `string` | The time of a schedule event that lasts whole days (`"All day"`). |
 | `AuthFormIncompleteCode` (init) | `string` | Error of an incomplete one-time code; `{0}` is the number of characters. |
 | `AuthFormInvalidEmail` (init) | `string` | Error that `KlyAuthForm` shows when an email field holds an address that is not valid. |
 | `AuthFormRequired` (init) | `string` | Error of an empty required field of an auth form; `{0}` is the field label. |
@@ -5210,6 +5819,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `ChartSummary` (init) | `string` | Generated description of a line, area or bar chart. {0} kind, {1} number of points, {2} first, {3} last, {4} the series (each formatted with `KlyMessages.ChartRange`). |
 | `ChartSummaryDonut` (init) | `string` | Generated description of a donut chart. {0} kind, {1} the slices (each formatted with `KlyMessages.ChartSlice`). |
 | `ChartTable` (init) | `string` | Summary of the disclosure that holds the chart's data table. |
+| `ChartValue` (init) | `string` | The name of the series of a funnel `KlyChart` or a chart without a name, used in the tooltip and the data table (`"Value"`). |
 | `ChatAssistant` (init) | `string` | Name of the author of an assistant message in `KlyChatMessage`, used as the accessible name of its avatar. |
 | `ChatAttachmentFailed` (init) | `string` | Word that `KlyChatAttachment` shows when the upload of a file failed. |
 | `ChatAttachmentUploading` (init) | `string` | Read out after the name of an attachment that is uploading or failed. |
@@ -5252,11 +5862,16 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `ContentSurround` (init) | `string` | Accessible name of the previous and next page links. |
 | `ContentToc` (init) | `string` | Title of a `KlyContentToc` that has no `Title`. |
 | `ContextMenu` (init) | `string` | Accessible name of the menu of `KlyContextMenu`. |
+| `CopyValue` (init) | `string` | The accessible name of a copy button. `{0}` is the label or value it copies (`"Copy Email"`). |
 | `DashboardSearch` (init) | `string` | Accessible name of the dashboard search dialog and its search field. |
 | `DashboardSearchButton` (init) | `string` | Text of the button that opens the dashboard search. |
 | `DashboardSearchPlaceholder` (init) | `string` | Placeholder of the dashboard search field. |
+| `DayCount` (init) | `Func<int, string>` | The length of a range `KlyDateTile` or of an all-day event of a schedule, given the number of days (`"7 days"`). |
 | `DayPeriod` (init) | `string` | Accessible name of the AM/PM segment of `KlyInputTime`. |
+| `DaysOverdue` (init) | `Func<int, string>` | The countdown text of a `KlyDateTile` for a past date, given the number of days (`"3 days overdue"`). |
+| `Details` (init) | `string` | The toggle that opens the lines of a collapsible `KlyBreakdown` (`"Details"`). |
 | `DropFiles` (init) | `string` | Text of the drop zone of `KlyFileUpload`. |
+| `Duration` (init) | `Func<int, string>` | The length of a schedule event, given its total number of minutes (`"1 h 30 min"`, `"45 min"`, `"2 h"`). The length is never negative. |
 | `EditorAddressRefused` (init) | `string` | Explains why the editor refused an address when no list of schemes is known. |
 | `EditorBlockquote` (init) | `string` | Label of the quote button of the editor toolbar and of its slash menu entry. |
 | `EditorBold` (init) | `string` | Label of the bold button of the editor toolbar (`KlyEditorToolbar`). |
@@ -5323,8 +5938,11 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `HeaderMenu` (init) | `string` | Title of the mobile menu panel of a header, and name of its navigation. |
 | `HeaderNavigation` (init) | `string` | Accessible name of the site navigation of a header. |
 | `HexColor` (init) | `string` | Accessible name of the hex field of `KlyColorPicker`. |
+| `HideDetails` (init) | `string` | The toggle that closes the details of a `KlyAlert` or the lines of a collapsible `KlyBreakdown` (`"Hide details"`). |
 | `Hours` (init) | `string` | Accessible name of the hours segment of `KlyInputTime`. |
 | `Hue` (init) | `string` | Accessible name of the hue slider of `KlyColorPicker`. |
+| `ImageAlt` (init) | `string` | The alternative text of an image of a `KlyImageGallery` that has none. `{0}` is its position (`"Image 2"`). |
+| `InDays` (init) | `Func<int, string>` | The countdown text of a `KlyDateTile` for a date two days away or more, given the number of days (`"In 5 days"`). |
 | `InputMenuNoResults` (init) | `string` | Text shown by `KlyInputMenu` when no suggestion matches what was typed. |
 | `InputMenuSuggestions` (init) | `string` | Accessible name of the list of suggestions of `KlyInputMenu`. |
 | `InputNumberDecrement` (init) | `string` | Accessible name of the decrease button of `KlyInputNumber`. |
@@ -5336,6 +5954,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `LoadMore` (init) | `string` | Text of the button of `KlyInfiniteScroll` that loads the next items by hand. |
 | `LocaleSelectLabel` (init) | `string` | Accessible name of a language select. |
 | `MaximumSize` (init) | `string` | Hint of `KlyFileUpload` that states the size limit; `{0}` is the limit, formatted for the locale. |
+| `Meter` (init) | `string` | The accessible name of a `KlyMeter` without a title (`"Meter"`). |
 | `Minutes` (init) | `string` | Accessible name of the minutes segment of `KlyInputTime`. |
 | `ModifierKey` (init) | `string` | Name of the key that "mod" stands for in the hint of a shortcut (`mod+k`): "Ctrl", "Strg" in German. On Apple devices the browser shows the command symbol instead. |
 | `MoreAvatars` (init) | `string` | Name of the "+N" avatar of an avatar group; `{0}` is the number of hidden avatars. |
@@ -5365,6 +5984,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `PricingNotIncluded` (init) | `string` | Hidden text of a pricing table cell that has a minus sign. |
 | `PricingOriginalPrice` (init) | `string` | Hidden text before the original price of a pricing plan that has a discount. |
 | `Progress` (init) | `string` | Accessible name of a progress bar that has no `AriaLabel`. |
+| `ReadMore` (init) | `string` | The toggle that expands a clamped `KlyText` (`"Read more"`). |
 | `RemoteOptionsError` (init) | `string` | Shown (and announced) when the `OptionsProvider` of a `SelectMenu` or `InputMenu` fails. |
 | `RemoteOptionsLoading` (init) | `string` | Announced politely while a `SelectMenu` or `InputMenu` with an `OptionsProvider` loads its options. |
 | `RemoteOptionsMinLength` (init) | `string` | Shown when the typed text is shorter than `MinLength`; `{0}` is that length. |
@@ -5377,6 +5997,9 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `SelectMenuCreate` (init) | `string` | Label of the option that adds the typed text as a new value; `{0}` is the text. |
 | `SelectMenuNoResults` (init) | `string` | Text shown by `KlySelectMenu` when no option matches the filter. |
 | `SelectMenuSearch` (init) | `string` | Accessible name of the filter field of the popup of `KlySelectMenu`. |
+| `ShowDetails` (init) | `string` | The toggle that opens the details of a `KlyAlert` (`"Show details"`). |
+| `ShowLess` (init) | `string` | The toggle that clamps an expanded `KlyText` again (`"Show less"`). |
+| `ShowMore` (init) | `Func<int, string>` | The button that reveals more items of a list-like block, given the number of items the next click reveals (`"Show more · 3"`). |
 | `SidebarLabel` (init) | `string` | Accessible name of a sidebar, and title of its mobile panel. |
 | `SkipToContent` (init) | `string` | Text of the skip link (`KlySkipLink`): the first link of a page, to the main content. |
 | `SlideControls` (init) | `string` | Accessible name of the group of slide dots of `KlyCarousel`. |
@@ -5388,8 +6011,30 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `StepCompleted` (init) | `string` | Word read by assistive technology after the title of a finished step of `KlyStepper`. |
 | `TimeAm` (init) | `string` | Label of the morning segment when the culture has no designator for it. |
 | `TimePm` (init) | `string` | Label of the afternoon segment when the culture has no designator for it. |
+| `Today` (init) | `string` | The countdown text of a `KlyDateTile` for the current day, and the heading of today in a schedule (`"Today"`). |
 | `ToggleColorMode` (init) | `string` | Accessible name of `KlyColorModeButton` and `KlyColorModeSwitch`. |
+| `Tomorrow` (init) | `string` | The countdown text of a `KlyDateTile` for the next day, and the heading of tomorrow in a schedule (`"Tomorrow"`). |
 | `TooManyFiles` (init) | `string` | Error of `KlyFileUpload` when more files than allowed are chosen; `{0}` is the limit. |
+| `Unscheduled` (init) | `string` | The heading of the events of a schedule that have no date (`"Unscheduled"`). |
+
+#### `KlyMeterPart`
+
+`Klyroo.UI` · record
+
+One segment of a `KlyMeter`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyMeterPart(string Label, double Value)` | One segment of a `KlyMeter`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Color` (init) | `KlyColor?` | The segment color (primary when `null`). |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown in the legend instead of the color dot. |
+| `Label` (init) | `string` | The segment label, shown as a tooltip and in the legend. |
+| `Max` (init) | `double?` | A maximum for this segment: the segment never grows past it, and the legend shows the value out of it. |
+| `Value` (init) | `double` | The segment size, in the same unit as `KlyMeter.Max`. |
+| `ValueLabel` (init) | `string?` | The value as displayed in the tooltip and the legend, such as `"3.2 GB"`. When `null`, the number is shown. |
 
 #### `KlyNavigationItem`
 
@@ -5581,6 +6226,33 @@ A radio button of a `KlyRadioGroup`.
 | `Label` (init) | `string` | Text next to the radio button. |
 | `Value` (init) | `TValue` | Value the group takes when the radio button is chosen. |
 
+#### `KlyRecordItem`
+
+`Klyroo.UI` · record
+
+One row of a `KlyRecordList`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyRecordItem(string Title)` | One row of a `KlyRecordList`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `AvatarText` (init) | `string?` | Short text, such as initials, shown in the leading tile. |
+| `Badge` (init) | `KlyBadgeItem?` | A badge shown at the end of the row. |
+| `Badges` (init) | `IReadOnlyList<KlyBadgeItem>?` | Badges shown at the end of the row, before `KlyRecordItem.Badge`. |
+| `Color` (init) | `KlyColor?` | A color for the leading tile and the trailing value. |
+| `Description` (init) | `string?` | The secondary line under the title. |
+| `DescriptionIcon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown before `KlyRecordItem.Description`. |
+| `Href` (init) | `string?` | The URL the title links to. |
+| `Icon` (init) | `string?` | The name of an icon (see `KlyIcon`) shown in the leading tile. It takes precedence over `KlyRecordItem.AvatarText`, and `KlyRecordItem.ImageSrc` takes precedence over it. |
+| `ImageSrc` (init) | `string?` | The URL of an image shown in the leading tile instead of the icon or avatar text. It is decorative (empty `alt`), since the title names the row. |
+| `OnClick` (init) | `EventCallback` | A callback invoked when the title is clicked. Without `KlyRecordItem.Href` the title becomes a button, disabled until the page is interactive; with it, the link is followed and the callback runs too. |
+| `Reference` (init) | `string?` | A reference such as an order number, shown above the title in a monospace font. |
+| `Title` (init) | `string` | The row title. It is a link when `KlyRecordItem.Href` is set. |
+| `Trailing` (init) | `string?` | A value shown at the end of the row, such as an amount. |
+| `TrailingCaption` (init) | `string?` | A line of smaller text under the trailing value, such as a date. |
+
 #### `KlyResolvedImage`
 
 `Klyroo.UI` · record
@@ -5639,6 +6311,23 @@ A panel of a `KlySplitter`.
 | `MinSize` (init) | `double` | Smallest size in percent. |
 | `Size` (init) | `double?` | Initial size in percent. Panels without one share what the others leave. |
 
+#### `KlyStatItem`
+
+`Klyroo.UI` · record
+
+One metric of a `KlyStatGroup`.
+
+| Constructor | Description |
+| :--- | :--- |
+| `KlyStatItem(string Label, string Value)` | One metric of a `KlyStatGroup`. |
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | A line of text below the value. |
+| `Color` (init) | `KlyColor?` | A color for the value, such as `KlyColor.Error` for a metric that went wrong. |
+| `Label` (init) | `string` | The metric label. |
+| `Value` (init) | `string` | The metric value, displayed as given. |
+
 #### `KlyStepperItem`
 
 `Klyroo.UI` · record
@@ -5687,9 +6376,14 @@ An event of a `KlyTimeline`.
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
-| `Date` (init) | `string?` | Free text: "Mar 2026", "Yesterday". |
+| `Actor` (init) | `string?` | The name of the person behind the event. |
+| `At` (init) | `DateTimeOffset?` | When the event happened or starts. It is shown in the short date and time format of the resolved culture when `KlyTimelineItem.Date` is not set, set as the `datetime` of the `time` element, and starts each line of the log layout. It is shown in its own offset. In the schedule layout it places the event on its day and orders the events; an event without it is listed last, under the unscheduled heading. |
+| `Color` (init) | `KlyColor?` | A color for the marker of this event, replacing the one of the timeline. |
+| `Date` (init) | `string?` | Free text: "Mar 2026", "Yesterday". It is displayed as given and takes precedence over `KlyTimelineItem.At` for the text; in the log layout it replaces the time part of `KlyTimelineItem.At`. |
 | `Description` (init) | `string?` | Text under the title. |
+| `EndAt` (init) | `DateTimeOffset?` | When the event ends. Only the schedule layout reads it: it shows the time range and the length of the event. It is ignored when `KlyTimelineItem.At` is not set or when it is not after `KlyTimelineItem.At`, and it is shown in its own offset. An event that starts at midnight and has no end, or ends at midnight or at the end of a day, is an all-day event. An end at midnight is excluded, as in calendar files (iCal): an `KlyTimelineItem.At` of the 12th and an end of the 14th at midnight is two days, and one of the 14th at 23:59 is three. |
 | `Icon` (init) | `RenderFragment?` | Icon of the event, as markup such as a `KlyIcon`. |
+| `State` (init) | `KlyTimelineState?` | The state of the event. When `null`, `KlyTimeline.Active` decides in the default layout, an event is done in the pipeline and log layouts, and it is a plain upcoming event in the schedule layout, where only an explicit `KlyTimelineState.Done` is muted and only `KlyTimelineState.Current` is emphasized and gets `aria-current`. |
 | `Title` (init) | `string` | Title of the event. |
 
 #### `KlyToast`
@@ -5770,6 +6464,32 @@ Per-instance class overrides of the slots of `KlyListbox`, passed to its `Ui` pa
 | `ItemLeadingIcon` (init) | `string?` | Classes merged into the `itemLeadingIcon` slot of `KlyListbox`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyListbox`, after the theme and the app configuration. |
 
+#### `ListUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyList`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Body` (init) | `string?` | Classes merged into the `body` slot of `KlyList`, after the theme and the app configuration. |
+| `Bullet` (init) | `string?` | Classes merged into the `bullet` slot of `KlyList`, after the theme and the app configuration. |
+| `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyList`, after the theme and the app configuration. |
+| `Icon` (init) | `string?` | Classes merged into the `icon` slot of `KlyList`, after the theme and the app configuration. |
+| `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyList`, after the theme and the app configuration. |
+| `Lead` (init) | `string?` | Classes merged into the `lead` slot of `KlyList`, after the theme and the app configuration. |
+| `Link` (init) | `string?` | Classes merged into the `link` slot of `KlyList`, after the theme and the app configuration. |
+| `List` (init) | `string?` | Classes merged into the `list` slot of `KlyList`, after the theme and the app configuration. |
+| `Marker` (init) | `string?` | Classes merged into the `marker` slot of `KlyList`, after the theme and the app configuration. |
+| `MarkerIcon` (init) | `string?` | Classes merged into the `markerIcon` slot of `KlyList`, after the theme and the app configuration. |
+| `Meta` (init) | `string?` | Classes merged into the `meta` slot of `KlyList`, after the theme and the app configuration. |
+| `More` (init) | `string?` | Classes merged into the `more` slot of `KlyList`, after the theme and the app configuration. |
+| `MoreIcon` (init) | `string?` | Classes merged into the `moreIcon` slot of `KlyList`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyList`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyList`, after the theme and the app configuration. |
+| `Text` (init) | `string?` | Classes merged into the `text` slot of `KlyList`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyList`, after the theme and the app configuration. |
+
 #### `LocaleSelectUi`
 
 `Klyroo.UI` · record
@@ -5800,6 +6520,39 @@ Per-instance class overrides of the slots of `KlyMarquee`, passed to its `Ui` pa
 | :--- | :--- | :--- |
 | `Group` (init) | `string?` | Classes merged into the `group` slot of `KlyMarquee`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyMarquee`, after the theme and the app configuration. |
+
+#### `MeterUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyMeter`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Bar` (init) | `string?` | Classes merged into the `bar` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Header` (init) | `string?` | Classes merged into the `header` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Legend` (init) | `string?` | Classes merged into the `legend` slot of `KlyMeter`, after the theme and the app configuration. |
+| `LegendDot` (init) | `string?` | Classes merged into the `legendDot` slot of `KlyMeter`, after the theme and the app configuration. |
+| `LegendIcon` (init) | `string?` | Classes merged into the `legendIcon` slot of `KlyMeter`, after the theme and the app configuration. |
+| `LegendItem` (init) | `string?` | Classes merged into the `legendItem` slot of `KlyMeter`, after the theme and the app configuration. |
+| `LegendLabel` (init) | `string?` | Classes merged into the `legendLabel` slot of `KlyMeter`, after the theme and the app configuration. |
+| `LegendValue` (init) | `string?` | Classes merged into the `legendValue` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Level` (init) | `string?` | Classes merged into the `level` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Part` (init) | `string?` | Classes merged into the `part` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Ring` (init) | `string?` | Classes merged into the `ring` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingArc` (init) | `string?` | Classes merged into the `ringArc` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingDrawing` (init) | `string?` | Classes merged into the `ringDrawing` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingSvg` (init) | `string?` | Classes merged into the `ringSvg` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingText` (init) | `string?` | Classes merged into the `ringText` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingTrack` (init) | `string?` | Classes merged into the `ringTrack` slot of `KlyMeter`, after the theme and the app configuration. |
+| `RingValue` (init) | `string?` | Classes merged into the `ringValue` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Scale` (init) | `string?` | Classes merged into the `scale` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Track` (init) | `string?` | Classes merged into the `track` slot of `KlyMeter`, after the theme and the app configuration. |
+| `Value` (init) | `string?` | Classes merged into the `value` slot of `KlyMeter`, after the theme and the app configuration. |
 
 #### `ModalUi`
 
@@ -6259,6 +7012,38 @@ Per-instance class overrides of the slots of `KlyRadioGroup`, passed to its `Ui`
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyRadioGroup`, after the theme and the app configuration. |
 | `Wrapper` (init) | `string?` | Classes merged into the `wrapper` slot of `KlyRadioGroup`, after the theme and the app configuration. |
 
+#### `RecordListUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyRecordList`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Avatar` (init) | `string?` | Classes merged into the `avatar` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `AvatarIcon` (init) | `string?` | Classes merged into the `avatarIcon` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Body` (init) | `string?` | Classes merged into the `body` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Count` (init) | `string?` | Classes merged into the `count` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Header` (init) | `string?` | Classes merged into the `header` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Image` (init) | `string?` | Classes merged into the `image` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Lead` (init) | `string?` | Classes merged into the `lead` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Link` (init) | `string?` | Classes merged into the `link` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Meta` (init) | `string?` | Classes merged into the `meta` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `MetaIcon` (init) | `string?` | Classes merged into the `metaIcon` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `MetaText` (init) | `string?` | Classes merged into the `metaText` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `More` (init) | `string?` | Classes merged into the `more` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `MoreIcon` (init) | `string?` | Classes merged into the `moreIcon` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Name` (init) | `string?` | Classes merged into the `name` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Reference` (init) | `string?` | Classes merged into the `reference` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Trail` (init) | `string?` | Classes merged into the `trail` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `Trailing` (init) | `string?` | Classes merged into the `trailing` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `TrailingBlock` (init) | `string?` | Classes merged into the `trailingBlock` slot of `KlyRecordList`, after the theme and the app configuration. |
+| `TrailingCaption` (init) | `string?` | Classes merged into the `trailingCaption` slot of `KlyRecordList`, after the theme and the app configuration. |
+
 #### `ScrollAreaUi`
 
 `Klyroo.UI` · record
@@ -6424,6 +7209,42 @@ Per-instance class overrides of the slots of `KlySplitter`, passed to its `Ui` p
 | `Panel` (init) | `string?` | Classes merged into the `panel` slot of `KlySplitter`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlySplitter`, after the theme and the app configuration. |
 
+#### `StatGroupUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyStatGroup`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Grid` (init) | `string?` | Classes merged into the `grid` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyStatGroup`, after the theme and the app configuration. |
+| `Value` (init) | `string?` | Classes merged into the `value` slot of `KlyStatGroup`, after the theme and the app configuration. |
+
+#### `StatUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyStat`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyStat`, after the theme and the app configuration. |
+| `Delta` (init) | `string?` | Classes merged into the `delta` slot of `KlyStat`, after the theme and the app configuration. |
+| `Label` (init) | `string?` | Classes merged into the `label` slot of `KlyStat`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyStat`, after the theme and the app configuration. |
+| `Row` (init) | `string?` | Classes merged into the `row` slot of `KlyStat`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyStat`, after the theme and the app configuration. |
+| `Sparkline` (init) | `string?` | Classes merged into the `sparkline` slot of `KlyStat`, after the theme and the app configuration. |
+| `Unit` (init) | `string?` | Classes merged into the `unit` slot of `KlyStat`, after the theme and the app configuration. |
+| `Value` (init) | `string?` | Classes merged into the `value` slot of `KlyStat`, after the theme and the app configuration. |
+| `ValueGroup` (init) | `string?` | Classes merged into the `valueGroup` slot of `KlyStat`, after the theme and the app configuration. |
+
 #### `StepperUi`
 
 `Klyroo.UI` · record
@@ -6471,12 +7292,19 @@ Per-instance class overrides of the slots of `KlyTable`, passed to its `Ui` para
 | :--- | :--- | :--- |
 | `Base` (init) | `string?` | Classes merged into the `base` slot of `KlyTable`, after the theme and the app configuration. |
 | `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyTable`, after the theme and the app configuration. |
+| `CellEnd` (init) | `string?` | Classes merged into the `cellEnd` slot of `KlyTable`, after the theme and the app configuration. |
+| `CellMono` (init) | `string?` | Classes merged into the `cellMono` slot of `KlyTable`, after the theme and the app configuration. |
+| `CellNumeric` (init) | `string?` | Classes merged into the `cellNumeric` slot of `KlyTable`, after the theme and the app configuration. |
 | `Empty` (init) | `string?` | Classes merged into the `empty` slot of `KlyTable`, after the theme and the app configuration. |
+| `More` (init) | `string?` | Classes merged into the `more` slot of `KlyTable`, after the theme and the app configuration. |
+| `MoreIcon` (init) | `string?` | Classes merged into the `moreIcon` slot of `KlyTable`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyTable`, after the theme and the app configuration. |
 | `SortButton` (init) | `string?` | Classes merged into the `sortButton` slot of `KlyTable`, after the theme and the app configuration. |
 | `SortIcon` (init) | `string?` | Classes merged into the `sortIcon` slot of `KlyTable`, after the theme and the app configuration. |
 | `Tbody` (init) | `string?` | Classes merged into the `tbody` slot of `KlyTable`, after the theme and the app configuration. |
 | `Td` (init) | `string?` | Classes merged into the `td` slot of `KlyTable`, after the theme and the app configuration. |
+| `Tf` (init) | `string?` | Classes merged into the `tf` slot of `KlyTable`, after the theme and the app configuration. |
+| `Tfoot` (init) | `string?` | Classes merged into the `tfoot` slot of `KlyTable`, after the theme and the app configuration. |
 | `Th` (init) | `string?` | Classes merged into the `th` slot of `KlyTable`, after the theme and the app configuration. |
 | `Thead` (init) | `string?` | Classes merged into the `thead` slot of `KlyTable`, after the theme and the app configuration. |
 | `Tr` (init) | `string?` | Classes merged into the `tr` slot of `KlyTable`, after the theme and the app configuration. |
@@ -6506,6 +7334,22 @@ Per-instance class overrides of the slots of `KlyTextarea`, passed to its `Ui` p
 | :--- | :--- | :--- |
 | `Base` (init) | `string?` | Classes merged into the `base` slot of `KlyTextarea`, after the theme and the app configuration. |
 
+#### `TextUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of `KlyText`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Body` (init) | `string?` | Classes merged into the `body` slot of `KlyText`, after the theme and the app configuration. |
+| `Footer` (init) | `string?` | Classes merged into the `footer` slot of `KlyText`, after the theme and the app configuration. |
+| `Paragraph` (init) | `string?` | Classes merged into the `paragraph` slot of `KlyText`, after the theme and the app configuration. |
+| `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyText`, after the theme and the app configuration. |
+| `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyText`, after the theme and the app configuration. |
+| `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyText`, after the theme and the app configuration. |
+| `Toggle` (init) | `string?` | Classes merged into the `toggle` slot of `KlyText`, after the theme and the app configuration. |
+
 #### `TimelineUi`
 
 `Klyroo.UI` · record
@@ -6514,12 +7358,49 @@ Per-instance class overrides of the slots of `KlyTimeline`, passed to its `Ui` p
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
+| `Actor` (init) | `string?` | Classes merged into the `actor` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Date` (init) | `string?` | Classes merged into the `date` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Icon` (init) | `string?` | Classes merged into the `icon` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Indicator` (init) | `string?` | Classes merged into the `indicator` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Item` (init) | `string?` | Classes merged into the `item` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogActor` (init) | `string?` | Classes merged into the `logActor` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogBody` (init) | `string?` | Classes merged into the `logBody` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogDescription` (init) | `string?` | Classes merged into the `logDescription` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogDot` (init) | `string?` | Classes merged into the `logDot` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogIcon` (init) | `string?` | Classes merged into the `logIcon` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogItem` (init) | `string?` | Classes merged into the `logItem` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogList` (init) | `string?` | Classes merged into the `logList` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogMarker` (init) | `string?` | Classes merged into the `logMarker` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogTimestamp` (init) | `string?` | Classes merged into the `logTimestamp` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `LogTitle` (init) | `string?` | Classes merged into the `logTitle` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `More` (init) | `string?` | Classes merged into the `more` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `MoreIcon` (init) | `string?` | Classes merged into the `moreIcon` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `Number` (init) | `string?` | Classes merged into the `number` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `PipelineItem` (init) | `string?` | Classes merged into the `pipelineItem` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `PipelineList` (init) | `string?` | Classes merged into the `pipelineList` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `Schedule` (init) | `string?` | Classes merged into the `schedule` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleActor` (init) | `string?` | Classes merged into the `scheduleActor` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleBody` (init) | `string?` | Classes merged into the `scheduleBody` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleCurrent` (init) | `string?` | Classes merged into the `scheduleCurrent` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleCurrentTone` (init) | `string?` | Classes merged into the `scheduleCurrentTone` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDay` (init) | `string?` | Classes merged into the `scheduleDay` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDayTitle` (init) | `string?` | Classes merged into the `scheduleDayTitle` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDescription` (init) | `string?` | Classes merged into the `scheduleDescription` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDone` (init) | `string?` | Classes merged into the `scheduleDone` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDoneTone` (init) | `string?` | Classes merged into the `scheduleDoneTone` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleDuration` (init) | `string?` | Classes merged into the `scheduleDuration` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleEvent` (init) | `string?` | Classes merged into the `scheduleEvent` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleHeader` (init) | `string?` | Classes merged into the `scheduleHeader` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleIcon` (init) | `string?` | Classes merged into the `scheduleIcon` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleList` (init) | `string?` | Classes merged into the `scheduleList` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleTime` (init) | `string?` | Classes merged into the `scheduleTime` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleTimes` (init) | `string?` | Classes merged into the `scheduleTimes` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleTitle` (init) | `string?` | Classes merged into the `scheduleTitle` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleUnscheduled` (init) | `string?` | Classes merged into the `scheduleUnscheduled` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleUpcoming` (init) | `string?` | Classes merged into the `scheduleUpcoming` slot of `KlyTimeline`, after the theme and the app configuration. |
+| `ScheduleUpcomingTone` (init) | `string?` | Classes merged into the `scheduleUpcomingTone` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Separator` (init) | `string?` | Classes merged into the `separator` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Text` (init) | `string?` | Classes merged into the `text` slot of `KlyTimeline`, after the theme and the app configuration. |
 | `Title` (init) | `string?` | Classes merged into the `title` slot of `KlyTimeline`, after the theme and the app configuration. |
@@ -6601,9 +7482,19 @@ Per-instance class overrides of `KlyUser` slots.
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Avatar` (init) | `string?` | Classes merged into the `avatar` slot of `KlyUser`, after the theme and the app configuration. |
+| `Badge` (init) | `string?` | Classes merged into the `badge` slot of `KlyUser`, after the theme and the app configuration. |
+| `Contact` (init) | `string?` | Classes merged into the `contact` slot of `KlyUser`, after the theme and the app configuration. |
+| `ContactBody` (init) | `string?` | Classes merged into the `contactBody` slot of `KlyUser`, after the theme and the app configuration. |
+| `ContactIcon` (init) | `string?` | Classes merged into the `contactIcon` slot of `KlyUser`, after the theme and the app configuration. |
+| `ContactLink` (init) | `string?` | Classes merged into the `contactLink` slot of `KlyUser`, after the theme and the app configuration. |
+| `Contacts` (init) | `string?` | Classes merged into the `contacts` slot of `KlyUser`, after the theme and the app configuration. |
+| `ContactText` (init) | `string?` | Classes merged into the `contactText` slot of `KlyUser`, after the theme and the app configuration. |
+| `Copy` (init) | `string?` | Classes merged into the `copy` slot of `KlyUser`, after the theme and the app configuration. |
+| `CopyIcon` (init) | `string?` | Classes merged into the `copyIcon` slot of `KlyUser`, after the theme and the app configuration. |
 | `Description` (init) | `string?` | Classes merged into the `description` slot of `KlyUser`, after the theme and the app configuration. |
 | `Name` (init) | `string?` | Classes merged into the `name` slot of `KlyUser`, after the theme and the app configuration. |
 | `Root` (init) | `string?` | Classes merged into the `root` slot of `KlyUser`, after the theme and the app configuration. |
+| `Stack` (init) | `string?` | Classes merged into the `stack` slot of `KlyUser`, after the theme and the app configuration. |
 | `Wrapper` (init) | `string?` | Classes merged into the `wrapper` slot of `KlyUser`, after the theme and the app configuration. |
 
 ### Structs
@@ -7119,6 +8010,7 @@ The kind of chart `KlyChart` draws.
 | `Area` | Values joined by a line with the area under it filled. |
 | `Bar` | One bar per value, vertical or, with `Horizontal`, horizontal. |
 | `Donut` | One slice per row, sized by the first category. |
+| `Funnel` | One horizontal bar per row, sized by the first category relative to the largest one, with the share kept from the previous step: a conversion funnel. Rows are the steps in order. |
 
 #### `KlyChipPosition`
 
@@ -7133,6 +8025,17 @@ Corner of its content where a `KlyChip` sits.
 | `BottomRight` | Bottom end corner. |
 | `BottomLeft` | Bottom start corner. |
 
+#### `KlyColumnAlign`
+
+`Klyroo.UI` · enum
+
+The alignment of a column of a `KlyTable`.
+
+| Value | Description |
+| :--- | :--- |
+| `Start` | At the start of the cell. |
+| `End` | At the end of the cell. |
+
 #### `KlyContentTocBreakpoint`
 
 `Klyroo.UI` · enum
@@ -7144,6 +8047,30 @@ The width below which `KlyContentToc` collapses behind its title.
 | `Lg` | 1024px. |
 | `Xl` | 1280px. |
 | `Xxl` | 1536px. |
+
+#### `KlyDateTileMode`
+
+`Klyroo.UI` · enum
+
+What a `KlyDateTile` says beside its calendar tile.
+
+| Value | Description |
+| :--- | :--- |
+| `Date` | The date in the long format of the culture, or the title. |
+| `Countdown` | The days until the date, or since it (today, tomorrow, in 5 days, 3 days overdue), with the title as a caption. |
+| `Range` | The start and end dates with the number of days, with the title as a caption. Without an end date the tile shows the date. |
+
+#### `KlyDeltaDirection`
+
+`Klyroo.UI` · enum
+
+The direction of the change shown beside a `KlyStat` value. It only chooses the color of the badge.
+
+| Value | Description |
+| :--- | :--- |
+| `Up` | Success color. |
+| `Down` | Error color. |
+| `Flat` | Neutral color. |
 
 #### `KlyDirection`
 
@@ -7228,6 +8155,18 @@ The `loading` attribute of an image.
 | `Lazy` | Wait until the image is near the viewport (the default). |
 | `Eager` | Load right away. Use it for the image that is visible at first paint. |
 
+#### `KlyListVariant`
+
+`Klyroo.UI` · enum
+
+The layout of a `KlyList`.
+
+| Value | Description |
+| :--- | :--- |
+| `Plain` | A bullet or an icon before each item. |
+| `Steps` | A numbered list that marks done items and the current one. |
+| `Checks` | A checklist: numbered items that mark done ones and the current one. |
+
 #### `KlyMenuItemKind`
 
 `Klyroo.UI` · enum
@@ -7239,6 +8178,18 @@ What a `KlyMenuItem` is.
 | `Item` | An action, or a link when `Href` is set. |
 | `Separator` | A line between two groups of items. |
 | `Heading` | A non-interactive title of a group of items. |
+
+#### `KlyMeterLayout`
+
+`Klyroo.UI` · enum
+
+The drawing of a `KlyMeter`.
+
+| Value | Description |
+| :--- | :--- |
+| `Bar` | A horizontal bar. |
+| `Ring` | A ring with the value in its center. |
+| `Scale` | Discrete levels, the ones up to `KlyMeter.CurrentLevel` highlighted. |
 
 #### `KlyOrientation`
 
@@ -7334,6 +8285,55 @@ Size of a component, which scales its text, padding and icons.
 | `Md` | Medium, the default of most components. |
 | `Lg` | Large. |
 | `Xl` | Extra large. |
+
+#### `KlySurface`
+
+`Klyroo.UI` · enum
+
+The surface treatment of a read-only block such as `KlyFacts` or `KlyStat`: border, background and padding.
+
+| Value | Description |
+| :--- | :--- |
+| `Plain` | No border, background or padding. |
+| `Muted` | A muted background with padding. |
+| `Bordered` | A border and padding. |
+| `Elevated` | A border, an elevated background, padding and a shadow. |
+
+#### `KlyTextVariant`
+
+`Klyroo.UI` · enum
+
+The layout of a `KlyText`.
+
+| Value | Description |
+| :--- | :--- |
+| `Default` | Plain paragraphs. |
+| `Quote` | A block quote: a start border, italic text and a footer with the author and meta text. |
+
+#### `KlyTimelineLayout`
+
+`Klyroo.UI` · enum
+
+The layout of a `KlyTimeline`.
+
+| Value | Description |
+| :--- | :--- |
+| `Default` | Events along a line, vertical or horizontal (`KlyTimeline.Orientation`). |
+| `Pipeline` | Events in a row that wraps, each with a marker and no connecting line. |
+| `Log` | Compact lines that start with the date and time of each event. |
+| `Schedule` | An agenda: events grouped by day, each with a time column, a length, all-day events and a group of events without a date. |
+
+#### `KlyTimelineState`
+
+`Klyroo.UI` · enum
+
+The state of an event of a `KlyTimeline`.
+
+| Value | Description |
+| :--- | :--- |
+| `Done` | The event happened. |
+| `Current` | The event is happening now. |
+| `Upcoming` | The event has not happened yet. |
 
 #### `KlyVariant`
 

@@ -3,7 +3,7 @@
 <!-- Generated from the Klyroo.UI docs bundle by build/Klyroo.Stack.DocsBundle. Do not edit: run
      dotnet run --project build/Klyroo.Stack.DocsBundle -- --skill-reference  to refresh it. -->
 
-146 components of Klyroo.UI 0.1.0-preview.1, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
+158 components of Klyroo.UI 0.1.0-preview.1, by family. Every parameter listed exists in the library; `Class` and `Ui` are accepted by every styled component. Parameters marked `@bind` take `@bind-Name`. For types, defaults, descriptions and examples, call the `get-component` and `get-component-metadata` tools of the MCP server or open `/components/{slug}` on the docs site.
 
 ## Elements
 
@@ -31,7 +31,7 @@
 `/components/avatar`. An image of a person, falling back to initials when there is none or it fails to load.
 
 - `<KlyAvatar>`
-  - Parameters: `Alt`, `Class`, `ImageOptions`, `Size`, `Src`, `Text`, `Ui`
+  - Parameters: `Alt`, `Class`, `Color`, `ImageOptions`, `Size`, `Src`, `Text`, `Ui`
   - Slots: `Icon`
   - `Ui` (`AvatarUi`): `Root`, `Image`, `Fallback`
 
@@ -49,10 +49,10 @@
 `/components/alert`. A callout that draws attention to a message.
 
 - `<KlyAlert>`
-  - Parameters: `Class`, `Close`, `Color`, `Description`, `Title`, `Ui`, `Variant`
+  - Parameters: `ActionItems`, `Class`, `Close`, `Color`, `DefaultOpen`, `Description`, `Details`, `StatusIcon`, `Title`, `Ui`, `Variant`
   - Events: `OnClose`
   - Slots: `Actions`, `Icon`, `ChildContent`
-  - `Ui` (`AlertUi`): `Root`, `Icon`, `Wrapper`, `Title`, `Description`, `Actions`, `Close`
+  - `Ui` (`AlertUi`): `Root`, `Icon`, `Wrapper`, `Title`, `Description`, `Actions`, `Close`, `Toggle`, `ToggleIcon`, `DetailsPanel`
 
 ### Kbd
 
@@ -146,7 +146,7 @@
 `/components/empty`. An empty state with an icon, a title, a description and actions.
 
 - `<KlyEmpty>`
-  - Parameters: `Class`, `Description`, `HeadingLevel`, `Size`, `Title`, `Ui`, `Variant`
+  - Parameters: `ActionItems`, `Class`, `Description`, `HeadingLevel`, `Size`, `Title`, `Ui`, `Variant`
   - Slots: `Actions`, `Icon`, `ChildContent`
   - `Ui` (`EmptyUi`): `Root`, `Header`, `Icon`, `Title`, `Description`, `Actions`
 
@@ -155,9 +155,9 @@
 `/components/user`. An avatar with a name and a description, optionally a link.
 
 - `<KlyUser>`
-  - Parameters: `AvatarSrc`, `Class`, `Description`, `Href`, `Name`, `Orientation`, `ShowAvatar`, `Size`, `Target`, `Ui`
+  - Parameters: `AvatarColor`, `AvatarSrc`, `Badge`, `Class`, `Contacts`, `Description`, `Href`, `Name`, `Orientation`, `ShowAvatar`, `Size`, `Target`, `Ui`
   - Slots: `AvatarIcon`
-  - `Ui` (`UserUi`): `Root`, `Avatar`, `Wrapper`, `Name`, `Description`
+  - `Ui` (`UserUi`): `Root`, `Avatar`, `Wrapper`, `Name`, `Description`, `Stack`, `Badge`, `Contacts`, `Contact`, `ContactBody`, `ContactIcon`, `ContactLink`, `ContactText`, `Copy`, `CopyIcon`
 
 ### AvatarGroup
 
@@ -559,8 +559,8 @@
 `/components/timeline`. A chronological list of events.
 
 - `<KlyTimeline>`
-  - Parameters: `Active`, `AriaLabel`, `Class`, `Color`, `Items` (required), `Orientation`, `Size`, `Ui`
-  - `Ui` (`TimelineUi`): `Root`, `Item`, `Track`, `Indicator`, `Icon`, `Separator`, `Text`, `Date`, `Title`, `Description`
+  - Parameters: `Active`, `AriaLabel`, `Class`, `Color`, `Items` (required), `Layout`, `Max`, `Now`, `Orientation`, `ShowNumbers`, `Size`, `Step`, `Ui`
+  - `Ui` (`TimelineUi`): `Root`, `Item`, `Track`, `Indicator`, `Icon`, `Separator`, `Text`, `Date`, `Title`, `Description`, `Actor`, `Number`, `PipelineList`, `PipelineItem`, `LogList`, `LogItem`, `LogTimestamp`, `LogMarker`, `LogDot`, `LogIcon`, `LogBody`, `LogTitle`, `LogDescription`, `LogActor`, `Schedule`, `ScheduleDay`, `ScheduleDayTitle`, `ScheduleUnscheduled`, `ScheduleList`, `ScheduleCurrent`, `ScheduleCurrentTone`, `ScheduleDone`, `ScheduleDoneTone`, `ScheduleUpcoming`, `ScheduleUpcomingTone`, `ScheduleTimes`, `ScheduleTime`, `ScheduleDuration`, `ScheduleBody`, `ScheduleHeader`, `ScheduleIcon`, `ScheduleTitle`, `ScheduleDescription`, `ScheduleActor`, `More`, `MoreIcon`, `ScheduleEvent`
 
 ### NavigationMenu
 
@@ -661,15 +661,15 @@
 `/components/table`. A data table with sortable columns.
 
 - `<KlyTable>`
-  - Parameters: `Caption`, `Class`, `Items`, `Sticky`, `Ui`
+  - Parameters: `Caption`, `Class`, `Items`, `Max`, `Step`, `Sticky`, `Ui`
   - Slots: `Empty`, `ChildContent`
-  - `Ui` (`TableUi`): `Root`, `Base`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`
+  - `Ui` (`TableUi`): `Root`, `Base`, `Caption`, `Thead`, `Tr`, `Th`, `SortButton`, `SortIcon`, `Tbody`, `Td`, `Empty`, `Tfoot`, `Tf`, `CellEnd`, `CellNumeric`, `CellMono`, `More`, `MoreIcon`
 - `<KlyColumn>`
-  - Parameters: `Class`, `Field` (required), `Sortable`, `Title` (required)
-  - Slots: `Template`
+  - Parameters: `Align`, `Class`, `Field` (required), `Footer`, `Mono`, `Numeric`, `Sortable`, `Title` (required)
+  - Slots: `FooterTemplate`, `Template`
 - `<KlyTemplateColumn>`
-  - Parameters: `Class`, `Title` (required)
-  - Slots: `Template`
+  - Parameters: `Align`, `Class`, `Footer`, `Mono`, `Numeric`, `Title` (required)
+  - Slots: `FooterTemplate`, `Template`
 
 ### DataList
 
@@ -825,7 +825,106 @@
   - Parameters: `AriaDescription`, `AriaLabel`, `Categories` (required), `Class`, `Colors`, `Culture`, `Curve`, `Data` (required), `Format`, `Grid`, `Height`, `Horizontal`, `Index` (required), `IndexFormat`, `Legend`, `Points`, `Stacked`, `Table`, `Thickness`, `Tooltip`, `Type`, `Ui`, `Width`, `XAxis`, `XLabel`, `YAxis`, `YLabel`
   - Events: `OnSelect`
   - Slots: `Center`
-  - `Ui` (`ChartUi`): `Root`, `Plot`, `Svg`, `Grid`, `AxisLine`, `Tick`, `AxisTitle`, `Line`, `Bar`, `Marker`, `Hit`, `HitArea`, `Slice`, `Tooltip`, `TooltipTitle`, `TooltipRow`, `TooltipIndicator`, `TooltipLabel`, `TooltipValue`, `Center`, `Legend`, `LegendItem`, `LegendSwatch`, `LegendLabel`, `LegendValue`, `Details`, `Summary`, `TableWrapper`, `Table`, `Th`, `Td`
+  - `Ui` (`ChartUi`): `Root`, `Plot`, `Svg`, `Grid`, `AxisLine`, `Tick`, `AxisTitle`, `Line`, `Bar`, `Marker`, `Hit`, `HitArea`, `Slice`, `Tooltip`, `TooltipTitle`, `TooltipRow`, `TooltipIndicator`, `TooltipLabel`, `TooltipValue`, `Center`, `Legend`, `LegendItem`, `LegendSwatch`, `LegendLabel`, `LegendValue`, `Details`, `Summary`, `TableWrapper`, `Table`, `Th`, `Td`, `Funnel`, `FunnelStep`, `FunnelHeader`, `FunnelLabel`, `FunnelValue`, `FunnelBar`, `FunnelEmpty`
+
+## Blocks
+
+### Heading
+
+`/components/heading`. A section heading with an icon tile, a count pill, a description and an action.
+
+- `<KlyHeading>`
+  - Parameters: `Action`, `Class`, `Count`, `Description`, `HeadingLevel`, `Loading`, `Surface`, `Title`, `Ui`
+  - Slots: `Icon`
+  - `Ui` (`HeadingUi`): `Root`, `Lead`, `Icon`, `Text`, `TitleRow`, `Title`, `Count`, `Description`, `Skeleton`
+
+### Text
+
+`/components/text`. Paragraphs, a quote, or a text clamped to a few lines with a Read more toggle.
+
+- `<KlyText>`
+  - Parameters: `Author`, `Class`, `Loading`, `MaxLines`, `Meta`, `Paragraphs`, `Surface`, `Title`, `Ui`, `Value`, `Variant`
+  - `Ui` (`TextUi`): `Root`, `Title`, `Paragraph`, `Body`, `Toggle`, `Footer`, `Skeleton`
+
+### Stat
+
+`/components/stat`. A highlighted value with a title, unit, delta badge, sparkline and caption.
+
+- `<KlyStat>`
+  - Parameters: `Caption`, `Class`, `Delta`, `DeltaDirection`, `Loading`, `Surface`, `Title`, `Trend`, `Ui`, `Unit`, `Value`
+  - `Ui` (`StatUi`): `Root`, `Label`, `Row`, `ValueGroup`, `Value`, `Unit`, `Delta`, `Sparkline`, `Caption`, `Skeleton`
+
+### StatGroup
+
+`/components/stat-group`. Several small metrics side by side under an optional title.
+
+- `<KlyStatGroup>`
+  - Parameters: `Class`, `Items`, `Loading`, `Surface`, `Title`, `Ui`
+  - `Ui` (`StatGroupUi`): `Root`, `Title`, `Grid`, `Item`, `Label`, `Value`, `Caption`, `Skeleton`
+
+### Facts
+
+`/components/facts`. Label and value rows, flat or grouped, with badges, links, copy buttons and loading placeholders.
+
+- `<KlyFacts>`
+  - Parameters: `Class`, `Groups`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Ui`
+  - `Ui` (`FactsUi`): `Root`, `Group`, `GroupHeader`, `GroupTitle`, `GroupAside`, `List`, `Item`, `Label`, `LabelRow`, `LabelIcon`, `Hint`, `Value`, `ValueMono`, `ValueEmphasis`, `ValueSkeleton`, `Empty`, `Link`, `Copy`, `CopyIcon`, `More`, `MoreIcon`, `None`, `Skeleton`
+
+### Breakdown
+
+`/components/breakdown`. Labelled decimal amounts with subtotals and a total, in one or two columns or behind a toggle.
+
+- `<KlyBreakdown>`
+  - Parameters: `Class`, `Collapsible`, `CompareColumns`, `Culture`, `DefaultOpen`, `Footnote`, `Format`, `Lines`, `Loading`, `Surface`, `Title`, `Total`, `Ui`
+  - `Ui` (`BreakdownUi`): `Root`, `Title`, `Toggle`, `ToggleIcon`, `Columns`, `ColumnHeader`, `Lines`, `Row`, `Subtotal`, `Muted`, `Total`, `Label`, `LabelRow`, `Detail`, `Amount`, `CompareAmount`, `Footnote`, `Skeleton`
+
+### Diff
+
+`/components/diff`. Before and after values per field, with unchanged fields hidden unless asked.
+
+- `<KlyDiff>`
+  - Parameters: `Class`, `Items`, `Loading`, `ShowUnchanged`, `Surface`, `Title`, `Ui`
+  - `Ui` (`DiffUi`): `Root`, `Title`, `List`, `Item`, `Label`, `Values`, `Before`, `Arrow`, `After`, `Unchanged`, `Skeleton`
+
+### RecordList
+
+`/components/record-list`. Entity rows with an image, avatar or icon, a reference, a title, a secondary line, badges and a trailing value.
+
+- `<KlyRecordList>`
+  - Parameters: `Class`, `Count`, `ImageOptions`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Title`, `Ui`
+  - `Ui` (`RecordListUi`): `Root`, `Header`, `Title`, `Count`, `Item`, `Lead`, `Image`, `Avatar`, `AvatarIcon`, `Body`, `Reference`, `Name`, `Link`, `Meta`, `MetaIcon`, `MetaText`, `Trail`, `Trailing`, `TrailingBlock`, `TrailingCaption`, `More`, `MoreIcon`, `Skeleton`
+
+### List
+
+`/components/list`. A list of items: plain, numbered steps or a checklist.
+
+- `<KlyList>`
+  - Parameters: `Class`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Title`, `Ui`, `Variant`
+  - `Ui` (`ListUi`): `Root`, `Title`, `List`, `Item`, `Lead`, `Marker`, `MarkerIcon`, `Icon`, `Bullet`, `Body`, `Text`, `Link`, `Description`, `Meta`, `More`, `MoreIcon`, `Skeleton`
+
+### DateTile
+
+`/components/date-tile`. A calendar tile with a title, in a plain, countdown or range mode.
+
+- `<KlyDateTile>`
+  - Parameters: `Class`, `Description`, `EndValue`, `Loading`, `Mode`, `Now`, `Surface`, `Title`, `Ui`, `Value`
+  - `Ui` (`DateTileUi`): `Root`, `Tile`, `Month`, `Day`, `Text`, `Title`, `Caption`, `Description`, `Skeleton`
+
+### Meter
+
+`/components/meter`. A gauge in a known range: a bar, a ring or a scale of levels, with thresholds or stacked parts and a legend.
+
+- `<KlyMeter>`
+  - Parameters: `Class`, `CurrentLevel`, `Description`, `ErrorThreshold`, `Layout`, `Levels`, `Loading`, `Max`, `Parts`, `Surface`, `Title`, `Ui`, `Value`, `ValueText`, `WarningThreshold`
+  - `Ui` (`MeterUi`): `Root`, `Header`, `Label`, `Value`, `Track`, `Bar`, `Part`, `Ring`, `RingSvg`, `RingDrawing`, `RingTrack`, `RingArc`, `RingValue`, `RingText`, `Caption`, `Scale`, `Level`, `Legend`, `LegendItem`, `LegendIcon`, `LegendDot`, `LegendLabel`, `LegendValue`, `Skeleton`
+
+### ImageGallery
+
+`/components/image-gallery`. A grid of images with a +N overflow tile.
+
+- `<KlyImageGallery>`
+  - Parameters: `Caption`, `Class`, `Columns`, `ImageOptions`, `Images`, `Loading`, `Max`, `Surface`, `Ui`
+  - `Ui` (`ImageGalleryUi`): `Root`, `Grid`, `Tile`, `Image`, `Overflow`, `Caption`, `Skeleton`
 
 ## Layout
 
