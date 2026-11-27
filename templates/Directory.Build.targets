@@ -37,11 +37,13 @@
 
   <!-- The build features, for the projects of the Razor SDK (web hosts, class libraries, MAUI Blazor heads, WebAssembly projects). -->
   <ItemGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <!-- Built first; the task assembly is loaded from its output folder, not referenced. -->
-    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/Klyroo.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, always in Release; the task assembly is loaded from its output folder, not referenced. A template built from
+         another repository's solution (klyroo-stack's browser tests) runs in Debug while that solution builds the tasks in Release, so a
+         path that followed the template's own configuration pointed at a folder nothing had built. -->
+    <ProjectReference Include="$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/Klyroo.UI.Build.Tasks.csproj" ReferenceOutputAssembly="false" SetConfiguration="Configuration=Release" />
   </ItemGroup>
   <PropertyGroup Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'">
-    <KlyrooBuildTasksAssembly>$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/bin/$(Configuration)/netstandard2.0/Klyroo.UI.Build.Tasks.dll</KlyrooBuildTasksAssembly>
+    <KlyrooBuildTasksAssembly>$(KlyrooRepoRoot)src/Klyroo.UI.Build.Tasks/bin/Release/netstandard2.0/Klyroo.UI.Build.Tasks.dll</KlyrooBuildTasksAssembly>
   </PropertyGroup>
   <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Tasks.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
   <Import Project="$(KlyrooRepoRoot)src/Klyroo.UI/buildTransitive/Klyroo.UI.Fonts.targets" Condition="'$(UsingMicrosoftNETSdkRazor)' == 'true'" />
