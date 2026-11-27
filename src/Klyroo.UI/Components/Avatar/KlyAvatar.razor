@@ -4,9 +4,10 @@
 @* The root is the image and carries the name, so it stays named when the picture fails and the fallback shows. *@
 <span class="@_slots["root"]"
       role="img"
+      data-color="@Color?.Value"
       aria-label="@(Alt ?? Text)"
       @attributes="AdditionalAttributes">
-    <span class="@_slots["fallback"]" aria-hidden="true">
+    <span class="@_slots["fallback"]" data-color="@Color?.Value" aria-hidden="true">
         @if (Icon is not null)
         {
             @Icon
@@ -34,6 +35,8 @@
 
     /// <summary>Fallback text instead of the initials of <see cref="Alt"/>.</summary>
     [Parameter] public string? Text { get; set; }
+    /// <summary>A color that tints the avatar and its initials. Without it the avatar is neutral.</summary>
+    [Parameter] public KlyColor? Color { get; set; }
     /// <summary>Icon shown when there is no picture and no text, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? Icon { get; set; }
     /// <summary>Size of the avatar, from <c>Xs</c> to <c>Xl</c>; it also sets the pixel size asked of the image provider.</summary>

@@ -333,7 +333,9 @@ bg-(--klyroo-text-muted)
 bg-[length:250%_100%]
 bg-[linear-gradient(110deg,var(--klyroo-text-muted)_40%,var(--klyroo-text-highlighted)_50%,var(--klyroo-text-muted)_60%)]
 bg-[radial-gradient(40rem_circle_at_50%_0%,color-mix(in_oklab,var(--kly-color)_16%,transparent),transparent_60%)]
+bg-black/60
 bg-clip-text
+bg-current
 bg-transparent
 bg-white
 block
@@ -343,6 +345,7 @@ border-(--kly-color-text)
 border-(--klyroo-border)
 border-(--klyroo-border-accented)
 border-(--klyroo-error)
+border-(--klyroo-primary-text)
 border-0
 border-2
 border-b
@@ -394,6 +397,9 @@ dark:translate-x-4
 dark:translate-x-5
 dark:translate-x-[18px]
 data-[color=error]:text-(--klyroo-error-text)
+data-[color]:bg-(--kly-color)
+data-[color]:bg-(--kly-color)/15
+data-[color]:text-(--kly-color-text)
 data-[disabled=true]:cursor-not-allowed
 data-[disabled=true]:opacity-60
 data-[dragging=true]:bg-(--kly-color)
@@ -402,6 +408,9 @@ data-[fill=half]:w-1/2
 data-[level=3]:ps-6
 data-[level=4]:ps-9
 data-[level=5]:ps-12
+data-[reached=true]:bg-(--klyroo-bg-muted)
+data-[reached=true]:border-(--klyroo-primary-text)
+data-[reached=true]:text-(--klyroo-text-highlighted)
 data-[selected=true]:bg-(--kly-color)/10
 data-[selected=true]:text-(--kly-color-text)
 data-[state=active]:bg-(--kly-color)
@@ -419,6 +428,18 @@ data-[state=completed]:bg-(--kly-color-text)
 data-[state=completed]:border-(--kly-color-text)
 data-[state=completed]:text-(--kly-color-contrast)
 data-[state=completed]:text-(--klyroo-text)
+data-[state=current]:bg-(--klyroo-primary)
+data-[state=current]:border-(--kly-color-text)
+data-[state=current]:font-semibold
+data-[state=current]:text-(--kly-color-text)
+data-[state=current]:text-(--klyroo-primary-contrast)
+data-[state=done]:bg-(--kly-color)
+data-[state=done]:bg-(--kly-color-text)
+data-[state=done]:bg-(--klyroo-success)/15
+data-[state=done]:border-(--kly-color-text)
+data-[state=done]:text-(--kly-color-contrast)
+data-[state=done]:text-(--klyroo-success-text)
+data-[state=done]:text-(--klyroo-text-muted)
 data-[state=open]:block
 data-[state=open]:opacity-100
 data-[state=open]:visible
@@ -478,6 +499,8 @@ fill-(--klyroo-text-muted)
 fill-current
 fill-none
 fill-transparent
+first:pt-0
+first:rounded-s-full
 fixed
 flex
 flex-1
@@ -561,6 +584,11 @@ gap-y-6
 grid
 grid-cols-1
 grid-cols-2
+grid-cols-3
+grid-cols-4
+grid-cols-5
+grid-cols-6
+grid-cols-[minmax(0,1fr)_6rem_6rem]
 grid-cols-[repeat(auto-fill,minmax(min(100%,18rem),1fr))]
 grid-cols-[repeat(auto-fit,minmax(min(100%,17rem),1fr))]
 group
@@ -613,6 +641,7 @@ h-10
 h-12
 h-16
 h-2
+h-2.5
 h-20
 h-24
 h-3
@@ -696,6 +725,7 @@ inset-y-0
 inset-y-2
 invisible
 isolate
+italic
 items-baseline
 items-center
 items-end
@@ -710,6 +740,7 @@ last:before:hidden
 last:border-b-0
 last:flex-none
 last:pb-0
+last:rounded-e-full
 leading-[0.95]
 leading-none
 leading-tight
@@ -774,6 +805,7 @@ line-through
 list-disc
 list-none
 m-0
+m-1
 m-auto
 max-h-60
 max-h-72
@@ -910,6 +942,8 @@ mx-auto
 my-1
 my-3
 my-auto
+no-underline
+not-italic
 not-last:border-(--klyroo-border)
 not-last:border-e
 nth-2:[animation-delay:150ms]
@@ -919,6 +953,7 @@ object-cover
 opacity-0
 opacity-100
 opacity-60
+opacity-70
 opacity-80
 open:flex
 open:translate-x-0
@@ -940,11 +975,13 @@ p-1
 p-1.5
 p-10
 p-2
+p-2.5
 p-3
 p-4
 p-6
 p-8
 pb-(--kly-safe-bottom)
+pb-1
 pb-12
 pb-2
 pb-24
@@ -990,6 +1027,7 @@ ps-8
 ps-9
 pt-(--kly-safe-top)
 pt-1
+pt-1.5
 pt-2
 pt-4
 pt-8
@@ -1029,6 +1067,7 @@ ring-(--klyroo-text-highlighted)
 ring-0
 ring-1
 ring-2
+ring-current/20
 ring-inset
 rotate-90
 rounded
@@ -1077,6 +1116,7 @@ rtl:translate-x-full
 scroll-py-2
 scroll-smooth
 select-none
+self-center
 self-start
 self-stretch
 shadow-[0_0_0_1px_black]
@@ -1093,6 +1133,7 @@ size-11
 size-12
 size-2
 size-2.5
+size-20
 size-3
 size-3.5
 size-3/4
@@ -1107,9 +1148,15 @@ size-[18px]
 size-full
 sm:col-start-2
 sm:columns-2
+sm:flex-col
+sm:flex-row
 sm:gap-16
+sm:gap-4
+sm:gap-x-0
+sm:gap-y-0.5
 sm:gap-y-24
 sm:grid-cols-2
+sm:grid-cols-3
 sm:p-6
 sm:p-8
 sm:pb-6
@@ -1122,6 +1169,7 @@ sm:text-5xl
 sm:text-6xl
 sm:text-lg
 sm:text-xl/8
+sm:w-40
 sm:w-96
 snap-center
 snap-mandatory
@@ -1148,9 +1196,11 @@ stroke-(--klyroo-border-accented)
 stroke-1
 stroke-2
 tabular-nums
+text-(--kly-color)
 text-(--kly-color-contrast)
 text-(--kly-color-text)
 text-(--klyroo-bg)
+text-(--klyroo-bg-muted)
 text-(--klyroo-error-text)
 text-(--klyroo-primary-text)
 text-(--klyroo-success-text)
@@ -1177,6 +1227,7 @@ text-pretty
 text-sm
 text-start
 text-transparent
+text-white
 text-xl
 text-xs
 text-xs/5
@@ -1203,6 +1254,7 @@ translate-x-full
 translate-y-1/2
 translate-y-full
 truncate
+underline-offset-2
 underline-offset-4
 uppercase
 w-0.5
@@ -1218,6 +1270,7 @@ w-20
 w-24
 w-3
 w-3.5
+w-32
 w-4
 w-5
 w-6

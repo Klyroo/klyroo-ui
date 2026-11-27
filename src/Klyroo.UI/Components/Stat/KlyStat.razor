@@ -1,0 +1,79 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* A highlighted value with a title, unit, delta badge, sparkline and caption. *@
+<div class="@_slots["root"]" data-slot="stat" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <span class="@_slots["label"]" data-slot="stat-label">@Title</span>
+        }
+        <div class="@_slots["row"]">
+            <div class="@_slots["valueGroup"]">
+                <span class="@_slots["value"]" data-slot="stat-value">@(Value ?? "—")</span>
+                @if (!string.IsNullOrEmpty(Unit))
+                {
+                    <span class="@_slots["unit"]" data-slot="stat-unit">@Unit</span>
+                }
+            </div>
+            @if (!string.IsNullOrEmpty(Delta))
+            {
+                <KlyBadge Label="@Delta" Color="DeltaColor" Variant="KlyVariant.Subtle" Size="KlySize.Sm" Class="@_slots["delta"]" data-slot="stat-delta" />
+            }
+        </div>
+        @if (Trend is { Count: >= 2 })
+        {
+            @MiniCharts.Sparkline(Trend, _slots["sparkline"])
+        }
+        @if (!string.IsNullOrEmpty(Caption))
+        {
+            <span class="@_slots["caption"]" data-slot="stat-caption">@Caption</span>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The label of the value.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The value, displayed as given (format it with the culture of your choice). A dash when not set.</summary>
+    [Parameter] public string? Value { get; set; }
+    /// <summary>The unit shown beside the value.</summary>
+    [Parameter] public string? Unit { get; set; }
+    /// <summary>The change shown as a badge beside the value, for example <c>"+12.4%"</c>. It is displayed as given.</summary>
+    [Parameter] public string? Delta { get; set; }
+    /// <summary>The direction of <see cref="Delta"/>: <see cref="KlyDeltaDirection.Up"/> (success color, the default), <see cref="KlyDeltaDirection.Down"/> (error) or <see cref="KlyDeltaDirection.Flat"/> (neutral).</summary>
+    [Parameter] public KlyDeltaDirection DeltaDirection { get; set; } = KlyDeltaDirection.Up;
+    /// <summary>The series of the sparkline, drawn from two points or more.</summary>
+    [Parameter] public IReadOnlyList<double>? Trend { get; set; }
+    /// <summary>A line of smaller text under the value.</summary>
+    [Parameter] public string? Caption { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Muted when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the stat, see <see cref="StatUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public StatUi? Ui { get; set; }
+
+    private KlyColor DeltaColor => DeltaDirection switch
+    {
+        KlyDeltaDirection.Down => KlyColor.Error,
+        KlyDeltaDirection.Flat => KlyColor.Neutral,
+        _ => KlyColor.Success,
+    };
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Stat, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+}

@@ -1,0 +1,68 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* A grid of images. When there are more than Max, the last tile shows how many are hidden. *@
+<div class="@_slots["root"]" data-slot="image-gallery" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (Images is { Count: > 0 })
+        {
+            var max = Math.Max(1, Max);
+            var shown = Images.Take(max).ToList();
+            var hidden = Images.Count - shown.Count;
+            <div class="@_slots["grid"]" data-slot="gallery-grid">
+                @for (var i = 0; i < shown.Count; i++)
+                {
+                    var overflow = i == shown.Count - 1 && hidden > 0;
+                    <div class="@_slots["tile"]" data-slot="gallery-tile">
+                        <KlyImage Src="@shown[i].Src" Alt="@(shown[i].Alt ?? string.Format(Messages.ImageAlt, i + 1))" Width="@shown[i].Width" Height="@shown[i].Height"
+                                  ImageOptions="ImageOptions" Class="@_slots["image"]" />
+                        @if (overflow)
+                        {
+                            <span class="@_slots["overflow"]" data-slot="gallery-overflow">+@hidden</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(Caption))
+        {
+            <p class="@_slots["caption"]" data-slot="gallery-caption">@Caption</p>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The images, as <see cref="KlyGalleryImage"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyGalleryImage>? Images { get; set; }
+    /// <summary>The number of tiles shown. The last one carries a +N overflow when more images exist (<c>3</c> by default, at least <c>1</c>).</summary>
+    [Parameter] public int Max { get; set; } = 3;
+    /// <summary>The number of columns of the grid, from <c>1</c> to <c>6</c> (<c>3</c> by default; other values are clamped).</summary>
+    [Parameter] public int Columns { get; set; } = 3;
+    /// <summary>A line of smaller text under the gallery.</summary>
+    [Parameter] public string? Caption { get; set; }
+    /// <summary>Image settings forwarded to every <see cref="KlyImage"/> of the gallery.</summary>
+    [Parameter] public KlyImageOptions? ImageOptions { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the gallery, see <see cref="ImageGalleryUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public ImageGalleryUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.ImageGallery, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+            ["columns"] = Math.Clamp(Columns, 1, 6).ToString(System.Globalization.CultureInfo.InvariantCulture),
+        }, Ui, "root");
+}

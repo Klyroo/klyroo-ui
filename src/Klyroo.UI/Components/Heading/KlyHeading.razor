@@ -1,0 +1,68 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* A section heading of a page block: an icon tile, the title as a heading element, a count, a description and one action. *@
+<div class="@_slots["root"]" data-slot="heading" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        <div class="@_slots["lead"]">
+            @if (Icon is not null)
+            {
+                <span class="@_slots["icon"]" aria-hidden="true">@Icon</span>
+            }
+            <div class="@_slots["text"]">
+                <div class="@_slots["titleRow"]">
+                    <SectionHeading Level="HeadingLevel" Class="@_slots["title"]">@Title</SectionHeading>
+                    @if (Count is { } count)
+                    {
+                        <span class="@_slots["count"]" data-slot="heading-count">@count.ToString("N0", FormatCulture)</span>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(Description))
+                {
+                    <p class="@_slots["description"]" data-slot="heading-description">@Description</p>
+                }
+            </div>
+        </div>
+        @if (Action is not null)
+        {
+            @BlockRender.Actions([Action], Options.Icons, null, this)
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The title, drawn as the heading element chosen by <see cref="HeadingLevel"/>.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>A line of smaller text under the title.</summary>
+    [Parameter] public string? Description { get; set; }
+    /// <summary>The icon in the tile before the title, as markup such as a <see cref="KlyIcon"/>.</summary>
+    [Parameter] public RenderFragment? Icon { get; set; }
+    /// <summary>A count shown in a pill beside the title, formatted with the format culture of the locale.</summary>
+    [Parameter] public int? Count { get; set; }
+    /// <summary>The button at the end of the row.</summary>
+    [Parameter] public KlyActionItem? Action { get; set; }
+    /// <summary>The level of the heading element, from <c>1</c> (<c>h1</c>) to <c>6</c> (<c>h6</c>); <c>3</c> by default, and values outside are clamped. Choose it from the page outline: the look does not change with the level.</summary>
+    [Parameter] public int HeadingLevel { get; set; } = 3;
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the heading, see <see cref="HeadingUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public HeadingUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Heading, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+}

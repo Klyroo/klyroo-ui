@@ -1,0 +1,151 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Entity rows: a leading image, avatar or icon, a reference, a title, a secondary line, badges and a trailing value. *@
+<div class="@_slots["root"]" data-slot="record-list" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <div class="@_slots["header"]">
+                <span class="@_slots["title"]" data-slot="record-list-title">@Title</span>
+                @if (Count is { } count)
+                {
+                    <span class="@_slots["count"]" data-slot="record-list-count">@count.ToString("N0", FormatCulture)</span>
+                }
+            </div>
+        }
+        var (visible, remaining) = _reveal.Apply(Items, Max, Step);
+        @foreach (var record in visible)
+        {
+            <div class="@_slots["item"]" data-color="@record.Color?.Value" data-slot="record-item">
+                <div class="@_slots["lead"]">
+                    @if (!string.IsNullOrEmpty(record.ImageSrc))
+                    {
+                        <KlyImage Src="@record.ImageSrc" Alt="" Width="32" Height="32" ImageOptions="ImageOptions" Class="@_slots["image"]" data-slot="record-image" />
+                    }
+                    else if (!string.IsNullOrEmpty(record.AvatarText) || !string.IsNullOrEmpty(record.Icon))
+                    {
+                        <span class="@_slots["avatar"]" data-color="@record.Color?.Value" aria-hidden="true" data-slot="record-avatar">
+                            @if (!string.IsNullOrEmpty(record.Icon))
+                            {
+                                @RenderIcon(record.Icon, _slots["avatarIcon"])
+                            }
+                            else
+                            {
+                                @record.AvatarText
+                            }
+                        </span>
+                    }
+                    <div class="@_slots["body"]">
+                        @if (!string.IsNullOrEmpty(record.Reference))
+                        {
+                            <span class="@_slots["reference"]" data-slot="record-reference">@record.Reference</span>
+                        }
+                        @if (!string.IsNullOrEmpty(record.Href))
+                        {
+                            <a href="@record.Href" class="@_slots["link"]" data-slot="record-title" @onclick="Click(record)">@record.Title</a>
+                        }
+                        else if (record.OnClick.HasDelegate)
+                        {
+                            <button type="button" class="@_slots["link"]" data-slot="record-title" disabled="@(!RendererInfo.IsInteractive)"
+                                    @onclick="Click(record)">@record.Title</button>
+                        }
+                        else
+                        {
+                            <span class="@_slots["name"]" data-slot="record-title">@record.Title</span>
+                        }
+                        @if (!string.IsNullOrEmpty(record.Description))
+                        {
+                            <span class="@_slots["meta"]" data-slot="record-meta">
+                                @if (!string.IsNullOrEmpty(record.DescriptionIcon))
+                                {
+                                    @RenderIcon(record.DescriptionIcon, _slots["metaIcon"])
+                                }
+                                <span class="@_slots["metaText"]">@record.Description</span>
+                            </span>
+                        }
+                    </div>
+                </div>
+                <div class="@_slots["trail"]">
+                    @if (record.Badges is { Count: > 0 })
+                    {
+                        @foreach (var badge in record.Badges)
+                        {
+                            @BlockRender.Badge(badge, Options.Icons)
+                        }
+                    }
+                    @if (record.Badge is { } single)
+                    {
+                        @BlockRender.Badge(single, Options.Icons)
+                    }
+                    @if (!string.IsNullOrEmpty(record.Trailing) || !string.IsNullOrEmpty(record.TrailingCaption))
+                    {
+                        <div class="@_slots["trailingBlock"]">
+                            @if (!string.IsNullOrEmpty(record.Trailing))
+                            {
+                                <span class="@_slots["trailing"]" data-color="@record.Color?.Value" data-slot="record-trailing">@record.Trailing</span>
+                            }
+                            @if (!string.IsNullOrEmpty(record.TrailingCaption))
+                            {
+                                <span class="@_slots["trailingCaption"]" data-slot="record-trailing-caption">@record.TrailingCaption</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        @if (remaining > 0 && Items is not null)
+        {
+            <button type="button" class="@_slots["more"]" data-slot="more" disabled="@(!RendererInfo.IsInteractive)"
+                    @onclick="@(() => _reveal.More(Items.Count, Max, Step))">
+                <span>@Messages.ShowMore(remaining)</span>
+                @RenderIcon(Options.Icons.ChevronDown, _slots["moreIcon"])
+            </button>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly Reveal _reveal = new();
+
+    // No delegate means no handler is attached, so a plain link costs no round trip in Server mode.
+    private EventCallback<Microsoft.AspNetCore.Components.Web.MouseEventArgs> Click(KlyRecordItem record) =>
+        record.OnClick.HasDelegate ? EventCallback.Factory.Create<Microsoft.AspNetCore.Components.Web.MouseEventArgs>(this, () => record.OnClick.InvokeAsync()) : default;
+
+    /// <summary>The title above the rows.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>A count shown beside the title, formatted with the format culture of the locale.</summary>
+    [Parameter] public int? Count { get; set; }
+    /// <summary>The rows, as <see cref="KlyRecordItem"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyRecordItem>? Items { get; set; }
+    /// <summary>The number of rows shown before a Show more button (all rows when <see langword="null"/>).</summary>
+    [Parameter] public int? Max { get; set; }
+    /// <summary>The number of rows each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
+    [Parameter] public int? Step { get; set; }
+    /// <summary>Image settings forwarded to the <see cref="KlyImage"/> of the rows that have an <see cref="KlyRecordItem.ImageSrc"/>.</summary>
+    [Parameter] public KlyImageOptions? ImageOptions { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Bordered when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the record list, see <see cref="RecordListUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public RecordListUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _reveal.Sync(Max);
+        _slots = ResolveSlots(Options.RecordList, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+    }
+}

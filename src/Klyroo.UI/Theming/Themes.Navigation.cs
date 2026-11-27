@@ -36,7 +36,7 @@ internal static partial class Themes
             .Slot("body", "pb-3.5 text-sm text-(--klyroo-text-muted)");
 
     public static ComponentTheme Table() =>
-        new ComponentTheme("table", "root", "base", "caption", "thead", "tr", "th", "sortButton", "sortIcon", "tbody", "td", "empty")
+        new ComponentTheme("table", "root", "base", "caption", "thead", "tr", "th", "sortButton", "sortIcon", "tbody", "td", "empty", "tfoot", "tf", "cellEnd", "cellNumeric", "cellMono", "more", "moreIcon")
             .Slot("root", "relative overflow-auto")
             .Slot("base", "min-w-full text-sm")
             .Slot("caption", "sr-only")
@@ -49,6 +49,13 @@ internal static partial class Themes
             .Slot("tbody", "")
             .Slot("td", "whitespace-nowrap px-4 py-4 text-(--klyroo-text-muted)")
             .Slot("empty", "py-6 text-center text-(--klyroo-text-muted)")
+            .Slot("tfoot", "border-t border-(--klyroo-border-accented)")
+            .Slot("tf", "whitespace-nowrap px-4 py-3.5 text-start font-semibold text-(--klyroo-text-highlighted)")
+            .Slot("cellEnd", "text-end")
+            .Slot("cellNumeric", "text-end tabular-nums")
+            .Slot("cellMono", "font-mono")
+            .Slot("more", "m-1 inline-flex items-center gap-1.5 rounded-(--klyroo-radius) px-2 py-1 text-xs font-medium text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text) disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-(--klyroo-primary-text)")
+            .Slot("moreIcon", "size-3.5")
             .Variant("sticky", "true", "thead", "sticky top-0 z-[1] bg-(--klyroo-bg)/75 backdrop-blur")
             .Default("sticky", "false");
 }

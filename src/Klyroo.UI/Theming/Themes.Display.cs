@@ -32,9 +32,9 @@ internal static partial class Themes
 
     public static ComponentTheme Avatar() =>
         new ComponentTheme("avatar", "root", "image", "fallback")
-            .Slot("root", "relative inline-flex items-center justify-center shrink-0 select-none overflow-hidden rounded-full align-middle bg-(--klyroo-bg-accented)")
+            .Slot("root", "relative inline-flex items-center justify-center shrink-0 select-none overflow-hidden rounded-full align-middle bg-(--klyroo-bg-accented) data-[color]:bg-(--kly-color)/15")
             .Slot("image", "absolute inset-0 size-full object-cover")
-            .Slot("fallback", "font-medium leading-none text-(--klyroo-text) truncate")
+            .Slot("fallback", "font-medium leading-none text-(--klyroo-text) truncate data-[color]:text-(--kly-color-text)")
             .Variant("size", "xs", "root", "size-6 text-[10px]")
             .Variant("size", "sm", "root", "size-7 text-xs")
             .Variant("size", "md", "root", "size-8 text-sm")
@@ -54,7 +54,7 @@ internal static partial class Themes
             .Default("variant", "outline");
 
     public static ComponentTheme Alert() =>
-        new ComponentTheme("alert", "root", "icon", "wrapper", "title", "description", "actions", "close")
+        new ComponentTheme("alert", "root", "icon", "wrapper", "title", "description", "actions", "close", "toggle", "toggleIcon", "detailsPanel")
             .Slot("root", "relative flex w-full gap-2.5 overflow-hidden rounded-(--klyroo-radius) p-4")
             .Slot("icon", "size-5 shrink-0")
             .Slot("wrapper", "flex min-w-0 flex-1 flex-col gap-1")
@@ -62,6 +62,9 @@ internal static partial class Themes
             .Slot("description", "text-sm")
             .Slot("actions", "flex flex-wrap items-center gap-1.5 shrink-0")
             .Slot("close", "-m-1 shrink-0 self-start rounded-(--klyroo-radius) p-1 opacity-80 hover:opacity-100 disabled:cursor-not-allowed focus-visible:outline-2 focus-visible:outline-current")
+            .Slot("toggle", "inline-flex items-center gap-1 self-start rounded-sm text-xs font-medium underline-offset-2 hover:underline disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-current")
+            .Slot("toggleIcon", "size-3.5")
+            .Slot("detailsPanel", "rounded-(--klyroo-radius) p-2.5 text-xs ring ring-inset ring-current/20")
             .Variant("variant", "solid", "root", "bg-(--kly-color) ring ring-inset ring-(--kly-color-text) text-(--kly-color-contrast)")
             .Variant("variant", "outline", "root", "text-(--kly-color-text) ring ring-inset ring-(--kly-color-text)/75")
             .Variant("variant", "soft", "root", "bg-(--kly-color)/10 text-(--kly-color-text)")

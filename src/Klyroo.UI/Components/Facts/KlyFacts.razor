@@ -1,0 +1,134 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@using Microsoft.JSInterop
+@inherits KlyComponentBase
+
+@* Label and value rows, flat or in titled groups. Copy buttons write to the clipboard from .NET, so they wait for interactivity. *@
+<div class="@_slots["root"]" data-slot="facts" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else if (Groups is { Count: > 0 })
+    {
+        @foreach (var group in Groups)
+        {
+            <div class="@_slots["group"]" data-slot="fact-group">
+                @if (!string.IsNullOrEmpty(group.Title) || !string.IsNullOrEmpty(group.Aside))
+                {
+                    <div class="@_slots["groupHeader"]">
+                        <span class="@_slots["groupTitle"]">@group.Title</span>
+                        @if (!string.IsNullOrEmpty(group.Aside))
+                        {
+                            <span class="@_slots["groupAside"]">@group.Aside</span>
+                        }
+                    </div>
+                }
+                @FactList(group.Items)
+            </div>
+        }
+    }
+    else if (Items is { Count: > 0 })
+    {
+        var (visible, remaining) = _reveal.Apply(Items, Max, Step);
+        @FactList(visible)
+        @if (remaining > 0)
+        {
+            <button type="button" class="@_slots["more"]" data-slot="more" disabled="@(!RendererInfo.IsInteractive)"
+                    @onclick="@(() => _reveal.More(Items.Count, Max, Step))">
+                <span>@Messages.ShowMore(remaining)</span>
+                @RenderIcon(Options.Icons.ChevronDown, _slots["moreIcon"])
+            </button>
+        }
+    }
+    else
+    {
+        <p class="@_slots["none"]" data-slot="facts-empty">—</p>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly Reveal _reveal = new();
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private RenderFragment FactList(IReadOnlyList<KlyFact> facts) => @<dl class="@_slots["list"]">
+        @foreach (var fact in facts)
+        {
+            var isEmpty = string.IsNullOrWhiteSpace(fact.Value) && fact.Badge is null;
+            var valueClass = string.Join(' ', new[] { _slots["value"], fact.Mono ? _slots["valueMono"] : null, fact.Emphasis ? _slots["valueEmphasis"] : null }.Where(c => !string.IsNullOrEmpty(c)));
+            <div class="@_slots["item"]" data-slot="fact-item">
+                <dt class="@_slots["label"]" data-slot="fact-label">
+                    <span class="@_slots["labelRow"]">
+                        @if (!string.IsNullOrEmpty(fact.Icon))
+                        {
+                            @RenderIcon(fact.Icon, _slots["labelIcon"])
+                        }
+                        <span>@fact.Label</span>
+                    </span>
+                    @if (!string.IsNullOrEmpty(fact.Hint))
+                    {
+                        <span class="@_slots["hint"]" data-slot="fact-hint">@fact.Hint</span>
+                    }
+                </dt>
+                <dd class="@valueClass" data-color="@fact.Color?.Value" data-slot="fact-value">
+                    @if (fact.Loading)
+                    {
+                        <KlySkeleton Class="@_slots["valueSkeleton"]" />
+                    }
+                    else if (fact.Badge is { } badge)
+                    {
+                        @BlockRender.Badge(badge, Options.Icons)
+                    }
+                    else if (isEmpty)
+                    {
+                        <span class="@_slots["empty"]" data-slot="fact-empty">—</span>
+                    }
+                    else if (!string.IsNullOrEmpty(fact.Href))
+                    {
+                        <a href="@fact.Href" class="@_slots["link"]">@fact.Value</a>
+                    }
+                    else
+                    {
+                        <span>@fact.Value</span>
+                    }
+                    @if ((fact.Copy || !string.IsNullOrEmpty(fact.CopyText)) && !isEmpty)
+                    {
+                        var text = fact.CopyText ?? fact.Value;
+                        <button type="button" class="@_slots["copy"]" aria-label="@string.Format(Messages.CopyValue, fact.Label)" data-slot="fact-copy"
+                                disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => BlockRender.CopyAsync(JS, RendererInfo.IsInteractive, text))">
+                            @RenderIcon(Options.Icons.Copy, _slots["copyIcon"])
+                        </button>
+                    }
+                </dd>
+            </div>
+        }
+    </dl>;
+
+    /// <summary>The label and value rows, flat. They are ignored when <see cref="Groups"/> is set.</summary>
+    [Parameter] public IReadOnlyList<KlyFact>? Items { get; set; }
+    /// <summary>The titled groups of rows. When set, they replace <see cref="Items"/>, and <see cref="Max"/> does not apply.</summary>
+    [Parameter] public IReadOnlyList<KlyFactGroup>? Groups { get; set; }
+    /// <summary>The number of rows shown before a Show more button (all rows when <see langword="null"/>). It applies to <see cref="Items"/> only.</summary>
+    [Parameter] public int? Max { get; set; }
+    /// <summary>The number of rows each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
+    [Parameter] public int? Step { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Bordered when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the facts, see <see cref="FactsUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public FactsUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _reveal.Sync(Max);
+        _slots = ResolveSlots(Options.Facts, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+    }
+}

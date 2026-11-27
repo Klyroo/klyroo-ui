@@ -12,6 +12,10 @@ public sealed record KlyAccordionItem(string Label)
     public RenderFragment? Icon { get; init; }
     /// <summary>Content of the panel that opens under the header.</summary>
     public RenderFragment? Content { get; init; }
+    /// <summary>Text of the panel, used when <see cref="Content"/> is not set.</summary>
+    public string? Text { get; init; }
+    /// <summary>Whether the item starts open when <see cref="KlyAccordion.Value"/> is not set. With a single open item (<see cref="KlyAccordion.Multiple"/> off), only the first such item opens.</summary>
+    public bool DefaultOpen { get; init; }
     /// <summary>Prevents the user from opening or closing the item.</summary>
     public bool Disabled { get; init; }
 }

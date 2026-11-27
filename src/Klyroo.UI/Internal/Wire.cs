@@ -20,6 +20,15 @@ internal static class Wire
         _ => throw new ArgumentOutOfRangeException(nameof(placement), placement, null),
     };
 
+    public static string Of(KlySurface surface) => surface switch
+    {
+        KlySurface.Plain => "plain",
+        KlySurface.Muted => "muted",
+        KlySurface.Bordered => "bordered",
+        KlySurface.Elevated => "elevated",
+        _ => throw new ArgumentOutOfRangeException(nameof(surface), surface, null),
+    };
+
     public static string Of(ButtonType type) => type switch
     {
         ButtonType.Button => "button",

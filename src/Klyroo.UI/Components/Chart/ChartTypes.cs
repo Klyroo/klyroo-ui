@@ -14,6 +14,9 @@ public enum KlyChartType
 
     /// <summary>One slice per row, sized by the first category.</summary>
     Donut,
+
+    /// <summary>One horizontal bar per row, sized by the first category relative to the largest one, with the share kept from the previous step: a conversion funnel. Rows are the steps in order.</summary>
+    Funnel,
 }
 
 /// <summary>The shape of the line between values of a line or area chart.</summary>
@@ -133,6 +136,21 @@ public sealed record ChartUi : ISlotOverrides
     /// <summary>Classes merged into the <c>td</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
     public string? Td { get; init; }
 
+    /// <summary>Classes merged into the <c>funnel</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? Funnel { get; init; }
+    /// <summary>Classes merged into the <c>funnelStep</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelStep { get; init; }
+    /// <summary>Classes merged into the <c>funnelHeader</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelHeader { get; init; }
+    /// <summary>Classes merged into the <c>funnelLabel</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelLabel { get; init; }
+    /// <summary>Classes merged into the <c>funnelValue</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelValue { get; init; }
+    /// <summary>Classes merged into the <c>funnelBar</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelBar { get; init; }
+    /// <summary>Classes merged into the <c>funnelEmpty</c> slot of <see cref="KlyChart{TItem, TIndex}"/>, after the theme and the app configuration.</summary>
+    public string? FunnelEmpty { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -166,6 +184,13 @@ public sealed record ChartUi : ISlotOverrides
         "table" => Table,
         "th" => Th,
         "td" => Td,
+        "funnel" => Funnel,
+        "funnelStep" => FunnelStep,
+        "funnelHeader" => FunnelHeader,
+        "funnelLabel" => FunnelLabel,
+        "funnelValue" => FunnelValue,
+        "funnelBar" => FunnelBar,
+        "funnelEmpty" => FunnelEmpty,
         _ => null,
     };
 }

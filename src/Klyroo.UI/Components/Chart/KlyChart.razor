@@ -12,245 +12,252 @@
     well as by color. The tooltip and the arrow-key exploration are a custom element (js/chart.js) that reads the
     hidden "tips" and highlights the hit area under the pointer: nothing leaves the browser.
 *@
-<kly-chart class="@_slots["root"]" data-type="@_kind" data-selectable="@(_selectable ? "" : null)"
-           @onklypick="PickHandler" @onklypick:stopPropagation="true" @attributes="AdditionalAttributes">
-    <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
-         role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
-         aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? PlotDescribedBy : null)">
-        <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="@(_interactive ? null : "img")" aria-label="@(_interactive ? null : _label)"
-             aria-hidden="@(_interactive ? "true" : null)"
-             aria-describedby="@(AriaDescription is null || _interactive ? null : _id + "-description")" class="@_slots["svg"]">
-            @if (Type != KlyChartType.Line && _series.Count > 0)
-            {
-                <defs>
-                    @for (var k = 0; k < PatternCount; k++)
-                    {
-                        @Pattern(k)
-                    }
-                </defs>
-            }
-            @if (Type != KlyChartType.Donut)
-            {
-                @if (Grid)
+@if (Type == KlyChartType.Funnel)
+{
+    @FunnelView
+}
+else
+{
+    <kly-chart class="@_slots["root"]" data-type="@_kind" data-selectable="@(_selectable ? "" : null)"
+               @onklypick="PickHandler" @onklypick:stopPropagation="true" @attributes="AdditionalAttributes">
+        <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
+             role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
+             aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? PlotDescribedBy : null)">
+            <svg viewBox="0 0 @Num(_layout.Width) @Num(_layout.Height)" role="@(_interactive ? null : "img")" aria-label="@(_interactive ? null : _label)"
+                 aria-hidden="@(_interactive ? "true" : null)"
+                 aria-describedby="@(AriaDescription is null || _interactive ? null : _id + "-description")" class="@_slots["svg"]">
+                @if (Type != KlyChartType.Line && _series.Count > 0)
                 {
-                    @foreach (var line in _layout.GridLines)
-                    {
-                        <line x1="@Num(line.X1)" y1="@Num(line.Y1)" x2="@Num(line.X2)" y2="@Num(line.Y2)" stroke-width="1"
-                              class="@(line.Zero ? _slots["axisLine"] : _slots["grid"])" />
-                    }
+                    <defs>
+                        @for (var k = 0; k < PatternCount; k++)
+                        {
+                            @Pattern(k)
+                        }
+                    </defs>
                 }
-                @if (XAxis)
+                @if (Type != KlyChartType.Donut)
                 {
-                    @if (_layout.Horizontal)
+                    @if (Grid)
                     {
-                        <line x1="@Num(_layout.Left)" y1="@Num(_layout.Top)" x2="@Num(_layout.Left)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
+                        @foreach (var line in _layout.GridLines)
+                        {
+                            <line x1="@Num(line.X1)" y1="@Num(line.Y1)" x2="@Num(line.X2)" y2="@Num(line.Y2)" stroke-width="1"
+                                  class="@(line.Zero ? _slots["axisLine"] : _slots["grid"])" />
+                        }
                     }
-                    else
-                    {
-                        <line x1="@Num(_layout.Left)" y1="@Num(_layout.Bottom)" x2="@Num(_layout.Right)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
-                    }
-                    @foreach (var label in _layout.IndexLabels)
+                    @if (XAxis)
                     {
                         @if (_layout.Horizontal)
                         {
-                            @SvgText(_slots["tick"], label.Text, _layout.Left - 8, label.Position, "end", "0.32em")
+                            <line x1="@Num(_layout.Left)" y1="@Num(_layout.Top)" x2="@Num(_layout.Left)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
                         }
                         else
                         {
-                            @SvgText(_slots["tick"], label.Text, label.Position, _layout.Bottom + 16, "middle")
+                            <line x1="@Num(_layout.Left)" y1="@Num(_layout.Bottom)" x2="@Num(_layout.Right)" y2="@Num(_layout.Bottom)" stroke-width="1" class="@_slots["axisLine"]" />
+                        }
+                        @foreach (var label in _layout.IndexLabels)
+                        {
+                            @if (_layout.Horizontal)
+                            {
+                                @SvgText(_slots["tick"], label.Text, _layout.Left - 8, label.Position, "end", "0.32em")
+                            }
+                            else
+                            {
+                                @SvgText(_slots["tick"], label.Text, label.Position, _layout.Bottom + 16, "middle")
+                            }
                         }
                     }
-                }
-                @if (YAxis)
-                {
-                    @foreach (var tick in _layout.ValueTicks)
+                    @if (YAxis)
+                    {
+                        @foreach (var tick in _layout.ValueTicks)
+                        {
+                            @if (_layout.Horizontal)
+                            {
+                                @SvgText(_slots["tick"], tick.Label, tick.Position, _layout.Bottom + 16, "middle")
+                            }
+                            else
+                            {
+                                @SvgText(_slots["tick"], tick.Label, _layout.Left - 8, tick.Position, "end", "0.32em")
+                            }
+                        }
+                    }
+                    @if (XLabel is not null)
                     {
                         @if (_layout.Horizontal)
                         {
-                            @SvgText(_slots["tick"], tick.Label, tick.Position, _layout.Bottom + 16, "middle")
+                            @SvgText(_slots["axisTitle"], XLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
                         }
                         else
                         {
-                            @SvgText(_slots["tick"], tick.Label, _layout.Left - 8, tick.Position, "end", "0.32em")
+                            @SvgText(_slots["axisTitle"], XLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
                         }
                     }
-                }
-                @if (XLabel is not null)
-                {
-                    @if (_layout.Horizontal)
+                    @if (YLabel is not null)
                     {
-                        @SvgText(_slots["axisTitle"], XLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
-                    }
-                    else
-                    {
-                        @SvgText(_slots["axisTitle"], XLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
-                    }
-                }
-                @if (YLabel is not null)
-                {
-                    @if (_layout.Horizontal)
-                    {
-                        @SvgText(_slots["axisTitle"], YLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
-                    }
-                    else
-                    {
-                        @SvgText(_slots["axisTitle"], YLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
-                    }
-                }
-
-                @for (var s = 0; s < _series.Count; s++)
-                {
-                    var shape = _layout.Series[s];
-                    var color = _series[s].Color.Value;
-                    var pattern = $"url(#{_id}-p{s})";
-                    <g data-color="@color" data-series="@s">
-                        @if (Type == KlyChartType.Area)
+                        @if (_layout.Horizontal)
                         {
-                            @foreach (var area in shape.Areas)
-                            {
-                                <path d="@area" fill="@pattern" stroke="none" />
-                            }
-                        }
-                        @if (Type != KlyChartType.Bar)
-                        {
-                            @foreach (var line in shape.Lines)
-                            {
-                                <path d="@line" class="@_slots["line"]" stroke-dasharray="@Dash(s)" stroke-linejoin="round" stroke-linecap="round" />
-                            }
+                            @SvgText(_slots["axisTitle"], YLabel, (_layout.Left + _layout.Right) / 2, _layout.Height - 4, "middle")
                         }
                         else
                         {
-                            @foreach (var bar in shape.Bars)
-                            {
-                                <rect x="@Num(bar.X)" y="@Num(bar.Y)" width="@Num(bar.Width)" height="@Num(bar.Height)" rx="2" fill="@pattern" class="@_slots["bar"]" />
-                            }
+                            @SvgText(_slots["axisTitle"], YLabel, 12, (_layout.Top + _layout.Bottom) / 2, "middle", null, true)
                         }
-                    </g>
-                }
+                    }
 
-                @foreach (var hit in _layout.Hits)
-                {
-                    var row = hit.Row;
-                    <g data-hit="" data-index="@row" class="@_slots["hit"]">
-                        <rect x="@Num(hit.X)" y="@Num(hit.Y)" width="@Num(hit.Width)" height="@Num(hit.Height)" class="@_slots["hitArea"]" />
-                        @if (Type != KlyChartType.Bar)
-                        {
-                            @for (var s = 0; s < _series.Count; s++)
+                    @for (var s = 0; s < _series.Count; s++)
+                    {
+                        var shape = _layout.Series[s];
+                        var color = _series[s].Color.Value;
+                        var pattern = $"url(#{_id}-p{s})";
+                        <g data-color="@color" data-series="@s">
+                            @if (Type == KlyChartType.Area)
                             {
-                                if (_points[s].TryGetValue(row, out var point))
+                                @foreach (var area in shape.Areas)
                                 {
-                                    <path d="@MarkerPath(s, point.X, point.Y)" data-series="@s" data-color="@_series[s].Color.Value" class="@_slots["marker"]" />
+                                    <path d="@area" fill="@pattern" stroke="none" />
                                 }
                             }
-                        }
-                    </g>
+                            @if (Type != KlyChartType.Bar)
+                            {
+                                @foreach (var line in shape.Lines)
+                                {
+                                    <path d="@line" class="@_slots["line"]" stroke-dasharray="@Dash(s)" stroke-linejoin="round" stroke-linecap="round" />
+                                }
+                            }
+                            else
+                            {
+                                @foreach (var bar in shape.Bars)
+                                {
+                                    <rect x="@Num(bar.X)" y="@Num(bar.Y)" width="@Num(bar.Width)" height="@Num(bar.Height)" rx="2" fill="@pattern" class="@_slots["bar"]" />
+                                }
+                            }
+                        </g>
+                    }
+
+                    @foreach (var hit in _layout.Hits)
+                    {
+                        var row = hit.Row;
+                        <g data-hit="" data-index="@row" class="@_slots["hit"]">
+                            <rect x="@Num(hit.X)" y="@Num(hit.Y)" width="@Num(hit.Width)" height="@Num(hit.Height)" class="@_slots["hitArea"]" />
+                            @if (Type != KlyChartType.Bar)
+                            {
+                                @for (var s = 0; s < _series.Count; s++)
+                                {
+                                    if (_points[s].TryGetValue(row, out var point))
+                                    {
+                                        <path d="@MarkerPath(s, point.X, point.Y)" data-series="@s" data-color="@_series[s].Color.Value" class="@_slots["marker"]" />
+                                    }
+                                }
+                            }
+                        </g>
+                    }
                 }
-            }
-            else
-            {
-                @foreach (var slice in _layout.Slices)
+                else
                 {
-                    <path d="@slice.Path" data-hit="" data-index="@slice.Row" data-color="@_series[slice.Row].Color.Value"
-                          fill="url(#@(_id)-p@(slice.Row))" class="@_slots["slice"]" />
+                    @foreach (var slice in _layout.Slices)
+                    {
+                        <path d="@slice.Path" data-hit="" data-index="@slice.Row" data-color="@_series[slice.Row].Color.Value"
+                              fill="url(#@(_id)-p@(slice.Row))" class="@_slots["slice"]" />
+                    }
                 }
+            </svg>
+            @if (AriaDescription is not null && !_interactive)
+            {
+                <span id="@(_id + "-description")" class="sr-only">@AriaDescription</span>
             }
-        </svg>
-        @if (AriaDescription is not null && !_interactive)
-        {
-            <span id="@(_id + "-description")" class="sr-only">@AriaDescription</span>
-        }
-        @if (Type == KlyChartType.Donut && Center is not null)
-        {
-            <div class="@_slots["center"]">@Center</div>
-        }
+            @if (Type == KlyChartType.Donut && Center is not null)
+            {
+                <div class="@_slots["center"]">@Center</div>
+            }
+            @if (_interactive)
+            {
+                <div class="@_slots["tooltip"]" data-slot="tooltip" aria-hidden="true"></div>
+                <div role="status" class="@_slots["status"]" data-slot="status"></div>
+                <div hidden data-slot="tips">
+                    @foreach (var row in _tipRows)
+                    {
+                        <div data-tip="@row" data-text="@TipText(row)">
+                            <p class="@_slots["tooltipTitle"]">@_index[row]</p>
+                            @if (Type == KlyChartType.Donut)
+                            {
+                                var slice = _layout.Slices.First(s => s.Row == row);
+                                <p class="@_slots["tooltipRow"]" data-color="@_series[row].Color.Value">
+                                    <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
+                                    <span class="@_slots["tooltipLabel"]">@Categories[0].Name</span>
+                                    <span class="@_slots["tooltipValue"]">@FormatValue(slice.Value) (@slice.Fraction.ToString("P0", Cult))</span>
+                                </p>
+                            }
+                            else
+                            {
+                                @for (var s = 0; s < _series.Count; s++)
+                                {
+                                    if (_values[s][row] is { } value)
+                                    {
+                                        <p class="@_slots["tooltipRow"]" data-color="@_series[s].Color.Value">
+                                            <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
+                                            <span class="@_slots["tooltipLabel"]">@_series[s].Name</span>
+                                            <span class="@_slots["tooltipValue"]">@FormatValue(value)</span>
+                                        </p>
+                                    }
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+        @* The group is described by these, but they are not part of its content, so they are read once. *@
         @if (_interactive)
         {
-            <div class="@_slots["tooltip"]" data-slot="tooltip" aria-hidden="true"></div>
-            <div role="status" class="@_slots["status"]" data-slot="status"></div>
-            <div hidden data-slot="tips">
-                @foreach (var row in _tipRows)
+            <span id="@(_id + "-hint")" hidden>@Messages.ChartHint@(_selectable ? " " + Messages.ChartHintSelect : "")</span>
+            @if (AriaDescription is not null)
+            {
+                <span id="@(_id + "-description")" hidden>@AriaDescription</span>
+            }
+        }
+        @if (_showLegend)
+        {
+            <ul class="@_slots["legend"]" aria-label="@Messages.ChartLegend">
+                @for (var i = 0; i < LegendCount; i++)
                 {
-                    <div data-tip="@row" data-text="@TipText(row)">
-                        <p class="@_slots["tooltipTitle"]">@_index[row]</p>
-                        @if (Type == KlyChartType.Donut)
-                        {
-                            var slice = _layout.Slices.First(s => s.Row == row);
-                            <p class="@_slots["tooltipRow"]" data-color="@_series[row].Color.Value">
-                                <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
-                                <span class="@_slots["tooltipLabel"]">@Categories[0].Name</span>
-                                <span class="@_slots["tooltipValue"]">@FormatValue(slice.Value) (@slice.Fraction.ToString("P0", Cult))</span>
-                            </p>
-                        }
-                        else
-                        {
-                            @for (var s = 0; s < _series.Count; s++)
+                    var item = i;
+                    <li class="@_slots["legendItem"]" data-color="@_series[item].Color.Value">
+                        <svg viewBox="0 0 20 12" aria-hidden="true" class="@_slots["legendSwatch"]">
+                            @if (Type == KlyChartType.Line)
                             {
-                                if (_values[s][row] is { } value)
+                                <path d="M1 6H19" stroke-width="2" fill="none" stroke-dasharray="@Dash(item)" stroke-linecap="round" />
+                                @if (Points)
                                 {
-                                    <p class="@_slots["tooltipRow"]" data-color="@_series[s].Color.Value">
-                                        <span class="@_slots["tooltipIndicator"]" aria-hidden="true"></span>
-                                        <span class="@_slots["tooltipLabel"]">@_series[s].Name</span>
-                                        <span class="@_slots["tooltipValue"]">@FormatValue(value)</span>
-                                    </p>
+                                    <path d="@MarkerPath(item, 10, 6)" stroke-width="2" style="fill:var(--klyroo-bg)" />
                                 }
                             }
-                        }
-                    </div>
-                }
-            </div>
-        }
-    </div>
-    @* The group is described by these, but they are not part of its content, so they are read once. *@
-    @if (_interactive)
-    {
-        <span id="@(_id + "-hint")" hidden>@Messages.ChartHint@(_selectable ? " " + Messages.ChartHintSelect : "")</span>
-        @if (AriaDescription is not null)
-        {
-            <span id="@(_id + "-description")" hidden>@AriaDescription</span>
-        }
-    }
-    @if (_showLegend)
-    {
-        <ul class="@_slots["legend"]" aria-label="@Messages.ChartLegend">
-            @for (var i = 0; i < LegendCount; i++)
-            {
-                var item = i;
-                <li class="@_slots["legendItem"]" data-color="@_series[item].Color.Value">
-                    <svg viewBox="0 0 20 12" aria-hidden="true" class="@_slots["legendSwatch"]">
-                        @if (Type == KlyChartType.Line)
-                        {
-                            <path d="M1 6H19" stroke-width="2" fill="none" stroke-dasharray="@Dash(item)" stroke-linecap="round" />
-                            @if (Points)
+                            else
                             {
-                                <path d="@MarkerPath(item, 10, 6)" stroke-width="2" style="fill:var(--klyroo-bg)" />
+                                <rect x="0.5" y="0.5" width="19" height="11" rx="2" stroke-width="1" fill="url(#@(_id)-p@(item))" />
                             }
-                        }
-                        else
+                        </svg>
+                        <span class="@_slots["legendLabel"]">@_series[item].Name</span>
+                        @if (Type == KlyChartType.Donut)
                         {
-                            <rect x="0.5" y="0.5" width="19" height="11" rx="2" stroke-width="1" fill="url(#@(_id)-p@(item))" />
+                            <span class="@_slots["legendValue"]">@FormatValue(_values[0][item] ?? 0)</span>
                         }
-                    </svg>
-                    <span class="@_slots["legendLabel"]">@_series[item].Name</span>
-                    @if (Type == KlyChartType.Donut)
-                    {
-                        <span class="@_slots["legendValue"]">@FormatValue(_values[0][item] ?? 0)</span>
-                    }
-                </li>
-            }
-        </ul>
-    }
-    @if (Table == KlyChartTable.Toggle)
-    {
-        <details class="@_slots["details"]">
-            <summary class="@_slots["summary"]">@Messages.ChartTable</summary>
+                    </li>
+                }
+            </ul>
+        }
+        @if (Table == KlyChartTable.Toggle)
+        {
+            <details class="@_slots["details"]">
+                <summary class="@_slots["summary"]">@Messages.ChartTable</summary>
+                <div class="@_slots["tableWrapper"]">@DataTable</div>
+            </details>
+        }
+        else
+        {
             <div class="@_slots["tableWrapper"]">@DataTable</div>
-        </details>
-    }
-    else
-    {
-        <div class="@_slots["tableWrapper"]">@DataTable</div>
-    }
-</kly-chart>
+        }
+    </kly-chart>
+}
 
 @code {
     private sealed record SeriesInfo(string Name, KlyColor Color);
@@ -374,6 +381,53 @@
 
     private CultureInfo Cult => Culture ?? FormatCulture;
 
+    // The funnel is plain markup, not an SVG plot: the steps are a list whose text carries the value and the share of the previous step.
+    private RenderFragment FunnelView => @<div class="@_slots["root"]" data-type="funnel" data-slot="chart-funnel" @attributes="AdditionalAttributes">
+        @if (_funnel.Count == 0)
+        {
+            <p class="@_slots["funnelEmpty"]" data-slot="chart-empty">@Messages.NoData</p>
+        }
+        else
+        {
+            <ol class="@_slots["funnel"]" aria-label="@AriaLabel">
+                @foreach (var step in _funnel)
+                {
+                    <li class="@_slots["funnelStep"]" data-slot="funnel-step">
+                        <div class="@_slots["funnelHeader"]">
+                            <span class="@_slots["funnelLabel"]">@step.Label</span>
+                            <span class="@_slots["funnelValue"]">@step.Text</span>
+                        </div>
+                        <div class="@_slots["funnelBar"]" data-color="@step.Color.Value" style="@($"width:{step.Width}%")" aria-hidden="true"></div>
+                    </li>
+                }
+            </ol>
+        }
+    </div>;
+
+    private sealed record FunnelStep(string Label, string Text, string Width, KlyColor Color);
+
+    private List<FunnelStep> _funnel = [];
+
+    private void BuildFunnel()
+    {
+        var category = Categories.Count > 0 ? Categories[0] : null;
+        var values = Data.Select(item => category is null ? null : Sanitize(category.Value(item))).ToList();
+        // Widths are relative to the largest positive step; a zero, negative or missing step has no bar, a positive one never vanishes.
+        var positives = values.Where(v => v is > 0).Select(v => v!.Value).ToList();
+        var largest = positives.Count > 0 ? positives.Max() : 1.0;
+        _funnel = [];
+        for (var i = 0; i < values.Count; i++)
+        {
+            var value = values[i];
+            var width = value is > 0 ? Math.Clamp(value.Value / largest * 100.0, 2, 100) : 0.0;
+            var previous = i > 0 ? values[i - 1] : null;
+            var rate = previous is > 0 ? $"{Math.Round((value ?? 0) / previous.Value * 100).ToString(CultureInfo.InvariantCulture)}%" : null;
+            var shown = value is { } v ? FormatValue(v) : "—";
+            var color = category?.Color ?? (Colors is { Count: > 0 } ? Colors[i % Colors.Count] : Palette[0]);
+            _funnel.Add(new FunnelStep(IndexText(Index(Data[i])), rate is null ? shown : $"{shown} ({rate})", width.ToString("0.#", CultureInfo.InvariantCulture), color));
+        }
+    }
+
     private string PlotDescribedBy => AriaDescription is null ? _id + "-hint" : _id + "-hint " + _id + "-description";
 
     private int PatternCount => _series.Count;
@@ -420,6 +474,18 @@
         // time. The chart's own renders do not go through here and reuse it.
         var strings = Messages;
         var donut = Type == KlyChartType.Donut;
+
+        if (Type == KlyChartType.Funnel)
+        {
+            BuildFunnel();
+            _slots = ResolveSlots(Options.Chart, new Dictionary<string, string?>
+            {
+                ["table"] = "hidden",
+                ["points"] = VariantValue.Of(false),
+                ["selectable"] = VariantValue.Of(false),
+            }, Ui, "root");
+            return;
+        }
 
         _index = Data.Select(item => IndexText(Index(item))).ToList();
         // A donut colors the slices, so it has one "series" per row; the others one per category.

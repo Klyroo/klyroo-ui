@@ -87,6 +87,13 @@ public sealed record AlertUi : ISlotOverrides
     /// <summary>Classes merged into the <c>close</c> slot of <see cref="KlyAlert"/>, after the theme and the app configuration.</summary>
     public string? Close { get; init; }
 
+    /// <summary>Classes merged into the <c>toggle</c> slot of <see cref="KlyAlert"/>, after the theme and the app configuration.</summary>
+    public string? Toggle { get; init; }
+    /// <summary>Classes merged into the <c>toggleIcon</c> slot of <see cref="KlyAlert"/>, after the theme and the app configuration.</summary>
+    public string? ToggleIcon { get; init; }
+    /// <summary>Classes merged into the <c>detailsPanel</c> slot of <see cref="KlyAlert"/>, after the theme and the app configuration.</summary>
+    public string? DetailsPanel { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -96,6 +103,9 @@ public sealed record AlertUi : ISlotOverrides
         "description" => Description,
         "actions" => Actions,
         "close" => Close,
+        "toggle" => Toggle,
+        "toggleIcon" => ToggleIcon,
+        "detailsPanel" => DetailsPanel,
         _ => null,
     };
 }
@@ -515,6 +525,21 @@ public sealed record TableUi : ISlotOverrides
     /// <summary>Classes merged into the <c>empty</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
     public string? Empty { get; init; }
 
+    /// <summary>Classes merged into the <c>tfoot</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? Tfoot { get; init; }
+    /// <summary>Classes merged into the <c>tf</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? Tf { get; init; }
+    /// <summary>Classes merged into the <c>cellEnd</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? CellEnd { get; init; }
+    /// <summary>Classes merged into the <c>cellNumeric</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? CellNumeric { get; init; }
+    /// <summary>Classes merged into the <c>cellMono</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? CellMono { get; init; }
+    /// <summary>Classes merged into the <c>more</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? More { get; init; }
+    /// <summary>Classes merged into the <c>moreIcon</c> slot of <see cref="KlyTable{TItem}"/>, after the theme and the app configuration.</summary>
+    public string? MoreIcon { get; init; }
+
     string? ISlotOverrides.For(string slot) => slot switch
     {
         "root" => Root,
@@ -528,6 +553,13 @@ public sealed record TableUi : ISlotOverrides
         "tbody" => Tbody,
         "td" => Td,
         "empty" => Empty,
+        "tfoot" => Tfoot,
+        "tf" => Tf,
+        "cellEnd" => CellEnd,
+        "cellNumeric" => CellNumeric,
+        "cellMono" => CellMono,
+        "more" => More,
+        "moreIcon" => MoreIcon,
         _ => null,
     };
 }

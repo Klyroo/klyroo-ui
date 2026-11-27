@@ -13,7 +13,8 @@ internal static partial class Themes
         new ComponentTheme("chart", "root", "plot", "svg", "grid", "axisLine", "tick", "axisTitle", "line", "bar", "marker", "hit", "hitArea", "slice",
                 "patternBase", "patternMark", "tooltip", "tooltipTitle", "tooltipRow", "tooltipIndicator", "tooltipLabel", "tooltipValue",
                 "center", "status", "legend", "legendItem", "legendSwatch", "legendLabel", "legendValue",
-                "details", "summary", "tableWrapper", "table", "caption", "tr", "th", "td")
+                "details", "summary", "tableWrapper", "table", "caption", "tr", "th", "td",
+                "funnel", "funnelStep", "funnelHeader", "funnelLabel", "funnelValue", "funnelBar", "funnelEmpty")
             .Slot("root", "relative block w-full text-(--klyroo-text)")
             .Slot("plot", "relative mx-auto w-full rounded-sm " + ChartFocus)
             .Slot("svg", "block h-auto w-full overflow-visible")
@@ -50,6 +51,13 @@ internal static partial class Themes
             .Slot("tr", "border-b border-(--klyroo-border) last:border-b-0")
             .Slot("th", "px-3 py-2 text-start font-semibold text-(--klyroo-text-highlighted)")
             .Slot("td", "px-3 py-2 tabular-nums text-(--klyroo-text)")
+            .Slot("funnel", "m-0 flex list-none flex-col gap-2 p-0")
+            .Slot("funnelStep", "flex flex-col gap-1")
+            .Slot("funnelHeader", "flex items-baseline justify-between gap-2 text-xs")
+            .Slot("funnelLabel", "font-medium text-(--klyroo-text)")
+            .Slot("funnelValue", "tabular-nums text-(--klyroo-text-muted)")
+            .Slot("funnelBar", "h-2 rounded-full bg-(--kly-color) ring ring-inset ring-(--kly-color-text)")
+            .Slot("funnelEmpty", "m-0 text-xs text-(--klyroo-text-muted)")
 
             .Variant("table", "hidden", "tableWrapper", "sr-only")
             .Variant("table", "visible", "tableWrapper", "mt-4 overflow-x-auto rounded-(--klyroo-radius) border border-(--klyroo-border)")

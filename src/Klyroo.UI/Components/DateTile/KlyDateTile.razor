@@ -1,0 +1,80 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* A calendar tile with a title: the date, the days until or since it, or a range between two dates. *@
+<div class="@_slots["root"]" data-slot="date-tile" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        var date = Value ?? DateTimeOffset.UtcNow;
+        var now = Now ?? DateTimeOffset.UtcNow;
+        var days = (int)Math.Round((date.Date - now.Date).TotalDays);
+        var isCountdown = Mode == KlyDateTileMode.Countdown;
+        var isRange = Mode == KlyDateTileMode.Range && EndValue is not null;
+        <div class="@_slots["tile"]" aria-hidden="true" data-slot="date-tile-calendar">
+            <span class="@_slots["month"]">@date.ToString("MMM", FormatCulture)</span>
+            <span class="@_slots["day"]">@date.Day</span>
+        </div>
+        <div class="@_slots["text"]">
+            <span class="@_slots["title"]" data-slot="date-title">
+                @if (isCountdown)
+                {
+                    @(days == 0 ? Messages.Today : days == 1 ? Messages.Tomorrow : days > 1 ? Messages.InDays(days) : Messages.DaysOverdue(Math.Abs(days)))
+                }
+                else if (isRange)
+                {
+                    var end = EndValue!.Value;
+                    var span = Math.Max(1, (int)Math.Round((end.Date - date.Date).TotalDays) + 1);
+                    @($"{date.ToString("yyyy-MM-dd", FormatCulture)} → {end.ToString("yyyy-MM-dd", FormatCulture)} ({Messages.DayCount(span)})")
+                }
+                else
+                {
+                    @(Title ?? date.ToString("D", FormatCulture))
+                }
+            </span>
+            @if ((isCountdown || isRange) && !string.IsNullOrEmpty(Title))
+            {
+                <span class="@_slots["caption"]" data-slot="date-caption">@Title</span>
+            }
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <span class="@_slots["description"]" data-slot="date-description">@Description</span>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The date, or the start of a range. The current date when not set.</summary>
+    [Parameter] public DateTimeOffset? Value { get; set; }
+    /// <summary>The end of a <see cref="KlyDateTileMode.Range"/>, inclusive in the day count.</summary>
+    [Parameter] public DateTimeOffset? EndValue { get; set; }
+    /// <summary>What the tile says beside the calendar: the date, the days until it, or a range.</summary>
+    [Parameter] public KlyDateTileMode Mode { get; set; }
+    /// <summary>The title. In the default mode it replaces the formatted date; in the countdown and range modes it is a caption under the text.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>A line of smaller text under the title.</summary>
+    [Parameter] public string? Description { get; set; }
+    /// <summary>The reference time of a <see cref="KlyDateTileMode.Countdown"/>. <see cref="DateTimeOffset.UtcNow"/> when not set. Pass it for tests and for stable server rendering.</summary>
+    [Parameter] public DateTimeOffset? Now { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the date tile, see <see cref="DateTileUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public DateTileUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.DateTile, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+}

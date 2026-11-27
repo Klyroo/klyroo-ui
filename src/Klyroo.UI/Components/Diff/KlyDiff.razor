@@ -1,0 +1,77 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Before and after values per field. The old value is a <del> and the new one an <ins>, so assistive technology hears the change. *@
+<div class="@_slots["root"]" data-slot="diff" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <p class="@_slots["title"]" data-slot="diff-title">@Title</p>
+        }
+        <div class="@_slots["list"]">
+            @foreach (var item in Visible)
+            {
+                <div class="@_slots["item"]" data-slot="diff-item" data-changed="@(item.Changed ? "true" : "false")">
+                    <span class="@_slots["label"]">
+                        <span>@item.Label</span>
+                        @if (item.Note is { } note)
+                        {
+                            @BlockRender.Badge(note, Options.Icons)
+                        }
+                    </span>
+                    <div class="@_slots["values"]">
+                        @if (item.Changed)
+                        {
+                            @if (!string.IsNullOrEmpty(item.Before))
+                            {
+                                <del class="@_slots["before"]" data-slot="diff-before">@item.Before</del>
+                            }
+                            @if (!string.IsNullOrEmpty(item.Before) && !string.IsNullOrEmpty(item.After))
+                            {
+                                <span class="@_slots["arrow"]" aria-hidden="true">→</span>
+                            }
+                            <ins class="@_slots["after"]" data-slot="diff-after">@(item.After ?? "—")</ins>
+                        }
+                        else
+                        {
+                            <span class="@_slots["unchanged"]" data-slot="diff-unchanged">@(item.After ?? item.Before ?? "—")</span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    private IEnumerable<KlyDiffItem> Visible => (Items ?? []).Where(d => ShowUnchanged || d.Changed);
+
+    /// <summary>The title of the block.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The fields, as <see cref="KlyDiffItem"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyDiffItem>? Items { get; set; }
+    /// <summary>Shows the fields whose <see cref="KlyDiffItem.Changed"/> is <see langword="false"/> (<see langword="false"/> by default).</summary>
+    [Parameter] public bool ShowUnchanged { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the diff, see <see cref="DiffUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public DiffUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Diff, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+}

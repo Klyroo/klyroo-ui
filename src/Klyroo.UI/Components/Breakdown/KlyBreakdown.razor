@@ -1,0 +1,127 @@
+@namespace Klyroo.UI
+@using System.Globalization
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Labelled amounts with subtotals and a total, optionally in two columns and behind a toggle. Amounts are decimals formatted with the culture. *@
+<div class="@_slots["root"]" data-slot="breakdown" data-compare="@(_compare ? "true" : null)" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <p class="@_slots["title"]" data-slot="breakdown-title">@Title</p>
+        }
+        @if (Collapsible)
+        {
+            <button type="button" class="@_slots["toggle"]" aria-expanded="@(_open ? "true" : "false")" data-slot="breakdown-toggle"
+                    disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => _open = !_open)">
+                <span>@(_open ? Messages.HideDetails : Messages.Details)</span>
+                @RenderIcon(_open ? Options.Icons.ChevronUp : Options.Icons.ChevronDown, _slots["toggleIcon"])
+            </button>
+        }
+        @if (CompareColumns is { } columns && (!Collapsible || _open || Total is not null))
+        {
+            <div class="@_slots["columns"]" data-slot="breakdown-columns">
+                <span></span>
+                <span class="@_slots["columnHeader"]">@columns.First</span>
+                <span class="@_slots["columnHeader"]">@columns.Second</span>
+            </div>
+        }
+        @if ((!Collapsible || _open) && Lines is { Count: > 0 })
+        {
+            <div class="@_slots["lines"]" data-slot="breakdown-lines">
+                @foreach (var line in Lines)
+                {
+                    @Row(line, "breakdown-line", line.IsSubtotal ? _slots["subtotal"] : line.IsMuted ? _slots["muted"] : null)
+                }
+            </div>
+        }
+        @if (Total is { } total)
+        {
+            @Row(total, "breakdown-total", _slots["total"])
+        }
+        @if (!string.IsNullOrEmpty(Footnote))
+        {
+            <p class="@_slots["footnote"]" data-slot="breakdown-footnote">@Footnote</p>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private bool _open;
+    private bool _initialized;
+    private bool _compare;
+
+    private RenderFragment Row(KlyBreakdownLine line, string slot, string? extra) => @<div class="@Join(_slots["row"], extra)" data-slot="@slot">
+        <span class="@_slots["label"]">
+            <span class="@_slots["labelRow"]">
+                <span>@line.Label</span>
+                @if (line.Badge is { } badge)
+                {
+                    @BlockRender.Badge(badge, Options.Icons)
+                }
+            </span>
+            @if (!string.IsNullOrEmpty(line.Detail))
+            {
+                <span class="@_slots["detail"]" data-slot="breakdown-detail">@line.Detail</span>
+            }
+        </span>
+        <span class="@_slots["amount"]" data-color="@line.Color?.Value" data-slot="breakdown-value">@Amount(line.Amount)</span>
+        @if (_compare)
+        {
+            <span class="@_slots["compareAmount"]" data-slot="breakdown-compare">@Amount(line.CompareAmount)</span>
+        }
+    </div>;
+
+    private static string Join(string a, string? b) => string.IsNullOrEmpty(b) ? a : a + " " + b;
+
+    private string Amount(decimal? amount) => amount is { } value ? value.ToString(Format, Culture ?? FormatCulture) : "—";
+
+    /// <summary>The title of the block.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The lines, as <see cref="KlyBreakdownLine"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyBreakdownLine>? Lines { get; set; }
+    /// <summary>The total row, shown below the lines.</summary>
+    [Parameter] public KlyBreakdownLine? Total { get; set; }
+    /// <summary>The headers of the two amount columns, for example <c>new KlyBreakdownColumns("2026", "2025")</c>: <see cref="KlyBreakdownLine.Amount"/> goes under <c>First</c> and <see cref="KlyBreakdownLine.CompareAmount"/> under <c>Second</c>, for the lines and the total. A line without a second amount shows a dash. Setting a <see cref="KlyBreakdownLine.CompareAmount"/> on any line also switches to two columns, without headers.</summary>
+    [Parameter] public KlyBreakdownColumns? CompareColumns { get; set; }
+    /// <summary>Hides the lines behind a toggle. The total, the headers of the columns and the footnote stay visible.</summary>
+    [Parameter] public bool Collapsible { get; set; }
+    /// <summary>Whether a collapsible block starts open. It is read once, when the component first receives its parameters.</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
+    /// <summary>A line of smaller text under the block.</summary>
+    [Parameter] public string? Footnote { get; set; }
+    /// <summary>The .NET numeric format string of the amounts (<c>"N2"</c> by default; <c>"C2"</c> shows the currency of <see cref="Culture"/>).</summary>
+    [Parameter] public string Format { get; set; } = "N2";
+    /// <summary>The culture that formats the amounts. Defaults to the format culture of the locale in effect.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Bordered when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the breakdown, see <see cref="BreakdownUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public BreakdownUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!_initialized)
+        {
+            _initialized = true;
+            _open = DefaultOpen;
+        }
+        // The comparison layout lines the amounts up in two columns: Amount under First, CompareAmount under Second.
+        _compare = CompareColumns is not null || Lines?.Any(l => l.CompareAmount is not null) == true || Total?.CompareAmount is not null;
+        _slots = ResolveSlots(Options.Breakdown, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+            ["compare"] = VariantValue.Of(_compare),
+        }, Ui, "root");
+    }
+}

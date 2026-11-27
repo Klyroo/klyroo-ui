@@ -1,51 +1,282 @@
 @namespace Klyroo.UI
+@using System.Globalization
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
-@* A list of events. Items up to and including Active are highlighted. Pure markup: works in every render mode. *@
-<ol data-color="@Color.Value" data-orientation="@_orientation" aria-label="@AriaLabel" class="@_slots["root"]" @attributes="AdditionalAttributes">
-    @for (var i = 0; i < Items.Count; i++)
-    {
-        var item = Items[i];
-        var state = Active is { } active && i <= active ? "active" : "inactive";
-        <li data-state="@state" aria-current="@(Active == i ? "step" : null)" class="@_slots["item"]">
-            <div class="@_slots["track"]">
-                <span aria-hidden="true" data-state="@state" class="@_slots["indicator"]">
+@*
+    A list of events. In the default layout, items up to and including Active are highlighted, or each item carries its State. The pipeline, log and
+    schedule layouts draw the same events differently. Pure markup (the "Show more" button is the only .NET state): works in every render mode.
+*@
+@if (Layout == KlyTimelineLayout.Schedule)
+{
+    var sorted = TimelineSchedule.Sort(Items);
+    var (visible, remaining) = _reveal.Apply(sorted, Max, Step);
+    var days = TimelineSchedule.Group(visible);
+    var reference = Now ?? DateTimeOffset.UtcNow;
+    var hasDatedDays = days.Any(d => d.Day is not null);
+    <div data-color="@Color.Value" aria-label="@AriaLabel" class="@Join(_slots["root"], _slots["schedule"])" data-slot="timeline" data-variant="schedule" @attributes="AdditionalAttributes">
+        @foreach (var day in days)
+        {
+            <div class="@_slots["scheduleDay"]" data-slot="schedule-day" data-date="@(day.Day?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))">
+                @if (day.Day is { } date)
+                {
+                    <h4 class="@_slots["scheduleDayTitle"]" data-slot="schedule-day-title">
+                        <time datetime="@date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">@DayTitle(day, reference)</time>
+                    </h4>
+                }
+                else if (hasDatedDays)
+                {
+                    <h4 class="@_slots["scheduleUnscheduled"]" data-slot="schedule-unscheduled-title">@Messages.Unscheduled</h4>
+                }
+                <ol class="@_slots["scheduleList"]">
+                    @foreach (var e in day.Events)
+                    {
+                        @RenderScheduleEvent(e)
+                    }
+                </ol>
+            </div>
+        }
+        @MoreButton(remaining)
+    </div>
+}
+else if (Layout == KlyTimelineLayout.Log)
+{
+    var (visible, remaining) = _reveal.Apply(Items, Max, Step);
+    <ol data-color="@Color.Value" aria-label="@AriaLabel" class="@Join(_slots["root"], _slots["logList"])" data-slot="timeline-log" @attributes="AdditionalAttributes">
+        @foreach (var item in visible)
+        {
+            var state = item.State ?? KlyTimelineState.Done;
+            <li class="@_slots["logItem"]" data-color="@item.Color?.Value" aria-current="@(state == KlyTimelineState.Current ? "step" : null)" data-slot="timeline-item" data-state="@StateName(state)">
+                <time class="@_slots["logTimestamp"]" datetime="@Iso(item.At)" data-slot="timeline-timestamp">@LogTimestamp(item)</time>
+                <span class="@_slots["logMarker"]" data-color="@item.Color?.Value" aria-hidden="true">
                     @if (item.Icon is not null)
                     {
-                        <span class="@_slots["icon"]">@item.Icon</span>
+                        <span class="@_slots["logIcon"]">@item.Icon</span>
+                    }
+                    else
+                    {
+                        <span class="@_slots["logDot"]"></span>
                     }
                 </span>
-                @if (i < Items.Count - 1)
+                <div class="@_slots["logBody"]">
+                    <span class="@_slots["logTitle"]" data-slot="timeline-title">@item.Title</span>
+                    @if (!string.IsNullOrEmpty(item.Description))
+                    {
+                        <span class="@_slots["logDescription"]">@item.Description</span>
+                    }
+                    @if (!string.IsNullOrEmpty(item.Actor))
+                    {
+                        <span class="@_slots["logActor"]">@item.Actor</span>
+                    }
+                </div>
+            </li>
+        }
+    </ol>
+    @MoreButton(remaining)
+}
+else
+{
+    var pipeline = Layout == KlyTimelineLayout.Pipeline;
+    var (visible, remaining) = _reveal.Apply(Items, Max, Step);
+    <ol data-color="@Color.Value" data-orientation="@_orientation" aria-label="@AriaLabel" class="@(pipeline ? Join(_slots["root"], _slots["pipelineList"]) : _slots["root"])" data-slot="timeline" @attributes="AdditionalAttributes">
+        @for (var i = 0; i < visible.Count; i++)
+        {
+            var index = i;
+            var item = visible[i];
+            var state = pipeline ? StateName(item.State ?? KlyTimelineState.Done) : StateOf(item, index);
+            var timeText = TimeText(item);
+            <li data-state="@state" data-color="@item.Color?.Value" aria-current="@(IsCurrent(item, index, pipeline) ? "step" : null)" class="@(pipeline ? _slots["pipelineItem"] : _slots["item"])" data-slot="timeline-item">
+                @if (pipeline)
                 {
-                    <span aria-hidden="true" data-state="@state" class="@_slots["separator"]"></span>
+                    @Indicator(item, state, index)
                 }
-            </div>
-            <div class="@_slots["text"]">
-                @if (item.Date is not null)
+                else
                 {
-                    <span class="@_slots["date"]">@item.Date</span>
+                    <div class="@_slots["track"]">
+                        @Indicator(item, state, index)
+                        @if (index < visible.Count - 1)
+                        {
+                            <span aria-hidden="true" data-state="@state" class="@_slots["separator"]"></span>
+                        }
+                    </div>
                 }
-                <span class="@_slots["title"]">@item.Title</span>
-                @if (item.Description is not null)
-                {
-                    <span class="@_slots["description"]">@item.Description</span>
-                }
-            </div>
-        </li>
-    }
-</ol>
+                <div class="@_slots["text"]">
+                    @if (!string.IsNullOrEmpty(timeText))
+                    {
+                        @if (item.At is not null && string.IsNullOrEmpty(item.Date))
+                        {
+                            <time class="@_slots["date"]" datetime="@Iso(item.At)" data-slot="timeline-time">@timeText</time>
+                        }
+                        else
+                        {
+                            <span class="@_slots["date"]" data-slot="timeline-time">@timeText</span>
+                        }
+                    }
+                    <span class="@_slots["title"]" data-slot="timeline-title">@item.Title</span>
+                    @if (item.Description is not null)
+                    {
+                        <span class="@_slots["description"]">@item.Description</span>
+                    }
+                    @if (!string.IsNullOrEmpty(item.Actor))
+                    {
+                        <span class="@_slots["actor"]">@item.Actor</span>
+                    }
+                </div>
+            </li>
+        }
+    </ol>
+    @MoreButton(remaining)
+}
 
 @code {
     private SlotSet _slots = default!;
     private string _orientation = "vertical";
+    private readonly Reveal _reveal = new();
+
+    private RenderFragment Indicator(KlyTimelineItem item, string state, int index) => @<span aria-hidden="true" data-state="@state" data-color="@item.Color?.Value" class="@_slots["indicator"]" data-slot="timeline-marker">
+        @if (item.Icon is not null)
+        {
+            <span class="@_slots["icon"]">@item.Icon</span>
+        }
+        else if (ShowNumbers)
+        {
+            <span class="@_slots["number"]">@(index + 1)</span>
+        }
+    </span>;
+
+    private RenderFragment MoreButton(int remaining) => remaining <= 0 || Items is null ? (_ => { }) : @<button type="button" class="@_slots["more"]" data-slot="more" disabled="@(!RendererInfo.IsInteractive)"
+            @onclick="@(() => _reveal.More(Items.Count, Max, Step))">
+        <span>@Messages.ShowMore(remaining)</span>
+        @RenderIcon(Options.Icons.ChevronDown, _slots["moreIcon"])
+    </button>;
+
+    private RenderFragment RenderScheduleEvent(ScheduleEvent e)
+    {
+        var item = e.Item;
+        var state = item.State;
+        var timeText = ScheduleTimeText(e);
+        var durationText = ScheduleDurationText(e);
+        var rowClass = (state, item.Color is null) switch
+        {
+            (KlyTimelineState.Current, true) => _slots["scheduleCurrent"],
+            (KlyTimelineState.Current, false) => _slots["scheduleCurrentTone"],
+            (KlyTimelineState.Done, true) => _slots["scheduleDone"],
+            (KlyTimelineState.Done, false) => _slots["scheduleDoneTone"],
+            (_, true) => _slots["scheduleUpcoming"],
+            _ => _slots["scheduleUpcomingTone"],
+        };
+        return @<li class="@Join(_slots["scheduleEvent"], rowClass)" aria-current="@(state == KlyTimelineState.Current ? "step" : null)" data-slot="schedule-event"
+                    data-state="@(state is { } s ? StateName(s) : null)" data-color="@item.Color?.Value">
+            <div class="@_slots["scheduleTimes"]" data-slot="schedule-time-column">
+                @if (!string.IsNullOrEmpty(timeText))
+                {
+                    <time class="@_slots["scheduleTime"]" datetime="@ScheduleIso(e)" data-slot="schedule-time">@timeText</time>
+                }
+                @if (!string.IsNullOrEmpty(durationText))
+                {
+                    <time class="@_slots["scheduleDuration"]" datetime="@TimelineSchedule.IsoDuration(e)" data-slot="schedule-duration">@durationText</time>
+                }
+            </div>
+            <div class="@_slots["scheduleBody"]">
+                <div class="@_slots["scheduleHeader"]">
+                    @if (item.Icon is not null)
+                    {
+                        <span class="@_slots["scheduleIcon"]" data-color="@item.Color?.Value" aria-hidden="true" data-slot="schedule-icon">@item.Icon</span>
+                    }
+                    <span class="@_slots["scheduleTitle"]" data-state="@(state is { } st ? StateName(st) : null)" data-slot="timeline-title">@item.Title</span>
+                </div>
+                @if (!string.IsNullOrEmpty(item.Description))
+                {
+                    <p class="@_slots["scheduleDescription"]" data-slot="schedule-description">@item.Description</p>
+                }
+                @if (!string.IsNullOrEmpty(item.Actor))
+                {
+                    <span class="@_slots["scheduleActor"]" data-slot="schedule-actor">@item.Actor</span>
+                }
+            </div>
+        </li>;
+    }
+
+    private static string Join(string a, string? b) => string.IsNullOrEmpty(b) ? a : a + " " + b;
+
+    private static string StateName(KlyTimelineState state) => state switch
+    {
+        KlyTimelineState.Done => "done",
+        KlyTimelineState.Current => "current",
+        _ => "upcoming",
+    };
+
+    private string StateOf(KlyTimelineItem item, int index) =>
+        item.State is { } state ? StateName(state) : Active is { } active && index <= active ? "active" : "inactive";
+
+    private bool IsCurrent(KlyTimelineItem item, int index, bool pipeline) =>
+        item.State == KlyTimelineState.Current || (!pipeline && item.State is null && Active == index);
+
+    private string? TimeText(KlyTimelineItem item) => !string.IsNullOrEmpty(item.Date) ? item.Date : item.At?.ToString("g", FormatCulture);
+
+    private static string? Iso(DateTimeOffset? date) => date?.ToString("O", CultureInfo.InvariantCulture);
+
+    // The log line shows the date and the time of each event: from At, with Date replacing the time part when given.
+    private string LogTimestamp(KlyTimelineItem item)
+    {
+        if (item.At is { } at)
+        {
+            var time = !string.IsNullOrEmpty(item.Date) ? item.Date : at.ToString("t", FormatCulture);
+            return $"{at.ToString("d", FormatCulture)} {time}";
+        }
+        return item.Date ?? "";
+    }
+
+    // "Today" and "Tomorrow" come first when the day is one of them, then the long date of the resolved culture.
+    private string DayTitle(ScheduleDay day, DateTimeOffset reference)
+    {
+        var sample = day.Sample!.Value;
+        var longDate = sample.ToString("D", FormatCulture);
+        var referenceDay = DateOnly.FromDateTime(reference.ToOffset(sample.Offset).DateTime);
+        if (day.Day == referenceDay) return $"{Messages.Today} · {longDate}";
+        if (day.Day == referenceDay.AddDays(1)) return $"{Messages.Tomorrow} · {longDate}";
+        return longDate;
+    }
+
+    // The time text wins when given. Otherwise: the all-day label, or the start with the end (and the end date when it is on another day).
+    private string ScheduleTimeText(ScheduleEvent e)
+    {
+        if (!string.IsNullOrEmpty(e.Item.Date)) return e.Item.Date;
+        if (e.Start is not { } start) return "";
+        if (e.AllDay) return Messages.AllDay;
+        var from = start.ToString("t", FormatCulture);
+        if (e.End is not { } end) return from;
+        var to = end.Date == start.Date ? end.ToString("t", FormatCulture) : $"{end.ToString("d", FormatCulture)} {end.ToString("t", FormatCulture)}";
+        return $"{from} – {to}";
+    }
+
+    private string ScheduleDurationText(ScheduleEvent e)
+    {
+        if (e.AllDay) return e.Days > 1 ? Messages.DayCount(e.Days) : "";
+        return e.Minutes is { } minutes ? Messages.Duration(minutes) : "";
+    }
+
+    private static string? ScheduleIso(ScheduleEvent e) => e.Start is not { } start
+        ? null
+        : e.AllDay ? start.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : start.ToString("O", CultureInfo.InvariantCulture);
 
     /// <summary>The events, as <see cref="KlyTimelineItem"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<KlyTimelineItem> Items { get; set; } = [];
 
-    /// <summary>Index of the last highlighted item. Null highlights none.</summary>
+    /// <summary>Index of the last highlighted item in the default layout. Null highlights none. An item with a <see cref="KlyTimelineItem.State"/> uses it instead.</summary>
     [Parameter] public int? Active { get; set; }
-    /// <summary>Direction of the layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
+    /// <summary>Direction of the default layout: <c>Horizontal</c> or <c>Vertical</c>.</summary>
     [Parameter] public KlyOrientation Orientation { get; set; } = KlyOrientation.Vertical;
+    /// <summary>The layout: <see cref="KlyTimelineLayout.Default"/> (along a line), <see cref="KlyTimelineLayout.Pipeline"/>, <see cref="KlyTimelineLayout.Log"/> or <see cref="KlyTimelineLayout.Schedule"/>.</summary>
+    [Parameter] public KlyTimelineLayout Layout { get; set; }
+    /// <summary>Numbers the markers of the default and pipeline layouts (1, 2, 3...) when an event has no icon.</summary>
+    [Parameter] public bool ShowNumbers { get; set; }
+    /// <summary>The number of events shown before a Show more button (all events when <see langword="null"/>). In the schedule layout the events are sorted first, so Show more reveals later events.</summary>
+    [Parameter] public int? Max { get; set; }
+    /// <summary>The number of events each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
+    [Parameter] public int? Step { get; set; }
+    /// <summary>The reference time of the schedule layout, which names the days "Today" and "Tomorrow". <see cref="DateTimeOffset.UtcNow"/> when not set. Pass it for tests and for stable server rendering.</summary>
+    [Parameter] public DateTimeOffset? Now { get; set; }
     /// <summary>
     /// Semantic color of the timeline: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
     /// </summary>
@@ -64,7 +295,10 @@
 
     protected override void OnParametersSet()
     {
-        _orientation = Orientation == KlyOrientation.Vertical ? "vertical" : "horizontal";
+        _reveal.Sync(Max);
+        // The log and the schedule are always a column; the pipeline is always a row.
+        var vertical = Layout is KlyTimelineLayout.Log or KlyTimelineLayout.Schedule || (Layout == KlyTimelineLayout.Default && Orientation == KlyOrientation.Vertical);
+        _orientation = vertical ? "vertical" : "horizontal";
         _slots = ResolveSlots(Options.Timeline, new Dictionary<string, string?>
         {
             ["orientation"] = _orientation,

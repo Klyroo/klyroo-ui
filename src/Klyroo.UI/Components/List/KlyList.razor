@@ -1,0 +1,122 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* A list of items: plain, as numbered steps, or as a checklist. Done items say so to assistive technology. *@
+<div class="@_slots["root"]" data-slot="list" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <p class="@_slots["title"]" data-slot="list-title">@Title</p>
+        }
+        var (visible, remaining) = _reveal.Apply(Items, Max, Step);
+        @if (Variant == KlyListVariant.Steps)
+        {
+            <ol class="@_slots["list"]">@Entries(visible)</ol>
+        }
+        else
+        {
+            <ul class="@_slots["list"]">@Entries(visible)</ul>
+        }
+        @if (remaining > 0 && Items is not null)
+        {
+            <button type="button" class="@_slots["more"]" data-slot="more" disabled="@(!RendererInfo.IsInteractive)"
+                    @onclick="@(() => _reveal.More(Items.Count, Max, Step))">
+                <span>@Messages.ShowMore(remaining)</span>
+                @RenderIcon(Options.Icons.ChevronDown, _slots["moreIcon"])
+            </button>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private readonly Reveal _reveal = new();
+
+    private RenderFragment Entries(IReadOnlyList<KlyListItem> visible) => @<text>
+        @for (var i = 0; i < visible.Count; i++)
+        {
+            var index = i;
+            var item = visible[i];
+            var state = item.Done ? "done" : item.Current ? "current" : "todo";
+            var numbered = Variant is KlyListVariant.Steps or KlyListVariant.Checks;
+            <li class="@_slots["item"]" data-slot="list-item" data-state="@(numbered ? state : null)" aria-current="@(numbered && item.Current ? "step" : null)">
+                <div class="@_slots["lead"]">
+                    @if (numbered)
+                    {
+                        <span class="@_slots["marker"]" data-state="@state" data-slot="list-marker">
+                            @if (item.Done)
+                            {
+                                @RenderIcon(Options.Icons.Check, _slots["markerIcon"])
+                                <span class="sr-only">@Messages.StepCompleted</span>
+                            }
+                            else
+                            {
+                                @(index + 1)
+                            }
+                        </span>
+                    }
+                    else if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <span class="@_slots["icon"]" data-color="@item.Color?.Value" aria-hidden="true" data-slot="list-icon">@RenderIcon(item.Icon, "size-full")</span>
+                    }
+                    else
+                    {
+                        <span class="@_slots["bullet"]" data-color="@item.Color?.Value" aria-hidden="true" data-slot="list-bullet"></span>
+                    }
+                    <div class="@_slots["body"]">
+                        @if (!string.IsNullOrEmpty(item.Href))
+                        {
+                            <a href="@item.Href" class="@_slots["link"]">@item.Text</a>
+                        }
+                        else
+                        {
+                            <span class="@_slots["text"]">@item.Text</span>
+                        }
+                        @if (!string.IsNullOrEmpty(item.Description))
+                        {
+                            <span class="@_slots["description"]">@item.Description</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(item.Meta))
+                {
+                    <span class="@_slots["meta"]">@item.Meta</span>
+                }
+            </li>
+        }
+    </text>;
+
+    /// <summary>The title above the list.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The items, as <see cref="KlyListItem"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyListItem>? Items { get; set; }
+    /// <summary>The layout: <see cref="KlyListVariant.Plain"/> (bullets or icons), <see cref="KlyListVariant.Steps"/> (a numbered list) or <see cref="KlyListVariant.Checks"/> (a checklist).</summary>
+    [Parameter] public KlyListVariant Variant { get; set; }
+    /// <summary>The number of items shown before a Show more button (all items when <see langword="null"/>).</summary>
+    [Parameter] public int? Max { get; set; }
+    /// <summary>The number of items each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
+    [Parameter] public int? Step { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the list, see <see cref="ListUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public ListUi? Ui { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        _reveal.Sync(Max);
+        _slots = ResolveSlots(Options.List, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+    }
+}

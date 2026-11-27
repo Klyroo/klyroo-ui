@@ -1,0 +1,84 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Paragraphs of text, or a quote. MaxLines clamps the text and adds a toggle: the expanded state is .NET state, so the toggle waits for interactivity. *@
+@if (Loading)
+{
+    <div class="@_slots["root"]" data-slot="text" aria-busy="true" @attributes="AdditionalAttributes">@BlockRender.Skeleton(_slots["skeleton"], null)</div>
+}
+else if (Variant == KlyTextVariant.Quote)
+{
+    <blockquote class="@_slots["root"]" data-slot="text" @attributes="AdditionalAttributes">@Content</blockquote>
+}
+else
+{
+    <div class="@_slots["root"]" data-slot="text" @attributes="AdditionalAttributes">@Content</div>
+}
+
+@code {
+    private SlotSet _slots = default!;
+    private bool _expanded;
+
+    private RenderFragment Content => @<text>
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <p class="@_slots["title"]" data-slot="text-title">@Title</p>
+        }
+        @if (Paragraphs is { Count: > 0 })
+        {
+            @foreach (var paragraph in Paragraphs)
+            {
+                <p class="@_slots["paragraph"]">@paragraph</p>
+            }
+        }
+        else if (!string.IsNullOrEmpty(Value))
+        {
+            <p class="@_slots["body"]" style="@(Clamped ? $"-webkit-line-clamp:{MaxLines}" : null)" data-slot="text-body">@Value</p>
+        }
+        @if (MaxLines is > 0)
+        {
+            <button type="button" class="@_slots["toggle"]" data-slot="text-toggle" aria-expanded="@(_expanded ? "true" : "false")"
+                    disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => _expanded = !_expanded)">
+                @(_expanded ? Messages.ShowLess : Messages.ReadMore)
+            </button>
+        }
+        @if (!string.IsNullOrEmpty(Author) || !string.IsNullOrEmpty(Meta))
+        {
+            <footer class="@_slots["footer"]">@string.Join(" · ", new[] { Author, Meta }.Where(s => !string.IsNullOrWhiteSpace(s)))</footer>
+        }
+    </text>;
+
+    private bool Clamped => MaxLines is > 0 && !_expanded;
+
+    /// <summary>The bold first line of the text.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The text of the block, used when <see cref="Paragraphs"/> is not set.</summary>
+    [Parameter] public string? Value { get; set; }
+    /// <summary>The paragraphs of the block. When set, they replace <see cref="Value"/>.</summary>
+    [Parameter] public IReadOnlyList<string>? Paragraphs { get; set; }
+    /// <summary>The author shown in the footer, before <see cref="Meta"/>.</summary>
+    [Parameter] public string? Author { get; set; }
+    /// <summary>Extra text shown in the footer, after <see cref="Author"/>.</summary>
+    [Parameter] public string? Meta { get; set; }
+    /// <summary>When greater than zero, clamps <see cref="Value"/> to this number of lines and adds a Read more toggle. The toggle shows even when the text is shorter, and <see cref="Paragraphs"/> are not clamped.</summary>
+    [Parameter] public int? MaxLines { get; set; }
+    /// <summary>The layout: <see cref="KlyTextVariant.Default"/> or <see cref="KlyTextVariant.Quote"/>.</summary>
+    [Parameter] public KlyTextVariant Variant { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the text, see <see cref="TextUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public TextUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.Text, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+            ["variant"] = Variant == KlyTextVariant.Quote ? "quote" : "default",
+            ["clamped"] = VariantValue.Of(Clamped),
+        }, Ui, "root");
+}

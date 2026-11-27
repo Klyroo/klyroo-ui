@@ -2,6 +2,15 @@ using Microsoft.AspNetCore.Components;
 
 namespace Klyroo.UI;
 
+/// <summary>The alignment of a column of a <see cref="KlyTable{TItem}"/>.</summary>
+public enum KlyColumnAlign
+{
+    /// <summary>At the start of the cell.</summary>
+    Start,
+    /// <summary>At the end of the cell.</summary>
+    End,
+}
+
 /// <summary>
 /// What every column of a <see cref="KlyTable{TItem}"/> has: a title, cell classes, and the registration with its table.
 /// Columns render nothing themselves. Use <see cref="KlyColumn{TItem, TValue}"/> to show a value of the item or <see cref="KlyTemplateColumn{TItem}"/> for custom cells.
@@ -21,6 +30,23 @@ public abstract class KlyColumnBase<TItem> : ComponentBase, IDisposable
 
     /// <summary>Classes added to the cells of this column.</summary>
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>The alignment of the header, the cells and the footer of the column: <see cref="KlyColumnAlign.Start"/> (the default) or <see cref="KlyColumnAlign.End"/>.</summary>
+    [Parameter] public KlyColumnAlign Align { get; set; }
+
+    /// <summary>Aligns the column to the end and uses tabular figures, so digits line up.</summary>
+    [Parameter] public bool Numeric { get; set; }
+
+    /// <summary>Renders the cells in a monospace font.</summary>
+    [Parameter] public bool Mono { get; set; }
+
+    /// <summary>Text of the cell of this column in the footer row. The footer row shows when any column has a <see cref="Footer"/> or a <see cref="FooterTemplate"/>.</summary>
+    [Parameter] public string? Footer { get; set; }
+
+    /// <summary>Markup of the cell of this column in the footer row, instead of <see cref="Footer"/>.</summary>
+    [Parameter] public RenderFragment? FooterTemplate { get; set; }
+
+    internal bool HasFooter => Footer is not null || FooterTemplate is not null;
 
     /// <summary>True when a click on the header sorts the table by this column.</summary>
     internal abstract bool CanSort { get; }

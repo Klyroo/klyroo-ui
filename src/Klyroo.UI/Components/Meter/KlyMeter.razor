@@ -1,0 +1,188 @@
+@namespace Klyroo.UI
+@using System.Globalization
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@*
+    A gauge within a known range (role="meter"): a bar, a ring or a scale of levels, with warning and error thresholds or stacked parts and a legend.
+    It is not a progress bar: the value is a measure (disk used, quota), not the completion of a task, see KlyProgress for that.
+*@
+<div class="@_slots["root"]" data-slot="meter" data-tone="@_level" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (Layout == KlyMeterLayout.Ring)
+        {
+            <div class="@_slots["ring"]" data-slot="meter-ring">
+                <div class="@_slots["ringSvg"]" role="meter" aria-label="@(Title ?? Messages.Meter)" aria-valuenow="@BlockRender.Invariant(_value)" aria-valuemin="0"
+                     aria-valuemax="@BlockRender.Invariant(_max)" aria-valuetext="@_valueText">
+                    @MiniCharts.Ring(RingArcs(), _slots["ringDrawing"], _slots["ringTrack"], _slots["ringArc"])
+                    <span class="@_slots["ringValue"]" data-slot="meter-value">@(ValueText ?? $"{Math.Round(_percent).ToString(CultureInfo.InvariantCulture)}%")</span>
+                </div>
+                <div class="@_slots["ringText"]">
+                    @if (!string.IsNullOrEmpty(Title))
+                    {
+                        <span class="@_slots["label"]" data-slot="meter-label">@Title</span>
+                    }
+                    @if (!string.IsNullOrEmpty(Description))
+                    {
+                        <span class="@_slots["caption"]" data-slot="meter-caption">@Description</span>
+                    }
+                </div>
+            </div>
+        }
+        else
+        {
+            @if (!string.IsNullOrEmpty(Title) || !string.IsNullOrEmpty(ValueText))
+            {
+                <div class="@_slots["header"]">
+                    <span class="@_slots["label"]" data-slot="meter-label">@Title</span>
+                    <span class="@_slots["value"]" data-slot="meter-value">@_valueText</span>
+                </div>
+            }
+            @if (_scale)
+            {
+                <div class="@_slots["scale"]" style="@($"grid-template-columns:repeat({Levels!.Count},minmax(0,1fr))")" data-slot="meter-scale">
+                    @for (var i = 0; i < Levels.Count; i++)
+                    {
+                        var reached = CurrentLevel is { } current && i <= current;
+                        <div class="@_slots["level"]" data-reached="@(reached ? "true" : "false")" data-slot="meter-level" data-active="@(CurrentLevel == i ? "true" : null)"
+                             aria-current="@(CurrentLevel == i ? "true" : null)">@Levels[i]</div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="@_slots["track"]" role="meter" aria-label="@(Title ?? Messages.Meter)" aria-valuenow="@BlockRender.Invariant(_value)" aria-valuemin="0"
+                     aria-valuemax="@BlockRender.Invariant(_max)" aria-valuetext="@_valueText" data-slot="meter-track">
+                    @if (_hasParts)
+                    {
+                        @foreach (var part in Parts!)
+                        {
+                            <div class="@_slots["part"]" data-color="@(part.Color ?? KlyColor.Primary).Value"
+                                 style="@($"width:{Num(Math.Clamp(PartAmount(part) / _max * 100.0, 0, 100))}%")" title="@PartTooltip(part)" data-slot="meter-part"></div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="@_slots["bar"]" data-color="@_level" style="@($"width:{Num(_percent)}%")" data-slot="meter-bar"></div>
+                    }
+                </div>
+            }
+            @if (!string.IsNullOrEmpty(Description))
+            {
+                <span class="@_slots["caption"]" data-slot="meter-caption">@Description</span>
+            }
+        }
+        @if (_hasParts && !_scale && Parts!.Any(p => p.ValueLabel is not null || p.Icon is not null || p.Max is not null))
+        {
+            <ul class="@_slots["legend"]" data-slot="meter-legend">
+                @foreach (var part in Parts!)
+                {
+                    <li class="@_slots["legendItem"]" data-color="@part.Color?.Value" data-slot="meter-legend-item">
+                        @if (!string.IsNullOrEmpty(part.Icon))
+                        {
+                            @RenderIcon(part.Icon, _slots["legendIcon"])
+                        }
+                        else
+                        {
+                            <span class="@_slots["legendDot"]" data-color="@(part.Color ?? KlyColor.Primary).Value" aria-hidden="true"></span>
+                        }
+                        <span class="@_slots["legendLabel"]">@part.Label</span>
+                        <span class="@_slots["legendValue"]">@PartValueText(part)</span>
+                    </li>
+                }
+            </ul>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+    private double _max;
+    private double _value;
+    private double _percent;
+    private string _level = "primary";
+    private bool _hasParts;
+    private bool _scale;
+    private string _valueText = "";
+
+    /// <summary>The current value, clamped between 0 and <see cref="Max"/>.</summary>
+    [Parameter] public double Value { get; set; }
+    /// <summary>The maximum (<c>100</c> by default). When it is zero or less, the sum of <see cref="Parts"/> is used.</summary>
+    [Parameter] public double Max { get; set; } = 100;
+    /// <summary>The percentage of <see cref="Max"/> from which the bar turns to the warning color.</summary>
+    [Parameter] public double? WarningThreshold { get; set; }
+    /// <summary>The percentage of <see cref="Max"/> from which the bar turns to the error color. It wins over <see cref="WarningThreshold"/>.</summary>
+    [Parameter] public double? ErrorThreshold { get; set; }
+    /// <summary>The segments, stacked in the bar or around the ring. When set, they replace the single value and the thresholds do not apply. A legend lists them when one of them has a <see cref="KlyMeterPart.ValueLabel"/>, an <see cref="KlyMeterPart.Icon"/> or a <see cref="KlyMeterPart.Max"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyMeterPart>? Parts { get; set; }
+    /// <summary>The level labels of a <see cref="KlyMeterLayout.Scale"/>.</summary>
+    [Parameter] public IReadOnlyList<string>? Levels { get; set; }
+    /// <summary>The zero-based index of the current level of a scale. The levels up to it are highlighted.</summary>
+    [Parameter] public int? CurrentLevel { get; set; }
+    /// <summary>The drawing: a bar, a ring with the value in its center, or a scale of discrete levels (a bar when there are no <see cref="Levels"/>).</summary>
+    [Parameter] public KlyMeterLayout Layout { get; set; }
+    /// <summary>The label of the meter, and its accessible name (<see cref="KlyMessages.Meter"/> when not set).</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The value as displayed, such as <c>"3.2 GB"</c>. When not set, the number out of the maximum (the percentage in the center of a ring).</summary>
+    [Parameter] public string? ValueText { get; set; }
+    /// <summary>A line of smaller text under the meter.</summary>
+    [Parameter] public string? Description { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Plain when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the meter, see <see cref="MeterUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public MeterUi? Ui { get; set; }
+
+    // A part's size on the meter: its value, capped by its own maximum when it has one.
+    private static double PartAmount(KlyMeterPart part) => Math.Max(0, part.Max is { } partMax ? Math.Min(part.Value, partMax) : part.Value);
+
+    private string PartValueText(KlyMeterPart part) =>
+        part.ValueLabel ?? (part.Max is { } partMax
+            ? $"{part.Value.ToString("0.##", FormatCulture)} / {partMax.ToString("0.##", FormatCulture)}"
+            : part.Value.ToString("0.##", FormatCulture));
+
+    private string PartTooltip(KlyMeterPart part) => $"{part.Label}: {PartValueText(part)}";
+
+    private static string Num(double value) => BlockRender.Invariant(value);
+
+    // The arcs of the ring: one per part, stacked, or one for the value, rounded and colored by the thresholds.
+    private IReadOnlyList<RingArc> RingArcs()
+    {
+        if (_hasParts)
+        {
+            var arcs = new List<RingArc>();
+            var offset = 0.0;
+            foreach (var part in Parts!)
+            {
+                var share = Math.Clamp(PartAmount(part) / _max * 100.0, 0, 100 - offset);
+                arcs.Add(new RingArc(share, offset, (part.Color ?? KlyColor.Primary).Value, "meter-ring-part", PartTooltip(part)));
+                offset += share;
+            }
+            return arcs;
+        }
+        return _percent > 0 ? [new RingArc(_percent, 0, _level, "meter-ring-value", RoundCap: true)] : [];
+    }
+
+    protected override void OnParametersSet()
+    {
+        _hasParts = Parts is { Count: > 0 };
+        _max = Max > 0 ? Max : (_hasParts ? Math.Max(1, Parts!.Sum(PartAmount)) : 100);
+        _value = Math.Clamp(Value, 0, _max);
+        _percent = Math.Clamp(_value / _max * 100.0, 0, 100);
+        _level = ErrorThreshold is { } error && _percent >= error ? "error" : WarningThreshold is { } warning && _percent >= warning ? "warning" : "primary";
+        _scale = Layout == KlyMeterLayout.Scale && Levels is { Count: > 0 };
+        _valueText = ValueText ?? $"{_value.ToString("0.##", FormatCulture)} / {_max.ToString("0.##", FormatCulture)}";
+        _slots = ResolveSlots(Options.Meter, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+    }
+}

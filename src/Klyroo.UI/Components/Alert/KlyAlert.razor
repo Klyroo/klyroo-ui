@@ -1,12 +1,17 @@
 @namespace Klyroo.UI
+@using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
 @if (!_dismissed)
 {
-    <div data-color="@Color.Value" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div data-color="@Color.Value" role="@(Color == KlyColor.Warning || Color == KlyColor.Error ? "status" : null)" class="@_slots["root"]" @attributes="AdditionalAttributes">
         @if (Icon is not null)
         {
             <span class="@_slots["icon"]" aria-hidden="true">@Icon</span>
+        }
+        else if (StatusIcon)
+        {
+            <span class="@_slots["icon"]" aria-hidden="true">@RenderIcon(StatusIconName, "size-full")</span>
         }
         <div class="@_slots["wrapper"]">
             @if (Title is not null)
@@ -17,10 +22,27 @@
             {
                 <div class="@_slots["description"]" data-slot="description">@(ChildContent ?? (RenderFragment)(b => b.AddContent(0, Description)))</div>
             }
+            @if (!string.IsNullOrEmpty(Details))
+            {
+                @* The panel is .NET state: the toggle stays disabled until the page is interactive. *@
+                <button type="button" class="@_slots["toggle"]" aria-expanded="@(_detailsOpen ? "true" : "false")" data-slot="details-toggle"
+                        disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => _detailsOpen = !_detailsOpen)">
+                    <span>@(_detailsOpen ? Messages.HideDetails : Messages.ShowDetails)</span>
+                    @RenderIcon(_detailsOpen ? Options.Icons.ChevronUp : Options.Icons.ChevronDown, _slots["toggleIcon"])
+                </button>
+                @if (_detailsOpen)
+                {
+                    <div class="@_slots["detailsPanel"]" data-slot="details">@Details</div>
+                }
+            }
         </div>
         @if (Actions is not null)
         {
             <div class="@_slots["actions"]">@Actions</div>
+        }
+        @if (ActionItems is { Count: > 0 })
+        {
+            @BlockRender.Actions(ActionItems, Options.Icons, _slots["actions"], this)
         }
         @if (Close)
         {
@@ -36,6 +58,8 @@
 @code {
     private SlotSet _slots = default!;
     private bool _dismissed;
+    private bool _detailsOpen;
+    private bool _detailsInitialized;
 
     /// <summary>Title of the alert, shown above its description.</summary>
     [Parameter] public string? Title { get; set; }
@@ -48,6 +72,20 @@
     [Parameter] public RenderFragment? Icon { get; set; }
     /// <summary>Buttons or links under the description of the alert.</summary>
     [Parameter] public RenderFragment? Actions { get; set; }
+    /// <summary>
+    /// Buttons or links under the description, from data (<see cref="KlyActionItem"/>). They are shown after <see cref="Actions"/>.
+    /// </summary>
+    [Parameter] public IReadOnlyList<KlyActionItem>? ActionItems { get; set; }
+    /// <summary>
+    /// Collapsible text under the description, opened with a Show details toggle. The toggle is disabled until the page is interactive.
+    /// </summary>
+    [Parameter] public string? Details { get; set; }
+    /// <summary>Whether <see cref="Details"/> starts open. It is read once, when the component first receives its parameters.</summary>
+    [Parameter] public bool DefaultOpen { get; set; }
+    /// <summary>
+    /// Shows the icon of the color (info, success, warning or error, from <see cref="KlyrooOptions.Icons"/>) when no <see cref="Icon"/> is given.
+    /// </summary>
+    [Parameter] public bool StatusIcon { get; set; }
     /// <summary>
     /// Semantic color of the alert: a built-in <see cref="KlyColor"/> or the name of a color you defined. When not set, <see cref="KlyDefaults.Color"/> applies, else the default of the component.
     /// </summary>
@@ -65,8 +103,20 @@
     /// </summary>
     [Parameter] public AlertUi? Ui { get; set; }
 
-    protected override void OnParametersSet() =>
+    private string StatusIconName => Color == KlyColor.Success ? Options.Icons.Success
+        : Color == KlyColor.Warning ? Options.Icons.Warning
+        : Color == KlyColor.Error ? Options.Icons.Error
+        : Options.Icons.Info;
+
+    protected override void OnParametersSet()
+    {
+        if (!_detailsInitialized)
+        {
+            _detailsInitialized = true;
+            _detailsOpen = DefaultOpen;
+        }
         _slots = ResolveSlots(Options.Alert, new Dictionary<string, string?> { ["variant"] = VariantValue.Of(Variant) }, Ui, "root");
+    }
 
     private async Task Dismiss()
     {

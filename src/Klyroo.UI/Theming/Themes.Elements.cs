@@ -202,12 +202,22 @@ internal static partial class Themes
             .Default("size", "md");
 
     public static ComponentTheme User() =>
-        new ComponentTheme("user", "root", "avatar", "wrapper", "name", "description")
+        new ComponentTheme("user", "root", "avatar", "wrapper", "name", "description", "stack", "badge", "contacts", "contact", "contactBody", "contactIcon", "contactLink", "contactText", "copy", "copyIcon")
             .Slot("root", "relative flex min-w-0 items-center")
             .Slot("avatar", "shrink-0")
             .Slot("wrapper", "flex min-w-0 flex-col")
             .Slot("name", "truncate font-medium text-(--klyroo-text-highlighted)")
             .Slot("description", "truncate text-(--klyroo-text-muted)")
+            .Slot("stack", "flex min-w-0 flex-col gap-3")
+            .Slot("badge", "ms-auto shrink-0")
+            .Slot("contacts", "flex flex-col gap-1.5 border-t border-(--klyroo-border) pt-2")
+            .Slot("contact", "flex items-center justify-between gap-2 text-xs")
+            .Slot("contactBody", "flex min-w-0 items-center gap-1.5")
+            .Slot("contactIcon", "size-3.5 shrink-0 text-(--klyroo-text-muted)")
+            .Slot("contactLink", "truncate text-(--klyroo-primary-text) hover:underline")
+            .Slot("contactText", "truncate text-(--klyroo-text)")
+            .Slot("copy", "inline-flex size-6 shrink-0 items-center justify-center rounded-(--klyroo-radius) text-(--klyroo-text-muted) hover:bg-(--klyroo-bg-muted) hover:text-(--klyroo-text) disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-(--klyroo-primary-text)")
+            .Slot("copyIcon", "size-3.5")
             .Variant("orientation", "horizontal", "root", "flex-row")
             .Variant("orientation", "vertical", "root", "flex-col text-center")
             .Variant("link", "true", "root", "rounded-(--klyroo-radius) " + LinkFocus)

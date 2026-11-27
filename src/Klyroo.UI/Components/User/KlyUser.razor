@@ -1,25 +1,63 @@
 @namespace Klyroo.UI
 @using Klyroo.UI.Internal
+@using Microsoft.JSInterop
 @inherits KlyComponentBase
 
-@if (Href is null)
+@if (Contacts is { Count: > 0 })
 {
-    <div class="@_slots["root"]" @attributes="AdditionalAttributes">@Inner</div>
+    @* The contacts hold links and buttons, so they sit next to the user, not inside its link. *@
+    <div class="@_slots["stack"]" data-slot="user-stack">
+        @Person
+        <div class="@_slots["contacts"]" data-slot="user-contacts">
+            @foreach (var contact in Contacts)
+            {
+                <div class="@_slots["contact"]" data-slot="user-contact">
+                    <span class="@_slots["contactBody"]">
+                        @if (!string.IsNullOrEmpty(contact.Icon))
+                        {
+                            @RenderIcon(contact.Icon, _slots["contactIcon"])
+                        }
+                        @if (!string.IsNullOrEmpty(contact.Href))
+                        {
+                            <a href="@contact.Href" class="@_slots["contactLink"]">@contact.Value</a>
+                        }
+                        else
+                        {
+                            <span class="@_slots["contactText"]">@contact.Value</span>
+                        }
+                    </span>
+                    @if (contact.Copy)
+                    {
+                        <button type="button" class="@_slots["copy"]" aria-label="@string.Format(Messages.CopyValue, contact.Value)" data-slot="user-contact-copy"
+                                disabled="@(!RendererInfo.IsInteractive)" @onclick="@(() => BlockRender.CopyAsync(JS, RendererInfo.IsInteractive, contact.Value))">
+                            @RenderIcon(Options.Icons.Copy, _slots["copyIcon"])
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
 }
 else
 {
-    <a href="@Href" target="@Target?.Value" class="@_slots["root"]" @attributes="AdditionalAttributes" rel="@LinkRel.For(Target, AdditionalAttributes)">@Inner@if (Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>
+    @Person
 }
 
 @code {
     private SlotSet _slots = default!;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private RenderFragment Person => Href is null
+        ? @<div class="@_slots["root"]" @attributes="AdditionalAttributes">@Inner</div>
+        : @<a href="@Href" target="@Target?.Value" class="@_slots["root"]" @attributes="AdditionalAttributes" rel="@LinkRel.For(Target, AdditionalAttributes)">@Inner@if (Target is { IsBlank: true }) {<span class="sr-only"> @Messages.OpensInNewTab</span>}</a>;
 
     // The name is next to the avatar, so the avatar is decoration: hidden from assistive technology.
     private RenderFragment Inner => @<text>
         @if (ShowAvatar)
         {
             <span class="@_slots["avatar"]" aria-hidden="true">
-                <KlyAvatar Src="@AvatarSrc" Alt="@Name" Icon="@AvatarIcon" Size="@Size" />
+                <KlyAvatar Src="@AvatarSrc" Alt="@Name" Icon="@AvatarIcon" Color="AvatarColor" Size="@Size" />
             </span>
         }
         @if (Name is not null || Description is not null)
@@ -35,6 +73,10 @@ else
                 }
             </span>
         }
+        @if (Badge is { } badge)
+        {
+            <span class="@_slots["badge"]" data-slot="user-badge">@BlockRender.Badge(badge, Options.Icons)</span>
+        }
     </text>;
 
     /// <summary>Name of the person or entity.</summary>
@@ -45,6 +87,13 @@ else
     [Parameter] public string? AvatarSrc { get; set; }
     /// <summary>Icon of the avatar when there is no picture, as markup such as a <see cref="KlyIcon"/>.</summary>
     [Parameter] public RenderFragment? AvatarIcon { get; set; }
+
+    /// <summary>A color that tints the initials avatar.</summary>
+    [Parameter] public KlyColor? AvatarColor { get; set; }
+    /// <summary>A badge shown at the end of the row.</summary>
+    [Parameter] public KlyBadgeItem? Badge { get; set; }
+    /// <summary>Contact lines under the user, each with an optional icon, link and copy button. They sit outside the link of <see cref="Href"/>. The copy buttons are disabled until the page is interactive.</summary>
+    [Parameter] public IReadOnlyList<KlyContactItem>? Contacts { get; set; }
 
     /// <summary>Shows the avatar: the image, else the initials of <see cref="Name"/>.</summary>
     [Parameter] public bool ShowAvatar { get; set; } = true;

@@ -35,7 +35,7 @@
             </Heading>
             <div role="region" data-slot="content" data-kly-accordion-content id="@($"{_id}-content-{index}")" aria-labelledby="@($"{_id}-trigger-{index}")"
                  hidden="@(open ? null : "until-found")" class="@_slots["content"]">
-                <div class="@_slots["body"]">@item.Content</div>
+                <div class="@_slots["body"]">@if (item.Content is not null) { @item.Content } else { @item.Text }</div>
             </div>
         </div>
     }
@@ -71,13 +71,26 @@
     private EventCallback<KlyChangeEventArgs> ChangeHandler =>
         ValueChanged.HasDelegate ? EventCallback.Factory.Create<KlyChangeEventArgs>(this, OnChange) : default;
 
+    // The items that start open when the open set is not controlled: the first one only without Multiple.
+    private IReadOnlyList<string> DefaultValues()
+    {
+        var open = new List<string>();
+        for (var i = 0; i < Items.Count; i++)
+        {
+            if (!Items[i].DefaultOpen) continue;
+            open.Add(ValueOf(Items[i], i));
+            if (!Multiple) break;
+        }
+        return open;
+    }
+
     private static string ValueOf(KlyAccordionItem item, int index) => item.Value ?? index.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
         _id ??= NewId("accordion");
-        _open = Value ?? [];
+        _open = Value ?? DefaultValues();
         _slots = ResolveSlots(Options.Accordion, new Dictionary<string, string?>(), Ui, "root");
     }
 

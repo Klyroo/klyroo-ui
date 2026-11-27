@@ -1,0 +1,57 @@
+@namespace Klyroo.UI
+@using Klyroo.UI.Internal
+@inherits KlyComponentBase
+
+@* Several small metrics side by side under an optional title. *@
+<div class="@_slots["root"]" data-slot="stat-group" @attributes="AdditionalAttributes">
+    @if (Loading)
+    {
+        @BlockRender.Skeleton(_slots["skeleton"], null)
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <span class="@_slots["title"]" data-slot="stat-group-title">@Title</span>
+        }
+        @if (Items is { Count: > 0 })
+        {
+            <div class="@_slots["grid"]" data-slot="stat-group-items">
+                @foreach (var item in Items)
+                {
+                    <div class="@_slots["item"]" data-slot="stat-item">
+                        <span class="@_slots["label"]">@item.Label</span>
+                        <span class="@_slots["value"]" data-color="@item.Color?.Value" data-slot="stat-item-value">@item.Value</span>
+                        @if (!string.IsNullOrEmpty(item.Caption))
+                        {
+                            <span class="@_slots["caption"]">@item.Caption</span>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private SlotSet _slots = default!;
+
+    /// <summary>The line above the metrics.</summary>
+    [Parameter] public string? Title { get; set; }
+    /// <summary>The metrics, as <see cref="KlyStatItem"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyStatItem>? Items { get; set; }
+    /// <summary>Shows a skeleton placeholder instead of the content.</summary>
+    [Parameter] public bool Loading { get; set; }
+    /// <summary>The surface treatment. Bordered when not set.</summary>
+    [Parameter] public KlySurface? Surface { get; set; }
+    /// <summary>
+    /// Per-instance class overrides of the slots of the stat group, see <see cref="StatGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
+    /// </summary>
+    [Parameter] public StatGroupUi? Ui { get; set; }
+
+    protected override void OnParametersSet() =>
+        _slots = ResolveSlots(Options.StatGroup, new Dictionary<string, string?>
+        {
+            ["surface"] = Surface is { } surface ? Wire.Of(surface) : null,
+        }, Ui, "root");
+}

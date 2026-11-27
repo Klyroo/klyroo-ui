@@ -19,7 +19,7 @@
                     <tr class="@_slots["tr"]">
                         @foreach (var column in _columns)
                         {
-                            <th scope="col" class="@_slots["th"]" aria-sort="@AriaSort(column)">
+                            <th scope="col" class="@CellClass(_slots["th"], column, false)" aria-sort="@AriaSort(column)">
                                 @if (column.CanSort)
                                 {
                                     <button type="button" class="@_slots["sortButton"]" disabled="@(!RendererInfo.IsInteractive)" title="@SortTitle(column)" @onclick="() => Sort(column)">
@@ -43,7 +43,7 @@
                     </tr>
                 </thead>
                 <tbody class="@_slots["tbody"]">
-                    @{ var rows = SortedItems.ToList(); }
+                    @{ var all = SortedItems.ToList(); var (rows, remaining) = _reveal.Apply(all, Max, Step); }
                     @if (rows.Count == 0)
                     {
                         <tr class="@_slots["tr"]">
@@ -55,20 +55,49 @@
                         <tr class="@_slots["tr"]">
                             @foreach (var column in _columns)
                             {
-                                <td class="@Resolver.Merge(_slots["td"], column.Class)">
+                                <td class="@CellClass(_slots["td"], column, true)">
                                     @column.Cell(item)
                                 </td>
                             }
                         </tr>
                     }
                 </tbody>
+                @if (_columns.Any(c => c.HasFooter))
+                {
+                    <tfoot class="@_slots["tfoot"]">
+                        <tr class="@_slots["tr"]">
+                            @foreach (var column in _columns)
+                            {
+                                <td class="@CellClass(_slots["tf"], column, false)" data-slot="tf">
+                                    @if (column.FooterTemplate is not null)
+                                    {
+                                        @column.FooterTemplate
+                                    }
+                                    else
+                                    {
+                                        @column.Footer
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    </tfoot>
+                }
             </table>
+            @if (remaining > 0)
+            {
+                <button type="button" class="@_slots["more"]" data-slot="more" disabled="@(!RendererInfo.IsInteractive)"
+                        @onclick="@(() => _reveal.More(all.Count, Max, Step))">
+                    <span>@Messages.ShowMore(remaining)</span>
+                    @RenderIcon(Options.Icons.ChevronDown, _slots["moreIcon"])
+                </button>
+            }
         </div>
     </Defer>
 </CascadingValue>
 
 @code {
     private readonly List<KlyColumnBase<TItem>> _columns = [];
+    private readonly Reveal _reveal = new();
     private SlotSet _slots = default!;
     private KlyColumnBase<TItem>? _sortColumn;
     private bool _ascending = true;
@@ -84,6 +113,12 @@
 
     /// <summary>Shown when there are no items.</summary>
     [Parameter] public RenderFragment? Empty { get; set; }
+
+    /// <summary>The number of rows shown before a Show more button (all rows when <see langword="null"/>). The rows are cut after sorting.</summary>
+    [Parameter] public int? Max { get; set; }
+
+    /// <summary>The number of rows each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
+    [Parameter] public int? Step { get; set; }
 
     /// <summary>Keeps the header visible while the table scrolls (give the table a max height through Class).</summary>
     [Parameter] public bool Sticky { get; set; }
@@ -105,8 +140,18 @@
     internal void RemoveColumn(KlyColumnBase<TItem> column) => _columns.Remove(column);
 
     /// <inheritdoc />
-    protected override void OnParametersSet() =>
+    protected override void OnParametersSet()
+    {
+        _reveal.Sync(Max);
         _slots = ResolveSlots(Options.Table, new Dictionary<string, string?> { ["sticky"] = VariantValue.Of(Sticky) }, Ui, "root");
+    }
+
+    // The alignment, the tabular figures and the font of a column, then its own classes.
+    private string CellClass(string slot, KlyColumnBase<TItem> column, bool withColumnClass) => Resolver.Merge(
+        slot,
+        column.Numeric ? _slots["cellNumeric"] : column.Align == KlyColumnAlign.End ? _slots["cellEnd"] : null,
+        column.Mono ? _slots["cellMono"] : null,
+        withColumnClass ? column.Class : null);
 
     private IEnumerable<TItem> SortedItems
     {

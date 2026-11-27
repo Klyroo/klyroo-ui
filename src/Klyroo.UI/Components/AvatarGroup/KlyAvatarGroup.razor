@@ -4,7 +4,8 @@
 <div role="group" aria-label="@AriaLabel" class="@_slots["root"]" @attributes="AdditionalAttributes">
     @foreach (var item in Visible)
     {
-        <KlyAvatar Src="@item.Src" Alt="@item.Alt" Text="@item.Text" Size="@Size" Class="@_slots["avatar"]" />
+        var label = Label(item);
+        <KlyAvatar Src="@item.Src" Alt="@label" Text="@(item.Text ?? (item.Alt is null ? null : Initials(item.Alt)))" Color="item.Color" Size="@Size" Class="@_slots["avatar"]" title="@label" />
     }
     @if (Hidden > 0)
     {
@@ -30,6 +31,16 @@
     /// Per-instance class overrides of the slots of the avatar group, see <see cref="AvatarGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
     /// </summary>
     [Parameter] public AvatarGroupUi? Ui { get; set; }
+
+    // The tooltip and the accessible name: the name, then the description and the badge when there are any (the stack has no room for text).
+    private static string? Label(KlyAvatarItem item) =>
+        item.Description is null && item.Badge is null
+            ? item.Alt
+            : string.Join(" · ", new[] { item.Alt, item.Description, item.Badge?.Label }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
+    // The initials KlyAvatar derives from a name (the first letters of its first two words), taken from the name alone so a tooltip text does not leak into them.
+    private static string Initials(string? name) =>
+        string.Concat((name ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries).Take(2).Select(word => char.ToUpperInvariant(word[0])));
 
     private IEnumerable<KlyAvatarItem> Visible => Max is { } max && max >= 0 ? Items.Take(max) : Items;
     private int Hidden => Max is { } max && max >= 0 ? Math.Max(Items.Count - max, 0) : 0;
