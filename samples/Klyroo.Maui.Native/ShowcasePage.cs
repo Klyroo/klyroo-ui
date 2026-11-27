@@ -13,6 +13,9 @@ public class ShowcasePage : ContentPage
         themeToggle.Clicked += (_, _) =>
             Application.Current!.UserAppTheme = Application.Current.RequestedTheme == AppTheme.Dark ? AppTheme.Light : AppTheme.Dark;
 
+        var more = new KlyButton { Text = "More controls", Variant = ButtonVariant.Soft, Size = KlySize.Sm };
+        more.Clicked += async (_, _) => await Navigation.PushAsync(new Showcase2Page());
+
         var stack = new VerticalStackLayout
         {
             Spacing = 20,
@@ -20,6 +23,7 @@ public class ShowcasePage : ContentPage
             Children =
             {
                 Row(Heading("Klyroo.UI.Maui", 28), themeToggle),
+                more,
                 Section("Buttons", ButtonVariants(), ButtonColors(), ButtonSizes(), new KlyButton { Text = "Block", Block = true }, new KlyButton { Text = "Disabled", IsEnabled = false }),
                 Section("Badges", BadgeRow(KlyVariant.Solid), BadgeRow(KlyVariant.Soft), BadgeRow(KlyVariant.Outline), BadgeRow(KlyVariant.Subtle)),
                 Section("Card", Cards()),
