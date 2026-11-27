@@ -32,10 +32,17 @@ for (const repo of readdirSync(parent).filter((n) => n.startsWith('klyroo-') && 
   }
 }
 
+// the native projects: Klyroo.UI.Maui here, and a Klyroo.<Name>.Maui project in the src folder of each sibling repository
+const nativeRoots = [join(root, 'src/Klyroo.UI.Maui')];
+for (const repo of readdirSync(parent).filter((n) => n.startsWith('klyroo-') && existsSync(join(parent, n, 'src')))) {
+  for (const dir of readdirSync(join(parent, repo, 'src')).filter((n) => n.endsWith('.Maui'))) nativeRoots.push(join(parent, repo, 'src', dir));
+}
 const native = new Set();
-for (const file of walk(join(root, 'src/Klyroo.UI.Maui'))) {
-  if (!file.endsWith('.cs')) continue;
-  for (const m of readFileSync(file, 'utf8').matchAll(/\b(?:class|record|struct|enum|interface)\s+(Kly\w+)/g)) native.add(m[1]);
+for (const nativeRoot of nativeRoots) {
+  for (const file of walk(nativeRoot)) {
+    if (!file.endsWith('.cs')) continue;
+    for (const m of readFileSync(file, 'utf8').matchAll(/\b(?:class|record|struct|enum|interface)\s+(Kly\w+)/g)) native.add(m[1]);
+  }
 }
 
 const config = JSON.parse(readFileSync(join(root, 'build/maui-coverage.json'), 'utf8'));
