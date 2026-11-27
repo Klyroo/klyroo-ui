@@ -832,7 +832,7 @@
 
 ### Heading
 
-`/components/heading`. A section heading with an icon tile, a count pill, a description and an action.
+`/components/heading`. A section heading with a count.
 
 - `<KlyHeading>`
   - Parameters: `Action`, `Class`, `Count`, `Description`, `HeadingLevel`, `Loading`, `Surface`, `Title`, `Ui`
@@ -841,7 +841,7 @@
 
 ### Text
 
-`/components/text`. Paragraphs, a quote, or a text clamped to a few lines with a Read more toggle.
+`/components/text`. Paragraphs, a quote, clamped text.
 
 - `<KlyText>`
   - Parameters: `Author`, `Class`, `Loading`, `MaxLines`, `Meta`, `Paragraphs`, `Surface`, `Title`, `Ui`, `Value`, `Variant`
@@ -849,7 +849,7 @@
 
 ### Stat
 
-`/components/stat`. A highlighted value with a title, unit, delta badge, sparkline and caption.
+`/components/stat`. A number with a delta and a sparkline.
 
 - `<KlyStat>`
   - Parameters: `Caption`, `Class`, `Culture`, `Delta`, `DeltaDirection`, `DeltaFormat`, `DeltaUnit`, `Format`, `Loading`, `Surface`, `Title`, `Trend`, `Ui`, `Unit`, `Value`
@@ -857,7 +857,7 @@
 
 ### StatGroup
 
-`/components/stat-group`. Several small metrics side by side under an optional title.
+`/components/stat-group`. Small metrics side by side.
 
 - `<KlyStatGroup>`
   - Parameters: `Class`, `Culture`, `Format`, `Items`, `Loading`, `Surface`, `Title`, `Ui`
@@ -865,7 +865,7 @@
 
 ### Facts
 
-`/components/facts`. Label and value rows, flat or grouped, with badges, links, copy buttons and loading placeholders.
+`/components/facts`. Label and value rows.
 
 - `<KlyFacts>`
   - Parameters: `Class`, `Groups`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Ui`
@@ -873,7 +873,7 @@
 
 ### Breakdown
 
-`/components/breakdown`. Labelled decimal amounts with subtotals and a total, in one or two columns or behind a toggle.
+`/components/breakdown`. Amounts with subtotals and a total.
 
 - `<KlyBreakdown>`
   - Parameters: `Class`, `Collapsible`, `CompareColumns`, `Culture`, `DefaultOpen`, `Footnote`, `Format`, `Lines`, `Loading`, `Surface`, `Title`, `Total`, `Ui`
@@ -881,7 +881,7 @@
 
 ### Diff
 
-`/components/diff`. Before and after values per field, with unchanged fields hidden unless asked.
+`/components/diff`. Before and after values.
 
 - `<KlyDiff>`
   - Parameters: `Class`, `Culture`, `Items`, `Loading`, `ShowUnchanged`, `Surface`, `Title`, `Ui`
@@ -889,7 +889,7 @@
 
 ### RecordList
 
-`/components/record-list`. Entity rows with an image, avatar or icon, a reference, a title, a secondary line, badges and a trailing value.
+`/components/record-list`. Entity rows with a trailing value.
 
 - `<KlyRecordList>`
   - Parameters: `Class`, `Count`, `ImageOptions`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Title`, `Ui`
@@ -897,7 +897,7 @@
 
 ### List
 
-`/components/list`. A list of items: plain, numbered steps or a checklist.
+`/components/list`. Plain, stepped or checked items.
 
 - `<KlyList>`
   - Parameters: `Class`, `Items`, `Loading`, `Max`, `Step`, `Surface`, `Title`, `Ui`, `Variant`
@@ -905,7 +905,7 @@
 
 ### DateTile
 
-`/components/date-tile`. A calendar tile with a title, in a plain, countdown or range mode.
+`/components/date-tile`. A calendar tile.
 
 - `<KlyDateTile>`
   - Parameters: `Class`, `Description`, `EndValue`, `Loading`, `Mode`, `Now`, `Surface`, `Title`, `Ui`, `Value`
@@ -913,7 +913,7 @@
 
 ### Meter
 
-`/components/meter`. A gauge in a known range: a bar, a ring or a scale of levels, with thresholds or stacked parts and a legend.
+`/components/meter`. A gauge: bar, ring or scale.
 
 - `<KlyMeter>`
   - Parameters: `Class`, `CurrentLevel`, `Description`, `ErrorThreshold`, `Layout`, `Levels`, `Loading`, `Max`, `Parts`, `Surface`, `Title`, `Ui`, `Value`, `ValueText`, `WarningThreshold`
@@ -921,7 +921,7 @@
 
 ### ImageGallery
 
-`/components/image-gallery`. A grid of images with a +N overflow tile.
+`/components/image-gallery`. A grid of images.
 
 - `<KlyImageGallery>`
   - Parameters: `Caption`, `Class`, `Columns`, `ImageOptions`, `Images`, `Loading`, `Max`, `Surface`, `Ui`
@@ -1014,7 +1014,7 @@
 - `<KlyLocale>`
   - Parameters: `Code`, `Culture`, `Dir`, `DirAttribute`, `Flag`, `Messages`, `Name`
 - `<KlyMessages>`
-  - Parameters: `AuthFormIncompleteCode`, `AuthFormInvalidEmail`, `AuthFormRequired`, `AuthFormSeparator`, `AuthFormShowPassword`, `AuthFormSubmit`, `Breadcrumb`, `Brightness`, `Cancel`, `CarouselRoleDescription`, `CarouselSlideRoleDescription`, `ChartArea`, `ChartBar`, `ChartBarHorizontal`, `ChartDonut`, `ChartHint`, `ChartHintSelect`, `ChartIndex`, `ChartLegend`, `ChartLine`, `ChartRange`, `ChartSlice`, `ChartSummary`, `ChartSummaryDonut`, `ChartTable`, `ChatAssistant`, `ChatAttachmentFailed`, `ChatAttachmentUploading`, `ChatConversation`, `ChatError`, `ChatJumpToLatest`, `ChatPromptLabel`, `ChatPromptPlaceholder`, `ChatRemoveAttachment`, `ChatResponding`, `ChatRetry`, `ChatSend`, `ChatStop`, `ChatSystem`, `ChatThinking`, `ChatThought`, `ChatThoughtFor`, `ChatToolFailed`, `ChatToolRunning`, `ChatUser`, `ChooseDate`, `Close`, `CollapseSidebar`, `ColorMode`, `ColorModeDark`, `ColorModeLight`, `ColorModeSystem`, `CommandPaletteClose`, `CommandResults`, `Confirm`, `ContentNavigation`, `ContentNext`, `ContentPrevious`, `ContentSearch`, `ContentSearchButton`, `ContentSearchError`, `ContentSearchLoading`, `ContentSearchPlaceholder`, `ContentSearchRetry`, `ContentSurround`, `ContentToc`, `ContextMenu`, `DashboardSearch`, `DashboardSearchButton`, `DashboardSearchPlaceholder`, `DayPeriod`, `DropFiles`, `EditorAddressRefused`, `EditorBlockquote`, `EditorBold`, `EditorBulletList`, `EditorClearFormatting`, `EditorCode`, `EditorCodeBlock`, `EditorDescriptionBlockquote`, `EditorDescriptionBulletList`, `EditorDescriptionCodeBlock`, `EditorDescriptionHeading1`, `EditorDescriptionHeading2`, `EditorDescriptionHeading3`, `EditorDescriptionHorizontalRule`, `EditorDescriptionOrderedList`, `EditorDescriptionParagraph`, `EditorDragHandle`, `EditorEmojiMenu`, `EditorHeading`, `EditorHorizontalRule`, `EditorImage`, `EditorImageUrl`, `EditorItalic`, `EditorLabel`, `EditorLink`, `EditorLinkApply`, `EditorLinkRemove`, `EditorLinkUrl`, `EditorMentionMenu`, `EditorMoveDown`, `EditorMoveUp`, `EditorNoResults`, `EditorOrderedList`, `EditorParagraph`, `EditorRedo`, `EditorSchemesOnly`, `EditorStrike`, `EditorSuggestionMenu`, `EditorSuggestionText`, `EditorTaskItem`, `EditorTaskList`, `EditorToolbar`, `EditorUnderline`, `EditorUndo`, `ErrorBackHome`, `ErrorForbidden`, `ErrorForbiddenMessage`, `ErrorNotFound`, `ErrorNotFoundMessage`, `ErrorServer`, `ErrorServerMessage`, `ErrorUnauthorized`, `ErrorUnauthorizedMessage`, `FileNotAccepted`, `FileSizeBytes`, `FileSizeGigabytes`, `FileSizeKilobytes`, `FileSizeMegabytes`, `FileTooLarge`, `FirstPage`, `FooterLinks`, `FormSummaryTitle`, `GoToSlide`, `HeaderMenu`, `HeaderNavigation`, `HexColor`, `Hours`, `Hue`, `InputMenuNoResults`, `InputMenuSuggestions`, `InputNumberDecrement`, `InputNumberIncrement`, `InputRatingValue`, `InputTagsRemove`, `LastPage`, `LoadMore`, `LoadingMore`, `LocaleSelectLabel`, `MaximumSize`, `Minutes`, `ModifierKey`, `MoreAvatars`, `NextMonth`, `NextPage`, `NextSlide`, `NoCommandResults`, `NoData`, `NoMoreItems`, `Notifications`, `OpenHeaderMenu`, `OpenSidebar`, `OpensInNewTab`, `Page`, `PageAnchors`, `PageLinks`, `Pagination`, `PauseSlides`, `PinInputCharacter`, `PlaySlides`, `PreviousMonth`, `PreviousPage`, `PreviousSlide`, `PricingDiscountedPrice`, `PricingFeatures`, `PricingIncluded`, `PricingNotIncluded`, `PricingOriginalPrice`, `Progress`, `RemoteOptionsError`, `RemoteOptionsLoading`, `RemoteOptionsMinLength`, `RemoteOptionsRetry`, `RemoveFile`, `ResizePanels`, `ResizeSidebar`, `Saturation`, `SearchCommands`, `SelectMenuCreate`, `SelectMenuNoResults`, `SelectMenuSearch`, `SidebarLabel`, `SkipToContent`, `SlideControls`, `SlideOf`, `SliderMaximum`, `SliderMinimum`, `SortAscending`, `SortDescending`, `StepCompleted`, `TimeAm`, `TimePm`, `ToggleColorMode`, `TooManyFiles`
+  - Parameters: `AllDay`, `AuthFormIncompleteCode`, `AuthFormInvalidEmail`, `AuthFormRequired`, `AuthFormSeparator`, `AuthFormShowPassword`, `AuthFormSubmit`, `Breadcrumb`, `Brightness`, `Cancel`, `CarouselRoleDescription`, `CarouselSlideRoleDescription`, `ChartArea`, `ChartBar`, `ChartBarHorizontal`, `ChartDonut`, `ChartHint`, `ChartHintSelect`, `ChartIndex`, `ChartLegend`, `ChartLine`, `ChartRange`, `ChartSlice`, `ChartSummary`, `ChartSummaryDonut`, `ChartTable`, `ChartValue`, `ChatAssistant`, `ChatAttachmentFailed`, `ChatAttachmentUploading`, `ChatConversation`, `ChatError`, `ChatJumpToLatest`, `ChatPromptLabel`, `ChatPromptPlaceholder`, `ChatRemoveAttachment`, `ChatResponding`, `ChatRetry`, `ChatSend`, `ChatStop`, `ChatSystem`, `ChatThinking`, `ChatThought`, `ChatThoughtFor`, `ChatToolFailed`, `ChatToolRunning`, `ChatUser`, `ChooseDate`, `Close`, `CollapseSidebar`, `ColorMode`, `ColorModeDark`, `ColorModeLight`, `ColorModeSystem`, `CommandPaletteClose`, `CommandResults`, `Confirm`, `ContentNavigation`, `ContentNext`, `ContentPrevious`, `ContentSearch`, `ContentSearchButton`, `ContentSearchError`, `ContentSearchLoading`, `ContentSearchPlaceholder`, `ContentSearchRetry`, `ContentSurround`, `ContentToc`, `ContextMenu`, `CopyValue`, `DashboardSearch`, `DashboardSearchButton`, `DashboardSearchPlaceholder`, `DayCount`, `DayPeriod`, `DaysOverdue`, `Details`, `DropFiles`, `Duration`, `EditorAddressRefused`, `EditorBlockquote`, `EditorBold`, `EditorBulletList`, `EditorClearFormatting`, `EditorCode`, `EditorCodeBlock`, `EditorDescriptionBlockquote`, `EditorDescriptionBulletList`, `EditorDescriptionCodeBlock`, `EditorDescriptionHeading1`, `EditorDescriptionHeading2`, `EditorDescriptionHeading3`, `EditorDescriptionHorizontalRule`, `EditorDescriptionOrderedList`, `EditorDescriptionParagraph`, `EditorDragHandle`, `EditorEmojiMenu`, `EditorHeading`, `EditorHorizontalRule`, `EditorImage`, `EditorImageUrl`, `EditorItalic`, `EditorLabel`, `EditorLink`, `EditorLinkApply`, `EditorLinkRemove`, `EditorLinkUrl`, `EditorMentionMenu`, `EditorMoveDown`, `EditorMoveUp`, `EditorNoResults`, `EditorOrderedList`, `EditorParagraph`, `EditorRedo`, `EditorSchemesOnly`, `EditorStrike`, `EditorSuggestionMenu`, `EditorSuggestionText`, `EditorTaskItem`, `EditorTaskList`, `EditorToolbar`, `EditorUnderline`, `EditorUndo`, `ErrorBackHome`, `ErrorForbidden`, `ErrorForbiddenMessage`, `ErrorNotFound`, `ErrorNotFoundMessage`, `ErrorServer`, `ErrorServerMessage`, `ErrorUnauthorized`, `ErrorUnauthorizedMessage`, `FileNotAccepted`, `FileSizeBytes`, `FileSizeGigabytes`, `FileSizeKilobytes`, `FileSizeMegabytes`, `FileTooLarge`, `FirstPage`, `FooterLinks`, `FormSummaryTitle`, `GoToSlide`, `HeaderMenu`, `HeaderNavigation`, `HexColor`, `HideDetails`, `Hours`, `Hue`, `ImageAlt`, `InDays`, `InputMenuNoResults`, `InputMenuSuggestions`, `InputNumberDecrement`, `InputNumberIncrement`, `InputRatingValue`, `InputTagsRemove`, `LastPage`, `LoadMore`, `LoadingMore`, `LocaleSelectLabel`, `MaximumSize`, `Meter`, `Minutes`, `ModifierKey`, `MoreAvatars`, `NextMonth`, `NextPage`, `NextSlide`, `NoCommandResults`, `NoData`, `NoMoreItems`, `Notifications`, `OpenHeaderMenu`, `OpenSidebar`, `OpensInNewTab`, `Page`, `PageAnchors`, `PageLinks`, `Pagination`, `PauseSlides`, `PinInputCharacter`, `PlaySlides`, `PreviousMonth`, `PreviousPage`, `PreviousSlide`, `PricingDiscountedPrice`, `PricingFeatures`, `PricingIncluded`, `PricingNotIncluded`, `PricingOriginalPrice`, `Progress`, `ReadMore`, `RemoteOptionsError`, `RemoteOptionsLoading`, `RemoteOptionsMinLength`, `RemoteOptionsRetry`, `RemoveFile`, `ResizePanels`, `ResizeSidebar`, `Saturation`, `SearchCommands`, `SelectMenuCreate`, `SelectMenuNoResults`, `SelectMenuSearch`, `ShowDetails`, `ShowLess`, `ShowMore`, `SidebarLabel`, `SkipToContent`, `SlideControls`, `SlideOf`, `SliderMaximum`, `SliderMinimum`, `SortAscending`, `SortDescending`, `StepCompleted`, `TimeAm`, `TimePm`, `Today`, `ToggleColorMode`, `Tomorrow`, `TooManyFiles`, `Unscheduled`
 
 ### Theme
 

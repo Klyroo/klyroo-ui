@@ -31,6 +31,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Changed
 
+- The ecosystem table of the README describes Klyroo.Display by what it keeps (code highlighting, secret and file list components, media player controls and file preview), since its read-only display blocks are typed components of Klyroo.UI.
 - `KlyTimeline` gives an event that has a `State` the done, current or upcoming look over the one `Active` decides (`KlyTimelineItem.Date` stays the free text shown as given, `At` is the real date), and `KlyAccordion` opens its `DefaultOpen` items when `Value` is not set. The text of a `KlyUser` without a picture or a name shows a person icon.
 - The Display kinds Heading, Text, Alert, Facts, Stat, Breakdown, Meter, Chart, Table, Diff, Record, Person, List, Timeline, Date, Media, Empty and Accordion are no longer in `KlyDisplay` (Klyroo.Display keeps Code, the files list and the media players): see the new components above. A section heading has no eyebrow variant.
 - **Breaking:** the public API has no `object` left in parameters and results except where Blazor or .NET demands it (`AdditionalAttributes`, `KlyForm.Model`, the parameter dictionary of `ShowAsync`). What changes, besides the overlay service above that is typed from the start:
