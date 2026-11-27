@@ -26,6 +26,8 @@ public static class KlyTheme
     public static KlyThemeColor Text { get; } = KlyThemeColor.FromHex("#1f2937", "#e5e7eb");
     /// <summary>Text color of headings and emphasis.</summary>
     public static KlyThemeColor TextHighlighted { get; } = KlyThemeColor.FromHex("#0b0f14", "#ffffff");
+    /// <summary>Text color between <see cref="Text"/> and <see cref="TextMuted"/>, such as the punctuation of a code block.</summary>
+    public static KlyThemeColor TextToned { get; } = KlyThemeColor.FromHex("#374151", "#cbd5e1");
     /// <summary>Secondary text color.</summary>
     public static KlyThemeColor TextMuted { get; } = KlyThemeColor.FromHex("#4b5563", "#9ca3af");
     /// <summary>Placeholder and hint text color.</summary>

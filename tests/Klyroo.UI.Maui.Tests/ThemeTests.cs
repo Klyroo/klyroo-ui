@@ -103,4 +103,11 @@ public class ThemeTests
         Assert.Equal(Surface.For(ButtonVariant.Soft, c), Surface.For(KlyVariant.Soft, c));
         Assert.Equal(Surface.For(ButtonVariant.Subtle, c), Surface.For(KlyVariant.Subtle, c));
     }
+
+    [Fact]
+    public void Text_tokens_keep_the_values_of_the_web_theme()
+    {
+        Assert.Equal(Color.FromArgb("#374151"), KlyTheme.TextToned.Light);
+        Assert.Equal(Color.FromArgb("#cbd5e1"), KlyTheme.TextToned.Dark);
+    }
 }
