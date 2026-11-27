@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (171) · Static classes and extensions (11) · Classes (23) · Records (201) · Structs (4) · Interfaces (8) · Enums (57) · Delegates (2)
+Components (171) · Static classes and extensions (11) · Classes (24) · Records (201) · Structs (4) · Interfaces (8) · Enums (57) · Delegates (2)
 
 ### Components
 
@@ -426,6 +426,7 @@ Line, area, bar or donut chart drawn as SVG on the server, with a generated text
 | `Legend` | `bool?` | Shows the legend. By default it shows when there is more than one series, or more than one slice with a donut. |
 | `OnSelect` | `EventCallback<KlyChartSelectEventArgs<TItem, TIndex>>` | Raised when a bar, point or donut slice is clicked, or chosen with Enter or Space on the row the arrow keys are on. The arguments carry the row, its index, the series that was picked, its value and the row item. Only a chart with a handler reacts: it gets a pointer cursor on its bars, points and slices, and its keyboard hint says Enter selects. A bar is the one under the pointer, a point on a line or area the series nearest the pointer; from the keyboard, with several series, no series is named (`SeriesIndex` -1, `SeriesKey` and `Value` null) and the handler chooses from the row item. It needs the tooltip (the keyboard row is the highlighted one) and an interactive render, since the pick is reported by the browser. |
 | `Points` | `bool` | Always shows a marker at each value of a line chart. Without it the marker shows on the value under the pointer or the keyboard. |
+| `Responsive` | `bool` | Draws the chart at the width it is given when that is less than `KlyChart.Width` (`true` by default), instead of shrinking a drawing made for `KlyChart.Width`: the labels and the lines keep their size, and the height follows the width down to 180 pixels, or `KlyChart.Height` when it is smaller. The browser reports the width, so without scripts (a page that is not interactive) the chart is drawn at `KlyChart.Width` and scales with its container. A donut is not concerned. |
 | `Stacked` | `bool` | Stacks the series instead of drawing them side by side or over one another. Only applies to area and bar. |
 | `Table` | `KlyChartTable` | Where the table with the chart's data goes. It is always rendered; by default it is visually hidden. |
 | `Thickness` | `int` | The width of the ring in pixels. Only applies to `KlyChartType.Donut`. |
@@ -3507,6 +3508,16 @@ Loads options from a `KlyOptionsProvider` one page at a time: the pages listed s
 | `LoadMoreAsync()` | `Task` | Loads the next page. Nothing happens while a request runs, after an error (use `KlyRemoteOptions.RetryAsync`) or at the end. |
 | `RetryAsync()` | `Task` | Repeats the request that failed. |
 | `SearchAsync(string? raw)` | `Task` | Searches for a term (what the field reports). The same term again changes nothing, except after an error, where it asks again. |
+
+#### `KlyResizeEventArgs`
+
+`Klyroo.UI` · class · inherits `EventArgs`
+
+Payload of the `kly-resize` browser event raised by `KlyChart` with the width it is given, so the chart draws itself at that width.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Width` (get, set) | `int` | The width of the chart in CSS pixels. |
 
 #### `KlyrooFontsManifestAttribute`
 
