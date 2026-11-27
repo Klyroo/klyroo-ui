@@ -399,8 +399,8 @@ internal sealed class KlyThemeTokens
         Add("text-highlighted", light ? PickText("text-highlighted", 9, 9, TextRatio) : White);
         Add("text-toned", PickText("text-toned", 6, 3, TextRatio));
         Add("text-muted", PickText("text-muted", 5, 4, TextRatio));
-        // Placeholders and hints: as legible as the default theme's, which is slightly under 4.5:1.
-        Add("text-dimmed", PickText("text-dimmed", 4, 5, 4.0));
+        // Placeholders and hints are text like the rest (WCAG 1.4.3): 4.5:1 on every surface, so a group label or a hint in 11px passes too.
+        Add("text-dimmed", PickText("text-dimmed", 4, 5, TextRatio));
         Add("text-inverted", light ? White : p.Hex(10));
 
         Add("bg", bg);

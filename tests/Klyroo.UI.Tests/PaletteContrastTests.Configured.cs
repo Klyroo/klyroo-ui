@@ -77,7 +77,7 @@ public partial class PaletteContrastTests
             foreach (var surface in Surfaces)
             {
                 var dimmed = Contrast(t["text-dimmed"], t[surface]);
-                Check(dimmed >= 3.0, $"{theme}: text-dimmed on {surface} is {dimmed:0.00}:1, needs 3:1");
+                Check(dimmed >= 4.5, $"{theme}: text-dimmed on {surface} is {dimmed:0.00}:1, needs 4.5:1");
             }
             foreach (var token in new[] { "border-accented", "control" })
             {
