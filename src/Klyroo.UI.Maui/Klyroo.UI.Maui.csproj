@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Native .NET MAUI controls with the Klyroo.UI design tokens: no WebView, no Blazor. Same version as the library: build/Version.props. -->
+  <PropertyGroup>
+    <!-- The plain framework target is what the unit tests run on; the platform targets are what an app uses. -->
+    <TargetFrameworks>$(KlyrooMauiTfm);$(KlyrooMauiTfm)-android</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('linux'))">$(TargetFrameworks);$(KlyrooMauiTfm)-ios;$(KlyrooMauiTfm)-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);$(KlyrooMauiTfm)-windows10.0.19041.0</TargetFrameworks>
+
+    <UseMaui>true</UseMaui>
+    <SingleProject>false</SingleProject>
+    <RootNamespace>Klyroo.UI.Maui</RootNamespace>
+    <PackageId>Klyroo.UI.Maui</PackageId>
+    <Description>Native .NET MAUI controls (no WebView) that follow the Klyroo.UI design tokens: buttons, badges, cards, alerts, avatars, separators and form fields, with light and dark colors that follow the app theme.</Description>
+    <PackageTags>maui;dotnet-maui;android;ios;controls;design-system;dark-mode</PackageTags>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">24.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Klyroo.UI.Maui.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A native .NET MAUI app (no WebView, no Blazor) built with Klyroo.UI.Maui. Android only: the other platforms need their own Platforms folder.
+    dotnet build -t:Run -f net10.0-android   (an emulator or a device must be running)
+  -->
+  <PropertyGroup>
+    <TargetFramework>$(KlyrooSampleTfm)-android</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Klyroo.Maui.Native</RootNamespace>
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+
+    <ApplicationTitle>Klyroo native</ApplicationTitle>
+    <ApplicationId>dev.klyroo.maui.controls</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>24.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#1d4ed8" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#1d4ed8" BaseSize="128,128" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Klyroo.UI.Maui\Klyroo.UI.Maui.csproj" AdditionalProperties="KlyrooMauiTfm=$(KlyrooSampleTfm)" />
+  </ItemGroup>
+
+</Project>
