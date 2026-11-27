@@ -49,7 +49,7 @@
 `/components/alert`. A callout that draws attention to a message.
 
 - `<KlyAlert>`
-  - Parameters: `ActionItems`, `Class`, `Close`, `Color`, `DefaultOpen`, `Description`, `Details`, `StatusIcon`, `Title`, `Ui`, `Variant`
+  - Parameters: `ActionItems`, `Class`, `Close`, `Color`, `DefaultOpen`, `Description`, `Details`, `Live`, `StatusIcon`, `Title`, `Ui`, `Variant`
   - Events: `OnClose`
   - Slots: `Actions`, `Icon`, `ChildContent`
   - `Ui` (`AlertUi`): `Root`, `Icon`, `Wrapper`, `Title`, `Description`, `Actions`, `Close`, `Toggle`, `ToggleIcon`, `DetailsPanel`
@@ -172,7 +172,8 @@
 `/components/image`. An img with the width, height, srcset, sizes and loading a provider fills in.
 
 - `<KlyImage>`
-  - Parameters: `Alt` (required), `Class`, `Densities`, `FetchPriority`, `Fit`, `Format`, `Height`, `ImageOptions`, `Loading`, `Modifiers`, `Placeholder`, `Preload`, `Preset`, `Provider`, `Quality`, `Sizes`, `Src` (required), `Width`
+  - Parameters: `Alt` (required), `Caption`, `Class`, `Densities`, `FetchPriority`, `Fit`, `Format`, `Height`, `ImageOptions`, `Loading`, `Modifiers`, `Placeholder`, `Preload`, `Preset`, `Provider`, `Quality`, `Sizes`, `Src` (required), `Ui`, `Width`
+  - `Ui` (`ImageUi`): `Figure`, `Caption`
 
 ### FieldGroup
 
@@ -851,7 +852,7 @@
 `/components/stat`. A highlighted value with a title, unit, delta badge, sparkline and caption.
 
 - `<KlyStat>`
-  - Parameters: `Caption`, `Class`, `Delta`, `DeltaDirection`, `Loading`, `Surface`, `Title`, `Trend`, `Ui`, `Unit`, `Value`
+  - Parameters: `Caption`, `Class`, `Culture`, `Delta`, `DeltaDirection`, `DeltaFormat`, `DeltaUnit`, `Format`, `Loading`, `Surface`, `Title`, `Trend`, `Ui`, `Unit`, `Value`
   - `Ui` (`StatUi`): `Root`, `Label`, `Row`, `ValueGroup`, `Value`, `Unit`, `Delta`, `Sparkline`, `Caption`, `Skeleton`
 
 ### StatGroup
@@ -859,7 +860,7 @@
 `/components/stat-group`. Several small metrics side by side under an optional title.
 
 - `<KlyStatGroup>`
-  - Parameters: `Class`, `Items`, `Loading`, `Surface`, `Title`, `Ui`
+  - Parameters: `Class`, `Culture`, `Format`, `Items`, `Loading`, `Surface`, `Title`, `Ui`
   - `Ui` (`StatGroupUi`): `Root`, `Title`, `Grid`, `Item`, `Label`, `Value`, `Caption`, `Skeleton`
 
 ### Facts
@@ -883,7 +884,7 @@
 `/components/diff`. Before and after values per field, with unchanged fields hidden unless asked.
 
 - `<KlyDiff>`
-  - Parameters: `Class`, `Items`, `Loading`, `ShowUnchanged`, `Surface`, `Title`, `Ui`
+  - Parameters: `Class`, `Culture`, `Items`, `Loading`, `ShowUnchanged`, `Surface`, `Title`, `Ui`
   - `Ui` (`DiffUi`): `Root`, `Title`, `List`, `Item`, `Label`, `Values`, `Before`, `Arrow`, `After`, `Unchanged`, `Skeleton`
 
 ### RecordList

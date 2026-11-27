@@ -540,16 +540,26 @@ Goal: present figures, facts, amounts and history without writing the markup of 
 
 Each kind of read-only block is a component of its own with only its own parameters, so a misuse does not compile. Every block takes `Surface` (`KlySurface.Plain`, `Muted`, `Bordered` or `Elevated`; each block has its own default), `Loading` (a skeleton instead of the content), a `Ui` record to restyle its slots and the usual `Class`. Items are records (`new KlyFact("Plan") { Value = "Pro" }`), colors are `KlyColor`, icons are names (`"check"`) or any icon markup, and the buttons and badges inside a block are `KlyActionItem` and `KlyBadgeItem`.
 
-A figure with its change and a sparkline, and several small figures in a row:
+A figure with its change and a sparkline, and several small figures in a row. `KlyStat` and `KlyStatGroup` are generic over the number type (any built-in number type, or its nullable form, which shows a dash when it has no value), and Blazor infers it from `Value` or `Items`: write a number as an expression (`Value="@_mrr"`, `Value="@(12400m)"`), because a bare attribute value is text. The value is formatted with `Format` and `Culture`, `Unit` stays text, and the delta is a number too: its sign picks the color of the badge (up, down or flat) unless you set `DeltaDirection`, which you do for a change where a drop is good news (a cost, an error rate).
 
 ```razor
-<KlyStat Title="MRR" Value="€12,400" Delta="+14%" DeltaDirection="KlyDeltaDirection.Up" Trend="@(new double[] { 10, 14, 13, 19 })" Caption="vs last month" />
+<KlyStat Title="MRR" Value="@_mrr" Format="C0" Culture="@_en" Delta="@_change" DeltaFormat="+0.0;-0.0" DeltaUnit="%"
+         Trend="@(new double[] { 10, 14, 13, 19 })" Caption="vs last month" />
+
+<KlyStat Title="Error rate" Value="@_errors" Format="P1" Delta="@(-0.4)" DeltaDirection="KlyDeltaDirection.Up" />
 
 <KlyStatGroup Title="This week" Items="@(new[]
 {
-    new KlyStatItem("Errors", "12") { Color = KlyColor.Error },
-    new KlyStatItem("Users", "340") { Caption = "+8" },
+    new KlyStatItem<int>("Errors", 12) { Color = KlyColor.Error },
+    new KlyStatItem<int>("Users", 340) { Caption = "+8" },
 })" />
+
+@code {
+    private readonly CultureInfo _en = CultureInfo.GetCultureInfo("en-US");
+    private readonly decimal _mrr = 12400m;
+    private readonly decimal _change = 14.2m;
+    private readonly double _errors = 0.012;
+}
 ```
 
 Label and value rows, flat or in groups, with badges, links, copy buttons and a loading placeholder. `Max` and `Step` show a Show more button. Copy buttons write to the clipboard from .NET, so they are disabled until the page is interactive:
@@ -580,15 +590,21 @@ Amounts are decimals, formatted with `Format` (a .NET format string, `"N2"` by d
 }
 ```
 
-Before and after values per field. The old value is a `del` and the new one an `ins`. `KlyDiffItem.Compare` builds an item from two typed values and decides `Changed` by equality:
+Before and after values per field. The old value is a `del` and the new one an `ins`. `KlyDiffItem.Compare` builds an item from two typed values and decides `Changed` by equality. The values are formatted when the block renders, with the format string you give (any .NET format string of an `IFormattable` type, or a `(value, culture) => text` function) and the `Culture` of the block, so the same item reads `1,200.50` in English and `1.200,50` in German:
 
 ```razor
-<KlyDiff ShowUnchanged="true" Items="@(new[]
+<KlyDiff ShowUnchanged="true" Culture="@_de" Items="@(new[]
 {
     KlyDiffItem.Compare("Plan", "Starter", "Team"),
     KlyDiffItem.Compare("Seats", 12, 12),
+    KlyDiffItem.Compare("Price", 1200.5m, 1500m, "N2"),
+    KlyDiffItem.Compare("Due", new DateOnly(2026, 3, 5), new DateOnly(2026, 4, 1), "d"),
     new KlyDiffItem("Role", "Member", "Admin") { Note = new KlyBadgeItem("Needs approval") },
 })" />
+
+@code {
+    private readonly CultureInfo _de = CultureInfo.GetCultureInfo("de-DE");
+}
 ```
 
 Entity rows and lists. A record row has a leading image, avatar text or icon, a reference, a title (a link with `Href`, a button with `OnClick`), a secondary line, badges and a trailing value. A list is `Plain`, `Steps` or `Checks`; done items say so to assistive technology:
@@ -620,6 +636,8 @@ A calendar tile in three modes, a paragraph or a quote, a section heading, and a
             Action="@(new KlyActionItem("Export") { Href = "/export" })" />
 
 <KlyImageGallery Images="@_photos" Max="3" Columns="3" Caption="Trip" />
+
+<KlyImage Src="/img/box.png" Alt="A box on a shelf" Caption="A box on a shelf, Paris" Width="480" />
 ```
 
 A gauge. `KlyMeter` is a `role="meter"` measure in a known range (disk used, quota), not the progress of a task: use `KlyProgress` for that. It is a bar, a ring or a scale of levels, and its parts stack with a legend:
@@ -635,10 +653,10 @@ A gauge. `KlyMeter` is a `role="meter"` measure in a known range (disk used, quo
 <KlyMeter Layout="KlyMeterLayout.Scale" Levels="@(new[] { "Low", "Medium", "High" })" CurrentLevel="1" />
 ```
 
-Existing components carry the other kinds. `KlyAlert` takes `Details` (collapsed behind a toggle), `ActionItems` and `StatusIcon`; `KlyEmpty` takes `ActionItems`; `KlyTable` takes a `Footer` on its columns, `Align`, `Numeric` and `Mono`, and `Max` with `Step`; `KlyUser` takes a `Badge` and `Contacts`; `KlyAvatarGroup` shows the description and badge of each person in its tooltips; `KlyAccordionItem` takes `Text` and `DefaultOpen`; and `KlyChart` draws a conversion funnel with `Type="KlyChartType.Funnel"`: one step per row, sized by the first category and labeled with the share of the previous step.
+Existing components carry the other kinds. `KlyAlert` takes `Details` (collapsed behind a toggle), `ActionItems`, `StatusIcon` and `Live` (`KlyAlertLive.None` by default; `Polite` is `role="status"` and `Assertive` is `role="alert"`, for an alert inserted after the page loaded); `KlyEmpty` takes `ActionItems`; `KlyTable` takes a `Footer` on its columns, `Align`, `Numeric` and `Mono`, and `Max` with `Step`; `KlyUser` takes a `Badge` and `Contacts`; `KlyAvatarGroup` shows the description and badge of each person in its tooltips; `KlyAccordionItem` takes `Text` and `DefaultOpen`; `KlyImage` takes a `Caption`, which wraps the image in a `figure` with a `figcaption` (nothing is wrapped without it); and `KlyChart` draws a conversion funnel with `Type="KlyChartType.Funnel"`: one step per row, sized by the first category and labeled with the share of the previous step.
 
 ```razor
-<KlyAlert Color="KlyColor.Warning" Variant="KlyVariant.Soft" StatusIcon="true" Title="Quota warning"
+<KlyAlert Color="KlyColor.Warning" Variant="KlyVariant.Soft" StatusIcon="true" Live="KlyAlertLive.Polite" Title="Quota warning"
           Description="Your plan is almost full." Details="85% of the monthly volume is used."
           ActionItems="@(new[] { new KlyActionItem("Upgrade") { Href = "/billing", Variant = ButtonVariant.Solid, Color = KlyColor.Warning } })" />
 

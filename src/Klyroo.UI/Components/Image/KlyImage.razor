@@ -11,7 +11,9 @@
         <link rel="preload" as="image" href="@_resolved.Src" imagesrcset="@_resolved.SrcSet" imagesizes="@_resolved.Sizes" fetchpriority="@_priorityText" />
     </HeadContent>
 }
-<img src="@_resolved.Src"
+@if (string.IsNullOrEmpty(Caption))
+{
+    <img src="@_resolved.Src"
      alt="@Alt"
      width="@_width"
      height="@_height"
@@ -22,6 +24,24 @@
      class="@Class"
      style="@_style"
      @attributes="_attributes" />
+}
+else
+{
+    <figure class="@_figureSlots["figure"]" data-slot="image-figure">
+        <img src="@_resolved.Src"
+     alt="@Alt"
+     width="@_width"
+     height="@_height"
+     srcset="@_resolved.SrcSet"
+     sizes="@_resolved.Sizes"
+     loading="@_loadingText"
+     fetchpriority="@_priorityText"
+     class="@Class"
+     style="@_style"
+     @attributes="_attributes" />
+        <figcaption class="@_figureSlots["caption"]" data-slot="image-caption">@Caption</figcaption>
+    </figure>
+}
 
 @code {
     private KlyResolvedImage _resolved = new("", null, null);
@@ -32,6 +52,7 @@
     private string? _width;
     private string? _height;
     private IReadOnlyDictionary<string, object>? _attributes;
+    private SlotSet _figureSlots = default!;
 
     /// <summary>Address of the image: a root-relative path ("/img/team.jpg") or an absolute URL.</summary>
     [Parameter, EditorRequired] public string? Src { get; set; }
@@ -47,6 +68,15 @@
 
     /// <summary>Height of the image in CSS pixels, with the same rules as <see cref="Width"/>.</summary>
     [Parameter] public int? Height { get; set; }
+
+    /// <summary>
+    /// A caption under the image. When set, the image is wrapped in a <c>figure</c> with a <c>figcaption</c>; <c>Class</c> and the other attributes stay on the <c>img</c>.
+    /// Nothing is wrapped when it is not set.
+    /// </summary>
+    [Parameter] public string? Caption { get; set; }
+
+    /// <summary>Per-instance class overrides of the <c>figure</c> and <c>caption</c> slots, see <see cref="ImageUi"/>. They apply only with a <see cref="Caption"/>.</summary>
+    [Parameter] public ImageUi? Ui { get; set; }
 
     /// <summary>Settings shared with the other image parameters: the parameters below override the ones set here.</summary>
     [Parameter] public KlyImageOptions? ImageOptions { get; set; }
@@ -108,6 +138,8 @@
         {
             throw new InvalidOperationException("KlyImage needs Alt: describe the image, or pass an empty string when it is decorative.");
         }
+
+        _figureSlots = ResolveSlots(Options.ImageFigure, new Dictionary<string, string?>(), Ui, "");
 
         var options = new KlyImageOptions
         {

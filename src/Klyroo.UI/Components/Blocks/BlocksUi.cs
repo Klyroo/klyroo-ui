@@ -70,28 +70,28 @@ public sealed record TextUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of the slots of <see cref="KlyStat"/>, passed to its <c>Ui</c> parameter. Each property holds the classes merged into one slot.</summary>
+/// <summary>Per-instance class overrides of the slots of <see cref="KlyStat{TValue}"/>, passed to its <c>Ui</c> parameter. Each property holds the classes merged into one slot.</summary>
 public sealed record StatUi : ISlotOverrides
 {
-    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
-    /// <summary>Classes merged into the <c>label</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>label</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Label { get; init; }
-    /// <summary>Classes merged into the <c>row</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>row</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Row { get; init; }
-    /// <summary>Classes merged into the <c>valueGroup</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>valueGroup</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? ValueGroup { get; init; }
-    /// <summary>Classes merged into the <c>value</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>value</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Value { get; init; }
-    /// <summary>Classes merged into the <c>unit</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>unit</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Unit { get; init; }
-    /// <summary>Classes merged into the <c>delta</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>delta</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Delta { get; init; }
-    /// <summary>Classes merged into the <c>sparkline</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>sparkline</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Sparkline { get; init; }
-    /// <summary>Classes merged into the <c>caption</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>caption</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Caption { get; init; }
-    /// <summary>Classes merged into the <c>skeleton</c> slot of <see cref="KlyStat"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>skeleton</c> slot of <see cref="KlyStat{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Skeleton { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch
@@ -110,24 +110,24 @@ public sealed record StatUi : ISlotOverrides
     };
 }
 
-/// <summary>Per-instance class overrides of the slots of <see cref="KlyStatGroup"/>, passed to its <c>Ui</c> parameter. Each property holds the classes merged into one slot.</summary>
+/// <summary>Per-instance class overrides of the slots of <see cref="KlyStatGroup{TValue}"/>, passed to its <c>Ui</c> parameter. Each property holds the classes merged into one slot.</summary>
 public sealed record StatGroupUi : ISlotOverrides
 {
-    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>root</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Root { get; init; }
-    /// <summary>Classes merged into the <c>title</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>title</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Title { get; init; }
-    /// <summary>Classes merged into the <c>grid</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>grid</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Grid { get; init; }
-    /// <summary>Classes merged into the <c>item</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>item</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Item { get; init; }
-    /// <summary>Classes merged into the <c>label</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>label</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Label { get; init; }
-    /// <summary>Classes merged into the <c>value</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>value</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Value { get; init; }
-    /// <summary>Classes merged into the <c>caption</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>caption</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Caption { get; init; }
-    /// <summary>Classes merged into the <c>skeleton</c> slot of <see cref="KlyStatGroup"/>, after the theme and the app configuration.</summary>
+    /// <summary>Classes merged into the <c>skeleton</c> slot of <see cref="KlyStatGroup{TValue}"/>, after the theme and the app configuration.</summary>
     public string? Skeleton { get; init; }
 
     string? ISlotOverrides.For(string slot) => slot switch

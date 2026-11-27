@@ -20,7 +20,7 @@ Start with `search-components` (it understands alternate names: dialog finds Mod
 
 | Need | Use |
 |---|---|
-| A message that stays in the page | `KlyAlert` (collapsible `Details`, `ActionItems`, `StatusIcon`) |
+| A message that stays in the page | `KlyAlert` (collapsible `Details`, `ActionItems`, `StatusIcon`, `Live` for a live region) |
 | A site-wide announcement the user can close | `KlyBanner` (dismissal is remembered per `Id`, also in static pages) |
 | Nothing to show yet | `KlyEmpty` (buttons from data with `ActionItems`) |
 | Content is loading | `KlySkeleton` inside a region marked `aria-busy`, or `KlyProgress` for a measurable task |
@@ -32,15 +32,15 @@ Start with `search-components` (it understands alternate names: dialog finds Mod
 |---|---|
 | A section title with an icon, a count and an action | `KlyHeading` |
 | Paragraphs, a quote, a text clamped to a few lines | `KlyText` |
-| One highlighted figure with its change and a sparkline | `KlyStat`; several small figures in a row are `KlyStatGroup` |
+| One highlighted number with its change and a sparkline | `KlyStat` (generic over the number type, `Format` and `Culture`; the delta sign picks its color); several small numbers in a row are `KlyStatGroup` |
 | Label and value rows, with badges, links and copy buttons | `KlyFacts` (flat or in groups) |
 | Labelled amounts with subtotals, a total, two columns or a toggle | `KlyBreakdown` (decimal amounts, formatted by culture) |
-| What changed between two versions of a record | `KlyDiff`, with `KlyDiffItem.Compare` for typed values |
+| What changed between two versions of a record | `KlyDiff`, with `KlyDiffItem.Compare` for typed values formatted by culture |
 | Entity rows with an image, a reference, badges and a trailing value | `KlyRecordList` |
 | Items, numbered steps or a checklist | `KlyList` with `Plain`, `Steps` or `Checks` |
 | A date as a calendar tile, a countdown or a range | `KlyDateTile` |
 | A measure in a known range (quota, disk), with thresholds or stacked parts | `KlyMeter` as a bar, a ring or a scale; a task that is running is `KlyProgress` |
-| Several pictures with a +N tile | `KlyImageGallery`; one picture is `KlyImage` |
+| Several pictures with a +N tile | `KlyImageGallery`; one picture is `KlyImage`, with a `Caption` it is a figure |
 | A conversion funnel | `KlyChart` with `Type="KlyChartType.Funnel"` |
 | A history, a pipeline, a log or an agenda by day | `KlyTimeline` with `Layout` `Default`, `Pipeline`, `Log` or `Schedule` |
 | A person with contacts, a badge, or a stack of people with tooltips | `KlyUser` with `Contacts` and `Badge`; `KlyAvatarGroup` |

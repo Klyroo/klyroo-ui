@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (170) · Static classes and extensions (11) · Classes (23) · Records (200) · Structs (4) · Interfaces (8) · Enums (56) · Delegates (2)
+Components (170) · Static classes and extensions (11) · Classes (23) · Records (201) · Structs (4) · Interfaces (8) · Enums (57) · Delegates (2)
 
 ### Components
 
@@ -43,6 +43,7 @@ Inline message with an optional icon, title, description, actions and close butt
 | `Description` | `string?` | Text of the alert. Use `ChildContent` for markup. |
 | `Details` | `string?` | Collapsible text under the description, opened with a Show details toggle. The toggle is disabled until the page is interactive. |
 | `Icon` | `RenderFragment?` | Icon of the alert, as markup such as a `KlyIcon`. |
+| `Live` | `KlyAlertLive` | Makes the alert a live region that assistive technology announces when it appears: `KlyAlertLive.Polite` (`role="status"`) or `KlyAlertLive.Assertive` (`role="alert"`). `KlyAlertLive.None` (the default) adds no role. Use it for an alert that is inserted after the page loaded, not for one that is there from the start. |
 | `OnClose` | `EventCallback` | Raised when the user closes the alert with its close button. |
 | `StatusIcon` | `bool` | Shows the icon of the color (info, success, warning or error, from `KlyrooOptions.Icons`) when no `KlyAlert.Icon` is given. |
 | `Title` | `string?` | Title of the alert, shown above its description. |
@@ -1200,6 +1201,7 @@ Before and after values per field, with unchanged fields hidden unless `KlyDiff.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
+| `Culture` | `CultureInfo?` | The culture that formats the values of the items built with `KlyDiffItem.Compare``. Defaults to the format culture of the locale in effect. |
 | `Items` | `IReadOnlyList<KlyDiffItem>?` | The fields, as `KlyDiffItem`. |
 | `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
 | `ShowUnchanged` | `bool` | Shows the fields whose `KlyDiffItem.Changed` is `false` (`false` by default). |
@@ -1626,6 +1628,7 @@ Image element that fills in the width, height, srcset, sizes and loading attribu
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Alt` | `string?` | Text alternative. Required: pass an empty string for a decorative image. |
+| `Caption` | `string?` | A caption under the image. When set, the image is wrapped in a `figure` with a `figcaption`; `Class` and the other attributes stay on the `img`. Nothing is wrapped when it is not set. |
 | `Densities` | `IReadOnlyList<int>?` | Densities of the `srcset`, like `[1, 2]`. Defaults to `KlyImageSettings.Densities`. |
 | `FetchPriority` | `KlyFetchPriority?` | `high` speeds up the image that matters most (the hero); preloading sets it to high unless you choose. |
 | `Fit` | `KlyImageFit?` | How the image fills `KlyImage.Width` by `KlyImage.Height`. Cover when unset. |
@@ -1641,6 +1644,7 @@ Image element that fills in the width, height, srcset, sizes and loading attribu
 | `Quality` | `int?` | Quality from 1 to 100. |
 | `Sizes` | `string?` | Responsive sizes: `"100vw sm:50vw md:400px"` (an unprefixed entry is the default; each breakpoint applies from its width upward). Breakpoints come from `KlyImageSettings.Screens`. It becomes the `sizes` attribute and decides the widths of the `srcset`. |
 | `Src` | `string?` | Address of the image: a root-relative path ("/img/team.jpg") or an absolute URL. |
+| `Ui` | `ImageUi?` | Per-instance class overrides of the `figure` and `caption` slots, see `ImageUi`. They apply only with a `KlyImage.Caption`. |
 | `Width` | `int?` | Width of the image in CSS pixels. It is also the base of the 1x, 2x… candidates, and it reserves the space before the image loads. A value that is not positive is written as given and takes no part in the resolution. |
 
 Also accepts the parameters of `KlyComponentBase`.
@@ -2662,36 +2666,42 @@ Resizable panels separated by focusable handles.
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlyStat`
+#### `KlyStat<TValue>`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
 
-A highlighted value with a title, unit, delta badge, sparkline and caption.
+A highlighted number with a title, unit, delta badge, sparkline and caption. `TValue` is a built-in number type (`SByte` to `UInt64`, `Single`, `Double`, `Decimal`) or its nullable form, which shows a dash when it has no value: Blazor infers it from `KlyStat.Value` or `KlyStat.Delta` (write the number as an expression, `Value="@amount"`). Another type throws an `InvalidOperationException` that lists the supported ones.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `Caption` | `string?` | A line of smaller text under the value. |
-| `Delta` | `string?` | The change shown as a badge beside the value, for example `"+12.4%"`. It is displayed as given. |
-| `DeltaDirection` | `KlyDeltaDirection` | The direction of `KlyStat.Delta`: `KlyDeltaDirection.Up` (success color, the default), `KlyDeltaDirection.Down` (error) or `KlyDeltaDirection.Flat` (neutral). |
+| `Culture` | `CultureInfo?` | The culture that formats the numbers. Defaults to the format culture of the locale in effect. |
+| `Delta` | `TValue` | The change shown as a badge beside the value. Its direction comes from its sign unless `KlyStat.DeltaDirection` is set. With a nullable type, no value means no badge; with a plain number type the default, zero, shows a flat badge. |
+| `DeltaDirection` | `KlyDeltaDirection?` | The direction of `KlyStat.Delta`, which only chooses the color of its badge: `KlyDeltaDirection.Up` (success), `KlyDeltaDirection.Down` (error) or `KlyDeltaDirection.Flat` (neutral). When `null`, it comes from the sign of `KlyStat.Delta`. Set it for a change where a drop is good news (a cost, an error rate). |
+| `DeltaFormat` | `string` | The format string of `KlyStat.Delta` (`"+#,0.##;-#,0.##;0"` by default, which always shows the sign). |
+| `DeltaUnit` | `string?` | Text written after `KlyStat.Delta`, such as `"%"`. |
+| `Format` | `string` | The .NET numeric format string of `KlyStat.Value` (`"#,0.##"` by default; `"C0"` shows the currency of `KlyStat.Culture`, `"P1"` a percentage). |
 | `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
 | `Surface` | `KlySurface?` | The surface treatment. Muted when not set. |
 | `Title` | `string?` | The label of the value. |
 | `Trend` | `IReadOnlyList<double>?` | The series of the sparkline, drawn from two points or more. |
 | `Ui` | `StatUi?` | Per-instance class overrides of the slots of the stat, see `StatUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
-| `Unit` | `string?` | The unit shown beside the value. |
-| `Value` | `string?` | The value, displayed as given (format it with the culture of your choice). A dash when not set. |
+| `Unit` | `string?` | The unit shown beside the value, as text. |
+| `Value` | `TValue` | The value, formatted with `KlyStat.Format` and `KlyStat.Culture`. A dash when it is a nullable type with no value, or not finite. |
 
 Also accepts the parameters of `KlyComponentBase`.
 
-#### `KlyStatGroup`
+#### `KlyStatGroup<TValue>`
 
 `Klyroo.UI` · component · inherits `KlyComponentBase`
 
-Several small metrics side by side under an optional title (the "row" of statistics).
+Several small metrics side by side under an optional title (the "row" of statistics). `TValue` is the number type of every value.
 
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
-| `Items` | `IReadOnlyList<KlyStatItem>?` | The metrics, as `KlyStatItem`. |
+| `Culture` | `CultureInfo?` | The culture that formats the values. Defaults to the format culture of the locale in effect. |
+| `Format` | `string` | The .NET numeric format string of the values (`"#,0.##"` by default). |
+| `Items` | `IReadOnlyList<KlyStatItem<TValue>>?` | The metrics, as `KlyStatItem`. |
 | `Loading` | `bool` | Shows a skeleton placeholder instead of the content. |
 | `Surface` | `KlySurface?` | The surface treatment. Bordered when not set. |
 | `Title` | `string?` | The line above the metrics. |
@@ -3664,6 +3674,7 @@ Global configuration of Klyroo.UI. Register it from code shared by the server an
 | `Heading` | `ComponentTheme` | Theme of `KlyHeading`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Icon` | `ComponentTheme` | Theme of `KlyIcon`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Icons` | `KlyrooIconOptions` | The icons components draw (`Close`, `Check`, `ChevronDown`...), replaceable by name, and `Register` to add icons in code. Any Iconify icon works by name, see `KlyIcon`. |
+| `ImageFigure` | `ComponentTheme` | Theme of the `figure` that `KlyImage` draws around an image with a `KlyImage.Caption`: the default classes of its slots. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `ImageGallery` | `ComponentTheme` | Theme of `KlyImageGallery`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
 | `Images` | `KlyImageSettings` | How images are resized and delivered: providers, breakpoints, densities, allowed remote hosts and presets, global image provider and preset configuration. Read-only once an image was resolved. |
 | `InfiniteScroll` | `ComponentTheme` | Theme of `KlyInfiniteScroll`: the default classes of its slots, its variants and its defaults. Configure it in `AddKlyrooUi`; it becomes read-only the first time a component renders with it. |
@@ -5051,6 +5062,17 @@ Per-instance class overrides of the slots of `KlyImageGallery`, passed to its `U
 | `Skeleton` (init) | `string?` | Classes merged into the `skeleton` slot of `KlyImageGallery`, after the theme and the app configuration. |
 | `Tile` (init) | `string?` | Classes merged into the `tile` slot of `KlyImageGallery`, after the theme and the app configuration. |
 
+#### `ImageUi`
+
+`Klyroo.UI` · record
+
+Per-instance class overrides of the slots of the figure of `KlyImage`, passed to its `Ui` parameter. Each property holds the classes merged into one slot.
+
+| Property | Type | Description |
+| :--- | :--- | :--- |
+| `Caption` (init) | `string?` | Classes merged into the `caption` slot of `KlyImage`, after the theme and the app configuration. |
+| `Figure` (init) | `string?` | Classes merged into the `figure` slot of `KlyImage`, after the theme and the app configuration. |
+
 #### `InfiniteScrollUi`
 
 `Klyroo.UI` · record
@@ -5602,7 +5624,8 @@ One field of a `KlyDiff`.
 
 | Method | Returns | Description |
 | :--- | :--- | :--- |
-| `static Compare<T>(string label, T before, T after, Func<T, string?>? format = null, IEqualityComparer<T>? comparer = null)` | `KlyDiffItem` | Builds a field from two typed values: it is changed when they differ, and each value is shown with `format` (`ToString()` of the value when not set; a `null` value shows nothing). |
+| `static Compare<T>(string label, T before, T after, string? format = null, IEqualityComparer<T>? comparer = null)` | `KlyDiffItem` | Builds a field from two typed values: it is changed when they differ, and each value is formatted when the block renders, with `format` (a .NET format string such as `"C2"` or `"yyyy-MM-dd"`, for a type that is `IFormattable`) and the `KlyDiff.Culture` of the block. A value that is not formattable, or no format, uses `ToString()`; a `null` value shows nothing. |
+| `static Compare<T>(string label, T before, T after, Func<T, CultureInfo, string?> format, IEqualityComparer<T>? comparer = null)` | `KlyDiffItem` | Builds a field from two typed values shown with your own formatter (it receives the culture of the block). It is changed when the values differ. |
 
 #### `KlyFact`
 
@@ -6311,7 +6334,7 @@ A panel of a `KlySplitter`.
 | `MinSize` (init) | `double` | Smallest size in percent. |
 | `Size` (init) | `double?` | Initial size in percent. Panels without one share what the others leave. |
 
-#### `KlyStatItem`
+#### `KlyStatItem<TValue>`
 
 `Klyroo.UI` · record
 
@@ -6319,14 +6342,14 @@ One metric of a `KlyStatGroup`.
 
 | Constructor | Description |
 | :--- | :--- |
-| `KlyStatItem(string Label, string Value)` | One metric of a `KlyStatGroup`. |
+| `KlyStatItem<TValue>(string Label, TValue Value)` | One metric of a `KlyStatGroup`. |
 
 | Property | Type | Description |
 | :--- | :--- | :--- |
 | `Caption` (init) | `string?` | A line of text below the value. |
 | `Color` (init) | `KlyColor?` | A color for the value, such as `KlyColor.Error` for a metric that went wrong. |
 | `Label` (init) | `string` | The metric label. |
-| `Value` (init) | `string` | The metric value, displayed as given. |
+| `Value` (init) | `TValue` | The metric value, formatted with `KlyStatGroup.Format` and `KlyStatGroup.Culture`. A dash for a nullable type with no value, or a value that is not finite. |
 
 #### `KlyStepperItem`
 
@@ -7937,6 +7960,18 @@ The `type` attribute of a `KlyInput`: the kinds of single-line text control the 
 | `DateTimeLocal` | A date and a time without a time zone (`datetime-local`). |
 | `Month` | A month of a year (`yyyy-MM`). |
 | `Week` | A week of a year (`yyyy-Www`). |
+
+#### `KlyAlertLive`
+
+`Klyroo.UI` · enum
+
+Whether a `KlyAlert` is a live region, and how urgently it is announced.
+
+| Value | Description |
+| :--- | :--- |
+| `None` | No live region: the alert is read in its place, like any content. |
+| `Polite` | A polite announcement (`role="status"`) that waits for the user to be idle. |
+| `Assertive` | An assertive announcement (`role="alert"`) that interrupts. |
 
 #### `KlyAuthFieldType`
 

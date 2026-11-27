@@ -1,8 +1,10 @@
 @namespace Klyroo.UI
+@typeparam TValue
+@using System.Globalization
 @using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
-@* A highlighted value with a title, unit, delta badge, sparkline and caption. *@
+@* A highlighted number with a title, unit, delta badge, sparkline and caption. The number and its change are typed and formatted here, with a format and a culture. *@
 <div class="@_slots["root"]" data-slot="stat" @attributes="AdditionalAttributes">
     @if (Loading)
     {
@@ -16,15 +18,15 @@
         }
         <div class="@_slots["row"]">
             <div class="@_slots["valueGroup"]">
-                <span class="@_slots["value"]" data-slot="stat-value">@(Value ?? "—")</span>
+                <span class="@_slots["value"]" data-slot="stat-value">@(NumberText(Value, Format) ?? "—")</span>
                 @if (!string.IsNullOrEmpty(Unit))
                 {
                     <span class="@_slots["unit"]" data-slot="stat-unit">@Unit</span>
                 }
             </div>
-            @if (!string.IsNullOrEmpty(Delta))
+            @if (DeltaText is { } delta)
             {
-                <KlyBadge Label="@Delta" Color="DeltaColor" Variant="KlyVariant.Subtle" Size="KlySize.Sm" Class="@_slots["delta"]" data-slot="stat-delta" />
+                <KlyBadge Label="@delta" Color="DeltaColor" Variant="KlyVariant.Subtle" Size="KlySize.Sm" Class="@_slots["delta"]" data-slot="stat-delta" />
             }
         </div>
         @if (Trend is { Count: >= 2 })
@@ -43,14 +45,25 @@
 
     /// <summary>The label of the value.</summary>
     [Parameter] public string? Title { get; set; }
-    /// <summary>The value, displayed as given (format it with the culture of your choice). A dash when not set.</summary>
-    [Parameter] public string? Value { get; set; }
-    /// <summary>The unit shown beside the value.</summary>
+    /// <summary>The value, formatted with <see cref="Format"/> and <see cref="Culture"/>. A dash when it is a nullable type with no value, or not finite.</summary>
+    [Parameter] public TValue Value { get; set; } = default!;
+    /// <summary>The .NET numeric format string of <see cref="Value"/> (<c>"#,0.##"</c> by default; <c>"C0"</c> shows the currency of <see cref="Culture"/>, <c>"P1"</c> a percentage).</summary>
+    [Parameter] public string Format { get; set; } = "#,0.##";
+    /// <summary>The culture that formats the numbers. Defaults to the format culture of the locale in effect.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
+    /// <summary>The unit shown beside the value, as text.</summary>
     [Parameter] public string? Unit { get; set; }
-    /// <summary>The change shown as a badge beside the value, for example <c>"+12.4%"</c>. It is displayed as given.</summary>
-    [Parameter] public string? Delta { get; set; }
-    /// <summary>The direction of <see cref="Delta"/>: <see cref="KlyDeltaDirection.Up"/> (success color, the default), <see cref="KlyDeltaDirection.Down"/> (error) or <see cref="KlyDeltaDirection.Flat"/> (neutral).</summary>
-    [Parameter] public KlyDeltaDirection DeltaDirection { get; set; } = KlyDeltaDirection.Up;
+    /// <summary>The change shown as a badge beside the value. Its direction comes from its sign unless <see cref="DeltaDirection"/> is set. With a nullable type, no value means no badge; with a plain number type the default, zero, shows a flat badge.</summary>
+    [Parameter] public TValue Delta { get; set; } = default!;
+    /// <summary>The format string of <see cref="Delta"/> (<c>"+#,0.##;-#,0.##;0"</c> by default, which always shows the sign).</summary>
+    [Parameter] public string DeltaFormat { get; set; } = "+#,0.##;-#,0.##;0";
+    /// <summary>Text written after <see cref="Delta"/>, such as <c>"%"</c>.</summary>
+    [Parameter] public string? DeltaUnit { get; set; }
+    /// <summary>
+    /// The direction of <see cref="Delta"/>, which only chooses the color of its badge: <see cref="KlyDeltaDirection.Up"/> (success), <see cref="KlyDeltaDirection.Down"/> (error) or <see cref="KlyDeltaDirection.Flat"/> (neutral).
+    /// When <see langword="null"/>, it comes from the sign of <see cref="Delta"/>. Set it for a change where a drop is good news (a cost, an error rate).
+    /// </summary>
+    [Parameter] public KlyDeltaDirection? DeltaDirection { get; set; }
     /// <summary>The series of the sparkline, drawn from two points or more.</summary>
     [Parameter] public IReadOnlyList<double>? Trend { get; set; }
     /// <summary>A line of smaller text under the value.</summary>
@@ -64,7 +77,20 @@
     /// </summary>
     [Parameter] public StatUi? Ui { get; set; }
 
-    private KlyColor DeltaColor => DeltaDirection switch
+    private static NumberCodec<TValue> Codec => NumberCodec<TValue>.Instance;
+
+    private string? NumberText(TValue value, string format) => Codec.Display(value, format, Culture ?? FormatCulture);
+
+    private string? DeltaText => NumberText(Delta, DeltaFormat) is { } text ? text + DeltaUnit : null;
+
+    private KlyDeltaDirection EffectiveDirection => DeltaDirection ?? Codec.Sign(Delta) switch
+    {
+        > 0 => KlyDeltaDirection.Up,
+        < 0 => KlyDeltaDirection.Down,
+        _ => KlyDeltaDirection.Flat,
+    };
+
+    private KlyColor DeltaColor => EffectiveDirection switch
     {
         KlyDeltaDirection.Down => KlyColor.Error,
         KlyDeltaDirection.Flat => KlyColor.Neutral,

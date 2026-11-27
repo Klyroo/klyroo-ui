@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Components;
 
 namespace Klyroo.UI;
 
-/// <summary>The surface treatment of a read-only block such as <see cref="KlyFacts"/> or <see cref="KlyStat"/>: border, background and padding.</summary>
+/// <summary>The surface treatment of a read-only block such as <see cref="KlyFacts"/> or <see cref="KlyStat{TValue}"/>: border, background and padding.</summary>
 public enum KlySurface
 {
     /// <summary>No border, background or padding.</summary>
@@ -15,7 +15,7 @@ public enum KlySurface
     Elevated,
 }
 
-/// <summary>The direction of the change shown beside a <see cref="KlyStat"/> value. It only chooses the color of the badge.</summary>
+/// <summary>The direction of the change shown beside a <see cref="KlyStat{TValue}"/> value. It only chooses the color of the badge.</summary>
 public enum KlyDeltaDirection
 {
     /// <summary>Success color.</summary>

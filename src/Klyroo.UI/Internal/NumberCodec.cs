@@ -29,6 +29,12 @@ internal abstract class NumberCodec<T>
     /// <summary>The value as a double, for the track of a slider. No value is null.</summary>
     public abstract double? ToDouble(T? value);
 
+    /// <summary>The text of a value for display, with a .NET format string and a culture. No value, NaN and the infinities are null.</summary>
+    public abstract string? Display(T? value, string? format, CultureInfo culture);
+
+    /// <summary>The sign of a value: -1, 0 or 1. No value, NaN and the infinities are null.</summary>
+    public abstract int? Sign(T? value);
+
     /// <summary>Whether the type holds whole numbers only, so the field asks the keyboard for digits without a decimal separator.</summary>
     public abstract bool IsInteger { get; }
 
@@ -81,9 +87,15 @@ internal static class NumberCodecs
 
     internal sealed class Plain<TNumber> : NumberCodec<TNumber> where TNumber : struct, INumber<TNumber>
     {
+        public static readonly Plain<TNumber> Shared = new();
+
         public override string? Format(TNumber value) => Write(value);
 
         public override TNumber Parse(string? text) => Read<TNumber>(text, out _);
+
+        public override string? Display(TNumber value, string? format, CultureInfo culture) => TNumber.IsFinite(value) ? value.ToString(format, culture) : null;
+
+        public override int? Sign(TNumber value) => TNumber.IsFinite(value) ? TNumber.Sign(value) : null;
 
         public override double? ToDouble(TNumber value) => double.CreateSaturating(value);
 
@@ -93,6 +105,10 @@ internal static class NumberCodecs
     internal sealed class Lifted<TNumber> : NumberCodec<TNumber?> where TNumber : struct, INumber<TNumber>
     {
         public override string? Format(TNumber? value) => value is { } number ? Write(number) : null;
+
+        public override string? Display(TNumber? value, string? format, CultureInfo culture) => value is { } number ? Plain<TNumber>.Shared.Display(number, format, culture) : null;
+
+        public override int? Sign(TNumber? value) => value is { } number ? Plain<TNumber>.Shared.Sign(number) : null;
 
         public override TNumber? Parse(string? text)
         {

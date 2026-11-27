@@ -100,21 +100,21 @@ public class BlocksTests : KlyrooTestContext
     public void Every_block_shows_a_skeleton_instead_of_its_content_while_loading()
     {
         Assert.NotNull(Render<KlyHeading>(p => p.Add(x => x.Title, "A").Add(x => x.Loading, true)).Find("[data-slot=skeleton][aria-busy=true]"));
-        Assert.NotNull(Render<KlyStat>(p => p.Add(x => x.Value, "1").Add(x => x.Loading, true)).Find("[data-slot=skeleton]"));
+        Assert.NotNull(Render<KlyStat<int>>(p => p.Add(x => x.Value, 1).Add(x => x.Loading, true)).Find("[data-slot=skeleton]"));
         Assert.NotNull(Render<KlyFacts>(p => p.Add(x => x.Loading, true)).Find("[data-slot=skeleton]"));
         Assert.NotNull(Render<KlyMeter>(p => p.Add(x => x.Loading, true)).Find("[data-slot=skeleton]"));
         Assert.NotNull(Render<KlyText>(p => p.Add(x => x.Value, "t").Add(x => x.Loading, true)).Find("[data-slot=skeleton]"));
-        Assert.Empty(Render<KlyStat>(p => p.Add(x => x.Value, "1").Add(x => x.Loading, true)).FindAll("[data-slot=stat-value]"));
+        Assert.Empty(Render<KlyStat<int>>(p => p.Add(x => x.Value, 1).Add(x => x.Loading, true)).FindAll("[data-slot=stat-value]"));
     }
 
     [Fact]
     public void Surface_picks_the_look_of_the_block_and_each_block_has_its_own_default()
     {
-        Assert.Contains("bg-(--klyroo-bg-muted)", Render<KlyStat>(p => p.Add(x => x.Value, "42")).Find("[data-slot=stat]").ClassList);
+        Assert.Contains("bg-(--klyroo-bg-muted)", Render<KlyStat<int>>(p => p.Add(x => x.Value, 42)).Find("[data-slot=stat]").ClassList);
         Assert.Contains("border", Render<KlyFacts>().Find("[data-slot=facts]").ClassList);
         Assert.DoesNotContain("border", Render<KlyText>(p => p.Add(x => x.Value, "t")).Find("[data-slot=text]").ClassList);
         Assert.Contains("shadow-sm", Render<KlyText>(p => p.Add(x => x.Value, "t").Add(x => x.Surface, KlySurface.Elevated)).Find("[data-slot=text]").ClassList);
-        Assert.DoesNotContain("bg-(--klyroo-bg-muted)", Render<KlyStat>(p => p.Add(x => x.Value, "42").Add(x => x.Surface, KlySurface.Plain)).Find("[data-slot=stat]").ClassList);
+        Assert.DoesNotContain("bg-(--klyroo-bg-muted)", Render<KlyStat<int>>(p => p.Add(x => x.Value, 42).Add(x => x.Surface, KlySurface.Plain)).Find("[data-slot=stat]").ClassList);
     }
 
     // ---- KlyText
@@ -169,24 +169,78 @@ public class BlocksTests : KlyrooTestContext
     [InlineData(KlyDeltaDirection.Flat, "neutral")]
     public void The_delta_direction_picks_the_color_of_the_badge(KlyDeltaDirection direction, string color)
     {
-        var cut = Render<KlyStat>(p => p.Add(x => x.Value, "42").Add(x => x.Delta, "+1%").Add(x => x.DeltaDirection, direction));
+        var cut = Render<KlyStat<int>>(p => p.Add(x => x.Value, 42).Add(x => x.Delta, 1).Add(x => x.DeltaDirection, direction));
 
         Assert.Equal(color, cut.Find("[data-slot=stat-delta]").GetAttribute("data-color"));
+    }
+
+    [Theory]
+    [InlineData(12.4, "success", "+12.4")]
+    [InlineData(-3.0, "error", "-3")]
+    [InlineData(0.0, "neutral", "0")]
+    public void Without_a_direction_the_sign_of_the_delta_picks_the_color_and_the_format_shows_it(double delta, string color, string text)
+    {
+        var cut = Render<KlyStat<double>>(p => p.Add(x => x.Value, 10).Add(x => x.Delta, delta).Add(x => x.Culture, CultureInfo.GetCultureInfo("en-US")));
+
+        Assert.Equal(color, cut.Find("[data-slot=stat-delta]").GetAttribute("data-color"));
+        Assert.Equal(text, cut.Find("[data-slot=stat-delta]").TextContent.Trim());
+    }
+
+    [Fact]
+    public void An_explicit_direction_wins_over_the_sign_for_a_change_where_a_drop_is_good_news()
+    {
+        var cut = Render<KlyStat<decimal>>(p => p.Add(x => x.Value, 3.2m).Add(x => x.Delta, -0.5m).Add(x => x.DeltaDirection, KlyDeltaDirection.Up));
+
+        Assert.Equal("success", cut.Find("[data-slot=stat-delta]").GetAttribute("data-color"));
+        Assert.Contains("-0.5", cut.Find("[data-slot=stat-delta]").TextContent);
+    }
+
+    [Fact]
+    public void The_value_and_the_delta_follow_the_format_and_the_culture()
+    {
+        var fr = CultureInfo.GetCultureInfo("fr-FR");
+        var cut = Render<KlyStat<decimal>>(p => p.Add(x => x.Value, 12400.5m).Add(x => x.Culture, fr).Add(x => x.Format, "N1").Add(x => x.Delta, 0.125m).Add(x => x.DeltaFormat, "+0.0%;-0.0%").Add(x => x.DeltaUnit, " vs N-1"));
+
+        Assert.Equal("12 400,5", cut.Find("[data-slot=stat-value]").TextContent.Replace('\u202f', ' ').Replace('\u00a0', ' '));
+        Assert.Equal("+12,5% vs N-1", cut.Find("[data-slot=stat-delta]").TextContent.Replace('\u202f', ' ').Replace('\u00a0', ' ').Trim());
+    }
+
+    [Fact]
+    public void A_value_that_is_not_finite_shows_a_dash_and_a_missing_or_not_finite_delta_shows_no_badge()
+    {
+        var cut = Render<KlyStat<double>>(p => p.Add(x => x.Value, double.NaN).Add(x => x.Delta, double.PositiveInfinity));
+
+        Assert.Equal("—", cut.Find("[data-slot=stat-value]").TextContent);
+        Assert.Empty(cut.FindAll("[data-slot=stat-delta]"));
+        Assert.Empty(Render<KlyStat<int?>>(p => p.Add(x => x.Value, 1)).FindAll("[data-slot=stat-delta]"));
+    }
+
+    [Fact]
+    public void Type_arguments_are_inferred_from_the_values_in_markup()
+    {
+        var cut = Render<StatInference>();
+
+        Assert.Equal(["12,400", "7", "98.6"], cut.FindAll("[data-slot=stat-value]").Select(v => v.TextContent));
+        Assert.Equal(["12", "340"], cut.FindAll("[data-slot=stat-item-value]").Select(v => v.TextContent));
+        Assert.Equal("+14%", cut.Find("[data-slot=stat-delta]").TextContent.Trim());
     }
 
     [Fact]
     public void Stat_shows_value_unit_delta_sparkline_and_caption()
     {
-        var cut = Render<KlyStat>(p => p
+        var cut = Render<KlyStat<decimal>>(p => p
             .Add(x => x.Title, "MRR")
-            .Add(x => x.Value, "€12,400")
+            .Add(x => x.Value, 12400m)
+            .Add(x => x.Culture, CultureInfo.GetCultureInfo("en-US"))
+            .Add(x => x.Format, "N0")
             .Add(x => x.Unit, "EUR")
-            .Add(x => x.Delta, "+14%")
+            .Add(x => x.Delta, 14m)
+            .Add(x => x.DeltaUnit, "%")
             .Add(x => x.Trend, [10, 14, 13, 19])
             .Add(x => x.Caption, "vs last month"));
 
         Assert.Equal("MRR", cut.Find("[data-slot=stat-label]").TextContent);
-        Assert.Equal("€12,400", cut.Find("[data-slot=stat-value]").TextContent);
+        Assert.Equal("12,400", cut.Find("[data-slot=stat-value]").TextContent);
         Assert.Equal("EUR", cut.Find("[data-slot=stat-unit]").TextContent);
         Assert.Equal("+14%", cut.Find("[data-slot=stat-delta]").TextContent.Trim());
         Assert.Equal("true", cut.Find("[data-slot=stat-sparkline]").GetAttribute("aria-hidden"));
@@ -197,7 +251,7 @@ public class BlocksTests : KlyrooTestContext
     [Fact]
     public void Stat_without_a_value_shows_a_dash_and_a_single_point_draws_no_sparkline()
     {
-        var cut = Render<KlyStat>(p => p.Add(x => x.Trend, [1.0]));
+        var cut = Render<KlyStat<int?>>(p => p.Add(x => x.Trend, [1.0]));
 
         Assert.Equal("—", cut.Find("[data-slot=stat-value]").TextContent);
         Assert.Empty(cut.FindAll("[data-slot=stat-sparkline]"));
@@ -206,9 +260,9 @@ public class BlocksTests : KlyrooTestContext
     [Fact]
     public void Stat_group_shows_its_title_and_item_colors()
     {
-        var cut = Render<KlyStatGroup>(p => p
+        var cut = Render<KlyStatGroup<int>>(p => p
             .Add(x => x.Title, "This week")
-            .Add(x => x.Items, [new KlyStatItem("Errors", "12") { Color = KlyColor.Error, Caption = "up" }, new KlyStatItem("Users", "340")]));
+            .Add(x => x.Items, [new KlyStatItem<int>("Errors", 12) { Color = KlyColor.Error, Caption = "up" }, new KlyStatItem<int>("Users", 340)]));
 
         Assert.Equal("This week", cut.Find("[data-slot=stat-group-title]").TextContent);
         var values = cut.FindAll("[data-slot=stat-item-value]");
@@ -216,6 +270,18 @@ public class BlocksTests : KlyrooTestContext
         Assert.Null(values[1].GetAttribute("data-color"));
         Assert.Contains("data-[color]:text-(--kly-color-text)", values[0].ClassList);
         Assert.Equal("up", cut.Find("[data-slot=stat-item] span:last-child").TextContent);
+        Assert.Equal(["12", "340"], values.Select(v => v.TextContent));
+    }
+
+    [Fact]
+    public void Stat_group_values_follow_the_format_and_the_culture_and_a_missing_one_is_a_dash()
+    {
+        var cut = Render<KlyStatGroup<decimal?>>(p => p
+            .Add(x => x.Culture, CultureInfo.GetCultureInfo("de-DE"))
+            .Add(x => x.Format, "N2")
+            .Add(x => x.Items, [new KlyStatItem<decimal?>("Revenue", 1234.5m), new KlyStatItem<decimal?>("Refunds", null)]));
+
+        Assert.Equal(["1.234,50", "—"], cut.FindAll("[data-slot=stat-item-value]").Select(v => v.TextContent));
     }
 
     // ---- KlyFacts
@@ -437,7 +503,7 @@ public class BlocksTests : KlyrooTestContext
     public void Diff_Compare_builds_an_item_from_two_typed_values()
     {
         var same = KlyDiffItem.Compare("Seats", 12, 12);
-        var changed = KlyDiffItem.Compare("Due", new DateOnly(2026, 1, 1), new DateOnly(2026, 2, 1), d => d.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+        var changed = KlyDiffItem.Compare("Due", new DateOnly(2026, 1, 1), new DateOnly(2026, 2, 1), "yyyy-MM-dd");
         var added = KlyDiffItem.Compare<string>("Note", null, "New");
 
         Assert.False(same.Changed);
@@ -446,6 +512,23 @@ public class BlocksTests : KlyrooTestContext
         Assert.Equal("2026-02-01", changed.After);
         Assert.Null(added.Before);
         Assert.Equal("New", added.After);
+    }
+
+    [Fact]
+    public void Diff_formats_typed_values_when_it_renders_with_the_format_and_the_culture_of_the_block()
+    {
+        KlyDiffItem[] items =
+        [
+            KlyDiffItem.Compare("Price", 1200.5m, 1500m, "N2"),
+            KlyDiffItem.Compare("Due", new DateOnly(2026, 3, 5), new DateOnly(2026, 4, 1), "d"),
+            KlyDiffItem.Compare("Owner", "Ada", "Grace", (name, culture) => name.ToUpper(culture)),
+        ];
+
+        var english = Render<KlyDiff>(p => p.Add(x => x.Items, items).Add(x => x.Culture, CultureInfo.GetCultureInfo("en-US")));
+        var german = Render<KlyDiff>(p => p.Add(x => x.Items, items).Add(x => x.Culture, CultureInfo.GetCultureInfo("de-DE")));
+
+        Assert.Equal(["1,200.50", "3/5/2026", "ADA"], english.FindAll("[data-slot=diff-before]").Select(v => v.TextContent));
+        Assert.Equal(["1.500,00", "01.04.2026", "GRACE"], german.FindAll("[data-slot=diff-after]").Select(v => v.TextContent));
     }
 
     // ---- KlyRecordList
@@ -864,7 +947,6 @@ public class BlocksTests : KlyrooTestContext
     {
         var cut = Render<KlyAlert>(p => p.Add(a => a.Color, KlyColor.Warning).Add(a => a.Title, "Quota warning").Add(a => a.Details, "85% of monthly volume used"));
 
-        Assert.Equal("status", cut.Find("[data-color]").GetAttribute("role"));
         Assert.Empty(cut.FindAll("[data-slot=details]"));
         Assert.Equal("Show details", cut.Find("[data-slot=details-toggle]").TextContent.Trim());
         Assert.Equal("false", cut.Find("[data-slot=details-toggle]").GetAttribute("aria-expanded"));
@@ -888,17 +970,46 @@ public class BlocksTests : KlyrooTestContext
     }
 
     [Theory]
-    [InlineData("success", null)]
-    [InlineData("error", "status")]
-    [InlineData("warning", "status")]
-    [InlineData("info", null)]
-    public void Alert_has_a_status_role_for_warnings_and_errors_and_a_status_icon_on_request(string color, string? role)
+    [InlineData("success")]
+    [InlineData("error")]
+    [InlineData("warning")]
+    [InlineData("info")]
+    public void Alert_has_a_status_icon_on_request_and_no_role_by_default(string color)
     {
         var cut = Render<KlyAlert>(p => p.Add(a => a.Color, new KlyColor(color)).Add(a => a.StatusIcon, true).Add(a => a.Title, "T"));
 
-        Assert.Equal(role, cut.Find("[data-color]").GetAttribute("role"));
+        Assert.Null(cut.Find("[data-color]").GetAttribute("role"));
         Assert.NotNull(cut.Find("svg"));
         Assert.Empty(Render<KlyAlert>(p => p.Add(a => a.Title, "T")).FindAll("svg"));
+    }
+
+    [Theory]
+    [InlineData(KlyAlertLive.None, null)]
+    [InlineData(KlyAlertLive.Polite, "status")]
+    [InlineData(KlyAlertLive.Assertive, "alert")]
+    public void Alert_is_a_live_region_only_when_asked(KlyAlertLive live, string? role)
+    {
+        var cut = Render<KlyAlert>(p => p.Add(a => a.Color, KlyColor.Error).Add(a => a.Title, "T").Add(a => a.Live, live));
+
+        Assert.Equal(role, cut.Find("[data-color]").GetAttribute("role"));
+    }
+
+    [Fact]
+    public void Image_without_a_caption_is_a_bare_img_and_with_one_a_figure()
+    {
+        var bare = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "A").Add(i => i.Class, "rounded"));
+        Assert.Empty(bare.FindAll("figure"));
+        Assert.Contains("rounded", bare.Find("img").ClassList);
+
+        var cut = Render<KlyImage>(p => p.Add(i => i.Src, "/a.png").Add(i => i.Alt, "A box").Add(i => i.Caption, "A box on a shelf").Add(i => i.Class, "rounded").Add(i => i.Ui, new ImageUi { Caption = "italic" }));
+
+        var figure = cut.Find("figure");
+        Assert.Equal("A box", figure.QuerySelector("img")!.GetAttribute("alt"));
+        Assert.Contains("rounded", figure.QuerySelector("img")!.ClassList);
+        Assert.DoesNotContain("rounded", figure.ClassList);
+        Assert.Equal("A box on a shelf", figure.QuerySelector("figcaption")!.TextContent);
+        Assert.Contains("italic", figure.QuerySelector("figcaption")!.ClassList);
+        Assert.Equal(["IMG", "FIGCAPTION"], figure.Children.Select(c => c.TagName));
     }
 
     [Fact]

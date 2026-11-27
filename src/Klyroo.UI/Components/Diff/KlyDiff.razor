@@ -1,4 +1,5 @@
 @namespace Klyroo.UI
+@using System.Globalization
 @using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
@@ -28,19 +29,19 @@
                     <div class="@_slots["values"]">
                         @if (item.Changed)
                         {
-                            @if (!string.IsNullOrEmpty(item.Before))
+                            @if (!string.IsNullOrEmpty(BeforeText(item)))
                             {
-                                <del class="@_slots["before"]" data-slot="diff-before">@item.Before</del>
+                                <del class="@_slots["before"]" data-slot="diff-before">@BeforeText(item)</del>
                             }
-                            @if (!string.IsNullOrEmpty(item.Before) && !string.IsNullOrEmpty(item.After))
+                            @if (!string.IsNullOrEmpty(BeforeText(item)) && !string.IsNullOrEmpty(AfterText(item)))
                             {
                                 <span class="@_slots["arrow"]" aria-hidden="true">→</span>
                             }
-                            <ins class="@_slots["after"]" data-slot="diff-after">@(item.After ?? "—")</ins>
+                            <ins class="@_slots["after"]" data-slot="diff-after">@(AfterText(item) ?? "—")</ins>
                         }
                         else
                         {
-                            <span class="@_slots["unchanged"]" data-slot="diff-unchanged">@(item.After ?? item.Before ?? "—")</span>
+                            <span class="@_slots["unchanged"]" data-slot="diff-unchanged">@(AfterText(item) ?? BeforeText(item) ?? "—")</span>
                         }
                     </div>
                 </div>
@@ -52,12 +53,21 @@
 @code {
     private SlotSet _slots = default!;
 
+    private CultureInfo ItemCulture => Culture ?? FormatCulture;
+
+    // An item built from typed values formats them here, with the culture of the block; a plain item shows its text.
+    private string? BeforeText(KlyDiffItem item) => item.BeforeFor is { } format ? format(ItemCulture) : item.Before;
+
+    private string? AfterText(KlyDiffItem item) => item.AfterFor is { } format ? format(ItemCulture) : item.After;
+
     private IEnumerable<KlyDiffItem> Visible => (Items ?? []).Where(d => ShowUnchanged || d.Changed);
 
     /// <summary>The title of the block.</summary>
     [Parameter] public string? Title { get; set; }
     /// <summary>The fields, as <see cref="KlyDiffItem"/>.</summary>
     [Parameter] public IReadOnlyList<KlyDiffItem>? Items { get; set; }
+    /// <summary>The culture that formats the values of the items built with <see cref="KlyDiffItem.Compare{T}(string, T, T, string, IEqualityComparer{T})"/>. Defaults to the format culture of the locale in effect.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
     /// <summary>Shows the fields whose <see cref="KlyDiffItem.Changed"/> is <see langword="false"/> (<see langword="false"/> by default).</summary>
     [Parameter] public bool ShowUnchanged { get; set; }
     /// <summary>Shows a skeleton placeholder instead of the content.</summary>

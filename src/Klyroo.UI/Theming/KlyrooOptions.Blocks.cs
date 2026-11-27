@@ -13,11 +13,11 @@ public sealed partial class KlyrooOptions
     /// </summary>
     public ComponentTheme Text { get; } = Themes.Text();
     /// <summary>
-    /// Theme of <see cref="KlyStat"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyStat{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme Stat { get; } = Themes.Stat();
     /// <summary>
-    /// Theme of <see cref="KlyStatGroup"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
+    /// Theme of <see cref="KlyStatGroup{TValue}"/>: the default classes of its slots, its variants and its defaults. Configure it in <c>AddKlyrooUi</c>; it becomes read-only the first time a component renders with it.
     /// </summary>
     public ComponentTheme StatGroup { get; } = Themes.StatGroup();
     /// <summary>

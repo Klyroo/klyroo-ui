@@ -1,0 +1,11 @@
+@* Type arguments are inferred: no TValue anywhere. A number is an expression (@(...) or a field), a bare attribute value is text. *@
+<KlyStat Title="MRR" Value="@(12400m)" Delta="@(14m)" DeltaUnit="%" Format="N0" Culture="@_en" />
+<KlyStat Title="Open" Value="@_open" />
+<KlyStat Title="Temp" Value="@(98.6)" Format="0.0" Culture="@_en" />
+<KlyStatGroup Items="@_items" />
+
+@code {
+    private readonly System.Globalization.CultureInfo _en = System.Globalization.CultureInfo.GetCultureInfo("en-US");
+    private readonly int _open = 7;
+    private readonly KlyStatItem<int>[] _items = [new("Errors", 12), new("Users", 340)];
+}

@@ -229,6 +229,11 @@ internal static partial class Themes
             .Slot("legendValue", "font-semibold tabular-nums text-(--klyroo-text-highlighted)")
             .Slot("skeleton", "flex flex-col gap-2.5"), "plain");
 
+    public static ComponentTheme ImageFigure() =>
+        new ComponentTheme("imageFigure", "figure", "caption")
+            .Slot("figure", "m-0 flex flex-col gap-2")
+            .Slot("caption", "text-xs text-(--klyroo-text-muted)");
+
     public static ComponentTheme ImageGallery() => Surfaces(
         new ComponentTheme("imageGallery", "root", "grid", "tile", "image", "overflow", "caption", "skeleton")
             .Slot("root", "flex w-full min-w-0 flex-col gap-2 text-sm text-(--klyroo-text)")

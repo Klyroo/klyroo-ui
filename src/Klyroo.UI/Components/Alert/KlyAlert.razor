@@ -4,7 +4,7 @@
 
 @if (!_dismissed)
 {
-    <div data-color="@Color.Value" role="@(Color == KlyColor.Warning || Color == KlyColor.Error ? "status" : null)" class="@_slots["root"]" @attributes="AdditionalAttributes">
+    <div data-color="@Color.Value" role="@(Live switch { KlyAlertLive.Polite => "status", KlyAlertLive.Assertive => "alert", _ => null })" class="@_slots["root"]" @attributes="AdditionalAttributes">
         @if (Icon is not null)
         {
             <span class="@_slots["icon"]" aria-hidden="true">@Icon</span>
@@ -82,6 +82,11 @@
     [Parameter] public string? Details { get; set; }
     /// <summary>Whether <see cref="Details"/> starts open. It is read once, when the component first receives its parameters.</summary>
     [Parameter] public bool DefaultOpen { get; set; }
+    /// <summary>
+    /// Makes the alert a live region that assistive technology announces when it appears: <see cref="KlyAlertLive.Polite"/> (<c>role="status"</c>) or
+    /// <see cref="KlyAlertLive.Assertive"/> (<c>role="alert"</c>). <see cref="KlyAlertLive.None"/> (the default) adds no role. Use it for an alert that is inserted after the page loaded, not for one that is there from the start.
+    /// </summary>
+    [Parameter] public KlyAlertLive Live { get; set; }
     /// <summary>
     /// Shows the icon of the color (info, success, warning or error, from <see cref="KlyrooOptions.Icons"/>) when no <see cref="Icon"/> is given.
     /// </summary>

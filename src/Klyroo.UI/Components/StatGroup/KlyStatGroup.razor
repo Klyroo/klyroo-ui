@@ -1,4 +1,6 @@
 @namespace Klyroo.UI
+@typeparam TValue
+@using System.Globalization
 @using Klyroo.UI.Internal
 @inherits KlyComponentBase
 
@@ -21,7 +23,7 @@
                 {
                     <div class="@_slots["item"]" data-slot="stat-item">
                         <span class="@_slots["label"]">@item.Label</span>
-                        <span class="@_slots["value"]" data-color="@item.Color?.Value" data-slot="stat-item-value">@item.Value</span>
+                        <span class="@_slots["value"]" data-color="@item.Color?.Value" data-slot="stat-item-value">@Text(item.Value)</span>
                         @if (!string.IsNullOrEmpty(item.Caption))
                         {
                             <span class="@_slots["caption"]">@item.Caption</span>
@@ -38,8 +40,12 @@
 
     /// <summary>The line above the metrics.</summary>
     [Parameter] public string? Title { get; set; }
-    /// <summary>The metrics, as <see cref="KlyStatItem"/>.</summary>
-    [Parameter] public IReadOnlyList<KlyStatItem>? Items { get; set; }
+    /// <summary>The metrics, as <see cref="KlyStatItem{TValue}"/>.</summary>
+    [Parameter] public IReadOnlyList<KlyStatItem<TValue>>? Items { get; set; }
+    /// <summary>The .NET numeric format string of the values (<c>"#,0.##"</c> by default).</summary>
+    [Parameter] public string Format { get; set; } = "#,0.##";
+    /// <summary>The culture that formats the values. Defaults to the format culture of the locale in effect.</summary>
+    [Parameter] public CultureInfo? Culture { get; set; }
     /// <summary>Shows a skeleton placeholder instead of the content.</summary>
     [Parameter] public bool Loading { get; set; }
     /// <summary>The surface treatment. Bordered when not set.</summary>
@@ -48,6 +54,8 @@
     /// Per-instance class overrides of the slots of the stat group, see <see cref="StatGroupUi"/>. They are merged after the theme and the <c>Class</c> parameter wins on the root slot.
     /// </summary>
     [Parameter] public StatGroupUi? Ui { get; set; }
+
+    private string Text(TValue value) => NumberCodec<TValue>.Instance.Display(value, Format, Culture ?? FormatCulture) ?? "—";
 
     protected override void OnParametersSet() =>
         _slots = ResolveSlots(Options.StatGroup, new Dictionary<string, string?>
