@@ -2957,7 +2957,7 @@ Avatar with a name and a description, optionally linked.
 | Parameter | Type | Description |
 | :--- | :--- | :--- |
 | `AvatarColor` | `KlyColor?` | A color that tints the initials avatar. |
-| `AvatarIcon` | `RenderFragment?` | Icon of the avatar when there is no picture, as markup such as a `KlyIcon`. Without a picture and a `KlyUser.Name`, a person icon is shown. |
+| `AvatarIcon` | `RenderFragment?` | Icon of the avatar when there is no picture, as markup such as a `KlyIcon`. Without a picture and a `KlyUser.Name`, a person icon is shown. Without a picture and a `KlyUser.Name`, a person icon is shown. |
 | `AvatarSrc` | `string?` | Address of the avatar picture. |
 | `Badge` | `KlyBadgeItem?` | A badge shown at the end of the row. |
 | `Contacts` | `IReadOnlyList<KlyContactItem>?` | Contact lines under the user, each with an optional icon, link and copy button. They sit outside the link of `KlyUser.Href`. The copy buttons are disabled until the page is interactive. |
