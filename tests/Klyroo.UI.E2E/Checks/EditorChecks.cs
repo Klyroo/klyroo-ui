@@ -452,6 +452,13 @@ internal static class EditorChecks
     private static Task WaitServer(IPage page) =>
         Assertions.Expect(page.GetByTestId("renderer")).ToHaveTextAsync("Server", new() { Timeout = 60_000 });
 
+    /// <summary>
+    /// Waits until the app has read the storage once: the button of the sidebar is disabled until then. A seed written before that is read (and, past the bounds, repaired one
+    /// removal at a time) by the circuit that is alive, and a reload in the middle of that repair leaves the next read with fewer documents to remove than the seed went over by.
+    /// </summary>
+    private static Task WaitStorageRead(IPage page) =>
+        Assertions.Expect(page.GetByTestId("new-document")).ToBeEnabledAsync(new() { Timeout = 60_000 });
+
     /// <summary>Puts documents of about <paramref name="characters"/> characters straight into the storage, the way an older visit would have left them. The newest is number 0.</summary>
     private static Task Seed(IPage page, string? pathBase, int count, int characters, string? junkKey = null) =>
         page.EvaluateAsync(@"([prefix, count, characters, junkKey]) => {
@@ -479,6 +486,7 @@ internal static class EditorChecks
         page.WebSocket += (_, socket) => socket.FrameSent += (_, frame) => { lock (frames) frames.Add(frame.Binary?.Length ?? frame.Text?.Length ?? 0); };
         await page.GotoAsync("");
         await WaitServer(page);
+        await WaitStorageRead(page);
 
         // Many documents: ninety of 9,000 characters each (about 800 KB together) are listed, searched in the browser and opened one at a time.
         await Seed(page, pathBase, 90, 9000);
@@ -545,6 +553,7 @@ internal static class EditorChecks
         var page = await context.NewPageAsync();
         await page.GotoAsync("");
         await WaitServer(page);
+        await WaitStorageRead(page);
 
         // The storage holds 103 documents and something that is not one: reading it removes the 3 least recently used and the junk, and says so.
         await Seed(page, pathBase, 103, 600, junkKey: "not-a-document");
