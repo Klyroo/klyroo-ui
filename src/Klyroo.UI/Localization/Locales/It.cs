@@ -165,6 +165,7 @@ public static partial class KlyLocales
             SearchCommands = "Cerca comandi",
             NoCommandResults = "Nessun risultato trovato",
             CommandResults = "{0} risultati disponibili",
+            CommandPaletteClose = "Esc per chiudere",
             ContextMenu = "Menu contestuale",
             ToggleColorMode = "Attiva o disattiva la modalità scura",
             ColorMode = "Modalità colore",

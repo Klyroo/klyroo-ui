@@ -165,6 +165,7 @@ public static partial class KlyLocales
             SearchCommands = "搜索命令",
             NoCommandResults = "未找到结果",
             CommandResults = "有 {0} 个结果",
+            CommandPaletteClose = "Esc 关闭",
             ContextMenu = "上下文菜单",
             ToggleColorMode = "切换深色模式",
             ColorMode = "颜色模式",

@@ -9,6 +9,8 @@ public sealed partial record KlyMessages
 
     /// <summary>Announced to screen readers after filtering; <c>{0}</c> is the number of results.</summary>
     public string CommandResults { get; init; } = "{0} results available";
+    /// <summary>Accessible name of the "Esc" button that closes a <see cref="KlyCommandPalette"/> opened with <c>CloseOnSelect</c> (a content search, a dashboard search). It starts with the visible text of the button, so a voice control user can say it (WCAG 2.5.3).</summary>
+    public string CommandPaletteClose { get; init; } = "Esc to close";
     /// <summary>Accessible name of the menu of <see cref="KlyContextMenu"/>.</summary>
     public string ContextMenu { get; init; } = "Context menu";
     /// <summary>Accessible name of <see cref="KlyColorModeButton"/> and <see cref="KlyColorModeSwitch"/>.</summary>

@@ -222,6 +222,23 @@ public class Overlay2Tests : KlyrooTestContext
     }
 
     [Fact]
+    public void CommandPalette_esc_button_is_named_with_its_visible_text_in_every_locale()
+    {
+        // Label in Name (WCAG 2.5.3): the visible text of the button is "Esc", so the accessible name has to contain it.
+        foreach (var locale in KlyLocales.All)
+        {
+            var name = locale.Messages.CommandPaletteClose;
+            Assert.Contains("Esc", name);
+            Assert.NotEqual("", name.Replace("Esc", "").Trim(' ', ',', ':'));
+        }
+        var cut = Render<KlyCommandPalette>(p => p.Add(c => c.Groups, Commands).Add(c => c.CloseOnSelect, true));
+
+        var close = cut.Find("button[data-kly-close]");
+        Assert.Equal("Esc", close.TextContent.Trim());
+        Assert.Contains("Esc", close.GetAttribute("aria-label"));
+    }
+
+    [Fact]
     public void ColorModeButton_is_an_icon_button_wired_by_attribute()
     {
         var cut = Render<KlyColorModeButton>();

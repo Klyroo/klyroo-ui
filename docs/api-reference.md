@@ -5237,6 +5237,7 @@ Every text the components render: accessible names, labels, placeholders, announ
 | `ColorModeDark` (init) | `string` | Label of the dark option of `KlyColorModeSelect`. |
 | `ColorModeLight` (init) | `string` | Label of the light option of `KlyColorModeSelect`. |
 | `ColorModeSystem` (init) | `string` | Label of the option of `KlyColorModeSelect` that follows the system setting. |
+| `CommandPaletteClose` (init) | `string` | Accessible name of the "Esc" button that closes a `KlyCommandPalette` opened with `CloseOnSelect` (a content search, a dashboard search). It starts with the visible text of the button, so a voice control user can say it (WCAG 2.5.3). |
 | `CommandResults` (init) | `string` | Announced to screen readers after filtering; `{0}` is the number of results. |
 | `Confirm` (init) | `string` | Label of the confirm button of the dialog opened by `IKlyOverlayService.ConfirmAsync`. |
 | `ContentNavigation` (init) | `string` | Accessible name of a `KlyContentNavigation` that has no `AriaLabel`. |
