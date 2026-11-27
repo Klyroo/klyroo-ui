@@ -64,6 +64,18 @@ public class TimelineScheduleTests : KlyrooTestContext
         Assert.Single(log.FindAll("[data-slot=timeline-item]"));
     }
 
+    [Theory]
+    [InlineData(3, "H3")]
+    [InlineData(2, "H2")]
+    [InlineData(null, "P")]
+    public void The_day_titles_take_the_heading_level_of_the_page_outline_or_none(int? level, string tag)
+    {
+        var cut = Schedule([new("Standup") { At = At(12, 9) }, new("Backlog")], p => p.Add(x => x.DayHeadingLevel, level));
+
+        Assert.Equal(tag, cut.Find("[data-slot=schedule-day-title]").TagName);
+        Assert.Equal(tag, cut.Find("[data-slot=schedule-unscheduled-title]").TagName);
+    }
+
     [Fact]
     public void The_markup_is_a_list_per_day_under_a_dated_heading()
     {

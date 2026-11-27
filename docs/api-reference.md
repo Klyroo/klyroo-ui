@@ -4,7 +4,7 @@
 
 ## Klyroo.UI
 
-Components (170) · Static classes and extensions (11) · Classes (23) · Records (201) · Structs (4) · Interfaces (8) · Enums (57) · Delegates (2)
+Components (171) · Static classes and extensions (11) · Classes (23) · Records (201) · Structs (4) · Interfaces (8) · Enums (57) · Delegates (2)
 
 ### Components
 
@@ -2866,6 +2866,7 @@ List of events along a line, with the current one highlighted.
 | `Active` | `int?` | Index of the last highlighted item in the default layout. Null highlights none. An item with a `KlyTimelineItem.State` uses it instead. |
 | `AriaLabel` | `string?` | Accessible name of the list. |
 | `Color` | `KlyColor` | Semantic color of the timeline: a built-in `KlyColor` or the name of a color you defined. When not set, `KlyDefaults.Color` applies, else the default of the component. |
+| `DayHeadingLevel` | `int?` | Heading level (1 to 6) of the day titles of the schedule layout, so they fit the outline of the page: a schedule under an `h2` section takes 3. Null renders the day titles as plain text instead of headings. Defaults to 4. |
 | `Items` | `IReadOnlyList<KlyTimelineItem>` | The events, as `KlyTimelineItem`. |
 | `Layout` | `KlyTimelineLayout` | The layout: `KlyTimelineLayout.Default` (along a line), `KlyTimelineLayout.Pipeline`, `KlyTimelineLayout.Log` or `KlyTimelineLayout.Schedule`. |
 | `Max` | `int?` | The number of events shown before a Show more button (all events when `null`). In the schedule layout the events are sorted first, so Show more reveals later events. |
@@ -2981,6 +2982,19 @@ Avatar with a name and a description, optionally linked.
 | `Ui` | `UserUi?` | Per-instance class overrides of the slots of the user, see `UserUi`. They are merged after the theme and the `Class` parameter wins on the root slot. |
 
 Also accepts the parameters of `KlyComponentBase`.
+
+#### `DayTitleElement`
+
+`Klyroo.UI.Internal` · component · inherits `ComponentBase`
+
+The title of a day in the schedule layout of `KlyTimeline`: a heading of the given level, or a paragraph without one.
+
+| Parameter | Type | Description |
+| :--- | :--- | :--- |
+| `ChildContent` | `RenderFragment?` | Content of the title. |
+| `Class` | `string?` | Classes of the element. |
+| `Level` | `int?` | Heading level, 1 to 6, or null for a paragraph. |
+| `Slot` | `string?` | The `data-slot` of the element. |
 
 #### `Defer`
 

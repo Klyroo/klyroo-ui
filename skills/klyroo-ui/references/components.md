@@ -560,7 +560,7 @@
 `/components/timeline`. A chronological list of events.
 
 - `<KlyTimeline>`
-  - Parameters: `Active`, `AriaLabel`, `Class`, `Color`, `Items` (required), `Layout`, `Max`, `Now`, `Orientation`, `ShowNumbers`, `Size`, `Step`, `Ui`
+  - Parameters: `Active`, `AriaLabel`, `Class`, `Color`, `DayHeadingLevel`, `Items` (required), `Layout`, `Max`, `Now`, `Orientation`, `ShowNumbers`, `Size`, `Step`, `Ui`
   - `Ui` (`TimelineUi`): `Root`, `Item`, `Track`, `Indicator`, `Icon`, `Separator`, `Text`, `Date`, `Title`, `Description`, `Actor`, `Number`, `PipelineList`, `PipelineItem`, `LogList`, `LogItem`, `LogTimestamp`, `LogMarker`, `LogDot`, `LogIcon`, `LogBody`, `LogTitle`, `LogDescription`, `LogActor`, `Schedule`, `ScheduleDay`, `ScheduleDayTitle`, `ScheduleUnscheduled`, `ScheduleList`, `ScheduleCurrent`, `ScheduleCurrentTone`, `ScheduleDone`, `ScheduleDoneTone`, `ScheduleUpcoming`, `ScheduleUpcomingTone`, `ScheduleTimes`, `ScheduleTime`, `ScheduleDuration`, `ScheduleBody`, `ScheduleHeader`, `ScheduleIcon`, `ScheduleTitle`, `ScheduleDescription`, `ScheduleActor`, `More`, `MoreIcon`, `ScheduleEvent`
 
 ### NavigationMenu

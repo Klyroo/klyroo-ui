@@ -20,13 +20,13 @@
             <div class="@_slots["scheduleDay"]" data-slot="schedule-day" data-date="@(day.Day?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture))">
                 @if (day.Day is { } date)
                 {
-                    <h4 class="@_slots["scheduleDayTitle"]" data-slot="schedule-day-title">
+                    <DayTitleElement Level="DayHeadingLevel" Class="@_slots["scheduleDayTitle"]" Slot="schedule-day-title">
                         <time datetime="@date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">@DayTitle(day, reference)</time>
-                    </h4>
+                    </DayTitleElement>
                 }
                 else if (hasDatedDays)
                 {
-                    <h4 class="@_slots["scheduleUnscheduled"]" data-slot="schedule-unscheduled-title">@Messages.Unscheduled</h4>
+                    <DayTitleElement Level="DayHeadingLevel" Class="@_slots["scheduleUnscheduled"]" Slot="schedule-unscheduled-title">@Messages.Unscheduled</DayTitleElement>
                 }
                 <ol class="@_slots["scheduleList"]">
                     @foreach (var e in day.Events)
@@ -271,6 +271,11 @@ else
     [Parameter] public KlyTimelineLayout Layout { get; set; }
     /// <summary>Numbers the markers of the default and pipeline layouts (1, 2, 3...) when an event has no icon.</summary>
     [Parameter] public bool ShowNumbers { get; set; }
+    /// <summary>
+    /// Heading level (1 to 6) of the day titles of the schedule layout, so they fit the outline of the page: a schedule under an
+    /// <c>h2</c> section takes 3. Null renders the day titles as plain text instead of headings. Defaults to 4.
+    /// </summary>
+    [Parameter] public int? DayHeadingLevel { get; set; } = 4;
     /// <summary>The number of events shown before a Show more button (all events when <see langword="null"/>). In the schedule layout the events are sorted first, so Show more reveals later events.</summary>
     [Parameter] public int? Max { get; set; }
     /// <summary>The number of events each click on Show more reveals (all the remaining ones when <see langword="null"/>).</summary>
