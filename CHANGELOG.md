@@ -58,6 +58,7 @@ All notable changes to this project are documented in this file. The format is b
 
 ### Fixed
 
+- The label of a `KlyCollapsible` and of a `KlyTabs` tab, and the text of a `KlyList` or `KlyRecordList` item, wrap or scroll instead of being cut with an ellipsis on a narrow screen.
 - `KlyChart` is drawn at the width its container gives it when that is under `Width` (new `Responsive`, `true` by default; the browser reports the width through the new `kly-resize` event and `KlyResizeEventArgs`), instead of shrinking a drawing made for 640 pixels: on a phone the axis labels were 5 pixels high. The labels keep their 11 pixels, the thinning of the index labels follows the real room, and the height follows the width down to 180 pixels (or `Height` when smaller). A page that is not interactive keeps the old behaviour. A donut and a funnel are not concerned.
 - The icon of a `KlyBadge` (leading or trailing) sits in a centered box of the size of the badge and its drawing fills it: an icon without its own size class overflowed the box, touched the border of the pill and sat low against the text.
 - The note beside the label of a `KlyDiff` row is spaced by 8 pixels and shares the baseline of the label.
