@@ -171,7 +171,7 @@ internal static partial class Themes
             .Slot("root", "w-full")
             .Slot("trigger", "group/trigger flex w-full items-center gap-2 rounded-sm text-start text-sm font-medium text-(--klyroo-text) " +
                              "disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--klyroo-primary-text)")
-            .Slot("label", "min-w-0 flex-1 truncate")
+            .Slot("label", "min-w-0 flex-1 text-pretty")
             .Slot("icon", "ms-auto size-4 shrink-0 text-(--klyroo-text-muted) transition-transform duration-200 group-aria-expanded/trigger:rotate-180")
             .Slot("content", "overflow-hidden");
 
