@@ -508,7 +508,10 @@ internal static class EditorChecks
 
         // A large document: typed (inserted at once, like a paste) in a new document, saved, and back after a reload.
         await NewDocument(page);
-        var text = string.Concat(Enumerable.Repeat("Zażółć gęślą \"jaźń\" 日本語 — ", 4000));
+        // Two hundred paragraphs, not one of 116,000 characters: the browser takes 5 to 8 seconds to lay one paragraph of that length out (the editor is ready 0.6 s after a reload with
+        // paragraphs), so that test measured the layout of the browser, and failed whenever a runner was three times slower than a fast machine. What the check is about, the size of
+        // what the circuit carries, is the same.
+        var text = string.Join("\n", Enumerable.Repeat(string.Concat(Enumerable.Repeat("Zażółć gęślą \"jaźń\" 日本語 — ", 20)), 200));
         Assert.InRange(text.Length, 100_000, 120_000);
         await Surface(page).ClickAsync();
         await page.Keyboard.InsertTextAsync(text);
