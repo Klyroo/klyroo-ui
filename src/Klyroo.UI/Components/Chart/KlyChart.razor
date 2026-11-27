@@ -18,8 +18,9 @@
 }
 else
 {
-    <kly-chart class="@_slots["root"]" data-type="@_kind" data-selectable="@(_selectable ? "" : null)"
-               @onklypick="PickHandler" @onklypick:stopPropagation="true" @attributes="AdditionalAttributes">
+    <kly-chart class="@_slots["root"]" data-type="@_kind" data-selectable="@(_selectable ? "" : null)" data-responsive="@(Fits ? "" : null)"
+               @onklypick="PickHandler" @onklypick:stopPropagation="true"
+               @onklyresize="ResizeHandler" @onklyresize:stopPropagation="true" @attributes="AdditionalAttributes">
         <div class="@_slots["plot"]" data-slot="plot" style="max-width:@(Num(_naturalWidth))px"
              role="@(_interactive ? "group" : null)" tabindex="@(_interactive ? 0 : null)"
              aria-label="@(_interactive ? _label : null)" aria-describedby="@(_interactive ? PlotDescribedBy : null)">
@@ -282,6 +283,12 @@ else
     private bool _selectable;
     private bool _showLegend;
     private double _naturalWidth;
+    // The width the browser gave the chart, reported by kly-resize; null until it has.
+    private int? _measuredWidth;
+
+    // The narrowest drawing, and the shortest one of a chart that is narrower than its natural width: below these the plot has no room for its labels.
+    private const int MinFitWidth = 160;
+    private const int MinFitHeight = 180;
 
     /// <summary>The rows to plot: one per x value, or per slice with <see cref="KlyChartType.Donut"/>.</summary>
     [Parameter, EditorRequired] public IReadOnlyList<TItem> Data { get; set; } = [];
@@ -353,6 +360,13 @@ else
 
     /// <summary>The width of the drawing in pixels, and the widest the chart gets.</summary>
     [Parameter] public int Width { get; set; } = 640;
+
+    /// <summary>
+    /// Draws the chart at the width it is given when that is less than <see cref="Width"/> (<see langword="true"/> by default), instead of shrinking a drawing made for <see cref="Width"/>:
+    /// the labels and the lines keep their size, and the height follows the width down to 180 pixels, or <see cref="Height"/> when it is smaller. The browser reports the width, so
+    /// without scripts (a page that is not interactive) the chart is drawn at <see cref="Width"/> and scales with its container. A donut is not concerned.
+    /// </summary>
+    [Parameter] public bool Responsive { get; set; } = true;
 
     /// <summary>The colors of the series in order, in place of the default palette. A color set on a category wins.</summary>
     [Parameter] public IReadOnlyList<KlyColor>? Colors { get; set; }
@@ -509,10 +523,13 @@ else
             }
         }
 
+        var drawnWidth = donut ? Height : FittedWidth;
+        var drawnHeight = donut ? Height : FittedHeight(drawnWidth);
         _layout = ChartLayout.Build(
             Type, Horizontal, Stacked, Curve, _index, _values.Select(v => (IReadOnlyList<double?>)v).ToList(),
-            donut ? Height : Width, Height, XAxis, YAxis, XLabel is not null, YLabel is not null, Thickness, FormatValue);
-        _naturalWidth = _layout.Width;
+            drawnWidth, drawnHeight, XAxis, YAxis, XLabel is not null, YLabel is not null, Thickness, FormatValue);
+        // The chart is never wider than Width, however narrow it is drawn.
+        _naturalWidth = donut ? _layout.Width : Math.Max(Width, _layout.Width);
         _points = _layout.Series.Select(shape => shape.Points.ToDictionary(p => p.Row)).ToArray();
 
         _kind = Type switch
@@ -534,6 +551,28 @@ else
             ["points"] = VariantValue.Of(Points),
             ["selectable"] = VariantValue.Of(_selectable),
         }, Ui, "root");
+    }
+
+    private bool Fits => Responsive && Type is not (KlyChartType.Donut or KlyChartType.Funnel);
+
+    private int FittedWidth => Fits && _measuredWidth is { } measured && measured < Width ? Math.Min(Width, Math.Max(measured, MinFitWidth)) : Width;
+
+    private int FittedHeight(int drawnWidth) =>
+        drawnWidth >= Width || Width <= 0 ? Height : Math.Max((int)Math.Round(Height * (double)drawnWidth / Width), Math.Min(Height, MinFitHeight));
+
+    private EventCallback<KlyResizeEventArgs> ResizeHandler =>
+        Fits ? EventCallback.Factory.Create<KlyResizeEventArgs>(this, OnResize) : default;
+
+    [System.Diagnostics.CodeAnalysis.DynamicDependency(
+        System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicConstructors | System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.PublicProperties,
+        typeof(KlyResizeEventArgs))]
+    private void OnResize(KlyResizeEventArgs e)
+    {
+        var width = e.Width <= 0 ? (int?)null : e.Width;
+        if (width == _measuredWidth || width is null) return;
+        _measuredWidth = width;
+        // The layout is drawn at the new width; the event handler's render shows it.
+        OnParametersSet();
     }
 
     private EventCallback<KlyPickEventArgs> PickHandler =>

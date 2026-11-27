@@ -240,3 +240,54 @@ test('a marker chart picks the nearest marker for a pointer and none for the key
 
   assert.deepEqual(picks, [{ row: 0, series: 1 }, { row: 0, series: 0 }, { row: 2, series: 0 }, { row: 0, series: -1 }]);
 });
+
+test('a responsive chart reports its width once connected and again after a move of 8 pixels, never while hidden', () => {
+  const observers = [];
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; this.target = null; this.disconnected = false; observers.push(this); }
+    observe(target) { this.target = target; }
+    disconnect() { this.disconnected = true; }
+  };
+  try {
+    const chart = new KlyChartElement('kly-chart', { 'data-responsive': '' });
+    const widths = [];
+    chart.addEventListener('kly-resize', (event) => widths.push(event.detail.width));
+    chart.connectedCallback();
+    const observer = observers[0];
+    assert.equal(observer.target, chart);
+    const resize = (width) => observer.callback([{ contentRect: { width } }]);
+
+    resize(0);
+    resize(300.7);
+    resize(304);
+    resize(307);
+    resize(308.2);
+    resize(640);
+
+    assert.deepEqual(widths, [300, 308, 640]);
+
+    chart.disconnectedCallback();
+    assert.equal(observer.disconnected, true);
+  } finally {
+    delete globalThis.ResizeObserver;
+  }
+});
+
+test('a chart without data-responsive reports nothing', () => {
+  const observers = [];
+  globalThis.ResizeObserver = class {
+    constructor(callback) { this.callback = callback; observers.push(this); }
+    observe() {}
+    disconnect() {}
+  };
+  try {
+    const chart = new KlyChartElement('kly-chart', {});
+    const widths = [];
+    chart.addEventListener('kly-resize', (event) => widths.push(event.detail.width));
+    chart.connectedCallback();
+    observers[0].callback([{ contentRect: { width: 300 } }]);
+    assert.deepEqual(widths, []);
+  } finally {
+    delete globalThis.ResizeObserver;
+  }
+});

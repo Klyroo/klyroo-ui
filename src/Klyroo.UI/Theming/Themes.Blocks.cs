@@ -132,7 +132,7 @@ internal static partial class Themes
             .Slot("title", "m-0 font-semibold text-(--klyroo-text-highlighted)")
             .Slot("list", "divide-y divide-(--klyroo-border)")
             .Slot("item", "flex flex-wrap items-center justify-between gap-2 py-2 first:pt-0 last:pb-0")
-            .Slot("label", "inline-flex items-center gap-1.5 text-xs font-medium text-(--klyroo-text-muted)")
+            .Slot("label", "inline-flex items-baseline gap-2 text-xs font-medium text-(--klyroo-text-muted)")
             .Slot("values", "flex items-center gap-2 text-xs")
             .Slot("before", "line-through text-(--klyroo-error-text)")
             .Slot("arrow", "text-(--klyroo-text-muted)")

@@ -575,6 +575,43 @@ public class ChartTests : KlyrooTestContext
         Assert.Contains("max-width:500px", cut.Find("[data-slot=plot]").GetAttribute("style"));
     }
 
+    [Fact]
+    public async Task A_narrow_chart_is_drawn_at_the_width_the_browser_reports_so_its_labels_keep_their_size()
+    {
+        var cut = Chart(p => p.Add(c => c.Height, 220));
+        Assert.Equal("", cut.Find("kly-chart").GetAttribute("data-responsive"));
+        Assert.Equal("0 0 640 220", cut.Find("svg").GetAttribute("viewBox"));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklyresize", new KlyResizeEventArgs { Width = 300 });
+
+        // The height follows the width down to 180 pixels, and the chart still grows to 640 when there is room.
+        Assert.Equal("0 0 300 180", cut.Find("svg").GetAttribute("viewBox"));
+        Assert.Contains("max-width:640px", cut.Find("[data-slot=plot]").GetAttribute("style"));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklyresize", new KlyResizeEventArgs { Width = 900 });
+
+        Assert.Equal("0 0 640 220", cut.Find("svg").GetAttribute("viewBox"));
+    }
+
+    [Fact]
+    public async Task A_chart_never_gets_a_drawing_narrower_than_160_pixels_or_shorter_than_its_height_allows()
+    {
+        var cut = Chart(p => p.Add(c => c.Height, 120));
+
+        await cut.Find("kly-chart").TriggerEventAsync("onklyresize", new KlyResizeEventArgs { Width = 90 });
+
+        Assert.Equal("0 0 160 120", cut.Find("svg").GetAttribute("viewBox"));
+    }
+
+    [Fact]
+    public void A_chart_that_is_not_responsive_and_a_donut_report_no_width()
+    {
+        var fixedChart = Chart(p => p.Add(c => c.Responsive, false));
+        var donut = Chart(p => p.Add(c => c.Type, KlyChartType.Donut));
+
+        Assert.False(fixedChart.Find("kly-chart").HasAttribute("data-responsive"));
+        Assert.False(donut.Find("kly-chart").HasAttribute("data-responsive"));
+    }
 
     // ---- Review findings (waves C and D)
 

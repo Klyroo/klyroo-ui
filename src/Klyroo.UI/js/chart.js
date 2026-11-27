@@ -19,14 +19,22 @@
  *
  * The tooltip is filled by cloning the tip into an element the server renders empty, and the active row is only marked
  * with an attribute the server does not render (data-active), so a render never fights it.
+ *
+ * A chart that has the data-responsive attribute reports the width it is given with kly-resize ({ width } in pixels), once when it
+ * connects and again each time the width moves by 8 pixels or more. The server draws the SVG at that width, so the labels keep
+ * their size on a narrow screen instead of shrinking with a drawing made for 640 pixels. Nothing is reported while the chart is
+ * hidden (a width of 0).
  */
 export class KlyChartElement extends HTMLElement {
   #active = null;
   // The row the arrow keys are on: kept apart from the one under the pointer, so Enter and Space pick what the keyboard chose, not what the pointer happens to hover.
   #keyboard = null;
   #shown = null;
+  #sizeObserver = null;
+  #reportedWidth = null;
 
   connectedCallback() {
+    this.#observeWidth();
     this.addEventListener('pointermove', this.#onPointerMove);
     this.addEventListener('pointerleave', this.#onPointerLeave);
     this.addEventListener('keydown', this.#onKeyDown);
@@ -35,6 +43,9 @@ export class KlyChartElement extends HTMLElement {
   }
 
   disconnectedCallback() {
+    this.#sizeObserver?.disconnect();
+    this.#sizeObserver = null;
+    this.#reportedWidth = null;
     this.removeEventListener('pointermove', this.#onPointerMove);
     this.removeEventListener('pointerleave', this.#onPointerLeave);
     this.removeEventListener('keydown', this.#onKeyDown);
@@ -47,6 +58,19 @@ export class KlyChartElement extends HTMLElement {
   refresh() {
     this.#active = null;
     this.#hide();
+  }
+
+  #observeWidth() {
+    if (typeof ResizeObserver === 'undefined' || this.#sizeObserver) return;
+    this.#sizeObserver = new ResizeObserver((entries) => {
+      if (!this.hasAttribute('data-responsive')) return;
+      const width = Math.floor(entries[entries.length - 1].contentRect.width);
+      if (width <= 0) return;
+      if (this.#reportedWidth !== null && Math.abs(width - this.#reportedWidth) < 8) return;
+      this.#reportedWidth = width;
+      this.dispatchEvent(new CustomEvent('kly-resize', { bubbles: true, detail: { width } }));
+    });
+    this.#sizeObserver.observe(this);
   }
 
   get #plot() {

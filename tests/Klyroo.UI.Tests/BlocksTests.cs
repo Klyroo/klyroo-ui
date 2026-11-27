@@ -500,6 +500,33 @@ public class BlocksTests : KlyrooTestContext
     }
 
     [Fact]
+    public void Diff_note_is_spaced_from_its_label_and_shares_its_baseline()
+    {
+        var cut = Render<KlyDiff>(p => p.Add(x => x.Items, [new KlyDiffItem("Role", "Member", "Admin") { Note = new KlyBadgeItem("Needs approval") }]));
+
+        var label = cut.Find("[data-slot=diff-item] [data-slot=badge]").ParentElement!;
+        Assert.Contains("items-baseline", label.ClassList);
+        Assert.Contains("gap-2", label.ClassList);
+        Assert.DoesNotContain("items-center", label.ClassList);
+    }
+
+    [Fact]
+    public void Facts_empty_value_shows_a_dash_and_only_the_loading_flag_shows_a_placeholder_bar()
+    {
+        var cut = Render<KlyFacts>(p => p.Add(x => x.Items, [
+            new KlyFact("Address") { Value = null },
+            new KlyFact("Blank") { Value = "  " },
+            new KlyFact("Notes") { Loading = true },
+        ]));
+
+        var values = cut.FindAll("[data-slot=fact-value]");
+        Assert.Equal("—", values[0].TextContent.Trim());
+        Assert.Equal("—", values[1].TextContent.Trim());
+        Assert.Empty(values[0].QuerySelectorAll("[data-slot=skeleton], [data-slot=fact-skeleton]"));
+        Assert.Equal("", values[2].TextContent.Trim());
+    }
+
+    [Fact]
     public void Diff_Compare_builds_an_item_from_two_typed_values()
     {
         var same = KlyDiffItem.Compare("Seats", 12, 12);

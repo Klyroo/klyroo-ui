@@ -90,6 +90,7 @@
 [&>kbd[data-kly-mod]]:before:content-[attr(data-label)]
 [&>svg]:size-3
 [&>svg]:size-4
+[&>svg]:size-full
 [&[disabled]]:cursor-not-allowed
 [&[disabled]]:opacity-60
 [&[hidden]]:hidden

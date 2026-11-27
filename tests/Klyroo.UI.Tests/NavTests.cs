@@ -294,6 +294,18 @@ public class NavTests : KlyrooTestContext
     }
 
     [Fact]
+    public void Collapsible_label_wraps_a_long_title_instead_of_cutting_it()
+    {
+        var cut = Render<KlyCollapsible>(p => p.Add(c => c.Label, "A disclosure label long enough to need several lines on a phone").Add(c => c.ChildContent, Text("Details")));
+
+        var label = cut.Find("button[data-kly-collapsible-trigger] span");
+        Assert.DoesNotContain("truncate", label.ClassList);
+        Assert.Contains("min-w-0", label.ClassList);
+        Assert.Contains("flex-1", label.ClassList);
+        Assert.Contains("text-pretty", label.ClassList);
+    }
+
+    [Fact]
     public void Collapsible_open_renders_a_visible_region()
     {
         var cut = Render<KlyCollapsible>(p => p.Add(c => c.Label, "More").Add(c => c.Open, true));

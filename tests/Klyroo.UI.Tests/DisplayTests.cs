@@ -15,6 +15,28 @@ public class DisplayTests : KlyrooTestContext
         Assert.Equal("New", badge.TextContent.Trim());
     }
 
+    [Theory]
+    [InlineData(KlySize.Xs, "size-3")]
+    [InlineData(KlySize.Md, "size-4")]
+    [InlineData(KlySize.Xl, "size-6")]
+    public void Badge_icon_sits_in_a_centered_box_of_its_size_and_the_drawing_fills_it(KlySize size, string box)
+    {
+        var cut = Render<KlyBadge>(p => p
+            .Add(b => b.Label, "New")
+            .Add(b => b.Size, size)
+            .Add(b => b.LeadingIcon, (RenderFragment)(b => b.AddContent(0, (MarkupString)"<svg class=\"size-5\"></svg>")))
+            .Add(b => b.TrailingIcon, (RenderFragment)(b => b.AddContent(0, (MarkupString)"<svg></svg>"))));
+
+        foreach (var wrapper in cut.FindAll("span[aria-hidden=true]"))
+        {
+            Assert.Contains(box, wrapper.ClassList);
+            Assert.Contains("inline-flex", wrapper.ClassList);
+            Assert.Contains("items-center", wrapper.ClassList);
+            Assert.Contains("justify-center", wrapper.ClassList);
+            Assert.Contains("[&>svg]:size-full", wrapper.ClassList);
+        }
+    }
+
     [Fact]
     public void Avatar_without_image_is_an_image_named_by_alt_showing_initials()
     {

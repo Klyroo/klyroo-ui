@@ -45,6 +45,13 @@ public sealed class KlyPickEventArgs : EventArgs
     public int Series { get; set; }
 }
 
+/// <summary>Payload of the <c>kly-resize</c> browser event raised by <see cref="KlyChart{TItem, TIndex}"/> with the width it is given, so the chart draws itself at that width.</summary>
+public sealed class KlyResizeEventArgs : EventArgs
+{
+    /// <summary>The width of the chart in CSS pixels.</summary>
+    public int Width { get; set; }
+}
+
 /// <summary>Payload of the <c>kly-limit</c> browser event raised by <see cref="KlyEditor"/> when its text goes past <see cref="KlyEditor.MaxLength"/> or comes back within it.</summary>
 public sealed class KlyLimitEventArgs : EventArgs
 {
@@ -63,5 +70,6 @@ public sealed class KlyLimitEventArgs : EventArgs
 [EventHandler("onklychange", typeof(KlyChangeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklysearch", typeof(KlySearchEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklypick", typeof(KlyPickEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
+[EventHandler("onklyresize", typeof(KlyResizeEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 [EventHandler("onklylimit", typeof(KlyLimitEventArgs), enableStopPropagation: true, enablePreventDefault: true)]
 public static class EventHandlers;

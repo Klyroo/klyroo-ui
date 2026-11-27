@@ -99,6 +99,9 @@ public abstract class KlyComponentBase : ComponentBase
     /// <summary>An icon of the app as a render fragment: <paramref name="name"/> is a key of <c>Options.Icons</c> (<c>Options.Icons.Close</c>) or any icon name.</summary>
     protected RenderFragment RenderIcon(string name, string? @class = null) => IconRender.Fragment(Options?.Icons, name, @class);
 
+    /// <summary>Whether <paramref name="name"/> is an icon <see cref="RenderIcon"/> can draw (registered on <c>Options.Icons</c>, bundled with the app or built in). An unknown name renders an empty icon, so a component that has a fallback to show tests it first.</summary>
+    protected bool HasIcon(string? name) => IconResolver.TryResolve(name, Options?.Icons, out _);
+
     /// <summary>A short element id such as <c>kly-tabs-1a2b3c4d5e6f</c>, unique per call.</summary>
     protected static string NewId(string prefix) => $"kly-{prefix}-{Guid.NewGuid():N}"[..(prefix.Length + 13)];
 }

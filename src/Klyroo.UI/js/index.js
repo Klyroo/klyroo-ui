@@ -128,6 +128,10 @@ function registerEvents(blazor) {
     browserEventName: 'kly-pick',
     createEventArgs: (event) => ({ row: event.detail.row, series: event.detail.series }),
   });
+  blazor.registerCustomEventType('klyresize', {
+    browserEventName: 'kly-resize',
+    createEventArgs: (event) => ({ width: event.detail.width }),
+  });
   blazor.registerCustomEventType('klysearch', {
     browserEventName: 'kly-search',
     createEventArgs: (event) => ({ value: event.detail.value, sequence: event.detail.sequence }),
