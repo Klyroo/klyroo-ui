@@ -5,11 +5,11 @@ internal static partial class Themes
     public static ComponentTheme Tabs() =>
         new ComponentTheme("tabs", "root", "list", "trigger", "icon", "label", "content")
             .Slot("root", "flex flex-col gap-2")
-            .Slot("list", "relative flex")
-            .Slot("trigger", "inline-flex min-w-0 flex-1 items-center justify-center gap-1.5 whitespace-nowrap font-medium transition-colors " +
+            .Slot("list", "relative flex overflow-x-auto")
+            .Slot("trigger", "inline-flex flex-1 items-center justify-center gap-1.5 whitespace-nowrap font-medium transition-colors " +
                              "disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-(--kly-color-text)")
             .Slot("icon", "size-4 shrink-0")
-            .Slot("label", "truncate")
+            .Slot("label", "")
             .Slot("content", "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-(--kly-color-text)")
             .Variant("variant", "pill", "list", "gap-1 rounded-[calc(var(--klyroo-radius)_+_2px)] bg-(--klyroo-bg-elevated) p-1")
             .Variant("variant", "pill", "trigger", "rounded-(--klyroo-radius) px-3 py-1.5 text-sm text-(--klyroo-text-muted) hover:text-(--klyroo-text) " +
