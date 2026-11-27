@@ -5,7 +5,7 @@ description: Build Blazor user interfaces with Klyroo.UI (Kly components, Tailwi
 
 # Klyroo.UI
 
-Klyroo.UI is a Blazor component library of 133 accessible components, styled with Tailwind CSS v4 and modeled on Nuxt UI. Components are prefixed `Kly` (`<KlyButton>`), work in Interactive Server, WebAssembly, Auto and static server rendering, and keep UI state (open, focus, selection, keyboard navigation) in the browser. They also run in .NET MAUI Blazor Hybrid apps (a `BlazorWebView`): Android is tested on an emulator, iOS 17 or later, Windows and macOS (Mac Catalyst) have CI build jobs that have not run yet and are untested on devices, Android TV is experimental, Tizen is not supported (see `/docs/maui`).
+Klyroo.UI is a Blazor component library of 145 accessible components, styled with Tailwind CSS v4 and modeled on Nuxt UI. Components are prefixed `Kly` (`<KlyButton>`), work in Interactive Server, WebAssembly, Auto and static server rendering, and keep UI state (open, focus, selection, keyboard navigation) in the browser. They also run in .NET MAUI Blazor Hybrid apps (a `BlazorWebView`): Android is tested on an emulator, iOS 17 or later, Windows and macOS (Mac Catalyst) have CI build jobs that have not run yet and are untested on devices, Android TV is experimental, Tizen is not supported (see `/docs/maui`).
 
 ## Use the MCP server for API details
 

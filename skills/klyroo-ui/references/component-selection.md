@@ -20,11 +20,30 @@ Start with `search-components` (it understands alternate names: dialog finds Mod
 
 | Need | Use |
 |---|---|
-| A message that stays in the page | `KlyAlert` |
+| A message that stays in the page | `KlyAlert` (collapsible `Details`, `ActionItems`, `StatusIcon`) |
 | A site-wide announcement the user can close | `KlyBanner` (dismissal is remembered per `Id`, also in static pages) |
-| Nothing to show yet | `KlyEmpty` |
+| Nothing to show yet | `KlyEmpty` (buttons from data with `ActionItems`) |
 | Content is loading | `KlySkeleton` inside a region marked `aria-busy`, or `KlyProgress` for a measurable task |
 | A status, a count, a category | `KlyBadge`; a dot or count on a corner of another element is `KlyChip` |
+
+## Read-only information
+
+| Need | Use |
+|---|---|
+| A section title with an icon, a count and an action | `KlyHeading` |
+| Paragraphs, a quote, a text clamped to a few lines | `KlyText` |
+| One highlighted figure with its change and a sparkline | `KlyStat`; several small figures in a row are `KlyStatGroup` |
+| Label and value rows, with badges, links and copy buttons | `KlyFacts` (flat or in groups) |
+| Labelled amounts with subtotals, a total, two columns or a toggle | `KlyBreakdown` (decimal amounts, formatted by culture) |
+| What changed between two versions of a record | `KlyDiff`, with `KlyDiffItem.Compare` for typed values |
+| Entity rows with an image, a reference, badges and a trailing value | `KlyRecordList` |
+| Items, numbered steps or a checklist | `KlyList` with `Plain`, `Steps` or `Checks` |
+| A date as a calendar tile, a countdown or a range | `KlyDateTile` |
+| A measure in a known range (quota, disk), with thresholds or stacked parts | `KlyMeter` as a bar, a ring or a scale; a task that is running is `KlyProgress` |
+| Several pictures with a +N tile | `KlyImageGallery`; one picture is `KlyImage` |
+| A conversion funnel | `KlyChart` with `Type="KlyChartType.Funnel"` |
+| A history, a pipeline, a log or an agenda by day | `KlyTimeline` with `Layout` `Default`, `Pipeline`, `Log` or `Schedule` |
+| A person with contacts, a badge, or a stack of people with tooltips | `KlyUser` with `Contacts` and `Badge`; `KlyAvatarGroup` |
 
 ## Choosing a value
 
@@ -56,7 +75,7 @@ Start with `search-components` (it understands alternate names: dialog finds Mod
 | Show or hide a region | `KlyCollapsible` for one, `KlyAccordion` for a stack |
 | Where you are | `KlyBreadcrumb` |
 | Page through results | `KlyPagination` (links or buttons) |
-| Steps of a process | `KlyStepper`; a history is `KlyTimeline` |
+| Steps of a process | `KlyStepper`; a history is `KlyTimeline`, a checklist `KlyList` |
 | A hierarchy | `KlyTree` |
 | Resizable panels | `KlySplitter`, or `KlyDashboardPanel` with `Resizable` in a dashboard |
 | A scroll area with keyboard access | `KlyScrollArea` |
@@ -72,7 +91,7 @@ Start with `search-components` (it understands alternate names: dialog finds Mod
 | Sign-in, sign-up, verification | `KlyAuthForm` |
 | Site chrome | `KlyApp`, `KlyHeader`, `KlyMain`, `KlyFooter`, `KlyFooterColumns`, `KlySidebar` |
 | Application shell | `KlyDashboardGroup` with `KlyDashboardSidebar` and `KlyDashboardPanel` |
-| Data | `KlyTable`, `KlyChart`, `KlyCarousel` |
+| Data | `KlyTable` (footer, alignment, Show more), `KlyChart`, `KlyCarousel`; read-only figures and facts are in Read-only information |
 | Chat | `KlyChatMessages`, `KlyChatMessage`, `KlyChatPrompt`, or `KlyChatPalette` for a whole panel |
 
 ## Rules of thumb

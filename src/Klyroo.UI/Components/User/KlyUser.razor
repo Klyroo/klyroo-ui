@@ -57,7 +57,7 @@ else
         @if (ShowAvatar)
         {
             <span class="@_slots["avatar"]" aria-hidden="true">
-                <KlyAvatar Src="@AvatarSrc" Alt="@Name" Icon="@AvatarIcon" Color="AvatarColor" Size="@Size" />
+                <KlyAvatar Src="@AvatarSrc" Alt="@Name" Icon="@(AvatarIcon ?? (string.IsNullOrWhiteSpace(Name) && AvatarSrc is null ? RenderIcon("user", "size-full") : null))" Color="AvatarColor" Size="@Size" />
             </span>
         }
         @if (Name is not null || Description is not null)
@@ -85,7 +85,7 @@ else
     [Parameter] public string? Description { get; set; }
     /// <summary>Address of the avatar picture.</summary>
     [Parameter] public string? AvatarSrc { get; set; }
-    /// <summary>Icon of the avatar when there is no picture, as markup such as a <see cref="KlyIcon"/>.</summary>
+    /// <summary>Icon of the avatar when there is no picture, as markup such as a <see cref="KlyIcon"/>. Without a picture and a <see cref="Name"/>, a person icon is shown.</summary>
     [Parameter] public RenderFragment? AvatarIcon { get; set; }
 
     /// <summary>A color that tints the initials avatar.</summary>

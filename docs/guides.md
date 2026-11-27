@@ -375,7 +375,7 @@ await host.Services.ApplyServerCultureAsync(KlyLocales.All.Select(locale => loca
 await host.RunAsync();
 ```
 
-Change a few messages, or add a locale, in `AddKlyrooUi`. A message with placeholders keeps them in a translation.
+Change a few messages, or add a locale, in `AddKlyrooUi`. A message with placeholders keeps them in a translation, and a message that holds a count (`ShowMore`, `InDays`, `DayCount`) is a function of the count, so a language chooses its own plural forms.
 
 ```csharp
 using Klyroo.UI;
@@ -533,6 +533,145 @@ Goal: drill down when the user picks a bar, a point or a slice.
 `KlyChart<TItem, TIndex>` has two type arguments: the row type and the type of the x value that `Index` returns (a `string`, a `DateOnly`, a number). Blazor infers both from `Data` and `Index`, so you can leave `TItem` and `TIndex` out when you have no handler. A handler written as a method group, as above, needs them spelled out because Blazor cannot infer through it; with inferred types write the handler as a lambda that names the argument type: `OnSelect="@((KlyChartSelectEventArgs<Sale, DateOnly> pick) => Pick(pick))"`.
 
 The arguments carry the position of the row (`Row`), its `Index` (the x value, typed as `TIndex`), the `SeriesKey` and `SeriesIndex` of the series that was picked, its `Value` (null for a gap) and the row `Item`. A click on a bar reports the bar under the pointer, a click on a line or area chart the series whose point is nearest the pointer, a slice the single category; from the keyboard, with several series, no series is named (`SeriesIndex` is -1, `SeriesKey` and `Value` are null) and your handler chooses from `Item`, while a chart with one series always names it. Enter and Space select the row the arrow keys are on, not the one the pointer hovers. The pick is reported by the browser, so it needs an interactive render, and it needs `Tooltip` (the default), since the row of the keyboard is the highlighted one.
+
+## Show read-only information
+
+Goal: present figures, facts, amounts and history without writing the markup of each one.
+
+Each kind of read-only block is a component of its own with only its own parameters, so a misuse does not compile. Every block takes `Surface` (`KlySurface.Plain`, `Muted`, `Bordered` or `Elevated`; each block has its own default), `Loading` (a skeleton instead of the content), a `Ui` record to restyle its slots and the usual `Class`. Items are records (`new KlyFact("Plan") { Value = "Pro" }`), colors are `KlyColor`, icons are names (`"check"`) or any icon markup, and the buttons and badges inside a block are `KlyActionItem` and `KlyBadgeItem`.
+
+A figure with its change and a sparkline, and several small figures in a row:
+
+```razor
+<KlyStat Title="MRR" Value="€12,400" Delta="+14%" DeltaDirection="KlyDeltaDirection.Up" Trend="@(new double[] { 10, 14, 13, 19 })" Caption="vs last month" />
+
+<KlyStatGroup Title="This week" Items="@(new[]
+{
+    new KlyStatItem("Errors", "12") { Color = KlyColor.Error },
+    new KlyStatItem("Users", "340") { Caption = "+8" },
+})" />
+```
+
+Label and value rows, flat or in groups, with badges, links, copy buttons and a loading placeholder. `Max` and `Step` show a Show more button. Copy buttons write to the clipboard from .NET, so they are disabled until the page is interactive:
+
+```razor
+<KlyFacts Items="@(new[]
+{
+    new KlyFact("Status") { Badge = new KlyBadgeItem("Paid") { Color = KlyColor.Success, Icon = "check" } },
+    new KlyFact("Environment") { Value = "Production", Copy = true, Mono = true },
+    new KlyFact("Site") { Value = "klyroo.dev", Href = "https://klyroo.dev" },
+    new KlyFact("Plan") { Loading = true },
+})" />
+```
+
+Amounts are decimals, formatted with `Format` (a .NET format string, `"N2"` by default) and `Culture` (the format culture of the locale by default), so `Format="C2"` with `Culture="@fr"` shows `1 234,50 €`. Two amounts per line switch the block to two columns, and `Collapsible` hides the lines behind a toggle while keeping the total:
+
+```razor
+<KlyBreakdown Title="Invoice" Format="C2" Culture="@_fr" CompareColumns="@(new KlyBreakdownColumns("2026", "2025"))"
+              Lines="@_lines" Total="@(new KlyBreakdownLine("Total") { Amount = 1234.5m, CompareAmount = 1100m })" Footnote="VAT included" />
+
+@code {
+    private readonly CultureInfo _fr = CultureInfo.GetCultureInfo("fr-FR");
+    private readonly KlyBreakdownLine[] _lines =
+    [
+        new("Licenses") { Amount = 1400m, CompareAmount = 1200m, Detail = "12 seats", Badge = new KlyBadgeItem("New") },
+        new("Discount") { Amount = -165.5m, Color = KlyColor.Success },
+    ];
+}
+```
+
+Before and after values per field. The old value is a `del` and the new one an `ins`. `KlyDiffItem.Compare` builds an item from two typed values and decides `Changed` by equality:
+
+```razor
+<KlyDiff ShowUnchanged="true" Items="@(new[]
+{
+    KlyDiffItem.Compare("Plan", "Starter", "Team"),
+    KlyDiffItem.Compare("Seats", 12, 12),
+    new KlyDiffItem("Role", "Member", "Admin") { Note = new KlyBadgeItem("Needs approval") },
+})" />
+```
+
+Entity rows and lists. A record row has a leading image, avatar text or icon, a reference, a title (a link with `Href`, a button with `OnClick`), a secondary line, badges and a trailing value. A list is `Plain`, `Steps` or `Checks`; done items say so to assistive technology:
+
+```razor
+<KlyRecordList Title="Invoices" Count="2" Max="5" Items="@(new[]
+{
+    new KlyRecordItem("Acme Annual Plan") { Reference = "INV-42", Href = "/invoices/42", AvatarText = "AC", Trailing = "€12,000", TrailingCaption = "Nov 20", Badge = new KlyBadgeItem("Paid") },
+})" />
+
+<KlyList Variant="KlyListVariant.Steps" Items="@(new[]
+{
+    new KlyListItem("Create the account") { Done = true },
+    new KlyListItem("Add a card") { Current = true, Description = "Takes two minutes" },
+    new KlyListItem("Launch"),
+})" />
+```
+
+A calendar tile in three modes, a paragraph or a quote, a section heading, and a gallery with a plus-N tile:
+
+```razor
+<KlyDateTile Mode="KlyDateTileMode.Countdown" Value="@_renewal" Title="Renewal" />
+<KlyDateTile Mode="KlyDateTileMode.Range" Value="@_start" EndValue="@_end" />
+
+<KlyText Variant="KlyTextVariant.Quote" Value="Simplicity is prerequisite for reliability." Author="Dijkstra" />
+<KlyText Value="@_longText" MaxLines="3" />
+
+<KlyHeading Title="Subscriptions" Count="42" Description="Updated 5 minutes ago" HeadingLevel="2"
+            Action="@(new KlyActionItem("Export") { Href = "/export" })" />
+
+<KlyImageGallery Images="@_photos" Max="3" Columns="3" Caption="Trip" />
+```
+
+A gauge. `KlyMeter` is a `role="meter"` measure in a known range (disk used, quota), not the progress of a task: use `KlyProgress` for that. It is a bar, a ring or a scale of levels, and its parts stack with a legend:
+
+```razor
+<KlyMeter Title="Storage" Value="92" WarningThreshold="75" ErrorThreshold="90" ValueText="92 GB of 100 GB" />
+<KlyMeter Layout="KlyMeterLayout.Ring" Title="Quota" Value="64" />
+<KlyMeter Max="10" Parts="@(new[]
+{
+    new KlyMeterPart("Photos", 3) { ValueLabel = "3 GB", Color = KlyColor.Info, Icon = "image" },
+    new KlyMeterPart("Video", 4) { ValueLabel = "4 GB", Color = KlyColor.Warning },
+})" />
+<KlyMeter Layout="KlyMeterLayout.Scale" Levels="@(new[] { "Low", "Medium", "High" })" CurrentLevel="1" />
+```
+
+Existing components carry the other kinds. `KlyAlert` takes `Details` (collapsed behind a toggle), `ActionItems` and `StatusIcon`; `KlyEmpty` takes `ActionItems`; `KlyTable` takes a `Footer` on its columns, `Align`, `Numeric` and `Mono`, and `Max` with `Step`; `KlyUser` takes a `Badge` and `Contacts`; `KlyAvatarGroup` shows the description and badge of each person in its tooltips; `KlyAccordionItem` takes `Text` and `DefaultOpen`; and `KlyChart` draws a conversion funnel with `Type="KlyChartType.Funnel"`: one step per row, sized by the first category and labeled with the share of the previous step.
+
+```razor
+<KlyAlert Color="KlyColor.Warning" Variant="KlyVariant.Soft" StatusIcon="true" Title="Quota warning"
+          Description="Your plan is almost full." Details="85% of the monthly volume is used."
+          ActionItems="@(new[] { new KlyActionItem("Upgrade") { Href = "/billing", Variant = ButtonVariant.Solid, Color = KlyColor.Warning } })" />
+
+<KlyChart TItem="Step" TIndex="string" Type="KlyChartType.Funnel" Data="_steps" Index="@(s => s.Label)"
+          Categories="@(new[] { new KlyChartCategory<Step>("count", s => s.Count) })" />
+
+@code {
+    private sealed record Step(string Label, double Count);
+    private readonly Step[] _steps = [new("Visits", 1000), new("Signups", 240), new("Paid", 36)];
+}
+```
+
+`KlyTimeline` shows the same events in four layouts with `Layout`: `Default` (along a line, with `Orientation`), `Pipeline` (a row of markers), `Log` (compact lines that start with the date and time) and `Schedule`. An event has a `State` (`Done`, `Current`, `Upcoming`), a `Color`, an `Actor`, a free `Date` text and a real `At` and `EndAt`. In the `Default` layout, `Active` highlights the events up to an index when an event has no state, and `ShowNumbers` numbers the markers.
+
+The `Schedule` layout is an agenda. Events are sorted by start, grouped by calendar day under a heading that says Today and Tomorrow (`Now` is the reference, pass it for stable server rendering), with a time column and a length. Each event keeps its own offset, so a meeting entered in another time zone shows its own wall-clock time. An event that starts at midnight and has no end, or ends at midnight or at the end of a day, is an all-day event, and an end at midnight is excluded as in calendar files (the 14th to the 16th at midnight is two days). Events without a date come last under an Unscheduled heading, and `Max` cuts the sorted list, so Show more reveals later events:
+
+```razor
+<KlyTimeline Layout="KlyTimelineLayout.Schedule" Now="@_now" Items="@_events" />
+
+@code {
+    private static readonly TimeSpan Paris = TimeSpan.FromHours(1);
+    private readonly DateTimeOffset _now = new(2026, 3, 12, 9, 30, 0, Paris);
+    private readonly KlyTimelineItem[] _events =
+    [
+        new("Standup") { At = new(2026, 3, 12, 9, 0, 0, Paris), EndAt = new(2026, 3, 12, 9, 30, 0, Paris), State = KlyTimelineState.Current },
+        new("Design review") { Description = "Bring the mockups", At = new(2026, 3, 12, 14, 0, 0, Paris), EndAt = new(2026, 3, 12, 15, 30, 0, Paris), Actor = "Alice" },
+        new("Conference") { At = new(2026, 3, 14, 0, 0, 0, Paris), EndAt = new(2026, 3, 16, 0, 0, 0, Paris) },
+        new("Book the venue"),
+    ];
+}
+```
+
+The texts of the blocks (Show more, Read more, Show details, Today, All day, the length of an event...) are messages of the locale, in the twelve locales, so `KlyLocales.Extend` changes them like any other. A message that holds a count is a function of that count (`ShowMore`, `InDays`, `DaysOverdue`, `DayCount`, `Duration`), so a language keeps its plural forms.
 
 ## Control the color mode
 

@@ -62,7 +62,7 @@
                     {
                         @foreach (var part in Parts!)
                         {
-                            <div class="@_slots["part"]" data-color="@(part.Color ?? KlyColor.Primary).Value"
+                            <div class="@_slots["part"]" data-color="@((part.Color ?? KlyColor.Primary).Value)"
                                  style="@($"width:{Num(Math.Clamp(PartAmount(part) / _max * 100.0, 0, 100))}%")" title="@PartTooltip(part)" data-slot="meter-part"></div>
                         }
                     }
@@ -89,7 +89,7 @@
                         }
                         else
                         {
-                            <span class="@_slots["legendDot"]" data-color="@(part.Color ?? KlyColor.Primary).Value" aria-hidden="true"></span>
+                            <span class="@_slots["legendDot"]" data-color="@((part.Color ?? KlyColor.Primary).Value)" aria-hidden="true"></span>
                         }
                         <span class="@_slots["legendLabel"]">@part.Label</span>
                         <span class="@_slots["legendValue"]">@PartValueText(part)</span>
