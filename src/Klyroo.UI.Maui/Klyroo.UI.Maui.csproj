@@ -28,6 +28,11 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Klyroo.UI.Maui.Tests" />
+    <InternalsVisibleTo Include="Klyroo.Display.Maui" />
+    <InternalsVisibleTo Include="Klyroo.Dashboard.Maui" />
+    <InternalsVisibleTo Include="Klyroo.Table.Maui" />
+    <InternalsVisibleTo Include="Klyroo.Form.Maui" />
+    <InternalsVisibleTo Include="Klyroo.Spreadsheet.Maui" />
   </ItemGroup>
 
 </Project>
