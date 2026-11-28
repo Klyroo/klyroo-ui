@@ -20,6 +20,7 @@ components work in static server rendering, Interactive Server, WebAssembly and 
 - **Responsive images**: `KlyImage` fills `srcset` and `sizes` through providers for Cloudinary, imgix, ImageKit, Cloudflare, Netlify, Vercel and Bunny, or through your own server with libvips.
 - **Twelve locales**: every text comes from a locale, components follow the culture of the user, and Arabic renders right to left.
 - **.NET MAUI Blazor Hybrid**: the same pages run in a `BlazorWebView`, with a sample project.
+- **Native .NET MAUI**: use [Klyroo.UI.Maui](https://github.com/Klyroo/klyroo-ui/tree/main/src/Klyroo.UI.Maui) from source for native C# controls with Klyroo design tokens. Start with the [native Android sample](https://github.com/Klyroo/klyroo-ui/tree/main/samples/Klyroo.Maui.Native).
 
 ## Components
 
