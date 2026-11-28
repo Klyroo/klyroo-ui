@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="../../src/Klyroo.UI.Maui/Klyroo.UI.Maui.csproj" />
+  <Project Path="Klyroo.Maui.Native.csproj" />
+</Solution>

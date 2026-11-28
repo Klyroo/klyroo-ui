@@ -1,0 +1,9 @@
+{
+  "notApplicable": {
+    "KlySkipLink": "A keyboard skip-to-content link for web focus order; native screen readers navigate by gesture.",
+    "KlyHead": "Sends content to the HTML <head> of a Blazor web view; MAUI has no document head.",
+    "KlyFonts": "Links generated @font-face CSS; in MAUI the app registers fonts at startup (ConfigureFonts).",
+    "KlyCultureMeta": "A <meta> tag read by a WebAssembly client; the device culture is already native.",
+    "KlyColorModeScript": "Only prevents a flash before first paint in the browser; the native equivalent is KlyColorMode.ApplyStored() at app start."
+  }
+}

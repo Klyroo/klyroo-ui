@@ -43,6 +43,12 @@ escaping and the two base64 encodings Blazor adds), through the scoped `KlyPersi
 not handed over: that list or resource loads again once in the interactive render. Raise the budget only together with
 the `MaximumReceiveMessageSize` of the hub.
 
+## Native .NET MAUI controls
+
+Blazor Hybrid draws the UI in a web view. For an app with real native views, [`Klyroo.UI.Maui`](../src/Klyroo.UI.Maui/README.md) provides MAUI controls
+(`KlyButton`, `KlyInput`, `KlySwitch`, ...) with the same design tokens, in plain C# with no WebView and no Blazor. It covers a subset of the components,
+and the sample is [`samples/Klyroo.Maui.Native`](../samples/Klyroo.Maui.Native).
+
 ## .NET MAUI Blazor Hybrid
 
 The same components run in a `BlazorWebView`, so one set of pages can ship as a web app and as a native app. A web
