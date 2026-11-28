@@ -1,7 +1,8 @@
 name: MAUI
 
 # The native MAUI project (src/Klyroo.UI.Maui) is not in the solution of the repository: it needs the MAUI workloads,
-# so it is built here, per platform, with the .NET 10 SDK its global.json pins.
+# so it is built here, per platform. Every command runs from the project folder: its global.json pins the .NET 10 SDK, while the
+# one at the root of the repository rolls forward to the .NET 11 SDK that the runners preinstall, whose MAUI workloads only target net11.
 on:
   push:
     branches: [main]
@@ -25,7 +26,7 @@ jobs:
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: klyroo-ui
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
     steps:
       - uses: actions/checkout@v4
         with:
@@ -80,22 +81,22 @@ jobs:
       - name: Install the MAUI Android workload
         run: dotnet workload install maui-android
       - name: Build for the plain framework (the target the tests run on)
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0 -c Release --nologo
+        run: dotnet build -f net10.0 -c Release --nologo
       - name: Install the Android SDK packages the build needs
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0-android -t:InstallAndroidDependencies "-p:AndroidSdkDirectory=$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True --nologo
+        run: dotnet build -f net10.0-android -t:InstallAndroidDependencies "-p:AndroidSdkDirectory=$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True --nologo
       - name: Build for Android
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0-android -c Release --nologo
+        run: dotnet build -f net10.0-android -c Release --nologo
       - name: Build the Android sample
-        run: dotnet build samples/Klyroo.Maui.Native -f net10.0-android -c Release --nologo
+        run: dotnet build ../../samples/Klyroo.Maui.Native -f net10.0-android -c Release --nologo
       - name: Test
-        run: dotnet test --project tests/Klyroo.UI.Maui.Tests -c Release --nologo
+        run: dotnet run --project ../../tests/Klyroo.UI.Maui.Tests -c Release
 
   apple:
     runs-on: macos-latest
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: klyroo-ui
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
     steps:
       - uses: actions/checkout@v4
         with:
@@ -146,16 +147,16 @@ jobs:
       - name: Install the MAUI iOS and Mac Catalyst workloads
         run: dotnet workload install maui-ios maui-maccatalyst
       - name: Build for iOS
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0-ios -c Release --nologo
+        run: dotnet build -f net10.0-ios -c Release --nologo
       - name: Build for Mac Catalyst
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0-maccatalyst -c Release --nologo
+        run: dotnet build -f net10.0-maccatalyst -c Release --nologo
 
   windows:
     runs-on: windows-latest
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: klyroo-ui
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
     steps:
       - uses: actions/checkout@v4
         with:
@@ -206,4 +207,4 @@ jobs:
       - name: Install the MAUI Windows workload
         run: dotnet workload install maui-windows
       - name: Build for Windows
-        run: dotnet build src/Klyroo.UI.Maui -f net10.0-windows10.0.19041.0 -c Release --nologo
+        run: dotnet build -f net10.0-windows10.0.19041.0 -c Release --nologo
