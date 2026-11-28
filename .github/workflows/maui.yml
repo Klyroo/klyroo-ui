@@ -1,0 +1,211 @@
+name: MAUI
+
+# The native MAUI project (src/Klyroo.UI.Maui) is not in the solution of the repository: it needs the MAUI workloads,
+# so it is built here, per platform. Every command runs from the project folder: its global.json pins the .NET 10 SDK, while the
+# one at the root of the repository rolls forward to the .NET 11 SDK that the runners preinstall, whose MAUI workloads only target net11.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maui-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  android-and-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: klyroo-ui
+      - name: Check out klyroo-agent (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-agent
+          path: klyroo-agent
+      - name: Check out klyroo-dashboard (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-dashboard
+          path: klyroo-dashboard
+      - name: Check out klyroo-display (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-display
+          path: klyroo-display
+      - name: Check out klyroo-form (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-form
+          path: klyroo-form
+      - name: Check out klyroo-query (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-query
+          path: klyroo-query
+      - name: Check out klyroo-spreadsheet (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-spreadsheet
+          path: klyroo-spreadsheet
+      - name: Check out klyroo-stack (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-stack
+          path: klyroo-stack
+      - name: Check out klyroo-table (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-table
+          path: klyroo-table
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Install the MAUI Android workload
+        run: dotnet workload install maui-android
+      - name: Build for the plain framework (the target the tests run on)
+        run: dotnet build -f net10.0 -c Release --nologo
+      - name: Install the Android SDK packages the build needs
+        run: dotnet build -f net10.0-android -t:InstallAndroidDependencies "-p:AndroidSdkDirectory=$ANDROID_HOME" -p:AcceptAndroidSDKLicenses=True --nologo
+      - name: Build for Android
+        run: dotnet build -f net10.0-android -c Release --nologo
+      - name: Build the Android sample
+        run: dotnet build ../../samples/Klyroo.Maui.Native -f net10.0-android -c Release --nologo
+      - name: Test
+        run: dotnet run --project ../../tests/Klyroo.UI.Maui.Tests -c Release
+
+  apple:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: klyroo-ui
+      - name: Check out klyroo-agent (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-agent
+          path: klyroo-agent
+      - name: Check out klyroo-dashboard (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-dashboard
+          path: klyroo-dashboard
+      - name: Check out klyroo-display (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-display
+          path: klyroo-display
+      - name: Check out klyroo-form (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-form
+          path: klyroo-form
+      - name: Check out klyroo-query (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-query
+          path: klyroo-query
+      - name: Check out klyroo-spreadsheet (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-spreadsheet
+          path: klyroo-spreadsheet
+      - name: Check out klyroo-stack (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-stack
+          path: klyroo-stack
+      - name: Check out klyroo-table (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-table
+          path: klyroo-table
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install the MAUI workloads required by multi-target restore
+        run: dotnet workload install maui-android maui-ios maui-maccatalyst
+      - name: Pack and consume the iOS NuGet package
+        run: bash ../../build/verify-maui-package.sh net10.0-ios
+      - name: Build for Mac Catalyst
+        run: dotnet build -f net10.0-maccatalyst -c Release --nologo
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: klyroo-ui/src/Klyroo.UI.Maui
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: klyroo-ui
+      - name: Check out klyroo-agent (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-agent
+          path: klyroo-agent
+      - name: Check out klyroo-dashboard (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-dashboard
+          path: klyroo-dashboard
+      - name: Check out klyroo-display (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-display
+          path: klyroo-display
+      - name: Check out klyroo-form (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-form
+          path: klyroo-form
+      - name: Check out klyroo-query (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-query
+          path: klyroo-query
+      - name: Check out klyroo-spreadsheet (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-spreadsheet
+          path: klyroo-spreadsheet
+      - name: Check out klyroo-stack (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-stack
+          path: klyroo-stack
+      - name: Check out klyroo-table (referenced by relative path)
+        uses: actions/checkout@v4
+        with:
+          repository: klyroo/klyroo-table
+          path: klyroo-table
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install the MAUI Windows workload
+        run: dotnet workload install maui-windows
+      - name: Pack and consume the Windows NuGet package
+        shell: bash
+        run: bash ../../build/verify-maui-package.sh net10.0-windows10.0.19041.0
