@@ -146,8 +146,8 @@ jobs:
           dotnet-version: 10.0.x
       - name: Install the MAUI workloads required by multi-target restore
         run: dotnet workload install maui-android maui-ios maui-maccatalyst
-      - name: Build for iOS
-        run: dotnet build -f net10.0-ios -c Release --nologo
+      - name: Pack and consume the iOS NuGet package
+        run: bash ../../build/verify-maui-package.sh net10.0-ios
       - name: Build for Mac Catalyst
         run: dotnet build -f net10.0-maccatalyst -c Release --nologo
 
@@ -206,5 +206,6 @@ jobs:
           dotnet-version: 10.0.x
       - name: Install the MAUI Windows workload
         run: dotnet workload install maui-windows
-      - name: Build for Windows
-        run: dotnet build -f net10.0-windows10.0.19041.0 -c Release --nologo
+      - name: Pack and consume the Windows NuGet package
+        shell: bash
+        run: bash ../../build/verify-maui-package.sh net10.0-windows10.0.19041.0
