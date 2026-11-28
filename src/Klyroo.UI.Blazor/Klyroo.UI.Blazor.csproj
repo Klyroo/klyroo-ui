@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Description>Razor components for Blazor web apps and .NET MAUI Blazor Hybrid apps.</Description>
+    <PackageTags>klyroo;blazor;razor;maui;blazor-hybrid</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <IncludeSymbols>false</IncludeSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Klyroo.UI/Klyroo.UI.csproj" />
+    <None Update="README.md" Pack="true" PackagePath="/" />
+    <None Update="_._" Pack="true" PackagePath="lib/$(TargetFramework)/" />
+    <None Include="../Klyroo.UI/assets/icon.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+  <Import Project="../../build/ExactProjectReferences.targets" />
+</Project>

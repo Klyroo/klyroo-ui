@@ -19,8 +19,9 @@ components work in static server rendering, Interactive Server, WebAssembly and 
 - **Build-time icons and fonts**: any Iconify icon works by name and fonts are self-hosted, with no request to a third party when the page runs.
 - **Responsive images**: `KlyImage` fills `srcset` and `sizes` through providers for Cloudinary, imgix, ImageKit, Cloudflare, Netlify, Vercel and Bunny, or through your own server with libvips.
 - **Twelve locales**: every text comes from a locale, components follow the culture of the user, and Arabic renders right to left.
-- **.NET MAUI Blazor Hybrid**: the same pages run in a `BlazorWebView`, with a sample project.
-- **Native .NET MAUI**: use [Klyroo.UI.Maui](https://github.com/Klyroo/klyroo-ui/tree/main/src/Klyroo.UI.Maui) from source for native C# controls with Klyroo design tokens. Start with the [native Android sample](https://github.com/Klyroo/klyroo-ui/tree/main/samples/Klyroo.Maui.Native).
+- **Blazor web**: use [Klyroo.UI.Blazor](https://github.com/Klyroo/klyroo-ui/tree/main/src/Klyroo.UI.Blazor) for Razor components with static server rendering, Interactive Server, WebAssembly or Auto. The package references the existing `Klyroo.UI` library.
+- **.NET MAUI Blazor Hybrid**: use the same Blazor package and reuse your Razor pages in a `BlazorWebView` on Android, iOS, macOS (Mac Catalyst) or Windows. See the [Hybrid sample](https://github.com/Klyroo/klyroo-ui/tree/main/samples/Klyroo.Maui).
+- **Native .NET MAUI**: use [Klyroo.UI.Maui](https://github.com/Klyroo/klyroo-ui/tree/main/src/Klyroo.UI.Maui) from source for C# controls rendered as native views on the same four platforms. See the [native sample](https://github.com/Klyroo/klyroo-ui/tree/main/samples/Klyroo.Maui.Native).
 
 ## Components
 
