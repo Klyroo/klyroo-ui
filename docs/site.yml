@@ -20,10 +20,10 @@ packages:
 
 # The home page. headline is two lines, the second in the accent color; lead is the paragraph under it. Without them: the title and the tagline.
 headline: |
-  Accessible Blazor
-  components.
+  Blazor web and Hybrid.
+  Native MAUI controls.
 lead: >-
-  A complete set of accessible components, a design system on CSS variables, and a build that bundles icons, fonts and Tailwind. It runs in every Blazor render mode and in a BlazorWebView.
+  Build web apps with Blazor Server, WebAssembly, Auto or static rendering. Reuse the same Razor components in MAUI Blazor Hybrid through a BlazorWebView, or build native MAUI screens with C# controls from Klyroo.UI.Maui.
 
 # The accent of the site (#rrggbb): buttons, links, marks and the second line of the headline. The text variants that pass the contrast rules in light and
 # dark mode are computed from it. Without it: the color of the library in klyroo-stack/docs-site/Klyroo.Docs.Site/libraries.yml.

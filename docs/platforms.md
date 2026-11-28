@@ -43,11 +43,21 @@ escaping and the two base64 encodings Blazor adds), through the scoped `KlyPersi
 not handed over: that list or resource loads again once in the interactive render. Raise the budget only together with
 the `MaximumReceiveMessageSize` of the hub.
 
+## Choosing a UI package
+
+| App | UI package | How it renders |
+| --- | --- | --- |
+| Blazor web | `Klyroo.UI.Blazor` | Razor in the browser, with static server rendering, Interactive Server, WebAssembly or Auto. |
+| .NET MAUI Blazor Hybrid | `Klyroo.UI.Blazor` | The same Razor components inside a `BlazorWebView` on Android, iOS, Mac Catalyst or Windows. |
+| Native .NET MAUI | `Klyroo.UI.Maui` | Native MAUI views on the same four platforms, using C# controls. |
+
+`Klyroo.UI.Blazor` brings in the existing `Klyroo.UI` package, preserving its namespaces and static asset paths. The `Klyroo.UI.Blazor` and `Klyroo.UI.Maui` package projects are available from source.
+
 ## Native .NET MAUI controls
 
 Blazor Hybrid draws the UI in a web view. For an app with real native views, [`Klyroo.UI.Maui`](../src/Klyroo.UI.Maui/README.md) provides MAUI controls
 (`KlyButton`, `KlyInput`, `KlySwitch`, ...) with the same design tokens, in plain C# with no WebView and no Blazor. It covers a subset of the components,
-and the sample is [`samples/Klyroo.Maui.Native`](../samples/Klyroo.Maui.Native).
+and the sample is [`samples/Klyroo.Maui.Native`](../samples/Klyroo.Maui.Native). The project is separate from the Razor library and is available from source.
 
 ## .NET MAUI Blazor Hybrid
 

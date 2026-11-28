@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Klyroo.UI/Klyroo.UI.csproj" />
+    <Project Path="src/Klyroo.UI.Blazor/Klyroo.UI.Blazor.csproj" />
     <Project Path="src/Klyroo.UI.Build.Tasks/Klyroo.UI.Build.Tasks.csproj" />
     <Project Path="src/Klyroo.UI.Images/Klyroo.UI.Images.csproj" />
     <Project Path="src/Klyroo.UI.Images.Local/Klyroo.UI.Images.Local.csproj" />
