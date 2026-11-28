@@ -144,8 +144,8 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Install the MAUI iOS and Mac Catalyst workloads
-        run: dotnet workload install maui-ios maui-maccatalyst
+      - name: Install the MAUI workloads required by multi-target restore
+        run: dotnet workload install maui-android maui-ios maui-maccatalyst
       - name: Build for iOS
         run: dotnet build -f net10.0-ios -c Release --nologo
       - name: Build for Mac Catalyst
