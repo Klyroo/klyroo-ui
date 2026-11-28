@@ -18,7 +18,7 @@ cat > "$scratch/Consumer.csproj" <<EOF
   <PropertyGroup>
     <TargetFramework>$framework</TargetFramework>
     <UseMaui>true</UseMaui>
-    <RestoreAdditionalProjectSources>${scratch}/feed</RestoreAdditionalProjectSources>
+    <RestoreAdditionalProjectSources>\$(MSBuildProjectDirectory)/feed</RestoreAdditionalProjectSources>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Klyroo.UI.Maui" Version="[$version]" />
